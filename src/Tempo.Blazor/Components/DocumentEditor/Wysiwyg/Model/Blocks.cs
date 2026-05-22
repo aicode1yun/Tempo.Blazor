@@ -133,6 +133,9 @@ public class ImageBlock : Block
     /// <summary>Alternative text.</summary>
     public string Alt { get; set; } = string.Empty;
 
+    /// <summary>Whether assistive technology should skip this image.</summary>
+    public bool IsDecorative { get; set; }
+
     /// <summary>Image dimensions.</summary>
     public ImageSize Size { get; set; } = new();
 

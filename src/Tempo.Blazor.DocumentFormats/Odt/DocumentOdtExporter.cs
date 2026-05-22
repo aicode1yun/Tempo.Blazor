@@ -174,21 +174,20 @@ public sealed class OdtPackageWriter
     {
         var path = $"Pictures/image{++_imageIndex}.png";
         _images.Add((path, image));
-        var layout = image.FloatingLayout;
+        var layout = image.Layout;
+        var width = image.Layout.Transform.Width ?? image.Size.Width;
+        var height = image.Layout.Transform.Height ?? image.Size.Height;
         return new XElement(Text + "p",
             new XElement(Draw + "frame",
                 new XAttribute(Draw + "name", image.AltText ?? $"Image {_imageIndex}"),
-                new XAttribute(Text + "anchor-type", layout?.Inline == false ? "page" : "as-char"),
-                layout?.Inline == false ? new XAttribute(Svg + "x", FormatLength(layout.X)) : null,
-                layout?.Inline == false ? new XAttribute(Svg + "y", FormatLength(layout.Y)) : null,
-                image.Size.Width is > 0 ? new XAttribute(Svg + "width", FormatLength(image.Size.Width.Value)) : null,
-                image.Size.Height is > 0 ? new XAttribute(Svg + "height", FormatLength(image.Size.Height.Value)) : null,
-                layout?.Inline == false ? new XAttribute(Style + "wrap", ToOdtWrap(layout.WrapMode)) : null,
-                layout?.Inline == false ? new XAttribute(Draw + "z-index", layout.ZIndex) : null,
-                layout?.Inline == false ? new XAttribute(Tm + "wrap-mode", layout.WrapMode.ToString()) : null,
-                layout?.Inline == false ? new XAttribute(Tm + "horizontal-relative-to", layout.HorizontalRelativeTo.ToString()) : null,
-                layout?.Inline == false ? new XAttribute(Tm + "vertical-relative-to", layout.VerticalRelativeTo.ToString()) : null,
-                layout?.Inline == false ? new XAttribute(Tm + "lock-anchor", layout.LockAnchor ? "true" : "false") : null,
+                new XAttribute(Text + "anchor-type", !layout.IsInline ? "page" : "as-char"),
+                !layout.IsInline ? new XAttribute(Svg + "x", FormatLength(layout.Position.X)) : null,
+                !layout.IsInline ? new XAttribute(Svg + "y", FormatLength(layout.Position.Y)) : null,
+                width is > 0 ? new XAttribute(Svg + "width", FormatLength(width.Value)) : null,
+                height is > 0 ? new XAttribute(Svg + "height", FormatLength(height.Value)) : null,
+                !layout.IsInline ? new XAttribute(Style + "wrap", ToOdtWrap(layout.Wrap.Mode)) : null,
+                !layout.IsInline ? new XAttribute(Draw + "z-index", layout.Stacking.ZIndex) : null,
+                WriteTempoLayoutAttributes(layout),
                 new XElement(Draw + "image",
                     new XAttribute(XLink + "href", path),
                     new XAttribute(XLink + "type", "simple"),
@@ -200,6 +199,74 @@ public sealed class OdtPackageWriter
     private static string FormatLength(double value)
     {
         return FormattableString.Invariant($"{value:0.##}pt");
+    }
+
+    private static string FormatNumber(double value)
+    {
+        return value.ToString("0.########", CultureInfo.InvariantCulture);
+    }
+
+    private static IEnumerable<XAttribute> WriteTempoLayoutAttributes(DocumentObjectLayout layout)
+    {
+        yield return new XAttribute(Tm + "layout-kind", layout.Kind.ToString());
+        if (!string.IsNullOrWhiteSpace(layout.Anchor.BlockId))
+        {
+            yield return new XAttribute(Tm + "anchor-block-id", layout.Anchor.BlockId);
+        }
+
+        if (layout.Anchor.InlineIndex.HasValue)
+        {
+            yield return new XAttribute(Tm + "anchor-inline-index", layout.Anchor.InlineIndex.Value);
+        }
+
+        if (layout.Anchor.Offset.HasValue)
+        {
+            yield return new XAttribute(Tm + "anchor-offset", layout.Anchor.Offset.Value);
+        }
+
+        yield return new XAttribute(Tm + "anchor-region", layout.Anchor.Region.ToString());
+        yield return new XAttribute(Tm + "move-with-text", layout.Anchor.MoveWithText ? "true" : "false");
+        yield return new XAttribute(Tm + "fixed-on-page", layout.Anchor.FixedOnPage ? "true" : "false");
+        yield return new XAttribute(Tm + "lock-anchor", layout.Anchor.LockAnchor ? "true" : "false");
+        yield return new XAttribute(Tm + "horizontal-relative-to", layout.Position.HorizontalRelativeTo.ToString());
+        yield return new XAttribute(Tm + "vertical-relative-to", layout.Position.VerticalRelativeTo.ToString());
+        yield return new XAttribute(Tm + "x", FormatNumber(layout.Position.X));
+        yield return new XAttribute(Tm + "y", FormatNumber(layout.Position.Y));
+        if (layout.Position.HorizontalAlignment.HasValue)
+        {
+            yield return new XAttribute(Tm + "horizontal-alignment", layout.Position.HorizontalAlignment.Value.ToString());
+        }
+
+        yield return new XAttribute(Tm + "vertical-alignment", layout.Position.VerticalAlignment.ToString());
+        yield return new XAttribute(Tm + "wrap-mode", layout.Wrap.Mode.ToString());
+        yield return new XAttribute(Tm + "distance-left", FormatNumber(layout.Wrap.DistanceLeft));
+        yield return new XAttribute(Tm + "distance-right", FormatNumber(layout.Wrap.DistanceRight));
+        yield return new XAttribute(Tm + "distance-top", FormatNumber(layout.Wrap.DistanceTop));
+        yield return new XAttribute(Tm + "distance-bottom", FormatNumber(layout.Wrap.DistanceBottom));
+        if (layout.Transform.Width.HasValue)
+        {
+            yield return new XAttribute(Tm + "width", FormatNumber(layout.Transform.Width.Value));
+        }
+
+        if (layout.Transform.Height.HasValue)
+        {
+            yield return new XAttribute(Tm + "height", FormatNumber(layout.Transform.Height.Value));
+        }
+
+        if (layout.Transform.NaturalWidth.HasValue)
+        {
+            yield return new XAttribute(Tm + "natural-width", FormatNumber(layout.Transform.NaturalWidth.Value));
+        }
+
+        if (layout.Transform.NaturalHeight.HasValue)
+        {
+            yield return new XAttribute(Tm + "natural-height", FormatNumber(layout.Transform.NaturalHeight.Value));
+        }
+
+        yield return new XAttribute(Tm + "lock-aspect-ratio", layout.Transform.LockAspectRatio ? "true" : "false");
+        yield return new XAttribute(Tm + "rotation", FormatNumber(layout.Transform.Rotation));
+        yield return new XAttribute(Tm + "z-index", layout.Stacking.ZIndex);
+        yield return new XAttribute(Tm + "allow-overlap", layout.Stacking.AllowOverlap ? "true" : "false");
     }
 
     private static string ToOdtWrap(DocumentWrapMode wrapMode)

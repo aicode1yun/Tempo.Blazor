@@ -3238,6 +3238,8 @@
   <data name="TmDocumentEditor_ImageInsertAsset"       xml:space="preserve"><value>Z knihovny</value></data>
   <data name="TmDocumentEditor_ImageInspectorLabel"    xml:space="preserve"><value>Inspektor obrázku</value></data>
   <data name="TmDocumentEditor_ImageAltMissing"        xml:space="preserve"><value>Doplňte alternativní text kvůli přístupnosti.</value></data>
+  <data name="TmDocumentEditor_ImageDecorative"        xml:space="preserve"><value>Dekorativní obrázek</value></data>
+  <data name="TmDocumentEditor_ImageDecorativeHint"    xml:space="preserve"><value>Čtečky obrazovky tento obrázek přeskočí.</value></data>
   <data name="TmDocumentEditor_ImageLink"              xml:space="preserve"><value>Odkaz obrázku</value></data>
   <data name="TmDocumentEditor_ImageHeight"            xml:space="preserve"><value>Výška</value></data>
   <data name="TmDocumentEditor_ImageAlignment"         xml:space="preserve"><value>Zarovnání obrázku</value></data>
@@ -3255,13 +3257,35 @@
   <data name="TmDocumentEditor_ImageWrapMode"          xml:space="preserve"><value>Obtékat text</value></data>
   <data name="TmDocumentEditor_ImageWrapInline"        xml:space="preserve"><value>Vložený</value></data>
   <data name="TmDocumentEditor_ImageWrapSquare"        xml:space="preserve"><value>Čtverec</value></data>
+  <data name="TmDocumentEditor_ImageWrapTight"         xml:space="preserve"><value>Těsné</value></data>
+  <data name="TmDocumentEditor_ImageWrapThrough"       xml:space="preserve"><value>Skrz</value></data>
   <data name="TmDocumentEditor_ImageWrapTopBottom"     xml:space="preserve"><value>Nahoře a dole</value></data>
+  <data name="TmDocumentEditor_ImageWrapBehindText"    xml:space="preserve"><value>Za textem</value></data>
   <data name="TmDocumentEditor_ImageWrapInFrontOfText" xml:space="preserve"><value>Před textem</value></data>
   <data name="TmDocumentEditor_ImagePosition"          xml:space="preserve"><value>Pozice</value></data>
   <data name="TmDocumentEditor_ImagePositionLeft"      xml:space="preserve"><value>Vlevo</value></data>
   <data name="TmDocumentEditor_ImagePositionRight"     xml:space="preserve"><value>Vpravo</value></data>
+  <data name="TmDocumentEditor_ImagePositionX"         xml:space="preserve"><value>X</value></data>
+  <data name="TmDocumentEditor_ImagePositionY"         xml:space="preserve"><value>Y</value></data>
+  <data name="TmDocumentEditor_ImageRotation"          xml:space="preserve"><value>Otočení</value></data>
+  <data name="TmDocumentEditor_ImageSectionPicture"    xml:space="preserve"><value>Obrázek</value></data>
+  <data name="TmDocumentEditor_ImageSectionSizeRotation" xml:space="preserve"><value>Velikost a otočení</value></data>
+  <data name="TmDocumentEditor_ImageSectionWrapping"   xml:space="preserve"><value>Obtékání textu</value></data>
+  <data name="TmDocumentEditor_ImageSectionPosition"   xml:space="preserve"><value>Pozice</value></data>
+  <data name="TmDocumentEditor_ImageSectionOrder"      xml:space="preserve"><value>Pořadí</value></data>
+  <data name="TmDocumentEditor_ImageSectionAccessibility" xml:space="preserve"><value>Přístupnost</value></data>
+  <data name="TmDocumentEditor_ImageSourceUrl"         xml:space="preserve"><value>Obrázek z URL</value></data>
+  <data name="TmDocumentEditor_ImageSourceAsset"       xml:space="preserve"><value>Obrázek z knihovny</value></data>
+  <data name="TmDocumentEditor_ImageSourceClipboard"   xml:space="preserve"><value>Obrázek ze schránky</value></data>
+  <data name="TmDocumentEditor_ImageSourceDataUrl"     xml:space="preserve"><value>Vložený obrázek</value></data>
+  <data name="TmDocumentEditor_ImageBringForward"      xml:space="preserve"><value>Přenést dopředu</value></data>
+  <data name="TmDocumentEditor_ImageSendBackward"      xml:space="preserve"><value>Poslat dozadu</value></data>
   <data name="TmDocumentEditor_ImageDistanceTitle"     xml:space="preserve"><value>Vzdálenost od textu</value></data>
-  <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Pohybovat s textem</value></data>
+  <data name="TmDocumentEditor_ImageAnchorParagraph"   xml:space="preserve"><value>Odstavec kotvy</value></data>
+  <data name="TmDocumentEditor_ImageAnchorUnknown"     xml:space="preserve"><value>Není ukotveno</value></data>
+  <data name="TmDocumentEditor_ImageMoveWithText"      xml:space="preserve"><value>Pohybovat s textem</value></data>
+  <data name="TmDocumentEditor_ImageFixedOnPage"       xml:space="preserve"><value>Pevně na stránce</value></data>
+  <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Uzamknout kotvu</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Konec stránky</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG plocha dokumentu</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editovatelná plocha dokumentu. Pomocí Tab přecházíte mezi pásem karet, záhlavím, tělem, zápatím a komentáři.</value></data>

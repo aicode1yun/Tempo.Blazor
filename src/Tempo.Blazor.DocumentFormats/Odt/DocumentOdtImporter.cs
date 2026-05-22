@@ -29,6 +29,7 @@ public sealed class OdtPackageReader
     private static readonly XNamespace Text = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
     private static readonly XNamespace Table = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
     private static readonly XNamespace Draw = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+    private static readonly XNamespace Style = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
     private static readonly XNamespace Svg = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
     private static readonly XNamespace Tm = "urn:tempo-blazor:document-editor:1.0";
     private static readonly XNamespace XLink = "http://www.w3.org/1999/xlink";
@@ -347,7 +348,14 @@ public sealed class OdtPackageReader
             }
         }
 
-        var floatingLayout = ReadFloatingLayout(frame);
+        var layout = ReadObjectLayout(frame);
+        var size = new DocumentImageSize
+        {
+            Width = ParseLength((string?)frame.Attribute(Svg + "width")),
+            Height = ParseLength((string?)frame.Attribute(Svg + "height"))
+        };
+        layout.Transform.Width = size.Width;
+        layout.Transform.Height = size.Height;
 
         return new ImageBlockContent
         {
@@ -355,12 +363,8 @@ public sealed class OdtPackageReader
             Url = url,
             AssetId = url is null ? assetId : null,
             AltText = (string?)frame.Attribute(Draw + "name"),
-            Size = new DocumentImageSize
-            {
-                Width = ParseLength((string?)frame.Attribute(Svg + "width")),
-                Height = ParseLength((string?)frame.Attribute(Svg + "height"))
-            },
-            FloatingLayout = floatingLayout
+            Size = size,
+            Layout = layout
         };
     }
 
@@ -410,24 +414,75 @@ public sealed class OdtPackageReader
         };
     }
 
-    private static DocumentFloatingLayout ReadFloatingLayout(XElement frame)
+    private static DocumentObjectLayout ReadObjectLayout(XElement frame)
     {
-        var floating = ((string?)frame.Attribute(Text + "anchor-type")) == "page";
-        if (!floating)
+        var legacyFloating = ((string?)frame.Attribute(Text + "anchor-type")) == "page";
+        var fallbackKind = legacyFloating ? DocumentObjectLayoutKind.Anchored : DocumentObjectLayoutKind.Inline;
+        var kind = ParseEnum((string?)frame.Attribute(Tm + "layout-kind"), fallbackKind);
+        var legacyZIndex = int.TryParse((string?)frame.Attribute(Draw + "z-index"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var zIndex)
+            ? zIndex
+            : 0;
+        var horizontalAlignment = ParseNullableEnum<DocumentImageHorizontalPosition>((string?)frame.Attribute(Tm + "horizontal-alignment"));
+
+        return new DocumentObjectLayout
         {
-            return new DocumentFloatingLayout { Inline = true, WrapMode = DocumentWrapMode.Inline };
+            Kind = kind,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = (string?)frame.Attribute(Tm + "anchor-block-id"),
+                InlineIndex = ParseNullableInt((string?)frame.Attribute(Tm + "anchor-inline-index")),
+                Offset = ParseNullableInt((string?)frame.Attribute(Tm + "anchor-offset")),
+                Region = ParseEnum((string?)frame.Attribute(Tm + "anchor-region"), DocumentRenditionAnchorScope.Body),
+                MoveWithText = ParseBool((string?)frame.Attribute(Tm + "move-with-text"), kind != DocumentObjectLayoutKind.Fixed),
+                FixedOnPage = ParseBool((string?)frame.Attribute(Tm + "fixed-on-page"), kind == DocumentObjectLayoutKind.Fixed),
+                LockAnchor = ParseBool((string?)frame.Attribute(Tm + "lock-anchor"), false)
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = ParseEnum((string?)frame.Attribute(Tm + "horizontal-relative-to"), DocumentRelativePosition.Page),
+                VerticalRelativeTo = ParseEnum((string?)frame.Attribute(Tm + "vertical-relative-to"), DocumentRelativePosition.Paragraph),
+                X = ParseDouble((string?)frame.Attribute(Tm + "x"), ParseLength((string?)frame.Attribute(Svg + "x")) ?? 0),
+                Y = ParseDouble((string?)frame.Attribute(Tm + "y"), ParseLength((string?)frame.Attribute(Svg + "y")) ?? 0),
+                HorizontalAlignment = horizontalAlignment,
+                VerticalAlignment = ParseEnum((string?)frame.Attribute(Tm + "vertical-alignment"), DocumentObjectVerticalAlignment.None)
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = ParseEnum((string?)frame.Attribute(Tm + "wrap-mode"), FromOdtWrap((string?)frame.Attribute(Style + "wrap"), kind)),
+                DistanceLeft = ParseDouble((string?)frame.Attribute(Tm + "distance-left"), 0),
+                DistanceRight = ParseDouble((string?)frame.Attribute(Tm + "distance-right"), 0),
+                DistanceTop = ParseDouble((string?)frame.Attribute(Tm + "distance-top"), 0),
+                DistanceBottom = ParseDouble((string?)frame.Attribute(Tm + "distance-bottom"), 0)
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = ParseNullableDouble((string?)frame.Attribute(Tm + "width")),
+                Height = ParseNullableDouble((string?)frame.Attribute(Tm + "height")),
+                NaturalWidth = ParseNullableDouble((string?)frame.Attribute(Tm + "natural-width")),
+                NaturalHeight = ParseNullableDouble((string?)frame.Attribute(Tm + "natural-height")),
+                LockAspectRatio = ParseBool((string?)frame.Attribute(Tm + "lock-aspect-ratio"), true),
+                Rotation = ParseDouble((string?)frame.Attribute(Tm + "rotation"), 0)
+            },
+            Stacking = new DocumentObjectStacking
+            {
+                ZIndex = ParseInt((string?)frame.Attribute(Tm + "z-index"), legacyZIndex),
+                AllowOverlap = ParseBool((string?)frame.Attribute(Tm + "allow-overlap"), false)
+            }
+        };
+    }
+
+    private static DocumentWrapMode FromOdtWrap(string? value, DocumentObjectLayoutKind kind)
+    {
+        if (kind == DocumentObjectLayoutKind.Inline)
+        {
+            return DocumentWrapMode.Inline;
         }
 
-        return new DocumentFloatingLayout
+        return value?.Trim().ToLowerInvariant() switch
         {
-            Inline = false,
-            HorizontalRelativeTo = ParseEnum((string?)frame.Attribute(Tm + "horizontal-relative-to"), DocumentRelativePosition.Page),
-            VerticalRelativeTo = ParseEnum((string?)frame.Attribute(Tm + "vertical-relative-to"), DocumentRelativePosition.Paragraph),
-            X = ParseLength((string?)frame.Attribute(Svg + "x")) ?? 0,
-            Y = ParseLength((string?)frame.Attribute(Svg + "y")) ?? 0,
-            WrapMode = ParseEnum((string?)frame.Attribute(Tm + "wrap-mode"), DocumentWrapMode.Square),
-            ZIndex = int.TryParse((string?)frame.Attribute(Draw + "z-index"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var zIndex) ? zIndex : 0,
-            LockAnchor = string.Equals((string?)frame.Attribute(Tm + "lock-anchor"), "true", StringComparison.OrdinalIgnoreCase)
+            "none" => DocumentWrapMode.TopBottom,
+            "run-through" => DocumentWrapMode.InFrontOfText,
+            _ => DocumentWrapMode.Square
         };
     }
 
@@ -455,6 +510,37 @@ public sealed class OdtPackageReader
         where TEnum : struct
     {
         return Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed) ? parsed : fallback;
+    }
+
+    private static TEnum? ParseNullableEnum<TEnum>(string? value)
+        where TEnum : struct
+    {
+        return Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed) ? parsed : null;
+    }
+
+    private static bool ParseBool(string? value, bool fallback)
+    {
+        return bool.TryParse(value, out var parsed) ? parsed : fallback;
+    }
+
+    private static int ParseInt(string? value, int fallback)
+    {
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
+    }
+
+    private static int? ParseNullableInt(string? value)
+    {
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+    }
+
+    private static double ParseDouble(string? value, double fallback)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
+    }
+
+    private static double? ParseNullableDouble(string? value)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
     }
 
     private static List<InlineMark> MarksFromStyle(string? styleName)

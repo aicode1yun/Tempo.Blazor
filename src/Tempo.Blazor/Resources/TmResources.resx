@@ -3281,6 +3281,8 @@
   <data name="TmDocumentEditor_ImageInsertAsset"       xml:space="preserve"><value>From assets</value></data>
   <data name="TmDocumentEditor_ImageInspectorLabel"    xml:space="preserve"><value>Image inspector</value></data>
   <data name="TmDocumentEditor_ImageAltMissing"        xml:space="preserve"><value>Add alt text for accessibility.</value></data>
+  <data name="TmDocumentEditor_ImageDecorative"        xml:space="preserve"><value>Decorative image</value></data>
+  <data name="TmDocumentEditor_ImageDecorativeHint"    xml:space="preserve"><value>Screen readers will skip this image.</value></data>
   <data name="TmDocumentEditor_ImageLink"              xml:space="preserve"><value>Image link</value></data>
   <data name="TmDocumentEditor_ImageHeight"            xml:space="preserve"><value>Height</value></data>
   <data name="TmDocumentEditor_ImageAlignment"         xml:space="preserve"><value>Image alignment</value></data>
@@ -3298,13 +3300,35 @@
   <data name="TmDocumentEditor_ImageWrapMode"          xml:space="preserve"><value>Wrap text</value></data>
   <data name="TmDocumentEditor_ImageWrapInline"        xml:space="preserve"><value>Inline</value></data>
   <data name="TmDocumentEditor_ImageWrapSquare"        xml:space="preserve"><value>Square</value></data>
+  <data name="TmDocumentEditor_ImageWrapTight"         xml:space="preserve"><value>Tight</value></data>
+  <data name="TmDocumentEditor_ImageWrapThrough"       xml:space="preserve"><value>Through</value></data>
   <data name="TmDocumentEditor_ImageWrapTopBottom"     xml:space="preserve"><value>Top and bottom</value></data>
+  <data name="TmDocumentEditor_ImageWrapBehindText"    xml:space="preserve"><value>Behind text</value></data>
   <data name="TmDocumentEditor_ImageWrapInFrontOfText" xml:space="preserve"><value>In front of text</value></data>
   <data name="TmDocumentEditor_ImagePosition"          xml:space="preserve"><value>Position</value></data>
   <data name="TmDocumentEditor_ImagePositionLeft"      xml:space="preserve"><value>Left</value></data>
   <data name="TmDocumentEditor_ImagePositionRight"     xml:space="preserve"><value>Right</value></data>
+  <data name="TmDocumentEditor_ImagePositionX"         xml:space="preserve"><value>X</value></data>
+  <data name="TmDocumentEditor_ImagePositionY"         xml:space="preserve"><value>Y</value></data>
+  <data name="TmDocumentEditor_ImageRotation"          xml:space="preserve"><value>Rotation</value></data>
+  <data name="TmDocumentEditor_ImageSectionPicture"    xml:space="preserve"><value>Image</value></data>
+  <data name="TmDocumentEditor_ImageSectionSizeRotation" xml:space="preserve"><value>Size and rotation</value></data>
+  <data name="TmDocumentEditor_ImageSectionWrapping"   xml:space="preserve"><value>Text wrapping</value></data>
+  <data name="TmDocumentEditor_ImageSectionPosition"   xml:space="preserve"><value>Position</value></data>
+  <data name="TmDocumentEditor_ImageSectionOrder"      xml:space="preserve"><value>Order</value></data>
+  <data name="TmDocumentEditor_ImageSectionAccessibility" xml:space="preserve"><value>Accessibility</value></data>
+  <data name="TmDocumentEditor_ImageSourceUrl"         xml:space="preserve"><value>URL image</value></data>
+  <data name="TmDocumentEditor_ImageSourceAsset"       xml:space="preserve"><value>Asset image</value></data>
+  <data name="TmDocumentEditor_ImageSourceClipboard"   xml:space="preserve"><value>Clipboard image</value></data>
+  <data name="TmDocumentEditor_ImageSourceDataUrl"     xml:space="preserve"><value>Embedded image</value></data>
+  <data name="TmDocumentEditor_ImageBringForward"      xml:space="preserve"><value>Bring forward</value></data>
+  <data name="TmDocumentEditor_ImageSendBackward"      xml:space="preserve"><value>Send backward</value></data>
   <data name="TmDocumentEditor_ImageDistanceTitle"     xml:space="preserve"><value>Distance from text</value></data>
-  <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Move with text</value></data>
+  <data name="TmDocumentEditor_ImageAnchorParagraph"   xml:space="preserve"><value>Anchor paragraph</value></data>
+  <data name="TmDocumentEditor_ImageAnchorUnknown"     xml:space="preserve"><value>Not anchored</value></data>
+  <data name="TmDocumentEditor_ImageMoveWithText"      xml:space="preserve"><value>Move with text</value></data>
+  <data name="TmDocumentEditor_ImageFixedOnPage"       xml:space="preserve"><value>Fixed on page</value></data>
+  <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Lock anchor</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Page break</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG document surface</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editable document surface. Use Tab to move between the ribbon, header, body, footer, and comments.</value></data>

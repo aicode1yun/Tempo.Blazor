@@ -1176,6 +1176,26 @@
         }
     }
 
+    /// <summary>Requests the last JS-owned command transaction for undo/redo reconciliation.</summary>
+    public async Task<JsonElement?> RequestLastCommandTransactionAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            var transaction = await JSRuntime.InvokeAsync<JsonElement>(
+                "tmDocumentEditorRuntime.getLastCommandTransaction",
+                _instanceId);
+            return transaction.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null
+                ? null
+                : transaction;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>Called by the JS engine when a patch is generated.</summary>
     [JSInvokable]
     public Task HandlePatchGenerated(WysiwygPatch patch)
@@ -2328,12 +2348,22 @@
 
     private static DocumentBlock CreateImageBlock(ImageBlockContent content)
     {
+        SyncImageLayoutSize(content);
         return new DocumentBlock
         {
             Id = Guid.NewGuid().ToString("N"),
             Type = DocumentBlockType.Image,
             Content = content
         };
+    }
+
+    private static void SyncImageLayoutSize(ImageBlockContent content)
+    {
+        content.Layout ??= DocumentObjectLayout.Inline();
+        content.Layout.Transform.Width ??= content.Size.Width;
+        content.Layout.Transform.Height ??= content.Size.Height;
+        content.Layout.Transform.NaturalWidth ??= content.NaturalSize.Width;
+        content.Layout.Transform.NaturalHeight ??= content.NaturalSize.Height;
     }
 
     private static bool IsSafeImageUrl(string? url)

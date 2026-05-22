@@ -130,12 +130,12 @@ public partial class TmDocumentBlockRenderer : ComponentBase
         };
 
         var classes = new List<string> { "tm-document-block", "tm-document-image", $"tm-document-image--{alignment}" };
-        if (image.FloatingLayout?.Inline == false)
+        if (!image.Layout.IsInline)
         {
             classes.Add("tm-document-image--floating");
-            classes.Add($"tm-document-image--wrap-{ToCssToken(image.FloatingLayout.WrapMode)}");
-            classes.Add($"tm-document-image--relative-{ToCssToken(image.FloatingLayout.HorizontalRelativeTo)}");
-            classes.Add($"tm-document-image--vrelative-{ToCssToken(image.FloatingLayout.VerticalRelativeTo)}");
+            classes.Add($"tm-document-image--wrap-{ToCssToken(image.Layout.Wrap.Mode)}");
+            classes.Add($"tm-document-image--relative-{ToCssToken(image.Layout.Position.HorizontalRelativeTo)}");
+            classes.Add($"tm-document-image--vrelative-{ToCssToken(image.Layout.Position.VerticalRelativeTo)}");
         }
 
         return string.Join(" ", classes);
@@ -164,21 +164,21 @@ public partial class TmDocumentBlockRenderer : ComponentBase
 
     private static string? GetImageFigureStyle(ImageBlockContent image)
     {
-        var layout = image.FloatingLayout;
-        if (layout?.Inline != false)
+        var layout = image.Layout;
+        if (layout.IsInline)
         {
             return null;
         }
 
         var styles = new List<string>
         {
-            FormattableString.Invariant($"left: {layout.X:0.##}px"),
-            FormattableString.Invariant($"top: {layout.Y:0.##}px")
+            FormattableString.Invariant($"left: {layout.Position.X:0.##}px"),
+            FormattableString.Invariant($"top: {layout.Position.Y:0.##}px")
         };
 
-        if (layout.ZIndex != 0)
+        if (layout.Stacking.ZIndex != 0)
         {
-            styles.Add(FormattableString.Invariant($"z-index: {layout.ZIndex}"));
+            styles.Add(FormattableString.Invariant($"z-index: {layout.Stacking.ZIndex}"));
         }
 
         return string.Join("; ", styles);
@@ -187,14 +187,16 @@ public partial class TmDocumentBlockRenderer : ComponentBase
     private static string? GetImageStyle(ImageBlockContent image)
     {
         var styles = new List<string>();
-        if (image.Size.Width is > 0)
+        var width = image.Layout.Transform.Width ?? image.Size.Width;
+        var height = image.Layout.Transform.Height ?? image.Size.Height;
+        if (width is > 0)
         {
-            styles.Add(FormattableString.Invariant($"width: {image.Size.Width.Value:0.##}px"));
+            styles.Add(FormattableString.Invariant($"width: {width.Value:0.##}px"));
         }
 
-        if (image.Size.Height is > 0)
+        if (height is > 0)
         {
-            styles.Add(FormattableString.Invariant($"height: {image.Size.Height.Value:0.##}px"));
+            styles.Add(FormattableString.Invariant($"height: {height.Value:0.##}px"));
         }
 
         return styles.Count == 0 ? null : string.Join("; ", styles);

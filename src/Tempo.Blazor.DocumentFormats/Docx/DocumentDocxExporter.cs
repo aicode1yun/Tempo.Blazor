@@ -43,6 +43,9 @@ public sealed class DocumentDocxExporter : IDocumentFormatExporter
 /// <summary>Writes an editor document to a WordprocessingML package.</summary>
 public sealed class DocxPackageWriter
 {
+    private const string TempoNamespace = "urn:tempo-blazor:document-editor:1.0";
+    private const string TempoPrefix = "tm";
+
     private static readonly byte[] TransparentPng =
     [
         0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
@@ -413,12 +416,12 @@ public sealed class DocxPackageWriter
         }
 
         var relId = _mainPart.GetIdOfPart(part);
-        var width = image.Size.Width ?? 120;
-        var height = image.Size.Height ?? 90;
+        var width = image.Layout.Transform.Width ?? image.Size.Width ?? 120;
+        var height = image.Layout.Transform.Height ?? image.Size.Height ?? 90;
         var cx = (long)(width * 12700);
         var cy = (long)(height * 12700);
         var graphic = CreatePictureGraphic(image, relId, cx, cy);
-        var drawingBody = image.FloatingLayout?.Inline == false
+        var drawingBody = !image.Layout.IsInline
             ? CreateAnchoredDrawing(image, cx, cy, graphic)
             : CreateInlineDrawing(image, cx, cy, graphic);
         var drawing = new W.Drawing(drawingBody);
@@ -434,11 +437,11 @@ public sealed class DocxPackageWriter
 
     private OpenXmlElement CreateInlineDrawing(ImageBlockContent image, long cx, long cy, A.Graphic graphic)
     {
-        return new DW.Inline(
+        var inline = new DW.Inline(
             new DW.Extent { Cx = cx, Cy = cy },
             new DW.EffectExtent { LeftEdge = 0, TopEdge = 0, RightEdge = 0, BottomEdge = 0 },
             new DW.DocProperties { Id = (UInt32Value)_drawingId++, Name = image.AltText ?? "Picture" },
-            new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = true }),
+            new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = image.Layout.Transform.LockAspectRatio }),
             graphic)
         {
             DistanceFromTop = 0,
@@ -446,36 +449,40 @@ public sealed class DocxPackageWriter
             DistanceFromLeft = 0,
             DistanceFromRight = 0
         };
+
+        WriteTempoLayoutAttributes(inline, image.Layout);
+        return inline;
     }
 
     private OpenXmlElement CreateAnchoredDrawing(ImageBlockContent image, long cx, long cy, A.Graphic graphic)
     {
-        var layout = image.FloatingLayout!;
+        var layout = image.Layout;
         var anchor = new DW.Anchor(
             new DW.SimplePosition { X = 0, Y = 0 },
             CreateDocxHorizontalPosition(layout),
             new DW.VerticalPosition(
-                new DW.PositionOffset(PointToEmu(layout.Y).ToString(CultureInfo.InvariantCulture)))
-            { RelativeFrom = ToDocxVerticalRelative(layout.VerticalRelativeTo) },
+                new DW.PositionOffset(PointToEmu(layout.Position.Y).ToString(CultureInfo.InvariantCulture)))
+            { RelativeFrom = ToDocxVerticalRelative(layout.Position.VerticalRelativeTo) },
             new DW.Extent { Cx = cx, Cy = cy },
             new DW.EffectExtent { LeftEdge = 0, TopEdge = 0, RightEdge = 0, BottomEdge = 0 },
-            CreateDocxWrap(layout.WrapMode),
+            CreateDocxWrap(layout.Wrap.Mode),
             new DW.DocProperties { Id = (UInt32Value)_drawingId++, Name = image.AltText ?? "Picture" },
-            new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = true }),
+            new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = layout.Transform.LockAspectRatio }),
             graphic)
         {
-            DistanceFromTop = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceTop)),
-            DistanceFromBottom = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceBottom)),
-            DistanceFromLeft = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceLeft)),
-            DistanceFromRight = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceRight)),
+            DistanceFromTop = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.Wrap.DistanceTop)),
+            DistanceFromBottom = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.Wrap.DistanceBottom)),
+            DistanceFromLeft = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.Wrap.DistanceLeft)),
+            DistanceFromRight = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.Wrap.DistanceRight)),
             SimplePos = false,
-            RelativeHeight = (UInt32Value)(uint)Math.Max(0, layout.ZIndex),
-            BehindDoc = layout.WrapMode == DocumentWrapMode.BehindText,
-            Locked = layout.LockAnchor,
+            RelativeHeight = (UInt32Value)(uint)Math.Max(0, layout.Stacking.ZIndex),
+            BehindDoc = layout.Wrap.Mode == DocumentWrapMode.BehindText,
+            Locked = layout.Anchor.LockAnchor,
             LayoutInCell = true,
-            AllowOverlap = true
+            AllowOverlap = layout.Stacking.AllowOverlap
         };
 
+        WriteTempoLayoutAttributes(anchor, layout);
         return anchor;
     }
 
@@ -488,17 +495,74 @@ public sealed class DocxPackageWriter
                     new PIC.NonVisualPictureDrawingProperties()),
                 new PIC.BlipFill(new A.Blip { Embed = relId }, new A.Stretch(new A.FillRectangle())),
                 new PIC.ShapeProperties(
-                    new A.Transform2D(new A.Offset { X = 0, Y = 0 }, new A.Extents { Cx = cx, Cy = cy }),
+                    new A.Transform2D(new A.Offset { X = 0, Y = 0 }, new A.Extents { Cx = cx, Cy = cy })
+                    {
+                        Rotation = ToDrawingRotation(image.Layout.Transform.Rotation)
+                    },
                     new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle })))
         { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" });
     }
 
-    private static DW.HorizontalPosition CreateDocxHorizontalPosition(DocumentFloatingLayout layout)
+    private static void WriteTempoLayoutAttributes(OpenXmlElement element, DocumentObjectLayout layout)
     {
-        var hp = new DW.HorizontalPosition { RelativeFrom = ToDocxHorizontalRelative(layout.HorizontalRelativeTo) };
-        if (layout.HorizontalPosition.HasValue)
+        SetTempoAttribute(element, "layout-kind", layout.Kind.ToString());
+        SetTempoAttribute(element, "anchor-block-id", layout.Anchor.BlockId);
+        SetTempoAttribute(element, "anchor-inline-index", layout.Anchor.InlineIndex?.ToString(CultureInfo.InvariantCulture));
+        SetTempoAttribute(element, "anchor-offset", layout.Anchor.Offset?.ToString(CultureInfo.InvariantCulture));
+        SetTempoAttribute(element, "anchor-region", layout.Anchor.Region.ToString());
+        SetTempoAttribute(element, "move-with-text", FormatBool(layout.Anchor.MoveWithText));
+        SetTempoAttribute(element, "fixed-on-page", FormatBool(layout.Anchor.FixedOnPage));
+        SetTempoAttribute(element, "lock-anchor", FormatBool(layout.Anchor.LockAnchor));
+        SetTempoAttribute(element, "horizontal-relative-to", layout.Position.HorizontalRelativeTo.ToString());
+        SetTempoAttribute(element, "vertical-relative-to", layout.Position.VerticalRelativeTo.ToString());
+        SetTempoAttribute(element, "x", FormatNumber(layout.Position.X));
+        SetTempoAttribute(element, "y", FormatNumber(layout.Position.Y));
+        SetTempoAttribute(element, "horizontal-alignment", layout.Position.HorizontalAlignment?.ToString());
+        SetTempoAttribute(element, "vertical-alignment", layout.Position.VerticalAlignment.ToString());
+        SetTempoAttribute(element, "wrap-mode", layout.Wrap.Mode.ToString());
+        SetTempoAttribute(element, "distance-left", FormatNumber(layout.Wrap.DistanceLeft));
+        SetTempoAttribute(element, "distance-right", FormatNumber(layout.Wrap.DistanceRight));
+        SetTempoAttribute(element, "distance-top", FormatNumber(layout.Wrap.DistanceTop));
+        SetTempoAttribute(element, "distance-bottom", FormatNumber(layout.Wrap.DistanceBottom));
+        SetTempoAttribute(element, "width", FormatNullableNumber(layout.Transform.Width));
+        SetTempoAttribute(element, "height", FormatNullableNumber(layout.Transform.Height));
+        SetTempoAttribute(element, "natural-width", FormatNullableNumber(layout.Transform.NaturalWidth));
+        SetTempoAttribute(element, "natural-height", FormatNullableNumber(layout.Transform.NaturalHeight));
+        SetTempoAttribute(element, "lock-aspect-ratio", FormatBool(layout.Transform.LockAspectRatio));
+        SetTempoAttribute(element, "rotation", FormatNumber(layout.Transform.Rotation));
+        SetTempoAttribute(element, "z-index", layout.Stacking.ZIndex.ToString(CultureInfo.InvariantCulture));
+        SetTempoAttribute(element, "allow-overlap", FormatBool(layout.Stacking.AllowOverlap));
+    }
+
+    private static void SetTempoAttribute(OpenXmlElement element, string name, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
         {
-            hp.Append(new DW.HorizontalAlignment(layout.HorizontalPosition.Value switch
+            return;
+        }
+
+        element.SetAttribute(new OpenXmlAttribute(TempoPrefix, name, TempoNamespace, value));
+    }
+
+    private static string FormatBool(bool value) => value ? "true" : "false";
+
+    private static string FormatNumber(double value) => value.ToString("0.########", CultureInfo.InvariantCulture);
+
+    private static string? FormatNullableNumber(double? value) => value.HasValue ? FormatNumber(value.Value) : null;
+
+    private static Int32Value? ToDrawingRotation(double rotation)
+    {
+        return Math.Abs(rotation) < 0.0001
+            ? null
+            : (Int32Value)(int)Math.Round(rotation * 60000);
+    }
+
+    private static DW.HorizontalPosition CreateDocxHorizontalPosition(DocumentObjectLayout layout)
+    {
+        var hp = new DW.HorizontalPosition { RelativeFrom = ToDocxHorizontalRelative(layout.Position.HorizontalRelativeTo) };
+        if (layout.Position.HorizontalAlignment.HasValue)
+        {
+            hp.Append(new DW.HorizontalAlignment(layout.Position.HorizontalAlignment.Value switch
             {
                 DocumentImageHorizontalPosition.Left => "left",
                 DocumentImageHorizontalPosition.Center => "center",
@@ -508,7 +572,7 @@ public sealed class DocxPackageWriter
         }
         else
         {
-            hp.Append(new DW.PositionOffset(PointToEmu(layout.X).ToString(CultureInfo.InvariantCulture)));
+            hp.Append(new DW.PositionOffset(PointToEmu(layout.Position.X).ToString(CultureInfo.InvariantCulture)));
         }
         return hp;
     }

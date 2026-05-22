@@ -1,5 +1,6 @@
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
+using System.Globalization;
 using System.Text;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Internal;
@@ -30,6 +31,8 @@ public sealed class DocumentDocxImporter : IDocumentFormatImporter
 /// <summary>Reads WordprocessingML package parts into the editor model.</summary>
 public sealed class DocxPackageReader
 {
+    private const string TempoNamespace = "urn:tempo-blazor:document-editor:1.0";
+
     private readonly WordprocessingDocument _document;
     private readonly DocumentFormatImportOptions _options;
     private readonly List<DocumentFormatCompatibilityWarning> _warnings = [];
@@ -575,8 +578,15 @@ public sealed class DocxPackageReader
             url = $"data:{imagePart.ContentType};base64,{Convert.ToBase64String(bytes)}";
         }
 
-        var floatingLayout = ReadFloatingLayout(drawing);
+        var layout = ReadObjectLayout(drawing);
         var extent = drawing.Descendants<DW.Extent>().FirstOrDefault();
+        var size = new DocumentImageSize
+        {
+            Width = extent?.Cx is null ? 120 : Math.Round(extent.Cx.Value / 12700d, 2),
+            Height = extent?.Cy is null ? 90 : Math.Round(extent.Cy.Value / 12700d, 2)
+        };
+        layout.Transform.Width = size.Width;
+        layout.Transform.Height = size.Height;
 
         return new ImageBlockContent
         {
@@ -584,26 +594,45 @@ public sealed class DocxPackageReader
             Url = url,
             AssetId = url is null ? assetId : null,
             AltText = drawing.Descendants<DocumentFormat.OpenXml.Drawing.Pictures.NonVisualDrawingProperties>().FirstOrDefault()?.Description?.Value,
-            Size = new DocumentImageSize
-            {
-                Width = extent?.Cx is null ? 120 : Math.Round(extent.Cx.Value / 12700d, 2),
-                Height = extent?.Cy is null ? 90 : Math.Round(extent.Cy.Value / 12700d, 2)
-            },
-            FloatingLayout = floatingLayout
+            Size = size,
+            Layout = layout
         };
     }
 
-    private static DocumentFloatingLayout ReadFloatingLayout(W.Drawing drawing)
+    private static DocumentObjectLayout ReadObjectLayout(W.Drawing drawing)
     {
         var anchor = drawing.Descendants<DW.Anchor>().FirstOrDefault();
+        var inline = drawing.Descendants<DW.Inline>().FirstOrDefault();
+        var layoutElement = (OpenXmlElement?)anchor ?? inline;
+        if (layoutElement is null)
+        {
+            return DocumentObjectLayout.Inline();
+        }
+
         if (anchor is null)
         {
-            return new DocumentFloatingLayout { Inline = true, WrapMode = DocumentWrapMode.Inline };
+            return ReadTempoLayout(
+                layoutElement,
+                drawing,
+                fallbackKind: DocumentObjectLayoutKind.Inline,
+                fallbackWrapMode: DocumentWrapMode.Inline,
+                fallbackHorizontalPosition: null,
+                fallbackHorizontalRelativeTo: DocumentRelativePosition.Page,
+                fallbackVerticalRelativeTo: DocumentRelativePosition.Paragraph,
+                fallbackX: 0,
+                fallbackY: 0,
+                fallbackDistanceLeft: 0,
+                fallbackDistanceRight: 0,
+                fallbackDistanceTop: 0,
+                fallbackDistanceBottom: 0,
+                fallbackZIndex: 0,
+                fallbackAllowOverlap: false,
+                fallbackLockAnchor: false);
         }
 
         var horizontal = anchor.GetFirstChild<DW.HorizontalPosition>();
         var vertical = anchor.GetFirstChild<DW.VerticalPosition>();
-        var wrapMode = anchor.Descendants<DW.WrapTopBottom>().Any()
+        var fallbackWrapMode = anchor.Descendants<DW.WrapTopBottom>().Any()
             ? DocumentWrapMode.TopBottom
             : anchor.BehindDoc?.Value == true
                 ? DocumentWrapMode.BehindText
@@ -620,27 +649,147 @@ public sealed class DocxPackageReader
             _ => null
         };
 
-        return new DocumentFloatingLayout
+        return ReadTempoLayout(
+            layoutElement,
+            drawing,
+            fallbackKind: DocumentObjectLayoutKind.Anchored,
+            fallbackWrapMode: fallbackWrapMode,
+            fallbackHorizontalPosition: horizontalPosition,
+            fallbackHorizontalRelativeTo: FromDocxHorizontalRelative(horizontal?.RelativeFrom?.Value),
+            fallbackVerticalRelativeTo: FromDocxVerticalRelative(vertical?.RelativeFrom?.Value),
+            fallbackX: EmuToPoint(horizontal?.GetFirstChild<DW.PositionOffset>()?.Text),
+            fallbackY: EmuToPoint(vertical?.GetFirstChild<DW.PositionOffset>()?.Text),
+            fallbackDistanceLeft: EmuToPoint(anchor.DistanceFromLeft?.Value.ToString(CultureInfo.InvariantCulture)),
+            fallbackDistanceRight: EmuToPoint(anchor.DistanceFromRight?.Value.ToString(CultureInfo.InvariantCulture)),
+            fallbackDistanceTop: EmuToPoint(anchor.DistanceFromTop?.Value.ToString(CultureInfo.InvariantCulture)),
+            fallbackDistanceBottom: EmuToPoint(anchor.DistanceFromBottom?.Value.ToString(CultureInfo.InvariantCulture)),
+            fallbackZIndex: (int)(anchor.RelativeHeight?.Value ?? 0),
+            fallbackAllowOverlap: anchor.AllowOverlap?.Value == true,
+            fallbackLockAnchor: anchor.Locked?.Value == true);
+    }
+
+    private static DocumentObjectLayout ReadTempoLayout(
+        OpenXmlElement element,
+        W.Drawing drawing,
+        DocumentObjectLayoutKind fallbackKind,
+        DocumentWrapMode fallbackWrapMode,
+        DocumentImageHorizontalPosition? fallbackHorizontalPosition,
+        DocumentRelativePosition fallbackHorizontalRelativeTo,
+        DocumentRelativePosition fallbackVerticalRelativeTo,
+        double fallbackX,
+        double fallbackY,
+        double fallbackDistanceLeft,
+        double fallbackDistanceRight,
+        double fallbackDistanceTop,
+        double fallbackDistanceBottom,
+        int fallbackZIndex,
+        bool fallbackAllowOverlap,
+        bool fallbackLockAnchor)
+    {
+        var kind = ParseEnum(GetTempoAttribute(element, "layout-kind"), fallbackKind);
+        var horizontalPosition = ParseNullableEnum<DocumentImageHorizontalPosition>(GetTempoAttribute(element, "horizontal-alignment"))
+            ?? fallbackHorizontalPosition;
+
+        return new DocumentObjectLayout
         {
-            Inline = false,
-            HorizontalRelativeTo = FromDocxHorizontalRelative(horizontal?.RelativeFrom?.Value),
-            VerticalRelativeTo = FromDocxVerticalRelative(vertical?.RelativeFrom?.Value),
-            X = EmuToPoint(horizontal?.GetFirstChild<DW.PositionOffset>()?.Text),
-            Y = EmuToPoint(vertical?.GetFirstChild<DW.PositionOffset>()?.Text),
-            WrapMode = wrapMode,
-            ZIndex = (int)(anchor.RelativeHeight?.Value ?? 0),
-            LockAnchor = anchor.Locked?.Value == true,
-            HorizontalPosition = horizontalPosition,
-            DistanceLeft = EmuToPoint(anchor.DistanceFromLeft?.Value.ToString()),
-            DistanceRight = EmuToPoint(anchor.DistanceFromRight?.Value.ToString()),
-            DistanceTop = EmuToPoint(anchor.DistanceFromTop?.Value.ToString()),
-            DistanceBottom = EmuToPoint(anchor.DistanceFromBottom?.Value.ToString())
+            Kind = kind,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = GetTempoAttribute(element, "anchor-block-id"),
+                InlineIndex = ParseNullableInt(GetTempoAttribute(element, "anchor-inline-index")),
+                Offset = ParseNullableInt(GetTempoAttribute(element, "anchor-offset")),
+                Region = ParseEnum(GetTempoAttribute(element, "anchor-region"), DocumentRenditionAnchorScope.Body),
+                MoveWithText = ParseBool(GetTempoAttribute(element, "move-with-text"), kind != DocumentObjectLayoutKind.Fixed),
+                FixedOnPage = ParseBool(GetTempoAttribute(element, "fixed-on-page"), kind == DocumentObjectLayoutKind.Fixed),
+                LockAnchor = ParseBool(GetTempoAttribute(element, "lock-anchor"), fallbackLockAnchor)
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = ParseEnum(GetTempoAttribute(element, "horizontal-relative-to"), fallbackHorizontalRelativeTo),
+                VerticalRelativeTo = ParseEnum(GetTempoAttribute(element, "vertical-relative-to"), fallbackVerticalRelativeTo),
+                X = ParseDouble(GetTempoAttribute(element, "x"), fallbackX),
+                Y = ParseDouble(GetTempoAttribute(element, "y"), fallbackY),
+                HorizontalAlignment = horizontalPosition,
+                VerticalAlignment = ParseEnum(GetTempoAttribute(element, "vertical-alignment"), DocumentObjectVerticalAlignment.None)
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = ParseEnum(GetTempoAttribute(element, "wrap-mode"), fallbackWrapMode),
+                DistanceLeft = ParseDouble(GetTempoAttribute(element, "distance-left"), fallbackDistanceLeft),
+                DistanceRight = ParseDouble(GetTempoAttribute(element, "distance-right"), fallbackDistanceRight),
+                DistanceTop = ParseDouble(GetTempoAttribute(element, "distance-top"), fallbackDistanceTop),
+                DistanceBottom = ParseDouble(GetTempoAttribute(element, "distance-bottom"), fallbackDistanceBottom)
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = ParseNullableDouble(GetTempoAttribute(element, "width")),
+                Height = ParseNullableDouble(GetTempoAttribute(element, "height")),
+                NaturalWidth = ParseNullableDouble(GetTempoAttribute(element, "natural-width")),
+                NaturalHeight = ParseNullableDouble(GetTempoAttribute(element, "natural-height")),
+                LockAspectRatio = ParseBool(GetTempoAttribute(element, "lock-aspect-ratio"), true),
+                Rotation = ParseDouble(GetTempoAttribute(element, "rotation"), ReadDrawingRotation(drawing))
+            },
+            Stacking = new DocumentObjectStacking
+            {
+                ZIndex = ParseInt(GetTempoAttribute(element, "z-index"), fallbackZIndex),
+                AllowOverlap = ParseBool(GetTempoAttribute(element, "allow-overlap"), fallbackAllowOverlap)
+            }
         };
+    }
+
+    private static string? GetTempoAttribute(OpenXmlElement element, string name)
+    {
+        var attribute = element.GetAttributes()
+            .FirstOrDefault(attribute => attribute.LocalName == name && attribute.NamespaceUri == TempoNamespace);
+        return string.IsNullOrWhiteSpace(attribute.Value) ? null : attribute.Value;
+    }
+
+    private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)
+        where TEnum : struct
+    {
+        return Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed) ? parsed : fallback;
+    }
+
+    private static TEnum? ParseNullableEnum<TEnum>(string? value)
+        where TEnum : struct
+    {
+        return Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed) ? parsed : null;
+    }
+
+    private static bool ParseBool(string? value, bool fallback)
+    {
+        return bool.TryParse(value, out var parsed) ? parsed : fallback;
+    }
+
+    private static int ParseInt(string? value, int fallback)
+    {
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
+    }
+
+    private static int? ParseNullableInt(string? value)
+    {
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+    }
+
+    private static double ParseDouble(string? value, double fallback)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
+    }
+
+    private static double? ParseNullableDouble(string? value)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+    }
+
+    private static double ReadDrawingRotation(W.Drawing drawing)
+    {
+        var rotation = drawing.Descendants<A.Transform2D>().FirstOrDefault()?.Rotation?.Value;
+        return rotation.HasValue ? Math.Round(rotation.Value / 60000d, 4) : 0;
     }
 
     private static double EmuToPoint(string? value)
     {
-        return long.TryParse(value, out var emu)
+        return long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var emu)
             ? Math.Round(emu / 12700d, 2)
             : 0;
     }

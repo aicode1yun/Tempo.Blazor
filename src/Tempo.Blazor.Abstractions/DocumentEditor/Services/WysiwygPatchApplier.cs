@@ -299,6 +299,12 @@ public sealed class WysiwygPatchApplier
 
         var offset = patch.Selection?.AnchorOffset ?? 0;
         var length = string.IsNullOrEmpty(patch.Data) ? 1 : patch.Data.Length;
+        if (offset >= textRun.Text.Length && string.IsNullOrEmpty(patch.Data))
+        {
+            ApplyMergeWithNextBlock(document, patch);
+            return;
+        }
+
         var start = Math.Clamp(offset, 0, textRun.Text.Length);
         var end = Math.Clamp(offset + length, start, textRun.Text.Length);
 
@@ -714,8 +720,10 @@ public sealed class WysiwygPatchApplier
         if (TryFindBlockList(document, blockId, out var blocks, out var index, patch.Selection))
         {
             var block = blocks[index];
+            var fallbackAnchorBlockId = FindFallbackObjectAnchorBlockId(blocks, index);
             blocks.RemoveAt(index);
             RemoveFloatingImageAnchor(document, block.Id);
+            RepairFloatingImageAnchorsAfterBlockRemoved(document, block.Id, fallbackAnchorBlockId, patch.Selection);
             return;
         }
 
@@ -723,7 +731,13 @@ public sealed class WysiwygPatchApplier
         var cellResult = FindCellContainingBlock(document, blockId, patch.Selection);
         if (cellResult.Cell is not null)
         {
+            var cellIndex = cellResult.Cell.Blocks.FindIndex(b => b.Id == blockId);
+            var fallbackAnchorBlockId = cellIndex >= 0
+                ? FindFallbackObjectAnchorBlockId(cellResult.Cell.Blocks, cellIndex)
+                : null;
             cellResult.Cell.Blocks.RemoveAll(b => b.Id == blockId);
+            RemoveFloatingImageAnchor(document, blockId);
+            RepairFloatingImageAnchorsAfterBlockRemoved(document, blockId, fallbackAnchorBlockId, patch.Selection);
         }
     }
 
@@ -974,6 +988,34 @@ public sealed class WysiwygPatchApplier
         previousInlines.AddRange(currentInlines.Select(CloneInline));
         blocks.RemoveAt(index);
         RemoveFloatingImageAnchor(document, current.Id);
+    }
+
+    private static void ApplyMergeWithNextBlock(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        if (!TryFindBlockList(document, patch.Selection?.AnchorBlockId, out var blocks, out var index, patch.Selection)
+            || index < 0
+            || index >= blocks.Count - 1)
+        {
+            return;
+        }
+
+        var current = blocks[index];
+        var next = blocks[index + 1];
+        var currentInlines = GetEditableInlines(current.Content);
+        var nextInlines = GetEditableInlines(next.Content);
+        if (currentInlines is null || nextInlines is null)
+        {
+            return;
+        }
+
+        if (currentInlines.Count == 1 && currentInlines[0] is TextRun { Text.Length: 0 })
+        {
+            currentInlines.Clear();
+        }
+
+        currentInlines.AddRange(nextInlines.Select(CloneInline));
+        blocks.RemoveAt(index + 1);
+        RemoveFloatingImageAnchor(document, next.Id);
     }
 
     private static (DocumentBlock? Block, InlineContent? Inline) ResolveBlockAndInline(DocumentEditorDocument document, WysiwygSelectionSnapshot? selection)
@@ -1370,7 +1412,7 @@ public sealed class WysiwygPatchApplier
         }
 
         var anchor = FindFloatingImageAnchor(document, block.Id);
-        if (image.FloatingLayout?.Inline == false)
+        if (!image.Layout.IsInline)
         {
             document.Anchors ??= [];
             var anchorBlockId = ResolveFloatingAnchorBlockId(document, block.Id, selection, anchor);
@@ -1386,13 +1428,20 @@ public sealed class WysiwygPatchApplier
 
             anchor.Type = DocumentAnchorType.FloatingObject;
             anchor.ObjectBlockId = block.Id;
-            if (image.FloatingLayout.LockAnchor && !string.IsNullOrWhiteSpace(anchor.BlockId))
+            if (image.Layout.Anchor.LockAnchor && !string.IsNullOrWhiteSpace(anchor.BlockId))
             {
                 anchorBlockId = anchor.BlockId;
             }
 
+            image.Layout.Anchor.BlockId = anchorBlockId;
+            image.Layout.Anchor.InlineIndex = ResolveFloatingAnchorInlineIndex(document, anchorBlockId, selection, anchor);
+            image.Layout.Anchor.Offset = ResolveFloatingAnchorOffset(anchorBlockId, selection, anchor);
+            image.Layout.Anchor.Region = ResolveFloatingAnchorRegion(selection, anchor);
             anchor.BlockId = anchorBlockId;
-            anchor.FloatingLayout = image.FloatingLayout;
+            anchor.InlineIndex = image.Layout.Anchor.InlineIndex;
+            anchor.Offset = image.Layout.Anchor.Offset;
+            anchor.Scope = image.Layout.Anchor.Region;
+            anchor.Layout = image.Layout;
             return;
         }
 
@@ -1406,8 +1455,7 @@ public sealed class WysiwygPatchApplier
     {
         return document.Anchors.FirstOrDefault(anchor =>
             anchor.Type == DocumentAnchorType.FloatingObject
-            && (string.Equals(anchor.ObjectBlockId, blockId, StringComparison.Ordinal)
-                || string.Equals(anchor.BlockId, blockId, StringComparison.Ordinal)));
+            && string.Equals(anchor.ObjectBlockId, blockId, StringComparison.Ordinal));
     }
 
     private static void RemoveFloatingImageAnchor(DocumentEditorDocument document, string blockId)
@@ -1416,6 +1464,75 @@ public sealed class WysiwygPatchApplier
         if (anchor is not null)
         {
             document.Anchors.Remove(anchor);
+        }
+    }
+
+    private static string? FindFallbackObjectAnchorBlockId(List<DocumentBlock> blocks, int removedIndex)
+    {
+        for (var index = removedIndex + 1; index < blocks.Count; index++)
+        {
+            if (IsObjectAnchorTargetBlock(blocks[index]))
+            {
+                return blocks[index].Id;
+            }
+        }
+
+        for (var index = removedIndex - 1; index >= 0; index--)
+        {
+            if (IsObjectAnchorTargetBlock(blocks[index]))
+            {
+                return blocks[index].Id;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsObjectAnchorTargetBlock(DocumentBlock block)
+        => block.Type is DocumentBlockType.Paragraph
+            or DocumentBlockType.Heading
+            or DocumentBlockType.List
+            or DocumentBlockType.Quote;
+
+    private static void RepairFloatingImageAnchorsAfterBlockRemoved(
+        DocumentEditorDocument document,
+        string removedBlockId,
+        string? fallbackAnchorBlockId,
+        WysiwygSelectionSnapshot? selection)
+    {
+        var anchors = document.Anchors
+            .Where(anchor => anchor.Type == DocumentAnchorType.FloatingObject
+                && string.Equals(anchor.BlockId, removedBlockId, StringComparison.Ordinal))
+            .ToList();
+
+        foreach (var anchor in anchors)
+        {
+            if (!string.IsNullOrWhiteSpace(fallbackAnchorBlockId))
+            {
+                anchor.BlockId = fallbackAnchorBlockId;
+                anchor.Layout ??= new DocumentObjectLayout();
+                anchor.Layout.Anchor.BlockId = fallbackAnchorBlockId;
+                anchor.Layout.Anchor.InlineIndex = 0;
+                anchor.Layout.Anchor.Offset = 0;
+                anchor.InlineIndex = 0;
+                anchor.Offset = 0;
+
+                if (FindBlockById(document, anchor.ObjectBlockId, selection)?.Content is ImageBlockContent image)
+                {
+                    image.Layout.Anchor.BlockId = fallbackAnchorBlockId;
+                    image.Layout.Anchor.InlineIndex = 0;
+                    image.Layout.Anchor.Offset = 0;
+                }
+
+                continue;
+            }
+
+            document.Anchors.Remove(anchor);
+            if (!string.IsNullOrWhiteSpace(anchor.ObjectBlockId)
+                && TryFindBlockList(document, anchor.ObjectBlockId, out var objectBlocks, out var objectIndex, selection))
+            {
+                objectBlocks.RemoveAt(objectIndex);
+            }
         }
     }
 
@@ -1453,6 +1570,56 @@ public sealed class WysiwygPatchApplier
         }
 
         return imageBlockId;
+    }
+
+    private static int? ResolveFloatingAnchorInlineIndex(
+        DocumentEditorDocument document,
+        string anchorBlockId,
+        WysiwygSelectionSnapshot? selection,
+        DocumentAnchor? existingAnchor)
+    {
+        if (string.Equals(selection?.AnchorBlockId, anchorBlockId, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(selection.AnchorInlineId)
+            && FindBlockById(document, anchorBlockId, selection) is { } block
+            && GetEditableInlines(block.Content) is { } inlines)
+        {
+            return FindInlineIndex(inlines, selection.AnchorInlineId);
+        }
+
+        return existingAnchor?.InlineIndex;
+    }
+
+    private static int? ResolveFloatingAnchorOffset(
+        string anchorBlockId,
+        WysiwygSelectionSnapshot? selection,
+        DocumentAnchor? existingAnchor)
+    {
+        if (string.Equals(selection?.AnchorBlockId, anchorBlockId, StringComparison.Ordinal))
+        {
+            return selection.AnchorOffset;
+        }
+
+        return existingAnchor?.Offset;
+    }
+
+    private static DocumentRenditionAnchorScope ResolveFloatingAnchorRegion(
+        WysiwygSelectionSnapshot? selection,
+        DocumentAnchor? existingAnchor)
+    {
+        if (selection is null || string.IsNullOrWhiteSpace(selection.Region))
+        {
+            return existingAnchor?.Scope ?? DocumentRenditionAnchorScope.Body;
+        }
+
+        return selection.Region.Trim().ToLowerInvariant() switch
+        {
+            "header" => DocumentRenditionAnchorScope.Header,
+            "footer" => DocumentRenditionAnchorScope.Footer,
+            "footnote" => DocumentRenditionAnchorScope.Footnote,
+            "endnote" => DocumentRenditionAnchorScope.Endnote,
+            "body" => DocumentRenditionAnchorScope.Body,
+            _ => existingAnchor?.Scope ?? DocumentRenditionAnchorScope.Body
+        };
     }
 
     private static bool IsSafeImageUrl(string? url)

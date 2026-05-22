@@ -135,8 +135,8 @@ public class DocumentAnchorMapBuilder
                 continue;
             }
 
-            var height = block.Content is ImageBlockContent image && image.Size.Height is > 0
-                ? Math.Max(DefaultLineHeight, image.Size.Height.Value)
+            var height = block.Content is ImageBlockContent image && (image.Layout.Transform.Height ?? image.Size.Height) is > 0
+                ? Math.Max(DefaultLineHeight, (image.Layout.Transform.Height ?? image.Size.Height)!.Value)
                 : DefaultLineHeight;
 
             var box = new LayoutBox(
@@ -153,9 +153,9 @@ public class DocumentAnchorMapBuilder
                 1);
             context.Blocks[block.Id] = box;
 
-            if (block.Content is ImageBlockContent { FloatingLayout: not null } floatingImage)
+            if (block.Content is ImageBlockContent floatingImage && !floatingImage.Layout.IsInline)
             {
-                context.FloatingBlocks[block.Id] = MapFloatingBox(floatingImage.FloatingLayout, context, block.SectionId);
+                context.FloatingBlocks[block.Id] = MapFloatingBox(floatingImage.Layout, context, block.SectionId);
             }
 
             AddInlineTokenAnchors(block, context, scope, y);
@@ -314,7 +314,7 @@ public class DocumentAnchorMapBuilder
             Y = Clamp01(source.Value.Y),
             Width = Clamp01(Math.Max(width, 0.001)),
             Height = Clamp01(Math.Max(height, 0.001)),
-            Scope = anchor.FloatingLayout is not null ? DocumentRenditionAnchorScope.FloatingObject : source.Value.Scope,
+            Scope = anchor.Layout is not null ? DocumentRenditionAnchorScope.FloatingObject : source.Value.Scope,
             SectionId = source.Value.SectionId,
             SourceBlockId = anchor.BlockId,
             SourceCellId = source.Value.CellId ?? anchor.TableCellId,
@@ -333,7 +333,7 @@ public class DocumentAnchorMapBuilder
         if (!string.IsNullOrWhiteSpace(sourceAnchor.BlockId)
             || !string.IsNullOrWhiteSpace(sourceAnchor.TableCellId)
             || !string.IsNullOrWhiteSpace(sourceAnchor.HeaderFooterId)
-            || sourceAnchor.FloatingLayout is not null
+            || sourceAnchor.Layout is not null
             || sourceAnchor.SigningPlaceholder is not null)
         {
             return false;
@@ -347,9 +347,9 @@ public class DocumentAnchorMapBuilder
 
     private static LayoutBox? ResolveSourceBox(DocumentAnchor anchor, BuildContext context)
     {
-        if (anchor.FloatingLayout is not null)
+        if (anchor.Layout is not null)
         {
-            return MapFloatingBox(anchor.FloatingLayout, context, null);
+            return MapFloatingBox(anchor.Layout, context, null);
         }
 
         if (!string.IsNullOrWhiteSpace(anchor.TableCellId) && context.Cells.TryGetValue(anchor.TableCellId, out var cellBox))
@@ -381,12 +381,12 @@ public class DocumentAnchorMapBuilder
             1);
     }
 
-    private static LayoutBox MapFloatingBox(DocumentFloatingLayout layout, BuildContext context, string? sectionId)
+    private static LayoutBox MapFloatingBox(DocumentObjectLayout layout, BuildContext context, string? sectionId)
     {
         return new LayoutBox(
             1,
-            NormalizePosition(layout.X, context.PageWidth),
-            NormalizePosition(layout.Y, context.PageHeight),
+            NormalizePosition(layout.Position.X, context.PageWidth),
+            NormalizePosition(layout.Position.Y, context.PageHeight),
             DefaultAnchorWidth,
             DefaultAnchorHeight,
             DocumentRenditionAnchorScope.FloatingObject,

@@ -16,6 +16,10 @@ window.tmDocumentWysiwyg = (function () {
     /** @type {Map<string, WysiwygInstance>} */
     const _instances = new Map();
     let _instanceCounter = 0;
+    const _textRunMeasureCache = new Map();
+    const _textRunMeasureStats = { count: 0, cacheHits: 0, invalidations: 0 };
+    let _textRunMeasureCanvas = null;
+    const _tempoClipboardMime = 'application/x-tempo-document-editor';
 
     function _isImageDebugEnabled() {
         try {
@@ -48,10 +52,8 @@ window.tmDocumentWysiwyg = (function () {
         var parts = [element.tagName ? element.tagName.toLowerCase() : 'node'];
         var blockId = element.getAttribute && element.getAttribute('data-block-id');
         var inlineId = element.getAttribute && element.getAttribute('data-inline-id');
-        var sidecarFor = element.getAttribute && element.getAttribute('data-wrap-sidecar-for');
         if (blockId) parts.push('block=' + blockId);
         if (inlineId) parts.push('inline=' + inlineId);
-        if (sidecarFor) parts.push('sidecarFor=' + sidecarFor);
         if (element.className && typeof element.className === 'string') {
             parts.push('.' + element.className.trim().replace(/\s+/g, '.'));
         }
@@ -168,6 +170,9 @@ window.tmDocumentWysiwyg = (function () {
             pendingInputPatch: null,
             pendingInputPatchTimer: null,
             pendingInputPatchMaxTimer: null,
+            localLayoutReflowTimer: null,
+            forceNextLocalSnapshotRender: false,
+            forceNextLocalSnapshotSelection: null,
             pendingTypingMarks: {},
             pendingSelectionSnapshot: null,
             pendingSelectionTimer: null,
@@ -245,7 +250,10 @@ window.tmDocumentWysiwyg = (function () {
             appliedOperationIds: new Set(),
             inlineRevisionPopover: null,
             selectedImageFigure: null,
+            selectedImageFigures: new Set(),
+            internalClipboard: null,
             imageContextMenu: null,
+            imageSelectionPane: null,
             miniToolbarVisible: false,
             miniToolbarRequestKey: null,
             imageDragTransaction: null,
@@ -289,6 +297,10 @@ window.tmDocumentWysiwyg = (function () {
             clearTimeout(inst.pendingInputPatchMaxTimer);
             inst.pendingInputPatchMaxTimer = null;
         }
+        if (inst.localLayoutReflowTimer) {
+            clearTimeout(inst.localLayoutReflowTimer);
+            inst.localLayoutReflowTimer = null;
+        }
         if (inst.pendingSelectionTimer) {
             clearTimeout(inst.pendingSelectionTimer);
             inst.pendingSelectionTimer = null;
@@ -311,6 +323,7 @@ window.tmDocumentWysiwyg = (function () {
 
         _hideInlineRevisionReview(inst);
         _hideImageContextMenu(inst);
+        _hideImageSelectionPane(inst);
         _hideMiniToolbar(inst, true);
 
         _detachEventListeners(inst);
@@ -377,6 +390,7 @@ window.tmDocumentWysiwyg = (function () {
         inst._handlePointerDown = function (e) { _onFloatingImagePointerDown(inst, e); };
         inst._handleTablePointerDown = function (e) { _onTablePointerDown(inst, e); };
         inst._handlePointerUp = function (e) { _onRootPointerUp(inst, e); };
+        inst._handleFocusIn = function (e) { _onRootFocusIn(inst, e); };
         inst._handleClick = function (e) { _onRootClick(inst, e); };
         inst._handleDoubleClick = function (e) { _onRootDoubleClick(inst, e); };
         inst._handleContextMenu = function (e) { _onRootContextMenu(inst, e); };
@@ -398,6 +412,7 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.addEventListener('pointerdown', inst._handlePointerDown, true);
         inst.root.addEventListener('pointerdown', inst._handleTablePointerDown, true);
         inst.root.addEventListener('pointerup', inst._handlePointerUp, true);
+        inst.root.addEventListener('focusin', inst._handleFocusIn, true);
         inst.root.addEventListener('click', inst._handleClick, true);
         inst.root.addEventListener('dblclick', inst._handleDoubleClick, true);
         inst.root.addEventListener('contextmenu', inst._handleContextMenu, true);
@@ -449,6 +464,9 @@ window.tmDocumentWysiwyg = (function () {
         if (inst._handlePointerUp) {
             inst.root.removeEventListener('pointerup', inst._handlePointerUp, true);
         }
+        if (inst._handleFocusIn) {
+            inst.root.removeEventListener('focusin', inst._handleFocusIn, true);
+        }
         if (inst._handleClick) {
             inst.root.removeEventListener('click', inst._handleClick, true);
         }
@@ -475,6 +493,20 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
+    function _onRootFocusIn(inst, event) {
+        if (!inst || inst.disposed || inst.readOnly) return;
+        var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        if (!target) return;
+
+        var figure = target.closest && target.closest('figure.tm-wysiwyg-image');
+        if (!figure || !inst.root.contains(figure)) return;
+        if (target.closest('figcaption[contenteditable="true"]')) return;
+
+        _selectImageFigure(inst, figure, false, { preserveFocus: true });
+    }
+
     function _onRootClick(inst, event) {
         if (!inst || inst.disposed || inst.readOnly) return;
         var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
@@ -487,7 +519,7 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        if (target.closest('.tm-wysiwyg-image-context-menu')) {
+        if (target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-object-selection-pane')) {
             return;
         }
 
@@ -512,14 +544,35 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        var imageSideTextBlock = _findWrappedImageSideTextBlockAtPoint(inst, event.clientX, event.clientY);
-        if (imageSideTextBlock) {
+        var hitTest = _getDocumentHitTestService(inst);
+        var hit = hitTest ? hitTest.hitTest(event.clientX, event.clientY) : null;
+        if (hit) {
+            inst.lastHitTest = _sanitizeHitTestForSnapshot(hit);
+        }
+        if (hit && hit.Kind === 'TextCaret') {
             event.preventDefault();
             _clearSelectedImage(inst);
             _hideImageContextMenu(inst);
             _hideImageReplaceMenu(inst);
-            _focusWrappedImageSideTextBlock(inst, imageSideTextBlock, event.clientX, event.clientY);
-            return;
+            _hideInlineRevisionReview(inst);
+            if (_applyTextCaretHitTest(inst, hit, event.shiftKey)) {
+                return;
+            }
+        }
+
+        if (hit && (hit.Kind === 'ImageObject' || hit.Kind === 'ImageResizeHandle' || hit.Kind === 'ImageRotateHandle' || hit.Kind === 'ImageLayoutBubble')) {
+            var hitFigure = hit.FigureElement || (hit.TargetElement && hit.TargetElement.closest && hit.TargetElement.closest('figure.tm-wysiwyg-image'));
+            if (hitFigure && inst.root.contains(hitFigure)) {
+                event.preventDefault();
+                inst.lastHitTest = _sanitizeHitTestForSnapshot(hit);
+                if (event.ctrlKey || event.metaKey) {
+                    _selectImageFigure(inst, hitFigure, true);
+                } else {
+                    _selectImageFigure(inst, hitFigure);
+                }
+                _hideInlineRevisionReview(inst);
+                return;
+            }
         }
 
         var image = target.closest('figure.tm-wysiwyg-image');
@@ -529,7 +582,11 @@ window.tmDocumentWysiwyg = (function () {
             }
 
             event.preventDefault();
-            _selectImageFigure(inst, image);
+            if (event.ctrlKey || event.metaKey) {
+                _selectImageFigure(inst, image, true);
+            } else {
+                _selectImageFigure(inst, image);
+            }
             _hideInlineRevisionReview(inst);
             return;
         }
@@ -624,7 +681,7 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         if (_isMiniToolbarInteractionTarget(target)
-            || target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-image-selection-toolbar')) {
+            || target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-image-selection-toolbar, .tm-wysiwyg-object-selection-pane')) {
             if (_isMiniToolbarInteractionTarget(target)) {
                 inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
             }
@@ -634,6 +691,7 @@ window.tmDocumentWysiwyg = (function () {
 
         _hideImageContextMenu(inst);
         _hideImageReplaceMenu(inst);
+        _hideImageSelectionPane(inst);
         _hideMiniToolbar(inst, true);
     }
 
@@ -1341,22 +1399,36 @@ window.tmDocumentWysiwyg = (function () {
         }) || null;
     }
 
-    function _selectImageFigure(inst, figure) {
+    function _selectImageFigure(inst, figure, additive, options) {
         if (!inst || !figure || !inst.root.contains(figure)) return;
-        if (inst.selectedImageFigure && inst.selectedImageFigure !== figure) {
-            inst.selectedImageFigure.classList.remove('tm-wysiwyg-image--selected');
-            inst.selectedImageFigure.removeAttribute('aria-selected');
+        options = options || {};
+        if (!inst.selectedImageFigures) inst.selectedImageFigures = new Set();
+
+        if (!additive) {
+            inst.selectedImageFigures.forEach(function (selected) {
+                if (selected && selected !== figure && selected.isConnected) {
+                    selected.classList.remove('tm-wysiwyg-image--selected');
+                    selected.setAttribute('aria-selected', 'false');
+                }
+            });
+            inst.selectedImageFigures.clear();
+            if (inst.selectedImageFigure && inst.selectedImageFigure !== figure) {
+                inst.selectedImageFigure.classList.remove('tm-wysiwyg-image--selected');
+                inst.selectedImageFigure.setAttribute('aria-selected', 'false');
+            }
         }
 
         inst.selectedImageFigure = figure;
+        inst.selectedImageFigures.add(figure);
+        _syncImageAccessibilityAttributes(inst, figure);
         figure.classList.add('tm-wysiwyg-image--selected');
         figure.setAttribute('aria-selected', 'true');
         figure.setAttribute('tabindex', '0');
-        if (typeof figure.focus === 'function') {
+        if (!options.preserveFocus && typeof figure.focus === 'function') {
             figure.focus({ preventScroll: true });
         }
         var browserSelection = window.getSelection && window.getSelection();
-        if (browserSelection) {
+        if (!options.preserveSelection && browserSelection) {
             browserSelection.removeAllRanges();
         }
 
@@ -1367,6 +1439,7 @@ window.tmDocumentWysiwyg = (function () {
             _scheduleSelectionNotification(inst, inst.lastSelectionSnapshot);
         }
         _showImageSelectionToolbar(inst, figure);
+        _syncParagraphAnchorGlyphSelection(inst, block ? block.getAttribute('data-block-id') : figure.getAttribute('data-block-id'));
     }
 
     function _createImageSelectionSnapshot(figure) {
@@ -1378,6 +1451,8 @@ window.tmDocumentWysiwyg = (function () {
             AnchorBlockId: blockId,
             FocusBlockId: blockId,
             ActiveImageBlockId: blockId,
+            ActiveObjectId: figure ? (figure.getAttribute('data-layout-object-id') || null) : null,
+            HitTargetKind: 'ImageObject',
             AnchorInlineId: '',
             FocusInlineId: '',
             AnchorOffset: 0,
@@ -1386,14 +1461,99 @@ window.tmDocumentWysiwyg = (function () {
         };
     }
 
-    function _clearSelectedImage(inst) {
-        if (!inst || !inst.selectedImageFigure) return;
-        _hideImageSelectionToolbar(inst);
-        if (inst.selectedImageFigure.isConnected) {
-            inst.selectedImageFigure.classList.remove('tm-wysiwyg-image--selected');
-            inst.selectedImageFigure.removeAttribute('aria-selected');
+    function _syncImageAccessibilityAttributes(inst, figure) {
+        if (!figure || !figure.querySelector) return;
+
+        var img = figure.querySelector('img');
+        var blockId = figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id')
+            || figure.getAttribute('data-block-id')
+            || '';
+        var decorative = figure.getAttribute('data-image-decorative') === 'true';
+        var altText = img ? (img.getAttribute('alt') || '') : '';
+        var hasAlt = altText.trim().length > 0;
+        var wrapMode = _getImageWrapModeAccessibilityLabel(figure);
+        var size = _getImageSizeAccessibilityLabel(figure, img);
+        var label = decorative
+            ? 'Decorative image. Wrap mode: ' + wrapMode + '. Size: ' + size + '.'
+            : 'Image: ' + (hasAlt ? altText.trim() : 'missing alternative text') + '. Wrap mode: ' + wrapMode + '. Size: ' + size + '.';
+        var warningId = blockId ? ('tm-wysiwyg-image-alt-warning-' + blockId) : '';
+
+        figure.setAttribute('tabindex', '0');
+        figure.setAttribute('role', 'group');
+        figure.setAttribute('aria-roledescription', decorative ? 'decorative image' : 'image');
+        figure.setAttribute('aria-label', label);
+        figure.setAttribute('aria-selected', figure.classList.contains('tm-wysiwyg-image--selected') ? 'true' : 'false');
+        figure.setAttribute('aria-keyshortcuts', 'Enter Shift+F10 Delete ArrowUp ArrowDown ArrowLeft ArrowRight Control+Z Control+Y');
+        figure.setAttribute('data-image-alt-warning', (!decorative && !hasAlt) ? 'true' : 'false');
+        figure.setAttribute('data-image-decorative', decorative ? 'true' : 'false');
+        if (img) {
+            img.setAttribute('aria-hidden', 'true');
         }
+
+        var warning = figure.querySelector('.tm-wysiwyg-image__a11y-status[data-alt-warning]');
+        if (!decorative && !hasAlt) {
+            if (!warning) {
+                warning = document.createElement('span');
+                warning.className = 'tm-wysiwyg-image__a11y-status';
+                warning.setAttribute('data-alt-warning', 'true');
+                warning.setAttribute('data-testid', 'document-wysiwyg-image-alt-warning');
+                warning.setAttribute('contenteditable', 'false');
+                figure.appendChild(warning);
+            }
+            if (warningId) warning.id = warningId;
+            warning.textContent = 'Missing alternative text.';
+            warning.setAttribute('role', 'status');
+            if (warningId) {
+                figure.setAttribute('aria-describedby', warningId);
+            }
+        } else {
+            if (warning) warning.remove();
+            figure.removeAttribute('aria-describedby');
+        }
+    }
+
+    function _getImageWrapModeAccessibilityLabel(figure) {
+        var wrapMode = parseInt(figure.getAttribute('data-wrap-mode') || '0', 10) || 0;
+        switch (wrapMode) {
+            case 1: return 'square';
+            case 2: return 'tight';
+            case 3: return 'through';
+            case 4: return 'top and bottom';
+            case 5: return 'behind text';
+            case 6: return 'in front of text';
+            default: return 'inline';
+        }
+    }
+
+    function _getImageSizeAccessibilityLabel(figure, img) {
+        var width = parseFloat(img?.style?.width || '') || parseFloat(figure.style.getPropertyValue('--tm-layout-object-width') || '') || parseFloat(img?.getAttribute?.('width') || '') || Math.round(img?.getBoundingClientRect?.().width || figure.getBoundingClientRect().width || 0);
+        var height = parseFloat(img?.style?.height || '') || parseFloat(figure.style.getPropertyValue('--tm-layout-object-height') || '') || parseFloat(img?.getAttribute?.('height') || '') || Math.round(img?.getBoundingClientRect?.().height || figure.getBoundingClientRect().height || 0);
+        if (!(width > 0) && !(height > 0)) return 'unknown';
+        if (!(width > 0)) return Math.round(height) + ' pixels high';
+        if (!(height > 0)) return Math.round(width) + ' pixels wide';
+        return Math.round(width) + ' by ' + Math.round(height) + ' pixels';
+    }
+
+    function _clearSelectedImage(inst) {
+        if (!inst || (!inst.selectedImageFigure && (!inst.selectedImageFigures || inst.selectedImageFigures.size === 0))) return;
+        _stopImageWrapPointEditor(inst);
+        _hideImageSelectionToolbar(inst);
+        if (inst.selectedImageFigures && inst.selectedImageFigures.size > 0) {
+            inst.selectedImageFigures.forEach(function (figure) {
+                if (figure && figure.isConnected) {
+                    figure.classList.remove('tm-wysiwyg-image--selected');
+                    figure.setAttribute('aria-selected', 'false');
+                }
+            });
+            inst.selectedImageFigures.clear();
+        }
+        if (inst.selectedImageFigure && inst.selectedImageFigure.isConnected) {
+            inst.selectedImageFigure.classList.remove('tm-wysiwyg-image--selected');
+            inst.selectedImageFigure.setAttribute('aria-selected', 'false');
+        }
+        _closeSelectedImageLayoutBubble(inst, false);
         inst.selectedImageFigure = null;
+        _syncParagraphAnchorGlyphSelection(inst, null);
         if (inst.runtimeSelection && (inst.runtimeSelection.activeImageBlockId || inst.runtimeSelection.ActiveImageBlockId)) {
             inst.runtimeSelection = Object.assign({}, inst.runtimeSelection, {
                 region: 'Body',
@@ -1402,6 +1562,15 @@ window.tmDocumentWysiwyg = (function () {
             });
             inst.lastSelectionSnapshot = _createSelectionSnapshotFromRuntimeSelection(inst.runtimeSelection);
         }
+    }
+
+    function _syncParagraphAnchorGlyphSelection(inst, objectBlockId) {
+        if (!inst || !inst.root) return;
+        inst.root.querySelectorAll('.tm-wysiwyg-paragraph-anchor-glyph').forEach(function (glyph) {
+            var active = !!objectBlockId && glyph.getAttribute('data-anchor-object-block-id') === objectBlockId;
+            glyph.classList.toggle('tm-wysiwyg-paragraph-anchor-glyph--active', active);
+            glyph.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
     }
 
     function _positionFloatingElementInRoot(inst, element, x, y, fallbackWidth, fallbackHeight) {
@@ -1433,32 +1602,44 @@ window.tmDocumentWysiwyg = (function () {
         menu.setAttribute('contenteditable', 'false');
         menu.setAttribute('data-testid', 'document-wysiwyg-image-context-menu');
 
-        var actions = [
-            { text: 'Replace image', testId: 'document-wysiwyg-image-replace', action: function () { _showImageReplaceMenu(inst, figure, clientX, clientY); } },
-            { text: 'Alt text', testId: 'document-wysiwyg-image-alt-text', action: function () { _editSelectedImageAltText(inst); } },
-            { text: 'Caption', testId: 'document-wysiwyg-image-caption', action: function () { _editSelectedImageCaption(inst); } },
-            { text: 'Wrap text: Inline', testId: 'document-wysiwyg-image-wrap-inline', action: function () { _setSelectedImageInline(inst); } },
-            { text: 'Wrap text: Square', testId: 'document-wysiwyg-image-wrap-square', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'Square' }); } },
-            { text: 'Wrap text: Top and bottom', testId: 'document-wysiwyg-image-wrap-top-bottom', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'TopBottom' }); } },
-            { text: 'Position: Left', testId: 'document-wysiwyg-image-position-left', action: function () { _setSelectedImagePosition(inst, { horizontalPosition: 'Left' }); } },
-            { text: 'Position: Right', testId: 'document-wysiwyg-image-position-right', action: function () { _setSelectedImagePosition(inst, { horizontalPosition: 'Right' }); } },
-            { text: 'Position: In front of text', testId: 'document-wysiwyg-image-position-front', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'InFrontOfText' }); } },
-            { text: 'Delete', testId: 'document-wysiwyg-image-delete', action: function () { _deleteSelectedImage(inst); } }
-        ];
-
-        actions.forEach(function (item) {
-            var button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = item.text;
-            button.setAttribute('role', 'menuitem');
-            button.setAttribute('data-testid', item.testId);
-            button.addEventListener('click', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                item.action();
-            });
-            menu.appendChild(button);
+        _appendImageMenuButton(menu, {
+            text: 'Replace image',
+            testId: 'document-wysiwyg-image-replace',
+            action: function () { _showImageReplaceMenu(inst, figure, clientX, clientY); }
         });
+        _appendImageMenuButton(menu, { text: 'Crop image', testId: 'document-wysiwyg-image-crop', action: function () { _beginImageCropMode(inst); } });
+        _appendImageMenuButton(menu, { text: 'Alt text', testId: 'document-wysiwyg-image-alt-text', action: function () { _editSelectedImageAltText(inst); } });
+        _appendImageMenuButton(menu, { text: 'Caption', testId: 'document-wysiwyg-image-caption', action: function () { _editSelectedImageCaption(inst); } });
+        _appendImageMenuButton(menu, { text: 'Link', testId: 'document-wysiwyg-image-link', action: function () { _editSelectedImageLink(inst); } });
+
+        var wrapGroup = _appendImageMenuGroup(menu, 'Text wrapping', 'document-wysiwyg-image-wrap-submenu');
+        [
+            { text: 'Inline', testId: 'document-wysiwyg-image-wrap-inline', action: function () { _setSelectedImageInline(inst); } },
+            { text: 'Square', testId: 'document-wysiwyg-image-wrap-square', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'Square' }); } },
+            { text: 'Tight', testId: 'document-wysiwyg-image-wrap-tight', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'Tight' }); } },
+            { text: 'Through', testId: 'document-wysiwyg-image-wrap-through', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'Through' }); } },
+            { text: 'Top and bottom', testId: 'document-wysiwyg-image-wrap-top-bottom', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'TopBottom' }); } },
+            { text: 'Behind text', testId: 'document-wysiwyg-image-wrap-behind', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'BehindText' }); } },
+            { text: 'In front of text', testId: 'document-wysiwyg-image-wrap-in-front', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'InFrontOfText' }); } },
+            { text: 'Edit wrap points', testId: 'document-wysiwyg-image-edit-wrap-points', action: function () { _startImageWrapPointEditor(inst, figure); } },
+            { text: 'Reset wrap points', testId: 'document-wysiwyg-image-reset-wrap-points', action: function () { _resetSelectedImageWrapContour(inst, { blockId: figure.getAttribute('data-block-id') || figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || '' }); } }
+        ].forEach(function (item) { _appendImageMenuButton(wrapGroup, item); });
+
+        var positionGroup = _appendImageMenuGroup(menu, 'Position', 'document-wysiwyg-image-position-submenu');
+        [
+            { text: 'Left', testId: 'document-wysiwyg-image-position-left', action: function () { _setSelectedImagePosition(inst, { horizontalPosition: 'Left' }); } },
+            { text: 'Center', testId: 'document-wysiwyg-image-position-center', action: function () { _setSelectedImagePosition(inst, { horizontalPosition: 'Center' }); } },
+            { text: 'Right', testId: 'document-wysiwyg-image-position-right', action: function () { _setSelectedImagePosition(inst, { horizontalPosition: 'Right' }); } },
+            { text: 'In front of text', testId: 'document-wysiwyg-image-position-front', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'InFrontOfText' }); } }
+        ].forEach(function (item) { _appendImageMenuButton(positionGroup, item); });
+
+        _appendImageMenuButton(menu, { text: 'Bring forward', testId: 'document-wysiwyg-image-bring-forward', action: function () { _setSelectedImageZOrder(inst, { direction: 'Forward' }); } });
+        _appendImageMenuButton(menu, { text: 'Send backward', testId: 'document-wysiwyg-image-send-backward', action: function () { _setSelectedImageZOrder(inst, { direction: 'Backward' }); } });
+        _appendImageMenuButton(menu, { text: 'Bring to front', testId: 'document-wysiwyg-image-bring-to-front', action: function () { _setSelectedImageZOrder(inst, { direction: 'BringToFront' }); } });
+        _appendImageMenuButton(menu, { text: 'Send to back', testId: 'document-wysiwyg-image-send-to-back', action: function () { _setSelectedImageZOrder(inst, { direction: 'SendToBack' }); } });
+        _appendImageMenuButton(menu, { text: 'Selection pane', testId: 'document-wysiwyg-image-selection-pane', action: function () { _showImageSelectionPane(inst, clientX, clientY); } });
+        _appendImageMenuButton(menu, { text: 'Reset size', testId: 'document-wysiwyg-image-reset-size', action: function () { _resetSelectedImageSize(inst); } });
+        _appendImageMenuButton(menu, { text: 'Delete', testId: 'document-wysiwyg-image-delete', action: function () { _deleteSelectedImage(inst); } });
 
         inst.root.appendChild(menu);
         var figRect = figure.getBoundingClientRect();
@@ -1475,12 +1656,142 @@ window.tmDocumentWysiwyg = (function () {
         inst.imageContextMenu = menu;
     }
 
+    function _appendImageMenuGroup(menu, label, testId) {
+        var group = document.createElement('div');
+        group.className = 'tm-wysiwyg-image-context-menu__group';
+        group.setAttribute('role', 'group');
+        group.setAttribute('aria-label', label);
+        group.setAttribute('data-testid', testId);
+        var heading = document.createElement('span');
+        heading.className = 'tm-wysiwyg-image-context-menu__heading';
+        heading.textContent = label;
+        group.appendChild(heading);
+        menu.appendChild(group);
+        return group;
+    }
+
+    function _appendImageMenuButton(parent, item) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = item.text;
+        button.setAttribute('role', 'menuitem');
+        button.setAttribute('data-testid', item.testId);
+        button.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            item.action();
+        });
+        parent.appendChild(button);
+        return button;
+    }
+
     function _hideImageContextMenu(inst) {
         if (!inst || !inst.imageContextMenu) return;
         if (inst.imageContextMenu.parentNode) {
             inst.imageContextMenu.parentNode.removeChild(inst.imageContextMenu);
         }
         inst.imageContextMenu = null;
+    }
+
+    function _showImageSelectionPane(inst, clientX, clientY) {
+        if (!inst || !inst.root) return;
+        _hideImageContextMenu(inst);
+        _hideImageSelectionPane(inst);
+
+        var figures = _collectImageFigures(inst);
+        var pane = document.createElement('div');
+        pane.className = 'tm-wysiwyg-object-selection-pane';
+        pane.setAttribute('role', 'dialog');
+        pane.setAttribute('aria-label', 'Object selection pane');
+        pane.setAttribute('contenteditable', 'false');
+        pane.setAttribute('data-testid', 'document-wysiwyg-object-selection-pane');
+
+        var header = document.createElement('div');
+        header.className = 'tm-wysiwyg-object-selection-pane__header';
+        var title = document.createElement('strong');
+        title.textContent = 'Objects';
+        header.appendChild(title);
+        var close = document.createElement('button');
+        close.type = 'button';
+        close.textContent = 'Close';
+        close.setAttribute('data-testid', 'document-wysiwyg-object-selection-pane-close');
+        close.addEventListener('pointerdown', _stopToolbarPointerEvent);
+        close.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            _hideImageSelectionPane(inst);
+        });
+        header.appendChild(close);
+        pane.appendChild(header);
+
+        var list = document.createElement('div');
+        list.className = 'tm-wysiwyg-object-selection-pane__list';
+        figures
+            .sort(function (a, b) {
+                var layerDelta = _hitTestLayerPriority(_getImageLayerName(a), parseInt(a.getAttribute('data-wrap-mode') || '0', 10))
+                    - _hitTestLayerPriority(_getImageLayerName(b), parseInt(b.getAttribute('data-wrap-mode') || '0', 10));
+                if (layerDelta !== 0) return layerDelta;
+                return _readElementZIndex(a) - _readElementZIndex(b);
+            })
+            .forEach(function (figure, index) {
+                var blockId = figure.getAttribute('data-block-id') || '';
+                var img = figure.querySelector('img');
+                var label = img && img.alt ? img.alt : (figure.querySelector('figcaption')?.textContent || blockId || ('Image ' + (index + 1)));
+                var item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'tm-wysiwyg-object-selection-pane__item';
+                item.textContent = label;
+                item.setAttribute('data-testid', 'document-wysiwyg-object-selection-pane-item');
+                item.setAttribute('data-block-id', blockId);
+                item.setAttribute('data-wrap-mode', figure.getAttribute('data-wrap-mode') || '0');
+                item.setAttribute('data-object-z-index', String(_readElementZIndex(figure)));
+                item.addEventListener('pointerdown', _stopToolbarPointerEvent);
+                item.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    _selectImageFigure(inst, figure);
+                    _syncParagraphAnchorGlyphSelection(inst, blockId);
+                });
+                list.appendChild(item);
+            });
+
+        if (figures.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'tm-wysiwyg-object-selection-pane__empty';
+            empty.textContent = 'No objects';
+            list.appendChild(empty);
+        }
+
+        pane.appendChild(list);
+        inst.root.appendChild(pane);
+        var rootRect = inst.root.getBoundingClientRect();
+        var x = Number.isFinite(clientX) ? clientX - rootRect.left + inst.root.scrollLeft : inst.root.scrollLeft + 16;
+        var y = Number.isFinite(clientY) ? clientY - rootRect.top + inst.root.scrollTop : inst.root.scrollTop + 16;
+        _positionFloatingElementInRoot(inst, pane, x, y, 280, 260);
+        pane.style.zIndex = '1003';
+        inst.imageSelectionPane = pane;
+    }
+
+    function _hideImageSelectionPane(inst) {
+        if (!inst || !inst.imageSelectionPane) return;
+        if (inst.imageSelectionPane.parentNode) {
+            inst.imageSelectionPane.parentNode.removeChild(inst.imageSelectionPane);
+        }
+        inst.imageSelectionPane = null;
+    }
+
+    function _stopToolbarPointerEvent(event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    function _getImageLayerName(figure) {
+        var layer = figure && figure.closest ? figure.closest('.tm-wysiwyg-page__layer') : null;
+        return layer ? (layer.getAttribute('data-layout-layer') || '') : '';
     }
 
     function _showImageReplaceMenu(inst, figure, clientX, clientY) {
@@ -1499,7 +1810,8 @@ window.tmDocumentWysiwyg = (function () {
         var hasProviderAssets = !!(inst.options.hasImageAssetOptions ?? inst.options.HasImageAssetOptions);
         var actions = [
             { text: 'Replace from URL', testId: 'document-wysiwyg-image-replace-url', action: function () { _replaceSelectedImageFromUrl(inst); } },
-            { text: 'Upload file', testId: 'document-wysiwyg-image-replace-upload', action: function () { _replaceSelectedImageFromUpload(inst, figure); } }
+            { text: 'Upload file', testId: 'document-wysiwyg-image-replace-upload', action: function () { _replaceSelectedImageFromUpload(inst, figure); } },
+            { text: 'From clipboard', testId: 'document-wysiwyg-image-replace-clipboard', action: function () { _replaceSelectedImageFromClipboard(inst, figure); } }
         ];
         if (hasProviderAssets) {
             actions.push({ text: 'Provider asset', testId: 'document-wysiwyg-image-replace-asset', action: function () { _replaceSelectedImageFromAsset(inst, figure); } });
@@ -1549,10 +1861,13 @@ window.tmDocumentWysiwyg = (function () {
         toolbar.setAttribute('contenteditable', 'false');
         toolbar.setAttribute('data-testid', 'document-wysiwyg-image-selection-toolbar');
         toolbar.setAttribute('aria-label', 'Image tools');
+        var toolbarBlockId = figure.getAttribute('data-block-id')
+            || (figure.closest && figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id'))
+            || '';
 
         var buttons = [
             { label: 'Alt text', testId: 'document-wysiwyg-image-toolbar-alt', action: function () { _beginEditImageAltText(inst, figure); } },
-            { label: 'Caption', testId: 'document-wysiwyg-image-toolbar-caption', action: function () { _toggleImageCaption(inst); } },
+            { label: 'Caption', testId: 'document-wysiwyg-image-toolbar-caption', action: function () { _toggleImageCaption(inst, toolbarBlockId); } },
             { label: 'Replace', testId: 'document-wysiwyg-image-toolbar-replace', action: function () { _showImageReplaceMenu(inst, figure); } },
             { label: 'Delete', testId: 'document-wysiwyg-image-toolbar-delete', action: function () { _deleteSelectedImage(inst); } }
         ];
@@ -1579,11 +1894,18 @@ window.tmDocumentWysiwyg = (function () {
         var figRect = figure.getBoundingClientRect();
         var rootRect = inst.root.getBoundingClientRect();
         var toolbarHeight = toolbar.offsetHeight || 40;
-        var top = figRect.top - rootRect.top + inst.root.scrollTop - toolbarHeight - 8;
-        if (top < 8) {
-            top = figRect.bottom - rootRect.top + inst.root.scrollTop + 8;
+        var rootViewportTop = Math.max(0, rootRect.top || 0);
+        var rootViewportBottom = Math.min(window.innerHeight || document.documentElement.clientHeight || rootRect.bottom || 0, rootRect.bottom || 0);
+        var aboveViewportTop = figRect.top - toolbarHeight - 8;
+        var belowViewportTop = figRect.bottom + 8;
+        var topViewport = aboveViewportTop;
+        if (aboveViewportTop < rootViewportTop + 4 && belowViewportTop + toolbarHeight <= rootViewportBottom - 4) {
+            topViewport = belowViewportTop;
+        } else if (aboveViewportTop < rootViewportTop + 4) {
+            topViewport = Math.max(rootViewportTop + 4, Math.min(belowViewportTop, rootViewportBottom - toolbarHeight - 4));
         }
 
+        var top = topViewport - rootRect.top + inst.root.scrollTop;
         var left = figRect.left - rootRect.left + inst.root.scrollLeft;
         _positionFloatingElementInRoot(inst, toolbar, left, top, 360, toolbarHeight);
         toolbar.style.zIndex = '1001';
@@ -1613,6 +1935,16 @@ window.tmDocumentWysiwyg = (function () {
         if (!figure) return;
         var img = figure.querySelector('img');
         if (img) img.alt = altText || '';
+        _syncImageAccessibilityAttributes(inst, figure);
+        _dispatchImageUpdatePatch(inst, figure);
+    }
+
+    function _setImageDecorative(inst, isDecorative, blockId) {
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var value = isDecorative === true || String(isDecorative).toLowerCase() === 'true';
+        figure.setAttribute('data-image-decorative', value ? 'true' : 'false');
+        _syncImageAccessibilityAttributes(inst, figure);
         _dispatchImageUpdatePatch(inst, figure);
     }
 
@@ -1759,6 +2091,37 @@ window.tmDocumentWysiwyg = (function () {
         });
     }
 
+    function _replaceSelectedImageFromClipboard(inst, figure) {
+        figure = figure || _getSelectedImageFigure(inst);
+        if (!figure || !navigator.clipboard || !navigator.clipboard.read) {
+            return;
+        }
+
+        navigator.clipboard.read().then(function (items) {
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var imageType = (item.types || []).find(function (type) { return /^image\//i.test(type); });
+                if (!imageType) continue;
+                return item.getType(imageType).then(function (blob) {
+                    var file = new File([blob], 'clipboard-image.' + imageType.split('/')[1], { type: imageType });
+                    var block = figure.closest('.tm-wysiwyg-block[data-block-id]');
+                    _uploadAndReplaceImageFile(inst, figure, file, {
+                        Region: 'Image',
+                        AnchorBlockId: block ? block.getAttribute('data-block-id') || '' : '',
+                        FocusBlockId: block ? block.getAttribute('data-block-id') || '' : '',
+                        AnchorOffset: 0,
+                        FocusOffset: 0,
+                        IsCollapsed: true
+                    });
+                });
+            }
+        }).catch(function () {
+        }).finally(function () {
+            _hideImageContextMenu(inst);
+            _hideImageReplaceMenu(inst);
+        });
+    }
+
     function _editSelectedImageAltText(inst) {
         var figure = _getSelectedImageFigure(inst);
         if (!figure) return;
@@ -1768,6 +2131,24 @@ window.tmDocumentWysiwyg = (function () {
         if (next == null) return;
         if (img) img.alt = next;
         _dispatchImageUpdatePatch(inst, figure);
+        _hideImageContextMenu(inst);
+    }
+
+    function _editSelectedImageLink(inst) {
+        var figure = _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var current = figure.getAttribute('data-image-link') || '';
+        var next = window.prompt('Image link', current);
+        if (next == null) return;
+        _setImageLink(inst, next.trim());
+        _hideImageContextMenu(inst);
+    }
+
+    function _beginImageCropMode(inst) {
+        var figure = _getSelectedImageFigure(inst);
+        if (!figure) return;
+        figure.classList.add('tm-wysiwyg-image--crop-ready');
+        _selectImageFigure(inst, figure);
         _hideImageContextMenu(inst);
     }
 
@@ -1907,6 +2288,7 @@ window.tmDocumentWysiwyg = (function () {
         var src = (content && (content.url || content.Url)) || '';
         if (_isSafeImageUrl(src)) img.src = src;
         img.alt = (content && (content.altText || content.AltText)) || img.alt || '';
+        figure.setAttribute('data-image-decorative', (content && (content.isDecorative ?? content.IsDecorative ?? content.decorative ?? content.Decorative)) ? 'true' : 'false');
         var source = content && (content.source ?? content.Source);
         var assetId = content && (content.assetId || content.AssetId);
         figure.setAttribute('data-image-source', source == null ? '0' : String(source));
@@ -1917,58 +2299,37 @@ window.tmDocumentWysiwyg = (function () {
         }
         _attachImageLoadState(figure, img, src, inst);
         _ensureImageResizeHandle(figure, inst);
+        _syncImageAccessibilityAttributes(inst, figure);
     }
 
     function _setSelectedImageInline(inst) {
         var figure = _getSelectedImageFigure(inst);
         if (!figure) return;
-        var layout = _serializeImage(figure).FloatingLayout || {};
-        layout.Inline = true;
-        layout.WrapMode = 0;
-        layout.X = 0;
-        layout.Y = 0;
-        layout.ZIndex = 0;
-        _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Set image inline', beforeSel, true);
+        var layout = _serializeImage(figure).Layout || _createImageObjectLayoutFromFigure(figure);
+        layout.Kind = 0;
+        layout.Anchor = layout.Anchor || {};
+        layout.Anchor.MoveWithText = true;
+        layout.Anchor.FixedOnPage = false;
+        layout.Position = layout.Position || {};
+        layout.Position.X = 0;
+        layout.Position.Y = 0;
+        layout.Wrap = layout.Wrap || {};
+        layout.Wrap.Mode = 0;
+        layout.Stacking = layout.Stacking || {};
+        layout.Stacking.ZIndex = 0;
+        var imageSelection = _createImageSelectionSnapshot(figure);
+        inst.lastSelectionSnapshot = imageSelection;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(imageSelection);
+        _applyFloatingImageLayout(figure, { Layout: layout }, inst);
+        _ensureImageResizeHandle(figure, inst);
+        _ensureLayoutObjectChrome(figure, inst);
+        _selectImageFigure(inst, figure);
         _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
         _hideImageContextMenu(inst);
-    }
-
-    function _createWrappedImageSideTextBlockModel(figure) {
-        var imageOrder = parseFloat(figure && figure.getAttribute('data-block-order') || '0') || 0;
-        var blockId = _createBlockId();
-        var inlineId = _createInlineId();
-        return {
-            Id: blockId,
-            Type: 0,
-            Order: imageOrder + 0.1,
-            ParagraphProperties: {},
-            Content: {
-                $type: 'paragraph',
-                Inlines: [{
-                    $type: 'text',
-                    Id: inlineId,
-                    Text: ''
-                }]
-            }
-        };
-    }
-
-    function _isWrappedImageSideTextBlock(block) {
-        return !!(block && block.matches && block.matches('p.tm-wysiwyg-block[data-wrap-sidecar-for], p.tm-wysiwyg-image-sidecar-text'));
-    }
-
-    function _isTextBlockForWrappedImage(block) {
-        if (!block || !block.matches) return false;
-        if (_isWrappedImageSideTextBlock(block)) return true;
-        return block.matches('p.tm-wysiwyg-block[data-block-id]');
-    }
-
-    function _isWrappedImageSideTextLayout(figure) {
-        if (!figure) return false;
-        var inline = figure.getAttribute('data-floating-inline') !== 'false';
-        var wrapMode = parseInt(figure.getAttribute('data-wrap-mode') || (inline ? '0' : '1'), 10);
-        var hPos = figure.getAttribute('data-horizontal-position') || '';
-        return !inline && wrapMode === 1 && (!hPos || hPos === 'left' || hPos === 'right');
     }
 
     function _pointInRect(rect, clientX, clientY, padding) {
@@ -1989,7 +2350,7 @@ window.tmDocumentWysiwyg = (function () {
 
     function _isImageVisualClick(figure, clientX, clientY) {
         if (!figure || !figure.querySelectorAll) return false;
-        var targets = figure.querySelectorAll('img, figcaption, .tm-wysiwyg-image__resize-handle');
+        var targets = figure.querySelectorAll('img, figcaption, .tm-wysiwyg-image__resize-handle, .tm-wysiwyg-object-resize-handle, .tm-wysiwyg-object-rotation-handle, .tm-wysiwyg-anchor-glyph, .tm-wysiwyg-layout-bubble');
         for (var i = 0; i < targets.length; i++) {
             if (_pointInRect(targets[i].getBoundingClientRect(), clientX, clientY, 4)) {
                 return true;
@@ -1999,333 +2360,589 @@ window.tmDocumentWysiwyg = (function () {
         return targets.length === 0 && _pointInRect(figure.getBoundingClientRect(), clientX, clientY, 4);
     }
 
-    function _createSelectionSnapshotForBlockElement(blockEl, regionOverride) {
-        if (!blockEl || !blockEl.getAttribute) return null;
-        var blockId = blockEl.getAttribute('data-block-id') || '';
-        if (!blockId) return null;
+    function DocumentHitTestService(instOrRoot) {
+        if (instOrRoot && instOrRoot.root) {
+            this.inst = instOrRoot;
+            this.root = instOrRoot.root;
+        } else {
+            this.inst = null;
+            this.root = instOrRoot || null;
+        }
+    }
 
-        var inline = blockEl.querySelector && blockEl.querySelector('[data-inline-id]');
-        var inlineId = inline ? (inline.getAttribute('data-inline-id') || '') : '';
-        var pageEl = blockEl.closest && blockEl.closest('.tm-wysiwyg-page[data-page-index]');
-        var pageIndex = pageEl ? parseInt(pageEl.getAttribute('data-page-index') || '0', 10) : null;
-        if (!Number.isFinite(pageIndex)) pageIndex = null;
+    DocumentHitTestService.prototype.hitTest = function (clientX, clientY) {
+        return _hitTestDocument(this.inst, this.root, clientX, clientY);
+    };
 
+    function _getDocumentHitTestService(inst) {
+        if (!inst) return null;
+        if (!inst.hitTestService || inst.hitTestService.root !== inst.root) {
+            inst.hitTestService = new DocumentHitTestService(inst);
+        }
+        return inst.hitTestService;
+    }
+
+    function _hitTestDocument(inst, root, clientX, clientY) {
+        if (!root || !Number.isFinite(clientX) || !Number.isFinite(clientY)) {
+            return _createHitTestNone(clientX, clientY);
+        }
+
+        var geometry = _collectDocumentHitTestGeometry(inst, root, clientX, clientY);
+        return _hitTestLayoutGeometry(geometry);
+    }
+
+    function _collectDocumentHitTestGeometry(inst, root, clientX, clientY) {
+        var doc = root.ownerDocument || document;
+        var elementsAtPoint = typeof doc.elementsFromPoint === 'function'
+            ? doc.elementsFromPoint(clientX, clientY).filter(function (element) { return root.contains(element); })
+            : [];
+        if (elementsAtPoint.length === 0 && typeof doc.elementFromPoint === 'function') {
+            var element = doc.elementFromPoint(clientX, clientY);
+            if (element && root.contains(element)) elementsAtPoint = [element];
+        }
+
+        var rootRect = _domRectToLayoutRect(root.getBoundingClientRect ? root.getBoundingClientRect() : null);
+        var request = {
+            X: clientX,
+            Y: clientY,
+            RootRect: rootRect,
+            BodyRects: [],
+            PageRects: [],
+            HeaderFooters: [],
+            TableCells: [],
+            Controls: [],
+            Objects: [],
+            Lines: [],
+            ElementsAtPoint: elementsAtPoint
+        };
+
+        root.querySelectorAll('.tm-wysiwyg-page[data-page-index]').forEach(function (page) {
+            request.PageRects.push({
+                Kind: 'PageMargin',
+                PageIndex: parseInt(page.getAttribute('data-page-index') || '0', 10) || 0,
+                Rect: _domRectToLayoutRect(page.getBoundingClientRect())
+            });
+        });
+
+        root.querySelectorAll('.tm-wysiwyg-page__body').forEach(function (body) {
+            var page = body.closest('.tm-wysiwyg-page[data-page-index]');
+            request.BodyRects.push({
+                PageIndex: page ? (parseInt(page.getAttribute('data-page-index') || '0', 10) || 0) : null,
+                Rect: _domRectToLayoutRect(body.getBoundingClientRect())
+            });
+        });
+
+        root.querySelectorAll('.tm-wysiwyg-page__header, .tm-wysiwyg-page__footer').forEach(function (region) {
+            var page = region.closest('.tm-wysiwyg-page[data-page-index]');
+            request.HeaderFooters.push({
+                Kind: 'HeaderFooter',
+                Region: region.classList.contains('tm-wysiwyg-page__footer') ? 'Footer' : 'Header',
+                HeaderFooterId: region.getAttribute('data-hf-id') || null,
+                PageIndex: page ? (parseInt(page.getAttribute('data-page-index') || '0', 10) || 0) : null,
+                Rect: _domRectToLayoutRect(region.getBoundingClientRect()),
+                Element: region
+            });
+        });
+
+        root.querySelectorAll('td[data-cell-id], th[data-cell-id]').forEach(function (cell) {
+            request.TableCells.push({
+                Kind: 'TableCell',
+                CellId: cell.getAttribute('data-cell-id') || '',
+                Rect: _domRectToLayoutRect(cell.getBoundingClientRect()),
+                Element: cell
+            });
+        });
+
+        root.querySelectorAll('.tm-wysiwyg-object-resize-handle, .tm-wysiwyg-image__resize-handle, .tm-wysiwyg-object-rotation-handle, .tm-wysiwyg-layout-bubble').forEach(function (control) {
+            if (!_isVisibleForHitTest(control)) return;
+            var figure = control.closest('figure.tm-wysiwyg-image');
+            request.Controls.push({
+                Kind: control.classList.contains('tm-wysiwyg-object-rotation-handle')
+                    ? 'ImageRotateHandle'
+                    : (control.classList.contains('tm-wysiwyg-layout-bubble') ? 'ImageLayoutBubble' : 'ImageResizeHandle'),
+                Rect: _domRectToLayoutRect(control.getBoundingClientRect()),
+                ObjectId: figure ? (figure.getAttribute('data-layout-object-id') || '') : '',
+                BlockId: figure ? (figure.getAttribute('data-block-id') || '') : '',
+                Element: control,
+                FigureElement: figure,
+                ZIndex: _readElementZIndex(figure)
+            });
+        });
+
+        root.querySelectorAll('figure.tm-wysiwyg-image[data-block-id]').forEach(function (figure) {
+            if (!_isVisibleForHitTest(figure)) return;
+            var visualRects = [];
+            var img = figure.querySelector('img');
+            if (img && _isVisibleForHitTest(img)) {
+                visualRects.push(_domRectToLayoutRect(img.getBoundingClientRect()));
+            }
+            figure.querySelectorAll('figcaption, .tm-wysiwyg-selection-box').forEach(function (visual) {
+                if (_isVisibleForHitTest(visual)) {
+                    visualRects.push(_domRectToLayoutRect(visual.getBoundingClientRect()));
+                }
+            });
+            if (visualRects.length === 0) {
+                visualRects.push(_domRectToLayoutRect(figure.getBoundingClientRect()));
+            }
+
+            var layer = figure.closest('.tm-wysiwyg-page__layer');
+            var layerName = layer ? (layer.getAttribute('data-layout-layer') || '') : '';
+            var wrapMode = parseInt(figure.getAttribute('data-wrap-mode') || '0', 10);
+            request.Objects.push({
+                Kind: 'ImageObject',
+                ObjectId: figure.getAttribute('data-layout-object-id') || '',
+                BlockId: figure.getAttribute('data-block-id') || '',
+                Rect: _domRectToLayoutRect(figure.getBoundingClientRect()),
+                VisualRects: visualRects,
+                WrapMode: wrapMode,
+                Layer: layerName,
+                LayerPriority: _hitTestLayerPriority(layerName, wrapMode),
+                ZIndex: _readElementZIndex(figure),
+                Selectable: layerName !== 'behind-text' || figure.classList.contains('tm-wysiwyg-image--selected'),
+                Element: figure
+            });
+        });
+
+	        root.querySelectorAll('.tm-wysiwyg-layout-line[data-layout-line-id]').forEach(function (line, lineIndex) {
+	            if (!_isVisibleForHitTest(line)) return;
+	            var segments = [];
+	            var lineRect = null;
+	            line.querySelectorAll('.tm-wysiwyg-layout-segment[data-layout-segment-id]').forEach(function (segment) {
+	                if (!_isVisibleForHitTest(segment)) return;
+	                var textNode = _firstDeepTextNode(segment);
+	                var text = textNode ? (textNode.textContent || '') : (segment.textContent || '');
+	                var segmentRect = _domRectToLayoutRect(segment.getBoundingClientRect());
+	                lineRect = lineRect ? _mergeLayoutRects(lineRect, segmentRect) : segmentRect;
+	                segments.push({
+	                    Id: segment.getAttribute('data-layout-segment-id') || '',
+	                    LineId: segment.getAttribute('data-layout-line-id') || line.getAttribute('data-layout-line-id') || '',
+	                    InlineId: segment.getAttribute('data-inline-id') || '',
+	                    BlockId: segment.closest('[data-block-id]')?.getAttribute('data-block-id') || line.getAttribute('data-block-id') || '',
+	                    Rect: segmentRect,
+	                    TextLength: text.length,
+	                    StartOffset: parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10) || 0,
+	                    Element: segment,
+	                    TextNode: textNode
+	                });
+	            });
+
+            var page = line.closest('.tm-wysiwyg-page[data-page-index]');
+            request.Lines.push({
+	                Id: line.getAttribute('data-layout-line-id') || '',
+	                BlockId: line.getAttribute('data-block-id') || '',
+	                PageIndex: page ? (parseInt(page.getAttribute('data-page-index') || '0', 10) || 0) : null,
+	                VisualLineIndex: parseInt(line.getAttribute('data-visual-line-index') || String(lineIndex), 10) || 0,
+	                Rect: lineRect || _domRectToLayoutRect(line.getBoundingClientRect()),
+	                Segments: segments,
+	                Element: line
+	            });
+	        });
+
+        return request;
+    }
+
+    function _hitTestLayoutGeometry(request) {
+        request = request || {};
+        var x = Number(request.X ?? request.x);
+        var y = Number(request.Y ?? request.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            return _createHitTestNone(x, y);
+        }
+
+        var controls = _sortHitCandidates(request.Controls || request.controls || []);
+        for (var ci = 0; ci < controls.length; ci++) {
+            var control = controls[ci];
+            if (_pointInLayoutRect(control.Rect || control.rect, x, y, 0)) {
+                return _createHitResult(control.Kind || control.kind || 'ImageResizeHandle', x, y, control);
+            }
+        }
+
+        var tableCells = request.TableCells || request.tableCells || [];
+        for (var ti = 0; ti < tableCells.length; ti++) {
+            var cell = tableCells[ti];
+            if (_pointInLayoutRect(cell.Rect || cell.rect, x, y, 0)) {
+                return _createHitResult('TableCell', x, y, cell);
+            }
+        }
+
+        var headerFooters = request.HeaderFooters || request.headerFooters || [];
+        for (var hi = 0; hi < headerFooters.length; hi++) {
+            var region = headerFooters[hi];
+            if (_pointInLayoutRect(region.Rect || region.rect, x, y, 0)) {
+                return _createHitResult('HeaderFooter', x, y, region);
+            }
+        }
+
+        var objects = _sortHitCandidates(request.Objects || request.objects || []);
+        for (var oi = 0; oi < objects.length; oi++) {
+            var object = objects[oi];
+            if (object.Selectable === false || object.selectable === false) continue;
+            var visualRects = object.VisualRects || object.visualRects || [object.VisualRect || object.visualRect || object.Rect || object.rect];
+            for (var vi = 0; vi < visualRects.length; vi++) {
+                if (_pointInLayoutRect(visualRects[vi], x, y, 0)) {
+                    return _createHitResult('ImageObject', x, y, object);
+                }
+            }
+        }
+
+        var caret = _hitTestTextCaretGeometry(request, x, y);
+        if (caret) return caret;
+
+        var bodyRects = request.BodyRects || request.bodyRects || [];
+        var pageRects = request.PageRects || request.pageRects || [];
+        for (var pi = 0; pi < pageRects.length; pi++) {
+            var page = pageRects[pi];
+            if (!_pointInLayoutRect(page.Rect || page.rect, x, y, 0)) continue;
+            var insideBody = bodyRects.some(function (body) { return _pointInLayoutRect(body.Rect || body.rect, x, y, 0); });
+            if (!insideBody) {
+                return _createHitResult('PageMargin', x, y, page);
+            }
+        }
+
+        var rootRect = request.RootRect || request.rootRect;
+        if (rootRect && !_pointInLayoutRect(rootRect, x, y, 0)) {
+            return _createHitTestNone(x, y);
+        }
+
+        return _createHitTestNone(x, y);
+    }
+
+    function _hitTestTextCaretGeometry(request, x, y) {
+        var lines = (request.Lines || request.lines || []).filter(function (line) {
+            return !!(line && (line.Rect || line.rect));
+        });
+        if (lines.length === 0) return null;
+
+        var bodyRects = request.BodyRects || request.bodyRects || [];
+        var insideAnyBody = bodyRects.length === 0 || bodyRects.some(function (body) {
+            return _pointInLayoutRect(body.Rect || body.rect, x, y, 0);
+        });
+        if (!insideAnyBody) return null;
+
+        var bestLine = null;
+        var bestDistance = Number.POSITIVE_INFINITY;
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            var rect = line.Rect || line.rect;
+            var verticalDistance = _distanceToInterval(y, rect.Y ?? rect.y, (rect.Y ?? rect.y) + (rect.Height ?? rect.height));
+            var horizontalDistance = _distanceToInterval(x, rect.X ?? rect.x, (rect.X ?? rect.x) + (rect.Width ?? rect.width));
+            var distance = verticalDistance * 1000 + Math.min(horizontalDistance, 240);
+            if (verticalDistance <= Math.max(4, (rect.Height ?? rect.height ?? 0) / 2) && distance < bestDistance) {
+                bestDistance = distance;
+                bestLine = line;
+            }
+        }
+
+        if (!bestLine) return null;
+        var segmentHit = _resolveHitTestCaretSegment(bestLine, x);
+        if (!segmentHit) return null;
+
+        return _createHitResult('TextCaret', x, y, {
+            BlockId: segmentHit.BlockId || bestLine.BlockId || bestLine.blockId || '',
+            InlineId: segmentHit.InlineId || segmentHit.inlineId || '',
+            Offset: segmentHit.Offset,
+            LocalOffset: segmentHit.LocalOffset,
+            BlockOffset: segmentHit.BlockOffset ?? segmentHit.Offset,
+            LayoutLineId: bestLine.Id || bestLine.id || segmentHit.LineId || '',
+            LayoutSegmentId: segmentHit.Id || segmentHit.id || '',
+            VisualLineIndex: bestLine.VisualLineIndex ?? bestLine.visualLineIndex ?? 0,
+            LineElement: bestLine.Element || bestLine.element || null,
+            SegmentElement: segmentHit.Element || segmentHit.element || null,
+            TextNode: segmentHit.TextNode || segmentHit.textNode || null,
+            TextNodeOffset: segmentHit.TextNodeOffset ?? segmentHit.LocalOffset ?? 0
+        });
+    }
+
+    function _resolveHitTestCaretSegment(line, x) {
+        var segments = (line.Segments || line.segments || []).filter(function (segment) {
+            return !!(segment && (segment.Rect || segment.rect));
+        });
+        if (segments.length === 0) return null;
+        segments.sort(function (a, b) {
+            return ((a.Rect || a.rect).X ?? (a.Rect || a.rect).x ?? 0) - ((b.Rect || b.rect).X ?? (b.Rect || b.rect).x ?? 0);
+        });
+
+        var first = segments[0];
+        var last = segments[segments.length - 1];
+        var firstRect = first.Rect || first.rect;
+        var lastRect = last.Rect || last.rect;
+        if (x <= (firstRect.X ?? firstRect.x)) {
+            return _createSegmentCaretHit(first, 0);
+        }
+        if (x >= (lastRect.X ?? lastRect.x) + (lastRect.Width ?? lastRect.width)) {
+            return _createSegmentCaretHit(last, _hitTestSegmentTextLength(last));
+        }
+
+        var nearest = null;
+        var nearestDistance = Number.POSITIVE_INFINITY;
+        for (var i = 0; i < segments.length; i++) {
+            var segment = segments[i];
+            var rect = segment.Rect || segment.rect;
+            var left = rect.X ?? rect.x ?? 0;
+            var right = left + (rect.Width ?? rect.width ?? 0);
+            if (x >= left && x <= right) {
+                var length = _hitTestSegmentTextLength(segment);
+                var ratio = (rect.Width ?? rect.width ?? 0) > 0 ? (x - left) / (rect.Width ?? rect.width) : 0;
+                return _createSegmentCaretHit(segment, Math.max(0, Math.min(length, Math.round(ratio * length))));
+            }
+
+            var distance = Math.min(Math.abs(x - left), Math.abs(x - right));
+            if (distance < nearestDistance) {
+                nearest = x < left
+                    ? _createSegmentCaretHit(segment, 0)
+                    : _createSegmentCaretHit(segment, _hitTestSegmentTextLength(segment));
+                nearestDistance = distance;
+            }
+        }
+
+        return nearest;
+    }
+
+    function _createSegmentCaretHit(segment, localOffset) {
+        var startOffset = Number(segment.StartOffset ?? segment.startOffset ?? 0) || 0;
+        var textLength = _hitTestSegmentTextLength(segment);
+        var clampedLocal = Math.max(0, Math.min(textLength, localOffset || 0));
+        return Object.assign({}, segment, {
+            Offset: startOffset + clampedLocal,
+            LocalOffset: clampedLocal,
+            TextNodeOffset: clampedLocal,
+            BlockOffset: startOffset + clampedLocal
+        });
+    }
+
+    function _hitTestSegmentTextLength(segment) {
+        var value = Number(segment.TextLength ?? segment.textLength);
+        if (Number.isFinite(value)) return Math.max(0, value);
+        if (segment.TextNode || segment.textNode) return ((segment.TextNode || segment.textNode).textContent || '').length;
+        if (segment.Element || segment.element) return ((segment.Element || segment.element).textContent || '').length;
+        return 0;
+    }
+
+    function _sortHitCandidates(items) {
+        return (items || []).slice().sort(function (a, b) {
+            var layerDelta = (Number(b.LayerPriority ?? b.layerPriority ?? 0) || 0) - (Number(a.LayerPriority ?? a.layerPriority ?? 0) || 0);
+            if (layerDelta !== 0) return layerDelta;
+            return (Number(b.ZIndex ?? b.zIndex ?? 0) || 0) - (Number(a.ZIndex ?? a.zIndex ?? 0) || 0);
+        });
+    }
+
+    function _createHitResult(kind, x, y, source) {
+        source = source || {};
+        var isImageHit = String(kind || '').indexOf('Image') === 0;
         return {
-            region: regionOverride || 'Body',
-            pageIndex: pageIndex,
-            headerFooterId: null,
-            anchorNodeId: inlineId || blockId,
-            focusNodeId: inlineId || blockId,
-            anchorBlockId: blockId,
-            focusBlockId: blockId,
-            anchorInlineId: inlineId,
-            focusInlineId: inlineId,
-            anchorOffset: 0,
-            anchorBlockOffset: 0,
-            focusOffset: 0,
-            focusBlockOffset: 0,
-            isCollapsed: true,
-            direction: 'forward',
-            activeTableCellId: null,
-            tableCellPath: null,
-            activeImageBlockId: null
+            Kind: kind,
+            X: x,
+            Y: y,
+            BlockId: source.BlockId || source.blockId || null,
+            InlineId: source.InlineId || source.inlineId || null,
+            Offset: source.Offset ?? source.offset ?? null,
+            LocalOffset: source.LocalOffset ?? source.localOffset ?? null,
+            BlockOffset: source.BlockOffset ?? source.blockOffset ?? null,
+            LayoutLineId: source.LayoutLineId || source.layoutLineId || source.LineId || source.lineId || null,
+            LayoutSegmentId: source.LayoutSegmentId || source.layoutSegmentId || source.Id || source.id || null,
+            VisualLineIndex: source.VisualLineIndex ?? source.visualLineIndex ?? null,
+            ObjectId: source.ObjectId || source.objectId || null,
+            ActiveObjectId: isImageHit ? (source.ObjectId || source.objectId || null) : (source.ActiveObjectId || source.activeObjectId || null),
+            ActiveImageBlockId: isImageHit ? (source.BlockId || source.blockId || null) : null,
+            CellId: source.CellId || source.cellId || null,
+            Region: source.Region || source.region || null,
+            HeaderFooterId: source.HeaderFooterId || source.headerFooterId || null,
+            TargetElement: source.Element || source.element || null,
+            FigureElement: source.FigureElement || source.figureElement || source.Element || source.element || null,
+            LineElement: source.LineElement || source.lineElement || null,
+            SegmentElement: source.SegmentElement || source.segmentElement || source.Element || source.element || null,
+            TextNode: source.TextNode || source.textNode || null,
+            TextNodeOffset: source.TextNodeOffset ?? source.textNodeOffset ?? source.LocalOffset ?? source.localOffset ?? 0
         };
     }
 
-    function _ensureWrappedImageSideTextBlock(inst, figure, dispatchPatch, selectionSnapshot) {
-        if (!inst || !figure || !_isWrappedImageSideTextLayout(figure)) {
-            _debugImage(inst, 'sidecar.ensure.skipped', {
-                figure: _debugElementLabel(figure),
-                inline: figure && figure.getAttribute('data-floating-inline'),
-                wrapMode: figure && figure.getAttribute('data-wrap-mode'),
-                horizontalPosition: figure && figure.getAttribute('data-horizontal-position')
-            });
-            return null;
-        }
-
-        var imageId = figure.getAttribute('data-block-id') || '';
-        var parent = figure.parentElement;
-        if (!parent) {
-            _debugImage(inst, 'sidecar.ensure.no-parent', { imageId: imageId });
-            return null;
-        }
-
-        var next = figure.nextElementSibling;
-        if (_isTextBlockForWrappedImage(next)) {
-            next.classList.add('tm-wysiwyg-image-sidecar-text');
-            if (imageId && !next.getAttribute('data-wrap-sidecar-for')) {
-                next.setAttribute('data-wrap-sidecar-for', imageId);
-            }
-            _debugImage(inst, 'sidecar.ensure.reused', {
-                imageId: imageId,
-                block: _debugElementLabel(next),
-                dispatchPatch: !!dispatchPatch
-            });
-            return next;
-        }
-
-        var block = _createWrappedImageSideTextBlockModel(figure);
-        var blockEl = _renderBlock(block, inst);
-        if (!blockEl) {
-            _debugImage(inst, 'sidecar.ensure.render-failed', { imageId: imageId });
-            return null;
-        }
-
-        blockEl.classList.add('tm-wysiwyg-image-sidecar-text');
-        if (imageId) {
-            blockEl.setAttribute('data-wrap-sidecar-for', imageId);
-        }
-
-        var inline = blockEl.querySelector('[data-inline-id]');
-        _ensureCaretPlaceholder(inline);
-        parent.insertBefore(blockEl, figure.nextSibling);
-
-        if (dispatchPatch) {
-            var startedSidecarTransaction = false;
-            if (!inst.currentTransactionId) {
-                inst.currentTransactionId = 'txn-sidecar-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-                startedSidecarTransaction = true;
-            }
-            var patchSelection = selectionSnapshot || _createImageSelectionSnapshot(figure);
-            if (!patchSelection) {
-                patchSelection = _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot;
-            }
-            var sideTextSelection = _createSelectionSnapshotForBlockElement(blockEl, 'Body');
-            _dispatchPatch(inst, {
-                type: 'InsertBlock',
-                operationId: _nextRuntimeOperationId(inst),
-                blockType: 'Paragraph',
-                block: block,
-                selection: patchSelection,
-                beforeSelection: patchSelection,
-                afterSelection: sideTextSelection || patchSelection,
-                transactionId: inst.currentTransactionId,
-                protocolVersion: inst.options.protocolVersion || 1
-            });
-            if (startedSidecarTransaction) {
-                window.setTimeout(function () {
-                    _commitCurrentRuntimeTransaction(inst, true);
-                }, 0);
-            }
-        }
-
-        _debugImage(inst, 'sidecar.ensure.created', {
-            imageId: imageId,
-            block: _debugElementLabel(blockEl),
-            dispatchPatch: !!dispatchPatch
-        });
-        return blockEl;
+    function _createHitTestNone(x, y) {
+        return {
+            Kind: 'None',
+            X: Number.isFinite(x) ? x : null,
+            Y: Number.isFinite(y) ? y : null
+        };
     }
 
-    function _findWrappedImageSideTextBlockAtPoint(inst, clientX, clientY) {
-        if (!inst || !inst.root) return null;
+	    function _domRectToLayoutRect(rect) {
+	        if (!rect) return { X: 0, Y: 0, Width: 0, Height: 0, Right: 0, Bottom: 0 };
+	        var x = rect.left ?? rect.X ?? rect.x ?? 0;
+	        var y = rect.top ?? rect.Y ?? rect.y ?? 0;
+	        var width = rect.width ?? rect.Width ?? 0;
+        var height = rect.height ?? rect.Height ?? 0;
+        return {
+            X: x,
+            Y: y,
+            Width: width,
+            Height: height,
+            Right: rect.right ?? (x + width),
+            Bottom: rect.bottom ?? (y + height)
+	        };
+	    }
 
-        var topElement = typeof document.elementFromPoint === 'function'
-            ? document.elementFromPoint(clientX, clientY)
+	    function _mergeLayoutRects(a, b) {
+	        if (!a) return b || { X: 0, Y: 0, Width: 0, Height: 0, Right: 0, Bottom: 0 };
+	        if (!b) return a;
+	        var left = Math.min(a.X ?? a.x ?? 0, b.X ?? b.x ?? 0);
+	        var top = Math.min(a.Y ?? a.y ?? 0, b.Y ?? b.y ?? 0);
+	        var right = Math.max(a.Right ?? ((a.X ?? a.x ?? 0) + (a.Width ?? a.width ?? 0)), b.Right ?? ((b.X ?? b.x ?? 0) + (b.Width ?? b.width ?? 0)));
+	        var bottom = Math.max(a.Bottom ?? ((a.Y ?? a.y ?? 0) + (a.Height ?? a.height ?? 0)), b.Bottom ?? ((b.Y ?? b.y ?? 0) + (b.Height ?? b.height ?? 0)));
+	        return {
+	            X: left,
+	            Y: top,
+	            Width: Math.max(0, right - left),
+	            Height: Math.max(0, bottom - top),
+	            Right: right,
+	            Bottom: bottom
+	        };
+	    }
+
+	    function _pointInLayoutRect(rect, x, y, padding) {
+        if (!rect) return false;
+        var pad = padding || 0;
+        var left = rect.X ?? rect.x ?? rect.left ?? 0;
+        var top = rect.Y ?? rect.y ?? rect.top ?? 0;
+        var width = rect.Width ?? rect.width ?? Math.max(0, (rect.Right ?? rect.right ?? 0) - left);
+        var height = rect.Height ?? rect.height ?? Math.max(0, (rect.Bottom ?? rect.bottom ?? 0) - top);
+        return x >= left - pad && x <= left + width + pad && y >= top - pad && y <= top + height + pad;
+    }
+
+    function _distanceToInterval(value, start, end) {
+        if (!Number.isFinite(value)) return Number.POSITIVE_INFINITY;
+        start = Number(start || 0);
+        end = Number(end || start);
+        if (value < start) return start - value;
+        if (value > end) return value - end;
+        return 0;
+    }
+
+    function _hitTestLayerPriority(layerName, wrapMode) {
+        if (layerName === 'in-front-of-text' || wrapMode === 6) return 30;
+        if (layerName === 'object') return 20;
+        if (layerName === 'body-text') return 10;
+        if (layerName === 'behind-text' || wrapMode === 5) return 0;
+        return 10;
+    }
+
+    function _readElementZIndex(element) {
+        if (!element) return 0;
+        var value = parseInt(element.style && element.style.zIndex || '0', 10);
+        if (Number.isFinite(value) && value !== 0) return value;
+        try {
+            var computed = window.getComputedStyle ? window.getComputedStyle(element) : null;
+            value = parseInt(computed && computed.zIndex || '0', 10);
+            return Number.isFinite(value) ? value : 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    function _isVisibleForHitTest(element) {
+        if (!element || !element.getBoundingClientRect) return false;
+        var rect = element.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+        try {
+            var style = window.getComputedStyle ? window.getComputedStyle(element) : element.style;
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        } catch {
+            return true;
+        }
+    }
+
+    function _applyTextCaretHitTest(inst, hit, extendSelection) {
+        if (!inst || !hit || hit.Kind !== 'TextCaret' || !hit.TextNode) return false;
+        var textNode = hit.TextNode;
+        var targetOffset = Math.max(0, Math.min(hit.TextNodeOffset || 0, (textNode.textContent || '').length));
+        var existingSelection = window.getSelection && window.getSelection();
+        var extendAnchorNode = extendSelection && existingSelection && existingSelection.rangeCount > 0 && inst.root.contains(existingSelection.anchorNode)
+            ? existingSelection.anchorNode
             : null;
-        var topFigure = topElement && topElement.closest
-            ? topElement.closest('figure.tm-wysiwyg-image')
+        var extendAnchorOffset = extendAnchorNode ? existingSelection.anchorOffset : 0;
+        var segment = hit.SegmentElement || (textNode.parentElement && textNode.parentElement.closest('.tm-wysiwyg-layout-segment[data-layout-segment-id]'));
+        var bodyRegion = segment
+            ? segment.closest('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]')
             : null;
-        if (topFigure && !inst.root.contains(topFigure)) {
-            topFigure = null;
-        }
-
-        var figures = Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image'));
-        _debugImage(inst, 'sidecar.hit-test.start', {
-            x: Math.round(clientX),
-            y: Math.round(clientY),
-            figureCount: figures.length,
-            figures: _debugImageFigures(inst)
-        });
-        for (var i = 0; i < figures.length; i++) {
-            var figure = figures[i];
-            if (!_isWrappedImageSideTextLayout(figure)) {
-                _debugImage(inst, 'sidecar.hit-test.skip-layout', {
-                    figure: _debugElementLabel(figure),
-                    inline: figure.getAttribute('data-floating-inline'),
-                    wrapMode: figure.getAttribute('data-wrap-mode'),
-                    horizontalPosition: figure.getAttribute('data-horizontal-position')
-                });
-                continue;
-            }
-
-            var figureRect = figure.getBoundingClientRect();
-            var visualRect = _getImagePrimaryVisualRect(figure) || figureRect;
-            if (clientY < figureRect.top || clientY > figureRect.bottom) {
-                _debugImage(inst, 'sidecar.hit-test.skip-y', {
-                    figure: _debugElementLabel(figure),
-                    figureRect: _debugRect(figureRect),
-                    visualRect: _debugRect(visualRect),
-                    x: Math.round(clientX),
-                    y: Math.round(clientY)
-                });
-                continue;
-            }
-
-            var hPos = figure.getAttribute('data-horizontal-position') || 'left';
-            var isSideArea = hPos === 'right'
-                ? clientX < visualRect.left - 4
-                : clientX > visualRect.right + 4;
-            if (isSideArea) {
-                if (topFigure && topFigure !== figure) {
-                    _debugImage(inst, 'sidecar.hit-test.skip-visible-image', {
-                        figure: _debugElementLabel(figure),
-                        topFigure: _debugElementLabel(topFigure),
-                        topElement: _debugElementLabel(topElement),
-                        figureRect: _debugRect(figureRect),
-                        visualRect: _debugRect(visualRect),
-                        horizontalPosition: hPos,
-                        x: Math.round(clientX),
-                        y: Math.round(clientY)
-                    });
-                    return null;
-                }
-
-                _debugImage(inst, 'sidecar.hit-test.match', {
-                    figure: _debugElementLabel(figure),
-                    figureRect: _debugRect(figureRect),
-                    visualRect: _debugRect(visualRect),
-                    horizontalPosition: hPos,
-                    x: Math.round(clientX),
-                    y: Math.round(clientY)
-                });
-                return _ensureWrappedImageSideTextBlock(inst, figure, true);
-            }
-
-            _debugImage(inst, 'sidecar.hit-test.not-side-area', {
-                figure: _debugElementLabel(figure),
-                figureRect: _debugRect(figureRect),
-                visualRect: _debugRect(visualRect),
-                horizontalPosition: hPos,
-                x: Math.round(clientX),
-                y: Math.round(clientY)
-            });
-        }
-
-        _debugImage(inst, 'sidecar.hit-test.no-match', {
-            x: Math.round(clientX),
-            y: Math.round(clientY)
-        });
-        return null;
-    }
-
-    function _getCaretRangeFromPoint(doc, clientX, clientY) {
-        if (!doc || !Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
-        if (typeof doc.caretRangeFromPoint === 'function') {
-            return doc.caretRangeFromPoint(clientX, clientY);
-        }
-
-        if (typeof doc.caretPositionFromPoint === 'function') {
-            var position = doc.caretPositionFromPoint(clientX, clientY);
-            if (!position) return null;
-            var range = doc.createRange();
-            range.setStart(position.offsetNode, position.offset);
-            range.collapse(true);
-            return range;
-        }
-
-        return null;
-    }
-
-    function _trySetCaretFromPointInBlock(block, clientX, clientY) {
-        if (!block || !block.ownerDocument) return false;
-        var range = _getCaretRangeFromPoint(block.ownerDocument, clientX, clientY);
-        if (!range) return false;
-
-        var container = range.startContainer;
-        var element = container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement;
-        if (!element || !block.contains(element)) {
-            _debugImage(null, 'sidecar.caret-from-point.outside-block', {
-                block: _debugElementLabel(block),
-                rangeElement: _debugElementLabel(element),
-                x: Math.round(clientX),
-                y: Math.round(clientY)
-            });
-            return false;
-        }
-
-        var sel = block.ownerDocument.defaultView && block.ownerDocument.defaultView.getSelection
-            ? block.ownerDocument.defaultView.getSelection()
-            : window.getSelection();
-        if (!sel) return false;
-        var rect = range.getBoundingClientRect ? range.getBoundingClientRect() : null;
-        if (rect && rect.width <= 1 && rect.height > 0 && clientX > rect.right + 8) {
-            _debugImage(null, 'sidecar.caret-from-point.reject-left-edge', {
-                block: _debugElementLabel(block),
-                rangeRect: _debugRect(rect),
-                x: Math.round(clientX),
-                y: Math.round(clientY)
-            });
-            return false;
-        }
-        sel.removeAllRanges();
-        sel.addRange(range);
-        _debugImage(null, 'sidecar.caret-from-point.applied', {
-            block: _debugElementLabel(block),
-            rangeRect: _debugRect(rect),
-            x: Math.round(clientX),
-            y: Math.round(clientY)
-        });
-        return true;
-    }
-
-    function _focusWrappedImageSideTextBlock(inst, block, clientX, clientY) {
-        if (!block) return;
-
-        var editable = block.closest('[contenteditable="true"]');
-        var bodyRegion = block.closest('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]');
-        if (bodyRegion && inst && inst.root && inst.root.contains(bodyRegion)) {
+        if (bodyRegion && inst.root && inst.root.contains(bodyRegion)) {
             _markActivePageRegion(inst, bodyRegion);
-        }
-
-        if (editable && typeof editable.focus === 'function') {
-            editable.focus({ preventScroll: true });
-        }
-
-        if (_trySetCaretFromPointInBlock(block, clientX, clientY)) {
-            var pointSnapshot = _captureSelectionSnapshot(inst);
-            if (pointSnapshot) {
-                inst.lastSelectionSnapshot = pointSnapshot;
-                inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(pointSnapshot);
-                _scheduleSelectionNotification(inst, pointSnapshot);
+            if (typeof bodyRegion.focus === 'function') {
+                bodyRegion.focus({ preventScroll: true });
             }
-            _debugImage(inst, 'sidecar.focus.point', {
-                block: _debugElementLabel(block),
-                snapshot: pointSnapshot
-            });
-            return;
         }
 
-        var inline = block.querySelector('[data-inline-id]');
-        if (inline) {
-            _removeCaretPlaceholders(inline);
-            if (!inline.firstChild) {
-                inline.appendChild(document.createTextNode(''));
-            }
-
-            var textNode = Array.from(inline.childNodes).find(function (node) {
-                return node.nodeType === Node.TEXT_NODE;
-            });
-            if (!textNode) {
-                textNode = document.createTextNode('');
-                inline.insertBefore(textNode, inline.firstChild);
-            }
-
-            _setCaret(textNode, textNode.textContent ? textNode.textContent.length : 0);
-        } else {
-            _placeCaretAfterBlock(block);
+        inst.lastHitTest = _sanitizeHitTestForSnapshot(hit);
+        if (extendAnchorNode && !_setSelectionRangeBetween(inst, extendAnchorNode, extendAnchorOffset, textNode, targetOffset)) {
+            _setCaret(textNode, targetOffset);
+        } else if (!extendAnchorNode) {
+            _setCaret(textNode, targetOffset);
         }
-
         var snapshot = _captureSelectionSnapshot(inst);
+        snapshot = _enrichSelectionSnapshotFromHitTest(snapshot, hit);
         if (snapshot) {
             inst.lastSelectionSnapshot = snapshot;
+            inst.lastTextSelectionSnapshot = snapshot;
             inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
             _scheduleSelectionNotification(inst, snapshot);
         }
-        _debugImage(inst, 'sidecar.focus.fallback-end', {
-            block: _debugElementLabel(block),
-            snapshot: snapshot
-        });
+        return true;
+    }
+
+    function _setSelectionRangeBetween(inst, anchorNode, anchorOffset, focusNode, focusOffset) {
+        if (!inst || !anchorNode || !focusNode || !inst.root.contains(anchorNode) || !inst.root.contains(focusNode)) return false;
+        try {
+            var range = document.createRange();
+            var comparison = anchorNode === focusNode
+                ? (anchorOffset <= focusOffset ? Node.DOCUMENT_POSITION_FOLLOWING : Node.DOCUMENT_POSITION_PRECEDING)
+                : anchorNode.compareDocumentPosition(focusNode);
+            if (anchorNode === focusNode ? anchorOffset <= focusOffset : !!(comparison & Node.DOCUMENT_POSITION_FOLLOWING)) {
+                range.setStart(anchorNode, anchorOffset);
+                range.setEnd(focusNode, focusOffset);
+            } else {
+                range.setStart(focusNode, focusOffset);
+                range.setEnd(anchorNode, anchorOffset);
+            }
+            var selection = window.getSelection && window.getSelection();
+            if (!selection) return false;
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    function _enrichSelectionSnapshotFromHitTest(snapshot, hit) {
+        if (!snapshot || !hit) return snapshot;
+        snapshot.layoutLineId = hit.LayoutLineId || snapshot.layoutLineId || null;
+        snapshot.LayoutLineId = snapshot.layoutLineId;
+        snapshot.layoutSegmentId = hit.LayoutSegmentId || snapshot.layoutSegmentId || null;
+        snapshot.LayoutSegmentId = snapshot.layoutSegmentId;
+        snapshot.visualLineIndex = hit.VisualLineIndex ?? snapshot.visualLineIndex ?? null;
+        snapshot.VisualLineIndex = snapshot.visualLineIndex;
+        snapshot.activeObjectId = String(hit.Kind || '').indexOf('Image') === 0
+            ? (hit.ActiveObjectId || hit.ObjectId || snapshot.activeObjectId || null)
+            : null;
+        snapshot.ActiveObjectId = snapshot.activeObjectId;
+        snapshot.hitTargetKind = hit.Kind || snapshot.hitTargetKind || null;
+        snapshot.HitTargetKind = snapshot.hitTargetKind;
+        return snapshot;
+    }
+
+    function _sanitizeHitTestForSnapshot(hit) {
+        if (!hit) return null;
+        return {
+            Kind: hit.Kind,
+            X: hit.X,
+            Y: hit.Y,
+            BlockId: hit.BlockId,
+            InlineId: hit.InlineId,
+            Offset: hit.Offset,
+            LayoutLineId: hit.LayoutLineId,
+            LayoutSegmentId: hit.LayoutSegmentId,
+            VisualLineIndex: hit.VisualLineIndex,
+            ActiveObjectId: hit.ActiveObjectId || hit.ObjectId,
+            ActiveImageBlockId: hit.ActiveImageBlockId,
+            CellId: hit.CellId
+        };
     }
 
     // ── Input pipeline ───────────────────────────────────────────────────────
@@ -2487,7 +3104,7 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
-    function _applyInsertText(inst, data) {
+    function _applyInsertText(inst, data, selection) {
         if (!data) return null;
         inst._applyingOwnPatch = true;
         try {
@@ -2505,6 +3122,12 @@ window.tmDocumentWysiwyg = (function () {
             if (untrackedRevisionInsert) {
                 untrackedRevisionInsert.replacedText = replacedText;
                 return untrackedRevisionInsert;
+            }
+
+            var layoutInsert = _applyLayoutInsertText(inst, data, selection, sel);
+            if (layoutInsert) {
+                layoutInsert.replacedText = replacedText;
+                return layoutInsert;
             }
 
             var textNode = range.startContainer;
@@ -2629,7 +3252,7 @@ window.tmDocumentWysiwyg = (function () {
         });
     }
 
-    function _applyDeleteBackward(inst, unit) {
+    function _applyDeleteBackward(inst, unit, selection) {
         inst._applyingOwnPatch = true;
         try {
             var sel = window.getSelection();
@@ -2642,6 +3265,11 @@ window.tmDocumentWysiwyg = (function () {
             var range = sel.getRangeAt(0);
             var textNode = range.startContainer;
             var offset = range.startOffset;
+
+            var layoutDelete = _applyLayoutDeleteText(inst, selection, unit, true);
+            if (layoutDelete) {
+                return layoutDelete;
+            }
 
             if (textNode.nodeType === Node.TEXT_NODE) {
                 var current = textNode.textContent;
@@ -2660,7 +3288,7 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
-    function _applyDeleteForward(inst, unit) {
+    function _applyDeleteForward(inst, unit, selection) {
         inst._applyingOwnPatch = true;
         try {
             var sel = window.getSelection();
@@ -2674,6 +3302,11 @@ window.tmDocumentWysiwyg = (function () {
             var textNode = range.startContainer;
             var offset = range.startOffset;
 
+            var layoutDelete = _applyLayoutDeleteText(inst, selection, unit, false);
+            if (layoutDelete) {
+                return layoutDelete;
+            }
+
             if (textNode.nodeType === Node.TEXT_NODE) {
                 var current = textNode.textContent;
                 var delLen = unit === 'word' ? _wordBoundaryForward(current, offset) : 1;
@@ -2683,10 +3316,374 @@ window.tmDocumentWysiwyg = (function () {
                 return delLen > 0 ? { deletedText: deletedText, deletedRange: false } : null;
             }
 
-            return null;
+            return _mergeCurrentBlockWithNext(inst, range.startContainer);
         } finally {
             inst._applyingOwnPatch = false;
         }
+    }
+
+    function _isLayoutSelectionSnapshot(selection) {
+        return !!(selection
+            && (selection.layoutLineId || selection.LayoutLineId
+                || selection.layoutSegmentId || selection.LayoutSegmentId
+                || selection.visualLineIndex != null || selection.VisualLineIndex != null));
+    }
+
+    function _requestLocalLayoutSnapshotRender(inst, beforeSelection, afterSelection) {
+        if (!inst || (!_isLayoutSelectionSnapshot(beforeSelection) && !_isLayoutSelectionSnapshot(afterSelection))) {
+            return;
+        }
+
+        inst.forceNextLocalSnapshotRender = true;
+        inst.forceNextLocalSnapshotSelection = _cloneRuntimeJson(afterSelection || beforeSelection || null);
+    }
+
+    function _selectionValue(selection, camelName, pascalName, fallback) {
+        if (!selection) return fallback;
+        if (Object.prototype.hasOwnProperty.call(selection, camelName)) return selection[camelName];
+        if (Object.prototype.hasOwnProperty.call(selection, pascalName)) return selection[pascalName];
+        return fallback;
+    }
+
+    function _getSelectionBlockId(selection) {
+        return _selectionValue(selection, 'anchorBlockId', 'AnchorBlockId', '')
+            || _selectionValue(selection, 'focusBlockId', 'FocusBlockId', '');
+    }
+
+    function _getSelectionInlineId(selection) {
+        return _selectionValue(selection, 'anchorInlineId', 'AnchorInlineId', '')
+            || _selectionValue(selection, 'focusInlineId', 'FocusInlineId', '');
+    }
+
+    function _getSelectionOffset(selection) {
+        return _selectionValue(selection, 'anchorOffset', 'AnchorOffset', 0) || 0;
+    }
+
+    function _getSelectionSegmentId(selection) {
+        return _selectionValue(selection, 'layoutSegmentId', 'LayoutSegmentId', '') || '';
+    }
+
+    function _collectLayoutTextSegments(inst, selection) {
+        if (!inst || !inst.root || !_isLayoutSelectionSnapshot(selection)) return [];
+
+        var blockId = _getSelectionBlockId(selection);
+        var inlineId = _getSelectionInlineId(selection);
+        if (!blockId || !inlineId) return [];
+
+        return Array.from(inst.root.querySelectorAll('.tm-wysiwyg-layout-segment[data-inline-id]'))
+            .filter(function (segment) {
+                if ((segment.getAttribute('data-inline-id') || '') !== inlineId) return false;
+                return _layoutSegmentBelongsToBlock(segment, blockId);
+            })
+            .map(function (segment) {
+                var textNode = _firstDeepTextNode(segment);
+                if (!textNode) {
+                    textNode = document.createTextNode('');
+                    segment.appendChild(textNode);
+                }
+
+                var startOffset = parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10);
+                var line = segment.closest('.tm-wysiwyg-layout-line[data-layout-line-id]');
+                return {
+                    id: segment.getAttribute('data-layout-segment-id') || '',
+                    lineId: segment.getAttribute('data-layout-line-id') || (line ? line.getAttribute('data-layout-line-id') || '' : ''),
+                    visualLineIndex: line ? (parseInt(line.getAttribute('data-visual-line-index') || '0', 10) || 0) : 0,
+                    inlineId: inlineId,
+                    blockId: blockId,
+                    startOffset: Number.isFinite(startOffset) ? startOffset : 0,
+                    element: segment,
+                    textNode: textNode,
+                    text: textNode.textContent || ''
+                };
+            })
+            .sort(function (left, right) {
+                if (left.startOffset !== right.startOffset) return left.startOffset - right.startOffset;
+                return (left.visualLineIndex || 0) - (right.visualLineIndex || 0);
+            });
+    }
+
+    function _layoutSegmentBelongsToBlock(segment, blockId) {
+        var current = segment;
+        while (current) {
+            if (current.nodeType === Node.ELEMENT_NODE && current.getAttribute && current.getAttribute('data-block-id') === blockId) {
+                return true;
+            }
+
+            if (current.classList && current.classList.contains('tm-wysiwyg-host')) {
+                return false;
+            }
+
+            current = current.parentElement;
+        }
+
+        return false;
+    }
+
+    function _normalizeLayoutEditSegments(segments) {
+        return (segments || [])
+            .map(function (segment, index) {
+                var text = segment.Text ?? segment.text ?? '';
+                var rawStart = segment.StartOffset ?? segment.startOffset ?? segment.start ?? 0;
+                var start = parseInt(rawStart, 10);
+                return {
+                    id: segment.Id || segment.id || ('segment-' + index),
+                    startOffset: Number.isFinite(start) ? start : 0,
+                    text: String(text == null ? '' : text)
+                };
+            })
+            .sort(function (left, right) {
+                if (left.startOffset !== right.startOffset) return left.startOffset - right.startOffset;
+                return left.id.localeCompare(right.id);
+            });
+    }
+
+    function _composeLayoutTextFromSegments(segments) {
+        var fullText = '';
+        segments.forEach(function (segment) {
+            var start = Math.max(0, segment.startOffset || 0);
+            var text = segment.text || '';
+            if (start > fullText.length) {
+                fullText += ' '.repeat(start - fullText.length);
+            }
+
+            fullText = fullText.slice(0, start) + text + fullText.slice(start + text.length);
+        });
+        return fullText;
+    }
+
+    function _applyLayoutTextEditModel(segments, edit) {
+        var normalized = _normalizeLayoutEditSegments(segments);
+        var text = _composeLayoutTextFromSegments(normalized);
+        var inputType = edit ? (edit.InputType || edit.inputType || '') : '';
+        var data = edit ? (edit.Data ?? edit.data ?? '') : '';
+        var offset = edit ? (edit.Offset ?? edit.offset ?? 0) : 0;
+        offset = Math.max(0, Math.min(parseInt(offset, 10) || 0, text.length));
+        var unit = edit ? (edit.Unit || edit.unit || 'character') : 'character';
+
+        if (inputType === 'insertText') {
+            var insertedText = String(data == null ? '' : data);
+            return {
+                Handled: insertedText.length > 0,
+                Text: text.slice(0, offset) + insertedText + text.slice(offset),
+                InsertedText: insertedText,
+                DeletedText: '',
+                StartOffset: offset,
+                EndOffset: offset,
+                CaretOffset: offset + insertedText.length
+            };
+        }
+
+        if (inputType === 'deleteContentBackward' || inputType === 'deleteWordBackward') {
+            if (offset <= 0) {
+                return { Handled: false, MergePrevious: true, Text: text, StartOffset: 0, EndOffset: 0, CaretOffset: 0 };
+            }
+
+            var backwardLength = unit === 'word' || inputType === 'deleteWordBackward'
+                ? _wordBoundaryBackward(text, offset)
+                : 1;
+            var backwardStart = Math.max(0, offset - Math.max(1, backwardLength));
+            return {
+                Handled: backwardStart < offset,
+                Text: text.slice(0, backwardStart) + text.slice(offset),
+                DeletedText: text.slice(backwardStart, offset),
+                StartOffset: backwardStart,
+                EndOffset: offset,
+                CaretOffset: backwardStart
+            };
+        }
+
+        if (inputType === 'deleteContentForward' || inputType === 'deleteWordForward') {
+            if (offset >= text.length) {
+                return { Handled: false, MergeNext: true, Text: text, StartOffset: offset, EndOffset: offset, CaretOffset: offset };
+            }
+
+            var forwardLength = unit === 'word' || inputType === 'deleteWordForward'
+                ? _wordBoundaryForward(text, offset)
+                : 1;
+            var forwardEnd = Math.min(text.length, offset + Math.max(1, forwardLength));
+            return {
+                Handled: forwardEnd > offset,
+                Text: text.slice(0, offset) + text.slice(forwardEnd),
+                DeletedText: text.slice(offset, forwardEnd),
+                StartOffset: offset,
+                EndOffset: forwardEnd,
+                CaretOffset: offset
+            };
+        }
+
+        if (inputType === 'insertParagraph') {
+            return {
+                Handled: true,
+                Text: text,
+                SplitBefore: text.slice(0, offset),
+                SplitAfter: text.slice(offset),
+                StartOffset: offset,
+                EndOffset: offset,
+                CaretOffset: 0
+            };
+        }
+
+        return { Handled: false, Text: text, StartOffset: offset, EndOffset: offset, CaretOffset: offset };
+    }
+
+    function _applyLayoutInsertText(inst, data, selection, browserSelection) {
+        if (!_isLayoutSelectionSnapshot(selection) || !browserSelection || !browserSelection.isCollapsed) return null;
+
+        var segments = _collectLayoutTextSegments(inst, selection);
+        if (segments.length === 0) return null;
+
+        var offset = _getSelectionOffset(selection);
+        var result = _applyLayoutTextEditModel(segments, {
+            inputType: 'insertText',
+            offset: offset,
+            data: data
+        });
+        if (!result.Handled) return null;
+
+        var preferredSegmentId = _getSelectionSegmentId(selection);
+        var target = _findLayoutSegmentForCaret(segments, offset, preferredSegmentId, 'after');
+        if (!target) return null;
+
+        var text = target.segment.textNode.textContent || '';
+        var localOffset = Math.max(0, Math.min(target.offset, text.length));
+        target.segment.textNode.textContent = text.slice(0, localOffset) + data + text.slice(localOffset);
+        target.segment.element.setAttribute('data-layout-length', String(target.segment.textNode.textContent.length));
+        _setCaret(target.segment.textNode, localOffset + data.length);
+        return { insertedText: data, replacedText: '', layoutTextEdit: true };
+    }
+
+    function _applyLayoutDeleteText(inst, selection, unit, backward) {
+        if (!_isLayoutSelectionSnapshot(selection)) return null;
+
+        var segments = _collectLayoutTextSegments(inst, selection);
+        if (segments.length === 0) return null;
+
+        var offset = _getSelectionOffset(selection);
+        var inputType = backward
+            ? (unit === 'word' ? 'deleteWordBackward' : 'deleteContentBackward')
+            : (unit === 'word' ? 'deleteWordForward' : 'deleteContentForward');
+        var result = _applyLayoutTextEditModel(segments, {
+            inputType: inputType,
+            offset: offset,
+            unit: unit
+        });
+
+        if (result.MergePrevious) {
+            return null;
+        }
+
+        if (result.MergeNext) {
+            var current = _findLayoutSegmentForCaret(segments, offset, _getSelectionSegmentId(selection), 'before');
+            return current ? _mergeCurrentBlockWithNext(inst, current.segment.element) : null;
+        }
+
+        if (!result.Handled) return null;
+
+        _deleteLayoutTextRange(segments, result.StartOffset, result.EndOffset);
+        _setLayoutCaretAtAbsoluteOffset(
+            segments,
+            result.CaretOffset,
+            _getSelectionSegmentId(selection),
+            backward ? 'after' : 'before');
+        return {
+            deletedText: result.DeletedText || '',
+            deletedRange: false,
+            layoutTextEdit: true
+        };
+    }
+
+    function _deleteLayoutTextRange(segments, startOffset, endOffset) {
+        var start = Math.max(0, startOffset || 0);
+        var end = Math.max(start, endOffset || start);
+        segments.forEach(function (segment) {
+            var text = segment.textNode.textContent || '';
+            var segmentStart = segment.startOffset || 0;
+            var segmentEnd = segmentStart + text.length;
+            var overlapStart = Math.max(start, segmentStart);
+            var overlapEnd = Math.min(end, segmentEnd);
+            if (overlapEnd <= overlapStart) return;
+
+            var localStart = overlapStart - segmentStart;
+            var localEnd = overlapEnd - segmentStart;
+            segment.textNode.textContent = text.slice(0, localStart) + text.slice(localEnd);
+            segment.element.setAttribute('data-layout-length', String(segment.textNode.textContent.length));
+        });
+    }
+
+    function _findLayoutSegmentForCaret(segments, absoluteOffset, preferredSegmentId, affinity) {
+        if (!segments || segments.length === 0) return null;
+        var offset = Math.max(0, absoluteOffset || 0);
+        var preferred = preferredSegmentId
+            ? segments.find(function (segment) {
+                var textLength = (segment.textNode ? segment.textNode.textContent : segment.text || '').length;
+                return segment.id === preferredSegmentId
+                    && offset >= segment.startOffset
+                    && offset <= segment.startOffset + textLength;
+            })
+            : null;
+        if (preferred) {
+            return {
+                segment: preferred,
+                offset: Math.max(0, Math.min(offset - preferred.startOffset, (preferred.textNode.textContent || '').length))
+            };
+        }
+
+        var containing = segments.filter(function (segment) {
+            var text = segment.textNode ? segment.textNode.textContent || '' : segment.text || '';
+            return offset >= segment.startOffset && offset <= segment.startOffset + text.length;
+        });
+
+        if (containing.length > 0) {
+            var candidate = containing[0];
+            if (affinity === 'before') {
+                candidate = containing
+                    .slice()
+                    .sort(function (left, right) {
+                        var leftEnd = left.startOffset + (left.textNode ? left.textNode.textContent || '' : left.text || '').length;
+                        var rightEnd = right.startOffset + (right.textNode ? right.textNode.textContent || '' : right.text || '').length;
+                        if (leftEnd !== rightEnd) return rightEnd - leftEnd;
+                        return right.startOffset - left.startOffset;
+                    })[0];
+            } else if (affinity === 'after') {
+                candidate = containing
+                    .slice()
+                    .sort(function (left, right) {
+                        if (left.startOffset !== right.startOffset) return left.startOffset - right.startOffset;
+                        return (left.visualLineIndex || 0) - (right.visualLineIndex || 0);
+                    })[0];
+            }
+
+            var candidateText = candidate.textNode ? candidate.textNode.textContent || '' : candidate.text || '';
+            return {
+                segment: candidate,
+                offset: Math.max(0, Math.min(offset - candidate.startOffset, candidateText.length))
+            };
+        }
+
+        var previous = null;
+        var next = null;
+        for (var i = 0; i < segments.length; i++) {
+            var segment = segments[i];
+            var segmentText = segment.textNode ? segment.textNode.textContent || '' : segment.text || '';
+            var segmentEnd = segment.startOffset + segmentText.length;
+            if (segmentEnd <= offset) previous = segment;
+            if (segment.startOffset >= offset && !next) next = segment;
+        }
+
+        var fallback = affinity === 'after' ? (next || previous) : (previous || next);
+        if (!fallback) fallback = segments[segments.length - 1];
+        var fallbackText = fallback.textNode ? fallback.textNode.textContent || '' : fallback.text || '';
+        return {
+            segment: fallback,
+            offset: Math.max(0, Math.min(offset - fallback.startOffset, fallbackText.length))
+        };
+    }
+
+    function _setLayoutCaretAtAbsoluteOffset(segments, absoluteOffset, preferredSegmentId, affinity) {
+        var target = _findLayoutSegmentForCaret(segments, absoluteOffset, preferredSegmentId, affinity);
+        if (!target || !target.segment || !target.segment.textNode) return false;
+        _setCaret(target.segment.textNode, target.offset);
+        return true;
     }
 
     function _mergeCurrentBlockWithPrevious(inst, node) {
@@ -2716,6 +3713,35 @@ window.tmDocumentWysiwyg = (function () {
 
         _invalidateMeasureCache(inst);
         return { deletedText: '', deletedRange: false, mergedBlock: true };
+    }
+
+    function _mergeCurrentBlockWithNext(inst, node) {
+        var block = _closestBlockElement(node);
+        if (!block) return null;
+
+        var body = block.parentElement;
+        if (!body) return null;
+
+        var siblings = Array.from(body.querySelectorAll(':scope > .tm-wysiwyg-block[data-block-id]'));
+        var index = siblings.indexOf(block);
+        if (index < 0 || index >= siblings.length - 1) return null;
+
+        var next = siblings[index + 1];
+        if (!next || next.matches('figure, table, hr')) return null;
+
+        var caretNode = _lastDeepTextNode(block) || _firstDeepTextNode(block);
+        var caretOffset = caretNode ? (caretNode.textContent || '').length : 0;
+        while (next.firstChild) {
+            block.appendChild(next.firstChild);
+        }
+        next.remove();
+
+        if (caretNode) {
+            _setCaret(caretNode, caretOffset);
+        }
+
+        _invalidateMeasureCache(inst);
+        return { deletedText: '', deletedRange: false, mergedBlock: true, mergeForward: true };
     }
 
     function _wordBoundaryBackward(text, offset) {
@@ -2760,6 +3786,21 @@ window.tmDocumentWysiwyg = (function () {
             floatingRepositionTotalMs: 0,
             floatingRepositionMaxMs: 0,
             floatingRepositionLastMs: 0,
+            layoutPassCount: 0,
+            layoutPassTotalMs: 0,
+            layoutPassMaxMs: 0,
+            layoutPassLastMs: 0,
+            layoutReflowAfterDragCount: 0,
+            layoutReflowAfterDragTotalMs: 0,
+            layoutReflowAfterDragMaxMs: 0,
+            layoutReflowAfterDragLastMs: 0,
+            layoutReflowAfterResizeCount: 0,
+            layoutReflowAfterResizeTotalMs: 0,
+            layoutReflowAfterResizeMaxMs: 0,
+            layoutReflowAfterResizeLastMs: 0,
+            layoutInvalidatedPageCount: 0,
+            layoutInvalidatedPages: [],
+            layoutLastReason: '',
             clipboardNormalizationCount: 0,
             clipboardNormalizationTotalMs: 0,
             clipboardNormalizationMaxMs: 0,
@@ -2799,6 +3840,96 @@ window.tmDocumentWysiwyg = (function () {
         stats.floatingRepositionTotalMs += elapsed;
         stats.floatingRepositionLastMs = elapsed;
         stats.floatingRepositionMaxMs = Math.max(stats.floatingRepositionMaxMs || 0, elapsed);
+    }
+
+    function _recordLayoutPassMetric(inst, start, reason, previousSnapshot, nextSnapshot) {
+        if (!inst) return;
+        var stats = _ensurePerformanceStats(inst);
+        var elapsed = Math.max(0, _performanceNow() - start);
+        var normalizedReason = String(reason || 'layout').toLowerCase();
+        var invalidatedPages = _estimateLayoutInvalidatedPages(normalizedReason, previousSnapshot, nextSnapshot);
+
+        stats.layoutPassCount++;
+        stats.layoutPassTotalMs += elapsed;
+        stats.layoutPassLastMs = elapsed;
+        stats.layoutPassMaxMs = Math.max(stats.layoutPassMaxMs || 0, elapsed);
+        stats.layoutInvalidatedPages = invalidatedPages;
+        stats.layoutInvalidatedPageCount = invalidatedPages.length;
+        stats.layoutLastReason = reason || 'layout';
+
+        if (normalizedReason.indexOf('image-drag') >= 0) {
+            stats.layoutReflowAfterDragCount++;
+            stats.layoutReflowAfterDragTotalMs += elapsed;
+            stats.layoutReflowAfterDragLastMs = elapsed;
+            stats.layoutReflowAfterDragMaxMs = Math.max(stats.layoutReflowAfterDragMaxMs || 0, elapsed);
+        } else if (normalizedReason.indexOf('image-resize') >= 0) {
+            stats.layoutReflowAfterResizeCount++;
+            stats.layoutReflowAfterResizeTotalMs += elapsed;
+            stats.layoutReflowAfterResizeLastMs = elapsed;
+            stats.layoutReflowAfterResizeMaxMs = Math.max(stats.layoutReflowAfterResizeMaxMs || 0, elapsed);
+        }
+    }
+
+    function _estimateLayoutInvalidatedPages(reason, previousSnapshot, nextSnapshot) {
+        var nextPages = (nextSnapshot && (nextSnapshot.Pages || nextSnapshot.pages)) || [];
+        var previousPages = (previousSnapshot && (previousSnapshot.Pages || previousSnapshot.pages)) || [];
+        if (!nextPages.length) return [];
+        if (!previousPages.length || reason === 'runtime-document' || reason === 'snapshot' || reason === 'header-footer-layout-command') {
+            return nextPages.map(function (page, index) { return page.PageIndex ?? page.pageIndex ?? index; });
+        }
+
+        if (reason.indexOf('image-drag') >= 0 || reason.indexOf('image-resize') >= 0 || reason.indexOf('image') >= 0) {
+            var previousObjects = _indexLayoutObjectsByBlock(previousPages);
+            var changed = new Set();
+            nextPages.forEach(function (page, pageIndex) {
+                var objects = (page && (page.Objects || page.objects)) || [];
+                objects.forEach(function (obj) {
+                    var blockId = obj.BlockId || obj.blockId || '';
+                    var previous = previousObjects[blockId];
+                    if (!previous || _layoutObjectSignature(previous.object) !== _layoutObjectSignature(obj)) {
+                        changed.add(page.PageIndex ?? page.pageIndex ?? pageIndex);
+                        if (previous) changed.add(previous.pageIndex);
+                    }
+                });
+            });
+            if (changed.size > 0) return Array.from(changed).sort(function (a, b) { return a - b; });
+        }
+
+        return nextPages.map(function (page, index) { return page.PageIndex ?? page.pageIndex ?? index; });
+    }
+
+    function _indexLayoutObjectsByBlock(pages) {
+        var map = {};
+        (pages || []).forEach(function (page, pageIndex) {
+            var objects = (page && (page.Objects || page.objects)) || [];
+            objects.forEach(function (obj) {
+                var blockId = obj.BlockId || obj.blockId || '';
+                if (blockId) {
+                    map[blockId] = {
+                        object: obj,
+                        pageIndex: page.PageIndex ?? page.pageIndex ?? pageIndex
+                    };
+                }
+            });
+        });
+        return map;
+    }
+
+    function _layoutObjectSignature(obj) {
+        var rect = (obj && (obj.ObjectRect || obj.objectRect)) || {};
+        var wrap = (obj && (obj.WrapRect || obj.wrapRect)) || {};
+        return [
+            _roundLayoutNumber(rect.X ?? rect.x ?? 0),
+            _roundLayoutNumber(rect.Y ?? rect.y ?? 0),
+            _roundLayoutNumber(rect.Width ?? rect.width ?? 0),
+            _roundLayoutNumber(rect.Height ?? rect.height ?? 0),
+            _roundLayoutNumber(wrap.X ?? wrap.x ?? 0),
+            _roundLayoutNumber(wrap.Y ?? wrap.y ?? 0),
+            _roundLayoutNumber(wrap.Width ?? wrap.width ?? 0),
+            _roundLayoutNumber(wrap.Height ?? wrap.height ?? 0),
+            obj && (obj.WrapMode ?? obj.wrapMode ?? ''),
+            obj && (obj.ZIndex ?? obj.zIndex ?? 0)
+        ].join('|');
     }
 
     function _recordClipboardNormalizationMetric(inst, start) {
@@ -2879,7 +4010,7 @@ window.tmDocumentWysiwyg = (function () {
             var insertSelection = deleteSelection
                 ? _collapseSelectionSnapshot(selection, deleteSelection.startOffset)
                 : selection;
-            var result = _applyInsertText(inst, text);
+            var result = _applyInsertText(inst, text, insertSelection);
             if (!result) return true;
 
             _invalidateMeasureCache(inst);
@@ -2888,6 +4019,7 @@ window.tmDocumentWysiwyg = (function () {
             _scheduleSelectionNotification(inst, afterSelection);
             inst.jsOwnedInputCount++;
             _markIncrementalRender(inst, 'insertText');
+            _requestLocalLayoutSnapshotRender(inst, insertSelection, afterSelection);
 
             if (deleteSelection) {
                 _flushPendingInputPatch(inst);
@@ -2922,8 +4054,8 @@ window.tmDocumentWysiwyg = (function () {
                 ? _createDeleteRangePatchFromSelection(inst, selection)
                 : null;
             var deleteResult = backward
-                ? _applyDeleteBackward(inst, unit)
-                : _applyDeleteForward(inst, unit);
+                ? _applyDeleteBackward(inst, unit, selection)
+                : _applyDeleteForward(inst, unit, selection);
             if (!deleteResult) return true;
 
             _invalidateMeasureCache(inst);
@@ -2932,6 +4064,7 @@ window.tmDocumentWysiwyg = (function () {
             _scheduleSelectionNotification(inst, afterDeleteSelection);
             inst.jsOwnedInputCount++;
             _markIncrementalRender(inst, inputType || 'deleteText');
+            _requestLocalLayoutSnapshotRender(inst, selection, afterDeleteSelection);
 
             if (deleteRangePatch) {
                 _flushPendingInputPatch(inst);
@@ -3251,7 +4384,7 @@ window.tmDocumentWysiwyg = (function () {
         return { text: deletedText, revisionId: revisionId };
     }
 
-    function _applyParagraphBreakToDom(inst) {
+    function _applyParagraphBreakToDom(inst, selection) {
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return null;
 
@@ -3264,6 +4397,10 @@ window.tmDocumentWysiwyg = (function () {
         var blockTag = block.tagName ? block.tagName.toLowerCase() : '';
         if (blockTag === 'ul' || blockTag === 'ol') {
             return _applyListParagraphBreakToDom(inst, block, range, sel);
+        }
+
+        if (_isLayoutSelectionSnapshot(selection) || block.classList.contains('tm-wysiwyg-layout-paragraph')) {
+            return _applyLayoutParagraphBreakToDom(inst, block, range, sel, selection);
         }
 
         if (!sel.isCollapsed) {
@@ -3335,6 +4472,63 @@ window.tmDocumentWysiwyg = (function () {
                 Content: {
                     $type: 'paragraph',
                     Inlines: _serializeInlines(newBlock)
+                }
+            }
+        };
+    }
+
+    function _applyLayoutParagraphBreakToDom(inst, block, range, selection, snapshot) {
+        if (!block || !range || !selection) return null;
+
+        if (!selection.isCollapsed) {
+            range.deleteContents();
+        }
+
+        var blockId = _createBlockId();
+        var inlineId = _createInlineId();
+        var newBlock = document.createElement('p');
+        newBlock.className = 'tm-wysiwyg-block';
+        newBlock.setAttribute('data-block-id', blockId);
+        newBlock.setAttribute('data-block-order', block.getAttribute('data-block-order') || '');
+        newBlock.style.cssText = block.style.cssText || '';
+        newBlock.style.position = '';
+        newBlock.style.left = '';
+        newBlock.style.top = '';
+        newBlock.style.width = '';
+        newBlock.style.minHeight = '';
+
+        var sourceSegmentId = _getSelectionSegmentId(snapshot);
+        var sourceSegment = sourceSegmentId
+            ? block.querySelector('.tm-wysiwyg-layout-segment[data-layout-segment-id="' + _cssEscape(sourceSegmentId) + '"]')
+            : null;
+        var sourceInline = sourceSegment
+            ? sourceSegment.closest('[data-inline-id]')
+            : null;
+        var newInline = sourceInline ? sourceInline.cloneNode(false) : document.createElement('span');
+        newInline.setAttribute('data-inline-id', inlineId);
+        newInline.removeAttribute('data-layout-segment-id');
+        newInline.removeAttribute('data-layout-line-id');
+        newInline.removeAttribute('data-layout-start-offset');
+        newInline.removeAttribute('data-layout-length');
+        newInline.removeAttribute('data-revision-id');
+        newInline.removeAttribute('data-revision-type');
+        newInline.removeAttribute('data-testid');
+
+        var textNode = document.createTextNode('');
+        newInline.appendChild(textNode);
+        _ensureCaretPlaceholder(newInline);
+        newBlock.appendChild(newInline);
+        block.after(newBlock);
+        _setCaret(textNode, 0);
+
+        return {
+            block: {
+                Id: blockId,
+                Type: 0,
+                ParagraphProperties: _serializeParagraphProperties(block, null),
+                Content: {
+                    $type: 'paragraph',
+                    Inlines: [{ $type: 'text', Id: inlineId, Text: '' }]
                 }
             }
         };
@@ -3488,7 +4682,7 @@ window.tmDocumentWysiwyg = (function () {
             selection,
             true);
         var result = inputType === 'insertParagraph'
-            ? _applyParagraphBreakToDom(inst)
+            ? _applyParagraphBreakToDom(inst, selection)
             : (_applySoftBreakToDom(inst) ? { block: null } : null);
         if (!result) return false;
 
@@ -3499,6 +4693,7 @@ window.tmDocumentWysiwyg = (function () {
         var afterSelection = _captureSelectionSnapshot(inst);
         inst.lastSelectionSnapshot = afterSelection;
         _scheduleSelectionNotification(inst, afterSelection);
+        _requestLocalLayoutSnapshotRender(inst, selection, afterSelection);
         _beginTypingTransaction(inst);
         var isCurrentBlockUpdate = inputType === 'insertParagraph' && result.updateCurrentBlock;
         var patch = {
@@ -3952,6 +5147,9 @@ window.tmDocumentWysiwyg = (function () {
         inst.lastPatchId = patch.patchId || patch.PatchId || patch.operationId || patch.OperationId || null;
         inst.lastPatchTransactionId = patch.transactionId || patch.TransactionId || null;
         inst.lastPatchAt = new Date().toISOString();
+        if (_applyLocalTextPatchToRuntimeDocuments(inst, patch)) {
+            _scheduleLocalLayoutReflow(inst, _getPatchAfterSelection(patch) || _getPatchBeforeSelection(patch));
+        }
         _invokeDotNet(inst, 'HandlePatchGenerated', patch);
         _scheduleRemoteQueueFlush(inst);
     }
@@ -4919,6 +6117,12 @@ window.tmDocumentWysiwyg = (function () {
 
         const html = clipboardData.getData('text/html');
         const plain = clipboardData.getData('text/plain');
+        const internalPayload = _readInternalClipboardPayload(clipboardData)
+            || (_shouldUseRememberedInternalClipboard(inst, html, plain) ? inst.internalClipboard : null);
+        if (internalPayload && _insertInternalClipboardBlocks(inst, internalPayload, _captureSelectionSnapshot(inst))) {
+            return;
+        }
+
         if ((!html || !html.trim()) && plain && !/[\r\n]/.test(plain) && !_isClipboardUrlOnlyText(plain)) {
             if (inst.trackChangesEnabled) {
                 var trackedPasteSelection = _captureSelectionSnapshot(inst);
@@ -4998,11 +6202,15 @@ window.tmDocumentWysiwyg = (function () {
         if (inst.readOnly) return;
         var payload = _serializeSelectionForClipboard(inst);
         if (!payload) return;
+        _rememberClipboardPayload(inst, payload);
 
         if (event.clipboardData) {
             event.preventDefault();
             event.clipboardData.setData('text/html', payload.html);
             event.clipboardData.setData('text/plain', payload.plain);
+            if (payload.internal) {
+                event.clipboardData.setData(_tempoClipboardMime, JSON.stringify(payload.internal));
+            }
             return;
         }
 
@@ -5028,6 +6236,147 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         return null;
+    }
+
+    function _readInternalClipboardPayload(clipboardData) {
+        if (!clipboardData || !clipboardData.getData) return null;
+        var json = '';
+        try {
+            json = clipboardData.getData(_tempoClipboardMime) || '';
+        } catch {
+            json = '';
+        }
+        if (!json || !json.trim()) return null;
+
+        try {
+            var payload = JSON.parse(json);
+            return payload && Array.isArray(payload.blocks || payload.Blocks) ? payload : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function _rememberClipboardPayload(inst, payload) {
+        if (!inst) return;
+        inst.internalClipboard = payload && payload.internal
+            ? _clonePlainJson(payload.internal)
+            : null;
+    }
+
+    function _shouldUseRememberedInternalClipboard(inst, html, plain) {
+        if (!inst || !inst.internalClipboard) return false;
+        if ((!html || !html.trim()) && (!plain || !plain.trim())) return true;
+        return _clipboardHtmlLooksLikeTempoPayload(html);
+    }
+
+    function _clipboardHtmlLooksLikeTempoPayload(html) {
+        return !!(html && /data-tempo-clipboard\s*=\s*["'](?:image-block|document-blocks)["']/i.test(String(html)));
+    }
+
+    function _insertInternalClipboardBlocks(inst, payload, selectionSnapshot) {
+        if (!inst || !payload) return false;
+        var sourceBlocks = payload.blocks || payload.Blocks || [];
+        if (!Array.isArray(sourceBlocks) || sourceBlocks.length === 0) return false;
+
+        var beforeSelection = selectionSnapshot || _captureSelectionSnapshot(inst);
+        var blocks = sourceBlocks
+            .map(function (block) { return _cloneClipboardBlockForPaste(block, beforeSelection); })
+            .filter(Boolean);
+        var region = _normalizeSchemaRegion(beforeSelection && (beforeSelection.region || beforeSelection.Region));
+        if (region === 'Image') region = 'Body';
+        blocks = _normalizeInsertionBlocksForSchema(inst, blocks, region || _getActiveSchemaRegion(inst));
+        if (!blocks.length) return false;
+
+        _commitCurrentRuntimeTransaction(inst, true);
+        _beginUndoTransaction(inst, 'paste', 'Paste', beforeSelection, true);
+        _insertClipboardBlocks(inst, blocks, beforeSelection);
+        _commitCurrentRuntimeTransaction(inst, true);
+        return true;
+    }
+
+    function _cloneClipboardBlockForPaste(block, selectionSnapshot) {
+        var clone = _clonePlainJson(block || {});
+        clone.Id = _newId(_clipboardBlockIdPrefix(clone.Type ?? clone.type));
+        clone.Type = _normalizeBlockTypeNumber(clone.Type ?? clone.type);
+        clone.Order = 0;
+        clone.Content = clone.Content || clone.content || {};
+        delete clone.id;
+        delete clone.type;
+        delete clone.order;
+        delete clone.content;
+        _reassignClipboardContentIds(clone.Content, clone.Type);
+        if (clone.Type === 5) {
+            _retargetClipboardImageLayout(clone.Content, selectionSnapshot);
+        }
+        return clone;
+    }
+
+    function _clipboardBlockIdPrefix(type) {
+        var normalized = _normalizeBlockTypeNumber(type);
+        return normalized === 5 ? 'paste-image'
+            : normalized === 4 ? 'paste-table'
+                : normalized === 6 ? 'paste-pagebreak'
+                    : 'paste';
+    }
+
+    function _reassignClipboardContentIds(content, blockType) {
+        if (!content) return;
+        if (Array.isArray(content.Inlines || content.inlines)) {
+            var inlines = content.Inlines || content.inlines;
+            content.Inlines = inlines;
+            inlines.forEach(_reassignClipboardInlineId);
+        }
+
+        var rows = content.Rows || content.rows;
+        if (Array.isArray(rows)) {
+            content.Rows = rows;
+            rows.forEach(function (row) {
+                var cells = row.Cells || row.cells || [];
+                row.Cells = cells;
+                cells.forEach(function (cell) {
+                    cell.Id = _newId('cell');
+                    cell.Blocks = (cell.Blocks || cell.blocks || [])
+                        .map(function (child) { return _cloneClipboardBlockForPaste(child, null); })
+                        .filter(Boolean);
+                    delete cell.id;
+                    delete cell.blocks;
+                });
+            });
+        }
+
+        if (blockType === 5) {
+            var layout = content.Layout || content.layout;
+            if (layout) content.Layout = layout;
+        }
+    }
+
+    function _reassignClipboardInlineId(inline) {
+        if (!inline) return;
+        inline.Id = _newId('inline');
+        delete inline.id;
+        if (inline.Children || inline.children) {
+            var children = inline.Children || inline.children || [];
+            inline.Children = children;
+            children.forEach(_reassignClipboardInlineId);
+            delete inline.children;
+        }
+    }
+
+    function _retargetClipboardImageLayout(content, selectionSnapshot) {
+        if (!content) return;
+        var layout = content.Layout || content.layout;
+        if (!layout) return;
+        content.Layout = layout;
+        delete content.layout;
+        var anchor = layout.Anchor || layout.anchor;
+        if (!anchor) return;
+        layout.Anchor = anchor;
+        delete layout.anchor;
+        var anchorBlockId = selectionSnapshot && (selectionSnapshot.anchorBlockId || selectionSnapshot.AnchorBlockId || selectionSnapshot.focusBlockId || selectionSnapshot.FocusBlockId);
+        if (anchorBlockId) {
+            anchor.BlockId = anchorBlockId;
+            delete anchor.blockId;
+        }
     }
 
     function _uploadAndInsertImageFile(inst, file, selection) {
@@ -5174,6 +6523,23 @@ window.tmDocumentWysiwyg = (function () {
 
     function _appendClipboardElementBlocks(blocks, element) {
         var tag = element.tagName.toLowerCase();
+        if (tag === 'figure') {
+            var figureImage = element.querySelector('img');
+            var figureSrc = figureImage ? (figureImage.getAttribute('src') || '') : '';
+            if (figureImage && _isSafeImageUrl(figureSrc)) {
+                blocks.push(_createTextBlock(5, {
+                    $type: 'image',
+                    Source: 0,
+                    Url: figureSrc,
+                    AltText: figureImage.getAttribute('alt') || '',
+                    Caption: (element.querySelector('figcaption')?.textContent || '').trim()
+                }));
+            } else {
+                Array.from(element.children).forEach(function (child) { _appendClipboardElementBlocks(blocks, child); });
+            }
+            return;
+        }
+
         if (tag === 'p' || tag === 'div') {
             var headingLevel = _getClipboardHeadingLevel(element);
             if (headingLevel > 0) {
@@ -5802,6 +7168,216 @@ window.tmDocumentWysiwyg = (function () {
         return true;
     }
 
+    function _handleSelectedImageKeyboard(inst, event) {
+        if (!inst || !event) return false;
+        var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        var figure = _getSelectedImageFigure(inst)
+            || (target && target.closest && target.closest('figure.tm-wysiwyg-image'));
+        if (!figure || !inst.root.contains(figure)) return false;
+        if (target && target.closest && target.closest('figcaption[contenteditable="true"]')) return false;
+
+        if (target && target.closest && target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-object-selection-pane')) {
+            if (event.key === 'Escape') {
+                _consumeKeyboardEvent(event);
+                _hideImageContextMenu(inst);
+                _hideImageReplaceMenu(inst);
+                _hideImageSelectionPane(inst);
+                _selectImageFigure(inst, figure);
+                return true;
+            }
+
+            return false;
+        }
+
+        if (target && target.closest && target.closest('.tm-wysiwyg-layout-bubble')) {
+            return _handleImageLayoutBubbleKeyboard(inst, figure, event, target);
+        }
+
+        var key = event.key || '';
+        var lowerKey = key.toLowerCase();
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && lowerKey === 'z') {
+            _consumeKeyboardEvent(event);
+            executeCommand(inst.id, event.shiftKey ? 'redo' : 'undo', {});
+            _restoreImageKeyboardFocusAfterCommand(inst, figure);
+            return true;
+        }
+
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && lowerKey === 'y') {
+            _consumeKeyboardEvent(event);
+            executeCommand(inst.id, 'redo', {});
+            _restoreImageKeyboardFocusAfterCommand(inst, figure);
+            return true;
+        }
+
+        if ((event.shiftKey && key === 'F10') || key === 'ContextMenu') {
+            _consumeKeyboardEvent(event);
+            _selectImageFigure(inst, figure);
+            var rect = figure.getBoundingClientRect();
+            _showImageContextMenu(inst, figure, rect.left + Math.min(rect.width / 2, 32), rect.bottom + 8);
+            _focusFirstImageMenuItem(inst);
+            return true;
+        }
+
+        if (key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            _consumeKeyboardEvent(event);
+            _openSelectedImageLayoutBubble(inst, figure);
+            return true;
+        }
+
+        if (key === 'Escape') {
+            _consumeKeyboardEvent(event);
+            if (_hasOpenImageUi(inst)) {
+                _hideImageContextMenu(inst);
+                _hideImageReplaceMenu(inst);
+                _hideImageSelectionPane(inst);
+                _closeSelectedImageLayoutBubble(inst, true);
+                _selectImageFigure(inst, figure);
+            } else {
+                _moveCaretFromImageSelection(inst, false);
+            }
+            return true;
+        }
+
+        if (key === 'Delete' || key === 'Backspace') {
+            _consumeKeyboardEvent(event);
+            _deleteSelectedImage(inst);
+            return true;
+        }
+
+        if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown') {
+            _consumeKeyboardEvent(event);
+            _moveSelectedImageByKeyboard(inst, figure, key, event);
+            return true;
+        }
+
+        return false;
+    }
+
+    function _handleImageLayoutBubbleKeyboard(inst, figure, event, target) {
+        if (event.key === 'Escape') {
+            _consumeKeyboardEvent(event);
+            _closeSelectedImageLayoutBubble(inst, true);
+            return true;
+        }
+
+        if (!target || !target.matches || !target.matches('.tm-wysiwyg-layout-bubble__button')) {
+            return false;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            _consumeKeyboardEvent(event);
+            target.click();
+            return true;
+        }
+
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'Home' || event.key === 'End') {
+            _consumeKeyboardEvent(event);
+            var buttons = Array.from(target.closest('.tm-wysiwyg-layout-bubble')?.querySelectorAll('.tm-wysiwyg-layout-bubble__button:not(:disabled)') || []);
+            if (buttons.length === 0) return true;
+            var index = Math.max(0, buttons.indexOf(target));
+            var nextIndex = event.key === 'Home'
+                ? 0
+                : event.key === 'End'
+                    ? buttons.length - 1
+                    : event.key === 'ArrowLeft'
+                        ? Math.max(0, index - 1)
+                        : Math.min(buttons.length - 1, index + 1);
+            buttons[nextIndex].focus({ preventScroll: true });
+            return true;
+        }
+
+        return false;
+    }
+
+    function _consumeKeyboardEvent(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
+    }
+
+    function _hasOpenImageUi(inst) {
+        return !!(inst && (inst.imageContextMenu
+            || inst.imageReplaceMenu
+            || inst.imageSelectionPane
+            || (inst.selectedImageFigure && inst.selectedImageFigure.querySelector('.tm-wysiwyg-layout-bubble--keyboard-open'))));
+    }
+
+    function _openSelectedImageLayoutBubble(inst, figure) {
+        if (!inst || !figure || !figure.isConnected) return false;
+        _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
+        _ensureLayoutObjectChrome(figure, inst);
+        _selectImageFigure(inst, figure, false, { preserveFocus: true });
+        var bubble = figure.querySelector('.tm-wysiwyg-layout-bubble');
+        if (!bubble) return false;
+        bubble.classList.add('tm-wysiwyg-layout-bubble--keyboard-open');
+        bubble.setAttribute('data-keyboard-open', 'true');
+        _refreshLayoutBubbleState(figure, bubble);
+        _positionLayoutBubbleInViewport(inst, figure, bubble);
+        var first = bubble.querySelector('.tm-wysiwyg-layout-bubble__button:not(:disabled)');
+        if (first && typeof first.focus === 'function') {
+            first.focus({ preventScroll: true });
+        }
+        return true;
+    }
+
+    function _closeSelectedImageLayoutBubble(inst, focusFigure) {
+        if (!inst || !inst.selectedImageFigure) return;
+        var bubble = inst.selectedImageFigure.querySelector('.tm-wysiwyg-layout-bubble--keyboard-open');
+        if (bubble) {
+            bubble.classList.remove('tm-wysiwyg-layout-bubble--keyboard-open');
+            bubble.removeAttribute('data-keyboard-open');
+        }
+        if (focusFigure && typeof inst.selectedImageFigure.focus === 'function') {
+            inst.selectedImageFigure.focus({ preventScroll: true });
+        }
+    }
+
+    function _focusFirstImageMenuItem(inst) {
+        window.setTimeout(function () {
+            var item = inst && inst.imageContextMenu
+                ? inst.imageContextMenu.querySelector('button[role="menuitem"]:not(:disabled), button:not(:disabled)')
+                : null;
+            if (item && typeof item.focus === 'function') {
+                item.focus({ preventScroll: true });
+            }
+        }, 0);
+    }
+
+    function _moveSelectedImageByKeyboard(inst, figure, key, event) {
+        var step = event.ctrlKey || event.metaKey ? 0.25 : (event.shiftKey ? 10 : 1);
+        var dx = key === 'ArrowLeft' ? -step : key === 'ArrowRight' ? step : 0;
+        var dy = key === 'ArrowUp' ? -step : key === 'ArrowDown' ? step : 0;
+        var x = parseFloat(figure.getAttribute('data-image-x') || '0') || 0;
+        var y = parseFloat(figure.getAttribute('data-image-y') || '0') || 0;
+        _setSelectedImageObjectPosition(inst, {
+            BlockId: figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '',
+            X: Math.round((x + dx) * 100) / 100,
+            Y: Math.round((y + dy) * 100) / 100,
+            HorizontalRelativeTo: figure.getAttribute('data-horizontal-relative-to') || 'Page',
+            VerticalRelativeTo: figure.getAttribute('data-vertical-relative-to') || 'Paragraph',
+            HorizontalPosition: figure.getAttribute('data-horizontal-position') || undefined
+        });
+    }
+
+    function _restoreImageKeyboardFocusAfterCommand(inst, figure) {
+        if (!inst || !figure) return;
+        var blockId = figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id')
+            || figure.getAttribute('data-block-id')
+            || '';
+        if (!blockId) return;
+
+        window.setTimeout(function () {
+            var nextFigure = _getImageFigureByBlockId(inst, blockId);
+            if (!nextFigure || !nextFigure.isConnected) return;
+            _selectImageFigure(inst, nextFigure);
+        }, 0);
+    }
+
     function _blockTypeName(type) {
         return type === 1 ? 'Heading'
             : type === 2 ? 'List'
@@ -5826,6 +7402,13 @@ window.tmDocumentWysiwyg = (function () {
                 }
             }
 
+            return;
+        }
+
+        var eventTarget = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        if (eventTarget && eventTarget.closest && eventTarget.closest('.tm-wysiwyg-wrap-points-editor')) {
             return;
         }
 
@@ -5883,23 +7466,8 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        if (inst.selectedImageFigure) {
-            var leaveBeforeImage = (event.shiftKey && event.key === 'Tab')
-                || event.key === 'ArrowLeft'
-                || event.key === 'ArrowUp';
-            var leaveAfterImage = (!event.shiftKey && event.key === 'Tab')
-                || event.key === 'ArrowRight'
-                || event.key === 'ArrowDown'
-                || event.key === 'Escape';
-            if (leaveBeforeImage || leaveAfterImage) {
-                event.preventDefault();
-                event.stopPropagation();
-                if (typeof event.stopImmediatePropagation === 'function') {
-                    event.stopImmediatePropagation();
-                }
-                _moveCaretFromImageSelection(inst, leaveBeforeImage);
-                return;
-            }
+        if (_handleSelectedImageKeyboard(inst, event)) {
+            return;
         }
 
         if ((event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu') {
@@ -5998,6 +7566,17 @@ window.tmDocumentWysiwyg = (function () {
 
     function _onDocumentKeyDown(inst, event) {
         if (!inst || inst.disposed || inst.readOnly || event.defaultPrevented) return;
+        var eventTarget = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        if (_handleImageWrapPointEditorKeyDown(inst, event)) {
+            return;
+        }
+
+        if (eventTarget && eventTarget.closest && eventTarget.closest('.tm-wysiwyg-wrap-points-editor')) {
+            return;
+        }
+
         if (event.key === 'Escape' && document.querySelector('.tm-color-picker--open .tm-color-picker-dropdown')) {
             return;
         }
@@ -6013,23 +7592,8 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        if (inst.selectedImageFigure) {
-            var leaveBeforeImage = (event.shiftKey && event.key === 'Tab')
-                || event.key === 'ArrowLeft'
-                || event.key === 'ArrowUp';
-            var leaveAfterImage = (!event.shiftKey && event.key === 'Tab')
-                || event.key === 'ArrowRight'
-                || event.key === 'ArrowDown'
-                || event.key === 'Escape';
-            if (leaveBeforeImage || leaveAfterImage) {
-                event.preventDefault();
-                event.stopPropagation();
-                if (typeof event.stopImmediatePropagation === 'function') {
-                    event.stopImmediatePropagation();
-                }
-                _moveCaretFromImageSelection(inst, leaveBeforeImage);
-                return;
-            }
+        if (_handleSelectedImageKeyboard(inst, event)) {
+            return;
         }
 
         if ((event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu') {
@@ -6625,15 +8189,22 @@ window.tmDocumentWysiwyg = (function () {
             revisionId = _createRevisionId();
             _createRuntimeRevision(inst, revisionId, 'Image', 'Image updated', beforeSelection, afterSelection);
         }
+        var originalBlock = _findSnapshotBlock(inst, blockId);
+        var blockOrder = originalBlock
+            ? (originalBlock.order ?? originalBlock.Order ?? 0)
+            : (parseFloat(blockEl.getAttribute('data-block-order') || '0') || 0);
+        var updatedBlock = {
+            Id: blockId,
+            Type: 5,
+            Order: blockOrder,
+            Content: _serializeImage(figureEl)
+        };
+        _upsertSnapshotBlock(inst, updatedBlock);
+        inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(inst.snapshot);
         _dispatchPatch(inst, {
             type: 'UpdateBlock',
             operationId: _nextRuntimeOperationId(inst),
-            block: {
-                Id: blockId,
-                Type: 5,
-                Order: 0,
-                Content: _serializeImage(figureEl)
-            },
+            block: updatedBlock,
             selection: afterSelection,
             beforeSelection: beforeSelection,
             afterSelection: afterSelection,
@@ -6645,30 +8216,35 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _onFloatingImagePointerDown(inst, event) {
-        _debugImage(inst, 'pointerdown.start', {
-            x: Math.round(event.clientX),
-            y: Math.round(event.clientY),
-            target: _debugElementLabel(event.target && event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target && event.target.parentElement),
-            button: event.button,
-            pointerType: event.pointerType || ''
-        });
-        var sideTextBlock = _findWrappedImageSideTextBlockAtPoint(inst, event.clientX, event.clientY);
-        if (sideTextBlock) {
-            event.preventDefault();
-            _clearSelectedImage(inst);
-            _hideImageContextMenu(inst);
-            _hideImageReplaceMenu(inst);
-            _focusWrappedImageSideTextBlock(inst, sideTextBlock, event.clientX, event.clientY);
-            _debugImage(inst, 'pointerdown.sidecar-handled', {
-                sideTextBlock: _debugElementLabel(sideTextBlock)
-            });
+        var eventTarget = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target && event.target.parentElement;
+        if (eventTarget && eventTarget.closest && eventTarget.closest('.tm-wysiwyg-wrap-points-editor')) {
             return;
         }
 
-        var handle = event.target && event.target.closest && event.target.closest('.tm-wysiwyg-image__resize-handle');
-        var figure = handle
+        _debugImage(inst, 'pointerdown.start', {
+            x: Math.round(event.clientX),
+            y: Math.round(event.clientY),
+            target: _debugElementLabel(eventTarget),
+            button: event.button,
+            pointerType: event.pointerType || ''
+        });
+        var hitTest = _getDocumentHitTestService(inst);
+        var hit = hitTest ? hitTest.hitTest(event.clientX, event.clientY) : null;
+        if (hit) {
+            inst.lastHitTest = _sanitizeHitTestForSnapshot(hit);
+        }
+        var handle = event.target && event.target.closest && event.target.closest('.tm-wysiwyg-image__resize-handle, .tm-wysiwyg-object-resize-handle');
+        if (!handle && hit && hit.Kind === 'ImageResizeHandle') {
+            handle = hit.TargetElement || hit.targetElement || null;
+        }
+        var figure = hit && hit.Kind && String(hit.Kind).indexOf('Image') === 0
+            ? hit.FigureElement
+            : null;
+        figure = figure || (handle
             ? handle.closest('figure.tm-wysiwyg-image')
-            : event.target && event.target.closest && event.target.closest('figure.tm-wysiwyg-image');
+            : event.target && event.target.closest && event.target.closest('figure.tm-wysiwyg-image'));
         if (!figure || !inst.root.contains(figure)) {
             _debugImage(inst, 'pointerdown.no-image-target', {
                 target: _debugElementLabel(event.target && event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target && event.target.parentElement)
@@ -6676,8 +8252,24 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
+        if (hit && hit.Kind && String(hit.Kind).indexOf('Image') === 0) {
+            inst.lastHitTest = _sanitizeHitTestForSnapshot(hit);
+        }
+
+        if (hit && (hit.Kind === 'ImageRotateHandle' || hit.Kind === 'ImageLayoutBubble')) {
+            event.preventDefault();
+            _selectImageFigure(inst, figure);
+            _hideInlineRevisionReview(inst);
+            _hideImageContextMenu(inst);
+            _debugImage(inst, 'pointerdown.image-control-selected', {
+                figure: _debugElementLabel(figure),
+                hitKind: hit.Kind
+            });
+            return;
+        }
+
         if (!handle) {
-            if (!_isImageVisualClick(figure, event.clientX, event.clientY)) {
+            if ((!hit || hit.Kind !== 'ImageObject') && !_isImageVisualClick(figure, event.clientX, event.clientY)) {
                 _debugImage(inst, 'pointerdown.image-nonvisual-click-ignored', {
                     figure: _debugElementLabel(figure),
                     figureRect: _debugRect(figure.getBoundingClientRect()),
@@ -6708,81 +8300,264 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
+        _beginFloatingImageObjectDrag(inst, figure, event, handle);
+    }
+
+    function _beginFloatingImageObjectDrag(inst, figure, event, handle) {
         var img = figure.querySelector('img');
         var startX = event.clientX;
         var startY = event.clientY;
-        var initialX = parseFloat(figure.getAttribute('data-image-x') || '0') || 0;
-        var initialY = parseFloat(figure.getAttribute('data-image-y') || '0') || 0;
+        var initialX = parseFloat(figure.getAttribute('data-image-x') || figure.style.left || '0') || 0;
+        var initialY = parseFloat(figure.getAttribute('data-image-y') || figure.style.top || '0') || 0;
         var initialWidth = img ? (parseFloat(img.style.width) || img.getBoundingClientRect().width || 120) : 120;
         var initialHeight = img ? (parseFloat(img.style.height) || img.getBoundingClientRect().height || 90) : 90;
         var aspectRatio = initialWidth > 0 && initialHeight > 0 ? initialHeight / initialWidth : 0;
-        var blockId = figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || '';
-        var imageSelection = {
-            Region: 'Image',
-            AnchorBlockId: blockId,
-            FocusBlockId: blockId,
-            ActiveImageBlockId: blockId,
-            AnchorOffset: 0,
-            FocusOffset: 0,
-            IsCollapsed: true
+        var resizeHandleName = _getImageResizeHandleName(handle);
+        var initialRect = {
+            X: initialX,
+            Y: initialY,
+            Width: initialWidth,
+            Height: initialHeight
         };
-        _commitCurrentRuntimeTransaction(inst, true);
-        var undoTransaction = _beginUndoTransaction(inst, 'image', handle ? 'Resize image' : 'Move image', imageSelection, true);
-        figure.classList.add('tm-wysiwyg-image--dragging');
-        figure.setAttribute('data-drag-feedback', handle ? 'resize' : 'move');
-        inst.imageDragTransaction = {
+        var blockId = figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '';
+        var imageSelection = _createImageSelectionSnapshot(figure);
+        var initialContent = _cloneRuntimeJson(_serializeImage(figure));
+        var dragging = false;
+        var undoTransaction = null;
+        var drag = {
             blockId: blockId,
             mode: handle ? 'resize' : 'move',
-            transactionId: undoTransaction ? undoTransaction.transactionId : inst.currentTransactionId
+            currentFigure: figure,
+            initialContent: initialContent,
+            renderScheduled: false,
+            cancelled: false,
+            ended: false,
+            transactionInfo: null,
+            lastPreviewRect: null,
+            lastGuides: []
         };
-        if (typeof figure.setPointerCapture === 'function' && event.pointerId != null) {
-            try { figure.setPointerCapture(event.pointerId); } catch { }
+
+        function beginDrag() {
+            if (dragging) return;
+            dragging = true;
+            _hideImageSelectionToolbar(inst);
+            _commitCurrentRuntimeTransaction(inst, true);
+            undoTransaction = _beginUndoTransaction(inst, 'image', handle ? 'Resize image' : 'Move image', imageSelection, true);
+            drag.transactionInfo = {
+                blockId: blockId,
+                mode: handle ? 'resize' : 'move',
+                transactionId: undoTransaction ? undoTransaction.transactionId : inst.currentTransactionId
+            };
+            inst.imageDragTransaction = drag.transactionInfo;
+            drag.currentFigure.classList.add('tm-wysiwyg-image--dragging');
+            drag.currentFigure.setAttribute('data-drag-feedback', handle ? 'resize' : 'move');
+        }
+
+        function updateMove(moveEvent) {
+            var dx = moveEvent.clientX - startX;
+            var dy = moveEvent.clientY - startY;
+            var currentFigure = drag.currentFigure || figure;
+            var next = _clampFloatingImagePosition(currentFigure, initialX + dx, initialY + dy);
+            var snapContext = _createImageMoveSnapContext(inst, currentFigure, moveEvent.altKey);
+            var snapped = _computeImageMoveSnap({ x: next.x, y: next.y }, snapContext);
+            var nextX = snapped.x;
+            var nextY = snapped.y;
+            _applyImageMoveDomPosition(currentFigure, nextX, nextY);
+            var rect = _getImageLayoutObjectRect(currentFigure);
+            drag.lastPreviewRect = rect;
+            drag.lastGuides = snapped.guides || [];
+            _setImageMovePreview(inst, currentFigure, rect);
+            _setImageMoveGuides(inst, currentFigure, drag.lastGuides);
+            _updateRuntimeImageBlockContent(inst, blockId, _serializeImage(currentFigure));
+            _scheduleImageDragLayoutRefresh(inst, drag);
+        }
+
+        function updateResize(moveEvent) {
+            if (!img) return;
+            var dx = moveEvent.clientX - startX;
+            var dy = moveEvent.clientY - startY;
+            var currentFigure = drag.currentFigure || figure;
+            var currentImg = currentFigure.querySelector('img') || img;
+            var maxSize = _getFloatingImageMaxSize(currentFigure);
+            var lockAspectRatio = currentFigure.getAttribute('data-lock-aspect-ratio') !== 'false';
+            var isCornerHandle = resizeHandleName.length === 2;
+            var defaultPreserveAspectRatio = lockAspectRatio && isCornerHandle;
+            var nextRect = _computeImageResizeTransform({
+                handle: resizeHandleName || 'se',
+                startRect: initialRect,
+                dx: dx,
+                dy: dy,
+                minWidth: 24,
+                minHeight: 24,
+                maxWidth: maxSize.width,
+                maxHeight: maxSize.height,
+                aspectRatio: aspectRatio,
+                preserveAspectRatio: defaultPreserveAspectRatio,
+                toggleAspectRatio: moveEvent.shiftKey || moveEvent.altKey
+            });
+            _applyImageResizeDomRect(currentFigure, currentImg, nextRect);
+            drag.lastPreviewRect = nextRect;
+            drag.lastGuides = [];
+            _setImageMovePreview(inst, currentFigure, nextRect);
+            _clearImageMoveGuides(inst);
+            _setImageResizeSizeBadge(inst, currentFigure, nextRect);
+            _updateRuntimeImageBlockContent(inst, blockId, _serializeImage(currentFigure));
+            _scheduleImageDragLayoutRefresh(inst, drag);
         }
 
         function onMove(moveEvent) {
             var dx = moveEvent.clientX - startX;
             var dy = moveEvent.clientY - startY;
-            if (handle && img) {
-                var maxSize = _getFloatingImageMaxSize(figure);
-                var lockAspectRatio = figure.getAttribute('data-lock-aspect-ratio') !== 'false';
-                var nextWidth = Math.min(maxSize.width, Math.max(24, initialWidth + dx));
-                var nextHeight = lockAspectRatio && aspectRatio > 0
-                    ? nextWidth * aspectRatio
-                    : Math.min(maxSize.height, Math.max(24, initialHeight + dy));
-                if (nextHeight > maxSize.height) {
-                    nextHeight = maxSize.height;
-                    if (lockAspectRatio && aspectRatio > 0) {
-                        nextWidth = Math.max(24, nextHeight / aspectRatio);
-                    }
-                }
-                img.style.width = Math.round(nextWidth) + 'px';
-                img.style.height = Math.round(nextHeight) + 'px';
+            if (!dragging && Math.sqrt((dx * dx) + (dy * dy)) < 4) return;
+            beginDrag();
+            moveEvent.preventDefault();
+            if (handle) {
+                updateResize(moveEvent);
             } else {
-                var next = _clampFloatingImagePosition(figure, initialX + dx, initialY + dy);
-                var nextX = next.x;
-                var nextY = next.y;
-                figure.style.left = nextX + 'px';
-                figure.style.top = nextY + 'px';
-                figure.setAttribute('data-image-x', String(nextX));
-                figure.setAttribute('data-image-y', String(nextY));
+                updateMove(moveEvent);
             }
         }
 
-        function onUp() {
+        function cleanup() {
             document.removeEventListener('pointermove', onMove, true);
             document.removeEventListener('pointerup', onUp, true);
-            figure.classList.remove('tm-wysiwyg-image--dragging');
-            figure.removeAttribute('data-drag-feedback');
+            document.removeEventListener('pointercancel', onCancel, true);
+            document.removeEventListener('keydown', onKeyDown, true);
+            figure.removeEventListener('lostpointercapture', onLostPointerCapture, true);
+            var currentFigure = drag.currentFigure || figure;
+            if (currentFigure) {
+                currentFigure.classList.remove('tm-wysiwyg-image--dragging');
+                currentFigure.removeAttribute('data-drag-feedback');
+            }
+            _clearImageMovePreview(inst);
+            _clearImageMoveGuides(inst);
+            _clearImageResizeSizeBadge(inst);
             if (typeof figure.releasePointerCapture === 'function' && event.pointerId != null) {
                 try { figure.releasePointerCapture(event.pointerId); } catch { }
             }
-            _dispatchImageUpdatePatch(inst, figure);
-            _commitCurrentRuntimeTransaction(inst, true);
+        }
+
+        function rollback() {
+            drag.cancelled = true;
+            cleanup();
+            if (dragging) {
+                _updateRuntimeImageBlockContent(inst, blockId, drag.initialContent);
+                if (inst.pendingUndoTransaction && inst.imageDragTransaction === drag.transactionInfo) {
+                    inst.pendingUndoTransaction = null;
+                    inst.currentTransactionId = null;
+                    _notifyUndoStateChanged(inst);
+                }
+                _renderImageDragLayoutPreview(inst, drag);
+            }
             inst.imageDragTransaction = null;
         }
 
+        function commit() {
+            drag.ended = true;
+            cleanup();
+            if (!dragging) {
+                inst.imageDragTransaction = null;
+                return;
+            }
+            var currentFigure = drag.currentFigure || _getImageFigureByBlockId(inst, blockId) || figure;
+            _retargetImageAnchorFromPosition(inst, currentFigure);
+            _updateRuntimeImageBlockContent(inst, blockId, _serializeImage(currentFigure));
+            _dispatchImageUpdatePatch(inst, currentFigure);
+            _commitCurrentRuntimeTransaction(inst, true);
+            inst.imageDragTransaction = null;
+            _renderImageDragLayoutPreview(inst, drag);
+        }
+
+        function onUp(upEvent) {
+            upEvent.preventDefault();
+            commit();
+        }
+
+        function onCancel(cancelEvent) {
+            cancelEvent.preventDefault();
+            rollback();
+        }
+
+        function onKeyDown(keyEvent) {
+            if (keyEvent.key !== 'Escape') return;
+            keyEvent.preventDefault();
+            keyEvent.stopPropagation();
+            rollback();
+        }
+
+        function onLostPointerCapture() {
+            if (drag.ended || drag.cancelled) return;
+            if (dragging) {
+                commit();
+            } else {
+                rollback();
+            }
+        }
+
+        if (typeof figure.setPointerCapture === 'function' && event.pointerId != null) {
+            try { figure.setPointerCapture(event.pointerId); } catch { }
+        }
         document.addEventListener('pointermove', onMove, true);
         document.addEventListener('pointerup', onUp, true);
+        document.addEventListener('pointercancel', onCancel, true);
+        document.addEventListener('keydown', onKeyDown, true);
+        figure.addEventListener('lostpointercapture', onLostPointerCapture, true);
+    }
+
+    function _retargetImageAnchorFromPosition(inst, figure) {
+        if (!inst || !figure || figure.getAttribute('data-lock-anchor') === 'true') return;
+        var target = _findNearestImageAnchorParagraph(inst, figure);
+        if (!target) return;
+        figure.setAttribute('data-anchor-block-id', target.blockId);
+        figure.setAttribute('data-anchor-region', target.region);
+        figure.setAttribute('data-anchor-page-index', target.pageIndex);
+        if (target.inlineIndex != null) {
+            figure.setAttribute('data-anchor-inline-index', String(target.inlineIndex));
+        } else {
+            figure.removeAttribute('data-anchor-inline-index');
+        }
+        figure.setAttribute('data-anchor-offset', String(target.offset || 0));
+        _syncParagraphAnchorGlyphSelection(inst, figure.getAttribute('data-block-id') || target.objectBlockId || '');
+    }
+
+    function _findNearestImageAnchorParagraph(inst, figure) {
+        if (!inst || !inst.root || !figure) return null;
+        var figureRect = figure.getBoundingClientRect();
+        if (!figureRect.width || !figureRect.height) return null;
+        var centerX = figureRect.left + (figureRect.width / 2);
+        var centerY = figureRect.top + (figureRect.height / 2);
+        var paragraphs = Array.from(inst.root.querySelectorAll('.tm-wysiwyg-layout-paragraph[data-block-id], .tm-wysiwyg-block[data-block-id]'))
+            .filter(function (candidate) {
+                if (!candidate || candidate.closest('figure.tm-wysiwyg-image') || candidate.matches('figure.tm-wysiwyg-image')) return false;
+                if (candidate.closest('.tm-wysiwyg-page--virtual')) return false;
+                var type = candidate.getAttribute('data-block-type') || '';
+                if (String(type).toLowerCase() === 'image') return false;
+                var rect = candidate.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+            });
+        var best = null;
+        for (var i = 0; i < paragraphs.length; i++) {
+            var el = paragraphs[i];
+            var rect = el.getBoundingClientRect();
+            var dy = centerY < rect.top ? rect.top - centerY : (centerY > rect.bottom ? centerY - rect.bottom : 0);
+            var dx = centerX < rect.left ? rect.left - centerX : (centerX > rect.right ? centerX - rect.right : 0);
+            var score = (dy * 4) + dx;
+            if (!best || score < best.score) {
+                var page = el.closest('.tm-wysiwyg-page');
+                best = {
+                    element: el,
+                    score: score,
+                    blockId: el.getAttribute('data-block-id') || '',
+                    objectBlockId: figure.getAttribute('data-block-id') || '',
+                    region: '0',
+                    pageIndex: page ? (page.getAttribute('data-page-index') || '0') : '0',
+                    inlineIndex: 0,
+                    offset: 0
+                };
+            }
+        }
+
+        return best && best.blockId ? best : null;
     }
 
     function _beginInlineImageMoveDrag(inst, figure, event) {
@@ -6960,6 +8735,511 @@ window.tmDocumentWysiwyg = (function () {
             width: Math.max(24, page.clientWidth - 16),
             height: Math.max(24, page.clientHeight - 16)
         };
+    }
+
+    function _getImageResizeHandleName(handle) {
+        if (!handle) return '';
+        var explicit = handle.getAttribute && handle.getAttribute('data-resize-handle');
+        if (explicit) return explicit.toLowerCase();
+        if (handle.classList && handle.classList.contains('tm-wysiwyg-image__resize-handle')) return 'se';
+        return 'se';
+    }
+
+    function _computeImageResizeTransform(options) {
+        options = options || {};
+        var start = _readGuideRect(options.startRect || options.StartRect) || { X: 0, Y: 0, Width: 120, Height: 90 };
+        var handle = String(options.handle || options.Handle || 'se').toLowerCase();
+        var dx = Number(options.dx ?? options.Dx ?? 0) || 0;
+        var dy = Number(options.dy ?? options.Dy ?? 0) || 0;
+        var minWidth = Math.max(1, Number(options.minWidth ?? options.MinWidth ?? 24) || 24);
+        var minHeight = Math.max(1, Number(options.minHeight ?? options.MinHeight ?? 24) || 24);
+        var maxWidth = Number(options.maxWidth ?? options.MaxWidth ?? Number.MAX_SAFE_INTEGER);
+        var maxHeight = Number(options.maxHeight ?? options.MaxHeight ?? Number.MAX_SAFE_INTEGER);
+        if (!Number.isFinite(maxWidth) || maxWidth <= 0) maxWidth = Number.MAX_SAFE_INTEGER;
+        if (!Number.isFinite(maxHeight) || maxHeight <= 0) maxHeight = Number.MAX_SAFE_INTEGER;
+        maxWidth = Math.max(minWidth, maxWidth);
+        maxHeight = Math.max(minHeight, maxHeight);
+
+        var affectsWest = handle.indexOf('w') >= 0;
+        var affectsEast = handle.indexOf('e') >= 0 || (!affectsWest && handle.indexOf('n') < 0 && handle.indexOf('s') < 0);
+        var affectsNorth = handle.indexOf('n') >= 0;
+        var affectsSouth = handle.indexOf('s') >= 0 || (!affectsNorth && handle.indexOf('e') < 0 && handle.indexOf('w') < 0);
+        var affectsHorizontal = affectsWest || affectsEast;
+        var affectsVertical = affectsNorth || affectsSouth;
+        var ratio = Number(options.aspectRatio ?? options.AspectRatio ?? 0) || 0;
+        if (ratio <= 0 && start.Width > 0 && start.Height > 0) {
+            ratio = start.Height / start.Width;
+        }
+
+        var preserveAspectRatio = !!(options.preserveAspectRatio || options.PreserveAspectRatio);
+        if (options.toggleAspectRatio || options.ToggleAspectRatio) {
+            preserveAspectRatio = !preserveAspectRatio;
+        }
+
+        var width = start.Width + (affectsEast ? dx : affectsWest ? -dx : 0);
+        var height = start.Height + (affectsSouth ? dy : affectsNorth ? -dy : 0);
+
+        if (preserveAspectRatio && ratio > 0) {
+            var normalizedDx = affectsHorizontal ? Math.abs((width - start.Width) / Math.max(1, start.Width)) : 0;
+            var normalizedDy = affectsVertical ? Math.abs((height - start.Height) / Math.max(1, start.Height)) : 0;
+            if (affectsHorizontal && (!affectsVertical || normalizedDx >= normalizedDy)) {
+                height = width * ratio;
+            } else if (affectsVertical) {
+                width = height / ratio;
+            } else if (affectsHorizontal) {
+                height = width * ratio;
+            }
+        }
+
+        width = _clampNumber(width, minWidth, maxWidth);
+        if (preserveAspectRatio && ratio > 0) {
+            height = width * ratio;
+        }
+
+        height = _clampNumber(height, minHeight, maxHeight);
+        if (preserveAspectRatio && ratio > 0) {
+            if (height >= maxHeight || height <= minHeight) {
+                width = height / ratio;
+                width = _clampNumber(width, minWidth, maxWidth);
+                height = width * ratio;
+            }
+        }
+
+        width = _roundLayoutNumber(width);
+        height = _roundLayoutNumber(height);
+
+        var right = start.X + start.Width;
+        var bottom = start.Y + start.Height;
+        var x = affectsWest ? right - width : start.X;
+        var y = affectsNorth ? bottom - height : start.Y;
+        if (x < 0) {
+            width = _roundLayoutNumber(width + x);
+            x = 0;
+        }
+        if (y < 0) {
+            height = _roundLayoutNumber(height + y);
+            y = 0;
+        }
+        width = _roundLayoutNumber(Math.max(minWidth, Math.min(maxWidth, width)));
+        height = _roundLayoutNumber(Math.max(minHeight, Math.min(maxHeight, height)));
+
+        return {
+            X: _roundLayoutNumber(x),
+            Y: _roundLayoutNumber(y),
+            Width: width,
+            Height: height
+        };
+    }
+
+    function _applyImageResizeDomRect(figure, img, rect) {
+        if (!figure || !img || !rect) return;
+        var x = _roundLayoutNumber(rect.X || 0);
+        var y = _roundLayoutNumber(rect.Y || 0);
+        var width = _roundLayoutNumber(rect.Width || 0);
+        var height = _roundLayoutNumber(rect.Height || 0);
+        var isPositionedObject = figure.classList.contains('tm-wysiwyg-layout-object')
+            || figure.classList.contains('tm-wysiwyg-image--floating')
+            || figure.getAttribute('data-floating-inline') === 'false';
+
+        if (isPositionedObject) {
+            figure.style.left = x + 'px';
+            figure.style.top = y + 'px';
+            figure.style.width = width + 'px';
+            figure.style.minHeight = height + 'px';
+            figure.style.setProperty('--tm-layout-object-x', x + 'px');
+            figure.style.setProperty('--tm-layout-object-y', y + 'px');
+            figure.style.setProperty('--tm-layout-object-width', width + 'px');
+            figure.style.setProperty('--tm-layout-object-height', height + 'px');
+            figure.setAttribute('data-image-x', String(x));
+            figure.setAttribute('data-image-y', String(y));
+        }
+
+        img.style.width = width + 'px';
+        img.style.height = height + 'px';
+    }
+
+    function _clampNumber(value, min, max) {
+        value = Number(value);
+        if (!Number.isFinite(value)) value = min;
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function _computeImageMoveSnap(candidate, context) {
+        candidate = candidate || {};
+        context = context || {};
+        var x = Number(candidate.x ?? candidate.X ?? 0) || 0;
+        var y = Number(candidate.y ?? candidate.Y ?? 0) || 0;
+        var threshold = Math.max(1, Number(context.threshold ?? context.Threshold ?? 8) || 8);
+        if (context.disableSnap || context.DisableSnap) {
+            return { x: x, y: y, guides: [] };
+        }
+
+        var bodyRect = _readGuideRect(context.bodyRect || context.BodyRect) || { X: 0, Y: 0, Width: 0, Height: 0 };
+        var objectSize = context.objectSize || context.ObjectSize || {};
+        var width = Math.max(1, Number(objectSize.Width ?? objectSize.width ?? candidate.width ?? candidate.Width ?? 1) || 1);
+        var height = Math.max(1, Number(objectSize.Height ?? objectSize.height ?? candidate.height ?? candidate.Height ?? 1) || 1);
+        var guides = [];
+        var bestX = { distance: threshold + 1, value: x, guide: null };
+        var bestY = { distance: threshold + 1, value: y, guide: null };
+
+        function considerX(value, kind, guideX) {
+            if (!Number.isFinite(value)) return;
+            var distance = Math.abs(x - value);
+            if (distance <= threshold && distance < bestX.distance) {
+                bestX = {
+                    distance: distance,
+                    value: value,
+                    guide: {
+                        Kind: kind,
+                        Orientation: 'Vertical',
+                        X: _roundLayoutNumber(guideX ?? value),
+                        Y: _roundLayoutNumber(bodyRect.Y || 0),
+                        Length: _roundLayoutNumber(bodyRect.Height || Math.max(height, 1))
+                    }
+                };
+            }
+        }
+
+        function considerY(value, kind, guideY) {
+            if (!Number.isFinite(value)) return;
+            var distance = Math.abs(y - value);
+            if (distance <= threshold && distance < bestY.distance) {
+                bestY = {
+                    distance: distance,
+                    value: value,
+                    guide: {
+                        Kind: kind,
+                        Orientation: 'Horizontal',
+                        X: _roundLayoutNumber(bodyRect.X || 0),
+                        Y: _roundLayoutNumber(guideY ?? value),
+                        Length: _roundLayoutNumber(bodyRect.Width || Math.max(width, 1))
+                    }
+                };
+            }
+        }
+
+        var left = bodyRect.X || 0;
+        var right = left + Math.max(0, (bodyRect.Width || 0) - width);
+        var center = left + Math.max(0, ((bodyRect.Width || 0) - width) / 2);
+        considerX(left, 'text-left', left);
+        considerX(right, 'text-right', left + (bodyRect.Width || 0));
+        considerX(center, 'page-center-x', left + (bodyRect.Width || 0) / 2);
+
+        var otherObjects = context.otherObjects || context.OtherObjects || [];
+        for (var oi = 0; oi < otherObjects.length; oi++) {
+            var other = _readGuideRect(otherObjects[oi].Rect || otherObjects[oi].rect || otherObjects[oi]);
+            if (!other) continue;
+            considerX(other.X - width, 'object-left', other.X);
+            considerX(other.X + other.Width, 'object-right', other.X + other.Width);
+            considerX(other.X, 'object-left-edge', other.X);
+            considerX(other.X + ((other.Width - width) / 2), 'object-center-x', other.X + (other.Width / 2));
+            considerY(other.Y - height, 'object-top', other.Y);
+            considerY(other.Y + other.Height, 'object-bottom', other.Y + other.Height);
+            considerY(other.Y, 'object-top-edge', other.Y);
+            considerY(other.Y + ((other.Height - height) / 2), 'object-center-y', other.Y + (other.Height / 2));
+        }
+
+        var lines = context.lines || context.Lines || [];
+        for (var li = 0; li < lines.length; li++) {
+            var line = _readGuideRect(lines[li].Rect || lines[li].rect || lines[li]);
+            if (!line) continue;
+            considerY(line.Y, 'line-top', line.Y);
+            considerY(line.Y + line.Height, 'line-bottom', line.Y + line.Height);
+        }
+
+        if (bestX.guide) {
+            x = bestX.value;
+            guides.push(bestX.guide);
+        }
+        if (bestY.guide) {
+            y = bestY.value;
+            guides.push(bestY.guide);
+        }
+
+        return {
+            x: _roundLayoutNumber(x),
+            y: _roundLayoutNumber(y),
+            guides: guides
+        };
+    }
+
+    function _readGuideRect(rect) {
+        if (!rect) return null;
+        var x = Number(rect.X ?? rect.x ?? rect.left ?? rect.Left ?? 0);
+        var y = Number(rect.Y ?? rect.y ?? rect.top ?? rect.Top ?? 0);
+        var width = Number(rect.Width ?? rect.width ?? 0);
+        var height = Number(rect.Height ?? rect.height ?? 0);
+        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(width) || !Number.isFinite(height)) {
+            return null;
+        }
+
+        return { X: x, Y: y, Width: width, Height: height };
+    }
+
+    function _createImageMoveSnapContext(inst, figure, disableSnap) {
+        var body = figure && figure.closest ? figure.closest('.tm-wysiwyg-page__body') : null;
+        var layoutPage = _getRenderedLayoutPageForElement(inst, figure);
+        var bodyRect = layoutPage
+            ? (layoutPage.BodyRect || layoutPage.bodyRect)
+            : { X: 0, Y: 0, Width: body ? body.clientWidth : 0, Height: body ? body.clientHeight : 0 };
+        var objectRect = _getImageLayoutObjectRect(figure);
+        var objectSize = {
+            Width: objectRect.Width || figure.offsetWidth || 1,
+            Height: objectRect.Height || figure.offsetHeight || 1
+        };
+        var blockId = figure && (figure.getAttribute('data-block-id') || figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || '');
+        var objects = [];
+        var paragraphs = [];
+        if (layoutPage) {
+            var snapshotObjects = layoutPage.Objects || layoutPage.objects || [];
+            for (var i = 0; i < snapshotObjects.length; i++) {
+                var item = snapshotObjects[i];
+                var itemBlockId = item.BlockId || item.blockId || '';
+                if (itemBlockId && itemBlockId === blockId) continue;
+                objects.push(item);
+            }
+
+            paragraphs = layoutPage.Paragraphs || layoutPage.paragraphs || [];
+        }
+
+        var lines = [];
+        for (var pi = 0; pi < paragraphs.length; pi++) {
+            var paragraphLines = paragraphs[pi].Lines || paragraphs[pi].lines || [];
+            for (var li = 0; li < paragraphLines.length; li++) {
+                lines.push(paragraphLines[li]);
+            }
+        }
+
+        return {
+            bodyRect: bodyRect,
+            objectSize: objectSize,
+            otherObjects: objects,
+            lines: lines,
+            threshold: 16,
+            disableSnap: !!disableSnap
+        };
+    }
+
+    function _getRenderedLayoutPageForElement(inst, element) {
+        if (!inst || !element) return null;
+        var page = element.closest && element.closest('.tm-wysiwyg-page[data-page-index]');
+        var pageIndex = page ? parseInt(page.getAttribute('data-page-index') || '0', 10) : 0;
+        return _findLayoutPageSnapshot(inst, Number.isFinite(pageIndex) ? pageIndex : 0);
+    }
+
+    function _getImageLayoutObjectRect(figure) {
+        if (!figure) return { X: 0, Y: 0, Width: 0, Height: 0 };
+        var left = parseFloat(figure.style.left || figure.getAttribute('data-image-x') || '0') || 0;
+        var top = parseFloat(figure.style.top || figure.getAttribute('data-image-y') || '0') || 0;
+        var width = parseFloat(figure.style.width || figure.style.getPropertyValue('--tm-layout-object-width') || figure.offsetWidth || '0') || 0;
+        var height = parseFloat(figure.style.minHeight || figure.style.height || figure.style.getPropertyValue('--tm-layout-object-height') || figure.offsetHeight || '0') || 0;
+        return { X: left, Y: top, Width: width, Height: height };
+    }
+
+    function _setImageMoveGuides(inst, figure, guides) {
+        _clearImageMoveGuides(inst);
+        if (!inst || !figure || !guides || guides.length === 0) return;
+        var body = figure.closest('.tm-wysiwyg-page__body');
+        var layer = body && body.querySelector('[data-layout-layer="guides"]');
+        layer = layer || body;
+        if (!layer) return;
+
+        inst.imageMoveGuideElements = [];
+        guides.forEach(function (guide) {
+            var line = document.createElement('span');
+            line.className = 'tm-wysiwyg-guide-line tm-wysiwyg-guide-line--' + (guide.Orientation === 'Horizontal' ? 'horizontal' : 'vertical');
+            line.setAttribute('contenteditable', 'false');
+            line.setAttribute('data-testid', 'document-wysiwyg-image-move-guide');
+            line.setAttribute('data-guide-kind', guide.Kind || '');
+            if (guide.Orientation === 'Horizontal') {
+                line.style.left = _roundLayoutNumber(guide.X || 0) + 'px';
+                line.style.top = _roundLayoutNumber(guide.Y || 0) + 'px';
+                line.style.width = _roundLayoutNumber(guide.Length || 0) + 'px';
+            } else {
+                line.style.left = _roundLayoutNumber(guide.X || 0) + 'px';
+                line.style.top = _roundLayoutNumber(guide.Y || 0) + 'px';
+                line.style.height = _roundLayoutNumber(guide.Length || 0) + 'px';
+            }
+            layer.appendChild(line);
+            inst.imageMoveGuideElements.push(line);
+        });
+    }
+
+    function _clearImageMoveGuides(inst) {
+        if (!inst) return;
+        (inst.imageMoveGuideElements || []).forEach(function (line) {
+            if (line && line.parentNode) line.parentNode.removeChild(line);
+        });
+        inst.imageMoveGuideElements = [];
+        if (inst.root) {
+            inst.root.querySelectorAll('[data-testid="document-wysiwyg-image-move-guide"]').forEach(function (line) { line.remove(); });
+        }
+    }
+
+    function _setImageMovePreview(inst, figure, rect) {
+        if (!inst || !figure || !rect) return;
+        var body = figure.closest('.tm-wysiwyg-page__body');
+        var layer = body && body.querySelector('[data-layout-layer="selection"]');
+        layer = layer || body;
+        if (!layer) return;
+
+        var preview = inst.imageMovePreviewElement;
+        if (!preview || !preview.isConnected) {
+            preview = document.createElement('span');
+            preview.className = 'tm-wysiwyg-image-move-preview';
+            preview.setAttribute('contenteditable', 'false');
+            preview.setAttribute('data-testid', 'document-wysiwyg-image-move-preview');
+            inst.imageMovePreviewElement = preview;
+            layer.appendChild(preview);
+        } else if (preview.parentElement !== layer) {
+            layer.appendChild(preview);
+        }
+
+        preview.style.left = _roundLayoutNumber(rect.X) + 'px';
+        preview.style.top = _roundLayoutNumber(rect.Y) + 'px';
+        preview.style.width = _roundLayoutNumber(rect.Width) + 'px';
+        preview.style.height = _roundLayoutNumber(rect.Height) + 'px';
+    }
+
+    function _clearImageMovePreview(inst) {
+        if (!inst) return;
+        if (inst.imageMovePreviewElement && inst.imageMovePreviewElement.parentNode) {
+            inst.imageMovePreviewElement.parentNode.removeChild(inst.imageMovePreviewElement);
+        }
+        inst.imageMovePreviewElement = null;
+        if (inst.root) {
+            inst.root.querySelectorAll('[data-testid="document-wysiwyg-image-move-preview"]').forEach(function (preview) { preview.remove(); });
+        }
+    }
+
+    function _setImageResizeSizeBadge(inst, figure, rect) {
+        if (!inst || !figure || !rect) return;
+        var body = figure.closest('.tm-wysiwyg-page__body');
+        var layer = body && body.querySelector('[data-layout-layer="selection"]');
+        layer = layer || body;
+        if (!layer) return;
+
+        var badge = inst.imageResizeSizeBadgeElement;
+        if (!badge || !badge.isConnected) {
+            badge = document.createElement('span');
+            badge.className = 'tm-wysiwyg-image-resize-size-badge';
+            badge.setAttribute('contenteditable', 'false');
+            badge.setAttribute('data-testid', 'document-wysiwyg-image-resize-size-badge');
+            inst.imageResizeSizeBadgeElement = badge;
+            layer.appendChild(badge);
+        } else if (badge.parentElement !== layer) {
+            layer.appendChild(badge);
+        }
+
+        var width = Math.round(rect.Width || 0);
+        var height = Math.round(rect.Height || 0);
+        var layerWidth = layer.clientWidth || body?.clientWidth || 0;
+        var left = _roundLayoutNumber((rect.X || 0) + (rect.Width || 0) + 8);
+        if (layerWidth > 0 && left > layerWidth - 96) {
+            left = Math.max(0, _roundLayoutNumber((rect.X || 0) - 96));
+        }
+        badge.textContent = width + ' x ' + height;
+        badge.style.left = left + 'px';
+        badge.style.top = _roundLayoutNumber((rect.Y || 0) + (rect.Height || 0) + 8) + 'px';
+    }
+
+    function _clearImageResizeSizeBadge(inst) {
+        if (!inst) return;
+        if (inst.imageResizeSizeBadgeElement && inst.imageResizeSizeBadgeElement.parentNode) {
+            inst.imageResizeSizeBadgeElement.parentNode.removeChild(inst.imageResizeSizeBadgeElement);
+        }
+        inst.imageResizeSizeBadgeElement = null;
+        if (inst.root) {
+            inst.root.querySelectorAll('[data-testid="document-wysiwyg-image-resize-size-badge"]').forEach(function (badge) { badge.remove(); });
+        }
+    }
+
+    function _applyImageMoveDomPosition(figure, x, y) {
+        if (!figure) return;
+        figure.style.left = _roundLayoutNumber(x) + 'px';
+        figure.style.top = _roundLayoutNumber(y) + 'px';
+        figure.setAttribute('data-image-x', String(_roundLayoutNumber(x)));
+        figure.setAttribute('data-image-y', String(_roundLayoutNumber(y)));
+    }
+
+    function _updateRuntimeImageBlockContent(inst, blockId, content) {
+        var doc = _resolveRuntimeDocument(inst);
+        var block = _findRuntimeDocumentBlock(doc, blockId);
+        if (!block) return false;
+        if (Object.prototype.hasOwnProperty.call(block, 'content') && !Object.prototype.hasOwnProperty.call(block, 'Content')) {
+            block.content = content;
+        } else {
+            block.Content = content;
+        }
+        var snapshot = inst && inst.snapshot ? inst.snapshot : { ProtocolVersion: 1 };
+        _assignSnapshotDocument(snapshot, doc);
+        inst.snapshot = snapshot;
+        if (inst.runtimeDocument) {
+            inst.runtimeDocument.document = doc;
+        } else {
+            inst.runtimeDocument = { version: 1, document: doc, source: 'localImageMove' };
+        }
+        return true;
+    }
+
+    function _findRuntimeDocumentBlock(doc, blockId) {
+        if (!doc || !blockId) return null;
+        var blocks = doc.blocks || doc.Blocks || [];
+        return _findRuntimeDocumentBlockInList(blocks, blockId);
+    }
+
+    function _findRuntimeDocumentBlockInList(blocks, blockId) {
+        for (var i = 0; i < (blocks || []).length; i++) {
+            var block = blocks[i];
+            if ((block.id || block.Id) === blockId) return block;
+            var content = block.content || block.Content || {};
+            var rows = content.rows || content.Rows || [];
+            for (var r = 0; r < rows.length; r++) {
+                var cells = rows[r].cells || rows[r].Cells || [];
+                for (var c = 0; c < cells.length; c++) {
+                    var nested = _findRuntimeDocumentBlockInList(cells[c].blocks || cells[c].Blocks || [], blockId);
+                    if (nested) return nested;
+                }
+            }
+        }
+        return null;
+    }
+
+    function _scheduleImageDragLayoutRefresh(inst, drag) {
+        if (!inst || !drag || drag.renderScheduled || drag.cancelled || drag.ended) return;
+        drag.renderScheduled = true;
+        window.setTimeout(function () {
+            drag.renderScheduled = false;
+            if (drag.cancelled || drag.ended || inst.imageDragTransaction !== drag.transactionInfo) return;
+            _renderImageDragLayoutPreview(inst, drag);
+        }, 64);
+    }
+
+    function _renderImageDragLayoutPreview(inst, drag) {
+        if (!inst || !drag || !drag.currentFigure) return;
+        var selection = _createImageSelectionSnapshot(drag.currentFigure);
+        inst.lastSelectionSnapshot = selection;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(selection);
+        _renderDocument(inst, drag.mode === 'resize' ? 'image-resize-preview' : 'image-drag-preview');
+        inst.hasRenderedDocument = true;
+        _applyReviewDisplayMode(inst);
+        _renderRuntimeCommentDecorations(inst);
+        var nextFigure = _getImageFigureByBlockId(inst, drag.blockId);
+        if (nextFigure) {
+            drag.currentFigure = nextFigure;
+            nextFigure.classList.add('tm-wysiwyg-image--dragging');
+            nextFigure.setAttribute('data-drag-feedback', drag.mode === 'resize' ? 'resize' : 'move');
+            _selectImageFigure(inst, nextFigure);
+            if (drag.lastPreviewRect) {
+                _setImageMovePreview(inst, nextFigure, drag.lastPreviewRect);
+                if (drag.mode === 'resize') {
+                    _setImageResizeSizeBadge(inst, nextFigure, drag.lastPreviewRect);
+                }
+            }
+            if (drag.lastGuides) {
+                _setImageMoveGuides(inst, nextFigure, drag.lastGuides);
+            }
+        }
     }
 
     function _createTableCellElement() {
@@ -7525,6 +9805,16 @@ window.tmDocumentWysiwyg = (function () {
             description: description || 'Edit',
             beforeHtml: inst.root.innerHTML,
             afterHtml: null,
+            beforeSnapshot: _cloneRuntimeJson(inst.snapshot || null),
+            afterSnapshot: null,
+            beforeRuntimeDocument: _cloneRuntimeJson(inst.runtimeDocument || null),
+            afterRuntimeDocument: null,
+            beforeVirtualPages: _cloneRuntimeJson(inst.virtualPages || null),
+            afterVirtualPages: null,
+            beforeVirtualSettings: _cloneRuntimeJson(inst.virtualSettings || null),
+            afterVirtualSettings: null,
+            beforeVirtualState: _cloneRuntimeJson(inst.virtualState || null),
+            afterVirtualState: null,
             beforeSelection: _cloneRuntimeJson(beforeSelection || _captureSelectionSnapshot(inst)),
             afterSelection: null,
             operations: [],
@@ -7546,6 +9836,11 @@ window.tmDocumentWysiwyg = (function () {
         var transaction = inst.pendingUndoTransaction;
         inst.pendingUndoTransaction = null;
         transaction.afterHtml = inst.root.innerHTML;
+        transaction.afterSnapshot = _cloneRuntimeJson(inst.snapshot || null);
+        transaction.afterRuntimeDocument = _cloneRuntimeJson(inst.runtimeDocument || null);
+        transaction.afterVirtualPages = _cloneRuntimeJson(inst.virtualPages || null);
+        transaction.afterVirtualSettings = _cloneRuntimeJson(inst.virtualSettings || null);
+        transaction.afterVirtualState = _cloneRuntimeJson(inst.virtualState || null);
         transaction.afterSelection = _cloneRuntimeJson(afterSelection || _captureSelectionSnapshot(inst));
         transaction.inverseOperations = [{
             operationId: transaction.transactionId + '-inverse-restore',
@@ -8215,6 +10510,126 @@ window.tmDocumentWysiwyg = (function () {
         return null;
     }
 
+    function _getPatchBeforeSelection(patch) {
+        return patch
+            ? (patch.beforeSelection || patch.BeforeSelection || patch.selection || patch.Selection || null)
+            : null;
+    }
+
+    function _getPatchAfterSelection(patch) {
+        return patch
+            ? (patch.afterSelection || patch.AfterSelection || null)
+            : null;
+    }
+
+    function _getPatchTextTarget(patch) {
+        var selection = _getPatchBeforeSelection(patch) || {};
+        var blockId = selection.anchorBlockId || selection.AnchorBlockId || selection.focusBlockId || selection.FocusBlockId || '';
+        var inlineId = selection.anchorInlineId || selection.AnchorInlineId || selection.focusInlineId || selection.FocusInlineId || '';
+        var inlineIndex = selection.anchorInlineIndex ?? selection.AnchorInlineIndex ?? selection.focusInlineIndex ?? selection.FocusInlineIndex ?? 0;
+        var offset = selection.anchorOffset ?? selection.AnchorOffset ?? selection.focusOffset ?? selection.FocusOffset ?? selection.anchorBlockOffset ?? selection.AnchorBlockOffset ?? 0;
+        offset = Math.max(0, parseInt(offset, 10) || 0);
+        return {
+            blockId: blockId,
+            inlineId: inlineId,
+            inlineIndex: inlineIndex,
+            offset: offset
+        };
+    }
+
+    function _applyLocalTextPatchToRuntimeDocuments(inst, patch) {
+        if (!inst || !patch) return false;
+        var type = patch.type || patch.Type || '';
+
+        if (type === 'InsertBlock' || type === 'UpdateBlock') {
+            var block = patch.block || patch.Block;
+            if (!block) return false;
+            _upsertSnapshotBlock(inst, block);
+            inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(inst.snapshot);
+            return false;
+        }
+
+        if (type === 'RemoveBlock') {
+            var blockId = patch.blockId || patch.BlockId || '';
+            if (!blockId) return false;
+            _removeSnapshotBlock(inst, blockId);
+            inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(inst.snapshot);
+            return false;
+        }
+
+        var target = _getPatchTextTarget(patch);
+        if (!target.blockId) return false;
+
+        if (type === 'InsertText') {
+            var insertedText = String(patch.data ?? patch.Data ?? '');
+            if (!insertedText) return false;
+            return _updateSnapshotInlineText(inst, target, function (current) {
+                var offset = Math.max(0, Math.min(target.offset, current.length));
+                return current.slice(0, offset) + insertedText + current.slice(offset);
+            });
+        }
+
+        if (type === 'DeleteRange') {
+            var rangeLength = patch.deleteLength ?? patch.DeleteLength ?? String(patch.data ?? patch.Data ?? '').length;
+            rangeLength = Math.max(0, parseInt(rangeLength, 10) || 0);
+            if (rangeLength <= 0) return false;
+            return _updateSnapshotInlineText(inst, target, function (current) {
+                var offset = Math.max(0, Math.min(target.offset, current.length));
+                return current.slice(0, offset) + current.slice(offset + rangeLength);
+            });
+        }
+
+        if (type === 'DeleteContentBackward' || type === 'DeleteWordBackward') {
+            var backwardLength = String(patch.data ?? patch.Data ?? '').length || 1;
+            return _updateSnapshotInlineText(inst, target, function (current) {
+                var end = Math.max(0, Math.min(target.offset, current.length));
+                var start = Math.max(0, end - backwardLength);
+                return current.slice(0, start) + current.slice(end);
+            });
+        }
+
+        if (type === 'DeleteContentForward' || type === 'DeleteWordForward') {
+            var forwardLength = String(patch.data ?? patch.Data ?? '').length || 1;
+            return _updateSnapshotInlineText(inst, target, function (current) {
+                var offset = Math.max(0, Math.min(target.offset, current.length));
+                return current.slice(0, offset) + current.slice(offset + forwardLength);
+            });
+        }
+
+        return false;
+    }
+
+    function _scheduleLocalLayoutReflow(inst, selection) {
+        if (!inst || inst.disposed || !inst.hasRenderedDocument || !inst.layoutSnapshot) return;
+        inst.forceNextLocalSnapshotRender = true;
+        inst.forceNextLocalSnapshotSelection = _cloneRuntimeJson(selection || inst.lastSelectionSnapshot || null);
+        if (inst.localLayoutReflowTimer) {
+            clearTimeout(inst.localLayoutReflowTimer);
+        }
+
+        inst.localLayoutReflowTimer = setTimeout(function () {
+            inst.localLayoutReflowTimer = null;
+            _runLocalLayoutReflow(inst);
+        }, 120);
+    }
+
+    function _runLocalLayoutReflow(inst) {
+        if (!inst || inst.disposed || inst.compositionActive) return;
+        var selection = inst.forceNextLocalSnapshotSelection || inst.lastSelectionSnapshot || _captureSelectionSnapshot(inst);
+        var hadEditorFocus = _hasEditorSelectionOrFocus(inst);
+        inst.forceNextLocalSnapshotRender = false;
+        inst.forceNextLocalSnapshotSelection = null;
+        _renderDocument(inst, 'local-layout-reflow');
+        inst.hasRenderedDocument = true;
+        if (hadEditorFocus && selection) {
+            _restoreSelection(inst, selection);
+            inst.lastSelectionSnapshot = _captureSelectionSnapshot(inst) || selection;
+            _scheduleSelectionNotification(inst, inst.lastSelectionSnapshot);
+        }
+        _applyReviewDisplayMode(inst);
+        _renderRuntimeCommentDecorations(inst);
+    }
+
     function _transformRuntimeCommentAnchorsForPatch(inst, patch) {
         var change = _getTextChangeFromPatch(patch);
         if (!change) return;
@@ -8288,6 +10703,8 @@ window.tmDocumentWysiwyg = (function () {
                     anchorBlockId: imageBlockId,
                     focusBlockId: imageBlockId,
                     activeImageBlockId: imageBlockId,
+                    activeObjectId: selectedFigure.getAttribute('data-layout-object-id') || null,
+                    hitTargetKind: 'ImageObject',
                     anchorInlineId: '',
                     focusInlineId: '',
                     anchorOffset: 0,
@@ -8315,6 +10732,7 @@ window.tmDocumentWysiwyg = (function () {
 
         var region = _resolveSelectionRegion(sel.anchorNode, inst.root);
         var activeTableCellId = _findTableCellId(sel.anchorNode);
+        var layoutHitKind = anchor.layoutLineId || focus.layoutLineId ? 'TextCaret' : null;
         var snapshot = {
             region: region.region,
             pageIndex: region.pageIndex,
@@ -8332,7 +10750,12 @@ window.tmDocumentWysiwyg = (function () {
             isCollapsed: sel.isCollapsed,
             direction: direction,
             activeTableCellId: activeTableCellId,
-            tableCellPath: region.tableCellPath
+            tableCellPath: region.tableCellPath,
+            layoutLineId: anchor.layoutLineId || focus.layoutLineId || null,
+            layoutSegmentId: anchor.layoutSegmentId || focus.layoutSegmentId || null,
+            visualLineIndex: anchor.visualLineIndex ?? focus.visualLineIndex ?? null,
+            activeObjectId: null,
+            hitTargetKind: layoutHitKind
         };
         inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
         return snapshot;
@@ -8363,7 +10786,12 @@ window.tmDocumentWysiwyg = (function () {
             direction: snapshot.direction || snapshot.Direction || 'forward',
             activeTableCellId: snapshot.activeTableCellId || snapshot.ActiveTableCellId || null,
             tableCellPath: snapshot.tableCellPath || snapshot.TableCellPath || null,
-            activeImageBlockId: snapshot.activeImageBlockId || snapshot.ActiveImageBlockId || null
+            activeImageBlockId: snapshot.activeImageBlockId || snapshot.ActiveImageBlockId || null,
+            layoutLineId: snapshot.layoutLineId || snapshot.LayoutLineId || null,
+            layoutSegmentId: snapshot.layoutSegmentId || snapshot.LayoutSegmentId || null,
+            visualLineIndex: snapshot.visualLineIndex ?? snapshot.VisualLineIndex ?? null,
+            activeObjectId: snapshot.activeObjectId || snapshot.ActiveObjectId || null,
+            hitTargetKind: snapshot.hitTargetKind || snapshot.HitTargetKind || null
         };
     }
 
@@ -8387,7 +10815,12 @@ window.tmDocumentWysiwyg = (function () {
             direction: selection.direction || selection.Direction || 'forward',
             activeTableCellId: selection.activeTableCellId || selection.ActiveTableCellId || null,
             tableCellPath: selection.tableCellPath || selection.TableCellPath || null,
-            activeImageBlockId: selection.activeImageBlockId || selection.ActiveImageBlockId || null
+            activeImageBlockId: selection.activeImageBlockId || selection.ActiveImageBlockId || null,
+            layoutLineId: selection.layoutLineId || selection.LayoutLineId || null,
+            layoutSegmentId: selection.layoutSegmentId || selection.LayoutSegmentId || null,
+            visualLineIndex: selection.visualLineIndex ?? selection.VisualLineIndex ?? null,
+            activeObjectId: selection.activeObjectId || selection.ActiveObjectId || null,
+            hitTargetKind: selection.hitTargetKind || selection.HitTargetKind || null
         };
     }
 
@@ -8560,12 +10993,27 @@ window.tmDocumentWysiwyg = (function () {
             ? _absoluteTextOffset(inlineEl, textNode, textOffset)
             : textOffset;
         var blockOffset = _absoluteTextOffset(blockEl, textNode, textOffset);
+        var layoutSegment = inlineEl && inlineEl.closest
+            ? inlineEl.closest('.tm-wysiwyg-layout-segment[data-layout-segment-id]')
+            : null;
+        var layoutLine = layoutSegment && layoutSegment.closest
+            ? layoutSegment.closest('.tm-wysiwyg-layout-line[data-layout-line-id]')
+            : null;
+        if (layoutSegment && layoutSegment.contains(textNode)) {
+            var layoutStart = parseInt(layoutSegment.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+            var layoutLocalOffset = _absoluteTextOffset(layoutSegment, textNode, textOffset);
+            inlineOffset = layoutStart + layoutLocalOffset;
+            blockOffset = layoutStart + layoutLocalOffset;
+        }
 
         return {
             blockId: blockEl.getAttribute('data-block-id'),
             inlineId: inlineEl ? inlineEl.getAttribute('data-inline-id') : null,
             offset: inlineOffset,
             blockOffset: blockOffset,
+            layoutLineId: layoutLine ? (layoutLine.getAttribute('data-layout-line-id') || null) : null,
+            layoutSegmentId: layoutSegment ? (layoutSegment.getAttribute('data-layout-segment-id') || null) : null,
+            visualLineIndex: layoutLine ? (parseInt(layoutLine.getAttribute('data-visual-line-index') || '0', 10) || 0) : null
         };
     }
 
@@ -9101,6 +11549,10 @@ window.tmDocumentWysiwyg = (function () {
 
         const renderPlan = _createRenderPlan(doc);
         const pageSettings = _normalizePageSettings(doc.pageSettings || doc.PageSettings || {});
+        const previousLayoutSnapshot = inst.layoutSnapshot || null;
+        const layoutStart = _performanceNow();
+        const layoutSnapshot = _createLayoutSnapshotForRender(doc, renderPlan, pageSettings);
+        _recordLayoutPassMetric(inst, layoutStart, reason || 'runtime-document', previousLayoutSnapshot, layoutSnapshot);
         _applyDocumentTheme(inst, doc.theme || doc.Theme || {});
         _applyPageMetrics(inst, pageSettings);
 
@@ -9122,8 +11574,9 @@ window.tmDocumentWysiwyg = (function () {
 
         var firstSection = sections.length > 0 ? sections[0] : null;
         inst.renderPlan = renderPlan;
+        inst.layoutSnapshot = layoutSnapshot;
         inst.virtualPages = renderPlan.pages;
-        inst.virtualSettings = { pageSettings: pageSettings, firstSection: firstSection, hfMap: hfMap, sectionMap: sectionMap, notes: doc.notes || doc.Notes || [] };
+        inst.virtualSettings = { pageSettings: pageSettings, firstSection: firstSection, hfMap: hfMap, sectionMap: sectionMap, notes: doc.notes || doc.Notes || [], layoutSnapshot: layoutSnapshot };
         _renderVirtualizedPages(inst, false);
     }
 
@@ -9173,6 +11626,7 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.setAttribute('aria-multiline', 'true');
         inst.root.setAttribute('aria-readonly', inst.readOnly ? 'true' : 'false');
         inst.root.classList.add('tm-wysiwyg-host--paginated');
+        inst.root.classList.add('tm-wysiwyg-host--layout-snapshot');
         _ensureAccessibilityDescription(inst);
 
         var rendered = 0;
@@ -9230,9 +11684,16 @@ window.tmDocumentWysiwyg = (function () {
         pageEl.appendChild(body);
         _renderHeaderFooterForPage(inst, pageEl, settings.firstSection, pageData.index, settings.hfMap, settings.sectionMap);
 
-        for (var i = 0; i < pageData.blocks.length; i++) {
-            var blockEl = _renderBlock(pageData.blocks[i], inst);
-            if (blockEl) body.appendChild(blockEl);
+        var layoutPage = _findLayoutPageSnapshot(inst, pageData.index);
+        var hasRenderedLayout = layoutPage
+            ? _renderPageFromLayoutSnapshot(inst, pageData, body, layoutPage)
+            : false;
+
+        if (!hasRenderedLayout) {
+            for (var i = 0; i < pageData.blocks.length; i++) {
+                var blockEl = _renderBlock(pageData.blocks[i], inst);
+                if (blockEl) body.appendChild(blockEl);
+            }
         }
 
         if (pageData.blocks.length === 0) {
@@ -9242,6 +11703,332 @@ window.tmDocumentWysiwyg = (function () {
 
         _renderNoteRegionsForPage(inst, pageEl, pageData.index);
         return pageEl;
+    }
+
+    function _findLayoutPageSnapshot(inst, pageIndex) {
+        var snapshot = inst && inst.virtualSettings ? inst.virtualSettings.layoutSnapshot : null;
+        var pages = snapshot && (snapshot.Pages || snapshot.pages);
+        if (!pages || pages.length === 0) return null;
+        for (var i = 0; i < pages.length; i++) {
+            var page = pages[i];
+            var index = page.PageIndex ?? page.pageIndex;
+            if (index === pageIndex) return page;
+        }
+        return pages[pageIndex] || null;
+    }
+
+    function _renderPageFromLayoutSnapshot(inst, pageData, body, layoutPage) {
+        if (!layoutPage || !body) return false;
+        body.classList.add('tm-wysiwyg-page__body--layout');
+        body.setAttribute('data-layout-page-index', String(layoutPage.PageIndex ?? pageData.index ?? 0));
+        var layers = _createLayoutPageLayers(body, layoutPage);
+        var objectByBlockId = new Map();
+        var objectsByAnchorBlockId = new Map();
+        var objects = layoutPage.Objects || layoutPage.objects || [];
+        for (var oi = 0; oi < objects.length; oi++) {
+            var objectBox = objects[oi];
+            var objectBlockId = objectBox.BlockId || objectBox.blockId;
+            if (objectBlockId) objectByBlockId.set(objectBlockId, objectBox);
+            var anchorBlockId = objectBox.AnchorBlockId || objectBox.anchorBlockId;
+            if (anchorBlockId) {
+                var list = objectsByAnchorBlockId.get(anchorBlockId) || [];
+                list.push(objectBox);
+                objectsByAnchorBlockId.set(anchorBlockId, list);
+            }
+        }
+
+        var paragraphByBlockId = new Map();
+        var paragraphs = layoutPage.Paragraphs || layoutPage.paragraphs || [];
+        for (var pi = 0; pi < paragraphs.length; pi++) {
+            var paragraph = paragraphs[pi];
+            var paragraphBlockId = paragraph.BlockId || paragraph.blockId;
+            if (paragraphBlockId) paragraphByBlockId.set(paragraphBlockId, paragraph);
+        }
+
+        var renderedCount = 0;
+        var blocks = pageData.blocks || [];
+        for (var i = 0; i < blocks.length; i++) {
+            var block = blocks[i];
+            var blockId = block.id || block.Id || '';
+            var typeName = _blockTypeName(block);
+            if (typeName === 'image' && objectByBlockId.has(blockId)) {
+                var objectEl = _renderBlock(block, inst);
+                var imageObjectBox = objectByBlockId.get(blockId);
+                if (objectEl) {
+                    _applyLayoutObjectBoxToElement(objectEl, imageObjectBox, inst);
+                    _selectLayoutObjectLayer(layers, imageObjectBox).appendChild(objectEl);
+                    _appendBehindTextObjectHandle(inst, layers, imageObjectBox);
+                    renderedCount++;
+                }
+                continue;
+            }
+
+            if (paragraphByBlockId.has(blockId) && _isLayoutTextBlock(typeName)) {
+                var textEl = _renderTextBlockFromLayout(block, inst, paragraphByBlockId.get(blockId));
+                if (textEl) {
+                    _appendParagraphAnchorGlyph(inst, textEl, blockId, objectsByAnchorBlockId.get(blockId));
+                    layers.bodyText.appendChild(textEl);
+                    renderedCount++;
+                    continue;
+                }
+            }
+
+            var fallbackEl = _renderBlock(block, inst);
+            if (fallbackEl) {
+                layers.bodyText.appendChild(fallbackEl);
+                renderedCount++;
+            }
+        }
+
+        if (renderedCount === 0) {
+            layers.bodyText.classList.add('tm-wysiwyg-page__layer--empty');
+        }
+
+        return true;
+    }
+
+    function _createLayoutPageLayers(body, layoutPage) {
+        var bodyRect = (layoutPage && (layoutPage.BodyRect || layoutPage.bodyRect)) || {};
+        var height = Math.max(0, _roundLayoutNumber(bodyRect.Height || 0));
+        var layerDefs = [
+            ['behindText', 'behind-text', false],
+            ['bodyText', 'body-text', true],
+            ['object', 'object', false],
+            ['inFrontOfText', 'in-front-of-text', false],
+            ['selection', 'selection', false],
+            ['guides', 'guides', false]
+        ];
+        var layers = {};
+        for (var i = 0; i < layerDefs.length; i++) {
+            var def = layerDefs[i];
+            var layer = document.createElement('div');
+            layer.className = 'tm-wysiwyg-page__layer tm-wysiwyg-page__layer--' + def[1];
+            layer.setAttribute('data-layout-layer', def[1]);
+            layer.setAttribute('contenteditable', def[2] ? 'true' : 'false');
+            if (height > 0) {
+                layer.style.minHeight = height + 'px';
+            }
+            body.appendChild(layer);
+            layers[def[0]] = layer;
+        }
+        return layers;
+    }
+
+    function _renderTextBlockFromLayout(block, inst, paragraphLayout) {
+        var type = block.type || block.Type;
+        var typeName = _blockTypeName(block);
+        var content = block.content || block.Content;
+        var el;
+        switch (typeName) {
+            case 'paragraph':
+                el = document.createElement('p');
+                break;
+            case 'heading':
+                el = document.createElement('h' + ((content && (content.level || content.Level)) || 1));
+                break;
+            case 'quote':
+                el = document.createElement('blockquote');
+                break;
+            default:
+                return null;
+        }
+
+        var paragraphRect = paragraphLayout.Rect || paragraphLayout.rect || { X: 0, Y: 0, Width: 0, Height: 0 };
+        el.classList.add('tm-wysiwyg-layout-paragraph');
+        el.setAttribute('data-layout-paragraph-id', paragraphLayout.Id || paragraphLayout.id || '');
+        el.style.left = _roundLayoutNumber(paragraphRect.X) + 'px';
+        el.style.top = _roundLayoutNumber(paragraphRect.Y) + 'px';
+        el.style.width = _roundLayoutNumber(paragraphRect.Width) + 'px';
+        el.style.minHeight = _roundLayoutNumber(paragraphRect.Height) + 'px';
+
+        var lines = paragraphLayout.Lines || paragraphLayout.lines || [];
+        for (var i = 0; i < lines.length; i++) {
+            el.appendChild(_renderLayoutLine(lines[i], paragraphRect, inst, i));
+        }
+
+        _finalizeRenderedBlock(el, block, type, content, inst);
+        return el;
+    }
+
+    function _appendParagraphAnchorGlyph(inst, paragraphEl, blockId, objectBoxes) {
+        if (!paragraphEl || !blockId || !objectBoxes || objectBoxes.length === 0) return;
+        var objectBox = objectBoxes[0] || {};
+        var objectBlockId = objectBox.BlockId || objectBox.blockId || '';
+        if (!objectBlockId) return;
+
+        var glyph = document.createElement('button');
+        glyph.type = 'button';
+        glyph.className = 'tm-wysiwyg-paragraph-anchor-glyph';
+        glyph.setAttribute('contenteditable', 'false');
+        glyph.setAttribute('aria-label', 'Object anchor');
+        glyph.setAttribute('data-testid', 'document-wysiwyg-paragraph-anchor-glyph');
+        glyph.setAttribute('data-anchor-block-id', blockId);
+        glyph.setAttribute('data-anchor-object-block-id', objectBlockId);
+        glyph.textContent = '¶';
+        glyph.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        glyph.addEventListener('mousedown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        glyph.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var figure = _getImageFigureByBlockId(inst, objectBlockId);
+            if (figure) {
+                _selectImageFigure(inst, figure);
+                _syncParagraphAnchorGlyphSelection(inst, objectBlockId);
+            }
+        });
+        paragraphEl.insertBefore(glyph, paragraphEl.firstChild);
+    }
+
+    function _appendBehindTextObjectHandle(inst, layers, objectBox) {
+        if (!inst || !layers || !layers.selection || !objectBox) return;
+        var layer = objectBox.Layer || objectBox.layer || '';
+        var wrapMode = objectBox.WrapMode ?? objectBox.wrapMode ?? 0;
+        if (layer !== 'behindText' && wrapMode !== 5) return;
+
+        var rect = objectBox.Rect || objectBox.rect || {};
+        var blockId = objectBox.BlockId || objectBox.blockId || '';
+        if (!blockId) return;
+
+        var handle = document.createElement('button');
+        handle.type = 'button';
+        handle.className = 'tm-wysiwyg-behind-object-handle';
+        handle.setAttribute('contenteditable', 'false');
+        handle.setAttribute('aria-label', 'Select object behind text');
+        handle.setAttribute('data-testid', 'document-wysiwyg-behind-object-handle');
+        handle.setAttribute('data-block-id', blockId);
+        handle.style.left = Math.max(0, _roundLayoutNumber(rect.X) - 8) + 'px';
+        handle.style.top = Math.max(0, _roundLayoutNumber(rect.Y) - 8) + 'px';
+        handle.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        handle.addEventListener('mousedown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        handle.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var figure = _getImageFigureByBlockId(inst, blockId);
+            if (figure) {
+                _selectImageFigure(inst, figure);
+                _syncParagraphAnchorGlyphSelection(inst, blockId);
+            }
+        });
+        layers.selection.appendChild(handle);
+    }
+
+    function _renderLayoutLine(line, paragraphRect, inst, visualLineIndex) {
+        var lineRect = line.Rect || line.rect || { X: 0, Y: 0, Width: 0, Height: 0 };
+        var lineEl = document.createElement('span');
+        lineEl.className = 'tm-wysiwyg-layout-line';
+        lineEl.setAttribute('data-layout-line-id', line.Id || line.id || '');
+        lineEl.setAttribute('data-block-id', line.BlockId || line.blockId || '');
+        lineEl.setAttribute('data-visual-line-index', String(line.VisualLineIndex ?? line.visualLineIndex ?? visualLineIndex ?? 0));
+        var availableIntervals = line.AvailableIntervals || line.availableIntervals || [];
+        lineEl.setAttribute('data-layout-available-interval-count', String(availableIntervals.length || 0));
+        lineEl.style.left = _roundLayoutNumber(lineRect.X - paragraphRect.X) + 'px';
+        lineEl.style.top = _roundLayoutNumber(lineRect.Y - paragraphRect.Y) + 'px';
+        lineEl.style.width = _roundLayoutNumber(lineRect.Width) + 'px';
+        lineEl.style.height = _roundLayoutNumber(lineRect.Height) + 'px';
+
+        var segments = line.Segments || line.segments || [];
+        for (var i = 0; i < segments.length; i++) {
+            lineEl.appendChild(_renderLayoutSegment(segments[i], lineRect, inst));
+        }
+        return lineEl;
+    }
+
+    function _renderLayoutSegment(segment, lineRect, inst) {
+        var segmentRect = segment.Rect || segment.rect || { X: 0, Y: 0, Width: 0, Height: 0 };
+        var span = document.createElement('span');
+        span.className = 'tm-wysiwyg-layout-segment';
+        span.setAttribute('data-layout-segment-id', segment.Id || segment.id || '');
+        span.setAttribute('data-layout-line-id', segment.LineId || segment.lineId || '');
+        span.setAttribute('data-inline-id', segment.InlineId || segment.inlineId || '');
+        span.setAttribute('data-layout-start-offset', String(segment.StartOffset ?? segment.startOffset ?? 0));
+        span.setAttribute('data-layout-length', String(segment.Length ?? segment.length ?? 0));
+        span.style.left = _roundLayoutNumber(segmentRect.X - lineRect.X) + 'px';
+        span.style.top = _roundLayoutNumber(segmentRect.Y - lineRect.Y) + 'px';
+        span.style.width = _roundLayoutNumber(segmentRect.Width) + 'px';
+        span.style.height = _roundLayoutNumber(segmentRect.Height) + 'px';
+        _setRuntimeNodeAttributes(span, segment.InlineId || segment.inlineId || '', 'inline');
+        _renderTextRunContent(span, segment.Text || segment.text || '');
+        _applyMarks(span, segment.Marks || segment.marks, inst);
+        return span;
+    }
+
+    function _applyLayoutObjectBoxToElement(el, objectBox, inst) {
+        var rect = objectBox.Rect || objectBox.rect || {};
+        var wrapRect = objectBox.WrapRect || objectBox.wrapRect || rect;
+        var objectId = objectBox.Id || objectBox.id || '';
+        var anchorBlockId = objectBox.AnchorBlockId || objectBox.anchorBlockId || objectBox.BlockId || objectBox.blockId || '';
+        var anchorInlineIndex = objectBox.AnchorInlineIndex ?? objectBox.anchorInlineIndex;
+        var anchorOffset = objectBox.AnchorOffset ?? objectBox.anchorOffset;
+        var anchorRegion = objectBox.AnchorRegion ?? objectBox.anchorRegion ?? 0;
+        var anchorPageIndex = objectBox.AnchorPageIndex ?? objectBox.anchorPageIndex;
+        var zIndex = objectBox.ZIndex ?? objectBox.zIndex ?? 0;
+        var allowOverlap = _readLayoutBoolean(objectBox.AllowOverlap ?? objectBox.allowOverlap, false);
+        var wrapMode = objectBox.WrapMode ?? objectBox.wrapMode ?? el.getAttribute('data-wrap-mode') ?? 0;
+        el.classList.add('tm-wysiwyg-layout-object');
+        el.setAttribute('data-layout-object-id', objectId);
+        el.setAttribute('data-wrap-mode', String(wrapMode));
+        el.setAttribute('data-wrap-mode-css', objectBox.WrapModeCss || objectBox.wrapModeCss || '');
+        _writeWrapContourPointsToFigure(el, objectBox.WrapContourPoints || objectBox.wrapContourPoints || _readWrapContourPointsFromFigure(el));
+        el.setAttribute('data-anchor-block-id', anchorBlockId);
+        if (anchorInlineIndex != null && anchorInlineIndex !== '') {
+            el.setAttribute('data-anchor-inline-index', String(anchorInlineIndex));
+        } else {
+            el.removeAttribute('data-anchor-inline-index');
+        }
+        if (anchorOffset != null && anchorOffset !== '') {
+            el.setAttribute('data-anchor-offset', String(anchorOffset));
+        } else {
+            el.removeAttribute('data-anchor-offset');
+        }
+        el.setAttribute('data-anchor-region', String(anchorRegion));
+        if (anchorPageIndex != null && anchorPageIndex !== '') {
+            el.setAttribute('data-anchor-page-index', String(anchorPageIndex));
+        } else {
+            el.removeAttribute('data-anchor-page-index');
+        }
+        el.setAttribute('data-object-z-index', String(zIndex));
+        el.setAttribute('data-allow-overlap', allowOverlap ? 'true' : 'false');
+        el.style.position = 'absolute';
+        el.style.left = _roundLayoutNumber(rect.X) + 'px';
+        el.style.top = _roundLayoutNumber(rect.Y) + 'px';
+        el.style.width = _roundLayoutNumber(rect.Width) + 'px';
+        el.style.minHeight = _roundLayoutNumber(rect.Height) + 'px';
+        el.style.margin = '0';
+        el.style.zIndex = String(zIndex);
+        el.style.setProperty('--tm-layout-object-x', _roundLayoutNumber(rect.X) + 'px');
+        el.style.setProperty('--tm-layout-object-y', _roundLayoutNumber(rect.Y) + 'px');
+        el.style.setProperty('--tm-layout-object-width', _roundLayoutNumber(rect.Width) + 'px');
+        el.style.setProperty('--tm-layout-object-height', _roundLayoutNumber(rect.Height) + 'px');
+        el.style.setProperty('--tm-layout-wrap-x', _roundLayoutNumber(wrapRect.X) + 'px');
+        el.style.setProperty('--tm-layout-wrap-y', _roundLayoutNumber(wrapRect.Y) + 'px');
+        el.style.setProperty('--tm-layout-wrap-width', _roundLayoutNumber(wrapRect.Width) + 'px');
+        el.style.setProperty('--tm-layout-wrap-height', _roundLayoutNumber(wrapRect.Height) + 'px');
+
+        var img = el.querySelector && el.querySelector('img');
+        if (img) {
+            img.style.width = _roundLayoutNumber(rect.Width) + 'px';
+            img.style.height = _roundLayoutNumber(rect.Height) + 'px';
+        }
+        _ensureLayoutObjectChrome(el, inst);
+    }
+
+    function _selectLayoutObjectLayer(layers, objectBox) {
+        var layer = objectBox.Layer || objectBox.layer || 'object';
+        if (layer === 'behindText') return layers.behindText;
+        if (layer === 'inFrontOfText') return layers.inFrontOfText;
+        return layers.object;
     }
 
     function _createVirtualPagePlaceholder(inst, pageIndex) {
@@ -9376,6 +12163,775 @@ window.tmDocumentWysiwyg = (function () {
     function _formatA11yLabel(inst, camelName, pascalName, fallback, pageIndex) {
         var template = _readStringOption(inst, camelName, pascalName, fallback);
         return template.replace('{0}', String((pageIndex || 0) + 1));
+    }
+
+    function _createLayoutSnapshotForRender(doc, renderPlan, pageSettings) {
+        var plan = renderPlan || _createRenderPlan(doc || {});
+        var settings = pageSettings || _normalizePageSettings((doc && (doc.pageSettings || doc.PageSettings)) || {});
+        var metrics = _createLayoutPageMetrics(settings);
+        var pages = (plan && plan.pages) || [];
+        var objectAnchors = _createDocumentObjectAnchorMap(doc || {});
+        var snapshot = {
+            Version: 1,
+            DocumentId: (doc && (doc.documentId || doc.DocumentId)) || '',
+            Pages: []
+        };
+
+        for (var pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+            var pageData = pages[pageIndex];
+            var layoutPage = {
+                PageIndex: pageData.index ?? pageIndex,
+                PageNumber: (pageData.index ?? pageIndex) + 1,
+                PageRect: _cloneLayoutRect(metrics.pageRect),
+                BodyRect: _cloneLayoutRect(metrics.bodyRect),
+                Paragraphs: [],
+                Lines: [],
+                Objects: [],
+                Exclusions: [],
+                Diagnostics: []
+            };
+            var state = {
+                currentY: 0,
+                blockIndex: 0,
+                lineIndex: 0,
+                objectIndex: 0,
+                paragraphRects: new Map(),
+                objectAnchors: objectAnchors,
+                lastTextBlockId: ''
+            };
+            var blocks = pageData.blocks || [];
+            var theme = _readLayoutTheme(doc);
+
+            for (var i = 0; i < blocks.length; i++) {
+                _layoutBlockIntoSnapshot(doc, layoutPage, blocks[i], state, theme);
+                state.blockIndex++;
+            }
+
+            layoutPage.HeightUsed = _roundLayoutNumber(state.currentY);
+            snapshot.Pages.push(layoutPage);
+        }
+
+        return snapshot;
+    }
+
+    function _createDocumentObjectAnchorMap(doc) {
+        var map = {};
+        var anchors = (doc && (doc.anchors || doc.Anchors)) || [];
+        for (var i = 0; i < anchors.length; i++) {
+            var anchor = anchors[i] || {};
+            var objectBlockId = anchor.objectBlockId || anchor.ObjectBlockId || '';
+            if (!objectBlockId) continue;
+            map[objectBlockId] = {
+                BlockId: anchor.blockId || anchor.BlockId || '',
+                InlineIndex: _parseNullableInteger(anchor.inlineIndex ?? anchor.InlineIndex),
+                Offset: _parseNullableInteger(anchor.offset ?? anchor.Offset),
+                Region: _normalizeObjectAnchorRegion(anchor.scope ?? anchor.Scope).value
+            };
+        }
+
+        var blocks = (doc && (doc.blocks || doc.Blocks)) || [];
+        for (var b = 0; b < blocks.length; b++) {
+            var block = blocks[b] || {};
+            var blockId = block.id || block.Id || '';
+            if (!blockId) continue;
+            var content = block.content || block.Content || {};
+            var layout = _getImageObjectLayout(content);
+            if (!layout) continue;
+            var layoutState = _readImageObjectLayout(layout);
+            if (!layoutState.anchorBlockId) continue;
+            map[blockId] = {
+                BlockId: layoutState.anchorBlockId,
+                InlineIndex: layoutState.anchorInlineIndex,
+                Offset: layoutState.anchorOffset,
+                Region: layoutState.anchorRegion.value
+            };
+        }
+
+        return map;
+    }
+
+    function _createLayoutPageMetrics(pageSettings) {
+        var width = _cssLengthToPx(pageSettings && pageSettings.width) || 793.7;
+        var height = _cssLengthToPx(pageSettings && pageSettings.height) || 1122.5;
+        var marginLeft = _cssLengthToPx(pageSettings && pageSettings.marginLeft) || 96;
+        var marginRight = _cssLengthToPx(pageSettings && pageSettings.marginRight) || 96;
+        var marginTop = _cssLengthToPx(pageSettings && pageSettings.marginTop) || 96;
+        var marginBottom = _cssLengthToPx(pageSettings && pageSettings.marginBottom) || 96;
+        return {
+            pageRect: {
+                X: 0,
+                Y: 0,
+                Width: _roundLayoutNumber(width),
+                Height: _roundLayoutNumber(height)
+            },
+            bodyRect: {
+                X: 0,
+                Y: 0,
+                Width: _roundLayoutNumber(Math.max(120, width - marginLeft - marginRight)),
+                Height: _roundLayoutNumber(Math.max(120, height - marginTop - marginBottom))
+            }
+        };
+    }
+
+    function _readLayoutTheme(doc) {
+        var theme = (doc && (doc.theme || doc.Theme)) || {};
+        var fontSize = _sanitizeNumber(theme.bodyFontSize ?? theme.BodyFontSize, 11, 6, 96);
+        var lineHeight = _sanitizeNumber(theme.bodyLineHeight ?? theme.BodyLineHeight, 1.15, 0.8, 3);
+        return {
+            FontFamily: theme.bodyFontFamily || theme.BodyFontFamily || 'Aptos, Arial, sans-serif',
+            FontSize: fontSize,
+            LineHeight: lineHeight,
+            LineHeightPx: _roundLayoutNumber(fontSize * 96 / 72 * lineHeight),
+            ParagraphSpacingAfter: _sanitizeNumber(theme.paragraphSpacingAfter ?? theme.ParagraphSpacingAfter, 8, 0, 144) * 96 / 72
+        };
+    }
+
+    function _layoutBlockIntoSnapshot(doc, layoutPage, block, state, theme) {
+        var typeName = _blockTypeName(block);
+        var blockId = (block && (block.id || block.Id)) || ('block-' + state.blockIndex);
+        var content = (block && (block.content || block.Content)) || {};
+
+        if (typeName === 'image') {
+            var objectBox = _createImageLayoutObject(block, content, layoutPage, state);
+            if (objectBox) {
+                layoutPage.Objects.push(objectBox);
+                if (objectBox.Exclusion) {
+                    layoutPage.Exclusions.push(objectBox.Exclusion);
+                }
+
+                if (objectBox.InlineFlow) {
+                    state.currentY = Math.max(
+                        state.currentY,
+                        objectBox.WrapRect.Y + objectBox.WrapRect.Height + theme.ParagraphSpacingAfter);
+                } else if (objectBox.WrapMode === 4) {
+                    state.currentY = Math.max(state.currentY, objectBox.WrapRect.Y + objectBox.WrapRect.Height);
+                } else if (_wrapModeCreatesTextExclusion(objectBox.WrapMode)) {
+                    state.lastFloatingObjectBottom = Math.max(
+                        state.lastFloatingObjectBottom || state.currentY,
+                        objectBox.WrapRect.Y + objectBox.WrapRect.Height);
+                }
+            }
+            return;
+        }
+
+        if (!_isLayoutTextBlock(typeName)) {
+            state.currentY += theme.LineHeightPx + theme.ParagraphSpacingAfter;
+            return;
+        }
+
+        var paragraph = _createTextParagraphLayout(block, content, blockId, layoutPage, state, theme);
+        layoutPage.Paragraphs.push(paragraph);
+        state.paragraphRects.set(blockId, _cloneLayoutRect(paragraph.Rect));
+        state.lastTextBlockId = blockId;
+        for (var i = 0; i < paragraph.Lines.length; i++) {
+            layoutPage.Lines.push(paragraph.Lines[i]);
+        }
+        state.currentY = paragraph.Rect.Y + paragraph.Rect.Height + theme.ParagraphSpacingAfter;
+    }
+
+    function _isLayoutTextBlock(typeName) {
+        return typeName === 'paragraph'
+            || typeName === 'heading'
+            || typeName === 'quote';
+    }
+
+    function _createTextParagraphLayout(block, content, blockId, layoutPage, state, theme) {
+        var bodyRect = layoutPage.BodyRect;
+        var paragraph = {
+            Id: 'layout-paragraph-' + blockId,
+            BlockId: blockId,
+            Rect: {
+                X: bodyRect.X,
+                Y: _roundLayoutNumber(state.currentY),
+                Width: bodyRect.Width,
+                Height: theme.LineHeightPx
+            },
+            Lines: []
+        };
+        var runs = _createLayoutTextRuns(content);
+        var y = state.currentY;
+        var lineHeight = theme.LineHeightPx;
+        var currentLine = null;
+        var currentInterval = null;
+        var currentIntervals = [];
+        var currentIntervalIndex = 0;
+        var forceNewSegment = false;
+        var x = 0;
+
+        function startLine() {
+            var intervals = _getLayoutAvailableIntervals(y, lineHeight, bodyRect, layoutPage.Exclusions);
+            var guard = 0;
+            while (intervals.length === 0 && guard < 256) {
+                y += lineHeight;
+                intervals = _getLayoutAvailableIntervals(y, lineHeight, bodyRect, layoutPage.Exclusions);
+                guard++;
+            }
+            currentIntervals = intervals.length > 0
+                ? intervals.map(_cloneLayoutRect)
+                : [{ X: bodyRect.X, Y: y, Width: bodyRect.Width, Height: lineHeight }];
+            currentIntervalIndex = 0;
+            currentInterval = currentIntervals[0];
+            currentLine = {
+                Id: 'layout-line-' + blockId + '-' + state.lineIndex++,
+                BlockId: blockId,
+                Rect: {
+                    X: _roundLayoutNumber(currentInterval.X),
+                    Y: _roundLayoutNumber(y),
+                    Width: _roundLayoutNumber(currentInterval.Width),
+                    Height: _roundLayoutNumber(lineHeight)
+                },
+                AvailableIntervals: currentIntervals.map(_cloneLayoutRect),
+                Segments: []
+            };
+            x = currentInterval.X;
+            forceNewSegment = false;
+            paragraph.Lines.push(currentLine);
+        }
+
+        function expandCurrentLineToInterval(interval) {
+            if (!currentLine || !interval) return;
+            var lineRight = currentLine.Rect.X + currentLine.Rect.Width;
+            var intervalRight = interval.X + interval.Width;
+            var left = Math.min(currentLine.Rect.X, interval.X);
+            var right = Math.max(lineRight, intervalRight);
+            currentLine.Rect.X = _roundLayoutNumber(left);
+            currentLine.Rect.Width = _roundLayoutNumber(right - left);
+        }
+
+        function moveToNextAvailableInterval(width) {
+            if (!currentLine || !currentIntervals || currentIntervalIndex >= currentIntervals.length - 1) {
+                return false;
+            }
+
+            for (var intervalIndex = currentIntervalIndex + 1; intervalIndex < currentIntervals.length; intervalIndex++) {
+                var interval = currentIntervals[intervalIndex];
+                if (!interval || interval.Width <= 0) continue;
+                currentInterval = interval;
+                currentIntervalIndex = intervalIndex;
+                x = interval.X;
+                forceNewSegment = true;
+                expandCurrentLineToInterval(interval);
+                return true;
+            }
+
+            return false;
+        }
+
+        function addCharacter(run, char, charIndex) {
+            if (!currentLine) startLine();
+            if (char === '\n') {
+                y += lineHeight;
+                currentLine = null;
+                currentInterval = null;
+                startLine();
+                return;
+            }
+
+            var width = _measureLayoutTextWidth(char, run, theme);
+            var maxRight = currentInterval.X + currentInterval.Width;
+            if (currentLine.Segments.length > 0 && x + width > maxRight) {
+                if (!moveToNextAvailableInterval(width)) {
+                    y += lineHeight;
+                    currentLine = null;
+                    currentInterval = null;
+                    currentIntervals = [];
+                    currentIntervalIndex = 0;
+                    startLine();
+                }
+                maxRight = currentInterval.X + currentInterval.Width;
+            }
+
+            var segment = currentLine.Segments.length > 0
+                ? currentLine.Segments[currentLine.Segments.length - 1]
+                : null;
+            if (!segment || forceNewSegment || segment.InlineId !== run.InlineId || segment.SourceRunIndex !== run.InlineIndex) {
+                segment = {
+                    Id: 'layout-segment-' + blockId + '-' + currentLine.Segments.length + '-' + state.lineIndex + '-' + charIndex,
+                    BlockId: blockId,
+                    LineId: currentLine.Id,
+                    InlineId: run.InlineId,
+                    InlineIndex: run.InlineIndex,
+                    SourceRunIndex: run.InlineIndex,
+                    StartOffset: charIndex,
+                    Length: 0,
+                    Text: '',
+                    Marks: run.Marks || [],
+                    Rect: {
+                        X: _roundLayoutNumber(x),
+                        Y: _roundLayoutNumber(y),
+                        Width: 0,
+                        Height: _roundLayoutNumber(lineHeight)
+                    }
+                };
+                currentLine.Segments.push(segment);
+                forceNewSegment = false;
+            }
+
+            segment.Text += char;
+            segment.Length += 1;
+            segment.Rect.Width = _roundLayoutNumber(segment.Rect.Width + width);
+            x = Math.min(maxRight, x + width);
+        }
+
+        for (var runIndex = 0; runIndex < runs.length; runIndex++) {
+            var run = runs[runIndex];
+            var text = run.Text || '';
+            if (text.length === 0) {
+                startLine();
+                continue;
+            }
+
+            for (var charIndex = 0; charIndex < text.length; charIndex++) {
+                addCharacter(run, text[charIndex], charIndex);
+            }
+        }
+
+        if (paragraph.Lines.length === 0) {
+            startLine();
+        }
+
+        var lastLine = paragraph.Lines[paragraph.Lines.length - 1];
+        paragraph.Rect.Height = _roundLayoutNumber((lastLine.Rect.Y + lastLine.Rect.Height) - paragraph.Rect.Y);
+        return paragraph;
+    }
+
+    function _createLayoutTextRuns(content) {
+        var inlines = (content && (content.inlines || content.Inlines)) || [];
+        if (inlines.length === 0) {
+            return [{ InlineId: 'layout-inline-empty', InlineIndex: 0, Text: '', Marks: [] }];
+        }
+
+        return inlines.map(function (inline, index) {
+            var type = _inlineTypeName(inline);
+            var inlineId = (inline && (inline.id || inline.Id)) || ('layout-inline-' + index);
+            var text = '';
+            if (type === 'text') {
+                text = inline.text || inline.Text || '';
+            } else if (type === 'token') {
+                text = inline.displayName || inline.DisplayName || inline.key || inline.Key || '';
+            } else if (type === 'field') {
+                text = inline.displayText || inline.DisplayText || inline.fallbackText || inline.FallbackText || _fieldFallbackLabel(inline.fieldType ?? inline.FieldType);
+            } else if (type === 'noteReference') {
+                text = inline.displayMarker || inline.DisplayMarker || inline.noteId || inline.NoteId || '';
+            }
+
+            return {
+                InlineId: inlineId,
+                InlineIndex: index,
+                Text: String(text || ''),
+                Marks: (inline && (inline.marks || inline.Marks)) || []
+            };
+        });
+    }
+
+    function _measureLayoutTextWidth(text, run, theme) {
+        var fontWeight = '400';
+        var fontStyle = 'normal';
+        var marks = (run && run.Marks) || [];
+        for (var i = 0; i < marks.length; i++) {
+            var markType = marks[i].type ?? marks[i].Type;
+            if (markType === 'Bold' || markType === 0) fontWeight = '700';
+            if (markType === 'Italic' || markType === 1) fontStyle = 'italic';
+        }
+        var measurement = _measureTextRun({
+            Text: text,
+            FontFamily: theme.FontFamily,
+            FontSize: theme.FontSize,
+            FontWeight: fontWeight,
+            FontStyle: fontStyle,
+            LetterSpacing: 0,
+            Zoom: 1
+        });
+        return Math.max(1, measurement.Width || theme.FontSize * 0.5);
+    }
+
+    function _getLayoutAvailableIntervals(y, height, bodyRect, exclusions) {
+        var intervals = [{ X: bodyRect.X, Y: y, Width: bodyRect.Width, Height: height }];
+        for (var i = 0; i < exclusions.length; i++) {
+            var exclusion = exclusions[i];
+            if (!exclusion || !exclusion.BlocksText) continue;
+            if (!_rectsVerticallyOverlap(y, height, exclusion.Rect.Y, exclusion.Rect.Height)) continue;
+            var polygon = exclusion.Polygon || exclusion.polygon || [];
+            if (Array.isArray(polygon) && polygon.length >= 3) {
+                var blockedIntervals = _getLayoutPolygonBlockedIntervals(y, height, bodyRect, polygon);
+                for (var b = 0; b < blockedIntervals.length; b++) {
+                    intervals = _subtractLayoutInterval(intervals, blockedIntervals[b]);
+                    if (intervals.length === 0) break;
+                }
+            } else {
+                intervals = _subtractLayoutInterval(intervals, exclusion.Rect);
+            }
+            if (intervals.length === 0) break;
+        }
+
+        return intervals
+            .filter(function (interval) { return interval.Width >= 8; })
+            .map(function (interval) {
+                return {
+                    X: _roundLayoutNumber(interval.X),
+                    Y: _roundLayoutNumber(y),
+                    Width: _roundLayoutNumber(interval.Width),
+                    Height: _roundLayoutNumber(height)
+                };
+            });
+    }
+
+    function _subtractLayoutInterval(intervals, exclusionRect) {
+        var result = [];
+        for (var i = 0; i < intervals.length; i++) {
+            var interval = intervals[i];
+            var start = interval.X;
+            var end = interval.X + interval.Width;
+            var exStart = exclusionRect.X;
+            var exEnd = exclusionRect.X + exclusionRect.Width;
+            if (exEnd <= start || exStart >= end) {
+                result.push(interval);
+                continue;
+            }
+
+            if (exStart > start) {
+                result.push({ X: start, Y: interval.Y, Width: Math.max(0, exStart - start), Height: interval.Height });
+            }
+            if (exEnd < end) {
+                result.push({ X: exEnd, Y: interval.Y, Width: Math.max(0, end - exEnd), Height: interval.Height });
+            }
+        }
+
+        return result;
+    }
+
+    function _getLayoutPolygonBlockedIntervals(y, height, bodyRect, polygon) {
+        var top = y;
+        var bottom = y + height;
+        var sampleYs = [
+            Math.max(top + 0.01, Math.min(bottom - 0.01, top + 0.01)),
+            top + height / 2,
+            Math.max(top + 0.01, bottom - 0.01)
+        ];
+        for (var i = 0; i < polygon.length; i++) {
+            var py = parseFloat(polygon[i].Y ?? polygon[i].y);
+            if (Number.isFinite(py) && py > top + 0.01 && py < bottom - 0.01) {
+                sampleYs.push(py);
+            }
+        }
+
+        sampleYs = Array.from(new Set(sampleYs.map(function (value) { return Math.round(value * 100) / 100; })));
+        var intervals = [];
+        for (var s = 0; s < sampleYs.length; s++) {
+            var atY = _getLayoutPolygonIntervalsAtY(polygon, sampleYs[s]);
+            for (var j = 0; j < atY.length; j++) {
+                var left = Math.max(bodyRect.X, atY[j].X);
+                var right = Math.min(bodyRect.X + bodyRect.Width, atY[j].X + atY[j].Width);
+                if (right - left >= 1) {
+                    intervals.push({ X: left, Y: y, Width: right - left, Height: height });
+                }
+            }
+        }
+
+        return _mergeLayoutIntervals(intervals);
+    }
+
+    function _getLayoutPolygonIntervalsAtY(polygon, y) {
+        var intersections = [];
+        for (var i = 0; i < polygon.length; i++) {
+            var a = polygon[i];
+            var b = polygon[(i + 1) % polygon.length];
+            var ax = parseFloat(a.X ?? a.x) || 0;
+            var ay = parseFloat(a.Y ?? a.y) || 0;
+            var bx = parseFloat(b.X ?? b.x) || 0;
+            var by = parseFloat(b.Y ?? b.y) || 0;
+            if (Math.abs(ay - by) < 0.001) continue;
+            var minY = Math.min(ay, by);
+            var maxY = Math.max(ay, by);
+            if (y < minY || y >= maxY) continue;
+            var ratio = (y - ay) / (by - ay);
+            intersections.push(ax + (bx - ax) * ratio);
+        }
+
+        intersections.sort(function (a, b) { return a - b; });
+        var intervals = [];
+        for (var j = 0; j + 1 < intersections.length; j += 2) {
+            var left = intersections[j];
+            var right = intersections[j + 1];
+            if (right > left + 0.001) {
+                intervals.push({ X: left, Width: right - left });
+            }
+        }
+        return intervals;
+    }
+
+    function _mergeLayoutIntervals(intervals) {
+        var ordered = (intervals || [])
+            .filter(function (interval) { return interval && interval.Width > 0; })
+            .sort(function (a, b) { return a.X - b.X; });
+        if (ordered.length <= 1) return ordered;
+        var merged = [ordered[0]];
+        for (var i = 1; i < ordered.length; i++) {
+            var previous = merged[merged.length - 1];
+            var current = ordered[i];
+            var previousEnd = previous.X + previous.Width;
+            if (current.X <= previousEnd + 0.001) {
+                previous.Width = Math.max(previousEnd, current.X + current.Width) - previous.X;
+            } else {
+                merged.push(current);
+            }
+        }
+        return merged;
+    }
+
+    function _rectsVerticallyOverlap(y, height, otherY, otherHeight) {
+        return y < otherY + otherHeight && y + height > otherY;
+    }
+
+    function _createImageLayoutObject(block, content, layoutPage, state) {
+        var layout = _getImageObjectLayout(content);
+        var layoutState = _readImageObjectLayout(layout || { Kind: 0, Wrap: { Mode: 0 } });
+
+        var blockId = (block && (block.id || block.Id)) || ('image-' + state.objectIndex);
+        var size = _readLayoutImageSize(content, layoutState);
+        var storedAnchor = state.objectAnchors && state.objectAnchors[blockId] ? state.objectAnchors[blockId] : null;
+        var anchorBlockId = layoutState.anchorBlockId
+            || (storedAnchor && storedAnchor.BlockId)
+            || state.lastTextBlockId
+            || blockId;
+        var anchorRect = anchorBlockId && state.paragraphRects && state.paragraphRects.get(anchorBlockId)
+            ? state.paragraphRects.get(anchorBlockId)
+            : null;
+        var anchorY = layoutState.fixedOnPage
+            ? 0
+            : (anchorRect ? anchorRect.Y : state.currentY);
+        if (layoutState.inline === false
+            && _wrapModeCreatesTextExclusion(layoutState.wrapMode.value)
+            && !layoutState.fixedOnPage
+            && !anchorRect
+            && layoutState.y === 0
+            && Number.isFinite(state.lastFloatingObjectBottom)
+            && state.lastFloatingObjectBottom > anchorY) {
+            anchorY = state.lastFloatingObjectBottom;
+        }
+        var objectRect = _resolveImageObjectRect(layoutPage.BodyRect, anchorY, size, layoutState);
+        var wrapRect = _createImageWrapRect(objectRect, layoutState, layoutPage.BodyRect);
+        var objectId = 'layout-object-' + blockId;
+        var objectBox = {
+            Id: objectId,
+            BlockId: blockId,
+            ObjectType: 'image',
+            Rect: objectRect,
+            VisualRect: _cloneLayoutRect(objectRect),
+            WrapRect: wrapRect,
+            WrapContourPoints: layoutState.contourPoints,
+            AnchorBlockId: anchorBlockId,
+            AnchorInlineIndex: layoutState.anchorInlineIndex ?? (storedAnchor && storedAnchor.InlineIndex),
+            AnchorOffset: layoutState.anchorOffset ?? (storedAnchor && storedAnchor.Offset),
+            AnchorRegion: layoutState.anchorRegion.value ?? (storedAnchor && storedAnchor.Region) ?? 0,
+            AnchorPageIndex: layoutPage.PageIndex ?? 0,
+            WrapMode: layoutState.wrapMode.value,
+            WrapModeCss: layoutState.wrapMode.css,
+            HorizontalPosition: layoutState.hPos ? layoutState.hPos.css : 'left',
+            InlineFlow: layoutState.inline !== false,
+            ZIndex: layoutState.z,
+            AllowOverlap: layoutState.allowOverlap,
+            Layer: _layoutObjectLayer(layoutState.wrapMode.value),
+            DataAttributes: {
+                'data-layout-object-id': objectId,
+                'data-wrap-mode': String(layoutState.wrapMode.value),
+                'data-wrap-contour-points': JSON.stringify(layoutState.contourPoints),
+                'data-anchor-block-id': anchorBlockId,
+                'data-anchor-inline-index': String(layoutState.anchorInlineIndex ?? (storedAnchor && storedAnchor.InlineIndex) ?? ''),
+                'data-anchor-offset': String(layoutState.anchorOffset ?? (storedAnchor && storedAnchor.Offset) ?? ''),
+                'data-anchor-region': String(layoutState.anchorRegion.value ?? (storedAnchor && storedAnchor.Region) ?? 0),
+                'data-anchor-page-index': String(layoutPage.PageIndex ?? 0),
+                'data-object-z-index': String(layoutState.z),
+                'data-allow-overlap': layoutState.allowOverlap ? 'true' : 'false'
+            }
+        };
+        _avoidLayoutObjectOverlap(layoutPage, objectBox, layoutState);
+        state.objectIndex++;
+
+        if (layoutState.inline === false && _wrapModeCreatesTextExclusion(layoutState.wrapMode.value)) {
+            var exclusion = _createImageLayoutExclusion(blockId, objectId, objectBox, layoutState, layoutPage.BodyRect);
+            objectBox.Exclusion = {
+                Id: exclusion.Id,
+                ObjectId: exclusion.ObjectId,
+                Rect: exclusion.Rect,
+                Polygon: exclusion.Polygon,
+                BlocksText: true,
+                WrapMode: layoutState.wrapMode.value,
+                IsContourPlaceholder: false
+            };
+        }
+
+        return objectBox;
+    }
+
+    function _createImageLayoutExclusion(blockId, objectId, objectBox, layoutState, bodyRect) {
+        var wrapMode = layoutState.wrapMode.value;
+        if (wrapMode === 2 || wrapMode === 3) {
+            var polygon = _projectImageWrapContourPoints(objectBox.Rect, objectBox.WrapRect, layoutState.contourPoints, bodyRect);
+            var bounds = _layoutPolygonBounds(polygon);
+            return {
+                Id: 'layout-exclusion-' + blockId,
+                ObjectId: objectId,
+                Rect: bounds,
+                Polygon: polygon
+            };
+        }
+
+        return {
+            Id: 'layout-exclusion-' + blockId,
+            ObjectId: objectId,
+            Rect: objectBox.WrapRect,
+            Polygon: []
+        };
+    }
+
+    function _avoidLayoutObjectOverlap(layoutPage, objectBox, layoutState) {
+        if (!layoutPage || !objectBox || _readLayoutBoolean(objectBox.AllowOverlap ?? objectBox.allowOverlap, false)) return;
+        var bodyRect = layoutPage.BodyRect || {};
+        var peers = layoutPage.Objects || [];
+        var guard = 0;
+        while (guard++ < 64) {
+            var overlap = null;
+            for (var i = 0; i < peers.length; i++) {
+                var peer = peers[i];
+                if (!peer || _readLayoutBoolean(peer.AllowOverlap ?? peer.allowOverlap, false)) continue;
+                if ((peer.Layer || peer.layer || 'object') !== (objectBox.Layer || objectBox.layer || 'object')) continue;
+                if (!_layoutRectsIntersect(peer.Rect || peer.rect, objectBox.Rect || objectBox.rect)) continue;
+                if (!overlap || ((peer.Rect || peer.rect).Y + (peer.Rect || peer.rect).Height) > ((overlap.Rect || overlap.rect).Y + (overlap.Rect || overlap.rect).Height)) {
+                    overlap = peer;
+                }
+            }
+
+            if (!overlap) break;
+            var overlapRect = overlap.Rect || overlap.rect;
+            var rect = objectBox.Rect || objectBox.rect;
+            var nextY = (overlapRect.Y || 0) + (overlapRect.Height || 0) + 8;
+            var bottomLimit = (bodyRect.Y || 0) + (bodyRect.Height || 0);
+            if (bottomLimit > 0 && nextY + (rect.Height || 0) > bottomLimit) {
+                nextY = Math.max(bodyRect.Y || 0, bottomLimit - (rect.Height || 0));
+                if (nextY <= (rect.Y || 0) + 0.01) break;
+            }
+
+            rect.Y = _roundLayoutNumber(nextY);
+            objectBox.Rect = rect;
+            objectBox.VisualRect = _cloneLayoutRect(rect);
+            objectBox.WrapRect = _createImageWrapRect(rect, layoutState, bodyRect);
+        }
+    }
+
+    function _layoutRectsIntersect(a, b) {
+        if (!a || !b) return false;
+        var ax = a.X ?? a.x ?? 0;
+        var ay = a.Y ?? a.y ?? 0;
+        var aw = a.Width ?? a.width ?? 0;
+        var ah = a.Height ?? a.height ?? 0;
+        var bx = b.X ?? b.x ?? 0;
+        var by = b.Y ?? b.y ?? 0;
+        var bw = b.Width ?? b.width ?? 0;
+        var bh = b.Height ?? b.height ?? 0;
+        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+    }
+
+    function _readLayoutImageSize(content, layoutState) {
+        var transform = content && (content.transform || content.Transform || (content.layout || content.Layout || {}).transform || (content.layout || content.Layout || {}).Transform) || {};
+        var size = content && (content.size || content.Size) || {};
+        var naturalSize = content && (content.naturalSize || content.NaturalSize) || {};
+        var width = parseFloat(transform.width ?? transform.Width ?? size.width ?? size.Width ?? naturalSize.width ?? naturalSize.Width ?? 220) || 220;
+        var height = parseFloat(transform.height ?? transform.Height ?? size.height ?? size.Height ?? naturalSize.height ?? naturalSize.Height ?? 124) || 124;
+        if (width <= 0) width = 220;
+        if (height <= 0) height = Math.round(width * 0.5625);
+        return {
+            Width: _roundLayoutNumber(width),
+            Height: _roundLayoutNumber(height)
+        };
+    }
+
+    function _resolveImageObjectRect(bodyRect, currentY, size, layoutState) {
+        var x = bodyRect.X + layoutState.x;
+        var y = bodyRect.Y + currentY + layoutState.y;
+        var hPos = layoutState.hPos ? layoutState.hPos.css : 'left';
+        if (hPos === 'center') {
+            x = bodyRect.X + (bodyRect.Width - size.Width) / 2 + layoutState.x;
+        } else if (hPos === 'right') {
+            x = bodyRect.X + bodyRect.Width - size.Width + layoutState.x;
+        }
+
+        x = Math.max(bodyRect.X, Math.min(bodyRect.X + bodyRect.Width - size.Width, x));
+        y = Math.max(bodyRect.Y, Math.min(bodyRect.Y + bodyRect.Height - size.Height, y));
+        return {
+            X: _roundLayoutNumber(x),
+            Y: _roundLayoutNumber(y),
+            Width: _roundLayoutNumber(size.Width),
+            Height: _roundLayoutNumber(size.Height)
+        };
+    }
+
+    function _createImageWrapRect(objectRect, layoutState, bodyRect) {
+        if (layoutState.wrapMode.value === 4) {
+            return {
+                X: bodyRect.X,
+                Y: _roundLayoutNumber(objectRect.Y - layoutState.distT),
+                Width: bodyRect.Width,
+                Height: _roundLayoutNumber(objectRect.Height + layoutState.distT + layoutState.distB)
+            };
+        }
+
+        return {
+            X: _roundLayoutNumber(Math.max(bodyRect.X, objectRect.X - layoutState.distL)),
+            Y: _roundLayoutNumber(Math.max(bodyRect.Y, objectRect.Y - layoutState.distT)),
+            Width: _roundLayoutNumber(Math.min(bodyRect.X + bodyRect.Width, objectRect.X + objectRect.Width + layoutState.distR) - Math.max(bodyRect.X, objectRect.X - layoutState.distL)),
+            Height: _roundLayoutNumber(Math.min(bodyRect.Y + bodyRect.Height, objectRect.Y + objectRect.Height + layoutState.distB) - Math.max(bodyRect.Y, objectRect.Y - layoutState.distT))
+        };
+    }
+
+    function _projectImageWrapContourPoints(objectRect, wrapRect, points, bodyRect) {
+        var sourceRect = wrapRect && wrapRect.Width > 0 && wrapRect.Height > 0 ? wrapRect : objectRect;
+        return _normalizeWrapContourPoints(points).map(function (point) {
+            return {
+                X: _roundLayoutNumber(Math.max(bodyRect.X, Math.min(bodyRect.X + bodyRect.Width, sourceRect.X + sourceRect.Width * point.X))),
+                Y: _roundLayoutNumber(Math.max(bodyRect.Y, Math.min(bodyRect.Y + bodyRect.Height, sourceRect.Y + sourceRect.Height * point.Y)))
+            };
+        });
+    }
+
+    function _layoutPolygonBounds(points) {
+        var normalized = Array.isArray(points) ? points : [];
+        if (!normalized.length) return { X: 0, Y: 0, Width: 0, Height: 0 };
+        var left = Math.min.apply(Math, normalized.map(function (point) { return point.X; }));
+        var top = Math.min.apply(Math, normalized.map(function (point) { return point.Y; }));
+        var right = Math.max.apply(Math, normalized.map(function (point) { return point.X; }));
+        var bottom = Math.max.apply(Math, normalized.map(function (point) { return point.Y; }));
+        return {
+            X: _roundLayoutNumber(left),
+            Y: _roundLayoutNumber(top),
+            Width: _roundLayoutNumber(Math.max(0, right - left)),
+            Height: _roundLayoutNumber(Math.max(0, bottom - top))
+        };
+    }
+
+    function _wrapModeCreatesTextExclusion(wrapMode) {
+        return wrapMode === 1 || wrapMode === 2 || wrapMode === 3 || wrapMode === 4;
+    }
+
+    function _layoutObjectLayer(wrapMode) {
+        if (wrapMode === 5) return 'behindText';
+        if (wrapMode === 6) return 'inFrontOfText';
+        return 'object';
+    }
+
+    function _cloneLayoutRect(rect) {
+        return {
+            X: _roundLayoutNumber(rect && rect.X),
+            Y: _roundLayoutNumber(rect && rect.Y),
+            Width: _roundLayoutNumber(rect && rect.Width),
+            Height: _roundLayoutNumber(rect && rect.Height)
+        };
+    }
+
+    function _roundLayoutNumber(value) {
+        var number = parseFloat(value);
+        if (!Number.isFinite(number)) return 0;
+        return Math.round(number * 100) / 100;
     }
 
     function _ensureAccessibilityDescription(inst) {
@@ -10072,6 +13628,144 @@ window.tmDocumentWysiwyg = (function () {
         inst.measureCache.clear();
     }
 
+    function _measureTextRun(request) {
+        var normalized = _normalizeTextMeasurementRequest(request);
+        var key = _getTextRunMeasureCacheKey(normalized);
+        var cached = _textRunMeasureCache.get(key);
+        if (cached) {
+            _textRunMeasureStats.cacheHits++;
+            return cached;
+        }
+
+        var source = 'canvas';
+        var width = _measureTextRunWithCanvas(normalized);
+        if (!Number.isFinite(width) || width <= 0) {
+            source = 'approximate';
+            width = _measureTextRunApproximately(normalized);
+        }
+
+        var letterSpacingWidth = Math.max(0, normalized.text.length - 1) * normalized.letterSpacing;
+        var zoom = Math.max(0.1, normalized.zoom);
+        var height = normalized.fontSize * 1.2 * zoom;
+        var measurement = {
+            Width: (width + letterSpacingWidth) * zoom,
+            Height: height,
+            Baseline: height * 0.8,
+            Source: source,
+            CacheKey: key
+        };
+
+        _textRunMeasureStats.count++;
+        _textRunMeasureCache.set(key, measurement);
+        if (_textRunMeasureCache.size > 4096) {
+            _textRunMeasureCache.delete(_textRunMeasureCache.keys().next().value);
+        }
+
+        return measurement;
+    }
+
+    function _normalizeTextMeasurementRequest(request) {
+        request = request || {};
+        return {
+            text: String(request.text ?? request.Text ?? ''),
+            fontFamily: String(request.fontFamily ?? request.FontFamily ?? 'Arial'),
+            fontSize: _parseTextMeasureNumber(request.fontSize ?? request.FontSize, 12),
+            fontWeight: String(request.fontWeight ?? request.FontWeight ?? '400'),
+            fontStyle: String(request.fontStyle ?? request.FontStyle ?? 'normal'),
+            letterSpacing: _parseTextMeasureNumber(request.letterSpacing ?? request.LetterSpacing, 0),
+            zoom: _parseTextMeasureNumber(request.zoom ?? request.Zoom, 1)
+        };
+    }
+
+    function _parseTextMeasureNumber(value, fallback) {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string' && value.trim()) {
+            var parsed = parseFloat(value.trim().replace(',', '.'));
+            if (Number.isFinite(parsed)) return parsed;
+        }
+        return fallback;
+    }
+
+    function _getTextRunMeasureCacheKey(request) {
+        var normalized = request && request.text !== undefined
+            ? request
+            : _normalizeTextMeasurementRequest(request);
+        return [
+            normalized.text,
+            normalized.fontFamily,
+            normalized.fontSize,
+            normalized.fontWeight,
+            normalized.fontStyle,
+            normalized.letterSpacing,
+            normalized.zoom
+        ].join('|');
+    }
+
+    function _measureTextRunWithCanvas(request) {
+        if (typeof document === 'undefined' || !document.createElement) return 0;
+        if (!_textRunMeasureCanvas) {
+            _textRunMeasureCanvas = document.createElement('canvas');
+        }
+
+        var context = _textRunMeasureCanvas.getContext && _textRunMeasureCanvas.getContext('2d');
+        if (!context || !context.measureText) return 0;
+        context.font = _buildCanvasFont(request);
+        return context.measureText(request.text).width;
+    }
+
+    function _buildCanvasFont(request) {
+        var style = request.fontStyle && request.fontStyle !== 'normal' ? request.fontStyle : 'normal';
+        var weight = request.fontWeight || '400';
+        var family = request.fontFamily || 'Arial';
+        return style + ' ' + weight + ' ' + Math.max(1, request.fontSize) + 'px ' + family;
+    }
+
+    function _measureTextRunApproximately(request) {
+        var total = 0;
+        for (var index = 0; index < request.text.length; index++) {
+            total += _getApproximateTextCharacterFactor(request.text.charAt(index));
+        }
+
+        var width = total * request.fontSize;
+        if (_isTextMeasureBold(request.fontWeight)) width *= 1.08;
+        if ((request.fontStyle || '').toLowerCase().includes('italic')) width *= 1.03;
+        return width;
+    }
+
+    function _getApproximateTextCharacterFactor(ch) {
+        if (ch === '\t') return 1.6;
+        if (/\s/.test(ch)) return 0.34;
+        if (/[0-9]/.test(ch)) return 0.55;
+        if (/[A-Z]/.test(ch)) return 0.66;
+        if (/[\p{P}\p{S}]/u.test(ch)) return 0.32;
+        if (ch.charCodeAt(0) > 0x2E80) return 1.0;
+        return 0.52;
+    }
+
+    function _isTextMeasureBold(value) {
+        if (!value) return false;
+        var text = String(value).toLowerCase();
+        if (text === 'bold' || text === 'bolder') return true;
+        var numeric = parseInt(text, 10);
+        return Number.isFinite(numeric) && numeric >= 600;
+    }
+
+    function _getTextRunMeasureStats() {
+        return {
+            MeasureCount: _textRunMeasureStats.count,
+            MeasureCacheHits: _textRunMeasureStats.cacheHits,
+            MeasureInvalidations: _textRunMeasureStats.invalidations,
+            MeasureCacheSize: _textRunMeasureCache.size
+        };
+    }
+
+    function _clearTextRunMeasureCache() {
+        if (_textRunMeasureCache.size > 0) {
+            _textRunMeasureStats.invalidations++;
+        }
+        _textRunMeasureCache.clear();
+    }
+
     function _renderBlock(block, inst) {
         var type = block.type || block.Type;
         var id = block.id || block.Id;
@@ -10129,20 +13823,24 @@ window.tmDocumentWysiwyg = (function () {
                 break;
         }
 
-        if (el) {
-            el.setAttribute('data-block-id', id || '');
-            var order = block.order ?? block.Order;
-            _setRuntimeNodeAttributes(el, id || _renderNodeId('block', null, order ?? 0), 'block');
-            if (order != null) el.setAttribute('data-block-order', String(order));
-            el.classList.add('tm-wysiwyg-block');
-            _applyParagraphProperties(el, block.paragraphProperties || block.ParagraphProperties);
-            if ((type === 'List' || type === 2) && content && (content.indentLevel ?? content.IndentLevel) != null) {
-                el.style.marginLeft = _sanitizeParagraphPoints((content.indentLevel ?? content.IndentLevel) * 36, 0, 432) + 'pt';
-            }
-            _appendSuggestionDecorations(el, id, inst);
-        }
+        _finalizeRenderedBlock(el, block, type, content, inst);
 
         return el;
+    }
+
+    function _finalizeRenderedBlock(el, block, type, content, inst) {
+        if (!el || !block) return;
+        var id = block.id || block.Id;
+        el.setAttribute('data-block-id', id || '');
+        var order = block.order ?? block.Order;
+        _setRuntimeNodeAttributes(el, id || _renderNodeId('block', null, order ?? 0), 'block');
+        if (order != null) el.setAttribute('data-block-order', String(order));
+        el.classList.add('tm-wysiwyg-block');
+        _applyParagraphProperties(el, block.paragraphProperties || block.ParagraphProperties);
+        if ((type === 'List' || type === 2) && content && (content.indentLevel ?? content.IndentLevel) != null) {
+            el.style.marginLeft = _sanitizeParagraphPoints((content.indentLevel ?? content.IndentLevel) * 36, 0, 432) + 'pt';
+        }
+        _appendSuggestionDecorations(el, id, inst);
     }
 
     function _appendSuggestionDecorations(blockEl, blockId, inst) {
@@ -10805,22 +14503,28 @@ window.tmDocumentWysiwyg = (function () {
         img.loading = 'lazy';
         img.decoding = 'async';
         img.alt = alt;
+        var isDecorative = !!(content && (content.isDecorative ?? content.IsDecorative ?? content.decorative ?? content.Decorative));
+        figure.setAttribute('data-image-decorative', isDecorative ? 'true' : 'false');
         var source = content && (content.source ?? content.Source);
         var assetId = content && (content.assetId || content.AssetId);
         figure.setAttribute('data-image-source', source == null ? '0' : String(source));
         if (assetId) figure.setAttribute('data-image-asset-id', assetId);
         if (assetId) img.setAttribute('data-node-id', _renderNodeId('asset', assetId, 'image'));
         img.setAttribute('data-runtime-node-type', 'image-asset');
+        var layout = _getImageObjectLayout(content);
+        var transform = layout && (layout.transform || layout.Transform) || {};
         var size = content && (content.size || content.Size);
-        if (size) {
-            if (size.width || size.Width) img.style.width = (size.width || size.Width) + 'px';
-            if (size.height || size.Height) img.style.height = (size.height || size.Height) + 'px';
-            figure.setAttribute('data-lock-aspect-ratio', (size.lockAspectRatio ?? size.LockAspectRatio) === false ? 'false' : 'true');
+        if (size || Object.keys(transform).length > 0) {
+            var width = transform.width ?? transform.Width ?? size?.width ?? size?.Width;
+            var height = transform.height ?? transform.Height ?? size?.height ?? size?.Height;
+            if (width) img.style.width = width + 'px';
+            if (height) img.style.height = height + 'px';
+            figure.setAttribute('data-lock-aspect-ratio', (transform.lockAspectRatio ?? transform.LockAspectRatio ?? size?.lockAspectRatio ?? size?.LockAspectRatio) === false ? 'false' : 'true');
         }
         var naturalSize = content && (content.naturalSize || content.NaturalSize);
         if (naturalSize) {
-            var naturalWidth = naturalSize.width || naturalSize.Width;
-            var naturalHeight = naturalSize.height || naturalSize.Height;
+            var naturalWidth = transform.naturalWidth ?? transform.NaturalWidth ?? naturalSize.width ?? naturalSize.Width;
+            var naturalHeight = transform.naturalHeight ?? transform.NaturalHeight ?? naturalSize.height ?? naturalSize.Height;
             if (naturalWidth) figure.setAttribute('data-image-natural-width', String(naturalWidth));
             if (naturalHeight) figure.setAttribute('data-image-natural-height', String(naturalHeight));
         }
@@ -10840,6 +14544,7 @@ window.tmDocumentWysiwyg = (function () {
         _attachImageLoadState(figure, img, src, inst);
         _applyFloatingImageLayout(figure, content, inst);
         _ensureImageResizeHandle(figure, inst);
+        _syncImageAccessibilityAttributes(inst, figure);
         return figure;
     }
 
@@ -10861,6 +14566,7 @@ window.tmDocumentWysiwyg = (function () {
         img.addEventListener('load', function () {
             figure.setAttribute('data-image-load-state', 'loaded');
             _recordImageNaturalSize(figure, img);
+            _syncImageAccessibilityAttributes(inst, figure);
             figure.querySelectorAll('.tm-wysiwyg-image__retry').forEach(function (retry) { retry.remove(); });
         }, { once: true });
         img.addEventListener('error', function () {
@@ -10909,8 +14615,150 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
+    function _getImageObjectLayout(content) {
+        if (!content) return null;
+        var layout = content.layout || content.Layout;
+        if (layout) return layout;
+        var legacy = content.floatingLayout || content.FloatingLayout;
+        if (!legacy) return null;
+
+        var inline = (legacy.inline ?? legacy.Inline) !== false;
+        var wrap = _normalizeWrapMode(legacy.wrapMode ?? legacy.WrapMode);
+        var hPos = _normalizeHorizontalPosition(legacy.horizontalPosition ?? legacy.HorizontalPosition);
+        var objectLayout = {
+            Kind: inline ? 0 : 1,
+            Anchor: {
+                BlockId: legacy.anchorBlockId || legacy.AnchorBlockId || null,
+                InlineIndex: legacy.anchorInlineIndex ?? legacy.AnchorInlineIndex ?? null,
+                Offset: legacy.anchorOffset ?? legacy.AnchorOffset ?? null,
+                Region: legacy.anchorRegion ?? legacy.AnchorRegion ?? 0,
+                MoveWithText: !inline,
+                FixedOnPage: false,
+                LockAnchor: !!(legacy.lockAnchor ?? legacy.LockAnchor)
+            },
+            Position: {
+                HorizontalRelativeTo: legacy.horizontalRelativeTo ?? legacy.HorizontalRelativeTo ?? 0,
+                VerticalRelativeTo: legacy.verticalRelativeTo ?? legacy.VerticalRelativeTo ?? 3,
+                X: parseFloat(legacy.x ?? legacy.X ?? 0) || 0,
+                Y: parseFloat(legacy.y ?? legacy.Y ?? 0) || 0
+            },
+            Wrap: {
+                Mode: wrap.value,
+                DistanceLeft: parseFloat(legacy.distanceLeft ?? legacy.DistanceLeft ?? 0) || 0,
+                DistanceRight: parseFloat(legacy.distanceRight ?? legacy.DistanceRight ?? 0) || 0,
+                DistanceTop: parseFloat(legacy.distanceTop ?? legacy.DistanceTop ?? 0) || 0,
+                DistanceBottom: parseFloat(legacy.distanceBottom ?? legacy.DistanceBottom ?? 0) || 0,
+                WrapContourPoints: _normalizeWrapContourPoints(legacy.wrapContourPoints ?? legacy.WrapContourPoints)
+            },
+            Transform: {},
+            Stacking: {
+                ZIndex: parseInt(legacy.zIndex ?? legacy.ZIndex ?? 0, 10) || 0,
+                AllowOverlap: _readLayoutBoolean(legacy.allowOverlap ?? legacy.AllowOverlap, false)
+            }
+        };
+        if (hPos) objectLayout.Position.HorizontalAlignment = hPos.value;
+        return objectLayout;
+    }
+
+    function _readImageObjectLayout(layout) {
+        layout = layout || {};
+        var anchor = layout.anchor || layout.Anchor || {};
+        var position = layout.position || layout.Position || layout;
+        var wrap = layout.wrap || layout.Wrap || layout;
+        var stacking = layout.stacking || layout.Stacking || layout;
+        var wrapMode = _normalizeWrapMode(wrap.mode ?? wrap.Mode ?? layout.wrapMode ?? layout.WrapMode);
+        var kind = layout.kind ?? layout.Kind;
+        var inlineValue = layout.inline ?? layout.Inline;
+        var inline = inlineValue == null
+            ? (String(kind == null ? 'Inline' : kind).toLowerCase() === 'inline' || String(kind) === '0' || wrapMode.value === 0)
+            : inlineValue !== false;
+        var region = _normalizeObjectAnchorRegion(anchor.region ?? anchor.Region ?? layout.anchorRegion ?? layout.AnchorRegion);
+        return {
+            inline: inline,
+            wrapMode: wrapMode,
+            anchorBlockId: anchor.blockId || anchor.BlockId || layout.anchorBlockId || layout.AnchorBlockId || '',
+            anchorInlineIndex: _parseNullableInteger(anchor.inlineIndex ?? anchor.InlineIndex ?? layout.anchorInlineIndex ?? layout.AnchorInlineIndex),
+            anchorOffset: _parseNullableInteger(anchor.offset ?? anchor.Offset ?? layout.anchorOffset ?? layout.AnchorOffset),
+            anchorRegion: region,
+            anchorPageIndex: _parseNullableInteger(anchor.pageIndex ?? anchor.PageIndex ?? layout.anchorPageIndex ?? layout.AnchorPageIndex),
+            horizontal: _normalizeRelativePosition(position.horizontalRelativeTo ?? position.HorizontalRelativeTo ?? layout.horizontalRelativeTo ?? layout.HorizontalRelativeTo),
+            vertical: _normalizeRelativePosition(position.verticalRelativeTo ?? position.VerticalRelativeTo ?? layout.verticalRelativeTo ?? layout.VerticalRelativeTo ?? 3),
+            x: parseFloat(position.x ?? position.X ?? layout.x ?? layout.X ?? 0) || 0,
+            y: parseFloat(position.y ?? position.Y ?? layout.y ?? layout.Y ?? 0) || 0,
+            z: parseInt(stacking.zIndex ?? stacking.ZIndex ?? layout.zIndex ?? layout.ZIndex ?? 0, 10) || 0,
+            allowOverlap: _readLayoutBoolean(stacking.allowOverlap ?? stacking.AllowOverlap ?? layout.allowOverlap ?? layout.AllowOverlap, false),
+            lockAnchor: !!(anchor.lockAnchor ?? anchor.LockAnchor ?? layout.lockAnchor ?? layout.LockAnchor),
+            moveWithText: (anchor.moveWithText ?? anchor.MoveWithText ?? layout.moveWithText ?? layout.MoveWithText) !== false,
+            fixedOnPage: !!(anchor.fixedOnPage ?? anchor.FixedOnPage ?? layout.fixedOnPage ?? layout.FixedOnPage),
+            hPos: _normalizeHorizontalPosition(position.horizontalAlignment ?? position.HorizontalAlignment ?? layout.horizontalPosition ?? layout.HorizontalPosition),
+            distL: parseFloat(wrap.distanceLeft ?? wrap.DistanceLeft ?? layout.distanceLeft ?? layout.DistanceLeft ?? 0) || 0,
+            distR: parseFloat(wrap.distanceRight ?? wrap.DistanceRight ?? layout.distanceRight ?? layout.DistanceRight ?? 0) || 0,
+            distT: parseFloat(wrap.distanceTop ?? wrap.DistanceTop ?? layout.distanceTop ?? layout.DistanceTop ?? 0) || 0,
+            distB: parseFloat(wrap.distanceBottom ?? wrap.DistanceBottom ?? layout.distanceBottom ?? layout.DistanceBottom ?? 0) || 0,
+            contourPoints: _normalizeWrapContourPoints(wrap.wrapContourPoints ?? wrap.WrapContourPoints ?? layout.wrapContourPoints ?? layout.WrapContourPoints)
+        };
+    }
+
+    function _createImageObjectLayoutFromFigure(figureEl) {
+        var inline = figureEl.getAttribute('data-floating-inline') !== 'false';
+        var wrapMode = parseInt(figureEl.getAttribute('data-wrap-mode') || (inline ? '0' : '1'), 10);
+        var horizontal = parseInt(figureEl.getAttribute('data-horizontal-relative-to') || '0', 10);
+        var vertical = parseInt(figureEl.getAttribute('data-vertical-relative-to') || '3', 10);
+        var x = parseFloat(figureEl.getAttribute('data-image-x') || '0') || 0;
+        var y = parseFloat(figureEl.getAttribute('data-image-y') || '0') || 0;
+        var z = parseInt(figureEl.style.zIndex || figureEl.getAttribute('data-object-z-index') || '0', 10) || 0;
+        var allowOverlap = _readLayoutBoolean(figureEl.getAttribute('data-allow-overlap'), false);
+        var moveWithText = figureEl.getAttribute('data-move-with-text') !== 'false';
+        var fixedOnPage = figureEl.getAttribute('data-fixed-on-page') === 'true';
+        var anchorBlockId = figureEl.getAttribute('data-anchor-block-id') || '';
+        var anchorInlineIndex = _parseNullableInteger(figureEl.getAttribute('data-anchor-inline-index'));
+        var anchorOffset = _parseNullableInteger(figureEl.getAttribute('data-anchor-offset'));
+        var anchorRegion = _normalizeObjectAnchorRegion(figureEl.getAttribute('data-anchor-region'));
+        var hPosAttr = figureEl.getAttribute('data-horizontal-position');
+        var hPos = hPosAttr ? _normalizeHorizontalPosition(hPosAttr) : null;
+        var distL = parseFloat(figureEl.style.marginLeft) || 0;
+        var distR = parseFloat(figureEl.style.marginRight) || 0;
+        var distT = parseFloat(figureEl.style.marginTop) || 0;
+        var distB = parseFloat(figureEl.style.marginBottom) || 0;
+        var layout = {
+            Kind: fixedOnPage ? 2 : (inline ? 0 : 1),
+            Anchor: {
+                BlockId: anchorBlockId || null,
+                InlineIndex: anchorInlineIndex,
+                Offset: anchorOffset,
+                Region: anchorRegion.value,
+                MoveWithText: moveWithText,
+                FixedOnPage: fixedOnPage,
+                LockAnchor: figureEl.getAttribute('data-lock-anchor') === 'true'
+            },
+            Position: {
+                HorizontalRelativeTo: horizontal,
+                VerticalRelativeTo: vertical,
+                X: x,
+                Y: y
+            },
+            Wrap: {
+                Mode: wrapMode,
+                DistanceLeft: distL,
+                DistanceRight: distR,
+                DistanceTop: distT,
+                DistanceBottom: distB,
+                WrapContourPoints: _readWrapContourPointsFromFigure(figureEl)
+            },
+            Transform: {
+                LockAspectRatio: figureEl.getAttribute('data-lock-aspect-ratio') !== 'false'
+            },
+            Stacking: {
+                ZIndex: z,
+                AllowOverlap: allowOverlap
+            }
+        };
+        if (hPos) layout.Position.HorizontalAlignment = hPos.value;
+        return layout;
+    }
+
     function _applyFloatingImageLayout(figure, content, inst) {
-        var layout = content && (content.floatingLayout || content.FloatingLayout);
+        var layout = _getImageObjectLayout(content);
         figure.classList.remove(
             'tm-wysiwyg-image--floating',
             'tm-wysiwyg-image--wrap-inline',
@@ -10938,37 +14786,85 @@ window.tmDocumentWysiwyg = (function () {
         figure.style.marginRight = '';
         figure.style.marginTop = '';
         figure.style.marginBottom = '';
+        figure.style.shapeOutside = '';
 
         if (!layout) {
             figure.setAttribute('data-floating-inline', 'true');
             figure.setAttribute('data-wrap-mode', '0');
+            _writeWrapContourPointsToFigure(figure, _defaultWrapContourPoints());
+            figure.setAttribute('data-object-z-index', '0');
+            figure.setAttribute('data-allow-overlap', 'false');
+            figure.setAttribute('data-move-with-text', 'true');
+            figure.setAttribute('data-fixed-on-page', 'false');
+            figure.removeAttribute('data-anchor-block-id');
+            figure.removeAttribute('data-anchor-inline-index');
+            figure.removeAttribute('data-anchor-offset');
+            figure.setAttribute('data-anchor-region', '0');
+            figure.removeAttribute('data-anchor-page-index');
             _debugImage(inst, 'layout.apply.inline-default', {
                 figure: _debugElementLabel(figure)
             });
+            _syncImageAccessibilityAttributes(inst, figure);
             return;
         }
 
-        var inline = layout.inline ?? layout.Inline;
-        var wrapMode = _normalizeWrapMode(layout.wrapMode ?? layout.WrapMode);
-        var horizontal = _normalizeRelativePosition(layout.horizontalRelativeTo ?? layout.HorizontalRelativeTo);
-        var vertical = _normalizeRelativePosition(layout.verticalRelativeTo ?? layout.VerticalRelativeTo);
-        var x = parseFloat(layout.x ?? layout.X ?? 0) || 0;
-        var y = parseFloat(layout.y ?? layout.Y ?? 0) || 0;
-        var z = parseInt(layout.zIndex ?? layout.ZIndex ?? 0, 10) || 0;
-        var lockAnchor = !!(layout.lockAnchor ?? layout.LockAnchor);
-        var hPos = _normalizeHorizontalPosition(layout.horizontalPosition ?? layout.HorizontalPosition);
-        var distL = parseFloat(layout.distanceLeft ?? layout.DistanceLeft ?? 0) || 0;
-        var distR = parseFloat(layout.distanceRight ?? layout.DistanceRight ?? 0) || 0;
-        var distT = parseFloat(layout.distanceTop ?? layout.DistanceTop ?? 0) || 0;
-        var distB = parseFloat(layout.distanceBottom ?? layout.DistanceBottom ?? 0) || 0;
+        var layoutState = _readImageObjectLayout(layout);
+        var inline = layoutState.inline;
+        var wrapMode = layoutState.wrapMode;
+        var horizontal = layoutState.horizontal;
+        var vertical = layoutState.vertical;
+        var x = layoutState.x;
+        var y = layoutState.y;
+        var z = layoutState.z;
+        var allowOverlap = layoutState.allowOverlap;
+        var anchorBlockId = layoutState.anchorBlockId;
+        var anchorInlineIndex = layoutState.anchorInlineIndex;
+        var anchorOffset = layoutState.anchorOffset;
+        var anchorRegion = layoutState.anchorRegion;
+        var anchorPageIndex = layoutState.anchorPageIndex;
+        var lockAnchor = layoutState.lockAnchor;
+        var moveWithText = layoutState.moveWithText;
+        var fixedOnPage = layoutState.fixedOnPage;
+        var hPos = layoutState.hPos;
+        var distL = layoutState.distL;
+        var distR = layoutState.distR;
+        var distT = layoutState.distT;
+        var distB = layoutState.distB;
+        var contourPoints = layoutState.contourPoints;
 
         figure.setAttribute('data-floating-inline', inline === false ? 'false' : 'true');
         figure.setAttribute('data-wrap-mode', String(wrapMode.value));
+        _writeWrapContourPointsToFigure(figure, contourPoints);
         figure.setAttribute('data-horizontal-relative-to', String(horizontal.value));
         figure.setAttribute('data-vertical-relative-to', String(vertical.value));
         figure.setAttribute('data-image-x', String(x));
         figure.setAttribute('data-image-y', String(y));
+        figure.setAttribute('data-object-z-index', String(z));
+        figure.setAttribute('data-allow-overlap', allowOverlap ? 'true' : 'false');
         figure.setAttribute('data-lock-anchor', lockAnchor ? 'true' : 'false');
+        figure.setAttribute('data-move-with-text', moveWithText ? 'true' : 'false');
+        figure.setAttribute('data-fixed-on-page', fixedOnPage ? 'true' : 'false');
+        if (anchorBlockId) {
+            figure.setAttribute('data-anchor-block-id', anchorBlockId);
+        } else {
+            figure.removeAttribute('data-anchor-block-id');
+        }
+        if (anchorInlineIndex != null) {
+            figure.setAttribute('data-anchor-inline-index', String(anchorInlineIndex));
+        } else {
+            figure.removeAttribute('data-anchor-inline-index');
+        }
+        if (anchorOffset != null) {
+            figure.setAttribute('data-anchor-offset', String(anchorOffset));
+        } else {
+            figure.removeAttribute('data-anchor-offset');
+        }
+        figure.setAttribute('data-anchor-region', String(anchorRegion.value));
+        if (anchorPageIndex != null) {
+            figure.setAttribute('data-anchor-page-index', String(anchorPageIndex));
+        } else {
+            figure.removeAttribute('data-anchor-page-index');
+        }
         if (hPos) {
             figure.setAttribute('data-horizontal-position', hPos.css);
         } else {
@@ -10981,6 +14877,7 @@ window.tmDocumentWysiwyg = (function () {
                 wrapMode: wrapMode.css,
                 horizontalPosition: hPos ? hPos.css : null
             });
+            _syncImageAccessibilityAttributes(inst, figure);
             return;
         }
 
@@ -10998,6 +14895,9 @@ window.tmDocumentWysiwyg = (function () {
         if (distR > 0) figure.style.marginRight = distR + 'px';
         if (distT > 0) figure.style.marginTop = distT + 'px';
         if (distB > 0) figure.style.marginBottom = distB + 'px';
+        if (wrapMode.value === 2 || wrapMode.value === 3) {
+            figure.style.shapeOutside = _createShapeOutsidePolygon(contourPoints);
+        }
         _debugImage(inst, 'layout.apply.floating', {
             figure: _debugElementLabel(figure),
             inline: inline,
@@ -11010,6 +14910,7 @@ window.tmDocumentWysiwyg = (function () {
             figureRect: _debugRect(figure.getBoundingClientRect()),
             visualRect: _debugRect(_getImagePrimaryVisualRect(figure))
         });
+        _syncImageAccessibilityAttributes(inst, figure);
     }
 
     function _ensureImageResizeHandle(figure, inst) {
@@ -11019,9 +14920,200 @@ window.tmDocumentWysiwyg = (function () {
             handle.setAttribute('role', 'button');
             handle.setAttribute('tabindex', '0');
             handle.setAttribute('aria-label', _readStringOption(inst, 'imageResizeHandleLabel', 'ImageResizeHandleLabel', 'Resize image'));
+            handle.setAttribute('data-resize-handle', 'se');
             handle.setAttribute('data-testid', 'document-wysiwyg-image-resize-handle');
             figure.appendChild(handle);
         }
+    }
+
+    function _ensureLayoutObjectChrome(figure, inst) {
+        if (!figure || !figure.querySelectorAll) return;
+        figure.querySelectorAll('.tm-wysiwyg-object-resize-handle, .tm-wysiwyg-object-rotation-handle, .tm-wysiwyg-anchor-glyph, .tm-wysiwyg-layout-bubble, .tm-wysiwyg-selection-box').forEach(function (node) {
+            node.remove();
+        });
+
+        var selectionBox = document.createElement('span');
+        selectionBox.className = 'tm-wysiwyg-selection-box';
+        selectionBox.setAttribute('aria-hidden', 'true');
+        selectionBox.setAttribute('contenteditable', 'false');
+        figure.appendChild(selectionBox);
+
+        var handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+        var resizeLabel = _readStringOption(inst, 'imageResizeHandleLabel', 'ImageResizeHandleLabel', 'Resize image');
+        for (var i = 0; i < handles.length; i++) {
+            var handleName = handles[i];
+            var handle = document.createElement('span');
+            handle.className = 'tm-wysiwyg-object-resize-handle tm-wysiwyg-object-resize-handle--' + handleName;
+            handle.setAttribute('role', 'button');
+            handle.setAttribute('tabindex', '0');
+            handle.setAttribute('contenteditable', 'false');
+            handle.setAttribute('data-resize-handle', handleName);
+            handle.setAttribute('data-testid', 'document-wysiwyg-object-resize-handle-' + handleName);
+            handle.setAttribute('aria-label', resizeLabel + ' ' + handleName.toUpperCase());
+            figure.appendChild(handle);
+        }
+
+        var rotation = document.createElement('span');
+        rotation.className = 'tm-wysiwyg-object-rotation-handle';
+        rotation.setAttribute('role', 'button');
+        rotation.setAttribute('tabindex', '0');
+        rotation.setAttribute('contenteditable', 'false');
+        rotation.setAttribute('data-testid', 'document-wysiwyg-object-rotation-handle');
+        rotation.setAttribute('aria-label', _readStringOption(inst, 'imageRotationHandleLabel', 'ImageRotationHandleLabel', 'Rotate image'));
+        figure.appendChild(rotation);
+
+        var anchorGlyph = document.createElement('span');
+        anchorGlyph.className = 'tm-wysiwyg-anchor-glyph';
+        anchorGlyph.setAttribute('contenteditable', 'false');
+        anchorGlyph.setAttribute('data-testid', 'document-wysiwyg-object-anchor-glyph');
+        anchorGlyph.setAttribute('aria-hidden', 'true');
+        anchorGlyph.textContent = '¶';
+        figure.appendChild(anchorGlyph);
+
+        var bubble = document.createElement('div');
+        bubble.className = 'tm-wysiwyg-layout-bubble';
+        bubble.setAttribute('role', 'toolbar');
+        bubble.setAttribute('aria-label', _readStringOption(inst, 'imageLayoutBubbleLabel', 'ImageLayoutBubbleLabel', 'Layout'));
+        bubble.setAttribute('contenteditable', 'false');
+        bubble.setAttribute('data-testid', 'document-wysiwyg-object-layout-bubble');
+
+        [
+            { label: 'Inline', shortLabel: 'Inline', testId: 'document-wysiwyg-layout-bubble-inline', state: 'inline', action: function () { _setSelectedImageInline(inst); } },
+            { label: 'Wrap text', shortLabel: 'Wrap', testId: 'document-wysiwyg-layout-bubble-wrap', state: 'wrap', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'Square' }); } },
+            { label: 'Tight wrap', shortLabel: 'Tight', testId: 'document-wysiwyg-layout-bubble-tight', state: 'tight', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'Tight' }); } },
+            { label: 'Break text', shortLabel: 'Break', testId: 'document-wysiwyg-layout-bubble-break', state: 'break', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'TopBottom' }); } },
+            { label: 'Behind text', shortLabel: 'Behind', testId: 'document-wysiwyg-layout-bubble-behind', state: 'behind', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'BehindText' }); } },
+            { label: 'In front of text', shortLabel: 'Front', testId: 'document-wysiwyg-layout-bubble-front', state: 'front', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'InFrontOfText' }); } },
+            { label: 'Move with text', shortLabel: 'Move', testId: 'document-wysiwyg-layout-bubble-move-with-text', state: 'move', action: function () { _setSelectedImageAnchorMode(inst, { moveWithText: true, fixedOnPage: false }); } },
+            { label: 'Fix position on page', shortLabel: 'Fix', testId: 'document-wysiwyg-layout-bubble-fix-position', state: 'fix', action: function () { _setSelectedImageAnchorMode(inst, { moveWithText: false, fixedOnPage: true }); } },
+            { label: 'More image options', shortLabel: 'More', testId: 'document-wysiwyg-layout-bubble-more', state: 'more', action: function () {
+                var rect = bubble.getBoundingClientRect();
+                _showImageContextMenu(inst, figure, rect.left, rect.bottom + 6);
+            } }
+        ].forEach(function (item) {
+            bubble.appendChild(_createLayoutBubbleButton(inst, figure, item));
+        });
+        bubble.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        bubble.addEventListener('mousedown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        bubble.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+        figure.appendChild(bubble);
+        _refreshLayoutBubbleState(figure, bubble);
+        window.requestAnimationFrame(function () {
+            _positionLayoutBubbleInViewport(inst, figure, bubble);
+        });
+    }
+
+    function _createLayoutBubbleButton(inst, figure, item) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'tm-wysiwyg-layout-bubble__button';
+        button.textContent = item.shortLabel || item.label;
+        button.title = item.label;
+        button.setAttribute('aria-label', item.label);
+        button.setAttribute('data-layout-state', item.state || '');
+        button.setAttribute('data-testid', item.testId);
+        button.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        button.addEventListener('mousedown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            inst.selectedImageFigure = figure;
+            item.action();
+            if (figure && figure.isConnected) {
+                _refreshLayoutBubbleState(figure, button.closest('.tm-wysiwyg-layout-bubble'));
+                window.requestAnimationFrame(function () {
+                    _positionLayoutBubbleInViewport(inst, figure, button.closest('.tm-wysiwyg-layout-bubble'));
+                });
+            }
+        });
+        return button;
+    }
+
+    function _refreshLayoutBubbleState(figure, bubble) {
+        if (!figure || !bubble) return;
+        var wrapMode = parseInt(figure.getAttribute('data-wrap-mode') || '0', 10) || 0;
+        var moveWithText = figure.getAttribute('data-move-with-text') !== 'false';
+        var fixedOnPage = figure.getAttribute('data-fixed-on-page') === 'true';
+        var stateChecks = {
+            inline: wrapMode === 0,
+            wrap: wrapMode === 1,
+            tight: wrapMode === 2 || wrapMode === 3,
+            break: wrapMode === 4,
+            behind: wrapMode === 5,
+            front: wrapMode === 6,
+            move: moveWithText && !fixedOnPage,
+            fix: fixedOnPage
+        };
+        bubble.querySelectorAll('.tm-wysiwyg-layout-bubble__button').forEach(function (button) {
+            var state = button.getAttribute('data-layout-state') || '';
+            var active = !!stateChecks[state];
+            button.classList.toggle('tm-wysiwyg-layout-bubble__button--active', active);
+            if (state !== 'more') {
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            }
+        });
+    }
+
+    function _positionLayoutBubbleInViewport(inst, figure, bubble) {
+        if (!figure || !bubble || !bubble.isConnected) return;
+        bubble.style.right = 'auto';
+        var figureRect = figure.getBoundingClientRect();
+        var bubbleRect = bubble.getBoundingClientRect();
+        if (!figureRect.width || !bubbleRect.width) return;
+
+        var body = figure.closest ? figure.closest('.tm-wysiwyg-page__body') : null;
+        var bodyRect = body ? body.getBoundingClientRect() : null;
+        var preferredTop = -(bubbleRect.height + 6);
+        if (bodyRect && figureRect.top + preferredTop < bodyRect.top + 4) {
+            preferredTop = figureRect.height + 6;
+        }
+        bubble.style.top = Math.round(preferredTop) + 'px';
+
+        var viewportLeft = 8;
+        var viewportRight = (window.innerWidth || document.documentElement.clientWidth || 0) - 8;
+        var panel = document.querySelector('[data-testid="document-side-panel"]');
+        if (panel) {
+            var panelRect = panel.getBoundingClientRect();
+            var panelStyle = window.getComputedStyle(panel);
+            if (panelRect.width > 0 && panelStyle.visibility !== 'hidden' && panelStyle.display !== 'none') {
+                viewportRight = Math.min(viewportRight, panelRect.left - 8);
+            }
+        }
+
+        var rootRect = inst && inst.root ? inst.root.getBoundingClientRect() : null;
+        if (rootRect && rootRect.width > 0) {
+            viewportLeft = Math.max(viewportLeft, rootRect.left + 4);
+            viewportRight = Math.min(viewportRight, rootRect.right - 4);
+        }
+
+        var nextLeft = parseFloat(bubble.style.left || '0') || 0;
+        var currentLeft = figureRect.left + nextLeft;
+        var currentRight = currentLeft + bubbleRect.width;
+        if (currentRight > viewportRight) {
+            nextLeft -= currentRight - viewportRight;
+        }
+        if (figureRect.left + nextLeft < viewportLeft) {
+            nextLeft += viewportLeft - (figureRect.left + nextLeft);
+        }
+
+        var minLeft = viewportLeft - figureRect.left;
+        var maxLeft = Math.max(minLeft, viewportRight - figureRect.left - bubbleRect.width);
+        nextLeft = Math.min(Math.max(nextLeft, minLeft), maxLeft);
+        bubble.style.left = Math.round(nextLeft) + 'px';
     }
 
     function _normalizeWrapMode(value) {
@@ -11052,6 +15144,19 @@ window.tmDocumentWysiwyg = (function () {
         return byName[raw] || Object.values(byName).find(function (item) { return String(item.value) === raw; }) || byName.page;
     }
 
+    function _normalizeObjectAnchorRegion(value) {
+        var raw = String(value == null ? 'Body' : value).toLowerCase();
+        var byName = {
+            body: { value: 0, css: 'body' },
+            header: { value: 1, css: 'header' },
+            footer: { value: 2, css: 'footer' },
+            footnote: { value: 3, css: 'footnote' },
+            endnote: { value: 4, css: 'endnote' },
+            floatingobject: { value: 5, css: 'floating-object' }
+        };
+        return byName[raw] || Object.values(byName).find(function (item) { return String(item.value) === raw; }) || byName.body;
+    }
+
     function _normalizeHorizontalPosition(value) {
         if (value == null) return null;
         var raw = String(value).toLowerCase();
@@ -11061,6 +15166,80 @@ window.tmDocumentWysiwyg = (function () {
             right: { value: 2, css: 'right' }
         };
         return byName[raw] || Object.values(byName).find(function (item) { return String(item.value) === raw; }) || null;
+    }
+
+    function _parseNullableInteger(value) {
+        if (value == null || value === '') return null;
+        var parsed = parseInt(value, 10);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function _readLayoutBoolean(value, fallback) {
+        if (value == null || value === '') return !!fallback;
+        if (value === true || value === false) return value;
+        var text = String(value).toLowerCase();
+        if (text === 'true' || text === '1' || text === 'yes') return true;
+        if (text === 'false' || text === '0' || text === 'no') return false;
+        return !!fallback;
+    }
+
+    function _defaultWrapContourPoints() {
+        return [
+            { X: 0, Y: 0 },
+            { X: 1, Y: 0 },
+            { X: 1, Y: 1 },
+            { X: 0, Y: 1 }
+        ];
+    }
+
+    function _normalizeWrapContourPoints(points) {
+        var source = points;
+        if (typeof source === 'string') {
+            try {
+                source = JSON.parse(source);
+            } catch {
+                source = null;
+            }
+        }
+
+        var normalized = Array.isArray(source)
+            ? source
+                .filter(function (point) { return point != null; })
+                .map(function (point) {
+                    return {
+                        X: _clampNormalizedWrapPoint(point.x ?? point.X),
+                        Y: _clampNormalizedWrapPoint(point.y ?? point.Y)
+                    };
+                })
+            : [];
+
+        return normalized.length >= 3 ? normalized : _defaultWrapContourPoints();
+    }
+
+    function _clampNormalizedWrapPoint(value) {
+        var number = parseFloat(value);
+        if (!Number.isFinite(number)) return 0;
+        return Math.max(0, Math.min(1, Math.round(number * 10000) / 10000));
+    }
+
+    function _readWrapContourPointsFromFigure(figure) {
+        if (!figure) return _defaultWrapContourPoints();
+        return _normalizeWrapContourPoints(figure.getAttribute('data-wrap-contour-points'));
+    }
+
+    function _writeWrapContourPointsToFigure(figure, points) {
+        if (!figure) return;
+        var normalized = _normalizeWrapContourPoints(points);
+        figure.setAttribute('data-wrap-contour-points', JSON.stringify(normalized));
+    }
+
+    function _createShapeOutsidePolygon(points) {
+        var normalized = _normalizeWrapContourPoints(points);
+        return 'polygon(' + normalized
+            .map(function (point) {
+                return (Math.round(point.X * 10000) / 100) + '% ' + (Math.round(point.Y * 10000) / 100) + '%';
+            })
+            .join(', ') + ')';
     }
 
     function _isSafeImageUrl(url) {
@@ -11090,6 +15269,7 @@ window.tmDocumentWysiwyg = (function () {
                 Source: 0,
                 Url: url,
                 AltText: payload.altText || payload.AltText || '',
+                IsDecorative: !!(payload.isDecorative ?? payload.IsDecorative ?? payload.decorative ?? payload.Decorative),
                 Caption: payload.caption || payload.Caption || ''
             }
         };
@@ -11113,6 +15293,38 @@ window.tmDocumentWysiwyg = (function () {
         var selectionAnchorBlockId = insertionSelection
             ? (insertionSelection.anchorBlockId || insertionSelection.AnchorBlockId || '')
             : '';
+
+        var patch = {
+            type: 'InsertBlock',
+            blockType: 'Image',
+            block: block,
+            selection: insertionSelection,
+            protocolVersion: inst.options.protocolVersion || 1
+        };
+
+        if (inst.snapshot && inst.layoutSnapshot) {
+            _upsertSnapshotBlock(inst, block);
+            inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(inst.snapshot);
+            if (dispatchPatch) {
+                _dispatchPatch(inst, patch);
+            }
+
+            _renderDocument(inst, 'insert-image-layout');
+            inst.hasRenderedDocument = true;
+            _applyReviewDisplayMode(inst);
+            _renderRuntimeCommentDecorations(inst);
+
+            var layoutFigure = _getImageFigureByBlockId(inst, block.id || block.Id);
+            if (layoutFigure) {
+                _selectImageFigure(inst, layoutFigure);
+            }
+
+            if (ownsUndoTransaction) {
+                _commitUndoTransaction(inst, _captureSelectionSnapshot(inst));
+            }
+            return;
+        }
+
         if (selectionAnchorBlockId) {
             anchorBlock = inst.root.querySelector('[data-block-id="' + _cssEscape(selectionAnchorBlockId) + '"]');
         }
@@ -11139,13 +15351,7 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         if (dispatchPatch) {
-            _dispatchPatch(inst, {
-                type: 'InsertBlock',
-                blockType: 'Image',
-                block: block,
-                selection: insertionSelection,
-                protocolVersion: inst.options.protocolVersion || 1
-            });
+            _dispatchPatch(inst, patch);
         }
 
         var insertedFigure = blockEl.matches && blockEl.matches('figure.tm-wysiwyg-image')
@@ -11175,9 +15381,23 @@ window.tmDocumentWysiwyg = (function () {
         if (inst.renderStats) inst.renderStats.snapshotApplies++;
         const editorHasFocus = _hasEditorSelectionOrFocus(inst);
         const hasPendingLocalSnapshot = inst.pendingLocalSnapshotSkips > 0;
+        const forceLocalSnapshotRender = !!inst.forceNextLocalSnapshotRender;
+        const forcedSelectionSnapshot = forceLocalSnapshotRender
+            ? (inst.forceNextLocalSnapshotSelection || inst.lastSelectionSnapshot || null)
+            : null;
+        if (inst.ignoreNextSnapshotAfterUndoRedo && !forceRender) {
+            inst.ignoreNextSnapshotAfterUndoRedo = false;
+            inst.forceNextLocalSnapshotRender = false;
+            inst.forceNextLocalSnapshotSelection = null;
+            inst.pendingLocalSnapshotSkips = 0;
+            if (inst.renderStats) inst.renderStats.lastRenderReason = 'snapshot-skip-after-undo-redo';
+            _invokeDotNet(inst, 'HandleSnapshotApplied');
+            return;
+        }
         const skipLocalRender = inst.hasRenderedDocument
             && !inst.readOnly
             && !forceRender
+            && !forceLocalSnapshotRender
             && (editorHasFocus || hasPendingLocalSnapshot);
         inst.snapshot = snapshot;
         inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(snapshot);
@@ -11191,9 +15411,20 @@ window.tmDocumentWysiwyg = (function () {
             _invokeDotNet(inst, 'HandleSnapshotApplied');
             return;
         }
+        if (forceLocalSnapshotRender) {
+            if (inst.pendingLocalSnapshotSkips > 0) {
+                inst.pendingLocalSnapshotSkips--;
+            }
+            inst.forceNextLocalSnapshotRender = false;
+            inst.forceNextLocalSnapshotSelection = null;
+        }
         _hideInlineRevisionReview(inst);
         _renderDocument(inst, forceRender ? 'forced-snapshot' : 'runtime-load');
         inst.hasRenderedDocument = true;
+        if (forcedSelectionSnapshot) {
+            _restoreSelection(inst, forcedSelectionSnapshot);
+            inst.lastSelectionSnapshot = _captureSelectionSnapshot(inst) || forcedSelectionSnapshot;
+        }
         inst.lastCommittedHtml = inst.root.innerHTML;
         _markRuntimeSaved(inst, 'snapshot-load');
         _applyReviewDisplayMode(inst);
@@ -11994,10 +16225,21 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _updateSnapshotInlineText(inst, target, update) {
+        var changed = false;
+        var snapshotDoc = _getSnapshotDocument(inst);
+        var runtimeDoc = _resolveRuntimeDocument(inst);
+        changed = _updateDocumentInlineText(snapshotDoc, target, update) || changed;
+        if (runtimeDoc && runtimeDoc !== snapshotDoc) {
+            changed = _updateDocumentInlineText(runtimeDoc, target, update) || changed;
+        }
+        return changed;
+    }
+
+    function _updateDocumentInlineText(doc, target, update) {
         var blockId = target.blockId || target.BlockId || '';
         var inlineId = target.inlineId || target.InlineId || '';
         var inlineIndex = target.inlineIndex ?? target.InlineIndex ?? 0;
-        var block = _findSnapshotBlock(inst, blockId);
+        var block = _findDocumentBlock(doc, blockId);
         var content = block && (block.content || block.Content);
         var inlines = content && (content.inlines || content.Inlines);
         if (!Array.isArray(inlines)) return false;
@@ -12106,6 +16348,7 @@ window.tmDocumentWysiwyg = (function () {
         var src = content.url || content.Url || '';
         if (_isSafeImageUrl(src)) image.src = src;
         image.alt = content.altText || content.AltText || '';
+        existing.setAttribute('data-image-decorative', (content.isDecorative ?? content.IsDecorative ?? content.decorative ?? content.Decorative) ? 'true' : 'false');
 
         var size = content.size || content.Size;
         if (size) {
@@ -12138,6 +16381,7 @@ window.tmDocumentWysiwyg = (function () {
         _attachImageLoadState(existing, image, src, inst);
         _applyFloatingImageLayout(existing, content, inst);
         _ensureImageResizeHandle(existing, inst);
+        _syncImageAccessibilityAttributes(inst, existing);
     }
 
     function _applyRemoteMoveBlock(inst, operation) {
@@ -12297,7 +16541,10 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _getSnapshotBlocks(inst) {
-        var doc = _getSnapshotDocument(inst);
+        return _getDocumentBlocks(_getSnapshotDocument(inst));
+    }
+
+    function _getDocumentBlocks(doc) {
         if (!doc) return null;
         if (!doc.Blocks && doc.blocks) doc.Blocks = doc.blocks;
         if (!doc.blocks && doc.Blocks) doc.blocks = doc.Blocks;
@@ -12308,13 +16555,17 @@ window.tmDocumentWysiwyg = (function () {
         return doc.Blocks;
     }
 
-    function _findSnapshotBlock(inst, blockId) {
-        var blocks = _getSnapshotBlocks(inst);
+    function _findDocumentBlock(doc, blockId) {
+        var blocks = _getDocumentBlocks(doc);
         if (!blocks) return null;
         for (var i = 0; i < blocks.length; i++) {
             if ((blocks[i].id || blocks[i].Id) === blockId) return blocks[i];
         }
         return null;
+    }
+
+    function _findSnapshotBlock(inst, blockId) {
+        return _findDocumentBlock(_getSnapshotDocument(inst), blockId);
     }
 
     function _upsertSnapshotBlock(inst, block) {
@@ -13299,6 +17550,10 @@ window.tmDocumentWysiwyg = (function () {
 
         _markTransactionOperationsAsLocallyHandled(inst, transaction);
         inst.runtimeUndoEpoch = (inst.runtimeUndoEpoch || 0) + 1;
+        inst.ignoreNextSnapshotAfterUndoRedo = true;
+        inst.forceNextLocalSnapshotRender = false;
+        inst.forceNextLocalSnapshotSelection = null;
+        inst.pendingLocalSnapshotSkips = 0;
         if (!_applyRuntimeTransactionOperations(inst, transaction, false)) {
             _restoreRuntimeTransactionState(inst, transaction, false);
         }
@@ -13322,6 +17577,10 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         inst.runtimeUndoEpoch = (inst.runtimeUndoEpoch || 0) + 1;
+        inst.ignoreNextSnapshotAfterUndoRedo = true;
+        inst.forceNextLocalSnapshotRender = false;
+        inst.forceNextLocalSnapshotSelection = null;
+        inst.pendingLocalSnapshotSkips = 0;
         if (!_applyRuntimeTransactionOperations(inst, transaction, true)) {
             _restoreRuntimeTransactionState(inst, transaction, true);
         }
@@ -13369,10 +17628,34 @@ window.tmDocumentWysiwyg = (function () {
         var selection = forward ? transaction.afterSelection : transaction.beforeSelection;
         if (html == null) return;
 
+        var restoredSnapshot = forward ? transaction.afterSnapshot : transaction.beforeSnapshot;
+        var restoredRuntimeDocument = forward ? transaction.afterRuntimeDocument : transaction.beforeRuntimeDocument;
+        var restoredVirtualPages = forward ? transaction.afterVirtualPages : transaction.beforeVirtualPages;
+        var restoredVirtualSettings = forward ? transaction.afterVirtualSettings : transaction.beforeVirtualSettings;
+        var restoredVirtualState = forward ? transaction.afterVirtualState : transaction.beforeVirtualState;
+        var shouldRenderSnapshot = restoredSnapshot && _transactionHasOperationType(transaction, ['SplitBlock', 'InsertSoftBreak', 'UpdateBlock']);
+
+        if (restoredSnapshot) {
+            inst.snapshot = _cloneRuntimeJson(restoredSnapshot);
+            inst.runtimeDocument = _cloneRuntimeJson(restoredRuntimeDocument || null)
+                || _createRuntimeDocumentFromSnapshot(inst.snapshot);
+            _loadRuntimeRevisionsFromSnapshot(inst, inst.snapshot);
+            _loadRuntimeCommentsFromSnapshot(inst, inst.snapshot);
+            inst.virtualPages = _cloneRuntimeJson(restoredVirtualPages || []);
+            inst.virtualSettings = _cloneRuntimeJson(restoredVirtualSettings || null);
+            inst.virtualState = _cloneRuntimeJson(restoredVirtualState || null);
+        }
+
         inst._applyingOwnPatch = true;
         try {
-            inst.root.innerHTML = html;
-            inst.lastCommittedHtml = html;
+            if (shouldRenderSnapshot) {
+                _renderDocument(inst, 'undo-snapshot');
+                inst.hasRenderedDocument = true;
+                inst.lastCommittedHtml = inst.root.innerHTML;
+            } else {
+                inst.root.innerHTML = html;
+                inst.lastCommittedHtml = html;
+            }
         } finally {
             inst._applyingOwnPatch = false;
         }
@@ -13388,6 +17671,15 @@ window.tmDocumentWysiwyg = (function () {
         inst.lastSelectionSnapshot = restoredSelection;
         inst.runtimeSelection = restoredSelection ? _createRuntimeSelectionFromSnapshot(restoredSelection) : null;
         _scheduleSelectionNotification(inst, restoredSelection);
+    }
+
+    function _transactionHasOperationType(transaction, types) {
+        var operations = transaction && Array.isArray(transaction.operations) ? transaction.operations : [];
+        if (!operations.length || !Array.isArray(types)) return false;
+        return operations.some(function (operation) {
+            var type = operation.type || operation.Type || '';
+            return types.indexOf(type) >= 0;
+        });
     }
 
     function _applyRuntimeTransactionOperations(inst, transaction, forward) {
@@ -13662,8 +17954,41 @@ window.tmDocumentWysiwyg = (function () {
             case 'setImageWrapMode':
                 _setSelectedImageWrapMode(inst, payload);
                 break;
+            case 'setImageWrapContour':
+                _setSelectedImageWrapContour(inst, payload);
+                break;
+            case 'editImageWrapPoints':
+                _startImageWrapPointEditor(inst, payload);
+                break;
+            case 'resetImageWrapPoints':
+                _resetSelectedImageWrapContour(inst, payload);
+                break;
             case 'setImagePosition':
                 _setSelectedImagePosition(inst, payload);
+                break;
+            case 'setImageObjectPosition':
+                _setSelectedImageObjectPosition(inst, payload);
+                break;
+            case 'setImageAnchorMode':
+                _setSelectedImageAnchorMode(inst, payload);
+                break;
+            case 'setImageZOrder':
+                _setSelectedImageZOrder(inst, payload);
+                break;
+            case 'bringForwardImage':
+                _setSelectedImageZOrder(inst, Object.assign({}, payload || {}, { direction: 'Forward' }));
+                break;
+            case 'sendBackwardImage':
+                _setSelectedImageZOrder(inst, Object.assign({}, payload || {}, { direction: 'Backward' }));
+                break;
+            case 'bringImageToFront':
+                _setSelectedImageZOrder(inst, Object.assign({}, payload || {}, { direction: 'BringToFront' }));
+                break;
+            case 'sendImageToBack':
+                _setSelectedImageZOrder(inst, Object.assign({}, payload || {}, { direction: 'SendToBack' }));
+                break;
+            case 'resetImageSize':
+                _resetSelectedImageSize(inst, payload);
                 break;
             case 'replaceImage':
                 _replaceSelectedImage(inst);
@@ -13676,6 +18001,13 @@ window.tmDocumentWysiwyg = (function () {
                 var altText = altPayload.altText || altPayload.AltText || altPayload.value || '';
                 var altBlockId = altPayload.blockId || altPayload.BlockId || altPayload.imageId || altPayload.ImageId || '';
                 _setImageAltText(inst, altText, altBlockId);
+                break;
+            }
+            case 'setImageDecorative': {
+                var decorativePayload = payload || {};
+                var decorativeBlockId = decorativePayload.blockId || decorativePayload.BlockId || decorativePayload.imageId || decorativePayload.ImageId || '';
+                var decorativeValue = decorativePayload.isDecorative ?? decorativePayload.IsDecorative ?? decorativePayload.decorative ?? decorativePayload.Decorative ?? decorativePayload.value ?? false;
+                _setImageDecorative(inst, decorativeValue, decorativeBlockId);
                 break;
             }
             case 'toggleImageCaption': {
@@ -15380,20 +19712,17 @@ window.tmDocumentWysiwyg = (function () {
         var beforeSel = _captureSelectionSnapshot(inst);
         _beginUndoTransaction(inst, 'image', 'Set image wrap', beforeSel, true);
         var wrapMode = _normalizeWrapMode(payload.wrapMode ?? payload.WrapMode ?? 'Square');
-        var layout = _serializeImage(figure).FloatingLayout || {
-            Inline: false,
-            HorizontalRelativeTo: 0,
-            VerticalRelativeTo: 3,
-            X: parseFloat(figure.getAttribute('data-image-x') || '0') || 0,
-            Y: parseFloat(figure.getAttribute('data-image-y') || '0') || 0,
-            ZIndex: 0,
-            LockAnchor: false
-        };
-        layout.Inline = false;
-        layout.WrapMode = wrapMode.value;
-        var hPos = _normalizeHorizontalPosition(layout.horizontalPosition ?? layout.HorizontalPosition);
+        var layout = _serializeImage(figure).Layout || _createImageObjectLayoutFromFigure(figure);
+        layout.Kind = 1;
+        layout.Anchor = layout.Anchor || {};
+        layout.Anchor.MoveWithText = true;
+        layout.Anchor.FixedOnPage = false;
+        layout.Position = layout.Position || {};
+        layout.Wrap = layout.Wrap || {};
+        layout.Wrap.Mode = wrapMode.value;
+        var hPos = _normalizeHorizontalPosition(layout.Position.horizontalAlignment ?? layout.Position.HorizontalAlignment);
         if (wrapMode.value === 1 && (!hPos || hPos.css === 'center')) {
-            layout.HorizontalPosition = 0;
+            layout.Position.HorizontalAlignment = 0;
         }
         _debugImage(inst, 'command.wrap.apply', {
             figure: _debugElementLabel(figure),
@@ -15405,12 +19734,291 @@ window.tmDocumentWysiwyg = (function () {
         var imageSelection = _createImageSelectionSnapshot(figure);
         inst.lastSelectionSnapshot = imageSelection;
         inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(imageSelection);
-        _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
+        _applyFloatingImageLayout(figure, { Layout: layout }, inst);
         _ensureImageResizeHandle(figure, inst);
-        _ensureWrappedImageSideTextBlock(inst, figure, true, imageSelection);
         _selectImageFigure(inst, figure);
         _dispatchImageUpdatePatch(inst, figure);
         _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _setSelectedImageWrapContour(inst, payload) {
+        payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+
+        var points = _normalizeWrapContourPoints(payload.points || payload.Points || payload.wrapContourPoints || payload.WrapContourPoints);
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Edit image wrap points', beforeSel, true);
+        var layout = _serializeImage(figure).Layout || _createImageObjectLayoutFromFigure(figure);
+        layout.Kind = 1;
+        layout.Anchor = layout.Anchor || {};
+        layout.Anchor.MoveWithText = true;
+        layout.Anchor.FixedOnPage = false;
+        layout.Wrap = layout.Wrap || {};
+        var currentWrap = _normalizeWrapMode(payload.wrapMode ?? payload.WrapMode ?? layout.Wrap.Mode ?? layout.Wrap.mode ?? figure.getAttribute('data-wrap-mode') ?? 'Tight');
+        layout.Wrap.Mode = (currentWrap.value === 2 || currentWrap.value === 3) ? currentWrap.value : 2;
+        layout.Wrap.WrapContourPoints = points;
+        _applyFloatingImageLayout(figure, { Layout: layout }, inst);
+        _ensureImageResizeHandle(figure, inst);
+        var selected = _createImageSelectionSnapshot(figure);
+        inst.lastSelectionSnapshot = selected;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(selected);
+        var imageBlockId = blockId || figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '';
+        _updateRuntimeImageBlockContent(inst, imageBlockId, _serializeImage(figure));
+        if (payload.render !== false && payload.Render !== false) {
+            _renderDocument(inst, 'image-wrap-contour');
+            figure = _getImageFigureByBlockId(inst, imageBlockId) || figure;
+        }
+        _selectImageFigure(inst, figure);
+        if (payload.keepEditor || payload.KeepEditor) {
+            _renderImageWrapPointEditor(inst, figure);
+        }
+        _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _resetSelectedImageWrapContour(inst, payload) {
+        payload = payload || {};
+        _setSelectedImageWrapContour(inst, Object.assign({}, payload, {
+            points: _defaultWrapContourPoints(),
+            render: payload.render ?? payload.Render ?? true,
+            keepEditor: payload.keepEditor ?? payload.KeepEditor ?? true
+        }));
+    }
+
+    function _startImageWrapPointEditor(inst, payloadOrFigure) {
+        var figure = payloadOrFigure && payloadOrFigure.nodeType === Node.ELEMENT_NODE
+            ? payloadOrFigure
+            : null;
+        var payload = figure ? {} : (payloadOrFigure || {});
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        figure = figure || (blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst));
+        if (!figure) return;
+
+        var wrapMode = _normalizeWrapMode(figure.getAttribute('data-wrap-mode') || '0');
+        if (wrapMode.value !== 2 && wrapMode.value !== 3) {
+            _setSelectedImageWrapMode(inst, {
+                blockId: figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '',
+                wrapMode: 'Tight'
+            });
+            figure = _getSelectedImageFigure(inst) || figure;
+        }
+
+        _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
+        _selectImageFigure(inst, figure);
+        _renderImageWrapPointEditor(inst, figure);
+    }
+
+    function _stopImageWrapPointEditor(inst) {
+        if (!inst || !inst.wrapPointEditor) return;
+        var overlay = inst.wrapPointEditor.overlay;
+        if (overlay && overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
+        if (inst.wrapPointEditor.figure) {
+            inst.wrapPointEditor.figure.classList.remove('tm-wysiwyg-image--editing-wrap-points');
+        }
+        inst.wrapPointEditor = null;
+    }
+
+    function _renderImageWrapPointEditor(inst, figure) {
+        if (!inst || !figure || !figure.isConnected) return;
+        _stopImageWrapPointEditor(inst);
+        var img = figure.querySelector('img');
+        if (!img) return;
+        var figureRect = figure.getBoundingClientRect();
+        var imageRect = img.getBoundingClientRect();
+        if (!imageRect.width || !imageRect.height) return;
+
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.classList.add('tm-wysiwyg-wrap-points-editor');
+        svg.setAttribute('data-testid', 'document-wysiwyg-wrap-points-editor');
+        svg.setAttribute('contenteditable', 'false');
+        svg.setAttribute('tabindex', '0');
+        svg.setAttribute('role', 'application');
+        svg.setAttribute('aria-label', 'Edit image wrap points');
+        svg.setAttribute('viewBox', '0 0 ' + imageRect.width + ' ' + imageRect.height);
+        svg.style.left = Math.round(imageRect.left - figureRect.left) + 'px';
+        svg.style.top = Math.round(imageRect.top - figureRect.top) + 'px';
+        svg.style.width = Math.round(imageRect.width) + 'px';
+        svg.style.height = Math.round(imageRect.height) + 'px';
+
+        var points = _readWrapContourPointsFromFigure(figure);
+        _drawImageWrapPointEditor(inst, figure, svg, points, imageRect.width, imageRect.height);
+        figure.classList.add('tm-wysiwyg-image--editing-wrap-points');
+        figure.appendChild(svg);
+        inst.wrapPointEditor = { figure: figure, overlay: svg, activeIndex: 0 };
+        window.requestAnimationFrame(function () {
+            if (svg.isConnected && typeof svg.focus === 'function') {
+                svg.focus({ preventScroll: true });
+            }
+        });
+    }
+
+    function _drawImageWrapPointEditor(inst, figure, svg, points, width, height) {
+        svg.innerHTML = '';
+        var normalized = _normalizeWrapContourPoints(points);
+        var polylinePoints = normalized
+            .map(function (point) { return (point.X * width) + ',' + (point.Y * height); })
+            .join(' ');
+
+        var polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.classList.add('tm-wysiwyg-wrap-points-editor__polygon');
+        polygon.setAttribute('points', polylinePoints);
+        polygon.setAttribute('data-testid', 'document-wysiwyg-wrap-points-polygon');
+        svg.appendChild(polygon);
+
+        var edge = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        edge.classList.add('tm-wysiwyg-wrap-points-editor__edge-hit');
+        edge.setAttribute('points', polylinePoints + ' ' + (normalized[0].X * width) + ',' + (normalized[0].Y * height));
+        edge.setAttribute('data-testid', 'document-wysiwyg-wrap-points-edge');
+        svg.appendChild(edge);
+
+        edge.addEventListener('pointerdown', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var point = _eventToNormalizedWrapPoint(svg, event);
+            var index = _findNearestWrapContourSegment(normalized, point);
+            normalized.splice(index + 1, 0, point);
+            _writeWrapContourPointsToFigure(figure, normalized);
+            _setSelectedImageWrapContour(inst, {
+                blockId: figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '',
+                points: normalized,
+                keepEditor: true
+            });
+        });
+
+        normalized.forEach(function (point, index) {
+            var handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            handle.classList.add('tm-wysiwyg-wrap-points-editor__point');
+            handle.setAttribute('cx', String(point.X * width));
+            handle.setAttribute('cy', String(point.Y * height));
+            handle.setAttribute('r', '6');
+            handle.setAttribute('tabindex', '0');
+            handle.setAttribute('data-wrap-point-index', String(index));
+            handle.setAttribute('data-testid', 'document-wysiwyg-wrap-point');
+            svg.appendChild(handle);
+            handle.addEventListener('pointerdown', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (inst.wrapPointEditor) inst.wrapPointEditor.activeIndex = index;
+                if (typeof svg.focus === 'function') {
+                    svg.focus({ preventScroll: true });
+                }
+                handle.classList.add('tm-wysiwyg-wrap-points-editor__point--active');
+                try { handle.setPointerCapture(event.pointerId); } catch { }
+                var moved = false;
+                function onMove(moveEvent) {
+                    moved = true;
+                    var next = _eventToNormalizedWrapPoint(svg, moveEvent);
+                    normalized[index] = next;
+                    _writeWrapContourPointsToFigure(figure, normalized);
+                    var nextPoints = normalized
+                        .map(function (p) { return (p.X * width) + ',' + (p.Y * height); })
+                        .join(' ');
+                    polygon.setAttribute('points', nextPoints);
+                    edge.setAttribute('points', nextPoints + ' ' + (normalized[0].X * width) + ',' + (normalized[0].Y * height));
+                    handle.setAttribute('cx', String(next.X * width));
+                    handle.setAttribute('cy', String(next.Y * height));
+                }
+                function onUp(upEvent) {
+                    try { handle.releasePointerCapture(upEvent.pointerId); } catch { }
+                    handle.removeEventListener('pointermove', onMove);
+                    handle.removeEventListener('pointerup', onUp);
+                    handle.removeEventListener('pointercancel', onUp);
+                    if (moved) {
+                        _setSelectedImageWrapContour(inst, {
+                            blockId: figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '',
+                            points: normalized,
+                            keepEditor: true
+                        });
+                    }
+                }
+                handle.addEventListener('pointermove', onMove);
+                handle.addEventListener('pointerup', onUp);
+                handle.addEventListener('pointercancel', onUp);
+            });
+        });
+
+        svg.addEventListener('pointerdown', function (event) {
+            event.stopPropagation();
+        });
+        svg.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+        svg.addEventListener('keydown', function (event) {
+            _handleImageWrapPointEditorKeyDown(inst, event);
+        });
+    }
+
+    function _handleImageWrapPointEditorKeyDown(inst, event) {
+        if (!inst || !inst.wrapPointEditor || !event) return false;
+        var key = event.key || '';
+        if (key !== 'Escape' && key !== 'Delete' && key !== 'Backspace') return false;
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
+
+        var figure = inst.wrapPointEditor.figure;
+        if (key === 'Escape') {
+            _stopImageWrapPointEditor(inst);
+            _selectImageFigure(inst, figure);
+            return true;
+        }
+
+        var active = Number(inst.wrapPointEditor.activeIndex ?? -1);
+        var points = _readWrapContourPointsFromFigure(figure);
+        if (active < 0 || active >= points.length || points.length <= 3) {
+            return true;
+        }
+
+        points.splice(active, 1);
+        _setSelectedImageWrapContour(inst, {
+            blockId: figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '',
+            points: points,
+            keepEditor: true
+        });
+        return true;
+    }
+
+    function _eventToNormalizedWrapPoint(svg, event) {
+        var rect = svg.getBoundingClientRect();
+        return {
+            X: _clampNormalizedWrapPoint((event.clientX - rect.left) / Math.max(1, rect.width)),
+            Y: _clampNormalizedWrapPoint((event.clientY - rect.top) / Math.max(1, rect.height))
+        };
+    }
+
+    function _findNearestWrapContourSegment(points, point) {
+        var bestIndex = 0;
+        var bestDistance = Number.POSITIVE_INFINITY;
+        for (var i = 0; i < points.length; i++) {
+            var start = points[i];
+            var end = points[(i + 1) % points.length];
+            var distance = _distanceToWrapContourSegment(point, start, end);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    function _distanceToWrapContourSegment(point, start, end) {
+        var dx = end.X - start.X;
+        var dy = end.Y - start.Y;
+        var lengthSquared = dx * dx + dy * dy;
+        if (lengthSquared <= 0.000001) {
+            return Math.hypot(point.X - start.X, point.Y - start.Y);
+        }
+        var t = Math.max(0, Math.min(1, ((point.X - start.X) * dx + (point.Y - start.Y) * dy) / lengthSquared));
+        return Math.hypot(point.X - (start.X + t * dx), point.Y - (start.Y + t * dy));
     }
 
     function _setSelectedImagePosition(inst, payload) {
@@ -15435,20 +20043,17 @@ window.tmDocumentWysiwyg = (function () {
         _commitCurrentRuntimeTransaction(inst, false);
         var beforeSel = _captureSelectionSnapshot(inst);
         _beginUndoTransaction(inst, 'image', 'Set image position', beforeSel, true);
-        var layout = _serializeImage(figure).FloatingLayout || {
-            Inline: false,
-            HorizontalRelativeTo: 0,
-            VerticalRelativeTo: 3,
-            X: parseFloat(figure.getAttribute('data-image-x') || '0') || 0,
-            Y: parseFloat(figure.getAttribute('data-image-y') || '0') || 0,
-            ZIndex: 0,
-            LockAnchor: false
-        };
-        layout.Inline = false;
-        layout.HorizontalPosition = hPos.value;
-        var currentWrap = _normalizeWrapMode(layout.wrapMode ?? layout.WrapMode);
+        var layout = _serializeImage(figure).Layout || _createImageObjectLayoutFromFigure(figure);
+        layout.Kind = 1;
+        layout.Anchor = layout.Anchor || {};
+        layout.Anchor.MoveWithText = true;
+        layout.Anchor.FixedOnPage = false;
+        layout.Position = layout.Position || {};
+        layout.Position.HorizontalAlignment = hPos.value;
+        layout.Wrap = layout.Wrap || {};
+        var currentWrap = _normalizeWrapMode(layout.Wrap.mode ?? layout.Wrap.Mode);
         if ((hPos.css === 'left' || hPos.css === 'right') && (currentWrap.value === 0 || currentWrap.value === 4)) {
-            layout.WrapMode = 1;
+            layout.Wrap.Mode = 1;
         }
         _debugImage(inst, 'command.position.apply', {
             figure: _debugElementLabel(figure),
@@ -15459,9 +20064,133 @@ window.tmDocumentWysiwyg = (function () {
         var imageSelection = _createImageSelectionSnapshot(figure);
         inst.lastSelectionSnapshot = imageSelection;
         inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(imageSelection);
-        _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
+        _applyFloatingImageLayout(figure, { Layout: layout }, inst);
         _ensureImageResizeHandle(figure, inst);
-        _ensureWrappedImageSideTextBlock(inst, figure, true, imageSelection);
+        _selectImageFigure(inst, figure);
+        _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _setSelectedImageObjectPosition(inst, payload) {
+        payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+
+        var xValue = parseFloat(payload.x ?? payload.X ?? figure.getAttribute('data-image-x') ?? 0);
+        var yValue = parseFloat(payload.y ?? payload.Y ?? figure.getAttribute('data-image-y') ?? 0);
+        var horizontal = _normalizeRelativePosition(payload.horizontalRelativeTo ?? payload.HorizontalRelativeTo ?? figure.getAttribute('data-horizontal-relative-to') ?? 0);
+        var vertical = _normalizeRelativePosition(payload.verticalRelativeTo ?? payload.VerticalRelativeTo ?? figure.getAttribute('data-vertical-relative-to') ?? 3);
+        var hPos = _normalizeHorizontalPosition(payload.horizontalPosition ?? payload.HorizontalPosition ?? figure.getAttribute('data-horizontal-position'));
+
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Set image object position', beforeSel, true);
+        var layout = _serializeImage(figure).Layout || _createImageObjectLayoutFromFigure(figure);
+        layout.Kind = layout.Kind === 2 ? 2 : 1;
+        layout.Anchor = layout.Anchor || {};
+        layout.Anchor.MoveWithText = layout.Anchor.FixedOnPage ? false : (layout.Anchor.MoveWithText !== false);
+        layout.Position = layout.Position || {};
+        layout.Position.HorizontalRelativeTo = horizontal.value;
+        layout.Position.VerticalRelativeTo = vertical.value;
+        layout.Position.X = Number.isFinite(xValue) ? xValue : 0;
+        layout.Position.Y = Number.isFinite(yValue) ? yValue : 0;
+        if (hPos) {
+            layout.Position.HorizontalAlignment = hPos.value;
+        }
+        layout.Wrap = layout.Wrap || {};
+        if ((layout.Wrap.Mode ?? layout.Wrap.mode) === 0) {
+            layout.Wrap.Mode = 1;
+        }
+        _applyFloatingImageLayout(figure, { Layout: layout }, inst);
+        _ensureImageResizeHandle(figure, inst);
+        _selectImageFigure(inst, figure);
+        _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _setSelectedImageAnchorMode(inst, payload) {
+        payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+
+        var fixedOnPage = _readBooleanPayload(payload, 'fixedOnPage', 'FixedOnPage', figure.getAttribute('data-fixed-on-page') === 'true');
+        var moveWithText = fixedOnPage
+            ? false
+            : _readBooleanPayload(payload, 'moveWithText', 'MoveWithText', figure.getAttribute('data-move-with-text') !== 'false');
+        var lockAnchor = _readBooleanPayload(payload, 'lockAnchor', 'LockAnchor', figure.getAttribute('data-lock-anchor') === 'true');
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Set image anchor mode', beforeSel, true);
+        var layout = _serializeImage(figure).Layout || _createImageObjectLayoutFromFigure(figure);
+        layout.Kind = fixedOnPage ? 2 : ((layout.Wrap && (layout.Wrap.Mode ?? layout.Wrap.mode) === 0) ? 0 : 1);
+        layout.Anchor = layout.Anchor || {};
+        layout.Anchor.MoveWithText = moveWithText;
+        layout.Anchor.FixedOnPage = fixedOnPage;
+        layout.Anchor.LockAnchor = lockAnchor;
+        if (!layout.Anchor.BlockId) {
+            var target = _findNearestImageAnchorParagraph(inst, figure);
+            if (target) {
+                layout.Anchor.BlockId = target.blockId;
+                layout.Anchor.InlineIndex = target.inlineIndex;
+                layout.Anchor.Offset = target.offset;
+                layout.Anchor.Region = parseInt(target.region || '0', 10) || 0;
+            }
+        }
+        layout.Wrap = layout.Wrap || {};
+        if (fixedOnPage && (layout.Wrap.Mode ?? layout.Wrap.mode) === 0) {
+            layout.Wrap.Mode = 6;
+        }
+        _applyFloatingImageLayout(figure, { Layout: layout }, inst);
+        _ensureImageResizeHandle(figure, inst);
+        _selectImageFigure(inst, figure);
+        _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _readBooleanPayload(payload, camelName, pascalName, fallback) {
+        if (Object.prototype.hasOwnProperty.call(payload, camelName)) {
+            return payload[camelName] === true || String(payload[camelName]).toLowerCase() === 'true';
+        }
+
+        if (Object.prototype.hasOwnProperty.call(payload, pascalName)) {
+            return payload[pascalName] === true || String(payload[pascalName]).toLowerCase() === 'true';
+        }
+
+        return !!fallback;
+    }
+
+    function _setSelectedImageZOrder(inst, payload) {
+        payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+
+        var direction = String(payload.direction || payload.Direction || 'Forward').toLowerCase();
+        var explicit = parseInt(payload.zIndex ?? payload.ZIndex, 10);
+        var current = parseInt(figure.style.zIndex || figure.getAttribute('data-object-z-index') || '0', 10) || 0;
+        var imageZValues = _collectImageFigures(inst).map(function (item) { return _readElementZIndex(item); });
+        var maxZ = imageZValues.length > 0 ? Math.max.apply(Math, imageZValues) : current;
+        var minZ = imageZValues.length > 0 ? Math.min.apply(Math, imageZValues) : current;
+        var next = Number.isFinite(explicit)
+            ? explicit
+            : (direction === 'backward' || direction === 'sendbackward'
+                ? current - 1
+                : (direction === 'sendtoback' || direction === 'back'
+                    ? Math.min(current, minZ) - 1
+                    : (direction === 'bringtofront' || direction === 'front'
+                        ? Math.max(current, maxZ) + 1
+                        : current + 1)));
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Set image order', beforeSel, true);
+        var layout = _serializeImage(figure).Layout || _createImageObjectLayoutFromFigure(figure);
+        layout.Stacking = layout.Stacking || {};
+        layout.Stacking.ZIndex = next;
+        _applyFloatingImageLayout(figure, { Layout: layout }, inst);
+        figure.setAttribute('data-object-z-index', String(next));
+        _ensureImageResizeHandle(figure, inst);
         _selectImageFigure(inst, figure);
         _dispatchImageUpdatePatch(inst, figure);
         _commitCurrentRuntimeTransaction(inst, false);
@@ -15498,8 +20227,30 @@ window.tmDocumentWysiwyg = (function () {
         if (nextHeight > 0) img.style.height = Math.round(nextHeight) + 'px';
         figure.setAttribute('data-lock-aspect-ratio', lockAspectRatio ? 'true' : 'false');
         _ensureImageResizeHandle(figure, inst);
+        _syncImageAccessibilityAttributes(inst, figure);
         _dispatchImageUpdatePatch(inst, figure);
         _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _resetSelectedImageSize(inst, payload) {
+        payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var img = figure.querySelector('img');
+        if (!img) return;
+        var naturalW = parseFloat(figure.getAttribute('data-image-natural-width') || img.naturalWidth || '0') || 0;
+        var naturalH = parseFloat(figure.getAttribute('data-image-natural-height') || img.naturalHeight || '0') || 0;
+        if (!(naturalW > 0) || !(naturalH > 0)) {
+            naturalW = parseFloat(img.getAttribute('width') || img.style.width || '220') || 220;
+            naturalH = parseFloat(img.getAttribute('height') || img.style.height || '124') || 124;
+        }
+        _setSelectedImageSize(inst, {
+            BlockId: blockId,
+            Width: Math.round(naturalW),
+            Height: Math.round(naturalH),
+            LockAspectRatio: figure.getAttribute('data-lock-aspect-ratio') !== 'false'
+        });
     }
 
     function _getSelectedImageFigure(inst) {
@@ -15529,14 +20280,27 @@ window.tmDocumentWysiwyg = (function () {
         return null;
     }
 
+    function _collectImageFigures(inst) {
+        if (!inst || !inst.root) return [];
+        return Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image[data-block-id]'))
+            .filter(function (figure) {
+                return _isVisibleForHitTest(figure) && !figure.closest('.tm-wysiwyg-page--virtual');
+            });
+    }
+
     function _getImageFigureByBlockId(inst, blockId) {
         if (!inst || !inst.root || !blockId) return null;
         var safeId = String(blockId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        var block = inst.root.querySelector('[data-block-id="' + safeId + '"]');
-        if (!block) return null;
-        return block.matches('figure.tm-wysiwyg-image')
-            ? block
-            : block.querySelector('figure.tm-wysiwyg-image');
+        var candidates = Array.from(inst.root.querySelectorAll('[data-block-id="' + safeId + '"]'))
+            .map(function (block) {
+                return block.matches('figure.tm-wysiwyg-image')
+                    ? block
+                    : block.querySelector('figure.tm-wysiwyg-image');
+            })
+            .filter(Boolean);
+        return candidates.find(function (figure) {
+            return _isVisibleForHitTest(figure) && !figure.closest('.tm-wysiwyg-page--virtual');
+        }) || candidates[0] || null;
     }
 
     /**
@@ -15591,25 +20355,329 @@ window.tmDocumentWysiwyg = (function () {
 
     function _serializeSelectionForClipboard(inst) {
         var sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+            return _serializeSelectedImageForClipboard(inst);
+        }
         if (!inst.root.contains(sel.anchorNode) || !inst.root.contains(sel.focusNode)) return null;
 
         var range = sel.getRangeAt(0);
+        var selectedInlineFigures = _getInlineImageFiguresIntersectingRange(inst, range);
         var container = document.createElement('div');
         container.appendChild(range.cloneContents());
+        _pruneClipboardSelectionClone(container);
+        _ensureClipboardCloneContainsInlineFigures(inst, container, selectedInlineFigures);
 
-        var plain = sel.toString();
         var html = _sanitizeClipboardHtml(container);
+        var plain = _clipboardPlainTextFromClone(container) || sel.toString();
         if (!html || !html.trim()) {
             html = '<p>' + _escapeHtml(plain) + '</p>';
         } else if (!/<(p|h[1-6]|ul|ol|blockquote|table|figure|hr)\b/i.test(html)) {
             html = '<p>' + html + '</p>';
         }
 
-        return {
+        var payload = {
             html: html,
             plain: plain
         };
+        var internalBlocks = _buildInternalClipboardBlocksFromSelection(inst, range, html, selectedInlineFigures);
+        if (internalBlocks.length > 0) {
+            payload.internal = {
+                kind: 'blocks',
+                source: 'selection',
+                blocks: internalBlocks
+            };
+        }
+
+        return payload;
+    }
+
+    function _serializeSelectedImageForClipboard(inst) {
+        var figure = _getActiveSelectedImageFigure(inst);
+        if (!figure) return null;
+
+        var block = _serializeImageClipboardBlock(inst, figure);
+        if (!block) return null;
+
+        var html = _serializeImageBlockAsClipboardHtml(block);
+        var plain = _clipboardImagePlainText(block);
+        return {
+            html: html,
+            plain: plain,
+            internal: {
+                kind: 'blocks',
+                source: 'selected-image',
+                blocks: [block]
+            }
+        };
+    }
+
+    function _getActiveSelectedImageFigure(inst) {
+        if (!inst || !inst.root) return null;
+        if (inst.selectedImageFigure && inst.selectedImageFigure.isConnected && inst.root.contains(inst.selectedImageFigure)) {
+            return inst.selectedImageFigure;
+        }
+
+        var active = document.activeElement && document.activeElement.closest
+            ? document.activeElement.closest('figure.tm-wysiwyg-image[data-block-id]')
+            : null;
+        if (active && inst.root.contains(active) && active.classList.contains('tm-wysiwyg-image--selected')) {
+            inst.selectedImageFigure = active;
+            return active;
+        }
+
+        var selected = inst.root.querySelector('figure.tm-wysiwyg-image.tm-wysiwyg-image--selected[data-block-id]');
+        if (selected) {
+            inst.selectedImageFigure = selected;
+            return selected;
+        }
+
+        return null;
+    }
+
+    function _serializeImageClipboardBlock(inst, figure) {
+        if (!figure) return null;
+        var blockId = figure.getAttribute('data-block-id') || '';
+        var blockMap = _createBlockMap(_resolveRuntimeDocument(inst) || {});
+        var originalBlock = blockId ? blockMap[blockId] : null;
+        if (originalBlock && _normalizeBlockTypeNumber(originalBlock.Type ?? originalBlock.type) === 5) {
+            var modelBlock = _clonePlainJson(originalBlock);
+            modelBlock.Id = modelBlock.Id || modelBlock.id || blockId;
+            modelBlock.Type = modelBlock.Type ?? modelBlock.type ?? 5;
+            modelBlock.Content = modelBlock.Content || modelBlock.content || {};
+            delete modelBlock.id;
+            delete modelBlock.type;
+            delete modelBlock.content;
+
+            var domContent = _serializeImage(figure);
+            _normalizeImageClipboardContent(modelBlock.Content, domContent);
+            return modelBlock;
+        }
+
+        var blockEl = figure.closest && figure.closest('.tm-wysiwyg-block[data-block-id]');
+        if (!blockEl || !inst.root.contains(blockEl)) {
+            blockEl = figure;
+        }
+        var block = blockEl && blockEl.matches && blockEl.matches('[data-block-id]')
+            ? _serializeBlock(blockEl, _createBlockMap(_resolveRuntimeDocument(inst) || {}), 0)
+            : null;
+        if (!block || _normalizeBlockTypeNumber(block.Type) !== 5) {
+            block = {
+                Id: blockId || _newId('image'),
+                Type: 5,
+                Order: 0,
+                Content: _serializeImage(figure)
+            };
+        }
+
+        return _clonePlainJson(block);
+    }
+
+    function _normalizeImageClipboardContent(content, domContent) {
+        if (!content) return;
+        domContent = domContent || {};
+        var layout = content.Layout || content.layout || domContent.Layout || domContent.layout;
+        var size = domContent.Size || domContent.size || content.Size || content.size;
+        var naturalSize = domContent.NaturalSize || domContent.naturalSize || content.NaturalSize || content.naturalSize;
+
+        content.$type = content.$type || 'image';
+        content.Source = content.Source ?? content.source ?? domContent.Source ?? domContent.source ?? 0;
+        content.Url = domContent.Url || domContent.url || content.Url || content.url || '';
+        content.AltText = domContent.AltText || domContent.altText || content.AltText || content.altText || '';
+        content.Caption = domContent.Caption || domContent.caption || content.Caption || content.caption || '';
+        if (content.AssetId || content.assetId) content.AssetId = content.AssetId || content.assetId;
+        if (content.LinkUrl || content.linkUrl) content.LinkUrl = content.LinkUrl || content.linkUrl;
+        if (size) content.Size = _clonePlainJson(size);
+        if (naturalSize) content.NaturalSize = _clonePlainJson(naturalSize);
+        if (layout) content.Layout = _clonePlainJson(layout);
+
+        delete content.source;
+        delete content.url;
+        delete content.altText;
+        delete content.caption;
+        delete content.assetId;
+        delete content.linkUrl;
+        delete content.size;
+        delete content.naturalSize;
+        delete content.layout;
+    }
+
+    function _serializeImageBlockAsClipboardHtml(block) {
+        var content = block && (block.Content || block.content) || {};
+        var src = content.Url || content.url || '';
+        var alt = content.AltText || content.altText || '';
+        var caption = content.Caption || content.caption || '';
+        var size = content.Size || content.size || {};
+        var layout = content.Layout || content.layout || {};
+        var transform = layout.Transform || layout.transform || {};
+        var width = transform.Width ?? transform.width ?? size.Width ?? size.width;
+        var height = transform.Height ?? transform.height ?? size.Height ?? size.height;
+        var style = '';
+        if (width) style += 'width:' + _escapeHtmlAttribute(String(width)) + 'px;';
+        if (height) style += 'height:' + _escapeHtmlAttribute(String(height)) + 'px;';
+        return '<figure data-tempo-clipboard="image-block">'
+            + '<img src="' + _escapeHtmlAttribute(src) + '" alt="' + _escapeHtmlAttribute(alt) + '"' + (style ? ' style="' + style + '"' : '') + '>'
+            + (caption ? '<figcaption>' + _escapeHtml(caption) + '</figcaption>' : '')
+            + '</figure>';
+    }
+
+    function _clipboardImagePlainText(block) {
+        var content = block && (block.Content || block.content) || {};
+        return [content.AltText || content.altText || '', content.Caption || content.caption || '']
+            .filter(function (value) { return !!String(value || '').trim(); })
+            .join('\n');
+    }
+
+    function _pruneClipboardSelectionClone(container) {
+        if (!container || !container.querySelectorAll) return;
+        container.querySelectorAll('figure.tm-wysiwyg-image').forEach(function (figure) {
+            if (!_isInlineClipboardFigure(figure)) {
+                figure.remove();
+            } else {
+                figure.setAttribute('data-tempo-clipboard', 'image-block');
+            }
+        });
+        container.querySelectorAll('.tm-wysiwyg-object-resize-handle, .tm-wysiwyg-image__resize-handle, .tm-wysiwyg-object-rotation-handle, .tm-wysiwyg-anchor-glyph, .tm-wysiwyg-layout-bubble, .tm-wysiwyg-selection-box').forEach(function (chrome) {
+            chrome.remove();
+        });
+    }
+
+    function _ensureClipboardCloneContainsInlineFigures(inst, container, figures) {
+        if (!container || !Array.isArray(figures) || figures.length === 0) return;
+        var existingIds = new Set(Array.from(container.querySelectorAll('figure.tm-wysiwyg-image[data-block-id]'))
+            .map(function (figure) { return figure.getAttribute('data-block-id') || ''; })
+            .filter(Boolean));
+        figures.forEach(function (figure) {
+            var blockId = figure.getAttribute('data-block-id') || '';
+            if (!blockId || existingIds.has(blockId)) return;
+            var clone = figure.cloneNode(true);
+            clone.setAttribute('data-tempo-clipboard', 'image-block');
+            clone.querySelectorAll('.tm-wysiwyg-object-resize-handle, .tm-wysiwyg-image__resize-handle, .tm-wysiwyg-object-rotation-handle, .tm-wysiwyg-anchor-glyph, .tm-wysiwyg-layout-bubble, .tm-wysiwyg-selection-box').forEach(function (chrome) {
+                chrome.remove();
+            });
+
+            var figureOrder = _getDocumentBlockOrder(inst, blockId);
+            var inserted = false;
+            Array.from(container.children).some(function (child) {
+                var childBlockId = child.getAttribute && child.getAttribute('data-block-id');
+                if (!childBlockId) return false;
+                var childOrder = _getDocumentBlockOrder(inst, childBlockId);
+                if (Number.isFinite(figureOrder) && Number.isFinite(childOrder) && childOrder > figureOrder) {
+                    container.insertBefore(clone, child);
+                    inserted = true;
+                    return true;
+                }
+                return false;
+            });
+            if (!inserted) {
+                container.appendChild(clone);
+            }
+            existingIds.add(blockId);
+        });
+    }
+
+    function _isInlineClipboardFigure(figure) {
+        if (!figure) return false;
+        var isTempoImage = (figure.className || '').indexOf('tm-wysiwyg-image') >= 0;
+        if (!isTempoImage) return true;
+        var inline = figure.getAttribute('data-floating-inline');
+        var wrapMode = parseInt(figure.getAttribute('data-wrap-mode') || '0', 10) || 0;
+        return inline !== 'false' && wrapMode === 0;
+    }
+
+    function _clipboardPlainTextFromClone(container) {
+        if (!container) return '';
+        return String(container.textContent || '').replace(/\u00a0/g, ' ').replace(/[ \t\f\v]+/g, ' ').trim();
+    }
+
+    function _buildInternalClipboardBlocksFromSelection(inst, range, html, selectedInlineFigures) {
+        if (!inst || !range || !html || !_clipboardHtmlLooksLikeTempoPayload(html)) return [];
+        var blocks = _parseClipboardHtml(html);
+        if (!blocks.some(function (block) { return _normalizeBlockTypeNumber(block.Type ?? block.type) === 5; })) {
+            return [];
+        }
+
+        var selectedFigures = Array.isArray(selectedInlineFigures)
+            ? selectedInlineFigures
+            : _getInlineImageFiguresIntersectingRange(inst, range);
+        var imageIndex = 0;
+        blocks.forEach(function (block) {
+            if (_normalizeBlockTypeNumber(block.Type ?? block.type) !== 5) return;
+            var figure = selectedFigures[imageIndex++];
+            if (!figure) return;
+            var serialized = _serializeImageClipboardBlock(inst, figure);
+            if (!serialized) return;
+            block.Id = serialized.Id || serialized.id || block.Id || block.id;
+            block.Type = serialized.Type ?? serialized.type ?? block.Type ?? block.type;
+            block.Content = serialized.Content || serialized.content;
+        });
+        return blocks;
+    }
+
+    function _getInlineImageFiguresIntersectingRange(inst, range) {
+        if (!inst || !range || !inst.root) return [];
+        var orderRange = _getSelectionDocumentOrderRange(inst, range);
+        var selected = [];
+        Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image[data-block-id]'))
+            .filter(_isInlineClipboardFigure)
+            .forEach(function (figure) {
+                var blockId = figure.getAttribute('data-block-id') || '';
+                var selectedByDomRange = _rangeIntersectsNode(range, figure);
+                var selectedByDocumentOrder = false;
+                if (orderRange && blockId) {
+                    var order = _getDocumentBlockOrder(inst, blockId);
+                    selectedByDocumentOrder = Number.isFinite(order)
+                        && order >= orderRange.start
+                        && order <= orderRange.end;
+                }
+                if (selectedByDomRange || selectedByDocumentOrder) {
+                    selected.push(figure);
+                }
+            });
+        return selected.sort(function (left, right) {
+            return (_getDocumentBlockOrder(inst, left.getAttribute('data-block-id') || '') || 0)
+                - (_getDocumentBlockOrder(inst, right.getAttribute('data-block-id') || '') || 0);
+        });
+    }
+
+    function _rangeIntersectsNode(range, node) {
+        if (!range || !node) return false;
+        try {
+            return range.intersectsNode(node);
+        } catch {
+            return false;
+        }
+    }
+
+    function _getSelectionDocumentOrderRange(inst, range) {
+        if (!inst || !range) return null;
+        var startBlock = _closestBlockElement(range.startContainer);
+        var endBlock = _closestBlockElement(range.endContainer);
+        var startId = startBlock && startBlock.getAttribute ? startBlock.getAttribute('data-block-id') : '';
+        var endId = endBlock && endBlock.getAttribute ? endBlock.getAttribute('data-block-id') : '';
+        var startOrder = _getDocumentBlockOrder(inst, startId || '');
+        var endOrder = _getDocumentBlockOrder(inst, endId || '');
+        if (!Number.isFinite(startOrder) || !Number.isFinite(endOrder)) return null;
+        return {
+            start: Math.min(startOrder, endOrder),
+            end: Math.max(startOrder, endOrder)
+        };
+    }
+
+    function _getDocumentBlockOrder(inst, blockId) {
+        if (!inst || !blockId) return NaN;
+        var blockMap = _createBlockMap(_resolveRuntimeDocument(inst) || {});
+        var block = blockMap[blockId];
+        if (block) {
+            var order = parseFloat(block.order ?? block.Order ?? NaN);
+            if (Number.isFinite(order)) return order;
+        }
+
+        var el = inst.root && inst.root.querySelector
+            ? inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]')
+            : null;
+        if (!el) return NaN;
+        var domOrder = parseFloat(el.getAttribute('data-block-order') || NaN);
+        return Number.isFinite(domOrder) ? domOrder : NaN;
     }
 
     function _sanitizeClipboardHtml(container) {
@@ -15671,6 +20739,10 @@ window.tmDocumentWysiwyg = (function () {
             var rowspan = parseInt(el.getAttribute('rowspan') || '1', 10);
             if (colspan > 1) attrs += ' colspan="' + colspan + '"';
             if (rowspan > 1) attrs += ' rowspan="' + rowspan + '"';
+        } else if (tag === 'figure') {
+            if (el.getAttribute('data-tempo-clipboard')) {
+                attrs += ' data-tempo-clipboard="' + _escapeHtmlAttribute(el.getAttribute('data-tempo-clipboard') || 'image-block') + '"';
+            }
         } else if (tag === 'img') {
             var src = el.getAttribute('src') || '';
             if (!_isSafeImageUrl(src)) return '';
@@ -15868,10 +20940,36 @@ window.tmDocumentWysiwyg = (function () {
 
     function _serializeBodyBlocks(bodyContainer, blockMap) {
         var blocks = [];
-        var bodyBlocks = Array.from(bodyContainer.children)
-            .filter(function (child) {
-                return child.matches && child.matches('.tm-wysiwyg-block[data-block-id]');
+        var bodyBlocks = [];
+        var seen = new Set();
+        var layoutLayers = bodyContainer.querySelectorAll(':scope > .tm-wysiwyg-page__layer');
+        if (layoutLayers.length > 0) {
+            layoutLayers.forEach(function (layer) {
+                if (layer.classList.contains('tm-wysiwyg-page__layer--selection') || layer.classList.contains('tm-wysiwyg-page__layer--guides')) return;
+                Array.from(layer.children)
+                    .filter(function (child) {
+                        return child.matches && child.matches('.tm-wysiwyg-block[data-block-id]');
+                    })
+                    .forEach(function (child) {
+                        var id = child.getAttribute('data-block-id') || '';
+                        if (id && seen.has(id)) return;
+                        if (id) seen.add(id);
+                        bodyBlocks.push(child);
+                    });
             });
+        } else {
+            bodyBlocks = Array.from(bodyContainer.children)
+                .filter(function (child) {
+                    return child.matches && child.matches('.tm-wysiwyg-block[data-block-id]');
+                });
+        }
+
+        bodyBlocks.sort(function (a, b) {
+            var ao = parseFloat(a.getAttribute('data-block-order') || '0') || 0;
+            var bo = parseFloat(b.getAttribute('data-block-order') || '0') || 0;
+            if (ao !== bo) return ao - bo;
+            return 0;
+        });
         for (var bj = 0; bj < bodyBlocks.length; bj++) {
             var block = _serializeBlock(bodyBlocks[bj], blockMap, bj);
             if (block) blocks.push(block);
@@ -15950,7 +21048,7 @@ window.tmDocumentWysiwyg = (function () {
                 break;
             case 'figure':
                 type = 5; // Image
-                content = _serializeImage(blockEl);
+                content = _serializeImage(blockEl, original && (original.Content || original.content));
                 break;
             case 'hr':
                 type = 6; // PageBreak
@@ -16387,9 +21485,10 @@ window.tmDocumentWysiwyg = (function () {
         return result;
     }
 
-    function _serializeImage(figureEl) {
+    function _serializeImage(figureEl, originalContent) {
         var img = figureEl.querySelector('img');
         var figcaption = figureEl.querySelector('figcaption');
+        originalContent = originalContent || {};
         var size = {};
         if (img) {
             var w = img.style.width;
@@ -16406,6 +21505,7 @@ window.tmDocumentWysiwyg = (function () {
             Source: source,
             Url: img ? img.src : '',
             AltText: img ? img.alt : '',
+            IsDecorative: figureEl.getAttribute('data-image-decorative') === 'true',
             Caption: figcaption ? figcaption.textContent : ''
         };
         if (assetId) content.AssetId = assetId;
@@ -16418,37 +21518,52 @@ window.tmDocumentWysiwyg = (function () {
             if (naturalWidth > 0) content.NaturalSize.Width = naturalWidth;
             if (naturalHeight > 0) content.NaturalSize.Height = naturalHeight;
         }
-        var inline = figureEl.getAttribute('data-floating-inline') !== 'false';
-        var wrapMode = parseInt(figureEl.getAttribute('data-wrap-mode') || (inline ? '0' : '1'), 10);
-        var horizontal = parseInt(figureEl.getAttribute('data-horizontal-relative-to') || '0', 10);
-        var vertical = parseInt(figureEl.getAttribute('data-vertical-relative-to') || '3', 10);
-        var x = parseFloat(figureEl.getAttribute('data-image-x') || '0') || 0;
-        var y = parseFloat(figureEl.getAttribute('data-image-y') || '0') || 0;
-        var z = parseInt(figureEl.style.zIndex || '0', 10) || 0;
-        var hPosAttr = figureEl.getAttribute('data-horizontal-position');
-        var hPos = hPosAttr ? _normalizeHorizontalPosition(hPosAttr) : null;
-        var distL = parseFloat(figureEl.style.marginLeft) || 0;
-        var distR = parseFloat(figureEl.style.marginRight) || 0;
-        var distT = parseFloat(figureEl.style.marginTop) || 0;
-        var distB = parseFloat(figureEl.style.marginBottom) || 0;
-        if (!inline || wrapMode !== 0 || x !== 0 || y !== 0 || z !== 0) {
-            content.FloatingLayout = {
-                Inline: inline,
-                HorizontalRelativeTo: horizontal,
-                VerticalRelativeTo: vertical,
-                X: x,
-                Y: y,
-                WrapMode: wrapMode,
-                ZIndex: z,
-                LockAnchor: figureEl.getAttribute('data-lock-anchor') === 'true'
-            };
-            if (hPos) content.FloatingLayout.HorizontalPosition = hPos.value;
-            if (distL !== 0) content.FloatingLayout.DistanceLeft = distL;
-            if (distR !== 0) content.FloatingLayout.DistanceRight = distR;
-            if (distT !== 0) content.FloatingLayout.DistanceTop = distT;
-            if (distB !== 0) content.FloatingLayout.DistanceBottom = distB;
-        }
+        var layout = _createImageObjectLayoutFromFigure(figureEl);
+        _preserveImageLayoutSerializationFallbacks(figureEl, layout, originalContent.Layout || originalContent.layout);
+        layout.Transform.Width = size.Width;
+        layout.Transform.Height = size.Height;
+        layout.Transform.LockAspectRatio = figureEl.getAttribute('data-lock-aspect-ratio') !== 'false';
+        var naturalWidthForLayout = parseInt(figureEl.getAttribute('data-image-natural-width') || '0', 10) || 0;
+        var naturalHeightForLayout = parseInt(figureEl.getAttribute('data-image-natural-height') || '0', 10) || 0;
+        if (naturalWidthForLayout > 0) layout.Transform.NaturalWidth = naturalWidthForLayout;
+        if (naturalHeightForLayout > 0) layout.Transform.NaturalHeight = naturalHeightForLayout;
+        content.Layout = layout;
         return content;
+    }
+
+    function _preserveImageLayoutSerializationFallbacks(figureEl, layout, originalLayout) {
+        if (!figureEl || !layout || !originalLayout) return;
+        var originalWrap = originalLayout.Wrap || originalLayout.wrap || {};
+        var wrap = layout.Wrap || {};
+        [
+            ['DistanceLeft', 'distanceLeft', 'marginLeft'],
+            ['DistanceRight', 'distanceRight', 'marginRight'],
+            ['DistanceTop', 'distanceTop', 'marginTop'],
+            ['DistanceBottom', 'distanceBottom', 'marginBottom']
+        ].forEach(function (entry) {
+            var pascal = entry[0];
+            var camel = entry[1];
+            var styleName = entry[2];
+            var originalValue = parseFloat(originalWrap[pascal] ?? originalWrap[camel] ?? 0) || 0;
+            var currentValue = parseFloat(wrap[pascal] ?? wrap[camel] ?? 0) || 0;
+            var hasDomValue = !!(figureEl.style && figureEl.style[styleName]);
+            if (!hasDomValue && currentValue === 0 && originalValue !== 0) {
+                wrap[pascal] = originalValue;
+            }
+        });
+
+        var originalAnchor = originalLayout.Anchor || originalLayout.anchor;
+        if (originalAnchor && !layout.Anchor) {
+            layout.Anchor = _clonePlainJson(originalAnchor);
+        }
+
+        var originalTransform = originalLayout.Transform || originalLayout.transform || {};
+        var transform = layout.Transform || (layout.Transform = {});
+        var originalRotation = parseFloat(originalTransform.Rotation ?? originalTransform.rotation ?? 0) || 0;
+        var currentRotation = parseFloat(transform.Rotation ?? transform.rotation ?? 0) || 0;
+        if (currentRotation === 0 && originalRotation !== 0) {
+            transform.Rotation = originalRotation;
+        }
     }
 
     function measureBlockForDebug(instanceId, target) {
@@ -16507,6 +21622,34 @@ window.tmDocumentWysiwyg = (function () {
             MeasureCacheHits: inst.measureStats.cacheHits,
             MeasureInvalidations: inst.measureStats.invalidations,
             MeasureCacheSize: inst.measureCache.size,
+            TextMeasureCount: _textRunMeasureStats.count,
+            TextMeasureCacheHits: _textRunMeasureStats.cacheHits,
+            TextMeasureInvalidations: _textRunMeasureStats.invalidations,
+            TextMeasureCacheSize: _textRunMeasureCache.size,
+            TextMeasureCacheHitRatio: (_textRunMeasureStats.count + _textRunMeasureStats.cacheHits) > 0
+                ? _textRunMeasureStats.cacheHits / (_textRunMeasureStats.count + _textRunMeasureStats.cacheHits)
+                : 0,
+            LayoutPassCount: performanceStats.layoutPassCount || 0,
+            LastLayoutPassMs: performanceStats.layoutPassLastMs || 0,
+            MaxLayoutPassMs: performanceStats.layoutPassMaxMs || 0,
+            AverageLayoutPassMs: performanceStats.layoutPassCount > 0
+                ? performanceStats.layoutPassTotalMs / performanceStats.layoutPassCount
+                : 0,
+            LastLayoutReason: performanceStats.layoutLastReason || '',
+            LayoutInvalidatedPageCount: performanceStats.layoutInvalidatedPageCount || 0,
+            LayoutInvalidatedPages: Array.isArray(performanceStats.layoutInvalidatedPages) ? performanceStats.layoutInvalidatedPages.slice() : [],
+            LayoutDragReflowCount: performanceStats.layoutReflowAfterDragCount || 0,
+            LastLayoutDragReflowMs: performanceStats.layoutReflowAfterDragLastMs || 0,
+            MaxLayoutDragReflowMs: performanceStats.layoutReflowAfterDragMaxMs || 0,
+            AverageLayoutDragReflowMs: performanceStats.layoutReflowAfterDragCount > 0
+                ? performanceStats.layoutReflowAfterDragTotalMs / performanceStats.layoutReflowAfterDragCount
+                : 0,
+            LayoutResizeReflowCount: performanceStats.layoutReflowAfterResizeCount || 0,
+            LastLayoutResizeReflowMs: performanceStats.layoutReflowAfterResizeLastMs || 0,
+            MaxLayoutResizeReflowMs: performanceStats.layoutReflowAfterResizeMaxMs || 0,
+            AverageLayoutResizeReflowMs: performanceStats.layoutReflowAfterResizeCount > 0
+                ? performanceStats.layoutReflowAfterResizeTotalMs / performanceStats.layoutReflowAfterResizeCount
+                : 0,
             MarkerRenderAttemptCount: performanceStats.markerRenderAttempts || 0,
             MarkerRenderCount: performanceStats.markerRenderCount || 0,
             MarkerRenderSkippedCount: performanceStats.markerRenderSkippedCount || 0,
@@ -16568,6 +21711,29 @@ window.tmDocumentWysiwyg = (function () {
         var activeBlock = debugElement ? debugElement.closest('[data-block-id]') : null;
         var activeInline = debugElement ? debugElement.closest('[data-inline-id]') : null;
         var pending = inst.pendingInputPatch || null;
+        var metrics = getDebugMetrics(instanceId) || {};
+        var performanceSnapshot = {
+            LayoutPassCount: metrics.LayoutPassCount || 0,
+            LastLayoutPassMs: metrics.LastLayoutPassMs || 0,
+            MaxLayoutPassMs: metrics.MaxLayoutPassMs || 0,
+            AverageLayoutPassMs: metrics.AverageLayoutPassMs || 0,
+            LastLayoutReason: metrics.LastLayoutReason || '',
+            LayoutInvalidatedPageCount: metrics.LayoutInvalidatedPageCount || 0,
+            LayoutInvalidatedPages: Array.isArray(metrics.LayoutInvalidatedPages) ? metrics.LayoutInvalidatedPages.slice() : [],
+            LayoutDragReflowCount: metrics.LayoutDragReflowCount || 0,
+            LastLayoutDragReflowMs: metrics.LastLayoutDragReflowMs || 0,
+            MaxLayoutDragReflowMs: metrics.MaxLayoutDragReflowMs || 0,
+            AverageLayoutDragReflowMs: metrics.AverageLayoutDragReflowMs || 0,
+            LayoutResizeReflowCount: metrics.LayoutResizeReflowCount || 0,
+            LastLayoutResizeReflowMs: metrics.LastLayoutResizeReflowMs || 0,
+            MaxLayoutResizeReflowMs: metrics.MaxLayoutResizeReflowMs || 0,
+            AverageLayoutResizeReflowMs: metrics.AverageLayoutResizeReflowMs || 0,
+            TextMeasureCount: metrics.TextMeasureCount || 0,
+            TextMeasureCacheHits: metrics.TextMeasureCacheHits || 0,
+            TextMeasureInvalidations: metrics.TextMeasureInvalidations || 0,
+            TextMeasureCacheSize: metrics.TextMeasureCacheSize || 0,
+            TextMeasureCacheHitRatio: metrics.TextMeasureCacheHitRatio || 0
+        };
 
         return {
             InstanceId: inst.id || instanceId || '',
@@ -16601,6 +21767,7 @@ window.tmDocumentWysiwyg = (function () {
             LastClearFormattingFallbackSelection: _toPascalSelection(inst.lastClearFormattingFallbackSelection || null),
             MiniToolbarVisible: !!inst.miniToolbarVisible,
             MiniToolbarRequestKey: inst.miniToolbarRequestKey || null,
+            LastHitTest: inst.lastHitTest || null,
             CurrentSelection: _toPascalSelection(selection),
             LastSelection: _toPascalSelection(lastSelection),
             ActiveBlockId: activeBlock ? activeBlock.getAttribute('data-block-id') : null,
@@ -16614,7 +21781,16 @@ window.tmDocumentWysiwyg = (function () {
             RenderedBlockCount: inst.root.querySelectorAll('[data-block-id]').length,
             RevisionElementCount: inst.root.querySelectorAll('[data-revision-id], .tm-wysiwyg-revision--insert, .tm-wysiwyg-revision--delete').length,
             ImageElementCount: inst.root.querySelectorAll('figure.tm-wysiwyg-image-block img, figure[data-image-source] img').length,
-            BodyTextLength: (inst.root.textContent || '').length
+            BodyTextLength: (inst.root.textContent || '').length,
+            Performance: performanceSnapshot,
+            LayoutPassCount: performanceSnapshot.LayoutPassCount,
+            LastLayoutPassMs: performanceSnapshot.LastLayoutPassMs,
+            LayoutInvalidatedPageCount: performanceSnapshot.LayoutInvalidatedPageCount,
+            LayoutInvalidatedPages: performanceSnapshot.LayoutInvalidatedPages,
+            LayoutDragReflowCount: performanceSnapshot.LayoutDragReflowCount,
+            LayoutResizeReflowCount: performanceSnapshot.LayoutResizeReflowCount,
+            TextMeasureCacheHitRatio: performanceSnapshot.TextMeasureCacheHitRatio,
+            UndoStackDebug: getDebugUndoStack(instanceId)
         };
     }
 
@@ -16637,6 +21813,11 @@ window.tmDocumentWysiwyg = (function () {
             ActiveTableCellId: selection.activeTableCellId || selection.ActiveTableCellId || null,
             TableCellPath: selection.tableCellPath || selection.TableCellPath || null,
             ActiveImageBlockId: selection.activeImageBlockId || selection.ActiveImageBlockId || null,
+            LayoutLineId: selection.layoutLineId || selection.LayoutLineId || null,
+            LayoutSegmentId: selection.layoutSegmentId || selection.LayoutSegmentId || null,
+            VisualLineIndex: selection.visualLineIndex ?? selection.VisualLineIndex ?? null,
+            ActiveObjectId: selection.activeObjectId || selection.ActiveObjectId || null,
+            HitTargetKind: selection.hitTargetKind || selection.HitTargetKind || null,
             AnchorNodeId: selection.anchorNodeId || selection.AnchorNodeId || selection.anchorInlineId || selection.AnchorInlineId || selection.anchorBlockId || selection.AnchorBlockId || null,
             FocusNodeId: selection.focusNodeId || selection.FocusNodeId || selection.focusInlineId || selection.FocusInlineId || selection.focusBlockId || selection.FocusBlockId || null
         };
@@ -16694,6 +21875,7 @@ window.tmDocumentWysiwyg = (function () {
         };
         inst.performanceStats = _createPerformanceStats();
         inst.measureCache.clear();
+        _clearTextRunMeasureCache();
     }
 
     function refreshVirtualization(instanceId) {
@@ -16780,6 +21962,7 @@ window.tmDocumentWysiwyg = (function () {
         getLinkInfo: getLinkInfo,
         executeCommand: executeCommand,
         measureBlockForDebug: measureBlockForDebug,
+        measureTextRunForDebug: _measureTextRun,
         getDebugMetrics: getDebugMetrics,
         getDebugSnapshot: getDebugSnapshot,
         clearDebugMetrics: clearDebugMetrics,
@@ -16790,6 +21973,7 @@ window.tmDocumentWysiwyg = (function () {
         upsertMarker: upsertMarker,
         removeMarker: removeMarker,
         getMarkers: getMarkers,
+        DocumentHitTestService: DocumentHitTestService,
         __testHooks: {
             sortRemoteBatchOperations: function (operations) {
                 return _sortRemoteBatchOperations((operations || []).slice());
@@ -16805,12 +21989,30 @@ window.tmDocumentWysiwyg = (function () {
             createRenderPlan: function (document) {
                 return _createRenderPlan(document);
             },
+            createLayoutSnapshotForRender: function (document) {
+                var renderPlan = _createRenderPlan(document || {});
+                var pageSettings = _normalizePageSettings((document && (document.pageSettings || document.PageSettings)) || {});
+                return _createLayoutSnapshotForRender(document || {}, renderPlan, pageSettings);
+            },
+            hitTestLayoutGeometry: function (request) {
+                return _hitTestLayoutGeometry(request || {});
+            },
+            applyLayoutTextEditModel: function (segments, edit) {
+                return _applyLayoutTextEditModel(segments || [], edit || {});
+            },
+            computeImageMoveSnap: function (candidate, context) {
+                return _computeImageMoveSnap(candidate || {}, context || {});
+            },
             operationRendererKeys: function () {
                 return Object.keys(_createOperationRendererRegistry()).sort();
             },
             createRuntimeSelectionFromSnapshot: function (snapshot) {
                 return _createRuntimeSelectionFromSnapshot(snapshot);
             },
+            measureTextRun: _measureTextRun,
+            getTextRunMeasureCacheKey: _getTextRunMeasureCacheKey,
+            getTextRunMeasureStats: _getTextRunMeasureStats,
+            clearTextRunMeasureCache: _clearTextRunMeasureCache,
             createSelectionSnapshotFromRuntimeSelection: function (selection) {
                 return _createSelectionSnapshotFromRuntimeSelection(selection);
             },
@@ -16842,6 +22044,10 @@ window.tmDocumentWysiwyg = (function () {
             },
             normalizeWrapMode: _normalizeWrapMode,
             normalizeHorizontalPosition: _normalizeHorizontalPosition,
+            normalizeWrapContourPoints: _normalizeWrapContourPoints,
+            getLayoutAvailableIntervals: function (y, height, bodyRect, exclusions) {
+                return _getLayoutAvailableIntervals(y, height, bodyRect, exclusions || []);
+            },
             schemaAllowsBlock: _schemaAllowsBlock,
             schemaAllowsToolbarBlockCommand: _schemaAllowsToolbarBlockCommand,
             normalizeInsertionBlocksForSchema: function (blocks, region) {
@@ -16888,6 +22094,8 @@ window.tmDocumentWysiwyg = (function () {
                     scrollTop: 0,
                     scrollHeight: 0,
                     clientHeight: 0,
+                    textContent: '',
+                    contains: function () { return false; },
                     querySelector: function () { return null; },
                     querySelectorAll: function () { return []; },
                     getBoundingClientRect: function () { return { top: 0, left: 0, width: 0, height: 0 }; }
@@ -16927,8 +22135,10 @@ window.tmDocumentWysiwyg = (function () {
                     instanceId: instanceId,
                     recordMarkerRender: function (rendered) { _recordMarkerRenderMetric(inst, _performanceNow(), !!rendered); },
                     recordFloatingReposition: function () { _recordFloatingRepositionMetric(inst, _performanceNow()); },
+                    recordLayoutPass: function (reason, previousSnapshot, nextSnapshot) { _recordLayoutPassMetric(inst, _performanceNow(), reason || 'layout', previousSnapshot || null, nextSnapshot || { Pages: [] }); },
                     recordClipboardNormalization: function () { _recordClipboardNormalizationMetric(inst, _performanceNow()); },
                     metrics: function () { return getDebugMetrics(instanceId); },
+                    snapshot: function () { return getDebugSnapshot(instanceId); },
                     clear: function () { clearDebugMetrics(instanceId); },
                     dispose: function () { _instances.delete(instanceId); }
                 };
@@ -16987,6 +22197,7 @@ window.tmDocumentWysiwyg = (function () {
             var inst = _instances.get(instanceId);
             if (!inst || inst.disposed) return null;
             var payload = _serializeSelectionForClipboard(inst);
+            _rememberClipboardPayload(inst, payload);
             if (payload && writeToClipboard !== false) {
                 _writeClipboardPayload(payload);
             }
@@ -17280,6 +22491,15 @@ window.tmDocumentEditorRuntime = (function () {
                 || _hasOwn(content, 'rows'));
     }
 
+    function _looksLikeImageContent(content) {
+        return !!content
+            && (_contentKind(content).indexOf('image') >= 0
+                || _hasOwn(content, 'Url')
+                || _hasOwn(content, 'url')
+                || _hasOwn(content, 'AssetId')
+                || _hasOwn(content, 'assetId'));
+    }
+
     function _normalizeParagraphContent(content, path) {
         var result = content ? _cloneJson(content) : {};
         if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
@@ -17311,9 +22531,62 @@ window.tmDocumentEditorRuntime = (function () {
         return _sortObjectDeep(result);
     }
 
+    function _normalizeImageContent(content) {
+        var result = content ? _cloneJson(content) : {};
+        if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
+            result.$type = 'image';
+        }
+
+        var layout = result.Layout || result.layout || null;
+        var legacy = result.FloatingLayout || result.floatingLayout || null;
+        if (!layout && legacy) {
+            var inline = (legacy.Inline ?? legacy.inline) !== false;
+            layout = {
+                Kind: inline ? 0 : 1,
+                Anchor: {
+                    MoveWithText: !inline,
+                    FixedOnPage: false,
+                    LockAnchor: !!(legacy.LockAnchor ?? legacy.lockAnchor)
+                },
+                Position: {
+                    HorizontalRelativeTo: legacy.HorizontalRelativeTo ?? legacy.horizontalRelativeTo ?? 0,
+                    VerticalRelativeTo: legacy.VerticalRelativeTo ?? legacy.verticalRelativeTo ?? 3,
+                    X: legacy.X ?? legacy.x ?? 0,
+                    Y: legacy.Y ?? legacy.y ?? 0
+                },
+                Wrap: {
+                    Mode: legacy.WrapMode ?? legacy.wrapMode ?? 0,
+                    DistanceLeft: legacy.DistanceLeft ?? legacy.distanceLeft ?? 0,
+                    DistanceRight: legacy.DistanceRight ?? legacy.distanceRight ?? 0,
+                    DistanceTop: legacy.DistanceTop ?? legacy.distanceTop ?? 0,
+                    DistanceBottom: legacy.DistanceBottom ?? legacy.distanceBottom ?? 0,
+                    WrapContourPoints: _normalizeWrapContourPoints(legacy.WrapContourPoints ?? legacy.wrapContourPoints)
+                },
+                Transform: {},
+                Stacking: {
+                    ZIndex: legacy.ZIndex ?? legacy.zIndex ?? 0,
+                    AllowOverlap: (legacy.AllowOverlap ?? legacy.allowOverlap) === true
+                        || String(legacy.AllowOverlap ?? legacy.allowOverlap ?? '').toLowerCase() === 'true'
+                }
+            };
+            if (legacy.HorizontalPosition != null || legacy.horizontalPosition != null) {
+                layout.Position.HorizontalAlignment = legacy.HorizontalPosition ?? legacy.horizontalPosition;
+            }
+        }
+
+        if (layout) {
+            _writePair(result, 'Layout', 'layout', _sortObjectDeep(layout));
+        }
+
+        delete result.FloatingLayout;
+        delete result.floatingLayout;
+        return _sortObjectDeep(result);
+    }
+
     function _normalizeBlockContent(content, path) {
         if (!content) return _normalizeParagraphContent({}, path);
         if (_looksLikeTableContent(content)) return _normalizeTableContent(content, path);
+        if (_looksLikeImageContent(content)) return _normalizeImageContent(content);
         if (_looksLikeParagraphContent(content)) return _normalizeParagraphContent(content, path);
         return _sortObjectDeep(_cloneJson(content));
     }
@@ -18353,6 +23626,20 @@ window.tmDocumentEditorRuntime = (function () {
                 MeasureCount: metrics.MeasureCount || 0,
                 MeasureCacheHits: metrics.MeasureCacheHits || 0,
                 MeasureInvalidations: metrics.MeasureInvalidations || 0,
+                TextMeasureCount: metrics.TextMeasureCount || 0,
+                TextMeasureCacheHits: metrics.TextMeasureCacheHits || 0,
+                TextMeasureCacheHitRatio: metrics.TextMeasureCacheHitRatio || 0,
+                LayoutPassCount: metrics.LayoutPassCount || 0,
+                LastLayoutPassMs: metrics.LastLayoutPassMs || 0,
+                MaxLayoutPassMs: metrics.MaxLayoutPassMs || 0,
+                AverageLayoutPassMs: metrics.AverageLayoutPassMs || 0,
+                LastLayoutReason: metrics.LastLayoutReason || '',
+                LayoutInvalidatedPageCount: metrics.LayoutInvalidatedPageCount || 0,
+                LayoutInvalidatedPages: Array.isArray(metrics.LayoutInvalidatedPages) ? metrics.LayoutInvalidatedPages.slice() : [],
+                LayoutDragReflowCount: metrics.LayoutDragReflowCount || 0,
+                LastLayoutDragReflowMs: metrics.LastLayoutDragReflowMs || 0,
+                LayoutResizeReflowCount: metrics.LayoutResizeReflowCount || 0,
+                LastLayoutResizeReflowMs: metrics.LastLayoutResizeReflowMs || 0,
                 VirtualizationEnabled: !!metrics.VirtualizationEnabled,
                 TotalPages: metrics.TotalPages || 0,
                 RenderedPages: metrics.RenderedPages || 0,

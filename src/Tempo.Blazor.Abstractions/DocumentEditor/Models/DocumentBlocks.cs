@@ -327,10 +327,13 @@ public class ImageBlockContent : DocumentBlockContent
     /// <summary>Alternative text.</summary>
     public string? AltText { get; set; }
 
+    /// <summary>Whether assistive technology should ignore this image as decorative.</summary>
+    public bool IsDecorative { get; set; }
+
     /// <summary>Optional caption.</summary>
     public string? Caption { get; set; }
 
-    /// <summary>Image size.</summary>
+    /// <summary>Source/default image size. User-controlled rendered size is stored in <see cref="Layout"/>.</summary>
     public DocumentImageSize Size { get; set; } = new();
 
     /// <summary>Intrinsic image size reported by the image asset once loaded.</summary>
@@ -339,8 +342,16 @@ public class ImageBlockContent : DocumentBlockContent
     /// <summary>Image alignment.</summary>
     public DocumentImageAlignment Alignment { get; set; } = DocumentImageAlignment.Center;
 
-    /// <summary>Optional floating layout metadata.</summary>
-    public DocumentFloatingLayout? FloatingLayout { get; set; }
+    /// <summary>Canonical object layout used for inline, anchored, and fixed image positioning.</summary>
+    public DocumentObjectLayout Layout { get; set; } = DocumentObjectLayout.Inline();
+
+    /// <summary>Previous floating layout DTO kept as a non-serialized transition shim for internal call sites.</summary>
+    [JsonIgnore]
+    public DocumentFloatingLayout? FloatingLayout
+    {
+        get => Layout?.ToFloatingLayout();
+        set => Layout = DocumentObjectLayout.FromFloatingLayout(value);
+    }
 
     /// <summary>Optional hyperlink URL wrapping the image.</summary>
     public string? LinkUrl { get; set; }

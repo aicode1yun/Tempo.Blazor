@@ -2763,6 +2763,8 @@
   <data name="TmDocumentEditor_ImageInsertAsset"       xml:space="preserve"><value>Depuis les ressources</value></data>
   <data name="TmDocumentEditor_ImageInspectorLabel"    xml:space="preserve"><value>Inspecteur d'image</value></data>
   <data name="TmDocumentEditor_ImageAltMissing"        xml:space="preserve"><value>Ajoutez un texte alternatif pour l'accessibilité.</value></data>
+  <data name="TmDocumentEditor_ImageDecorative"        xml:space="preserve"><value>Image décorative</value></data>
+  <data name="TmDocumentEditor_ImageDecorativeHint"    xml:space="preserve"><value>Les lecteurs d'écran ignoreront cette image.</value></data>
   <data name="TmDocumentEditor_ImageLink"              xml:space="preserve"><value>Lien de l'image</value></data>
   <data name="TmDocumentEditor_ImageHeight"            xml:space="preserve"><value>Hauteur</value></data>
   <data name="TmDocumentEditor_ImageAlignment"         xml:space="preserve"><value>Alignement de l'image</value></data>
@@ -2780,13 +2782,35 @@
   <data name="TmDocumentEditor_ImageWrapMode"          xml:space="preserve"><value>Habiller le texte</value></data>
   <data name="TmDocumentEditor_ImageWrapInline"        xml:space="preserve"><value>Intégré</value></data>
   <data name="TmDocumentEditor_ImageWrapSquare"        xml:space="preserve"><value>Carré</value></data>
+  <data name="TmDocumentEditor_ImageWrapTight"         xml:space="preserve"><value>Rapproché</value></data>
+  <data name="TmDocumentEditor_ImageWrapThrough"       xml:space="preserve"><value>Au travers</value></data>
   <data name="TmDocumentEditor_ImageWrapTopBottom"     xml:space="preserve"><value>Haut et bas</value></data>
+  <data name="TmDocumentEditor_ImageWrapBehindText"    xml:space="preserve"><value>Derrière le texte</value></data>
   <data name="TmDocumentEditor_ImageWrapInFrontOfText" xml:space="preserve"><value>Devant le texte</value></data>
   <data name="TmDocumentEditor_ImagePosition"          xml:space="preserve"><value>Position</value></data>
   <data name="TmDocumentEditor_ImagePositionLeft"      xml:space="preserve"><value>Gauche</value></data>
   <data name="TmDocumentEditor_ImagePositionRight"     xml:space="preserve"><value>Droite</value></data>
+  <data name="TmDocumentEditor_ImagePositionX"         xml:space="preserve"><value>X</value></data>
+  <data name="TmDocumentEditor_ImagePositionY"         xml:space="preserve"><value>Y</value></data>
+  <data name="TmDocumentEditor_ImageRotation"          xml:space="preserve"><value>Rotation</value></data>
+  <data name="TmDocumentEditor_ImageSectionPicture"    xml:space="preserve"><value>Image</value></data>
+  <data name="TmDocumentEditor_ImageSectionSizeRotation" xml:space="preserve"><value>Taille et rotation</value></data>
+  <data name="TmDocumentEditor_ImageSectionWrapping"   xml:space="preserve"><value>Habillage du texte</value></data>
+  <data name="TmDocumentEditor_ImageSectionPosition"   xml:space="preserve"><value>Position</value></data>
+  <data name="TmDocumentEditor_ImageSectionOrder"      xml:space="preserve"><value>Ordre</value></data>
+  <data name="TmDocumentEditor_ImageSectionAccessibility" xml:space="preserve"><value>Accessibilité</value></data>
+  <data name="TmDocumentEditor_ImageSourceUrl"         xml:space="preserve"><value>Image URL</value></data>
+  <data name="TmDocumentEditor_ImageSourceAsset"       xml:space="preserve"><value>Image ressource</value></data>
+  <data name="TmDocumentEditor_ImageSourceClipboard"   xml:space="preserve"><value>Image du presse-papiers</value></data>
+  <data name="TmDocumentEditor_ImageSourceDataUrl"     xml:space="preserve"><value>Image intégrée</value></data>
+  <data name="TmDocumentEditor_ImageBringForward"      xml:space="preserve"><value>Avancer</value></data>
+  <data name="TmDocumentEditor_ImageSendBackward"      xml:space="preserve"><value>Reculer</value></data>
   <data name="TmDocumentEditor_ImageDistanceTitle"     xml:space="preserve"><value>Distance du texte</value></data>
-  <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Déplacer avec le texte</value></data>
+  <data name="TmDocumentEditor_ImageAnchorParagraph"   xml:space="preserve"><value>Paragraphe d’ancrage</value></data>
+  <data name="TmDocumentEditor_ImageAnchorUnknown"     xml:space="preserve"><value>Non ancré</value></data>
+  <data name="TmDocumentEditor_ImageMoveWithText"      xml:space="preserve"><value>Déplacer avec le texte</value></data>
+  <data name="TmDocumentEditor_ImageFixedOnPage"       xml:space="preserve"><value>Fixe sur la page</value></data>
+  <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Verrouiller l’ancre</value></data>
   <data name="TmDocumentEditor_AcceptAllRevisions"     xml:space="preserve"><value>Tout accepter</value></data>
   <data name="TmDocumentEditor_RejectAllRevisions"     xml:space="preserve"><value>Tout rejeter</value></data>
   <data name="TmDocumentEditor_AllRevisionsAccepted"   xml:space="preserve"><value>{0} révisions acceptées</value></data>

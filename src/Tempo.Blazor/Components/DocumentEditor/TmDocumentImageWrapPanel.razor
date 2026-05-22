@@ -25,6 +25,22 @@
             @Loc["TmDocumentEditor_ImageWrapSquare"]
         </button>
 
+        <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Tight ? "tm-document-image-wrap-panel__btn--active" : "")"
+                data-testid="document-image-wrap-tight"
+                title="@Loc["TmDocumentEditor_ImageWrapTight"]"
+                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Tight)"
+                @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Tight)">
+            @Loc["TmDocumentEditor_ImageWrapTight"]
+        </button>
+
+        <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Through ? "tm-document-image-wrap-panel__btn--active" : "")"
+                data-testid="document-image-wrap-through"
+                title="@Loc["TmDocumentEditor_ImageWrapThrough"]"
+                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Through)"
+                @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Through)">
+            @Loc["TmDocumentEditor_ImageWrapThrough"]
+        </button>
+
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.TopBottom ? "tm-document-image-wrap-panel__btn--active" : "")"
                 data-testid="document-image-wrap-top-bottom"
                 title="@Loc["TmDocumentEditor_ImageWrapTopBottom"]"

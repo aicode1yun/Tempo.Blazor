@@ -8,6 +8,7 @@ namespace Tempo.Blazor.Demo.Services;
 public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
 {
     private const string DemoImageUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAC0CAYAAADl5PURAAACsUlEQVR42u3ZzQ2CQBCAUYuwFLuxDjuwBDqgAK9UZfwB9ECC04JGdJd5hzeZ80C+y252+9MMkNHGEQABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEBAAB0CEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAgAIDOD6nGSAjAQQEEEAAAQQQQAABBBBAAAEEEKDiAA4xADISQEAAAQQQQAABBBBAAAEEEEAAAQQQQAB/pWk74MsEUABBAAVQAEEABVAAQQAFUABBAAUQYBUBfMQCkJAAAgIIIIAAAggggAACCCCAAAIIUHEA+xgAGQkgIIAAAliJ8zgDhRNAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBHIE8D5Oc438XFC+0jsigIAACiAggAIICKAAAgIogIAACiAggAIICKAAAgIogIAACiAggAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKICAAAogIIACCAjgGwG8xViT7fGwiLXdCag4gEIHpAig2AECKHSAAIodkDiAPh6Q9hEEQAABPg7gEAtAQgIICCCAAAIIIIAAAggggAACCCCAAAIIIIAAAgjgMpq2g2KIiQAKIAKIAAogAogACiACiAAKIAJIgQG8xgDISAABAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQIC/BrCPBSAhAQQEEEAAAQQQQAABBBBAAAEEEKDiAF5iAGQkgIAAAgggQBIvAt6vRwtbqO0AAAAASUVORK5CYII=";
+    private const string ContractUrlImageUrl = "/favicon.png";
     private readonly HttpClient? _http;
 
     /// <summary>Creates the demo provider with sample legal documents.</summary>
@@ -21,21 +22,71 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
 
         contract.Blocks.Add(new DocumentBlock
         {
+            Id = "contract-evidence-url-image",
+            SectionId = "contract-section-main",
             Type = DocumentBlockType.Image,
             Order = 30,
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Url,
-                Url = DemoImageUrl,
-                AltText = "Embedded evidence preview",
-                Caption = "Evidence image loaded from a URL",
+                Url = ContractUrlImageUrl,
+                AltText = "URL evidence preview",
+                Caption = "Image loaded from /favicon.png",
                 Size = new DocumentImageSize { Width = 220, Height = 124 },
-                Alignment = DocumentImageAlignment.Center
+                NaturalSize = new DocumentImageSize { Width = 220, Height = 124 },
+                Alignment = DocumentImageAlignment.Start,
+                Layout = CreateLeftWrappedImageLayout(220, 124)
             }
         });
 
         contract.Blocks.Add(new DocumentBlock
         {
+            Id = "contract-image-wrap-demo-text",
+            SectionId = "contract-section-main",
+            Type = DocumentBlockType.Paragraph,
+            Order = 32,
+            ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Justify,
+                LineSpacing = 1.25,
+                SpacingAfter = 12
+            },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = "contract-image-wrap-demo-run",
+                        Text = "This longer clause demonstrates live text wrapping around the evidence preview. Click any visual line beside the image, continue typing, resize or move the object, and the paragraph should reflow as one normal editable paragraph."
+                    }
+                ]
+            }
+        });
+
+        contract.Blocks.Add(new DocumentBlock
+        {
+            Id = "contract-missing-alt-image",
+            SectionId = "contract-section-main",
+            Type = DocumentBlockType.Image,
+            Order = 34,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = ContractUrlImageUrl,
+                AltText = null,
+                Caption = "Accessibility warning sample: missing alt text",
+                Size = new DocumentImageSize { Width = 180, Height = 102 },
+                NaturalSize = new DocumentImageSize { Width = 180, Height = 102 },
+                Alignment = DocumentImageAlignment.End,
+                Layout = CreateRightWrappedImageLayout(180, 102)
+            }
+        });
+
+        contract.Blocks.Add(new DocumentBlock
+        {
+            Id = "contract-provider-asset-image",
+            SectionId = "contract-section-main",
             Type = DocumentBlockType.Image,
             Order = 40,
             Content = new ImageBlockContent
@@ -45,7 +96,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 AltText = "Provider-managed exhibit",
                 Caption = "Image resolved through IDocumentImageUrlResolver",
                 Size = new DocumentImageSize { Width = 240, Height = 135 },
-                Alignment = DocumentImageAlignment.Center
+                NaturalSize = new DocumentImageSize { Width = 240, Height = 135 },
+                Alignment = DocumentImageAlignment.Center,
+                Layout = CreateTopBottomImageLayout(240, 135)
             }
         });
 
@@ -505,11 +558,13 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Url,
-                Url = DemoImageUrl,
+                Url = ContractUrlImageUrl,
                 AltText = "URL exhibit",
                 Caption = "Image inserted from a URL",
                 Size = new DocumentImageSize { Width = 220, Height = 124 },
-                Alignment = DocumentImageAlignment.Center
+                NaturalSize = new DocumentImageSize { Width = 220, Height = 124 },
+                Alignment = DocumentImageAlignment.Start,
+                Layout = CreateLeftWrappedImageLayout(220, 124)
             }
         });
         document.Blocks.Add(new DocumentBlock
@@ -523,11 +578,91 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 AltText = "Provider exhibit",
                 Caption = "Image resolved through the demo image provider",
                 Size = new DocumentImageSize { Width = 240, Height = 135 },
-                Alignment = DocumentImageAlignment.Center
+                NaturalSize = new DocumentImageSize { Width = 240, Height = 135 },
+                Alignment = DocumentImageAlignment.Center,
+                Layout = CreateTopBottomImageLayout(240, 135)
             }
         });
         return document;
     }
+
+    private static DocumentObjectLayout CreateLeftWrappedImageLayout(double width, double height) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Left
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Square,
+                DistanceRight = 16,
+                DistanceBottom = 12
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
+    private static DocumentObjectLayout CreateRightWrappedImageLayout(double width, double height) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Right
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Square,
+                DistanceLeft = 16,
+                DistanceBottom = 12
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
+    private static DocumentObjectLayout CreateTopBottomImageLayout(double width, double height) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Center
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.TopBottom,
+                DistanceTop = 10,
+                DistanceBottom = 12
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
 
     private static DocumentEditorDocument CreateTablePropertiesDocument(string documentId)
     {

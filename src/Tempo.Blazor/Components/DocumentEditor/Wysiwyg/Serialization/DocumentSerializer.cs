@@ -132,19 +132,7 @@ public class DocumentSerializer
             Wyg.ImageBlock i => new DocumentBlock
             {
                 Type = DocumentBlockType.Image,
-                Content = new ImageBlockContent
-                {
-                    Source = DocumentImageSource.Url,
-                    Url = i.Src,
-                    AltText = i.Alt,
-                    Size = i.Size.Width is null && i.Size.Height is null
-                        ? new DocumentImageSize()
-                        : new DocumentImageSize
-                        {
-                            Width = CssLengthToPoints(i.Size.Width),
-                            Height = CssLengthToPoints(i.Size.Height)
-                        }
-                }
+                Content = ToPersistenceImageContent(i)
             },
             Wyg.PageBreakBlock => new DocumentBlock
             {
@@ -291,22 +279,111 @@ public class DocumentSerializer
                     : []
             },
             DocumentBlockType.Table => FromPersistenceTableBlock(block.Content as TableBlockContent),
-            DocumentBlockType.Image => new Wyg.ImageBlock
-            {
-                Src = block.Content is ImageBlockContent ic ? ic.Url ?? string.Empty : string.Empty,
-                Alt = block.Content is ImageBlockContent ic2 ? ic2.AltText ?? string.Empty : string.Empty,
-                Size = block.Content is ImageBlockContent ic3
-                    ? new Wyg.ImageSize
-                    {
-                        Width = ic3.Size?.Width?.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        Height = ic3.Size?.Height?.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    }
-                    : new Wyg.ImageSize()
-            },
+            DocumentBlockType.Image => FromPersistenceImageBlock(block.Content as ImageBlockContent),
             DocumentBlockType.PageBreak => new Wyg.PageBreakBlock(),
             _ => new Wyg.ParagraphBlock()
         };
     }
+
+    private static ImageBlockContent ToPersistenceImageContent(Wyg.ImageBlock image)
+    {
+        var width = CssLengthToPoints(image.Size.Width);
+        var height = CssLengthToPoints(image.Size.Height);
+
+        return new ImageBlockContent
+        {
+            Source = DocumentImageSource.Url,
+            Url = image.Src,
+            AltText = image.Alt,
+            IsDecorative = image.IsDecorative,
+            Size = width is null && height is null
+                ? new DocumentImageSize()
+                : new DocumentImageSize
+                {
+                    Width = width,
+                    Height = height
+                },
+            Layout = ToPersistenceImageLayout(image, width, height)
+        };
+    }
+
+    private static DocumentObjectLayout ToPersistenceImageLayout(Wyg.ImageBlock image, double? width, double? height)
+    {
+        var isInline = image.Layout == Wyg.ImageLayout.Inline;
+        return new DocumentObjectLayout
+        {
+            Kind = isInline ? DocumentObjectLayoutKind.Inline : DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                MoveWithText = true,
+                FixedOnPage = false
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                X = isInline ? 0 : CssLengthToPoints(image.Position?.X) ?? 0,
+                Y = isInline ? 0 : CssLengthToPoints(image.Position?.Y) ?? 0
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = isInline ? DocumentWrapMode.Inline : ToPersistenceImageWrapMode(image.WrapMode)
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                LockAspectRatio = true
+            }
+        };
+    }
+
+    private static Wyg.ImageBlock FromPersistenceImageBlock(ImageBlockContent? content)
+    {
+        var layout = content?.Layout ?? DocumentObjectLayout.Inline();
+        return new Wyg.ImageBlock
+        {
+            Src = content?.Url ?? content?.AssetId ?? string.Empty,
+            Alt = content?.AltText ?? string.Empty,
+            IsDecorative = content?.IsDecorative ?? false,
+            Size = new Wyg.ImageSize
+            {
+                Width = ToCssNumber(layout.Transform.Width ?? content?.Size?.Width),
+                Height = ToCssNumber(layout.Transform.Height ?? content?.Size?.Height)
+            },
+            Layout = layout.IsInline ? Wyg.ImageLayout.Inline : Wyg.ImageLayout.Floating,
+            Position = layout.IsInline
+                ? null
+                : new Wyg.ImagePosition
+                {
+                    X = ToCssNumber(layout.Position.X) ?? "0",
+                    Y = ToCssNumber(layout.Position.Y) ?? "0"
+                },
+            WrapMode = FromPersistenceImageWrapMode(layout.Wrap.Mode)
+        };
+    }
+
+    private static DocumentWrapMode ToPersistenceImageWrapMode(Wyg.ImageWrapMode mode)
+        => mode switch
+        {
+            Wyg.ImageWrapMode.Tight => DocumentWrapMode.Tight,
+            Wyg.ImageWrapMode.Through => DocumentWrapMode.Through,
+            Wyg.ImageWrapMode.TopAndBottom => DocumentWrapMode.TopBottom,
+            Wyg.ImageWrapMode.BehindText => DocumentWrapMode.BehindText,
+            Wyg.ImageWrapMode.InFrontOfText => DocumentWrapMode.InFrontOfText,
+            _ => DocumentWrapMode.Square
+        };
+
+    private static Wyg.ImageWrapMode FromPersistenceImageWrapMode(DocumentWrapMode mode)
+        => mode switch
+        {
+            DocumentWrapMode.Tight => Wyg.ImageWrapMode.Tight,
+            DocumentWrapMode.Through => Wyg.ImageWrapMode.Through,
+            DocumentWrapMode.TopBottom => Wyg.ImageWrapMode.TopAndBottom,
+            DocumentWrapMode.BehindText => Wyg.ImageWrapMode.BehindText,
+            DocumentWrapMode.InFrontOfText => Wyg.ImageWrapMode.InFrontOfText,
+            _ => Wyg.ImageWrapMode.Square
+        };
 
     private static Wyg.TableBlock FromPersistenceTableBlock(TableBlockContent? content)
     {
@@ -362,6 +439,9 @@ public class DocumentSerializer
             ? parsed
             : null;
     }
+
+    private static string? ToCssNumber(double? value)
+        => value?.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static Wyg.Inline FromPersistenceInline(InlineContent inline)
     {

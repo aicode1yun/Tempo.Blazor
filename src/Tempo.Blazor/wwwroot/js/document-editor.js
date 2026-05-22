@@ -252,15 +252,22 @@
 
             const observer = new ResizeObserver(measure);
             observer.observe(groupsEl);
+            const ownerDocument = groupsEl.ownerDocument
+                || window.document
+                || (typeof document !== 'undefined' ? document : null);
             const keydown = function (event) {
                 if (event.key !== 'Escape') return;
                 dotNetRef.invokeMethodAsync('CloseToolbarFloatingUiFromJsAsync');
             };
-            document.addEventListener('keydown', keydown, true);
+            if (ownerDocument) {
+                ownerDocument.addEventListener('keydown', keydown, true);
+            }
             overflowControllers.set(groupsEl, {
                 disconnect() {
                     observer.disconnect();
-                    document.removeEventListener('keydown', keydown, true);
+                    if (ownerDocument) {
+                        ownerDocument.removeEventListener('keydown', keydown, true);
+                    }
                 }
             });
             measure();

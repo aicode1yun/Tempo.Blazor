@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Tempo.Blazor.Abstractions.Models;
 
 namespace Tempo.Blazor.DocumentEditor.Models;
@@ -38,8 +39,16 @@ public class DocumentAnchor
     /// <summary>Optional signing placeholder metadata.</summary>
     public DocumentSigningPlaceholder? SigningPlaceholder { get; set; }
 
-    /// <summary>Floating layout when the anchor belongs to a positioned object.</summary>
-    public DocumentFloatingLayout? FloatingLayout { get; set; }
+    /// <summary>Object layout when the anchor belongs to a positioned object.</summary>
+    public DocumentObjectLayout? Layout { get; set; }
+
+    /// <summary>Previous floating layout DTO kept as a non-serialized transition shim for internal call sites.</summary>
+    [JsonIgnore]
+    public DocumentFloatingLayout? FloatingLayout
+    {
+        get => Layout?.ToFloatingLayout();
+        set => Layout = value is null ? null : DocumentObjectLayout.FromFloatingLayout(value);
+    }
 }
 
 /// <summary>Signing placeholder metadata stored in the editable document before rendition finalization.</summary>
@@ -92,7 +101,7 @@ public enum DocumentAnchorType
     Rendition
 }
 
-/// <summary>Floating or anchored layout metadata, modeled closely enough for DOCX/ODT round-tripping.</summary>
+/// <summary>Previous floating layout DTO. Use <see cref="DocumentObjectLayout"/> for persisted document data.</summary>
 public class DocumentFloatingLayout
 {
     /// <summary>Whether the object participates inline in the text flow.</summary>

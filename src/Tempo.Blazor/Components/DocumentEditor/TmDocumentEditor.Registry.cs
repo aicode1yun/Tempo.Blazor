@@ -163,6 +163,15 @@ public partial class TmDocumentEditor
                 icon: "text-cursor-input"));
 
             _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "setImageDecorative", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
+                execute: (_, payload) => ExecuteImageRuntimeCommandAsync("setImageDecorative", payload),
+                descriptionKey: "TmDocumentEditor_ImageDecorative",
+                tooltipKey: "TmDocumentEditor_ImageDecorative",
+                category: "Image",
+                icon: "accessibility"));
+
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
                 "toggleImageCaption", affectsData: true,
                 computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
                 execute: (_, _) => ExecuteImageRuntimeCommandAsync("toggleImageCaption"),

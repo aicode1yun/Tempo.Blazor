@@ -1561,6 +1561,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             BlockId = ActiveImageInspectorBlockId
         });
 
+    private Task SetActiveImageDecorativeFromPanelAsync(bool isDecorative) =>
+        ExecuteImageRuntimeCommandAsync("setImageDecorative", new
+        {
+            IsDecorative = isDecorative,
+            BlockId = ActiveImageInspectorBlockId
+        });
+
     private Task ToggleActiveImageCaptionFromPanelAsync() =>
         ExecuteImageRuntimeCommandAsync("toggleImageCaption", new { BlockId = ActiveImageInspectorBlockId });
 
@@ -1588,6 +1595,31 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             LockAspectRatio = size.LockAspectRatio,
             BlockId = ActiveImageInspectorBlockId
         });
+
+    private Task SetActiveImagePositionFromPanelAsync(DocumentObjectPosition position) =>
+        ExecuteImageRuntimeCommandAsync("setImageObjectPosition", new
+        {
+            X = position.X,
+            Y = position.Y,
+            HorizontalRelativeTo = position.HorizontalRelativeTo.ToString(),
+            VerticalRelativeTo = position.VerticalRelativeTo.ToString(),
+            HorizontalPosition = position.HorizontalAlignment?.ToString(),
+            VerticalAlignment = position.VerticalAlignment.ToString(),
+            BlockId = ActiveImageInspectorBlockId
+        });
+
+    private Task SetActiveImageLockAnchorFromPanelAsync(bool lockAnchor) =>
+        ExecuteImageRuntimeCommandAsync("setImageAnchorMode", new
+        {
+            LockAnchor = lockAnchor,
+            BlockId = ActiveImageInspectorBlockId
+        });
+
+    private Task BringActiveImageForwardFromPanelAsync() =>
+        ExecuteImageRuntimeCommandAsync("setImageZOrder", new { Direction = "Forward", BlockId = ActiveImageInspectorBlockId });
+
+    private Task SendActiveImageBackwardFromPanelAsync() =>
+        ExecuteImageRuntimeCommandAsync("setImageZOrder", new { Direction = "Backward", BlockId = ActiveImageInspectorBlockId });
 
     private static DocumentImageHorizontalPosition ToHorizontalPosition(DocumentImageAlignment alignment) =>
         alignment switch
@@ -2308,6 +2340,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             FocusedInlineRange = range,
             ActiveTableCellId = snapshot.ActiveTableCellId,
             ActiveImageBlockId = snapshot.ActiveImageBlockId,
+            LayoutLineId = snapshot.LayoutLineId,
+            LayoutSegmentId = snapshot.LayoutSegmentId,
+            VisualLineIndex = snapshot.VisualLineIndex,
+            ActiveObjectId = snapshot.ActiveObjectId,
+            HitTargetKind = snapshot.HitTargetKind,
             Region = _activeWysiwygRegion,
             HeaderFooterId = snapshot.HeaderFooterId,
             PageIndex = snapshot.PageIndex
@@ -2343,6 +2380,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             snapshot.AnchorOffset.ToString(CultureInfo.InvariantCulture),
             snapshot.ActiveTableCellId ?? string.Empty,
             snapshot.ActiveImageBlockId ?? string.Empty,
+            snapshot.LayoutLineId ?? string.Empty,
+            snapshot.LayoutSegmentId ?? string.Empty,
+            snapshot.VisualLineIndex?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            snapshot.ActiveObjectId ?? string.Empty,
+            snapshot.HitTargetKind ?? string.Empty,
             snapshot.HeaderFooterId ?? string.Empty,
             snapshot.PageIndex?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
 
@@ -2357,6 +2399,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _selection.ActiveBlockId = snapshot.AnchorBlockId;
         _selection.ActiveTableCellId = snapshot.ActiveTableCellId;
         _selection.ActiveImageBlockId = snapshot.ActiveImageBlockId;
+        _selection.LayoutLineId = snapshot.LayoutLineId;
+        _selection.LayoutSegmentId = snapshot.LayoutSegmentId;
+        _selection.VisualLineIndex = snapshot.VisualLineIndex;
+        _selection.ActiveObjectId = snapshot.ActiveObjectId;
+        _selection.HitTargetKind = snapshot.HitTargetKind;
         _selection.Region = _activeWysiwygRegion;
         _selection.HeaderFooterId = snapshot.HeaderFooterId;
         _selection.PageIndex = snapshot.PageIndex;
@@ -4847,12 +4894,26 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         {
             var runtimeDescription = _wysiwygUndoState.NextUndoDescription;
             var mirrorCommandStackReview = IsMirroredReviewUndoRedo(runtimeDescription, _commandStack.NextUndoDescription);
-            await _wysiwygHost.UndoRuntimeAsync();
+            var runtimeChanged = await _wysiwygHost.UndoRuntimeAsync();
+            var runtimeTransaction = runtimeChanged
+                ? await _wysiwygHost.RequestLastCommandTransactionAsync()
+                : null;
             if (mirrorCommandStackReview && _commandStack.CanUndo)
             {
                 await _commandStack.UndoAsync();
                 MarkDirtyAfterCommand();
                 await SyncCurrentDocumentToWysiwygAsync();
+            }
+            else if (runtimeChanged)
+            {
+                if (await TryApplyRuntimeUndoRedoDocumentTransactionAsync(runtimeTransaction, forward: false))
+                {
+                    await SyncCurrentDocumentToWysiwygAsync();
+                }
+                else
+                {
+                    await SyncCurrentDocumentFromWysiwygRuntimeAsync();
+                }
             }
 
             await RefreshRuntimeUndoDirtyStateAsync();
@@ -4886,12 +4947,26 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         {
             var runtimeDescription = _wysiwygUndoState.NextRedoDescription;
             var mirrorCommandStackReview = IsMirroredReviewUndoRedo(runtimeDescription, _commandStack.NextRedoDescription);
-            await _wysiwygHost.RedoRuntimeAsync();
+            var runtimeChanged = await _wysiwygHost.RedoRuntimeAsync();
+            var runtimeTransaction = runtimeChanged
+                ? await _wysiwygHost.RequestLastCommandTransactionAsync()
+                : null;
             if (mirrorCommandStackReview && _commandStack.CanRedo)
             {
                 await _commandStack.RedoAsync();
                 MarkDirtyAfterCommand();
                 await SyncCurrentDocumentToWysiwygAsync();
+            }
+            else if (runtimeChanged)
+            {
+                if (await TryApplyRuntimeUndoRedoDocumentTransactionAsync(runtimeTransaction, forward: true))
+                {
+                    await SyncCurrentDocumentToWysiwygAsync();
+                }
+                else
+                {
+                    await SyncCurrentDocumentFromWysiwygRuntimeAsync();
+                }
             }
 
             await RefreshRuntimeUndoDirtyStateAsync();
@@ -4931,6 +5006,258 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return string.Equals(runtimeDescription, commandDescription, StringComparison.OrdinalIgnoreCase)
             && (string.Equals(runtimeDescription, "Accept revision", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(runtimeDescription, "Reject revision", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task<bool> TryApplyRuntimeUndoRedoDocumentTransactionAsync(JsonElement? transaction, bool forward)
+    {
+        if (_document is null || transaction is null)
+        {
+            return false;
+        }
+
+        if (!TryGetJsonProperty(transaction.Value, out var operationsElement, "operations", "Operations")
+            || operationsElement.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        var before = _collaborationSnapshot is not null
+            ? Clone(_collaborationSnapshot)
+            : Clone(_document);
+        var changed = false;
+        var operations = operationsElement.EnumerateArray().ToArray();
+        IEnumerable<JsonElement> orderedOperations = forward
+            ? operations
+            : operations.AsEnumerable().Reverse();
+
+        foreach (var operation in orderedOperations)
+        {
+            var type = GetJsonString(operation, "type", "Type");
+            if (!forward && string.Equals(type, "SplitBlock", StringComparison.OrdinalIgnoreCase))
+            {
+                changed |= TryUndoRuntimeSplitBlock(operation);
+            }
+            else if (!forward && string.Equals(type, "InsertBlock", StringComparison.OrdinalIgnoreCase))
+            {
+                changed |= TryUndoRuntimeInsertBlock(operation);
+            }
+            else if (forward && string.Equals(type, "InsertBlock", StringComparison.OrdinalIgnoreCase))
+            {
+                changed |= TryRedoRuntimeInsertBlock(operation);
+            }
+        }
+
+        if (!changed)
+        {
+            return false;
+        }
+
+        DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(_document);
+        new DocumentEditorPostFixer().Fix(_document);
+        _currentDocument = _document;
+        _templatePreviewDocument = null;
+        _templatePreviewEnabled = false;
+        _templatePreviewMessage = null;
+        _isDirty = true;
+        _suggestionSnapshot = Clone(_document);
+        await BroadcastLocalCollaborationChangeAsync(before, _document);
+        return true;
+    }
+
+    private bool TryUndoRuntimeInsertBlock(JsonElement operation)
+    {
+        if (_document is null || !TryGetJsonProperty(operation, out var blockElement, "block", "Block"))
+        {
+            return false;
+        }
+
+        var blockId = GetJsonString(blockElement, "id", "Id");
+        if (string.IsNullOrWhiteSpace(blockId))
+        {
+            return false;
+        }
+
+        var blocks = FindMutableBlockListContainingBlock(_document, blockId);
+        if (blocks is null)
+        {
+            return false;
+        }
+
+        var index = blocks.FindIndex(block => string.Equals(block.Id, blockId, StringComparison.Ordinal));
+        if (index < 0)
+        {
+            return false;
+        }
+
+        blocks.RemoveAt(index);
+        _document.Anchors.RemoveAll(anchor => string.Equals(anchor.ObjectBlockId, blockId, StringComparison.Ordinal));
+        return true;
+    }
+
+    private bool TryRedoRuntimeInsertBlock(JsonElement operation)
+    {
+        if (_document is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var options = new JsonSerializerOptions(DocumentEditorJson.Options)
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var patch = JsonSerializer.Deserialize<WysiwygPatch>(operation.GetRawText(), options);
+            if (patch is null || !string.Equals(patch.Type, "InsertBlock", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            new WysiwygPatchApplier().ApplyPatch(_document, patch);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryUndoRuntimeSplitBlock(JsonElement operation)
+    {
+        if (_document is null
+            || !TryGetJsonProperty(operation, out var selection, "selection", "Selection", "beforeSelection", "BeforeSelection"))
+        {
+            return false;
+        }
+
+        var blockId = GetJsonString(selection, "anchorBlockId", "AnchorBlockId");
+        if (string.IsNullOrWhiteSpace(blockId))
+        {
+            return false;
+        }
+
+        var splitBlockId = TryGetJsonProperty(operation, out var blockElement, "block", "Block")
+            ? GetJsonString(blockElement, "id", "Id")
+            : null;
+        var blocks = FindMutableBlockListContainingBlock(_document, blockId);
+        if (blocks is null)
+        {
+            return false;
+        }
+
+        var currentIndex = blocks.FindIndex(block => string.Equals(block.Id, blockId, StringComparison.Ordinal));
+        if (currentIndex < 0)
+        {
+            return false;
+        }
+
+        var splitIndex = string.IsNullOrWhiteSpace(splitBlockId)
+            ? -1
+            : blocks.FindIndex(block => string.Equals(block.Id, splitBlockId, StringComparison.Ordinal));
+        if (splitIndex < 0 && currentIndex + 1 < blocks.Count)
+        {
+            splitIndex = currentIndex + 1;
+        }
+
+        if (splitIndex <= currentIndex || splitIndex >= blocks.Count)
+        {
+            return false;
+        }
+
+        var currentInlines = GetEditableInlines(blocks[currentIndex].Content);
+        var splitInlines = GetEditableInlines(blocks[splitIndex].Content);
+        if (currentInlines is null || splitInlines is null)
+        {
+            return false;
+        }
+
+        currentInlines.AddRange(splitInlines.Select(CloneForEditor));
+        blocks.RemoveAt(splitIndex);
+        return true;
+    }
+
+    private static List<DocumentBlock>? FindMutableBlockListContainingBlock(DocumentEditorDocument document, string blockId)
+    {
+        return FindMutableBlockListContainingBlock(document.Blocks, blockId)
+            ?? document.HeadersFooters
+                .Select(headerFooter => FindMutableBlockListContainingBlock(headerFooter.Blocks, blockId))
+                .FirstOrDefault(blocks => blocks is not null)
+            ?? document.Notes
+                .Select(note => FindMutableBlockListContainingBlock(note.Blocks, blockId))
+                .FirstOrDefault(blocks => blocks is not null);
+    }
+
+    private static List<DocumentBlock>? FindMutableBlockListContainingBlock(List<DocumentBlock> blocks, string blockId)
+    {
+        if (blocks.Any(block => string.Equals(block.Id, blockId, StringComparison.Ordinal)))
+        {
+            return blocks;
+        }
+
+        foreach (var table in blocks.Select(block => block.Content).OfType<TableBlockContent>())
+        {
+            foreach (var cell in table.Rows.SelectMany(row => row.Cells))
+            {
+                var nested = FindMutableBlockListContainingBlock(cell.Blocks, blockId);
+                if (nested is not null)
+                {
+                    return nested;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryGetJsonProperty(JsonElement element, out JsonElement value, params string[] names)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var name in names)
+            {
+                if (element.TryGetProperty(name, out value))
+                {
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string? GetJsonString(JsonElement element, params string[] names)
+    {
+        return TryGetJsonProperty(element, out var value, names) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+    }
+
+    private async Task SyncCurrentDocumentFromWysiwygRuntimeAsync()
+    {
+        if (_wysiwygHost is null || _document is null)
+        {
+            return;
+        }
+
+        var runtimeDocument = await _wysiwygHost.RequestSnapshotAsync();
+        if (runtimeDocument is null)
+        {
+            return;
+        }
+
+        var before = _collaborationSnapshot is not null
+            ? Clone(_collaborationSnapshot)
+            : Clone(_document);
+        var synchronizedDocument = CreateProviderBoundarySnapshot(_document, runtimeDocument);
+        _document = synchronizedDocument;
+        _currentDocument = synchronizedDocument;
+        _templatePreviewDocument = null;
+        _templatePreviewEnabled = false;
+        _templatePreviewMessage = null;
+        _isDirty = true;
+        _suggestionSnapshot = Clone(synchronizedDocument);
+        await BroadcastLocalCollaborationChangeAsync(before, synchronizedDocument);
     }
 
     private async Task SyncCurrentDocumentToWysiwygAsync()

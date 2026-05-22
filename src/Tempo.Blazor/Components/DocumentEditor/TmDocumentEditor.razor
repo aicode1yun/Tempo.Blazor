@@ -435,12 +435,17 @@
                     {
                         <TmDocumentImageInspector Image="activeImage"
                                                   AltTextChanged="SetActiveImageAltTextFromPanelAsync"
+                                                  DecorativeChanged="SetActiveImageDecorativeFromPanelAsync"
                                                   ToggleCaption="ToggleActiveImageCaptionFromPanelAsync"
                                                   CaptionChanged="SetActiveImageCaptionFromPanelAsync"
                                                   UrlChanged="SetActiveImageUrlFromPanelAsync"
                                                   WrapModeChanged="SetActiveImageWrapModeFromPanelAsync"
                                                   AlignmentChanged="SetActiveImageAlignmentFromPanelAsync"
-                                                  SizeChanged="SetActiveImageSizeFromPanelAsync" />
+                                                  SizeChanged="SetActiveImageSizeFromPanelAsync"
+                                                  PositionChanged="SetActiveImagePositionFromPanelAsync"
+                                                  LockAnchorChanged="SetActiveImageLockAnchorFromPanelAsync"
+                                                  BringForward="BringActiveImageForwardFromPanelAsync"
+                                                  SendBackward="SendActiveImageBackwardFromPanelAsync" />
                     }
                     else
                     {

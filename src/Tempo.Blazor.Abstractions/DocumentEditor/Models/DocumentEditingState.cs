@@ -15,6 +15,21 @@ public class DocumentEditorSelectionState
     /// <summary>Selected image block id, when the active selection is an image.</summary>
     public string? ActiveImageBlockId { get; set; }
 
+    /// <summary>Layout line id for the active caret hit-test, when available.</summary>
+    public string? LayoutLineId { get; set; }
+
+    /// <summary>Layout segment id for the active caret hit-test, when available.</summary>
+    public string? LayoutSegmentId { get; set; }
+
+    /// <summary>Zero-based visual line index within the active paragraph layout.</summary>
+    public int? VisualLineIndex { get; set; }
+
+    /// <summary>Selected layout object id, when the active hit target is an object.</summary>
+    public string? ActiveObjectId { get; set; }
+
+    /// <summary>Kind of target found by the WYSIWYG hit-test service.</summary>
+    public string? HitTargetKind { get; set; }
+
     /// <summary>Logical editor region that owns the active selection.</summary>
     public string Region { get; set; } = "Body";
 
@@ -31,6 +46,11 @@ public class DocumentEditorSelectionState
         FocusedInlineRange = null;
         ActiveTableCellId = null;
         ActiveImageBlockId = null;
+        LayoutLineId = null;
+        LayoutSegmentId = null;
+        VisualLineIndex = null;
+        ActiveObjectId = null;
+        HitTargetKind = null;
         Region = "Body";
         HeaderFooterId = null;
         PageIndex = null;

@@ -56,4 +56,19 @@ public sealed class WysiwygSelectionSnapshot
 
     /// <summary>Selected image block id when the active region is an image object.</summary>
     public string? ActiveImageBlockId { get; set; }
+
+    /// <summary>Layout line id that produced the active caret hit-test, when available.</summary>
+    public string? LayoutLineId { get; set; }
+
+    /// <summary>Layout segment id that produced the active caret hit-test, when available.</summary>
+    public string? LayoutSegmentId { get; set; }
+
+    /// <summary>Zero-based visual line index within the paragraph layout, when available.</summary>
+    public int? VisualLineIndex { get; set; }
+
+    /// <summary>Selected layout object id, when the active hit target is an object.</summary>
+    public string? ActiveObjectId { get; set; }
+
+    /// <summary>Kind of target found by the WYSIWYG hit-test service.</summary>
+    public string? HitTargetKind { get; set; }
 }
