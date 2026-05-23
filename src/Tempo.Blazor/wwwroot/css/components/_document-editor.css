@@ -2883,6 +2883,10 @@
     font-size: inherit;
 }
 
+.tm-wysiwyg-page__body > p.tm-wysiwyg-block {
+    white-space: break-spaces;
+}
+
 .tm-wysiwyg-page [data-inline-id]:not(.tm-wysiwyg-layout-segment):not(.tm-wysiwyg-field):not(.tm-wysiwyg-token) {
     white-space: break-spaces;
 }

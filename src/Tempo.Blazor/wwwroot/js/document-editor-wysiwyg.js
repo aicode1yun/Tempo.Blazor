@@ -4876,6 +4876,7 @@ window.tmDocumentEditorEngine = (function () {
             var frame = regionName === 'Header' ? page.headerFrame : page.footerFrame;
             var node = renderFrameNode(regionName === 'Header' ? 'header-content' : 'footer-content', regionName, frame, page);
             node.className = regionName === 'Header' ? 'tm-render-header-region' : 'tm-render-footer-region';
+            node.setAttribute('data-testid', regionName === 'Header' ? 'document-page-header' : 'document-page-footer');
             node.setAttribute('data-render-region', regionName);
             node.setAttribute('data-render-page-index', pageIndex);
             node.setAttribute('data-hf-id', regionLayout && regionLayout.headerFooterId || '');
@@ -5144,8 +5145,11 @@ window.tmDocumentEditorEngine = (function () {
             var id = revision.id || revision.Id;
             if (!id) return;
             var marker = document.createElement('span');
-            marker.className = 'revision-overlay';
+            var type = revision.type || revision.Type || '';
+            marker.className = 'tm-render-revision-marker revision-overlay';
+            marker.setAttribute('data-testid', 'document-revision-marker');
             marker.setAttribute('data-revision-id', id);
+            marker.setAttribute('data-revision-type', type);
             marker.textContent = '';
             overlay.appendChild(marker);
         });
@@ -5163,6 +5167,7 @@ window.tmDocumentEditorEngine = (function () {
             if (!id) return;
             var marker = document.createElement('span');
             marker.className = 'tm-render-comment-marker';
+            marker.setAttribute('data-testid', 'document-comment-marker');
             marker.setAttribute('data-comment-id', id);
             marker.textContent = '';
             overlay.appendChild(marker);
@@ -5990,8 +5995,12 @@ window.tmDocumentEditorEngine = (function () {
         var block = root && root.querySelector ? root.querySelector('[data-block-id="' + cssEscape(pos.blockId) + '"]') : null;
         if (!block) return { ok: false, error: { code: 'missing-dom-block', blockId: pos.blockId } };
         var textNode = findTextNode(block);
-        if (!textNode) return { ok: false, error: { code: 'missing-dom-text', blockId: pos.blockId } };
         var range = document.createRange();
+        if (!textNode) {
+            range.setStart(block, 0);
+            range.collapse(true);
+            return { ok: true, range: range, position: pos };
+        }
         range.setStart(textNode, Math.max(0, Math.min(textNode.nodeValue.length, pos.offset)));
         range.collapse(true);
         return { ok: true, range: range, position: pos };
@@ -6474,6 +6483,93 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function cssEscape(value) {
+        var text = _asText(value);
+        if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(text);
+        return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/\]/g, '\\]');
+    }
+
+    function findLiveTextBlockElement(inst, blockId) {
+        if (!inst || !inst.root || !blockId) return null;
+        var selector = '.tm-wysiwyg-block[data-block-id="' + cssEscape(blockId) + '"]';
+        var node = inst.root.querySelector(selector);
+        if (!node || node.matches('figure, table, .tm-wysiwyg-image, .tm-wysiwyg-table')) return null;
+        return node;
+    }
+
+    function setLiveParagraphText(node, text) {
+        if (!node) return false;
+        var value = _asText(text);
+        if (value.length === 0) {
+            node.replaceChildren(document.createElement('br'));
+        } else {
+            node.textContent = value;
+        }
+        return true;
+    }
+
+    function renderLiveParagraphHtml(block) {
+        return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block && block.id || '') + '" role="paragraph">' + _escape(_textFromRuns(block && block.content && block.content.runs || [])) + '</p>';
+    }
+
+    function applyLiveTypingDomPatch(inst, operation, committed) {
+        if (!inst || !inst.root || !operation) return false;
+        var op = attachOperationMethods(operation);
+        var type = op.type || op.Type || '';
+        if ([OPERATION_TYPES.InsertText, OPERATION_TYPES.DeleteRange, OPERATION_TYPES.SplitParagraph, OPERATION_TYPES.MergeParagraph].indexOf(type) < 0) {
+            return false;
+        }
+
+        if (type === OPERATION_TYPES.InsertText) {
+            var insertTarget = _normalizeTarget(op.target || op.Target);
+            var insertBlock = _findBlock(inst.model, insertTarget.blockId);
+            var insertNode = findLiveTextBlockElement(inst, insertTarget.blockId);
+            if (!insertBlock || !insertNode) return false;
+            setLiveParagraphText(insertNode, _blockText(insertBlock));
+        } else if (type === OPERATION_TYPES.DeleteRange) {
+            var range = _normalizeRange(op.range || op.Range);
+            var deleteBlock = _findBlock(inst.model, range.blockId);
+            var deleteNode = findLiveTextBlockElement(inst, range.blockId);
+            if (!deleteBlock || !deleteNode) return false;
+            setLiveParagraphText(deleteNode, _blockText(deleteBlock));
+        } else if (type === OPERATION_TYPES.SplitParagraph) {
+            var splitTarget = _normalizeTarget(op.target || op.Target);
+            var originalBlock = _findBlock(inst.model, splitTarget.blockId);
+            var newBlockId = op.newBlockId || op.NewBlockId || committed && committed.insertedBlockId || inst.selection && inst.selection.blockId;
+            var newBlock = _findBlock(inst.model, newBlockId);
+            var originalNode = findLiveTextBlockElement(inst, splitTarget.blockId);
+            if (!originalBlock || !newBlock || !originalNode) return false;
+            setLiveParagraphText(originalNode, _blockText(originalBlock));
+            if (!findLiveTextBlockElement(inst, newBlock.id)) {
+                originalNode.insertAdjacentHTML('afterend', renderLiveParagraphHtml(newBlock));
+                var inserted = findLiveTextBlockElement(inst, newBlock.id);
+                if (inserted && _blockText(newBlock).length === 0) setLiveParagraphText(inserted, '');
+            }
+        } else if (type === OPERATION_TYPES.MergeParagraph) {
+            var mergeTarget = _normalizeTarget(op.target || op.Target);
+            var removedNode = findLiveTextBlockElement(inst, mergeTarget.blockId);
+            var targetBlockId = inst.selection && inst.selection.blockId || '';
+            var targetBlock = _findBlock(inst.model, targetBlockId);
+            var targetNode = findLiveTextBlockElement(inst, targetBlockId);
+            if (!targetBlock || !targetNode || !removedNode) return false;
+            setLiveParagraphText(targetNode, _blockText(targetBlock));
+            if (removedNode !== targetNode) removedNode.remove();
+        }
+
+        inst.layout = Object.assign({}, inst.layout || {}, {
+            invalidatedScopeIds: operationAffectedBlockIds(op),
+            lastLiveTypingPatchAt: Date.now()
+        });
+        inst.root.setAttribute('data-live-typing-patch', String(Date.now()));
+        inst.root.setAttribute('data-logical-selection', JSON.stringify(_sortObject(inst.selection || {})));
+        restoreDomSelectionFromSnapshot(inst, inst.selection);
+        recordTimeline(inst, 'live-typing-dom-patch', {
+            operationType: type,
+            blockId: inst.selection && inst.selection.blockId || ''
+        });
+        return true;
+    }
+
     function recordVirtualizationMetric(inst, pagePlan) {
         var stats = ensureStrictPerformanceStats(inst);
         var plan = pagePlan || {};
@@ -6751,9 +6847,96 @@ window.tmDocumentEditorEngine = (function () {
         return result;
     }
 
+    function markKeyboardInputHandled(inst, inputType, data) {
+        inst.suppressedBeforeInput = {
+            inputType: inputType || '',
+            data: _asText(data || ''),
+            expiresAt: Date.now() + 120
+        };
+    }
+
+    function consumeSuppressedBeforeInput(inst, event) {
+        var suppressed = inst && inst.suppressedBeforeInput;
+        if (!suppressed) return false;
+        if (Date.now() > Number(suppressed.expiresAt || 0)) {
+            inst.suppressedBeforeInput = null;
+            return false;
+        }
+        var inputType = _asText(event && event.inputType || '');
+        var data = _asText(event && event.data || '');
+        var matches = inputType === suppressed.inputType
+            && (inputType !== 'insertText' || data === suppressed.data);
+        if (!matches) return false;
+        inst.suppressedBeforeInput = null;
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        recordTimeline(inst, 'beforeinput-suppressed-after-keydown', {
+            inputType: inputType,
+            dataLength: data.length
+        });
+        return true;
+    }
+
+    function readFixedDomSelection(inst, source) {
+        var fixed = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+        inst.selection = fixed;
+        markSelectionChanged(inst, source || 'dom-selection');
+        return createSelectionSnapshot(fixed || firstModelSelection(inst.model));
+    }
+
+    function applyKeyboardInsertText(inst, event, text) {
+        var selection = readFixedDomSelection(inst, 'keydown-dom');
+        var block = _findBlock(inst.model, selection.blockId);
+        var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
+        var result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
+            target: { blockId: selection.blockId, offset: offset },
+            text: text,
+            source: 'keydown',
+            transactionType: TRANSACTION_TYPES.Typing,
+            beforeSelection: selection
+        });
+        markKeyboardInputHandled(inst, 'insertText', text);
+        return result;
+    }
+
+    function applyKeyboardSplitParagraph(inst) {
+        var selection = readFixedDomSelection(inst, 'keydown-dom');
+        var block = _findBlock(inst.model, selection.blockId);
+        var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
+        var result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
+            target: { blockId: selection.blockId, offset: offset },
+            newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
+            source: 'keydown',
+            transactionType: TRANSACTION_TYPES.Typing,
+            beforeSelection: selection
+        });
+        markKeyboardInputHandled(inst, 'insertParagraph', '');
+        return result;
+    }
+
+    function applyKeyboardDelete(inst, inputType) {
+        var selection = readFixedDomSelection(inst, 'keydown-dom');
+        var block = _findBlock(inst.model, selection.blockId);
+        var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
+        var backward = inputType.indexOf('Backward') >= 0;
+        var textValue = _blockText(block);
+        var start = backward ? Math.max(0, offset - 1) : offset;
+        var end = backward ? offset : Math.min(textValue.length, offset + 1);
+        if (start === end) return { ok: true, noop: true };
+        var result = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
+            range: { blockId: selection.blockId, start: start, end: end },
+            source: 'keydown',
+            transactionType: 'delete',
+            beforeSelection: selection
+        });
+        markKeyboardInputHandled(inst, inputType, '');
+        return result;
+    }
+
     function handleEditorKeyDown(inst, event) {
         if (!inst || !event) return { handled: false };
-        var key = String(event.key || '').toLowerCase();
+        var rawKey = String(event.key || '');
+        var key = rawKey.toLowerCase();
         var ctrl = event.ctrlKey === true || event.metaKey === true;
         var shift = event.shiftKey === true;
         var prevent = function () {
@@ -6776,6 +6959,29 @@ window.tmDocumentEditorEngine = (function () {
             prevent();
             requestKeyboardContextMenu(inst, event);
             return { handled: true, command: 'contextMenu' };
+        }
+
+        if (!ctrl && !event.altKey && !event.isComposing && targetIsEditableDocumentSurface(inst, event.target)) {
+            if (key === 'enter') {
+                prevent();
+                return { handled: true, command: 'insertParagraph', result: applyKeyboardSplitParagraph(inst) };
+            }
+            if (key === 'backspace') {
+                prevent();
+                return { handled: true, command: 'deleteContentBackward', result: applyKeyboardDelete(inst, 'deleteContentBackward') };
+            }
+            if (key === 'delete') {
+                prevent();
+                return { handled: true, command: 'deleteContentForward', result: applyKeyboardDelete(inst, 'deleteContentForward') };
+            }
+            if (rawKey.length === 1 && key !== 'dead') {
+                prevent();
+                return { handled: true, command: 'insertText', result: applyKeyboardInsertText(inst, event, rawKey) };
+            }
+            if (key === 'spacebar') {
+                prevent();
+                return { handled: true, command: 'insertText', result: applyKeyboardInsertText(inst, event, ' ') };
+            }
         }
 
         if (!ctrl || event.altKey) return { handled: false };
@@ -6831,6 +7037,7 @@ window.tmDocumentEditorEngine = (function () {
 
     function handleEditorBeforeInput(inst, event) {
         if (!inst || !event || !targetIsEditableDocumentSurface(inst, event.target)) return { handled: false };
+        if (consumeSuppressedBeforeInput(inst, event)) return { handled: true, suppressed: true };
         var normalized = normalizeBeforeInput(event);
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
         recordTimeline(inst, 'beforeinput', {
@@ -6862,6 +7069,7 @@ window.tmDocumentEditorEngine = (function () {
         } else if (inputType === 'insertParagraph' || inputType === 'insertLineBreak') {
             result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
                 target: { blockId: selection.blockId, offset: offset },
+                newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
                 source: 'beforeinput',
                 transactionType: TRANSACTION_TYPES.Typing,
                 beforeSelection: selection
@@ -6968,6 +7176,18 @@ window.tmDocumentEditorEngine = (function () {
         inst.boundaryPatches.push(patch);
         updateDirtyState(inst, patch, source);
         patch.dirtyState = _clone(inst.dirtyState);
+        if (patch.transactionType === TRANSACTION_TYPES.Typing || source === TRANSACTION_TYPES.Typing || source === 'typing') {
+            scheduleTypingBoundaryPatchDispatch(inst, patch);
+            return patch;
+        }
+        flushTypingBoundaryPatchDispatch(inst);
+        dispatchBoundaryPatch(inst, patch);
+        dispatchDirtyState(inst);
+        return patch;
+    }
+
+    function dispatchBoundaryPatch(inst, patch) {
+        if (!inst || !patch) return;
         recordTimeline(inst, 'blazor-patch-emit', {
             transactionId: patch.transactionId,
             transactionType: patch.transactionType,
@@ -6975,8 +7195,66 @@ window.tmDocumentEditorEngine = (function () {
             affectedBlockIds: patch.affectedBlockIds
         });
         invokeBoundaryMethod(inst, 'HandleJsBoundaryPatchGenerated', patch, 'boundary-patch-dispatch-failed');
-        dispatchDirtyState(inst);
-        return patch;
+    }
+
+    function mergeTypingBoundaryPatches(inst, patches) {
+        var list = _asArray(patches).filter(Boolean);
+        var latest = list[list.length - 1] || null;
+        if (!latest) return null;
+        var operations = list.flatMap(function (patch) { return _asArray(patch.operations).map(_clone); });
+        var affected = [];
+        list.forEach(function (patch) {
+            _asArray(patch.affectedBlockIds).forEach(function (blockId) {
+                if (blockId && affected.indexOf(blockId) < 0) affected.push(blockId);
+            });
+        });
+        return _sortObject(Object.assign({}, _clone(latest), {
+            transactionId: latest.transactionId || (list[0] && list[0].transactionId) || '',
+            transactionType: TRANSACTION_TYPES.Typing,
+            operationIds: operations.map(getOperationId).filter(Boolean),
+            operations: operations,
+            affectedBlockIds: affected,
+            modelDelta: {
+                kind: operations.length > 0 ? 'operations' : 'snapshot',
+                operations: operations
+            },
+            dirtyState: _clone(inst.dirtyState || latest.dirtyState || createInitialDirtyState()),
+            coalescedPatchCount: list.length,
+            createdAt: latest.createdAt || Date.now()
+        }));
+    }
+
+    function scheduleTypingBoundaryPatchDispatch(inst, patch) {
+        if (!inst || !patch) return;
+        inst.pendingTypingBoundaryPatches = _asArray(inst.pendingTypingBoundaryPatches).concat([patch]);
+        if (inst.pendingTypingBoundaryTimer) clearTimeout(inst.pendingTypingBoundaryTimer);
+        var delay = Math.max(0, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) || 500);
+        inst.pendingTypingBoundaryTimer = setTimeout(function () {
+            flushTypingBoundaryPatchDispatch(inst);
+        }, delay);
+        if (inst.timers && inst.timers.indexOf(inst.pendingTypingBoundaryTimer) < 0) inst.timers.push(inst.pendingTypingBoundaryTimer);
+        recordTimeline(inst, 'blazor-patch-queued', {
+            transactionId: patch.transactionId,
+            transactionType: patch.transactionType,
+            pendingPatchCount: inst.pendingTypingBoundaryPatches.length
+        });
+    }
+
+    function flushTypingBoundaryPatchDispatch(inst) {
+        if (!inst) return null;
+        if (inst.pendingTypingBoundaryTimer) {
+            clearTimeout(inst.pendingTypingBoundaryTimer);
+            inst.pendingTypingBoundaryTimer = null;
+        }
+        var pending = _asArray(inst.pendingTypingBoundaryPatches);
+        if (!pending.length) return null;
+        inst.pendingTypingBoundaryPatches = [];
+        var merged = mergeTypingBoundaryPatches(inst, pending);
+        if (merged) {
+            dispatchBoundaryPatch(inst, merged);
+            dispatchDirtyState(inst);
+        }
+        return merged;
     }
 
     function applySaveAckToInstance(inst, ack) {
@@ -7083,6 +7361,8 @@ window.tmDocumentEditorEngine = (function () {
             savedEpoch: 0,
             savedVersion: null,
             dirtyState: createInitialDirtyState(),
+            pendingTypingBoundaryPatches: [],
+            pendingTypingBoundaryTimer: null,
             lastCSharpUpdate: null,
             createdAt: Date.now(),
             lastError: null,
@@ -7127,6 +7407,12 @@ window.tmDocumentEditorEngine = (function () {
             instanceRemoved: false
         };
         inst.disposed = true;
+        if (inst.pendingTypingBoundaryTimer) {
+            clearTimeout(inst.pendingTypingBoundaryTimer);
+            inst.pendingTypingBoundaryTimer = null;
+            cleanup.clearedTimers++;
+        }
+        inst.pendingTypingBoundaryPatches = [];
         if (inst.accessibilityAnnouncementTimer) cleanup.clearedTimers++;
         removeAccessibilityAndKeyboardHandlers(inst);
         _asArray(inst.timers).forEach(function (timerId) {
@@ -7253,9 +7539,14 @@ window.tmDocumentEditorEngine = (function () {
         markModelChanged(lookup.inst, commandName || operation.type);
         recordTimeline(lookup.inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: transaction.operations.length });
         lookup.inst.pendingDomSelectionRestore = _clone(lookup.inst.selection);
-        render(lookup.inst);
+        var livePatched = applyLiveTypingDomPatch(lookup.inst, operation, committed);
+        if (livePatched) {
+            lookup.inst.pendingDomSelectionRestore = null;
+        } else {
+            render(lookup.inst);
+        }
         var boundaryPatch = commitBoundaryPatch(lookup.inst, transaction, transaction.operations, committed, transaction.type);
-        return Object.assign({ instanceId: instanceId, boundaryPatch: boundaryPatch }, committed);
+        return Object.assign({ instanceId: instanceId, boundaryPatch: boundaryPatch, liveDomPatch: livePatched === true }, committed);
     }
 
     function pushUndoTransaction(inst, transaction) {
@@ -11635,6 +11926,177 @@ window.tmDocumentEditorRuntime = (function () {
             ? engine.getDebugSnapshot(instanceId)
             : { InstanceId: instanceId, HasInstance: false, Error: 'getDebugSnapshot unavailable' };
     }
+
+    window.tmDocumentEditorTestProbe = (function () {
+        var state = null;
+
+        function now() {
+            return performance && typeof performance.now === 'function' ? performance.now() : Date.now();
+        }
+
+        function resolveHost(selector) {
+            return document.querySelector(selector || '[data-testid="document-wysiwyg-host"]');
+        }
+
+        function readText(host) {
+            return host ? (host.innerText || host.textContent || '') : '';
+        }
+
+        function resolveInstanceId(host) {
+            return host && (host.getAttribute('data-instance-id') || host.closest('[data-instance-id]')?.getAttribute('data-instance-id')) || '';
+        }
+
+        function readRenderStats(host) {
+            try {
+                var id = resolveInstanceId(host);
+                return window.tmDocumentEditorDebug && typeof window.tmDocumentEditorDebug.getRenderStats === 'function'
+                    ? window.tmDocumentEditorDebug.getRenderStats(id)
+                    : {};
+            } catch (error) {
+                return { error: String(error) };
+            }
+        }
+
+        function readBoundaryPatchCount(host) {
+            try {
+                var id = resolveInstanceId(host);
+                var snapshot = window.tmDocumentEditorRuntime && typeof window.tmDocumentEditorRuntime.getDebugSnapshot === 'function'
+                    ? window.tmDocumentEditorRuntime.getDebugSnapshot(id)
+                    : window.tmDocumentEditorEngine && typeof window.tmDocumentEditorEngine.getDebugSnapshot === 'function'
+                        ? window.tmDocumentEditorEngine.getDebugSnapshot(id)
+                        : {};
+                return Number(snapshot.boundaryPatchCount || snapshot.BoundaryPatchCount || 0);
+            } catch {
+                return 0;
+            }
+        }
+
+        function num(value) {
+            return Number(value || 0);
+        }
+
+        function delta(current, initial) {
+            return Math.max(0, num(current) - num(initial));
+        }
+
+        function recordVisibleTextChange() {
+            if (!state || state.visibleTextChangedAt !== null) return;
+            var text = readText(state.host);
+            if (text !== state.initialText) {
+                state.visibleTextChangedAt = now();
+                state.lastText = text;
+            }
+        }
+
+        function tickVisibleText() {
+            if (!state) return;
+            recordVisibleTextChange();
+            state.raf = requestAnimationFrame(tickVisibleText);
+        }
+
+        function onKeyDown(event) {
+            if (!state) return;
+            state.keydownCount++;
+            state.lastKey = event.key || '';
+            if (state.keyDownAt === null) state.keyDownAt = now();
+        }
+
+        function onBeforeInput() {
+            if (!state) return;
+            state.beforeInputCount++;
+            if (state.beforeInputAt === null) state.beforeInputAt = now();
+        }
+
+        function disconnect() {
+            if (!state) return;
+            document.removeEventListener('keydown', onKeyDown, true);
+            document.removeEventListener('beforeinput', onBeforeInput, true);
+            if (state.observer) state.observer.disconnect();
+            if (state.raf) cancelAnimationFrame(state.raf);
+        }
+
+        function start(selector) {
+            disconnect();
+            var host = resolveHost(selector);
+            if (!host) throw new Error('tmDocumentEditorTestProbe could not find editor host.');
+            var initialStats = readRenderStats(host);
+            state = {
+                selector: selector || '[data-testid="document-wysiwyg-host"]',
+                host: host,
+                startedAt: now(),
+                keyDownAt: null,
+                beforeInputAt: null,
+                firstDomMutationAt: null,
+                visibleTextChangedAt: null,
+                initialText: readText(host),
+                lastText: readText(host),
+                initialStats: initialStats,
+                initialBoundaryPatchCount: readBoundaryPatchCount(host),
+                keydownCount: 0,
+                beforeInputCount: 0,
+                mutationBatchCount: 0,
+                mutationRecordCount: 0,
+                largestBatchSize: 0,
+                lastKey: '',
+                observer: null,
+                raf: null
+            };
+            state.observer = new MutationObserver(function (records) {
+                if (!state) return;
+                state.mutationBatchCount++;
+                state.mutationRecordCount += records.length;
+                state.largestBatchSize = Math.max(state.largestBatchSize, records.length);
+                if (state.firstDomMutationAt === null) state.firstDomMutationAt = now();
+                recordVisibleTextChange();
+            });
+            state.observer.observe(host, { childList: true, characterData: true, subtree: true, attributes: true });
+            document.addEventListener('keydown', onKeyDown, true);
+            document.addEventListener('beforeinput', onBeforeInput, true);
+            state.raf = requestAnimationFrame(tickVisibleText);
+            return snapshot();
+        }
+
+        function snapshot() {
+            if (!state) return {};
+            recordVisibleTextChange();
+            var currentStats = readRenderStats(state.host);
+            var keyDownAt = state.keyDownAt;
+            return {
+                startedAt: state.startedAt,
+                keyDownAt: keyDownAt,
+                beforeInputAt: state.beforeInputAt,
+                firstDomMutationAt: state.firstDomMutationAt,
+                visibleTextChangedAt: state.visibleTextChangedAt,
+                beforeInputLatencyMs: keyDownAt === null || state.beforeInputAt === null ? null : state.beforeInputAt - keyDownAt,
+                domMutationLatencyMs: keyDownAt === null || state.firstDomMutationAt === null ? null : state.firstDomMutationAt - keyDownAt,
+                visibleTextChangeLatencyMs: keyDownAt === null || state.visibleTextChangedAt === null ? null : state.visibleTextChangedAt - keyDownAt,
+                fullRenderCount: delta(currentStats.FullRenderCount || currentStats.fullRenderCount, state.initialStats.FullRenderCount || state.initialStats.fullRenderCount),
+                partialRenderCount: delta(currentStats.IncrementalOperationCount || currentStats.incrementalOperationCount, state.initialStats.IncrementalOperationCount || state.initialStats.incrementalOperationCount),
+                blazorCallbackCount: delta(readBoundaryPatchCount(state.host), state.initialBoundaryPatchCount),
+                keydownCount: state.keydownCount,
+                beforeInputCount: state.beforeInputCount,
+                mutationBatchCount: state.mutationBatchCount,
+                mutationRecordCount: state.mutationRecordCount,
+                largestBatchSize: state.largestBatchSize,
+                visibleTextLength: readText(state.host).length,
+                key: state.lastKey || ''
+            };
+        }
+
+        function stop() {
+            var result = snapshot();
+            disconnect();
+            state = null;
+            return result;
+        }
+
+        return {
+            start: start,
+            snapshot: snapshot,
+            stop: stop,
+            reset: function (selector) { return start(selector); }
+        };
+    })();
 
     window.tmDocumentEditorDebug = {
         getRuntimeState: function (instanceId) {

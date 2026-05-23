@@ -19,6 +19,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         var filing = SeedFilingDocument("filing-demo");
         var exhibits = CreateExhibitsDocument("exhibits-demo");
         var table = CreateTablePropertiesDocument("table-demo");
+        var recovery = SeedRecoveryDocument();
 
         contract.Blocks.Add(new DocumentBlock
         {
@@ -127,6 +128,13 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         {
             DocumentId = table.DocumentId,
             Document = table,
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        }).GetAwaiter().GetResult();
+
+        _ = base.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = recovery.DocumentId,
+            Document = recovery,
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         }).GetAwaiter().GetResult();
 

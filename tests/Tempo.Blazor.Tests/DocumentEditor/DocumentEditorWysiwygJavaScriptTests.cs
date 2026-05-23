@@ -2561,4 +2561,76 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         script.Should().Contain("setReviewDisplayMode: setReviewDisplayMode");
         script.Should().Contain("clearRevisionDecorations: clearRevisionDecorations");
     }
+
+    [Fact]
+    public async Task Phase2InputPipeline_AppliesSpaceEnterAndTypingBufferImmediately()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const engine = sandbox.window.tmDocumentEditorEngine;
+            const model = engine.model.importFromCSharpJson({
+                DocumentId: 'phase2-js',
+                Blocks: [{ Id: 'p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'r1', Text: 'AB' }] } }]
+            });
+            const pipeline = engine.input.createInputPipeline({
+                model,
+                selection: { blockId: 'p1', offset: 1, isCollapsed: true },
+                page: { x: 0, y: 0, width: 320, height: 480 }
+            });
+
+            const space = pipeline.handleBeforeInput({ inputType: 'insertText', data: ' ', preventDefault() {} });
+            assert.strictEqual(model.indexes.blocks.p1.content.runs.map(run => run.text || '').join(''), 'A B');
+            assert.strictEqual(space.selection.offset, 2);
+            assert.ok(pipeline.debug().lastVisibleText.includes(' '), 'space must be represented as its own immediate visible text state');
+
+            const enter = pipeline.handleBeforeInput({ inputType: 'insertParagraph', data: null, preventDefault() {} });
+            assert.strictEqual(enter.operations[0].type, 'SplitParagraph');
+            assert.notStrictEqual(enter.selection.blockId, 'p1');
+            assert.strictEqual(enter.selection.offset, 0);
+            assert.strictEqual(model.body.blocks[0].content.runs.map(run => run.text || '').join(''), 'A ');
+            assert.strictEqual(model.body.blocks[1].content.runs.map(run => run.text || '').join(''), 'B');
+
+            const buffer = engine.input.createTypingChangeBuffer({ timeoutMs: 1000 });
+            buffer.push(engine.operations.createOperation(engine.operations.types.InsertText, { target: { blockId: 'p1', offset: 0 }, text: 'A' }, { source: 'typing', timestamp: 1000 }));
+            buffer.push(engine.operations.createOperation(engine.operations.types.InsertText, { target: { blockId: 'p1', offset: 1 }, text: ' ' }, { source: 'typing', timestamp: 1010 }));
+            buffer.push(engine.operations.createOperation(engine.operations.types.InsertText, { target: { blockId: 'p1', offset: 2 }, text: 'B' }, { source: 'typing', timestamp: 1020 }));
+            const snapshot = buffer.snapshot();
+            assert.strictEqual(snapshot.operationCount, 1);
+            assert.strictEqual(snapshot.operations[0].text, 'A B');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public void Phase2Runtime_ContainsLiveTypingDomPatch()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        var jsText = File.ReadAllText(scriptPath);
+
+        jsText.Should().Contain("applyLiveTypingDomPatch");
+        jsText.Should().Contain("live-typing-dom-patch");
+        jsText.Should().Contain("data-live-typing-patch");
+        jsText.Should().Contain("renderLiveParagraphHtml");
+    }
 }

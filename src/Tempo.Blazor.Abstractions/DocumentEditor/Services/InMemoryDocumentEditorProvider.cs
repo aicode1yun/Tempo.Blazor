@@ -7,6 +7,12 @@ namespace Tempo.Blazor.DocumentEditor.Services;
 /// <summary>In-memory document editor provider intended for tests and demos.</summary>
 public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocumentAuditSink
 {
+    /// <summary>Stable document id for the 2026-05-23 Google Docs engine recovery baseline.</summary>
+    public const string Recovery20260523DocumentId = "recovery-2026-05-23";
+
+    private const string RecoverySectionId = "recovery-section-main";
+    private const string RecoveryUrlImageUrl = "/document-editor-evidence.svg";
+    private const string RecoveryProviderAssetId = "contract-evidence-asset";
     private readonly Dictionary<string, StoredDocument> _documents = [];
     private readonly Dictionary<string, List<DocumentVersion>> _versions = [];
     private readonly List<DocumentEditorAuditEvent> _auditEvents = [];
@@ -190,6 +196,264 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         });
 
         StoreDocument(document);
+        return Clone(document);
+    }
+
+    /// <summary>Seeds the deterministic recovery document used by Google Docs engine regression E2E tests.</summary>
+    public DocumentEditorDocument SeedRecoveryDocument(string documentId = Recovery20260523DocumentId)
+    {
+        var document = DocumentEditorDocument.Empty(documentId);
+        document.Metadata.Title = "Google Docs engine recovery baseline";
+        document.Metadata.Description = "Deterministic baseline for the 2026-05-23 document editor recovery plan.";
+        document.Metadata.Status = DocumentEditorStatus.Review;
+        document.Theme = new DocumentEditorTheme
+        {
+            BodyFontFamily = "Aptos, Arial, sans-serif",
+            BodyFontSize = 11,
+            BodyLineHeight = 1.25,
+            ParagraphSpacingAfter = 9
+        };
+        document.Sections[0].Id = RecoverySectionId;
+        document.Sections[0].Title = "Recovery";
+        document.Sections[0].Properties.HeaderFooterReferences =
+        [
+            new DocumentHeaderFooterReference
+            {
+                HeaderFooterId = "recovery-header-primary",
+                Type = DocumentHeaderFooterType.Header,
+                Scope = DocumentHeaderFooterScope.Primary
+            },
+            new DocumentHeaderFooterReference
+            {
+                HeaderFooterId = "recovery-footer-primary",
+                Type = DocumentHeaderFooterType.Footer,
+                Scope = DocumentHeaderFooterScope.Primary
+            }
+        ];
+        document.HeadersFooters.Add(CreateRecoveryHeader());
+        document.HeadersFooters.Add(CreateRecoveryFooter());
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "recovery-heading",
+            SectionId = RecoverySectionId,
+            Type = DocumentBlockType.Heading,
+            Order = 10,
+            Content = new HeadingBlockContent
+            {
+                Level = 1,
+                Inlines = [new TextRun { Id = "recovery-heading-text", Text = "Recovery baseline" }]
+            }
+        });
+        document.Blocks.Add(CreateParagraph(
+            "recovery-comment-paragraph",
+            20,
+            [
+                new TextRun { Id = "recovery-comment-prefix", Text = "This paragraph contains a " },
+                new TextRun
+                {
+                    Id = "recovery-comment-anchor-run",
+                    Text = "visible comment anchor",
+                    Marks =
+                    [
+                        new InlineMark
+                        {
+                            Type = InlineMarkType.CommentAnchor,
+                            CommentAnchor = new CommentAnchorMarkData
+                            {
+                                CommentId = "recovery-comment-visible",
+                                AnchorId = "recovery-comment-visible-anchor"
+                            }
+                        }
+                    ]
+                },
+                new TextRun { Id = "recovery-comment-suffix", Text = " for marker checks." }
+            ]));
+        document.Blocks.Add(CreateParagraph(
+            "recovery-insertion-revision-paragraph",
+            30,
+            [
+                new TextRun { Id = "recovery-insertion-prefix", Text = "Pending inserted text should be decorated: " },
+                new TextRun
+                {
+                    Id = "recovery-insertion-run",
+                    Text = "inserted recovery clause",
+                    Marks =
+                    [
+                        new InlineMark
+                        {
+                            Type = InlineMarkType.Revision,
+                            RevisionId = "recovery-revision-insertion",
+                            Value = "Insertion"
+                        }
+                    ]
+                },
+                new TextRun { Id = "recovery-insertion-suffix", Text = "." }
+            ]));
+        document.Blocks.Add(CreateParagraph(
+            "recovery-deletion-revision-paragraph",
+            40,
+            [
+                new TextRun { Id = "recovery-deletion-prefix", Text = "Pending deleted text should remain visible in all markup: " },
+                new TextRun
+                {
+                    Id = "recovery-deletion-run",
+                    Text = "deleted recovery clause",
+                    Marks =
+                    [
+                        new InlineMark
+                        {
+                            Type = InlineMarkType.Revision,
+                            RevisionId = "recovery-revision-deletion",
+                            Value = "Deletion"
+                        }
+                    ]
+                },
+                new TextRun { Id = "recovery-deletion-suffix", Text = "." }
+            ]));
+        document.Blocks.Add(CreateParagraph(
+            "recovery-selection-paragraph",
+            50,
+            "Select this inline recovery text with the mouse to verify that the floating toolbar appears and stays anchored near the selection."));
+        document.Blocks.Add(CreateImage(
+            "recovery-url-image",
+            60,
+            DocumentImageSource.Url,
+            RecoveryUrlImageUrl,
+            null,
+            "URL recovery evidence",
+            "URL image for recovery baseline",
+            156,
+            88,
+            DocumentImageAlignment.Center,
+            DocumentObjectLayout.Inline()));
+        document.Blocks.Add(CreateImage(
+            "recovery-provider-image",
+            70,
+            DocumentImageSource.Asset,
+            null,
+            RecoveryProviderAssetId,
+            "Provider recovery evidence",
+            "Provider image for recovery baseline",
+            156,
+            88,
+            DocumentImageAlignment.Center,
+            DocumentObjectLayout.Inline()));
+        document.Blocks.Add(CreateImage(
+            "recovery-inline-image",
+            80,
+            DocumentImageSource.Url,
+            RecoveryUrlImageUrl,
+            null,
+            "Inline recovery image",
+            "Inline image for recovery baseline",
+            140,
+            79,
+            DocumentImageAlignment.Center,
+            DocumentObjectLayout.Inline()));
+        document.Blocks.Add(CreateImage(
+            "recovery-left-wrap-image",
+            90,
+            DocumentImageSource.Url,
+            RecoveryUrlImageUrl,
+            null,
+            "Left wrapped recovery image",
+            "Left wrapped image for recovery baseline",
+            148,
+            84,
+            DocumentImageAlignment.Start,
+            CreateRecoveryWrappedImageLayout(148, 84, DocumentImageHorizontalPosition.Left, "recovery-left-wrap-text")));
+        document.Blocks.Add(CreateParagraph(
+            "recovery-left-wrap-text",
+            91,
+            "This text belongs below the left wrapped image and is long enough to create several visual lines beside the object. It should be readable, selectable, and free from image overlap."));
+        document.Blocks.Add(CreateImage(
+            "recovery-right-wrap-image",
+            100,
+            DocumentImageSource.Url,
+            RecoveryUrlImageUrl,
+            null,
+            "Right wrapped recovery image",
+            "Right wrapped image for recovery baseline",
+            148,
+            84,
+            DocumentImageAlignment.End,
+            CreateRecoveryWrappedImageLayout(148, 84, DocumentImageHorizontalPosition.Right, "recovery-right-wrap-text")));
+        document.Blocks.Add(CreateParagraph(
+            "recovery-right-wrap-text",
+            101,
+            "This text belongs below the right wrapped image and verifies that opposite image positioning still leaves clear selectable text lines for human interaction."));
+        document.Blocks.Add(CreateImage(
+            "recovery-top-bottom-image",
+            110,
+            DocumentImageSource.Asset,
+            null,
+            RecoveryProviderAssetId,
+            "Top bottom recovery image",
+            "Top-bottom image for recovery baseline",
+            220,
+            124,
+            DocumentImageAlignment.Center,
+            CreateRecoveryTopBottomImageLayout(220, 124, "recovery-top-bottom-text")));
+        document.Blocks.Add(CreateParagraph(
+            "recovery-top-bottom-text",
+            111,
+            "Top-bottom wrapping reserves a full horizontal band before this text continues."));
+        document.Blocks.Add(CreateImage(
+            "recovery-missing-alt-image",
+            120,
+            DocumentImageSource.Url,
+            RecoveryUrlImageUrl,
+            null,
+            null,
+            "Missing alt text image for recovery baseline",
+            156,
+            88,
+            DocumentImageAlignment.Center,
+            DocumentObjectLayout.Inline()));
+        document.Blocks.Add(CreateRecoveryTable());
+
+        document.Comments.Add(new DocumentComment
+        {
+            Id = "recovery-comment-visible",
+            Anchor = new DocumentCommentAnchor
+            {
+                Type = DocumentCommentAnchorType.TextRange,
+                BlockId = "recovery-comment-paragraph",
+                StartInlineIndex = 1,
+                EndInlineIndex = 1,
+                StartOffset = 0,
+                EndOffset = "visible comment anchor".Length,
+                ExternalAnchorId = "recovery-comment-visible-anchor"
+            },
+            Visibility = DocumentCommentVisibility.Internal,
+            Entries =
+            [
+                new DocumentCommentEntry
+                {
+                    Id = "recovery-comment-visible-entry",
+                    Author = new DocumentEditorAuthor { Id = "recovery-reviewer", DisplayName = "Recovery Reviewer" },
+                    Text = "The recovery baseline must show this comment in the document.",
+                    CreatedAt = new DateTimeOffset(2026, 5, 23, 8, 0, 0, TimeSpan.Zero)
+                }
+            ]
+        });
+        document.Revisions.Add(CreateRecoveryRevision(
+            "recovery-revision-insertion",
+            DocumentRevisionType.Insertion,
+            "recovery-insertion-revision-paragraph",
+            1,
+            "inserted recovery clause",
+            0));
+        document.Revisions.Add(CreateRecoveryRevision(
+            "recovery-revision-deletion",
+            DocumentRevisionType.Deletion,
+            "recovery-deletion-revision-paragraph",
+            1,
+            "deleted recovery clause",
+            5));
+
+        StoreDocument(document, "recovery-2026-05-23-canonical-v1");
         return Clone(document);
     }
 
@@ -558,6 +822,297 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
             ]
         };
     }
+
+    private static DocumentHeaderFooter CreateRecoveryHeader()
+        => new()
+        {
+            Id = "recovery-header-primary",
+            Type = DocumentHeaderFooterType.Header,
+            Scope = DocumentHeaderFooterScope.Primary,
+            SectionId = RecoverySectionId,
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "recovery-header-primary-block",
+                    SectionId = RecoverySectionId,
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines =
+                        [
+                            new TextRun
+                            {
+                                Id = "recovery-header-primary-text",
+                                Text = "Recovery Primary Header",
+                                Marks = [new InlineMark { Type = InlineMarkType.FontSize, Value = "9pt" }]
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
+
+    private static DocumentHeaderFooter CreateRecoveryFooter()
+        => new()
+        {
+            Id = "recovery-footer-primary",
+            Type = DocumentHeaderFooterType.Footer,
+            Scope = DocumentHeaderFooterScope.Primary,
+            SectionId = RecoverySectionId,
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "recovery-footer-primary-block",
+                    SectionId = RecoverySectionId,
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines =
+                        [
+                            new TextRun
+                            {
+                                Id = "recovery-footer-primary-prefix",
+                                Text = "Recovery Primary Footer - Page ",
+                                Marks = [new InlineMark { Type = InlineMarkType.FontSize, Value = "9pt" }]
+                            },
+                            new DocumentFieldRun
+                            {
+                                Id = "recovery-footer-primary-page-number",
+                                FieldType = DocumentFieldType.PageNumber,
+                                FallbackText = "1",
+                                DisplayText = "1",
+                                Marks = [new InlineMark { Type = InlineMarkType.FontSize, Value = "9pt" }]
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
+
+    private static DocumentBlock CreateParagraph(string id, double order, string text, double spacingAfter = 10)
+        => CreateParagraph(
+            id,
+            order,
+            [new TextRun { Id = $"{id}-text", Text = text }],
+            spacingAfter);
+
+    private static DocumentBlock CreateParagraph(string id, double order, List<InlineContent> inlines, double spacingAfter = 10)
+        => new()
+        {
+            Id = id,
+            SectionId = RecoverySectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = order,
+            ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Left,
+                LineSpacing = 1.25,
+                SpacingAfter = spacingAfter
+            },
+            Content = new ParagraphBlockContent { Inlines = inlines }
+        };
+
+    private static DocumentBlock CreateImage(
+        string id,
+        double order,
+        DocumentImageSource source,
+        string? url,
+        string? assetId,
+        string? altText,
+        string caption,
+        double width,
+        double height,
+        DocumentImageAlignment alignment,
+        DocumentObjectLayout layout)
+        => new()
+        {
+            Id = id,
+            SectionId = RecoverySectionId,
+            Type = DocumentBlockType.Image,
+            Order = order,
+            Content = new ImageBlockContent
+            {
+                Source = source,
+                Url = source == DocumentImageSource.Url ? url : null,
+                AssetId = source == DocumentImageSource.Asset ? assetId : null,
+                AltText = altText,
+                Caption = caption,
+                Size = new DocumentImageSize { Width = width, Height = height },
+                NaturalSize = new DocumentImageSize { Width = width, Height = height },
+                Alignment = alignment,
+                Layout = layout
+            }
+        };
+
+    private static DocumentObjectLayout CreateRecoveryWrappedImageLayout(
+        double width,
+        double height,
+        DocumentImageHorizontalPosition horizontalPosition,
+        string anchorBlockId)
+        => new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = true,
+                FixedOnPage = false
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = horizontalPosition
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Square,
+                DistanceLeft = horizontalPosition == DocumentImageHorizontalPosition.Right ? 16 : 0,
+                DistanceRight = horizontalPosition == DocumentImageHorizontalPosition.Left ? 16 : 0,
+                DistanceBottom = 12
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
+    private static DocumentObjectLayout CreateRecoveryTopBottomImageLayout(double width, double height, string anchorBlockId)
+        => new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = true,
+                FixedOnPage = false
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Center
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.TopBottom,
+                DistanceTop = 10,
+                DistanceBottom = 12
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
+    private static DocumentBlock CreateRecoveryTable()
+        => new()
+        {
+            Id = "recovery-table-under-images",
+            SectionId = RecoverySectionId,
+            Type = DocumentBlockType.Table,
+            Order = 130,
+            Content = new TableBlockContent
+            {
+                Layout = new TableLayoutContent
+                {
+                    Width = 420,
+                    Alignment = TableHorizontalAlignment.Center,
+                    CellPadding = 7,
+                    Borders = new TableCellBorders
+                    {
+                        Top = "1px solid #cbd5e1",
+                        Right = "1px solid #cbd5e1",
+                        Bottom = "1px solid #cbd5e1",
+                        Left = "1px solid #cbd5e1"
+                    }
+                },
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            CreateRecoveryTableCell("Scenario", true),
+                            CreateRecoveryTableCell("Expected visible state", true)
+                        ]
+                    },
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            CreateRecoveryTableCell("Images"),
+                            CreateRecoveryTableCell("All image layouts render before this table")
+                        ]
+                    },
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            CreateRecoveryTableCell("Review"),
+                            CreateRecoveryTableCell("Comments and revisions are visible in text")
+                        ]
+                    }
+                ]
+            }
+        };
+
+    private static TableCellContent CreateRecoveryTableCell(string text, bool isHeader = false)
+        => new()
+        {
+            IsHeader = isHeader,
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = text }]
+                    }
+                }
+            ]
+        };
+
+    private static DocumentRevision CreateRecoveryRevision(
+        string id,
+        DocumentRevisionType type,
+        string blockId,
+        int inlineIndex,
+        string text,
+        int createdAtOffsetMinutes)
+        => new()
+        {
+            Id = id,
+            Type = type,
+            Range = new DocumentRevisionRange
+            {
+                BlockId = blockId,
+                StartInlineIndex = inlineIndex,
+                EndInlineIndex = inlineIndex,
+                StartOffset = 0,
+                EndOffset = text.Length
+            },
+            Author = new DocumentRevisionAuthor
+            {
+                Id = "recovery-reviewer",
+                DisplayName = "Recovery Reviewer",
+                Email = "recovery@example.local"
+            },
+            CreatedAt = new DateTimeOffset(2026, 5, 23, 8, createdAtOffsetMinutes, 0, TimeSpan.Zero),
+            Action = DocumentRevisionAction.Pending,
+            PayloadJson = text
+        };
 
     private static T Clone<T>(T value)
     {

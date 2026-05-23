@@ -3,6 +3,7 @@
 
 <div class="tm-document-image-wrap-panel"
      data-testid="document-image-wrap-panel"
+     data-human-testid="document-image-toolbar"
      role="toolbar"
      aria-label="@Loc["TmDocumentEditor_ImageWrapPanelLabel"]">
 
@@ -11,6 +12,8 @@
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Inline ? "tm-document-image-wrap-panel__btn--active" : "")"
                 data-testid="document-image-wrap-inline"
+                data-human-testid="document-image-wrap-button"
+                data-wrap-mode="Inline"
                 title="@Loc["TmDocumentEditor_ImageWrapInline"]"
                 aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Inline)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Inline)">
@@ -19,6 +22,8 @@
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Square ? "tm-document-image-wrap-panel__btn--active" : "")"
                 data-testid="document-image-wrap-square"
+                data-human-testid="document-image-wrap-button"
+                data-wrap-mode="Square"
                 title="@Loc["TmDocumentEditor_ImageWrapSquare"]"
                 aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Square)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Square)">
@@ -27,6 +32,8 @@
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Tight ? "tm-document-image-wrap-panel__btn--active" : "")"
                 data-testid="document-image-wrap-tight"
+                data-human-testid="document-image-wrap-button"
+                data-wrap-mode="Tight"
                 title="@Loc["TmDocumentEditor_ImageWrapTight"]"
                 aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Tight)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Tight)">
@@ -35,6 +42,8 @@
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Through ? "tm-document-image-wrap-panel__btn--active" : "")"
                 data-testid="document-image-wrap-through"
+                data-human-testid="document-image-wrap-button"
+                data-wrap-mode="Through"
                 title="@Loc["TmDocumentEditor_ImageWrapThrough"]"
                 aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Through)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Through)">
@@ -43,6 +52,8 @@
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.TopBottom ? "tm-document-image-wrap-panel__btn--active" : "")"
                 data-testid="document-image-wrap-top-bottom"
+                data-human-testid="document-image-wrap-button"
+                data-wrap-mode="TopBottom"
                 title="@Loc["TmDocumentEditor_ImageWrapTopBottom"]"
                 aria-pressed="@(CurrentWrapMode == DocumentWrapMode.TopBottom)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.TopBottom)">
@@ -51,6 +62,8 @@
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.InFrontOfText ? "tm-document-image-wrap-panel__btn--active" : "")"
                 data-testid="document-image-wrap-in-front"
+                data-human-testid="document-image-wrap-button"
+                data-wrap-mode="InFrontOfText"
                 title="@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]"
                 aria-pressed="@(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.InFrontOfText)">

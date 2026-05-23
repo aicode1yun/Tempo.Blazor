@@ -243,6 +243,10 @@
     protected override void OnInitialized()
     {
         _documentId = ReadQueryString("documentId", _documentId);
+        if (string.Equals(ReadQueryString("recovery", string.Empty), "2026-05-23", StringComparison.Ordinal))
+        {
+            _documentId = InMemoryDocumentEditorProvider.Recovery20260523DocumentId;
+        }
     }
 
     private IReadOnlyCollection<string> DemoDisabledFeatures

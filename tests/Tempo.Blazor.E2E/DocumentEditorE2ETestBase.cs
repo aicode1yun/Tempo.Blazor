@@ -14,6 +14,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
     {
         WriteIndented = true
     };
+    private readonly Dictionary<IPage, DocumentEditorConsoleCapture> _mandatoryConsoleCaptures = [];
 
     /// <summary>Resets mutable demo data before each document editor runtime test.</summary>
     [TestInitialize]
@@ -25,8 +26,25 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
     {
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
+        StartMandatoryDocumentEditorConsoleCapture(page);
         await page.SetViewportSizeAsync(width, height);
         await page.GotoAsync($"{BaseUrl}/document-editor", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60000
+        });
+        await WaitForDocumentEditorReadyAsync(page);
+        return page;
+    }
+
+    /// <summary>Opens the deterministic 2026-05-23 Google Docs engine recovery document.</summary>
+    protected async Task<IPage> OpenRecoveryDocumentAsync(int width = 1280, int height = 720)
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        StartMandatoryDocumentEditorConsoleCapture(page);
+        await page.SetViewportSizeAsync(width, height);
+        await page.GotoAsync($"{BaseUrl}/document-editor?tmDocumentEditorEngine=google-docs&recovery=2026-05-23", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000
@@ -50,7 +68,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         return page.Keyboard.PressAsync("Control+Z");
     }
 
-    /// <summary>Reads visible document body text from non-virtual pages.</summary>
+    /// <summary>Diagnostic read-only helper: reads visible document body text from non-virtual pages.</summary>
     protected static Task<string> ReadEditorPlainTextAsync(IPage page)
     {
         return page.EvaluateAsync<string>(
@@ -61,7 +79,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             """);
     }
 
-    /// <summary>Reads current toolbar formatting state from controls and the JS debug bridge.</summary>
+    /// <summary>Diagnostic read-only helper: reads current toolbar formatting state from controls and the JS debug bridge.</summary>
     protected static Task<DocumentEditorToolbarState> ReadToolbarStateAsync(IPage page)
     {
         return page.EvaluateAsync<DocumentEditorToolbarState>(
@@ -100,9 +118,48 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         await TakeScreenshotAsync(page, name);
     }
 
+    /// <summary>Captures a named recovery screenshot and attaches it to the test result.</summary>
+    protected async Task<string> CaptureEditorScreenshotAsync(IPage page, string name)
+    {
+        await page.WaitForTimeoutAsync(150);
+        return await CaptureDocumentEditorPageScreenshotAsync(page, $"document_editor_recovery_{name}");
+    }
+
     /// <summary>Starts collecting console and page errors for strict document editor scenarios.</summary>
     protected static DocumentEditorConsoleCapture BeginDocumentEditorConsoleCapture(IPage page)
         => new(page);
+
+    /// <summary>Diagnostic read-only helper: evaluates browser state without applying user-visible editor commands.</summary>
+    protected static Task<T> ReadDocumentEditorDiagnosticAsync<T>(IPage page, string expression, object? arg = null)
+        => page.EvaluateAsync<T>(expression, arg);
+
+    /// <summary>Guards recovery tests against masking human-facing behavior through internal command APIs.</summary>
+    protected static void AssertRecoveryActionUsesHumanInput(string actionName, bool usesInternalApi)
+    {
+        if (usesInternalApi)
+        {
+            throw new AssertFailedException($"Recovery action '{actionName}' must use Playwright mouse/keyboard/locator APIs, not internal editor command APIs.");
+        }
+    }
+
+    /// <summary>Returns the mandatory console/runtime capture registered before page navigation.</summary>
+    protected DocumentEditorConsoleCapture GetMandatoryDocumentEditorConsoleCapture(IPage page)
+        => _mandatoryConsoleCaptures.TryGetValue(page, out var capture)
+            ? capture
+            : throw new InvalidOperationException("No mandatory document editor console capture was registered for this page.");
+
+    /// <summary>Fails the test when strict document editor console/runtime errors were captured.</summary>
+    protected async Task AssertNoDocumentEditorConsoleErrorsAsync(IPage page, DocumentEditorConsoleCapture console, string behavior)
+    {
+        var fatal = console.FatalErrors;
+        if (fatal.Count == 0)
+        {
+            return;
+        }
+
+        var screenshot = await CaptureEditorScreenshotAsync(page, $"{behavior}_console_error");
+        throw new AssertFailedException($"{behavior} emitted document editor console/runtime errors: {string.Join(" | ", fatal)}. Screenshot: {screenshot}.");
+    }
 
     /// <summary>Clicks a visual text line using real mouse coordinates.</summary>
     protected static async Task<DocumentEditorVisualLineTarget> ClickDocumentEditorVisualLineAsync(
@@ -136,6 +193,150 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         await page.Mouse.MoveAsync((float)endX, (float)endY, new() { Steps = 8 });
         await page.Mouse.UpAsync();
     }
+
+    /// <summary>Clicks a logical text offset in a visible document block using real mouse coordinates.</summary>
+    protected static async Task<DocumentEditorPointProbe> ClickDocumentEditorBlockOffsetAsync(
+        IPage page,
+        string blockId,
+        int offset,
+        string hostSelector = "[data-testid='document-wysiwyg-host']")
+    {
+        var target = await page.EvaluateAsync<DocumentEditorPointProbe>(
+            """
+            ({ hostSelector, blockId, offset }) => {
+                const host = document.querySelector(hostSelector);
+                const block = host?.querySelector(`[data-block-id="${cssEscape(blockId)}"], [data-render-block-id="${cssEscape(blockId)}"]`);
+                if (!block) throw new Error(`Could not find visible block '${blockId}'.`);
+                block.scrollIntoView({ block: 'center', inline: 'nearest' });
+                const textNode = firstTextNode(block);
+                const requested = Math.max(0, Number(offset) || 0);
+                if (!textNode) {
+                    const rect = block.getBoundingClientRect();
+                    return { x: rect.left + 8, y: rect.top + rect.height / 2 };
+                }
+                const length = textNode.nodeValue.length;
+                const range = document.createRange();
+                const caretOffset = Math.max(0, Math.min(length, requested));
+                if (caretOffset >= length && length > 0) {
+                    range.setStart(textNode, length - 1);
+                    range.setEnd(textNode, length);
+                    const rect = Array.from(range.getClientRects()).pop() || block.getBoundingClientRect();
+                    return { x: rect.right - 1, y: rect.top + rect.height / 2 };
+                }
+                range.setStart(textNode, caretOffset);
+                range.setEnd(textNode, Math.min(length, caretOffset + 1));
+                const rect = Array.from(range.getClientRects())[0] || block.getBoundingClientRect();
+                return { x: rect.left + 1, y: rect.top + rect.height / 2 };
+
+                function firstTextNode(root) {
+                    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                        acceptNode(node) {
+                            return node.nodeValue && node.nodeValue.length > 0
+                                ? NodeFilter.FILTER_ACCEPT
+                                : NodeFilter.FILTER_REJECT;
+                        }
+                    });
+                    return walker.nextNode();
+                }
+
+                function cssEscape(value) {
+                    return window.CSS?.escape ? window.CSS.escape(String(value)) : String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                }
+            }
+            """,
+            new { hostSelector, blockId, offset });
+        await page.Mouse.ClickAsync((float)target.X, (float)target.Y);
+        await page.EvaluateAsync(
+            """
+            ({ hostSelector, blockId, offset }) => {
+                const host = document.querySelector(hostSelector);
+                const escaped = window.CSS?.escape ? window.CSS.escape(blockId) : String(blockId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const block = host?.querySelector(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
+                if (!block) throw new Error(`Could not find visible block '${blockId}' after click.`);
+                const body = block.closest('[contenteditable="true"]');
+                if (!body) throw new Error(`Block '${blockId}' is not inside an editable document body.`);
+                const requested = Math.max(0, Number(offset) || 0);
+                const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+                    acceptNode(node) {
+                        return node.nodeValue !== null ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                    }
+                });
+                let current = 0;
+                let node = null;
+                let localOffset = 0;
+                while (walker.nextNode()) {
+                    const candidate = walker.currentNode;
+                    const length = candidate.nodeValue.length;
+                    if (requested <= current + length) {
+                        node = candidate;
+                        localOffset = Math.max(0, Math.min(length, requested - current));
+                        break;
+                    }
+                    current += length;
+                }
+                if (!node) {
+                    const lastWalker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+                    while (lastWalker.nextNode()) {
+                        node = lastWalker.currentNode;
+                    }
+                    localOffset = node ? node.nodeValue.length : 0;
+                }
+
+                body.focus();
+                const range = document.createRange();
+                if (node) {
+                    range.setStart(node, localOffset);
+                } else {
+                    range.selectNodeContents(block);
+                    range.collapse(false);
+                }
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """,
+            new { hostSelector, blockId, offset });
+        return target;
+    }
+
+    /// <summary>Diagnostic read-only helper: reads visible text from a rendered document block.</summary>
+    protected static Task<string> ReadDocumentEditorBlockTextAsync(
+        IPage page,
+        string blockId,
+        string hostSelector = "[data-testid='document-wysiwyg-host']")
+        => page.EvaluateAsync<string>(
+            """
+            ({ hostSelector, blockId }) => {
+                const host = document.querySelector(hostSelector);
+                const escaped = window.CSS?.escape ? window.CSS.escape(blockId) : String(blockId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const block = host?.querySelector(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
+                return block?.innerText || block?.textContent || '';
+            }
+            """,
+            new { hostSelector, blockId });
+
+    /// <summary>Diagnostic read-only helper: reads the current native caret rectangle.</summary>
+    protected static Task<DocumentEditorRectProbe> ReadDocumentEditorCaretRectAsync(IPage page)
+        => page.EvaluateAsync<DocumentEditorRectProbe>(
+            """
+            () => {
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) return { x: 0, y: 0, width: 0, height: 0 };
+                const range = selection.getRangeAt(0).cloneRange();
+                range.collapse(false);
+                let rect = range.getBoundingClientRect();
+                if (!rect || rect.height <= 0) {
+                    const marker = document.createElement('span');
+                    marker.textContent = '\u200b';
+                    range.insertNode(marker);
+                    rect = marker.getBoundingClientRect();
+                    marker.remove();
+                }
+                return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+            }
+            """);
 
     /// <summary>Types text one character at a time and captures strict frame probes after every character.</summary>
     protected async Task<IReadOnlyList<DocumentEditorFrameProbe>> TypeDocumentEditorTextByCharactersWithFrameProbesAsync(
@@ -277,7 +478,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         return probes;
     }
 
-    /// <summary>Captures one strict visual frame probe.</summary>
+    /// <summary>Diagnostic read-only helper: captures one strict visual frame probe.</summary>
     protected static Task<DocumentEditorFrameProbe> CaptureStrictFrameProbeAsync(
         IPage page,
         string stage = "probe",
@@ -560,6 +761,50 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             """,
             new { stage, hostSelector });
 
+    /// <summary>Diagnostic read-only helper: captures visible DOM geometry for recovery tests that need human-visible evidence.</summary>
+    protected static Task<DocumentEditorGeometryProbe> CaptureEditorGeometryAsync(IPage page)
+        => page.EvaluateAsync<DocumentEditorGeometryProbe>(
+            """
+            () => {
+                const visibleRects = selector => Array.from(document.querySelectorAll(selector))
+                    .filter(isVisible)
+                    .map(node => toRect(node.getBoundingClientRect()));
+                const firstRect = selector => visibleRects(selector)[0] || null;
+                return {
+                    pageRect: firstRect('[data-testid="document-wysiwyg-engine-document"] .tm-render-page, [data-testid="document-wysiwyg-engine-document"] .tm-wysiwyg-page, .tm-render-page, .tm-wysiwyg-page'),
+                    headerRect: firstRect('[data-testid="document-page-header"], .tm-render-header-region, [data-render-frame="header-content"]'),
+                    footerRect: firstRect('[data-testid="document-page-footer"], .tm-render-footer-region, [data-render-frame="footer-content"]'),
+                    bodyRect: firstRect('[data-render-frame="body"], .tm-render-body-frame, .tm-wysiwyg-page__body'),
+                    commentMarkerRects: visibleRects('[data-testid="document-comment-marker"], .tm-render-comment-marker, .tm-wysiwyg-marker--comment'),
+                    revisionMarkerRects: visibleRects('[data-testid="document-revision-marker"], .tm-render-revision-marker, .tm-wysiwyg-marker--revision-insert, .tm-wysiwyg-marker--revision-delete, .tm-wysiwyg-marker--revision-format'),
+                    floatingToolbarRect: firstRect('[data-testid="document-floating-toolbar"], [data-human-testid="document-floating-toolbar"], [data-testid="document-wysiwyg-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__floating-root'),
+                    imageToolbarRect: firstRect('[data-testid="document-image-toolbar"], [data-human-testid="document-image-toolbar"], [data-testid="document-wysiwyg-image-toolbar"], .tm-document-editor__image-toolbar, .tm-wysiwyg-image-toolbar'),
+                    sidePanelRect: firstRect('[data-testid="document-image-properties-panel"], [data-testid="document-side-panel"], .tm-document-side-panel'),
+                    visibleText: document.querySelector('[data-testid="document-wysiwyg-host"]')?.innerText || ''
+                };
+
+                function isVisible(node) {
+                    if (!node) return false;
+                    const rect = node.getBoundingClientRect();
+                    const style = window.getComputedStyle(node);
+                    return rect.width > 0.5
+                        && rect.height > 0.5
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && Number(style.opacity || 1) > 0.01;
+                }
+
+                function toRect(rect) {
+                    return {
+                        x: Number(rect.x || rect.left || 0),
+                        y: Number(rect.y || rect.top || 0),
+                        width: Number(rect.width || 0),
+                        height: Number(rect.height || 0)
+                    };
+                }
+            }
+            """);
+
     /// <summary>Fails if any captured frame probe reports a strict visual issue.</summary>
     protected async Task AssertStrictFrameProbesCleanAsync(
         IPage page,
@@ -619,6 +864,181 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         }
     }
 
+    /// <summary>Asserts that a user-visible element is visible and has a measurable rectangle.</summary>
+    protected static async Task<DocumentEditorRectProbe> ExpectVisibleAndNonEmptyAsync(ILocator locator, string name)
+    {
+        await Assertions.Expect(locator).ToBeVisibleAsync();
+        var rect = await GetLocatorRectAsync(locator, name);
+        if (rect.Width <= 0.5 || rect.Height <= 0.5)
+        {
+            throw new AssertFailedException($"{name} should be visible and non-empty, but its rect was {FormatRect(rect)}.");
+        }
+
+        return rect;
+    }
+
+    /// <summary>Asserts that a user-facing element is fully inside the rendered page bounds.</summary>
+    protected static async Task ExpectRectInsidePageAsync(ILocator locator, ILocator pageLocator)
+    {
+        var rect = await GetLocatorRectAsync(locator, "target");
+        var pageRect = await GetLocatorRectAsync(pageLocator, "page");
+        if (!RectInside(rect, pageRect, 1.5))
+        {
+            throw new AssertFailedException($"Expected target rect {FormatRect(rect)} to be inside page rect {FormatRect(pageRect)}.");
+        }
+    }
+
+    /// <summary>Asserts that two user-visible elements do not overlap beyond a tolerance.</summary>
+    protected static async Task ExpectNoOverlapAsync(ILocator locatorA, ILocator locatorB, double tolerancePx = 1.5)
+    {
+        var a = await GetLocatorRectAsync(locatorA, "first element");
+        var b = await GetLocatorRectAsync(locatorB, "second element");
+        if (RectsOverlap(a, b, tolerancePx))
+        {
+            throw new AssertFailedException($"Expected no overlap, but rects overlap: A={FormatRect(a)}, B={FormatRect(b)}, tolerance={tolerancePx:0.##}.");
+        }
+    }
+
+    /// <summary>Asserts that a comment or revision marker intersects the visual text range for expected text.</summary>
+    protected static async Task ExpectMarkerIntersectsTextRangeAsync(IPage page, ILocator marker, string expectedText)
+    {
+        var markerRect = await GetLocatorRectAsync(marker, "marker");
+        var result = await page.EvaluateAsync<MarkerTextIntersectionProbe>(
+            """
+            ({ markerRect, expectedText }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                if (!host) return { foundText: false, intersects: false, textRectCount: 0 };
+                const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT, {
+                    acceptNode(node) {
+                        if (!node.nodeValue || !node.nodeValue.includes(expectedText)) return NodeFilter.FILTER_REJECT;
+                        const parent = node.parentElement;
+                        if (!parent || parent.closest('[role="menu"], [data-testid="document-side-panel"], .tm-document-editor__floating-root')) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                });
+                const textRects = [];
+                for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                    const start = node.nodeValue.indexOf(expectedText);
+                    if (start < 0) continue;
+                    const range = document.createRange();
+                    range.setStart(node, start);
+                    range.setEnd(node, start + expectedText.length);
+                    for (const rect of Array.from(range.getClientRects())) {
+                        if (rect.width > 0.5 && rect.height > 0.5) {
+                            textRects.push({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+                        }
+                    }
+                }
+                return {
+                    foundText: textRects.length > 0,
+                    intersects: textRects.some(rect => intersects(rect, markerRect, 1.5)),
+                    textRectCount: textRects.length
+                };
+
+                function intersects(a, b, tolerance) {
+                    const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+                    const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+                    return x * y > tolerance;
+                }
+            }
+            """,
+            new { markerRect, expectedText });
+        if (!result.FoundText)
+        {
+            throw new AssertFailedException($"Expected visible text range '{expectedText}' was not found.");
+        }
+
+        if (!result.Intersects)
+        {
+            throw new AssertFailedException($"Marker rect {FormatRect(markerRect)} does not intersect text range '{expectedText}' ({result.TextRectCount} rects).");
+        }
+    }
+
+    /// <summary>Asserts that a floating toolbar is positioned near the current visual selection.</summary>
+    protected static async Task ExpectToolbarNearSelectionAsync(ILocator toolbar, DocumentEditorRectProbe selectionRect)
+    {
+        var toolbarRect = await GetLocatorRectAsync(toolbar, "toolbar");
+        var toolbarCenterX = toolbarRect.X + toolbarRect.Width / 2;
+        var selectionCenterX = selectionRect.X + selectionRect.Width / 2;
+        var horizontalDistance = Math.Abs(toolbarCenterX - selectionCenterX);
+        var verticalGap = Math.Min(
+            Math.Abs(toolbarRect.Y + toolbarRect.Height - selectionRect.Y),
+            Math.Abs(selectionRect.Y + selectionRect.Height - toolbarRect.Y));
+        if (horizontalDistance > Math.Max(160, selectionRect.Width) || verticalGap > 120)
+        {
+            throw new AssertFailedException($"Toolbar rect {FormatRect(toolbarRect)} should be near selection rect {FormatRect(selectionRect)}.");
+        }
+    }
+
+    /// <summary>Asserts that a properties panel is visibly bound to the active object.</summary>
+    protected static async Task ExpectPanelShowsActiveObjectAsync(ILocator panel, string objectId)
+    {
+        await Assertions.Expect(panel).ToBeVisibleAsync();
+        var actual = await panel.EvaluateAsync<string>(
+            """
+            (node) => node.getAttribute('data-active-object-id')
+                || node.getAttribute('data-active-image-block-id')
+                || node.getAttribute('data-object-id')
+                || node.textContent
+                || ''
+            """);
+        if (!actual.Contains(objectId, StringComparison.Ordinal))
+        {
+            throw new AssertFailedException($"Expected properties panel to show active object '{objectId}', actual binding/text was '{actual}'.");
+        }
+    }
+
+    /// <summary>Measures one human keystroke through the browser-side document editor latency probe.</summary>
+    protected static async Task<DocumentEditorKeystrokeLatencyProbe> MeasureKeystrokeLatencyAsync(
+        IPage page,
+        string key,
+        string hostSelector = "[data-testid='document-wysiwyg-host']")
+    {
+        await page.EvaluateAsync(
+            """
+            ({ hostSelector }) => {
+                if (!window.tmDocumentEditorTestProbe) throw new Error('tmDocumentEditorTestProbe is not available.');
+                window.tmDocumentEditorTestProbe.start(hostSelector);
+            }
+            """,
+            new { hostSelector });
+        await page.Keyboard.PressAsync(key);
+        await page.WaitForTimeoutAsync(120);
+        return await page.EvaluateAsync<DocumentEditorKeystrokeLatencyProbe>(
+            "() => window.tmDocumentEditorTestProbe.snapshot()");
+    }
+
+    /// <summary>Measures browser mutation/render batching while a key is held through Playwright keyboard input.</summary>
+    protected static async Task<DocumentEditorKeyHoldBatchProbe> HoldKeyAndMeasureBatchesAsync(
+        IPage page,
+        string key,
+        int holdMilliseconds = 500,
+        string hostSelector = "[data-testid='document-wysiwyg-host']")
+    {
+        await page.EvaluateAsync(
+            """
+            ({ hostSelector }) => {
+                if (!window.tmDocumentEditorTestProbe) throw new Error('tmDocumentEditorTestProbe is not available.');
+                window.tmDocumentEditorTestProbe.start(hostSelector);
+            }
+            """,
+            new { hostSelector });
+        var stopAt = DateTimeOffset.UtcNow.AddMilliseconds(Math.Max(1, holdMilliseconds));
+        do
+        {
+            await page.Keyboard.PressAsync(key);
+            await page.WaitForTimeoutAsync(30);
+        }
+        while (DateTimeOffset.UtcNow < stopAt);
+        await page.WaitForTimeoutAsync(120);
+        var probe = await page.EvaluateAsync<DocumentEditorKeyHoldBatchProbe>(
+            "() => window.tmDocumentEditorTestProbe.snapshot()");
+        probe.HoldMilliseconds = holdMilliseconds;
+        return probe;
+    }
+
     /// <summary>Waits until the document editor host has rendered at least one WYSIWYG block.</summary>
     protected static async Task WaitForDocumentEditorReadyAsync(IPage page)
     {
@@ -643,6 +1063,39 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         await body.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 60000 });
         return body;
     }
+
+    private static async Task<DocumentEditorRectProbe> GetLocatorRectAsync(ILocator locator, string name)
+    {
+        var box = await locator.BoundingBoxAsync();
+        if (box is null)
+        {
+            throw new AssertFailedException($"Could not measure {name}; no bounding box was returned.");
+        }
+
+        return new()
+        {
+            X = box.X,
+            Y = box.Y,
+            Width = box.Width,
+            Height = box.Height
+        };
+    }
+
+    private static bool RectInside(DocumentEditorRectProbe inner, DocumentEditorRectProbe outer, double tolerance)
+        => inner.X >= outer.X - tolerance
+            && inner.Y >= outer.Y - tolerance
+            && inner.X + Math.Max(1, inner.Width) <= outer.X + outer.Width + tolerance
+            && inner.Y + Math.Max(1, inner.Height) <= outer.Y + outer.Height + tolerance;
+
+    private static bool RectsOverlap(DocumentEditorRectProbe a, DocumentEditorRectProbe b, double tolerance)
+    {
+        var x = Math.Max(0, Math.Min(a.X + a.Width, b.X + b.Width) - Math.Max(a.X, b.X));
+        var y = Math.Max(0, Math.Min(a.Y + a.Height, b.Y + b.Height) - Math.Max(a.Y, b.Y));
+        return x * y > tolerance;
+    }
+
+    private static string FormatRect(DocumentEditorRectProbe rect)
+        => $"x={rect.X:0.##}, y={rect.Y:0.##}, w={rect.Width:0.##}, h={rect.Height:0.##}";
 
     private static Task<DocumentEditorVisualLineTarget> GetDocumentEditorVisualLineAsync(IPage page, int lineIndex, string hostSelector)
         => page.EvaluateAsync<DocumentEditorVisualLineTarget>(
@@ -693,6 +1146,16 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
 
     private static string Printable(char ch)
         => ch == ' ' ? "space" : ch.ToString();
+
+    private void StartMandatoryDocumentEditorConsoleCapture(IPage page)
+    {
+        if (_mandatoryConsoleCaptures.ContainsKey(page))
+        {
+            return;
+        }
+
+        _mandatoryConsoleCaptures[page] = new DocumentEditorConsoleCapture(page);
+    }
 
     private static string SanitizeFileName(string value)
         => string.Concat(value.Select(ch => char.IsLetterOrDigit(ch) || ch is '_' or '-' ? ch : '_'));
@@ -767,6 +1230,58 @@ public sealed class DocumentEditorRectProbe
     [JsonPropertyName("height")] public double Height { get; set; }
 }
 
+/// <summary>Visible geometry captured from the document editor DOM for regression recovery tests.</summary>
+public sealed class DocumentEditorGeometryProbe
+{
+    [JsonPropertyName("pageRect")] public DocumentEditorRectProbe? PageRect { get; set; }
+    [JsonPropertyName("headerRect")] public DocumentEditorRectProbe? HeaderRect { get; set; }
+    [JsonPropertyName("footerRect")] public DocumentEditorRectProbe? FooterRect { get; set; }
+    [JsonPropertyName("bodyRect")] public DocumentEditorRectProbe? BodyRect { get; set; }
+    [JsonPropertyName("commentMarkerRects")] public DocumentEditorRectProbe[] CommentMarkerRects { get; set; } = [];
+    [JsonPropertyName("revisionMarkerRects")] public DocumentEditorRectProbe[] RevisionMarkerRects { get; set; } = [];
+    [JsonPropertyName("floatingToolbarRect")] public DocumentEditorRectProbe? FloatingToolbarRect { get; set; }
+    [JsonPropertyName("imageToolbarRect")] public DocumentEditorRectProbe? ImageToolbarRect { get; set; }
+    [JsonPropertyName("sidePanelRect")] public DocumentEditorRectProbe? SidePanelRect { get; set; }
+    [JsonPropertyName("visibleText")] public string VisibleText { get; set; } = string.Empty;
+}
+
+/// <summary>Browser-side marker/text intersection result for recovery visual assertions.</summary>
+public sealed class MarkerTextIntersectionProbe
+{
+    [JsonPropertyName("foundText")] public bool FoundText { get; set; }
+    [JsonPropertyName("intersects")] public bool Intersects { get; set; }
+    [JsonPropertyName("textRectCount")] public int TextRectCount { get; set; }
+}
+
+/// <summary>Browser-side latency probe for one human keystroke.</summary>
+public class DocumentEditorKeystrokeLatencyProbe
+{
+    [JsonPropertyName("startedAt")] public double StartedAt { get; set; }
+    [JsonPropertyName("keyDownAt")] public double? KeyDownAt { get; set; }
+    [JsonPropertyName("beforeInputAt")] public double? BeforeInputAt { get; set; }
+    [JsonPropertyName("firstDomMutationAt")] public double? FirstDomMutationAt { get; set; }
+    [JsonPropertyName("visibleTextChangedAt")] public double? VisibleTextChangedAt { get; set; }
+    [JsonPropertyName("beforeInputLatencyMs")] public double? BeforeInputLatencyMs { get; set; }
+    [JsonPropertyName("domMutationLatencyMs")] public double? DomMutationLatencyMs { get; set; }
+    [JsonPropertyName("visibleTextChangeLatencyMs")] public double? VisibleTextChangeLatencyMs { get; set; }
+    [JsonPropertyName("fullRenderCount")] public int FullRenderCount { get; set; }
+    [JsonPropertyName("partialRenderCount")] public int PartialRenderCount { get; set; }
+    [JsonPropertyName("blazorCallbackCount")] public int BlazorCallbackCount { get; set; }
+    [JsonPropertyName("keydownCount")] public int KeydownCount { get; set; }
+    [JsonPropertyName("beforeInputCount")] public int BeforeInputCount { get; set; }
+    [JsonPropertyName("mutationBatchCount")] public int MutationBatchCount { get; set; }
+    [JsonPropertyName("mutationRecordCount")] public int MutationRecordCount { get; set; }
+    [JsonPropertyName("largestBatchSize")] public int LargestBatchSize { get; set; }
+    [JsonPropertyName("visibleTextLength")] public int VisibleTextLength { get; set; }
+    [JsonPropertyName("key")] public string Key { get; set; } = string.Empty;
+}
+
+/// <summary>Browser-side batching probe for a held key.</summary>
+public sealed class DocumentEditorKeyHoldBatchProbe : DocumentEditorKeystrokeLatencyProbe
+{
+    [JsonPropertyName("holdMilliseconds")] public int HoldMilliseconds { get; set; }
+}
+
 /// <summary>Paths attached to a strict E2E failure.</summary>
 public sealed record DocumentEditorStrictFailureArtifact(string ScreenshotPath, string JsonArtifactPath);
 
@@ -776,6 +1291,7 @@ public sealed class DocumentEditorConsoleCapture : IDisposable
     private readonly IPage _page;
     private readonly EventHandler<IConsoleMessage> _consoleHandler;
     private readonly EventHandler<string> _pageErrorHandler;
+    private readonly EventHandler<IRequest> _requestFailedHandler;
     private bool _disposed;
 
     public DocumentEditorConsoleCapture(IPage page)
@@ -789,14 +1305,27 @@ public sealed class DocumentEditorConsoleCapture : IDisposable
             }
         };
         _pageErrorHandler = (_, error) => Entries.Add($"pageerror: {error}");
+        _requestFailedHandler = (_, request) =>
+        {
+            var failure = request.Failure ?? string.Empty;
+            if (IsDocumentEditorRequestFailure(request.Url, failure))
+            {
+                Entries.Add($"requestfailed: {request.Method} {request.Url}: {failure}");
+            }
+        };
         _page.Console += _consoleHandler;
         _page.PageError += _pageErrorHandler;
+        _page.RequestFailed += _requestFailedHandler;
     }
 
     public List<string> Entries { get; } = [];
 
     public IReadOnlyList<string> Errors => Entries
         .Where(entry => entry.StartsWith("console:error:", StringComparison.Ordinal) || entry.StartsWith("pageerror:", StringComparison.Ordinal))
+        .ToArray();
+
+    public IReadOnlyList<string> FatalErrors => Entries
+        .Where(IsFatalEntry)
         .ToArray();
 
     public void Dispose()
@@ -808,6 +1337,48 @@ public sealed class DocumentEditorConsoleCapture : IDisposable
 
         _page.Console -= _consoleHandler;
         _page.PageError -= _pageErrorHandler;
+        _page.RequestFailed -= _requestFailedHandler;
         _disposed = true;
+    }
+
+    private static bool IsFatalEntry(string entry)
+    {
+        if (IsWhitelisted(entry))
+        {
+            return false;
+        }
+
+        if (entry.StartsWith("console:error:", StringComparison.Ordinal)
+            || entry.StartsWith("pageerror:", StringComparison.Ordinal)
+            || entry.StartsWith("requestfailed:", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var fatalFragments = new[]
+        {
+            "crit: Microsoft.AspNetCore.Components",
+            "Unhandled exception rendering component",
+            "Cannot read properties of null",
+            ".NET runtime already exited",
+            "invokeMethodAsync failed"
+        };
+
+        return fatalFragments.Any(fragment => entry.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsWhitelisted(string entry)
+        => entry.Contains("favicon", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsDocumentEditorRequestFailure(string url, string failure)
+    {
+        if (url.Contains("favicon", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return url.Contains("/document-editor", StringComparison.OrdinalIgnoreCase)
+            || url.Contains("_framework", StringComparison.OrdinalIgnoreCase)
+            || failure.Contains("net::ERR", StringComparison.OrdinalIgnoreCase);
     }
 }

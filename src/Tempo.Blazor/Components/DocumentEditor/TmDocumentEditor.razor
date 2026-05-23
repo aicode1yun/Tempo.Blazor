@@ -434,19 +434,23 @@
                 <PropertiesContent>
                     @if (ActiveImageContent is { } activeImage)
                     {
-                        <TmDocumentImageInspector Image="activeImage"
-                                                  AltTextChanged="SetActiveImageAltTextFromPanelAsync"
-                                                  DecorativeChanged="SetActiveImageDecorativeFromPanelAsync"
-                                                  ToggleCaption="ToggleActiveImageCaptionFromPanelAsync"
-                                                  CaptionChanged="SetActiveImageCaptionFromPanelAsync"
-                                                  UrlChanged="SetActiveImageUrlFromPanelAsync"
-                                                  WrapModeChanged="SetActiveImageWrapModeFromPanelAsync"
-                                                  AlignmentChanged="SetActiveImageAlignmentFromPanelAsync"
-                                                  SizeChanged="SetActiveImageSizeFromPanelAsync"
-                                                  PositionChanged="SetActiveImagePositionFromPanelAsync"
-                                                  LockAnchorChanged="SetActiveImageLockAnchorFromPanelAsync"
-                                                  BringForward="BringActiveImageForwardFromPanelAsync"
-                                                  SendBackward="SendActiveImageBackwardFromPanelAsync" />
+                        <section class="tm-document-image-properties-panel"
+                                 data-testid="document-image-properties-panel"
+                                 data-active-object-id="@ActiveImageInspectorBlockId">
+                            <TmDocumentImageInspector Image="activeImage"
+                                                      AltTextChanged="SetActiveImageAltTextFromPanelAsync"
+                                                      DecorativeChanged="SetActiveImageDecorativeFromPanelAsync"
+                                                      ToggleCaption="ToggleActiveImageCaptionFromPanelAsync"
+                                                      CaptionChanged="SetActiveImageCaptionFromPanelAsync"
+                                                      UrlChanged="SetActiveImageUrlFromPanelAsync"
+                                                      WrapModeChanged="SetActiveImageWrapModeFromPanelAsync"
+                                                      AlignmentChanged="SetActiveImageAlignmentFromPanelAsync"
+                                                      SizeChanged="SetActiveImageSizeFromPanelAsync"
+                                                      PositionChanged="SetActiveImagePositionFromPanelAsync"
+                                                      LockAnchorChanged="SetActiveImageLockAnchorFromPanelAsync"
+                                                      BringForward="BringActiveImageForwardFromPanelAsync"
+                                                      SendBackward="SendActiveImageBackwardFromPanelAsync" />
+                        </section>
                     }
                     else
                     {
@@ -505,7 +509,8 @@
                          style="@FloatingStyle(_miniToolbar)"
                          role="toolbar"
                          aria-label="@Loc["TmDocumentEditor_MiniToolbarLabel"]"
-                         data-testid="document-mini-toolbar">
+                         data-testid="document-mini-toolbar"
+                         data-human-testid="document-floating-toolbar">
                     <button type="button"
                             data-testid="document-mini-bold"
                             aria-label="@Loc["TmDocumentEditor_Bold"]"

@@ -35,6 +35,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
         var filing = SeedFilingDocument("filing-demo");
         var exhibits = CreateExhibitsDocument("exhibits-demo");
         var table = CreateTablePropertiesDocument("table-demo");
+        var recovery = SeedRecoveryDocument();
 
         SeedProviderImages();
         PrepareContractDemo(contract);
@@ -61,6 +62,8 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             Document = table,
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         }).GetAwaiter().GetResult();
+
+        StoreDocument(recovery, "recovery-2026-05-23-canonical-v1");
     }
 
     private void SeedProviderImages()

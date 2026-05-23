@@ -6,7 +6,8 @@
 <section class="tm-document-image-inspector"
          role="complementary"
          aria-label="@Loc["TmDocumentEditor_ImageInspectorLabel"]"
-         data-testid="document-image-inspector">
+         data-testid="document-image-inspector"
+         data-human-testid="document-image-properties-panel">
     <header class="tm-document-image-inspector__header">
         <TmIcon Name="image" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_ImageTools"]</span>
@@ -51,6 +52,7 @@
                 <input value="@_captionInput"
                        placeholder="@Loc["TmDocumentEditor_ImageCaption"]"
                        data-testid="document-image-inspector-caption"
+                       data-human-testid="document-image-caption-input"
                        @oninput="HandleCaptionInputAsync"
                        @onchange="HandleCaptionChangedAsync" />
             </label>
@@ -71,6 +73,7 @@
                            step="1"
                            value="@_widthInput"
                            data-testid="document-image-inspector-width"
+                           data-human-testid="document-image-width-input"
                            @oninput="HandleWidthInputAsync"
                            @onchange="HandleWidthChangedAsync" />
                 </label>
@@ -81,6 +84,7 @@
                            step="1"
                            value="@_heightInput"
                            data-testid="document-image-inspector-height"
+                           data-human-testid="document-image-height-input"
                            @oninput="HandleHeightInputAsync"
                            @onchange="HandleHeightChangedAsync" />
                 </label>
@@ -106,6 +110,8 @@
                         class="@WrapButtonClass(DocumentWrapMode.Inline)"
                         aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Inline)"
                         data-testid="document-image-inspector-wrap-inline"
+                        data-human-testid="document-image-wrap-button"
+                        data-wrap-mode="Inline"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Inline)">
                     @Loc["TmDocumentEditor_ImageWrapInline"]
                 </button>
@@ -113,6 +119,8 @@
                         class="@WrapButtonClass(DocumentWrapMode.Square)"
                         aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Square)"
                         data-testid="document-image-inspector-wrap-square"
+                        data-human-testid="document-image-wrap-button"
+                        data-wrap-mode="Square"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Square)">
                     @Loc["TmDocumentEditor_ImageWrapSquare"]
                 </button>
@@ -120,6 +128,8 @@
                         class="@WrapButtonClass(DocumentWrapMode.Tight)"
                         aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Tight)"
                         data-testid="document-image-inspector-wrap-tight"
+                        data-human-testid="document-image-wrap-button"
+                        data-wrap-mode="Tight"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Tight)">
                     @Loc["TmDocumentEditor_ImageWrapTight"]
                 </button>
@@ -127,6 +137,8 @@
                         class="@WrapButtonClass(DocumentWrapMode.Through)"
                         aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Through)"
                         data-testid="document-image-inspector-wrap-through"
+                        data-human-testid="document-image-wrap-button"
+                        data-wrap-mode="Through"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Through)">
                     @Loc["TmDocumentEditor_ImageWrapThrough"]
                 </button>
@@ -134,6 +146,8 @@
                         class="@WrapButtonClass(DocumentWrapMode.TopBottom)"
                         aria-pressed="@(CurrentWrapMode == DocumentWrapMode.TopBottom)"
                         data-testid="document-image-inspector-wrap-top-bottom"
+                        data-human-testid="document-image-wrap-button"
+                        data-wrap-mode="TopBottom"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.TopBottom)">
                     @Loc["TmDocumentEditor_ImageWrapTopBottom"]
                 </button>
@@ -141,6 +155,8 @@
                         class="@WrapButtonClass(DocumentWrapMode.BehindText)"
                         aria-pressed="@(CurrentWrapMode == DocumentWrapMode.BehindText)"
                         data-testid="document-image-inspector-wrap-behind"
+                        data-human-testid="document-image-wrap-button"
+                        data-wrap-mode="BehindText"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.BehindText)">
                     @Loc["TmDocumentEditor_ImageWrapBehindText"]
                 </button>
@@ -148,6 +164,8 @@
                         class="@WrapButtonClass(DocumentWrapMode.InFrontOfText)"
                         aria-pressed="@(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
                         data-testid="document-image-inspector-wrap-in-front"
+                        data-human-testid="document-image-wrap-button"
+                        data-wrap-mode="InFrontOfText"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.InFrontOfText)">
                     @Loc["TmDocumentEditor_ImageWrapInFrontOfText"]
                 </button>
@@ -253,6 +271,7 @@
                 <input value="@_altInput"
                        disabled="@IsDecorative"
                        data-testid="document-image-inspector-alt"
+                       data-human-testid="document-image-alt-input"
                        @oninput="HandleAltTextInputAsync"
                        @onchange="HandleAltTextChangedAsync" />
             </label>
