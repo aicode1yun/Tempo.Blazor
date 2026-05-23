@@ -5,89 +5,153 @@
      data-testid="document-image-wrap-panel"
      data-human-testid="document-image-toolbar"
      role="toolbar"
-     aria-label="@Loc["TmDocumentEditor_ImageWrapPanelLabel"]">
+     aria-label="@Loc["TmDocumentEditor_ImageWrapPanelLabel"]"
+     @onpointerdown:stopPropagation="true"
+     @onclick:stopPropagation="true">
+
+    <div class="tm-document-image-wrap-panel__group">
+        <button class="tm-document-image-wrap-panel__btn"
+                type="button"
+                data-testid="document-image-alt-text"
+                title="@Loc["TmDocumentEditor_ImageAltText"]"
+                @onclick="() => OnAltTextRequested.InvokeAsync()">
+            @Loc["TmDocumentEditor_ImageAltText"]
+        </button>
+
+        <button class="tm-document-image-wrap-panel__btn"
+                type="button"
+                data-testid="document-image-caption-toggle"
+                title="@Loc["TmDocumentEditor_ImageCaption"]"
+                @onclick="() => OnCaptionToggle.InvokeAsync()">
+            @Loc["TmDocumentEditor_ImageCaption"]
+        </button>
+
+        <button class="tm-document-image-wrap-panel__btn"
+                type="button"
+                data-testid="document-image-replace"
+                title="@Loc["TmDocumentEditor_ImageReplace"]"
+                @onclick="() => OnReplaceRequested.InvokeAsync()">
+            @Loc["TmDocumentEditor_ImageReplace"]
+        </button>
+
+        <button class="tm-document-image-wrap-panel__btn tm-document-image-wrap-panel__btn--danger"
+                type="button"
+                data-testid="document-image-delete"
+                title="@Loc["TmDocumentEditor_ImageDelete"]"
+                @onclick="() => OnDelete.InvokeAsync()">
+            @Loc["TmDocumentEditor_ImageDelete"]
+        </button>
+    </div>
 
     <div class="tm-document-image-wrap-panel__group">
         <span class="tm-document-image-wrap-panel__label">@Loc["TmDocumentEditor_ImageWrapMode"]</span>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Inline ? "tm-document-image-wrap-panel__btn--active" : "")"
+                type="button"
                 data-testid="document-image-wrap-inline"
                 data-human-testid="document-image-wrap-button"
                 data-wrap-mode="Inline"
                 title="@Loc["TmDocumentEditor_ImageWrapInline"]"
-                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Inline)"
+                aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Inline)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Inline)">
             @Loc["TmDocumentEditor_ImageWrapInline"]
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Square ? "tm-document-image-wrap-panel__btn--active" : "")"
+                type="button"
                 data-testid="document-image-wrap-square"
                 data-human-testid="document-image-wrap-button"
                 data-wrap-mode="Square"
                 title="@Loc["TmDocumentEditor_ImageWrapSquare"]"
-                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Square)"
+                aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Square)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Square)">
             @Loc["TmDocumentEditor_ImageWrapSquare"]
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Tight ? "tm-document-image-wrap-panel__btn--active" : "")"
+                type="button"
                 data-testid="document-image-wrap-tight"
                 data-human-testid="document-image-wrap-button"
                 data-wrap-mode="Tight"
                 title="@Loc["TmDocumentEditor_ImageWrapTight"]"
-                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Tight)"
+                aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Tight)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Tight)">
             @Loc["TmDocumentEditor_ImageWrapTight"]
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Through ? "tm-document-image-wrap-panel__btn--active" : "")"
+                type="button"
                 data-testid="document-image-wrap-through"
                 data-human-testid="document-image-wrap-button"
                 data-wrap-mode="Through"
                 title="@Loc["TmDocumentEditor_ImageWrapThrough"]"
-                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Through)"
+                aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Through)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Through)">
             @Loc["TmDocumentEditor_ImageWrapThrough"]
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.TopBottom ? "tm-document-image-wrap-panel__btn--active" : "")"
+                type="button"
                 data-testid="document-image-wrap-top-bottom"
                 data-human-testid="document-image-wrap-button"
                 data-wrap-mode="TopBottom"
                 title="@Loc["TmDocumentEditor_ImageWrapTopBottom"]"
-                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.TopBottom)"
+                aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.TopBottom)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.TopBottom)">
             @Loc["TmDocumentEditor_ImageWrapTopBottom"]
         </button>
 
+        <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.BehindText ? "tm-document-image-wrap-panel__btn--active" : "")"
+                type="button"
+                data-testid="document-image-wrap-behind"
+                data-human-testid="document-image-wrap-button"
+                data-wrap-mode="BehindText"
+                title="@Loc["TmDocumentEditor_ImageWrapBehindText"]"
+                aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.BehindText)"
+                @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.BehindText)">
+            @Loc["TmDocumentEditor_ImageWrapBehindText"]
+        </button>
+
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.InFrontOfText ? "tm-document-image-wrap-panel__btn--active" : "")"
+                type="button"
                 data-testid="document-image-wrap-in-front"
                 data-human-testid="document-image-wrap-button"
                 data-wrap-mode="InFrontOfText"
                 title="@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]"
-                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
+                aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.InFrontOfText)">
             @Loc["TmDocumentEditor_ImageWrapInFrontOfText"]
         </button>
     </div>
 
-    @if (CurrentWrapMode is DocumentWrapMode.Square or DocumentWrapMode.Tight or DocumentWrapMode.Through)
+    @if (CurrentWrapMode != DocumentWrapMode.Inline)
     {
         <div class="tm-document-image-wrap-panel__group">
             <span class="tm-document-image-wrap-panel__label">@Loc["TmDocumentEditor_ImagePosition"]</span>
 
             <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Left ? "tm-document-image-wrap-panel__btn--active" : "")"
+                    type="button"
                     data-testid="document-image-position-left"
                     title="@Loc["TmDocumentEditor_ImagePositionLeft"]"
-                    aria-pressed="@(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Left)"
+                    aria-pressed="@AriaPressed(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Left)"
                     @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Left)">
                 @Loc["TmDocumentEditor_ImagePositionLeft"]
             </button>
 
+            <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Center ? "tm-document-image-wrap-panel__btn--active" : "")"
+                    type="button"
+                    data-testid="document-image-position-center"
+                    title="@Loc["TmDocumentEditor_ImagePositionCenter"]"
+                    aria-pressed="@AriaPressed(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Center)"
+                    @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Center)">
+                @Loc["TmDocumentEditor_ImagePositionCenter"]
+            </button>
+
             <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Right ? "tm-document-image-wrap-panel__btn--active" : "")"
+                    type="button"
                     data-testid="document-image-position-right"
                     title="@Loc["TmDocumentEditor_ImagePositionRight"]"
-                    aria-pressed="@(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Right)"
+                    aria-pressed="@AriaPressed(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Right)"
                     @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Right)">
                 @Loc["TmDocumentEditor_ImagePositionRight"]
             </button>
@@ -146,24 +210,60 @@
             </label>
         </div>
     }
+
+    <div class="tm-document-image-wrap-panel__group">
+        <button class="tm-document-image-wrap-panel__btn"
+                type="button"
+                data-testid="document-image-more-options"
+                title="@Loc["TmDocumentEditor_ImageMoreOptions"]"
+                @onclick="() => OnMoreOptionsRequested.InvokeAsync()">
+            @Loc["TmDocumentEditor_ImageMoreOptions"]
+        </button>
+    </div>
 </div>
 
 @code {
+    /// <summary>Current text wrapping mode for the selected image.</summary>
     [Parameter] public DocumentWrapMode CurrentWrapMode { get; set; } = DocumentWrapMode.Inline;
+    /// <summary>Current horizontal position for non-inline image wrapping.</summary>
     [Parameter] public DocumentImageHorizontalPosition? CurrentHorizontalPosition { get; set; }
+    /// <summary>Current left text distance around the image.</summary>
     [Parameter] public double DistanceLeft { get; set; }
+    /// <summary>Current right text distance around the image.</summary>
     [Parameter] public double DistanceRight { get; set; }
+    /// <summary>Current top text distance around the image.</summary>
     [Parameter] public double DistanceTop { get; set; }
+    /// <summary>Current bottom text distance around the image.</summary>
     [Parameter] public double DistanceBottom { get; set; }
+    /// <summary>Whether the selected image anchor is locked.</summary>
     [Parameter] public bool LockAnchor { get; set; }
+    /// <summary>Raised when the image wrap mode changes.</summary>
     [Parameter] public EventCallback<DocumentWrapMode> OnWrapModeChanged { get; set; }
+    /// <summary>Raised when the image horizontal position changes.</summary>
     [Parameter] public EventCallback<DocumentImageHorizontalPosition> OnHorizontalPositionChanged { get; set; }
+    /// <summary>Raised when the left text distance changes.</summary>
     [Parameter] public EventCallback<double> OnDistanceLeftChanged { get; set; }
+    /// <summary>Raised when the right text distance changes.</summary>
     [Parameter] public EventCallback<double> OnDistanceRightChanged { get; set; }
+    /// <summary>Raised when the top text distance changes.</summary>
     [Parameter] public EventCallback<double> OnDistanceTopChanged { get; set; }
+    /// <summary>Raised when the bottom text distance changes.</summary>
     [Parameter] public EventCallback<double> OnDistanceBottomChanged { get; set; }
+    /// <summary>Raised when the image anchor lock changes.</summary>
     [Parameter] public EventCallback<bool> OnLockAnchorChanged { get; set; }
+    /// <summary>Raised when the alt text action is requested.</summary>
+    [Parameter] public EventCallback OnAltTextRequested { get; set; }
+    /// <summary>Raised when the caption toggle is requested.</summary>
+    [Parameter] public EventCallback OnCaptionToggle { get; set; }
+    /// <summary>Raised when the replace image action is requested.</summary>
+    [Parameter] public EventCallback OnReplaceRequested { get; set; }
+    /// <summary>Raised when the delete image action is requested.</summary>
+    [Parameter] public EventCallback OnDelete { get; set; }
+    /// <summary>Raised when more image options are requested.</summary>
+    [Parameter] public EventCallback OnMoreOptionsRequested { get; set; }
 
     private static double ParseDistance(object? value) =>
         double.TryParse(value?.ToString(), out var d) ? Math.Max(0, d) : 0;
+
+    private static string AriaPressed(bool value) => value ? "true" : "false";
 }

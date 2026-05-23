@@ -96,6 +96,19 @@
                        data-testid="document-image-inspector-rotation"
                        readonly />
             </label>
+            <label class="tm-document-image-inspector__field tm-document-image-inspector__checkbox">
+                <span>@Loc["TmDocumentEditor_ImageLockAspectRatio"]</span>
+                <input type="checkbox"
+                       checked="@LockAspectRatio"
+                       data-testid="document-image-inspector-lock-aspect"
+                       @onchange="HandleLockAspectRatioChangedAsync" />
+            </label>
+            <button type="button"
+                    class="tm-document-image-inspector__command"
+                    data-testid="document-image-inspector-reset-size"
+                    @onclick="HandleResetSizeAsync">
+                @Loc["TmDocumentEditor_ImageResetSize"]
+            </button>
         </div>
     </details>
 
@@ -108,7 +121,7 @@
             <div class="tm-document-image-inspector__group" role="toolbar" aria-label="@Loc["TmDocumentEditor_ImageWrapMode"]">
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Inline)"
-                        aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Inline)"
+                        aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Inline)"
                         data-testid="document-image-inspector-wrap-inline"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Inline"
@@ -117,7 +130,7 @@
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Square)"
-                        aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Square)"
+                        aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Square)"
                         data-testid="document-image-inspector-wrap-square"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Square"
@@ -126,7 +139,7 @@
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Tight)"
-                        aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Tight)"
+                        aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Tight)"
                         data-testid="document-image-inspector-wrap-tight"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Tight"
@@ -135,7 +148,7 @@
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Through)"
-                        aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Through)"
+                        aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Through)"
                         data-testid="document-image-inspector-wrap-through"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Through"
@@ -144,7 +157,7 @@
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.TopBottom)"
-                        aria-pressed="@(CurrentWrapMode == DocumentWrapMode.TopBottom)"
+                        aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.TopBottom)"
                         data-testid="document-image-inspector-wrap-top-bottom"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="TopBottom"
@@ -153,7 +166,7 @@
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.BehindText)"
-                        aria-pressed="@(CurrentWrapMode == DocumentWrapMode.BehindText)"
+                        aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.BehindText)"
                         data-testid="document-image-inspector-wrap-behind"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="BehindText"
@@ -162,7 +175,7 @@
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.InFrontOfText)"
-                        aria-pressed="@(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
+                        aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
                         data-testid="document-image-inspector-wrap-in-front"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="InFrontOfText"
@@ -182,21 +195,21 @@
             <div class="tm-document-image-inspector__group" role="toolbar" aria-label="@Loc["TmDocumentEditor_ImageAlignment"]">
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.Start)"
-                        aria-pressed="@(CurrentAlignment == DocumentImageAlignment.Start)"
+                        aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.Start)"
                         data-testid="document-image-inspector-align-start"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.Start)">
                     @Loc["TmDocumentEditor_ImageAlignStart"]
                 </button>
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.Center)"
-                        aria-pressed="@(CurrentAlignment == DocumentImageAlignment.Center)"
+                        aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.Center)"
                         data-testid="document-image-inspector-align-center"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.Center)">
                     @Loc["TmDocumentEditor_ImageAlignCenter"]
                 </button>
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.End)"
-                        aria-pressed="@(CurrentAlignment == DocumentImageAlignment.End)"
+                        aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.End)"
                         data-testid="document-image-inspector-align-end"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.End)">
                     @Loc["TmDocumentEditor_ImageAlignEnd"]
@@ -396,6 +409,8 @@
     private string RotationValue => FormatNumber(Image?.Layout.Transform.Rotation ?? 0);
 
     private bool IsAnchorLocked => Image?.Layout.Anchor.LockAnchor ?? false;
+
+    private bool LockAspectRatio => Image?.Size.LockAspectRatio ?? true;
 
     private bool IsDecorative => Image?.IsDecorative ?? false;
 
@@ -636,13 +651,47 @@
         return DecorativeChanged.InvokeAsync(isChecked);
     }
 
-    private DocumentImageSize CloneSize() =>
+    private DocumentImageSize CloneSize(bool? lockAspectRatio = null) =>
         new()
         {
             Width = ParsePositive(_widthInput),
             Height = ParsePositive(_heightInput),
-            LockAspectRatio = Image?.Size.LockAspectRatio ?? true
+            LockAspectRatio = lockAspectRatio ?? Image?.Size.LockAspectRatio ?? true
         };
+
+    private async Task HandleLockAspectRatioChangedAsync(ChangeEventArgs args)
+    {
+        var isChecked = args.Value is bool value
+            ? value
+            : string.Equals(args.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+
+        CancelDebounce(ref _sizeDebounce);
+        _lastDispatchedSize = string.Empty;
+        await SizeChanged.InvokeAsync(CloneSize(isChecked));
+    }
+
+    private async Task HandleResetSizeAsync()
+    {
+        var natural = Image?.NaturalSize;
+        var fallback = Image?.Size;
+        var width = natural?.Width ?? fallback?.Width;
+        var height = natural?.Height ?? fallback?.Height;
+        if (width is null && height is null)
+        {
+            return;
+        }
+
+        _widthInput = width?.ToString("0.##", CultureInfo.InvariantCulture) ?? string.Empty;
+        _heightInput = height?.ToString("0.##", CultureInfo.InvariantCulture) ?? string.Empty;
+        CancelDebounce(ref _sizeDebounce);
+        _lastDispatchedSize = string.Empty;
+        await SizeChanged.InvokeAsync(new DocumentImageSize
+        {
+            Width = width,
+            Height = height,
+            LockAspectRatio = LockAspectRatio
+        });
+    }
 
     private DocumentObjectPosition ClonePosition() =>
         new()
@@ -671,6 +720,8 @@
 
     private static string FormatNumber(double value) =>
         value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string AriaPressed(bool value) => value ? "true" : "false";
 
     private static string? NormalizeOptionalValue(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

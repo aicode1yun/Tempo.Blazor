@@ -2693,6 +2693,9 @@
   <data name="TmDocumentEditor_ImageUrl"               xml:space="preserve"><value>URL de l'image</value></data>
   <data name="TmDocumentEditor_ImageAltText"           xml:space="preserve"><value>Texte alternatif</value></data>
   <data name="TmDocumentEditor_ImageCaption"           xml:space="preserve"><value>Légende</value></data>
+  <data name="TmDocumentEditor_ImageReplace"           xml:space="preserve"><value>Remplacer</value></data>
+  <data name="TmDocumentEditor_ImageDelete"            xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmDocumentEditor_ImageMoreOptions"       xml:space="preserve"><value>Plus d’options d’image</value></data>
   <data name="TmDocumentEditor_ImageWidth"             xml:space="preserve"><value>Largeur</value></data>
   <data name="TmDocumentEditor_ImageTools"             xml:space="preserve"><value>Outils d'image</value></data>
   <data name="TmDocumentEditor_GroupParagraph"         xml:space="preserve"><value>Paragraphe</value></data>
@@ -2789,6 +2792,7 @@
   <data name="TmDocumentEditor_ImageWrapInFrontOfText" xml:space="preserve"><value>Devant le texte</value></data>
   <data name="TmDocumentEditor_ImagePosition"          xml:space="preserve"><value>Position</value></data>
   <data name="TmDocumentEditor_ImagePositionLeft"      xml:space="preserve"><value>Gauche</value></data>
+  <data name="TmDocumentEditor_ImagePositionCenter"    xml:space="preserve"><value>Centre</value></data>
   <data name="TmDocumentEditor_ImagePositionRight"     xml:space="preserve"><value>Droite</value></data>
   <data name="TmDocumentEditor_ImagePositionX"         xml:space="preserve"><value>X</value></data>
   <data name="TmDocumentEditor_ImagePositionY"         xml:space="preserve"><value>Y</value></data>
@@ -2811,6 +2815,8 @@
   <data name="TmDocumentEditor_ImageMoveWithText"      xml:space="preserve"><value>Déplacer avec le texte</value></data>
   <data name="TmDocumentEditor_ImageFixedOnPage"       xml:space="preserve"><value>Fixe sur la page</value></data>
   <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Verrouiller l’ancre</value></data>
+  <data name="TmDocumentEditor_ImageLockAspectRatio"   xml:space="preserve"><value>Conserver les proportions</value></data>
+  <data name="TmDocumentEditor_ImageResetSize"         xml:space="preserve"><value>Réinitialiser la taille</value></data>
   <data name="TmDocumentEditor_AcceptAllRevisions"     xml:space="preserve"><value>Tout accepter</value></data>
   <data name="TmDocumentEditor_RejectAllRevisions"     xml:space="preserve"><value>Tout rejeter</value></data>
   <data name="TmDocumentEditor_AllRevisionsAccepted"   xml:space="preserve"><value>{0} révisions acceptées</value></data>

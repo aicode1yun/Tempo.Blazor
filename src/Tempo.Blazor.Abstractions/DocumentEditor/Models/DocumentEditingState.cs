@@ -12,8 +12,17 @@ public class DocumentEditorSelectionState
     /// <summary>Selected table cell id, when the active block is a table.</summary>
     public string? ActiveTableCellId { get; set; }
 
+    /// <summary>Selected table block id, when the active block is a table.</summary>
+    public string? ActiveTableId { get; set; }
+
     /// <summary>Selected image block id, when the active selection is an image.</summary>
     public string? ActiveImageBlockId { get; set; }
+
+    /// <summary>Selected comment id when the active selection targets a comment anchor.</summary>
+    public string? ActiveCommentId { get; set; }
+
+    /// <summary>Selected revision id when the active selection targets a tracked-change marker.</summary>
+    public string? ActiveRevisionId { get; set; }
 
     /// <summary>Layout line id for the active caret hit-test, when available.</summary>
     public string? LayoutLineId { get; set; }
@@ -45,7 +54,10 @@ public class DocumentEditorSelectionState
         ActiveBlockId = null;
         FocusedInlineRange = null;
         ActiveTableCellId = null;
+        ActiveTableId = null;
         ActiveImageBlockId = null;
+        ActiveCommentId = null;
+        ActiveRevisionId = null;
         LayoutLineId = null;
         LayoutSegmentId = null;
         VisualLineIndex = null;

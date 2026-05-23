@@ -3130,6 +3130,9 @@
   <data name="TmDocumentEditor_ImageUrl"               xml:space="preserve"><value>URL obrázku</value></data>
   <data name="TmDocumentEditor_ImageAltText"           xml:space="preserve"><value>Alternativní text</value></data>
   <data name="TmDocumentEditor_ImageCaption"           xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmDocumentEditor_ImageReplace"           xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmDocumentEditor_ImageDelete"            xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmDocumentEditor_ImageMoreOptions"       xml:space="preserve"><value>Další možnosti obrázku</value></data>
   <data name="TmDocumentEditor_ImageWidth"             xml:space="preserve"><value>Šířka</value></data>
   <data name="TmDocumentEditor_ImageTools"             xml:space="preserve"><value>Nástroje obrázku</value></data>
   <data name="TmDocumentEditor_GroupParagraph"         xml:space="preserve"><value>Odstavec</value></data>
@@ -3264,6 +3267,7 @@
   <data name="TmDocumentEditor_ImageWrapInFrontOfText" xml:space="preserve"><value>Před textem</value></data>
   <data name="TmDocumentEditor_ImagePosition"          xml:space="preserve"><value>Pozice</value></data>
   <data name="TmDocumentEditor_ImagePositionLeft"      xml:space="preserve"><value>Vlevo</value></data>
+  <data name="TmDocumentEditor_ImagePositionCenter"    xml:space="preserve"><value>Na střed</value></data>
   <data name="TmDocumentEditor_ImagePositionRight"     xml:space="preserve"><value>Vpravo</value></data>
   <data name="TmDocumentEditor_ImagePositionX"         xml:space="preserve"><value>X</value></data>
   <data name="TmDocumentEditor_ImagePositionY"         xml:space="preserve"><value>Y</value></data>
@@ -3286,6 +3290,8 @@
   <data name="TmDocumentEditor_ImageMoveWithText"      xml:space="preserve"><value>Pohybovat s textem</value></data>
   <data name="TmDocumentEditor_ImageFixedOnPage"       xml:space="preserve"><value>Pevně na stránce</value></data>
   <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Uzamknout kotvu</value></data>
+  <data name="TmDocumentEditor_ImageLockAspectRatio"   xml:space="preserve"><value>Zamknout poměr stran</value></data>
+  <data name="TmDocumentEditor_ImageResetSize"         xml:space="preserve"><value>Obnovit velikost</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Konec stránky</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG plocha dokumentu</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editovatelná plocha dokumentu. Pomocí Tab přecházíte mezi pásem karet, záhlavím, tělem, zápatím a komentáři.</value></data>

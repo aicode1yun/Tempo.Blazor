@@ -185,6 +185,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private TmDocumentEditorToolbar? _toolbar;
     private TmDocumentWysiwygHost? _wysiwygHost;
     private DocumentEditorSelectionState _selection = new();
+    private DocumentEditorSelectionContext _selectionContext = DocumentEditorSelectionContext.Empty;
     private string? _activeImageInspectorBlockId;
     private string? _errorMessage;
     private string? _saveMessage;
@@ -237,8 +238,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private bool _compareDialogOpen;
     private bool _sidePanelOpen = true;
     private DocumentSidePanelTab _activeSidePanelTab = DocumentSidePanelTab.Versions;
+    private bool _sidePanelTabManuallySelected;
     private bool _commentComposerOpen;
     private string? _selectedCommentId;
+    private string? _selectedRevisionId;
     private DocumentCommentFilter _commentFilter = DocumentCommentFilter.All;
     private DocumentCommentSortMode _commentSortMode = DocumentCommentSortMode.Position;
     private string? _loadedDocumentId;
@@ -401,6 +404,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         !string.IsNullOrWhiteSpace(_selection.ActiveImageBlockId)
             ? _selection.ActiveImageBlockId
             : _activeImageInspectorBlockId;
+
+    private DocumentBlock? ActiveTableBlock =>
+        DisplayedDocument?.Blocks.FirstOrDefault(block =>
+            block.Content is TableBlockContent table
+            && (string.Equals(block.Id, _selectionContext.ActiveTableId, StringComparison.Ordinal)
+                || string.Equals(block.Id, _selection.ActiveTableId, StringComparison.Ordinal)
+                || string.Equals(block.Id, _selection.ActiveBlockId, StringComparison.Ordinal)
+                || TableContainsCell(table, _selectionContext.ActiveTableCellId ?? _selection.ActiveTableCellId)));
+
+    private TableBlockContent? ActiveTableContent => ActiveTableBlock?.Content as TableBlockContent;
+
+    private TableCellContent? ActiveTableCell => string.IsNullOrWhiteSpace(_selectionContext.ActiveTableCellId ?? _selection.ActiveTableCellId)
+        ? null
+        : ActiveTableContent?.Rows
+            .SelectMany(row => row.Cells)
+            .FirstOrDefault(cell => string.Equals(cell.Id, _selectionContext.ActiveTableCellId ?? _selection.ActiveTableCellId, StringComparison.Ordinal));
 
     private bool IsTemplatePreview => _templatePreviewEnabled;
 
@@ -1621,6 +1640,32 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private Task SendActiveImageBackwardFromPanelAsync() =>
         ExecuteImageRuntimeCommandAsync("setImageZOrder", new { Direction = "Backward", BlockId = ActiveImageInspectorBlockId });
 
+    private Task SetActiveTablePropertiesFromPanelAsync(TableLayoutContent layout) =>
+        _wysiwygHost is null
+            ? Task.CompletedTask
+            : _wysiwygHost.ExecuteRuntimeCommandAsync("setTableProperties", new
+            {
+                CellId = _selectionContext.ActiveTableCellId ?? _selection.ActiveTableCellId,
+                layout.Width,
+                Alignment = layout.Alignment.ToString(),
+                layout.CellPadding,
+                layout.BackgroundColor,
+                layout.Borders
+            });
+
+    private Task SetActiveCellPropertiesFromPanelAsync(TableCellContent cell) =>
+        _wysiwygHost is null
+            ? Task.CompletedTask
+            : _wysiwygHost.ExecuteRuntimeCommandAsync("setCellProperties", new
+            {
+                CellId = _selectionContext.ActiveTableCellId ?? _selection.ActiveTableCellId,
+                cell.Width,
+                cell.BackgroundColor,
+                VerticalAlignment = cell.VerticalAlignment.ToString(),
+                cell.Padding,
+                cell.Borders
+            });
+
     private static DocumentImageHorizontalPosition ToHorizontalPosition(DocumentImageAlignment alignment) =>
         alignment switch
         {
@@ -2276,6 +2321,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         if (snapshot is null)
         {
             _selection = new DocumentEditorSelectionState();
+            _selectionContext = DocumentEditorSelectionContext.Empty;
             _activeWysiwygRegion = "Body";
             _lastWysiwygSelectionSnapshot = null;
             _lastCollapsedSelectionRenderKey = null;
@@ -2292,6 +2338,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _formattingState = new WysiwygFormattingState();
             await BroadcastCollaborationCursorAsync();
             return;
+        }
+
+        if (string.IsNullOrWhiteSpace(snapshot.ActiveImageBlockId)
+            && (string.Equals(snapshot.Region, "Image", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(snapshot.HitTargetKind, "image", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(snapshot.HitTargetKind, "object", StringComparison.OrdinalIgnoreCase)))
+        {
+            snapshot.ActiveImageBlockId = !string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
+                ? snapshot.AnchorBlockId
+                : snapshot.FocusBlockId;
         }
 
         _activeWysiwygRegion = string.IsNullOrWhiteSpace(snapshot.Region) ? "Body" : snapshot.Region;
@@ -2339,7 +2395,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             ActiveBlockId = snapshot.AnchorBlockId,
             FocusedInlineRange = range,
             ActiveTableCellId = snapshot.ActiveTableCellId,
+            ActiveTableId = snapshot.ActiveTableId,
             ActiveImageBlockId = snapshot.ActiveImageBlockId,
+            ActiveCommentId = snapshot.ActiveCommentId,
+            ActiveRevisionId = snapshot.ActiveRevisionId,
             LayoutLineId = snapshot.LayoutLineId,
             LayoutSegmentId = snapshot.LayoutSegmentId,
             VisualLineIndex = snapshot.VisualLineIndex,
@@ -2349,17 +2408,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             HeaderFooterId = snapshot.HeaderFooterId,
             PageIndex = snapshot.PageIndex
         };
-        if (!string.IsNullOrWhiteSpace(_selection.ActiveImageBlockId))
-        {
-            _activeImageInspectorBlockId = _selection.ActiveImageBlockId;
-            OpenSidePanel(DocumentSidePanelTab.Properties);
-        }
-        else if (SelectionTargetsDocumentContent(snapshot))
-        {
-            _activeImageInspectorBlockId = null;
-        }
 
         _formattingState = await ResolveRuntimeFormattingStateAsync(snapshot);
+        _selectionContext = DocumentEditorSelectionContext.FromSnapshot(snapshot, _formattingState, GetActiveObjectPropertiesSnapshot(snapshot));
+        ApplySelectionContextToSidePanel(_selectionContext);
         ApplyPendingFloatingFormattingOverride();
         ApplyPendingParagraphFormattingOverride(snapshot);
         await RefreshCommandRegistryAsync();
@@ -2371,6 +2423,81 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         !string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
         || !string.IsNullOrWhiteSpace(snapshot.FocusBlockId)
         || !string.IsNullOrWhiteSpace(snapshot.ActiveTableCellId);
+
+    private static bool TableContainsCell(TableBlockContent table, string? cellId) =>
+        !string.IsNullOrWhiteSpace(cellId)
+        && table.Rows.Any(row => row.Cells.Any(cell => string.Equals(cell.Id, cellId, StringComparison.Ordinal)));
+
+    private void ApplySelectionContextToSidePanel(DocumentEditorSelectionContext context)
+    {
+        if (!string.IsNullOrWhiteSpace(context.ActiveImageId))
+        {
+            _activeImageInspectorBlockId = context.ActiveImageId;
+            OpenSidePanel(DocumentSidePanelTab.Properties, preserveManualChoice: false);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.ActiveTableCellId) || !string.IsNullOrWhiteSpace(context.ActiveTableId))
+        {
+            _activeImageInspectorBlockId = null;
+            OpenSidePanel(DocumentSidePanelTab.Properties, preserveManualChoice: false);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.ActiveCommentId))
+        {
+            _activeImageInspectorBlockId = null;
+            _selectedCommentId = context.ActiveCommentId;
+            OpenSidePanel(DocumentSidePanelTab.Comments, preserveManualChoice: false);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.ActiveRevisionId))
+        {
+            _activeImageInspectorBlockId = null;
+            _selectedRevisionId = context.ActiveRevisionId;
+            OpenSidePanel(DocumentSidePanelTab.Revisions, preserveManualChoice: false);
+            return;
+        }
+
+        if (SelectionTargetsDocumentContent(context.Selection))
+        {
+            _activeImageInspectorBlockId = null;
+        }
+
+        if (_sidePanelTabManuallySelected)
+        {
+            return;
+        }
+    }
+
+    private IReadOnlyDictionary<string, object?> GetActiveObjectPropertiesSnapshot(WysiwygSelectionSnapshot snapshot)
+    {
+        if (!string.IsNullOrWhiteSpace(snapshot.ActiveImageBlockId)
+            && DisplayedDocument?.Blocks.FirstOrDefault(block => string.Equals(block.Id, snapshot.ActiveImageBlockId, StringComparison.Ordinal))?.Content is ImageBlockContent image)
+        {
+            return new Dictionary<string, object?>
+            {
+                ["kind"] = "image",
+                ["altText"] = image.AltText,
+                ["wrapMode"] = image.Layout.Wrap.Mode.ToString(),
+                ["width"] = image.Size.Width,
+                ["height"] = image.Size.Height
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(snapshot.ActiveTableCellId) || !string.IsNullOrWhiteSpace(snapshot.ActiveTableId))
+        {
+            return new Dictionary<string, object?>
+            {
+                ["kind"] = "table",
+                ["tableId"] = snapshot.ActiveTableId,
+                ["cellId"] = snapshot.ActiveTableCellId
+            };
+        }
+
+        return new Dictionary<string, object?>();
+    }
 
     private static string GetCollapsedSelectionRenderKey(WysiwygSelectionSnapshot snapshot)
         => string.Join('|',
@@ -2398,7 +2525,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         _selection.ActiveBlockId = snapshot.AnchorBlockId;
         _selection.ActiveTableCellId = snapshot.ActiveTableCellId;
+        _selection.ActiveTableId = snapshot.ActiveTableId;
         _selection.ActiveImageBlockId = snapshot.ActiveImageBlockId;
+        _selection.ActiveCommentId = snapshot.ActiveCommentId;
+        _selection.ActiveRevisionId = snapshot.ActiveRevisionId;
         _selection.LayoutLineId = snapshot.LayoutLineId;
         _selection.LayoutSegmentId = snapshot.LayoutSegmentId;
         _selection.VisualLineIndex = snapshot.VisualLineIndex;
@@ -2900,7 +3030,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         WysiwygMiniToolbarRequest? previousMiniToolbar,
         WysiwygSelectionSnapshot? selection)
     {
-        if (_miniToolbar is not null || previousMiniToolbar is null)
+        if (previousMiniToolbar is null)
         {
             return;
         }
@@ -4036,7 +4166,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private Task SetSidePanelTabAsync(DocumentSidePanelTab tab)
     {
-        OpenSidePanel(tab);
+        OpenSidePanel(tab, manual: true);
         return InvokeAsync(StateHasChanged);
     }
 
@@ -4049,13 +4179,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private Task OpenCommentsPanelAsync()
     {
-        OpenSidePanel(DocumentSidePanelTab.Comments);
+        OpenSidePanel(DocumentSidePanelTab.Comments, manual: true);
         return InvokeAsync(StateHasChanged);
     }
 
     private Task OpenRevisionsPanelAsync()
     {
-        OpenSidePanel(DocumentSidePanelTab.Revisions);
+        OpenSidePanel(DocumentSidePanelTab.Revisions, manual: true);
         return InvokeAsync(StateHasChanged);
     }
 
@@ -4185,10 +4315,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return InvokeAsync(StateHasChanged);
     }
 
-    private void OpenSidePanel(DocumentSidePanelTab tab)
+    private void OpenSidePanel(DocumentSidePanelTab tab, bool preserveManualChoice = true, bool manual = false)
     {
         _activeSidePanelTab = NormalizeSidePanelTab(tab);
         _sidePanelOpen = true;
+        if (manual)
+        {
+            _sidePanelTabManuallySelected = true;
+        }
+        else if (!preserveManualChoice)
+        {
+            _sidePanelTabManuallySelected = false;
+        }
     }
 
     private void CloseSidePanel()
@@ -4568,11 +4706,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private async Task SelectCommentAsync(string commentId)
     {
         _selectedCommentId = commentId;
+        _selection.ActiveCommentId = commentId;
         OpenSidePanel(DocumentSidePanelTab.Comments);
         if (_wysiwygHost is not null)
         {
             await _wysiwygHost.ScrollToCommentAsync(commentId);
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task ToggleTrackChanges()
@@ -4626,6 +4767,19 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task SelectRevision(DocumentRevision revision)
     {
+        await SelectRevisionAsync(revision.Id);
+    }
+
+    private async Task SelectRevisionAsync(string revisionId)
+    {
+        var revision = _document?.Revisions.FirstOrDefault(item => item.Id == revisionId);
+        if (revision is null)
+        {
+            return;
+        }
+
+        _selectedRevisionId = revision.Id;
+        _selection.ActiveRevisionId = revision.Id;
         OpenSidePanel(DocumentSidePanelTab.Revisions);
         _selection.ActiveBlockId = revision.Range.BlockId;
         _selection.FocusedInlineRange = new DocumentEditorInlineRange
@@ -4641,6 +4795,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         {
             await _wysiwygHost.ScrollToRevisionAsync(revision.Id);
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private Task AcceptRevisionAsync(DocumentRevision revision)
@@ -5515,8 +5671,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         var command = markType == InlineMarkType.TextColor
-            ? "setTextColor"
-            : "setHighlightColor";
+            ? "textColor"
+            : "backgroundColor";
         var selection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
         if (selection is not null)
         {
@@ -7744,8 +7900,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         var text = string.Concat(inlines.Select(GetInlineText));
-        var start = Math.Clamp(anchor.StartOffset.Value, 0, text.Length);
-        var end = Math.Clamp(anchor.EndOffset.Value, 0, text.Length);
+        var (start, end) = ResolveCommentAnchorOffsets(inlines, anchor, text.Length);
         if (start >= end)
         {
             return false;
@@ -7786,6 +7941,38 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         inlines.Clear();
         inlines.AddRange(replacement);
         return true;
+    }
+
+    private static (int Start, int End) ResolveCommentAnchorOffsets(
+        IReadOnlyList<InlineContent> inlines,
+        DocumentCommentAnchor anchor,
+        int textLength)
+    {
+        var start = anchor.StartInlineIndex is int startInlineIndex
+            ? GetAbsoluteInlineOffset(inlines, startInlineIndex, anchor.StartOffset ?? 0)
+            : anchor.StartOffset.GetValueOrDefault();
+        var end = anchor.EndInlineIndex is int endInlineIndex
+            ? GetAbsoluteInlineOffset(inlines, endInlineIndex, anchor.EndOffset ?? textLength)
+            : anchor.EndOffset.GetValueOrDefault(textLength);
+
+        return (
+            Math.Clamp(start, 0, textLength),
+            Math.Clamp(end, 0, textLength));
+    }
+
+    private static int GetAbsoluteInlineOffset(
+        IReadOnlyList<InlineContent> inlines,
+        int inlineIndex,
+        int inlineOffset)
+    {
+        var clampedIndex = Math.Clamp(inlineIndex, 0, inlines.Count);
+        var total = 0;
+        for (var index = 0; index < clampedIndex; index++)
+        {
+            total += GetInlineText(inlines[index]).Length;
+        }
+
+        return total + Math.Max(0, inlineOffset);
     }
 
     private static void AddCommentMarkedTextSlice(
@@ -8001,6 +8188,61 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         var inlines = GetEditableInlines(block.Content);
         return inlines is null ? string.Empty : string.Concat(inlines.Select(GetInlineText));
+    }
+
+    private sealed class DocumentEditorSelectionContext
+    {
+        public static DocumentEditorSelectionContext Empty { get; } = new()
+        {
+            Selection = new WysiwygSelectionSnapshot()
+        };
+
+        public required WysiwygSelectionSnapshot Selection { get; init; }
+
+        public string ActiveRegion { get; init; } = "Body";
+
+        public DocumentEditorInlineRange? ActiveTextRange { get; init; }
+
+        public string? ActiveImageId { get; init; }
+
+        public string? ActiveTableId { get; init; }
+
+        public string? ActiveTableCellId { get; init; }
+
+        public string? ActiveCommentId { get; init; }
+
+        public string? ActiveRevisionId { get; init; }
+
+        public WysiwygFormattingState FormattingState { get; init; } = new();
+
+        public IReadOnlyDictionary<string, object?> ObjectProperties { get; init; } = new Dictionary<string, object?>();
+
+        public static DocumentEditorSelectionContext FromSnapshot(
+            WysiwygSelectionSnapshot snapshot,
+            WysiwygFormattingState formattingState,
+            IReadOnlyDictionary<string, object?> objectProperties)
+        {
+            return new DocumentEditorSelectionContext
+            {
+                Selection = snapshot,
+                ActiveRegion = string.IsNullOrWhiteSpace(snapshot.Region) ? "Body" : snapshot.Region,
+                ActiveTextRange = string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
+                    ? null
+                    : new DocumentEditorInlineRange
+                    {
+                        BlockId = snapshot.AnchorBlockId,
+                        StartOffset = snapshot.AnchorOffset,
+                        EndOffset = snapshot.IsCollapsed ? snapshot.AnchorOffset : snapshot.FocusOffset
+                    },
+                ActiveImageId = snapshot.ActiveImageBlockId,
+                ActiveTableId = snapshot.ActiveTableId,
+                ActiveTableCellId = snapshot.ActiveTableCellId,
+                ActiveCommentId = snapshot.ActiveCommentId,
+                ActiveRevisionId = snapshot.ActiveRevisionId,
+                FormattingState = formattingState,
+                ObjectProperties = objectProperties
+            };
+        }
     }
 
     private static T CloneForEditor<T>(T value)

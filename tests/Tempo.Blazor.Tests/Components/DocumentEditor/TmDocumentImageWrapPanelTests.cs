@@ -60,12 +60,14 @@ public sealed class TmDocumentImageWrapPanelTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Panel_PositionButtonsHidden_WhenTopBottomMode()
+    public void Panel_PositionButtonsVisible_WhenTopBottomMode()
     {
         var cut = RenderComponent<TmDocumentImageWrapPanel>(p => p
             .Add(x => x.CurrentWrapMode, DocumentWrapMode.TopBottom));
 
-        cut.FindAll("[data-testid='document-image-position-left']").Should().BeEmpty();
+        cut.Find("[data-testid='document-image-position-left']").Should().NotBeNull();
+        cut.Find("[data-testid='document-image-position-center']").Should().NotBeNull();
+        cut.Find("[data-testid='document-image-position-right']").Should().NotBeNull();
     }
 
     // ─── Active state ─────────────────────────────────────────────────────────

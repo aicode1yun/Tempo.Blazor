@@ -52,7 +52,10 @@
         <ul class="tm-document-revision-panel__list">
             @foreach (var revision in FilteredPendingRevisions)
             {
-                <li class="tm-document-revision-panel__item" data-testid="document-revision-item" data-revision-id="@revision.Id">
+                <li class="@GetItemClass(revision)"
+                    data-testid="document-revision-item"
+                    data-revision-id="@revision.Id"
+                    aria-current="@(string.Equals(SelectedRevisionId, revision.Id, StringComparison.Ordinal) ? "true" : "false")">
                     <button type="button"
                             class="tm-document-revision-panel__summary"
                             @onclick="() => OnSelectRevision.InvokeAsync(revision)">
@@ -104,6 +107,9 @@
     /// <summary>Optional status message.</summary>
     [Parameter] public string? StatusMessage { get; set; }
 
+    /// <summary>Currently selected revision id.</summary>
+    [Parameter] public string? SelectedRevisionId { get; set; }
+
     /// <summary>Raised when a revision is selected.</summary>
     [Parameter] public EventCallback<DocumentRevision> OnSelectRevision { get; set; }
 
@@ -153,6 +159,11 @@
         };
 
     private bool CanBatchReview => CanReview && !IsBusy && FilteredPendingRevisions.Count > 0;
+
+    private string GetItemClass(DocumentRevision revision)
+        => string.Equals(SelectedRevisionId, revision.Id, StringComparison.Ordinal)
+            ? "tm-document-revision-panel__item tm-document-revision-panel__item--selected"
+            : "tm-document-revision-panel__item";
 
     private string GetTypeLabel(DocumentRevision revision)
         => GetTypeLabel(revision.Type);

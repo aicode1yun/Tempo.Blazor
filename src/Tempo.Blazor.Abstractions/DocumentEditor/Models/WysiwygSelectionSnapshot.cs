@@ -51,11 +51,20 @@ public sealed class WysiwygSelectionSnapshot
     /// <summary>Phase 13: When the selection is inside a table cell, this is the cell id.</summary>
     public string? ActiveTableCellId { get; set; }
 
+    /// <summary>Table block id when the selection is inside or targets a table.</summary>
+    public string? ActiveTableId { get; set; }
+
     /// <summary>Stable table cell path when the selection is inside a table cell.</summary>
     public string? TableCellPath { get; set; }
 
     /// <summary>Selected image block id when the active region is an image object.</summary>
     public string? ActiveImageBlockId { get; set; }
+
+    /// <summary>Comment id when the active selection targets a comment anchor.</summary>
+    public string? ActiveCommentId { get; set; }
+
+    /// <summary>Revision id when the active selection targets a tracked-change marker.</summary>
+    public string? ActiveRevisionId { get; set; }
 
     /// <summary>Layout line id that produced the active caret hit-test, when available.</summary>
     public string? LayoutLineId { get; set; }

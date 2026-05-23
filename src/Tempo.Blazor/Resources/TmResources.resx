@@ -3173,6 +3173,9 @@
   <data name="TmDocumentEditor_ImageUrl"               xml:space="preserve"><value>Image URL</value></data>
   <data name="TmDocumentEditor_ImageAltText"           xml:space="preserve"><value>Alt text</value></data>
   <data name="TmDocumentEditor_ImageCaption"           xml:space="preserve"><value>Caption</value></data>
+  <data name="TmDocumentEditor_ImageReplace"           xml:space="preserve"><value>Replace</value></data>
+  <data name="TmDocumentEditor_ImageDelete"            xml:space="preserve"><value>Delete</value></data>
+  <data name="TmDocumentEditor_ImageMoreOptions"       xml:space="preserve"><value>More image options</value></data>
   <data name="TmDocumentEditor_ImageWidth"             xml:space="preserve"><value>Width</value></data>
   <data name="TmDocumentEditor_ImageTools"             xml:space="preserve"><value>Image tools</value></data>
   <data name="TmDocumentEditor_GroupParagraph"         xml:space="preserve"><value>Paragraph</value></data>
@@ -3307,6 +3310,7 @@
   <data name="TmDocumentEditor_ImageWrapInFrontOfText" xml:space="preserve"><value>In front of text</value></data>
   <data name="TmDocumentEditor_ImagePosition"          xml:space="preserve"><value>Position</value></data>
   <data name="TmDocumentEditor_ImagePositionLeft"      xml:space="preserve"><value>Left</value></data>
+  <data name="TmDocumentEditor_ImagePositionCenter"    xml:space="preserve"><value>Center</value></data>
   <data name="TmDocumentEditor_ImagePositionRight"     xml:space="preserve"><value>Right</value></data>
   <data name="TmDocumentEditor_ImagePositionX"         xml:space="preserve"><value>X</value></data>
   <data name="TmDocumentEditor_ImagePositionY"         xml:space="preserve"><value>Y</value></data>
@@ -3329,6 +3333,8 @@
   <data name="TmDocumentEditor_ImageMoveWithText"      xml:space="preserve"><value>Move with text</value></data>
   <data name="TmDocumentEditor_ImageFixedOnPage"       xml:space="preserve"><value>Fixed on page</value></data>
   <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Lock anchor</value></data>
+  <data name="TmDocumentEditor_ImageLockAspectRatio"   xml:space="preserve"><value>Lock aspect ratio</value></data>
+  <data name="TmDocumentEditor_ImageResetSize"         xml:space="preserve"><value>Reset size</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Page break</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG document surface</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editable document surface. Use Tab to move between the ribbon, header, body, footer, and comments.</value></data>

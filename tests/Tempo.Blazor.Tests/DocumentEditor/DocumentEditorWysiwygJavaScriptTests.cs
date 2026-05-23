@@ -1,5 +1,8 @@
 using System.Diagnostics;
+using System.Text.Json;
 using FluentAssertions;
+using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.DocumentEditor.Services;
 
 namespace Tempo.Blazor.Tests.DocumentEditor;
 
@@ -603,6 +606,135 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         result.ExitCode.Should().Be(0, result.StandardError);
     }
 
+    [Fact]
+    public async Task Phase4Comments_ImportBuildsVisibleMarkerStoreAndExportsComments()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var provider = new InMemoryDocumentEditorProvider();
+        var sourceDocument = provider.SeedRecoveryDocument();
+        var sourcePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(sourcePath, DocumentEditorJson.Serialize(sourceDocument));
+
+        try
+        {
+            var nodeScript =
+                """
+                const fs = require('fs');
+                const vm = require('vm');
+                const assert = require('assert');
+
+                const code = fs.readFileSync(process.argv[2], 'utf8');
+                const source = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'));
+                const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+                sandbox.window.setTimeout = setTimeout;
+                sandbox.window.clearTimeout = clearTimeout;
+                sandbox.window.console = console;
+                vm.createContext(sandbox);
+                vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+                const engine = sandbox.window.tmDocumentEditorEngine;
+                const model = engine.model.importFromCSharpJson(source);
+                const marker = engine.__testHooks.buildRuntimeCommentMarkers(model)
+                    .find(item => item.targetId === 'recovery-comment-visible');
+                assert.ok(marker, 'comment marker must be created from the inline comment anchor');
+                assert.strictEqual(marker.type, 'comment');
+                assert.strictEqual(marker.range.startBlockId, 'recovery-comment-paragraph');
+                assert.ok(marker.range.startOffset > 0, 'inline mark range must include the paragraph prefix');
+                assert.strictEqual(marker.range.endOffset - marker.range.startOffset, 'visible comment anchor'.length);
+
+                const exported = engine.model.exportToCSharpJson(model);
+                assert.ok(exported.Comments.some(comment => comment.Id === 'recovery-comment-visible'));
+                console.log(JSON.stringify({ ProtocolVersion: 1, Document: exported }));
+                """;
+
+            var result = await RunNodeAsync(scriptPath, nodeScript, sourcePath);
+            result.ExitCode.Should().Be(0, result.StandardError);
+
+            var snapshot = JsonSerializer.Deserialize<WysiwygDocumentSnapshot>(
+                result.StandardOutput.Trim(),
+                new JsonSerializerOptions(DocumentEditorJson.Options) { PropertyNameCaseInsensitive = true });
+            snapshot.Should().NotBeNull();
+            snapshot!.Document.Comments.Should().Contain(comment => comment.Id == "recovery-comment-visible");
+        }
+        finally
+        {
+            File.Delete(sourcePath);
+        }
+    }
+
+    [Fact]
+    public async Task Phase5Revisions_ImportBuildsVisibleMarkerStoreAndExportsRevisions()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var provider = new InMemoryDocumentEditorProvider();
+        var sourceDocument = provider.SeedRecoveryDocument();
+        var sourcePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(sourcePath, DocumentEditorJson.Serialize(sourceDocument));
+
+        try
+        {
+            var nodeScript =
+                """
+                const fs = require('fs');
+                const vm = require('vm');
+                const assert = require('assert');
+
+                const code = fs.readFileSync(process.argv[2], 'utf8');
+                const source = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'));
+                const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+                sandbox.window.setTimeout = setTimeout;
+                sandbox.window.clearTimeout = clearTimeout;
+                sandbox.window.console = console;
+                vm.createContext(sandbox);
+                vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+                const engine = sandbox.window.tmDocumentEditorEngine;
+                const hooks = engine.__testHooks;
+                const model = engine.model.importFromCSharpJson(source);
+                const markers = hooks.buildRuntimeRevisionMarkers(model);
+                const insertion = markers.find(item => item.targetId === 'recovery-revision-insertion');
+                const deletion = markers.find(item => item.targetId === 'recovery-revision-deletion');
+
+                assert.ok(insertion, 'insertion revision marker must be created from the imported model');
+                assert.strictEqual(insertion.type, 'revisionInsertion');
+                assert.strictEqual(insertion.blockId, 'recovery-insertion-revision-paragraph');
+                assert.strictEqual(insertion.range.endOffset - insertion.range.startOffset, 'inserted recovery clause'.length);
+                assert.strictEqual(insertion.insertedText, 'inserted recovery clause');
+
+                assert.ok(deletion, 'deletion revision marker must be created from the imported model');
+                assert.strictEqual(deletion.type, 'revisionDeletion');
+                assert.strictEqual(deletion.blockId, 'recovery-deletion-revision-paragraph');
+                assert.strictEqual(deletion.range.endOffset - deletion.range.startOffset, 'deleted recovery clause'.length);
+                assert.strictEqual(deletion.originalText, 'deleted recovery clause');
+
+                const exported = engine.model.exportToCSharpJson(model);
+                assert.ok(exported.Revisions.some(revision => revision.Id === 'recovery-revision-insertion'));
+                assert.ok(exported.Revisions.some(revision => revision.Id === 'recovery-revision-deletion'));
+                console.log(JSON.stringify({ ProtocolVersion: 1, Document: exported }));
+                """;
+
+            var result = await RunNodeAsync(scriptPath, nodeScript, sourcePath);
+            result.ExitCode.Should().Be(0, result.StandardError);
+
+            var snapshot = JsonSerializer.Deserialize<WysiwygDocumentSnapshot>(
+                result.StandardOutput.Trim(),
+                new JsonSerializerOptions(DocumentEditorJson.Options) { PropertyNameCaseInsensitive = true });
+            snapshot.Should().NotBeNull();
+            snapshot!.Document.Revisions.Should().Contain(revision => revision.Id == "recovery-revision-insertion");
+            snapshot.Document.Revisions.Should().Contain(revision => revision.Id == "recovery-revision-deletion");
+        }
+        finally
+        {
+            File.Delete(sourcePath);
+        }
+    }
+
     // ─── 8.x Table serialization ──────────────────────────────────────────────
 
     [Fact]
@@ -743,19 +875,24 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         }
     }
 
-    private static async Task<NodeResult> RunNodeAsync(string scriptPath, string nodeScript)
+    private static async Task<NodeResult> RunNodeAsync(string scriptPath, string nodeScript, params string[] additionalArguments)
     {
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = "node",
-                ArgumentList = { "-", scriptPath },
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             }
         };
+        process.StartInfo.ArgumentList.Add("-");
+        process.StartInfo.ArgumentList.Add(scriptPath);
+        foreach (var argument in additionalArguments)
+        {
+            process.StartInfo.ArgumentList.Add(argument);
+        }
 
         process.Start();
         await process.StandardInput.WriteAsync(nodeScript);
@@ -2632,5 +2769,146 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         jsText.Should().Contain("live-typing-dom-patch");
         jsText.Should().Contain("data-live-typing-patch");
         jsText.Should().Contain("renderLiveParagraphHtml");
+    }
+
+    [Fact]
+    public async Task Phase3HeaderFooter_ImportAndLayoutPreserveRegions()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const engine = sandbox.window.tmDocumentEditorEngine;
+            const model = engine.model.importFromCSharpJson({
+                DocumentId: 'phase3-js',
+                Blocks: [{ Id: 'body-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'body-r1', Text: 'Body' }] } }],
+                HeadersFooters: [
+                    { Id: 'header-primary', Type: 'Header', Scope: 'Primary', Blocks: [{ Id: 'header-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'header-r1', Text: 'Header' }] } }] },
+                    { Id: 'footer-primary', Type: 1, Scope: 'Primary', Blocks: [{ Id: 'footer-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'footer-r1', Text: 'Footer ' }, { Id: 'footer-page', Type: 'Field', FieldType: 'PageNumber', FallbackText: '1' }] } }] }
+                ]
+            });
+
+            assert.strictEqual(model.headers.length, 1);
+            assert.strictEqual(model.footers.length, 1);
+            assert.strictEqual(model.headers[0].scope, 'Primary');
+            assert.strictEqual(model.footers[0].id, 'footer-primary');
+            assert.strictEqual(model.indexes.blocks['header-p1'].content.runs[0].text, 'Header');
+            assert.strictEqual(model.indexes.blocks['footer-p1'].content.runs[1].kind, 'field');
+
+            const layout = engine.textLayout.createParagraphLayoutEngine().layoutDocument(model, {
+                page: { x: 0, y: 0, width: 600, height: 800 },
+                margins: { top: 48, right: 48, bottom: 48, left: 48 },
+                headerHeight: 32,
+                footerHeight: 32
+            });
+            assert.strictEqual(layout.headerFooterRegions.length, 2);
+            assert.ok(layout.headerFooterRegions.some(region => region.region === 'Header' && region.headerFooterId === 'header-primary'));
+            assert.ok(layout.headerFooterRegions.some(region => region.region === 'Footer' && region.headerFooterId === 'footer-primary'));
+            assert.ok(layout.pages[0].headerFrame.y < layout.pages[0].bodyFrame.y);
+            assert.ok(layout.pages[0].footerFrame.y > layout.pages[0].bodyFrame.y);
+
+            const exported = engine.model.exportToCSharpJson(model);
+            assert.strictEqual(exported.HeadersFooters.length, 2);
+            assert.ok(exported.HeadersFooters.some(region => region.Region === 'Footer' && region.Type === 1 && region.Scope === 0));
+            assert.strictEqual(exported.HeadersFooters[0].Blocks[0].Content.$type, 'paragraph');
+            assert.strictEqual(exported.HeadersFooters[0].Blocks[0].Content.Inlines[0].$type, 'text');
+            console.log(JSON.stringify({ ProtocolVersion: 1, Document: exported }));
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        var snapshot = JsonSerializer.Deserialize<WysiwygDocumentSnapshot>(
+            result.StandardOutput.Trim(),
+            new JsonSerializerOptions(DocumentEditorJson.Options) { PropertyNameCaseInsensitive = true });
+        snapshot.Should().NotBeNull();
+        snapshot!.Document.HeadersFooters.Should().Contain(region => region.Type == DocumentHeaderFooterType.Footer);
+    }
+
+    [Fact]
+    public async Task Phase3HeaderFooter_FullContractExportDeserializesForProviderSave()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var provider = new InMemoryDocumentEditorProvider();
+        var sourceDocument = provider.SeedRecoveryDocument();
+        var sourcePath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(sourcePath, DocumentEditorJson.Serialize(sourceDocument));
+
+        try
+        {
+            var nodeScript =
+                """
+                const fs = require('fs');
+                const vm = require('vm');
+
+                const code = fs.readFileSync(process.argv[2], 'utf8');
+                const source = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'));
+                const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+                sandbox.window.setTimeout = setTimeout;
+                sandbox.window.clearTimeout = clearTimeout;
+                sandbox.window.console = console;
+                vm.createContext(sandbox);
+                vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+                const engine = sandbox.window.tmDocumentEditorEngine;
+                const model = engine.model.importFromCSharpJson(source);
+                const footer = model.footers[0].blocks[0].content.runs[0];
+                footer.text = footer.text + ' provider-boundary';
+                const exported = engine.model.exportToCSharpJson(model);
+                console.log(JSON.stringify({ ProtocolVersion: 1, Document: exported }));
+                """;
+
+            var result = await RunNodeAsync(scriptPath, nodeScript, sourcePath);
+            result.ExitCode.Should().Be(0, result.StandardError);
+            var snapshot = JsonSerializer.Deserialize<WysiwygDocumentSnapshot>(
+                result.StandardOutput.Trim(),
+                new JsonSerializerOptions(DocumentEditorJson.Options) { PropertyNameCaseInsensitive = true });
+            snapshot.Should().NotBeNull();
+            var footerText = snapshot!.Document.HeadersFooters
+                .Where(region => region.Type == DocumentHeaderFooterType.Footer)
+                .SelectMany(region => region.Blocks)
+                .Select(block => block.Content)
+                .OfType<ParagraphBlockContent>()
+                .SelectMany(content => content.Inlines)
+                .OfType<TextRun>()
+                .Select(run => run.Text)
+                .FirstOrDefault(text => text.Contains("provider-boundary", StringComparison.Ordinal));
+            footerText.Should().NotBeNull();
+        }
+        finally
+        {
+            File.Delete(sourcePath);
+        }
+    }
+
+    [Fact]
+    public void Phase3Runtime_ContainsHeaderFooterRendererAndSelectionRouting()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        var jsText = File.ReadAllText(scriptPath);
+
+        jsText.Should().Contain("renderHeaderFooterHtml");
+        jsText.Should().Contain("resolveHeaderFooterRegion");
+        jsText.Should().Contain("document-page-header");
+        jsText.Should().Contain("document-page-footer");
+        jsText.Should().Contain("HeaderFooterId");
+        jsText.Should().Contain("flushTypingBoundaryPatchDispatch");
     }
 }

@@ -166,17 +166,69 @@ window.tmDocumentEditorEngine = (function () {
         var kind = 'text';
         if (type.indexOf('field') >= 0 || _hasOwn(raw, 'FieldType') || _hasOwn(raw, 'fieldType')) kind = 'field';
         if (type.indexOf('token') >= 0 || _hasOwn(raw, 'Key') || _hasOwn(raw, 'key')) kind = 'token';
+        var marks = _asArray(_read(raw, 'Marks', 'marks', [])).map(_sortObject);
+        var revisionId = _read(raw, 'RevisionId', 'revisionId', null) || readRevisionIdFromMarks(marks);
         return _sortObject({
             id: _asText(_read(raw, 'Id', 'id', '')) || _stableId('inline', path),
             kind: kind,
             text: _asText(_read(raw, 'Text', 'text', _read(raw, 'FallbackText', 'fallbackText', _read(raw, 'Key', 'key', '')))),
             key: _read(raw, 'Key', 'key', null),
             fieldType: _read(raw, 'FieldType', 'fieldType', null),
-            marks: _asArray(_read(raw, 'Marks', 'marks', [])).map(_sortObject),
+            marks: marks,
             style: _sortObject(_read(raw, 'Style', 'style', {}) || {}),
-            revisionId: _read(raw, 'RevisionId', 'revisionId', null),
+            revisionId: revisionId || null,
             commentIds: _asArray(_read(raw, 'CommentIds', 'commentIds', []))
         });
+    }
+
+    function readInlineMarkType(mark) {
+        var value = mark && (mark.type ?? mark.Type);
+        if (value === 7) return 'CommentAnchor';
+        if (value === 8) return 'Revision';
+        var key = _asText(value).replace(/[^a-z]/gi, '').toLowerCase();
+        if (key === 'commentanchor') return 'CommentAnchor';
+        if (key === 'revision' || key === 'revisionanchor') return 'Revision';
+        return _asText(value);
+    }
+
+    function readCommentIdFromMark(mark) {
+        if (readInlineMarkType(mark) !== 'CommentAnchor') return '';
+        var anchor = mark && (mark.CommentAnchor || mark.commentAnchor) || {};
+        return _asText(anchor.CommentId || anchor.commentId || mark.CommentId || mark.commentId || '');
+    }
+
+    function readCommentIdsFromRun(run) {
+        var ids = _asArray(run && (run.commentIds || run.CommentIds)).map(_asText).filter(Boolean);
+        _asArray(run && (run.marks || run.Marks)).forEach(function (mark) {
+            var id = readCommentIdFromMark(mark);
+            if (id && ids.indexOf(id) < 0) ids.push(id);
+        });
+        return ids;
+    }
+
+    function readRevisionIdFromMark(mark) {
+        if (readInlineMarkType(mark) !== 'Revision') return '';
+        return _asText(mark && (mark.revisionId || mark.RevisionId || mark.value || mark.Value || ''));
+    }
+
+    function readRevisionIdFromMarks(marks) {
+        var id = '';
+        _asArray(marks).some(function (mark) {
+            id = readRevisionIdFromMark(mark);
+            return !!id;
+        });
+        return id;
+    }
+
+    function readRevisionIdsFromRun(run) {
+        var ids = [];
+        var direct = _asText(run && (run.revisionId || run.RevisionId || ''));
+        if (direct) ids.push(direct);
+        _asArray(run && (run.marks || run.Marks)).forEach(function (mark) {
+            var id = readRevisionIdFromMark(mark);
+            if (id && ids.indexOf(id) < 0) ids.push(id);
+        });
+        return ids;
     }
 
     function importParagraphContent(source, path) {
@@ -201,12 +253,18 @@ window.tmDocumentEditorEngine = (function () {
         return _sortObject({
             type: 'image',
             objectId: _asText(_read(content, 'ObjectId', 'objectId', _read(content, 'Id', 'id', ''))) || _stableId('object', path),
+            source: _read(content, 'Source', 'source', 0),
             url: _read(content, 'Url', 'url', null),
             assetId: _read(content, 'AssetId', 'assetId', null),
             altText: _asText(_read(content, 'AltText', 'altText', '')),
+            isDecorative: _read(content, 'IsDecorative', 'isDecorative', false) === true,
             caption: _asText(_read(content, 'Caption', 'caption', '')),
+            size: _sortObject(_read(content, 'Size', 'size', {}) || {}),
+            naturalSize: _sortObject(_read(content, 'NaturalSize', 'naturalSize', {}) || {}),
+            alignment: _read(content, 'Alignment', 'alignment', 1),
             layout: _sortObject(_read(content, 'Layout', 'layout', _read(content, 'FloatingLayout', 'floatingLayout', {})) || {}),
-            style: _sortObject(_read(content, 'Style', 'style', {}) || {})
+            style: _sortObject(_read(content, 'Style', 'style', {}) || {}),
+            linkUrl: _read(content, 'LinkUrl', 'linkUrl', null)
         });
     }
 
@@ -269,9 +327,18 @@ window.tmDocumentEditorEngine = (function () {
 
     function importRegion(source, path, type) {
         var region = source || {};
+        var sourceType = String(_read(region, 'Region', 'region', _read(region, 'Type', 'type', type))).toLowerCase();
+        var numericType = Number(_read(region, 'Type', 'type', Number.NaN));
+        var normalizedType = sourceType.indexOf('footer') >= 0 || numericType === 1
+            ? 'footer'
+            : sourceType.indexOf('header') >= 0 || numericType === 0
+                ? 'header'
+                : type;
         return _sortObject({
             id: _asText(_read(region, 'Id', 'id', '')) || _stableId(type, path),
-            type: type,
+            type: normalizedType,
+            scope: _asText(_read(region, 'Scope', 'scope', 'Primary')) || 'Primary',
+            sectionId: _read(region, 'SectionId', 'sectionId', null),
             blocks: _asArray(_read(region, 'Blocks', 'blocks', [])).map(function (block, index) {
                 return importBlock(block, path + '-block-' + index);
             })
@@ -325,6 +392,11 @@ window.tmDocumentEditorEngine = (function () {
     function importFromCSharpJson(document) {
         var source = document && (document.Document || document.document) ? (document.Document || document.document) : (document || {});
         var headerFooterRegions = _asArray(_read(source, 'HeadersFooters', 'headersFooters', []));
+        var isFooterRegion = function (region) {
+            var typeValue = _read(region, 'Region', 'region', _read(region, 'Type', 'type', 'header'));
+            var numericType = Number(_read(region, 'Type', 'type', Number.NaN));
+            return String(typeValue).toLowerCase().indexOf('footer') >= 0 || numericType === 1;
+        };
         var model = _sortObject({
             schemaVersion: Number(_read(source, 'SchemaVersion', 'schemaVersion', 1) || 1),
             documentId: _asText(_read(source, 'DocumentId', 'documentId', 'document')),
@@ -332,12 +404,8 @@ window.tmDocumentEditorEngine = (function () {
             metadata: _sortObject(_read(source, 'Metadata', 'metadata', {}) || {}),
             pageSettings: _sortObject(_read(source, 'PageSettings', 'pageSettings', {}) || {}),
             body: importRegion({ Id: 'body', Blocks: _read(source, 'Blocks', 'blocks', []) }, 'body', 'body'),
-            headers: headerFooterRegions.filter(function (region) {
-                return String(_read(region, 'Region', 'region', _read(region, 'Type', 'type', 'header'))).toLowerCase().indexOf('footer') < 0;
-            }).map(function (region, index) { return importRegion(region, 'header-' + index, 'header'); }),
-            footers: headerFooterRegions.filter(function (region) {
-                return String(_read(region, 'Region', 'region', _read(region, 'Type', 'type', 'header'))).toLowerCase().indexOf('footer') >= 0;
-            }).map(function (region, index) { return importRegion(region, 'footer-' + index, 'footer'); }),
+            headers: headerFooterRegions.filter(function (region) { return !isFooterRegion(region); }).map(function (region, index) { return importRegion(region, 'header-' + index, 'header'); }),
+            footers: headerFooterRegions.filter(isFooterRegion).map(function (region, index) { return importRegion(region, 'footer-' + index, 'footer'); }),
             revisions: _asArray(_read(source, 'Revisions', 'revisions', [])).map(normalizeRevision),
             comments: _asArray(_read(source, 'Comments', 'comments', [])).map(_sortObject),
             assets: _asArray(_read(source, 'Assets', 'assets', [])).map(_sortObject)
@@ -349,35 +417,180 @@ window.tmDocumentEditorEngine = (function () {
     function exportInlineRun(run) {
         var result = {
             Id: run.id,
-            Marks: _clone(run.marks || []),
-            Text: _asText(run.text)
+            Marks: _clone(run.marks || [])
         };
         if (run.kind === 'field') {
-            result.Type = 'Field';
-            result.FieldType = run.fieldType || null;
+            result.$type = 'field';
+            result.FieldType = exportFieldType(run.fieldType);
+            result.FallbackText = run.fallbackText || run.text || null;
+            result.DisplayText = run.text || run.displayText || null;
         } else if (run.kind === 'token') {
-            result.Type = 'Token';
+            result.$type = 'token';
             result.Key = run.key || run.text || '';
+            result.DisplayName = run.displayName || run.text || run.key || '';
+            result.FallbackText = run.fallbackText || run.text || null;
         } else {
-            result.Type = 'Text';
+            result.$type = 'text';
+            result.Text = _asText(run.text);
         }
         return _sortObject(result);
+    }
+
+    function exportBlockType(block) {
+        var type = String(block && block.type || '').toLowerCase();
+        if (type === 'heading') return 1;
+        if (type === 'list') return 2;
+        if (type === 'quote') return 3;
+        if (type === 'table') return 4;
+        if (type === 'image') return 5;
+        if (type === 'pagebreak' || type === 'page-break') return 6;
+        return 0;
+    }
+
+    function exportHeaderFooterType(region) {
+        return region && region.type === 'footer' ? 1 : 0;
+    }
+
+    function exportHeaderFooterScope(scope) {
+        var normalized = String(scope || 'Primary').toLowerCase();
+        if (normalized === 'firstpage' || normalized === 'first-page' || normalized === 'first') return 1;
+        if (normalized === 'evenpage' || normalized === 'evenpages' || normalized === 'even-page' || normalized === 'even-pages' || normalized === 'even') return 2;
+        if (normalized === 'oddpage' || normalized === 'oddpages' || normalized === 'odd-page' || normalized === 'odd-pages' || normalized === 'odd') return 3;
+        return 0;
+    }
+
+    function exportFieldType(fieldType) {
+        var normalized = String(fieldType || '').toLowerCase();
+        if (normalized.indexOf('pagecount') >= 0 || normalized.indexOf('page-count') >= 0 || normalized.indexOf('numpages') >= 0) return 1;
+        if (normalized.indexOf('pagexofy') >= 0 || normalized.indexOf('page-x-of-y') >= 0) return 2;
+        if (normalized.indexOf('date') >= 0) return 3;
+        if (normalized.indexOf('documenttitle') >= 0 || normalized.indexOf('document-title') >= 0 || normalized.indexOf('title') >= 0) return 4;
+        if (normalized.indexOf('author') >= 0) return 5;
+        if (normalized.indexOf('lastsaved') >= 0 || normalized.indexOf('last-saved') >= 0 || normalized.indexOf('modified') >= 0) return 6;
+        return 0;
+    }
+
+    function exportCommentAnchorType(value) {
+        var normalized = String(value || '').toLowerCase();
+        if (value === 1 || normalized === 'textrange' || normalized === 'text-range') return 1;
+        if (value === 2 || normalized.indexOf('docx') >= 0) return 2;
+        if (value === 3 || normalized.indexOf('odt') >= 0) return 3;
+        if (value === 4 || normalized === 'page') return 4;
+        if (value === 5 || normalized === 'rendition') return 5;
+        return 0;
+    }
+
+    function exportCommentStatus(value) {
+        if (value === 1) return 1;
+        return String(value || '').toLowerCase().indexOf('resolved') >= 0 ? 1 : 0;
+    }
+
+    function exportCommentVisibility(value) {
+        var normalized = String(value || '').toLowerCase();
+        if (value === 1 || normalized === 'external') return 1;
+        if (value === 2 || normalized === 'client') return 2;
+        if (value === 3 || normalized === 'public') return 3;
+        return 0;
+    }
+
+    function exportComment(comment) {
+        var source = comment || {};
+        var anchor = source.Anchor || source.anchor || {};
+        return _sortObject({
+            Id: readCommentId(source),
+            Anchor: {
+                Type: exportCommentAnchorType(anchor.Type ?? anchor.type),
+                BlockId: anchor.BlockId ?? anchor.blockId ?? null,
+                StartInlineIndex: anchor.StartInlineIndex ?? anchor.startInlineIndex ?? null,
+                StartOffset: anchor.StartOffset ?? anchor.startOffset ?? null,
+                EndInlineIndex: anchor.EndInlineIndex ?? anchor.endInlineIndex ?? null,
+                EndOffset: anchor.EndOffset ?? anchor.endOffset ?? null,
+                ExternalAnchorId: anchor.ExternalAnchorId ?? anchor.externalAnchorId ?? null,
+                RenditionAnchorId: anchor.RenditionAnchorId ?? anchor.renditionAnchorId ?? null,
+                IsOrphaned: anchor.IsOrphaned === true || anchor.isOrphaned === true
+            },
+            Entries: _asArray(source.Entries || source.entries).map(function (entry) {
+                return _sortObject({
+                    Id: entry.Id || entry.id || _stableId('comment-entry', readCommentId(source) + '-entry'),
+                    Author: _clone(entry.Author || entry.author || {}),
+                    IsExternalAuthor: entry.IsExternalAuthor === true || entry.isExternalAuthor === true,
+                    Text: _asText(entry.Text || entry.text),
+                    CreatedAt: entry.CreatedAt || entry.createdAt || null,
+                    ModifiedAt: entry.ModifiedAt || entry.modifiedAt || null
+                });
+            }),
+            Status: exportCommentStatus(source.Status ?? source.status),
+            Visibility: exportCommentVisibility(source.Visibility ?? source.visibility),
+            SourceFormat: source.SourceFormat ?? source.sourceFormat ?? null,
+            ExternalId: source.ExternalId ?? source.externalId ?? null,
+            ResolvedAt: source.ResolvedAt ?? source.resolvedAt ?? null,
+            ResolvedBy: _clone(source.ResolvedBy || source.resolvedBy || null)
+        });
+    }
+
+    function exportRevisionType(value) {
+        var normalized = String(value || '').toLowerCase();
+        if (value === 1 || normalized === 'deletion' || normalized === 'delete') return 1;
+        if (value === 2 || normalized === 'formatting' || normalized === 'formatchange' || normalized === 'format') return 2;
+        if (value === 3 || normalized === 'move') return 3;
+        if (value === 4 || normalized === 'structure' || normalized === 'structural') return 4;
+        if (value === 5 || normalized === 'image') return 5;
+        if (value === 6 || normalized === 'table') return 6;
+        return 0;
+    }
+
+    function exportRevisionAction(value) {
+        var normalized = String(value || '').toLowerCase();
+        if (value === 1 || normalized === 'accepted') return 1;
+        if (value === 2 || normalized === 'rejected') return 2;
+        return 0;
+    }
+
+    function exportRevision(revision) {
+        var source = revision || {};
+        var range = source.Range || source.range || source.affectedRange || source.AffectedRange || {};
+        var payload = source.PayloadJson ?? source.payloadJson;
+        if (payload === undefined && source.payload !== undefined) {
+            payload = typeof source.payload === 'string' ? source.payload : JSON.stringify(source.payload || {});
+        }
+        return _sortObject({
+            Id: _asText(source.Id || source.id),
+            Type: exportRevisionType(source.Type ?? source.type),
+            Range: {
+                BlockId: range.BlockId ?? range.blockId ?? null,
+                SourceBlockId: range.SourceBlockId ?? range.sourceBlockId ?? null,
+                StartInlineIndex: range.StartInlineIndex ?? range.startInlineIndex ?? null,
+                StartOffset: range.StartOffset ?? range.startOffset ?? range.start ?? null,
+                EndInlineIndex: range.EndInlineIndex ?? range.endInlineIndex ?? null,
+                EndOffset: range.EndOffset ?? range.endOffset ?? range.end ?? null
+            },
+            Author: _clone(source.Author || source.authorObject || source.author || {}),
+            CreatedAt: source.CreatedAt ?? source.createdAt ?? source.timestamp ?? null,
+            Action: exportRevisionAction(source.Action ?? source.action ?? source.status),
+            PayloadJson: payload ?? null
+        });
     }
 
     function exportBlock(block) {
         if (block.type === 'image') {
             return _sortObject({
                 Id: block.id,
-                Type: 'Image',
+                Type: exportBlockType(block),
                 Content: {
-                    Type: 'Image',
+                    $type: 'image',
                     Id: block.content.objectId,
+                    Source: block.content.source ?? 0,
                     Url: block.content.url,
                     AssetId: block.content.assetId,
                     AltText: block.content.altText,
+                    IsDecorative: block.content.isDecorative === true,
                     Caption: block.content.caption,
+                    Size: _clone(block.content.size || {}),
+                    NaturalSize: _clone(block.content.naturalSize || {}),
+                    Alignment: block.content.alignment ?? 1,
                     Layout: _clone(block.content.layout || {}),
-                    Style: _clone(block.content.style || {})
+                    Style: _clone(block.content.style || {}),
+                    LinkUrl: block.content.linkUrl ?? null
                 },
                 Style: _clone(block.style || {})
             });
@@ -385,9 +598,9 @@ window.tmDocumentEditorEngine = (function () {
         if (block.type === 'table') {
             return _sortObject({
                 Id: block.id,
-                Type: 'Table',
+                Type: exportBlockType(block),
                 Content: {
-                    Type: 'Table',
+                    $type: 'table',
                     Rows: _asArray(block.content.rows).map(function (row) {
                         return {
                             Id: row.id,
@@ -411,9 +624,9 @@ window.tmDocumentEditorEngine = (function () {
         }
         return _sortObject({
             Id: block.id,
-            Type: 'Paragraph',
+            Type: exportBlockType(block),
             Content: {
-                Type: 'Paragraph',
+                $type: block.type === 'heading' ? 'heading' : block.type === 'list' ? 'list' : block.type === 'quote' ? 'quote' : 'paragraph',
                 Alignment: block.content.alignment,
                 LineSpacing: block.content.lineSpacing,
                 Inlines: _asArray(block.content.runs).map(exportInlineRun),
@@ -435,13 +648,17 @@ window.tmDocumentEditorEngine = (function () {
             HeadersFooters: _asArray(source.headers).concat(_asArray(source.footers)).map(function (region) {
                 return {
                     Id: region.id,
+                    Type: exportHeaderFooterType(region),
                     Region: region.type === 'footer' ? 'Footer' : 'Header',
+                    Scope: exportHeaderFooterScope(region.scope),
+                    ScopeName: region.scope || 'Primary',
+                    SectionId: region.sectionId || null,
                     Blocks: _asArray(region.blocks).map(exportBlock)
                 };
             }),
-            Revisions: _clone(source.revisions || []),
-            Comments: _clone(source.comments || []),
-            Assets: _clone(source.assets || [])
+            Revisions: _asArray(source.revisions).map(exportRevision),
+            Comments: _asArray(source.comments).map(exportComment),
+            Assets: []
         });
     }
 
@@ -787,6 +1004,14 @@ window.tmDocumentEditorEngine = (function () {
         block.content.runs = _plainRuns(text, block.id + '-run-0');
     }
 
+    function cloneRunSlice(run, start, end, suffix) {
+        var text = _asText(run && run.text);
+        var next = _clone(run || {});
+        next.id = _asText(next.id || next.Id || _stableId('inline', 'run')) + suffix;
+        next.text = text.slice(Math.max(0, start), Math.max(0, end));
+        return next;
+    }
+
     function _insertTextRun(block, offset, text, attributes) {
         if (!block.content) block.content = { type: 'paragraph', runs: [] };
         var attrs = attributes || {};
@@ -834,6 +1059,57 @@ window.tmDocumentEditorEngine = (function () {
             }, attrs.revisionId ? { revisionId: attrs.revisionId } : {})));
         }
         block.content.runs = mergeAdjacentTextRuns(result);
+    }
+
+    function _deleteTextRange(block, start, end) {
+        if (!block || block.type !== 'paragraph') return;
+        if (!block.content) block.content = { type: 'paragraph', runs: [] };
+        var from = Math.max(0, Math.min(start, end));
+        var to = Math.max(from, Math.max(start, end));
+        var result = [];
+        var cursor = 0;
+        _asArray(block.content.runs).forEach(function (run) {
+            var runText = _asText(run.text);
+            var runStart = cursor;
+            var runEnd = cursor + runText.length;
+            cursor = runEnd;
+            if (runEnd <= from || runStart >= to || runText.length === 0) {
+                result.push(_clone(run));
+                return;
+            }
+            var localStart = Math.max(0, from - runStart);
+            var localEnd = Math.min(runText.length, to - runStart);
+            if (localStart > 0) result.push(cloneRunSlice(run, 0, localStart, '-d-before'));
+            if (localEnd < runText.length) result.push(cloneRunSlice(run, localEnd, runText.length, '-d-after'));
+        });
+        block.content.runs = mergeAdjacentTextRuns(result.length ? result : _plainRuns('', block.id + '-run-0'));
+    }
+
+    function _splitParagraphRuns(block, offset) {
+        var before = [];
+        var after = [];
+        var cursor = 0;
+        _asArray(block && block.content && block.content.runs).forEach(function (run) {
+            var runText = _asText(run.text);
+            var runStart = cursor;
+            var runEnd = cursor + runText.length;
+            cursor = runEnd;
+            if (runEnd <= offset) {
+                before.push(_clone(run));
+                return;
+            }
+            if (runStart >= offset) {
+                after.push(_clone(run));
+                return;
+            }
+            var local = Math.max(0, Math.min(runText.length, offset - runStart));
+            if (local > 0) before.push(cloneRunSlice(run, 0, local, '-s-before'));
+            if (local < runText.length) after.push(cloneRunSlice(run, local, runText.length, '-s-after'));
+        });
+        return {
+            before: mergeAdjacentTextRuns(before.length ? before : _plainRuns('', block.id + '-before-empty')),
+            after: mergeAdjacentTextRuns(after.length ? after : _plainRuns('', block.id + '-after-empty'))
+        };
     }
 
     function _splitRunsForRange(block, start, end, mark, remove) {
@@ -1084,11 +1360,7 @@ window.tmDocumentEditorEngine = (function () {
         var marks = _asArray(op.marks || op.Marks);
         var style = op.style || op.Style || {};
         var revisionId = op.revisionId || op.RevisionId || null;
-        if (marks.length > 0 || revisionId || Object.keys(style).length > 0) {
-            _insertTextRun(block, target.offset, inserted, { marks: marks, style: style, revisionId: revisionId });
-        } else {
-            _setParagraphText(block, text.slice(0, target.offset) + inserted + text.slice(target.offset));
-        }
+        _insertTextRun(block, target.offset, inserted, { marks: marks, style: style, revisionId: revisionId });
         var range = { blockId: block.id, start: target.offset, end: target.offset + inserted.length };
         differ.record({ insertedRange: range, invalidatedLayoutScopes: [block.id] });
         return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.end, isCollapsed: true } };
@@ -1100,7 +1372,7 @@ window.tmDocumentEditorEngine = (function () {
         var text = _blockText(block);
         var removed = text.slice(range.start, range.end);
         op.deletedText = removed;
-        _setParagraphText(block, text.slice(0, range.start) + text.slice(range.end));
+        _deleteTextRange(block, range.start, range.end);
         differ.record({ removedRange: { blockId: block.id, start: range.start, end: range.end, text: removed }, invalidatedLayoutScopes: [block.id] });
         return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.start, isCollapsed: true } };
     }
@@ -1110,18 +1382,19 @@ window.tmDocumentEditorEngine = (function () {
         var container = _findBlockContainer(model, target.blockId);
         var block = container.block;
         var text = _blockText(block);
+        var splitRuns = _splitParagraphRuns(block, target.offset);
         var newBlock = importBlock({
             Id: op.newBlockId || op.NewBlockId || _stableId('block', block.id + '-split-' + Date.now()),
             Type: 'Paragraph',
             Content: {
-                Inlines: [{ Text: text.slice(target.offset) }],
+                Inlines: splitRuns.after,
                 Alignment: block.content && block.content.alignment,
                 LineSpacing: block.content && block.content.lineSpacing,
                 Style: _clone(block.content && block.content.style || {})
             },
             Style: _clone(block.style || {})
         }, block.id + '-split');
-        _setParagraphText(block, text.slice(0, target.offset));
+        block.content.runs = splitRuns.before;
         container.blocks.splice(container.index + 1, 0, newBlock);
         differ.record({ insertedRange: { blockId: newBlock.id, start: 0, end: _blockText(newBlock).length }, invalidatedLayoutScopes: [block.id, newBlock.id] });
         return { ok: true, invalidatedLayoutScopes: [block.id, newBlock.id], nextSelection: { region: 'Body', blockId: newBlock.id, offset: 0, isCollapsed: true }, insertedBlockId: newBlock.id };
@@ -1178,10 +1451,17 @@ window.tmDocumentEditorEngine = (function () {
     function applyUpdateImageLayout(model, op, differ) {
         var target = _normalizeTarget(op.target || op.Target);
         var block = _findBlock(model, target.blockId);
-        block.content.layout = _sortObject(op.layout || op.Layout || {});
+        block.content.layout = syncImageLayoutCase(_clone(op.layout || op.Layout || {}));
+        var transform = block.content.layout.Transform || block.content.layout.transform || {};
+        var currentSize = block.content.size || {};
+        block.content.size = _sortObject({
+            width: transform.Width ?? transform.width ?? currentSize.width ?? null,
+            height: transform.Height ?? transform.height ?? currentSize.height ?? null,
+            lockAspectRatio: (transform.LockAspectRatio ?? transform.lockAspectRatio ?? currentSize.lockAspectRatio ?? true) !== false
+        });
         var affected = _unique([block.id].concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds)));
         differ.record({ objectChange: { blockId: block.id, type: 'layout' }, invalidatedLayoutScopes: affected, invalidatedOverlayScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: affected, nextSelection: { region: 'Body', blockId: block.id, offset: 0, isCollapsed: true } };
+        return { ok: true, invalidatedLayoutScopes: affected, nextSelection: imageSelectionForBlock(block) };
     }
 
     function applyUpdateImageMetadata(model, op, differ) {
@@ -1190,7 +1470,7 @@ window.tmDocumentEditorEngine = (function () {
         var metadata = op.metadata || op.Metadata || {};
         Object.assign(block.content, _sortObject(metadata));
         differ.record({ objectChange: { blockId: block.id, type: 'metadata' }, invalidatedLayoutScopes: [block.id], invalidatedOverlayScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: 0, isCollapsed: true } };
+        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: imageSelectionForBlock(block) };
     }
 
     function applyInsertTable(model, op, differ) {
@@ -1249,11 +1529,26 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function normalizeRevisionType(value) {
+        if (value === 1) return 'Deletion';
+        if (value === 2) return 'FormatChange';
+        if (value === 3) return 'Move';
+        if (value === 4) return 'Structure';
+        if (value === 5) return 'Image';
+        if (value === 6) return 'Table';
         var raw = String(value || '').replace(/\s+/g, '').toLowerCase();
         if (raw === 'insert' || raw === 'insertion') return 'Insertion';
         if (raw === 'delete' || raw === 'deletion') return 'Deletion';
         if (raw === 'format' || raw === 'formatchange' || raw === 'formatting') return 'FormatChange';
         return value ? String(value) : 'Insertion';
+    }
+
+    function normalizeRevisionStatus(value) {
+        if (value === 1) return 'Accepted';
+        if (value === 2) return 'Rejected';
+        var raw = String(value || '').toLowerCase();
+        if (raw.indexOf('accept') >= 0) return 'Accepted';
+        if (raw.indexOf('reject') >= 0) return 'Rejected';
+        return 'Pending';
     }
 
     function normalizeRevisionRange(value) {
@@ -1269,15 +1564,22 @@ window.tmDocumentEditorEngine = (function () {
 
     function normalizeRevision(raw) {
         var source = raw || {};
-        var range = normalizeRevisionRange(source.affectedRange || source.AffectedRange || source.range || source.Range || {});
+        var sourceRange = source.affectedRange || source.AffectedRange || source.range || source.Range || {};
+        var range = normalizeRevisionRange(sourceRange);
+        var author = source.Author || source.authorObject || source.author || {};
+        var payload = source.payload || source.Payload || source.PayloadJson || source.payloadJson || {};
         return _sortObject({
             id: _asText(source.id || source.Id || ('rev-' + Date.now() + '-' + Math.floor(Math.random() * 100000))),
-            type: normalizeRevisionType(source.type || source.Type || source.revisionType || source.RevisionType || 'Insertion'),
-            author: _asText(source.author || source.Author || source.authorId || source.AuthorId || 'local'),
+            type: normalizeRevisionType(source.type ?? source.Type ?? source.revisionType ?? source.RevisionType ?? 'Insertion'),
+            author: _asText(author.DisplayName || author.displayName || source.authorName || source.AuthorName || source.author || source.Author || source.authorId || source.AuthorId || 'local'),
+            authorObject: _sortObject(author || {}),
+            createdAt: source.CreatedAt || source.createdAt || null,
             timestamp: Number(source.timestamp || source.Timestamp || Date.now()) || Date.now(),
+            range: _sortObject(sourceRange || {}),
             affectedRange: range,
-            payload: _sortObject(source.payload || source.Payload || {}),
-            status: _asText(source.status || source.Status || 'Pending')
+            payload: typeof payload === 'string' ? { text: payload } : _sortObject(payload || {}),
+            payloadJson: source.PayloadJson || source.payloadJson || null,
+            status: normalizeRevisionStatus(source.action ?? source.Action ?? source.status ?? source.Status)
         });
     }
 
@@ -1436,6 +1738,10 @@ window.tmDocumentEditorEngine = (function () {
                     delete run.revisionId;
                     delete run.RevisionId;
                 }
+                run.marks = _asArray(run.marks || run.Marks).filter(function (mark) {
+                    return readRevisionIdFromMark(mark) !== revisionId;
+                });
+                delete run.Marks;
             });
             block.content.runs = mergeAdjacentTextRuns(block.content.runs);
         });
@@ -1446,7 +1752,7 @@ window.tmDocumentEditorEngine = (function () {
         _asArray(model && model.body && model.body.blocks).forEach(function (block) {
             if (block.type !== 'paragraph') return;
             block.content.runs = mergeAdjacentTextRuns(_asArray(block.content && block.content.runs).filter(function (run) {
-                return run.revisionId !== revisionId && run.RevisionId !== revisionId;
+                return readRevisionIdsFromRun(run).indexOf(revisionId) < 0;
             }));
         });
         buildIndexes(model);
@@ -1515,6 +1821,8 @@ window.tmDocumentEditorEngine = (function () {
             'strikethrough': 'strike',
             'text-color': 'textColor',
             'textcolor': 'textColor',
+            'set-text-color': 'textColor',
+            'settextcolor': 'textColor',
             'font-color': 'textColor',
             'fontcolor': 'textColor',
             'foreground-color': 'textColor',
@@ -1522,6 +1830,10 @@ window.tmDocumentEditorEngine = (function () {
             'background-color': 'backgroundColor',
             'backgroundcolor': 'backgroundColor',
             'highlight': 'backgroundColor',
+            'highlight-color': 'backgroundColor',
+            'highlightcolor': 'backgroundColor',
+            'set-highlight-color': 'backgroundColor',
+            'sethighlightcolor': 'backgroundColor',
             'link': 'link',
             'clear-formatting': 'clearFormatting',
             'clearformatting': 'clearFormatting',
@@ -1586,8 +1898,8 @@ window.tmDocumentEditorEngine = (function () {
             case 'italic': return { type: 'Italic' };
             case 'underline': return { type: 'Underline' };
             case 'strike': return { type: 'Strike' };
-            case 'textColor': return { type: 'TextColor', color: body.color || body.Color || body.value || body.Value || null };
-            case 'backgroundColor': return { type: 'BackgroundColor', color: body.color || body.Color || body.value || body.Value || null };
+            case 'textColor': return { type: 'TextColor', value: body.color || body.Color || body.value || body.Value || null };
+            case 'backgroundColor': return { type: 'Highlight', value: body.color || body.Color || body.value || body.Value || null };
             case 'link': return { type: 'Link', href: body.href || body.Href || body.url || body.Url || '' };
             default: return null;
         }
@@ -1765,6 +2077,46 @@ window.tmDocumentEditorEngine = (function () {
             disabledReasons: disabledReasons,
             fromRevisionDecoration: false
         });
+    }
+
+    function toBlazorFormattingState(formatting) {
+        var state = formatting || {};
+        var commandValues = state.commandValues || {};
+        var inline = state.inline || {};
+        var mixed = inline.mixed || {};
+        var paragraph = state.paragraph || {};
+        function triState(commandId) {
+            if (mixed[commandId] === true) return 2;
+            return commandValues[commandId] === true ? 1 : 0;
+        }
+        function alignmentValue(value) {
+            var normalized = String(value || 'left').toLowerCase();
+            if (normalized === 'center') return 1;
+            if (normalized === 'right' || normalized === 'end') return 2;
+            if (normalized === 'justify') return 3;
+            return 0;
+        }
+        return _sortObject(Object.assign({}, state, {
+            Bold: triState('bold'),
+            Italic: triState('italic'),
+            Underline: triState('underline'),
+            Strikethrough: triState('strike'),
+            ParagraphAlignment: alignmentValue(commandValues.alignment || paragraph.alignment),
+            ParagraphAlignmentMixed: false,
+            TextColor: commandValues.textColor || null,
+            TextColorMixed: mixed.textColor === true,
+            HighlightColor: commandValues.backgroundColor || null,
+            HighlightColorMixed: mixed.backgroundColor === true,
+            LineSpacing: Number(commandValues.lineSpacing || paragraph.lineSpacing || 1) || 1,
+            SpacingBefore: Number(commandValues.spacingBefore ?? paragraph.spacingBefore ?? 0) || 0,
+            SpacingAfter: Number(commandValues.spacingAfter ?? paragraph.spacingAfter ?? 0) || 0,
+            LeftIndent: Number(commandValues.indent ?? paragraph.indentLevel ?? 0) || 0,
+            IsBulletList: String(commandValues.list || paragraph.listType || '').toLowerCase() === 'bullet',
+            IsNumberedList: String(commandValues.list || paragraph.listType || '').toLowerCase() === 'numbered',
+            ListMixed: false,
+            ActiveRegion: state.selection && state.selection.region || 'Body',
+            CurrentSelection: state.selection || null
+        }));
     }
 
     function createTableController(model, options) {
@@ -2331,13 +2683,13 @@ window.tmDocumentEditorEngine = (function () {
         function renderOverlay(root, overlayModel) {
             if (!root) return { ok: false };
             root.innerHTML = '';
-            var overlay = document.createElement('div');
+            var overlay = markOverlayNonText(document.createElement('div'));
             overlay.setAttribute('data-render-overlay', 'revision');
             overlay.className = 'tm-render-revision-overlay';
             overlay.style.position = 'relative';
             overlay.style.zIndex = String((overlayModel && overlayModel.zIndex) || 12);
             _asArray(overlayModel && overlayModel.markers).forEach(function (marker) {
-                var node = document.createElement('span');
+                var node = markOverlayNonText(document.createElement('span'));
                 node.className = 'tm-render-revision-marker tm-render-revision-marker--' + String(marker.type || '').toLowerCase();
                 node.setAttribute('data-revision-overlay-id', marker.revisionId);
                 node.setAttribute('data-revision-type', marker.type);
@@ -2708,7 +3060,8 @@ window.tmDocumentEditorEngine = (function () {
             limitId: value.limitId || value.LimitId || null,
             objectId: value.objectId || value.ObjectId || null,
             cellId: value.cellId || value.CellId || null,
-            tableId: value.tableId || value.TableId || null
+            tableId: value.tableId || value.TableId || null,
+            headerFooterId: value.headerFooterId || value.HeaderFooterId || null
         });
     }
 
@@ -2731,6 +3084,22 @@ window.tmDocumentEditorEngine = (function () {
                 var anchor = createLogicalPosition(value.anchor || value.Anchor || value.position || value.Position || value);
                 var focus = createLogicalPosition(value.focus || value.Focus || value.anchor || value.Anchor || value.position || value.Position || value);
                 range = createLogicalRange(anchor, focus, value.direction || value.Direction || (anchor.offset <= focus.offset ? 'forward' : 'backward'));
+            } else if (value.anchorBlockId || value.AnchorBlockId || value.focusBlockId || value.FocusBlockId) {
+                var anchorPosition = createLogicalPosition({
+                    region: value.region || value.Region || 'Body',
+                    blockId: value.anchorBlockId || value.AnchorBlockId || value.focusBlockId || value.FocusBlockId || '',
+                    inlineId: value.anchorInlineId || value.AnchorInlineId || value.anchorNodeId || value.AnchorNodeId || null,
+                    offset: value.anchorOffset ?? value.AnchorOffset ?? value.anchorBlockOffset ?? value.AnchorBlockOffset ?? 0,
+                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null
+                });
+                var focusPosition = createLogicalPosition({
+                    region: value.region || value.Region || 'Body',
+                    blockId: value.focusBlockId || value.FocusBlockId || value.anchorBlockId || value.AnchorBlockId || '',
+                    inlineId: value.focusInlineId || value.FocusInlineId || value.focusNodeId || value.FocusNodeId || null,
+                    offset: value.focusOffset ?? value.FocusOffset ?? value.focusBlockOffset ?? value.FocusBlockOffset ?? value.anchorOffset ?? value.AnchorOffset ?? 0,
+                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null
+                });
+                range = createLogicalRange(anchorPosition, focusPosition, value.direction || value.Direction || (anchorPosition.offset <= focusPosition.offset ? 'forward' : 'backward'));
             } else {
                 var position = createLogicalPosition(value.position || value.Position || value);
                 range = createLogicalRange(position, position, 'none');
@@ -2747,6 +3116,7 @@ window.tmDocumentEditorEngine = (function () {
             affinity: createLogicalPosition(range.focus).affinity,
             visualHintLineId: createLogicalPosition(range.focus).visualHintLineId,
             limitId: createLogicalPosition(range.focus).limitId,
+            headerFooterId: value.headerFooterId || value.HeaderFooterId || createLogicalPosition(range.focus).headerFooterId || createLogicalPosition(range.anchor).headerFooterId || null,
             isCollapsed: range.isCollapsed !== false,
             direction: range.direction || 'none'
             ,
@@ -2754,7 +3124,14 @@ window.tmDocumentEditorEngine = (function () {
             cellId: value.cellId || value.CellId || createLogicalPosition(range.focus).cellId || null,
             tableId: value.tableId || value.TableId || createLogicalPosition(range.focus).tableId || null,
             isCellSelection: value.isCellSelection === true || value.IsCellSelection === true || !!(value.cellId || value.CellId || createLogicalPosition(range.focus).cellId),
-            isObjectSelection: value.isObjectSelection === true || value.IsObjectSelection === true || !!createLogicalPosition(range.focus).objectId && createLogicalPosition(range.focus).blockId === createLogicalPosition(range.anchor).blockId && range.isCollapsed !== false
+            isObjectSelection: value.isObjectSelection === true || value.IsObjectSelection === true || !!createLogicalPosition(range.focus).objectId && createLogicalPosition(range.focus).blockId === createLogicalPosition(range.anchor).blockId && range.isCollapsed !== false,
+            activeImageBlockId: value.activeImageBlockId || value.ActiveImageBlockId || ((value.isObjectSelection === true || value.IsObjectSelection === true || !!createLogicalPosition(range.focus).objectId) ? createLogicalPosition(range.focus).blockId : null),
+            activeObjectId: value.activeObjectId || value.ActiveObjectId || value.objectId || value.ObjectId || createLogicalPosition(range.focus).objectId || null,
+            activeTableCellId: value.activeTableCellId || value.ActiveTableCellId || value.cellId || value.CellId || createLogicalPosition(range.focus).cellId || null,
+            activeTableId: value.activeTableId || value.ActiveTableId || value.tableId || value.TableId || createLogicalPosition(range.focus).tableId || createLogicalPosition(range.anchor).tableId || null,
+            activeCommentId: value.activeCommentId || value.ActiveCommentId || null,
+            activeRevisionId: value.activeRevisionId || value.ActiveRevisionId || null,
+            hitTargetKind: value.hitTargetKind || value.HitTargetKind || (value.activeImageBlockId || value.ActiveImageBlockId || value.objectId || value.ObjectId || createLogicalPosition(range.focus).objectId ? 'image' : null)
         });
     }
 
@@ -2999,8 +3376,11 @@ window.tmDocumentEditorEngine = (function () {
         var style = Object.assign({}, baseStyle || {}, run && run.style || run && run.Style || {});
         _asArray(run && (run.marks || run.Marks)).forEach(function (mark) {
             var type = String(mark && (mark.type || mark.Type) || '').toLowerCase();
+            var value = mark && (mark.value ?? mark.Value ?? mark.color ?? mark.Color ?? null);
             if (type === 'bold') style.fontWeight = style.fontWeight || '700';
             if (type === 'italic') style.fontStyle = style.fontStyle || 'italic';
+            if ((type === 'textcolor' || type === 'fontcolor' || type === 'foregroundcolor') && value) style.color = value;
+            if ((type === 'highlight' || type === 'backgroundcolor') && value) style.backgroundColor = value;
         });
         return style;
     }
@@ -5118,15 +5498,22 @@ window.tmDocumentEditorEngine = (function () {
         return affected.length === 0 || affected.indexOf(blockId) >= 0;
     }
 
+    function markOverlayNonText(node) {
+        if (!node || typeof node.setAttribute !== 'function') return node;
+        node.setAttribute('aria-hidden', 'true');
+        node.setAttribute('data-text-probe-ignore', 'true');
+        return node;
+    }
+
     function renderSelectionOverlay(snapshot) {
-        var overlay = document.createElement('div');
+        var overlay = markOverlayNonText(document.createElement('div'));
         overlay.setAttribute('data-render-overlay', 'selection');
         overlay.style.position = 'absolute';
         overlay.style.inset = '0';
         overlay.style.pointerEvents = 'none';
         var selection = snapshot && snapshot.selection;
         if (selection && selection.blockId) {
-            var marker = document.createElement('span');
+            var marker = markOverlayNonText(document.createElement('span'));
             marker.setAttribute('data-selection-block-id', selection.blockId);
             marker.setAttribute('data-selection-offset', selection.offset || 0);
             overlay.appendChild(marker);
@@ -5135,7 +5522,7 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function renderRevisionOverlay(snapshot) {
-        var overlay = document.createElement('div');
+        var overlay = markOverlayNonText(document.createElement('div'));
         overlay.setAttribute('data-render-overlay', 'revision');
         overlay.className = 'tm-render-revision-overlay';
         overlay.style.position = 'absolute';
@@ -5144,7 +5531,7 @@ window.tmDocumentEditorEngine = (function () {
         _asArray(snapshot && snapshot.model && snapshot.model.revisions).forEach(function (revision) {
             var id = revision.id || revision.Id;
             if (!id) return;
-            var marker = document.createElement('span');
+            var marker = markOverlayNonText(document.createElement('span'));
             var type = revision.type || revision.Type || '';
             marker.className = 'tm-render-revision-marker revision-overlay';
             marker.setAttribute('data-testid', 'document-revision-marker');
@@ -5157,7 +5544,7 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function renderCommentMarkers(snapshot) {
-        var overlay = document.createElement('div');
+        var overlay = markOverlayNonText(document.createElement('div'));
         overlay.setAttribute('data-render-overlay', 'comments');
         overlay.style.position = 'absolute';
         overlay.style.inset = '0';
@@ -5165,7 +5552,7 @@ window.tmDocumentEditorEngine = (function () {
         _asArray(snapshot && snapshot.model && snapshot.model.comments).forEach(function (comment) {
             var id = comment.id || comment.Id;
             if (!id) return;
-            var marker = document.createElement('span');
+            var marker = markOverlayNonText(document.createElement('span'));
             marker.className = 'tm-render-comment-marker';
             marker.setAttribute('data-testid', 'document-comment-marker');
             marker.setAttribute('data-comment-id', id);
@@ -6018,11 +6405,14 @@ window.tmDocumentEditorEngine = (function () {
         var blockId = blockElement.getAttribute('data-block-id');
         var block = _findBlock(model, blockId);
         if (!block) return { ok: false, error: { code: 'missing-model-block', blockId: blockId } };
+        var regionNode = blockElement.closest('[data-render-region]');
+        var region = regionNode && regionNode.getAttribute('data-render-region') || 'Body';
+        var headerFooterId = regionNode && regionNode.getAttribute('data-hf-id') || null;
         var pre = document.createRange();
         pre.selectNodeContents(blockElement);
         pre.setEnd(node, offset);
         var logicalOffset = Math.max(0, Math.min(_blockText(block).length, pre.toString().length));
-        return { ok: true, position: normalizeLogicalPosition(model, { region: 'Body', blockId: blockId, offset: logicalOffset, affinity: 'after' }) };
+        return { ok: true, position: normalizeLogicalPosition(model, { region: region, blockId: blockId, offset: logicalOffset, affinity: 'after', headerFooterId: headerFooterId }) };
     }
 
     function findTextNode(root) {
@@ -6299,6 +6689,24 @@ window.tmDocumentEditorEngine = (function () {
 
     function createStrictPerformanceStats() {
         return {
+            keyDownCount: 0,
+            beforeInputCount: 0,
+            inputDomApplyCount: 0,
+            fullRenderCount: 0,
+            partialRenderCount: 0,
+            textNodePatchCount: 0,
+            blockPatchCount: 0,
+            markerOverlayPatchCount: 0,
+            objectOverlayPatchCount: 0,
+            selectionNotifyCount: 0,
+            blazorInteropCallCount: 0,
+            typingFlushCount: 0,
+            maxTypingBatchSize: 0,
+            keyToDomSamples: [],
+            medianKeyToDomMs: 0,
+            p95KeyToDomMs: 0,
+            lastKeyToDomMs: 0,
+            maxKeyToDomMs: 0,
             inputOperationCount: 0,
             inputOperationTotalMs: 0,
             inputOperationMaxMs: 0,
@@ -6344,6 +6752,68 @@ window.tmDocumentEditorEngine = (function () {
     function ensureStrictPerformanceStats(inst) {
         if (!inst.performanceStats) inst.performanceStats = createStrictPerformanceStats();
         return inst.performanceStats;
+    }
+
+    function percentileNearestRank(values, percentile) {
+        var samples = _asArray(values).map(Number).filter(function (value) { return Number.isFinite(value); }).sort(function (a, b) { return a - b; });
+        if (!samples.length) return 0;
+        var rank = Math.max(1, Math.ceil(samples.length * percentile));
+        return samples[Math.min(samples.length - 1, rank - 1)];
+    }
+
+    function median(values) {
+        var samples = _asArray(values).map(Number).filter(function (value) { return Number.isFinite(value); }).sort(function (a, b) { return a - b; });
+        if (!samples.length) return 0;
+        var middle = Math.floor(samples.length / 2);
+        return samples.length % 2 === 0 ? (samples[middle - 1] + samples[middle]) / 2 : samples[middle];
+    }
+
+    function recordTypingKeyDown(inst, event) {
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.keyDownCount = Number(stats.keyDownCount || 0) + 1;
+        if (!inst || !event || !targetIsEditableDocumentSurface(inst, event.target)) return;
+        var rawKey = String(event.key || '');
+        var key = rawKey.toLowerCase();
+        var ctrl = event.ctrlKey === true || event.metaKey === true;
+        var typingKey = !ctrl && !event.altKey && !event.isComposing
+            && (rawKey.length === 1 || key === 'enter' || key === 'backspace' || key === 'delete' || key === 'spacebar');
+        if (!typingKey) return;
+        inst.pendingKeyToDomStarts = _asArray(inst.pendingKeyToDomStarts).concat([strictPerformanceNow()]).slice(-200);
+    }
+
+    function recordBeforeInputEvent(inst) {
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.beforeInputCount = Number(stats.beforeInputCount || 0) + 1;
+        inst.lastBeforeInputAt = strictPerformanceNow();
+    }
+
+    function recordInputDomApply(inst, type) {
+        var stats = ensureStrictPerformanceStats(inst);
+        var now = strictPerformanceNow();
+        var starts = _asArray(inst.pendingKeyToDomStarts);
+        var startedAt = starts.length ? starts.shift() : Number(inst.lastBeforeInputAt || now);
+        inst.pendingKeyToDomStarts = starts;
+        var latency = Math.max(0, now - startedAt);
+        var samples = _asArray(stats.keyToDomSamples).concat([latency]).slice(-200);
+        stats.keyToDomSamples = samples;
+        stats.inputDomApplyCount = Number(stats.inputDomApplyCount || 0) + 1;
+        inst.jsOwnedInputCount = Number(inst.jsOwnedInputCount || 0) + 1;
+        stats.partialRenderCount = Number(stats.partialRenderCount || 0) + 1;
+        stats.lastKeyToDomMs = latency;
+        stats.maxKeyToDomMs = Math.max(Number(stats.maxKeyToDomMs || 0), latency);
+        stats.medianKeyToDomMs = median(samples);
+        stats.p95KeyToDomMs = percentileNearestRank(samples, 0.95);
+        if (type === OPERATION_TYPES.InsertText || type === OPERATION_TYPES.DeleteRange) {
+            stats.textNodePatchCount = Number(stats.textNodePatchCount || 0) + 1;
+        } else if (type === OPERATION_TYPES.SplitParagraph || type === OPERATION_TYPES.MergeParagraph) {
+            stats.blockPatchCount = Number(stats.blockPatchCount || 0) + 1;
+        }
+        stats.markerOverlayPatchCount = Number(stats.markerOverlayPatchCount || 0) + 1;
+        recordTimeline(inst, 'input-dom-apply', {
+            operationType: type || '',
+            latencyMs: latency,
+            inputDomApplyCount: stats.inputDomApplyCount
+        });
     }
 
     function ensureDiagnostics(inst) {
@@ -6437,6 +6907,7 @@ window.tmDocumentEditorEngine = (function () {
     function recordRenderMetric(inst, elapsed, reason) {
         var stats = ensureStrictPerformanceStats(inst);
         stats.renderPassCount = Number(stats.renderPassCount || 0) + 1;
+        stats.fullRenderCount = Number(stats.fullRenderCount || 0) + 1;
         stats.renderPassLastMs = elapsed;
         stats.renderPassTotalMs = Number(stats.renderPassTotalMs || 0) + elapsed;
         stats.renderPassMaxMs = Math.max(Number(stats.renderPassMaxMs || 0), elapsed);
@@ -6508,8 +6979,14 @@ window.tmDocumentEditorEngine = (function () {
         return true;
     }
 
-    function renderLiveParagraphHtml(block) {
-        return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block && block.id || '') + '" role="paragraph">' + _escape(_textFromRuns(block && block.content && block.content.runs || [])) + '</p>';
+    function renderLiveParagraphHtml(inst, block) {
+        return renderEngineBlockHtml(inst, block, inst && inst.options && (inst.options.ImageAltMissing || inst.options.imageAltMissing) || 'Image is missing alternative text.', 1, 1);
+    }
+
+    function replaceLiveParagraphHtml(inst, node, block) {
+        if (!node || !block) return false;
+        node.outerHTML = renderLiveParagraphHtml(inst, block);
+        return true;
     }
 
     function applyLiveTypingDomPatch(inst, operation, committed) {
@@ -6525,13 +7002,13 @@ window.tmDocumentEditorEngine = (function () {
             var insertBlock = _findBlock(inst.model, insertTarget.blockId);
             var insertNode = findLiveTextBlockElement(inst, insertTarget.blockId);
             if (!insertBlock || !insertNode) return false;
-            setLiveParagraphText(insertNode, _blockText(insertBlock));
+            replaceLiveParagraphHtml(inst, insertNode, insertBlock);
         } else if (type === OPERATION_TYPES.DeleteRange) {
             var range = _normalizeRange(op.range || op.Range);
             var deleteBlock = _findBlock(inst.model, range.blockId);
             var deleteNode = findLiveTextBlockElement(inst, range.blockId);
             if (!deleteBlock || !deleteNode) return false;
-            setLiveParagraphText(deleteNode, _blockText(deleteBlock));
+            replaceLiveParagraphHtml(inst, deleteNode, deleteBlock);
         } else if (type === OPERATION_TYPES.SplitParagraph) {
             var splitTarget = _normalizeTarget(op.target || op.Target);
             var originalBlock = _findBlock(inst.model, splitTarget.blockId);
@@ -6539,9 +7016,10 @@ window.tmDocumentEditorEngine = (function () {
             var newBlock = _findBlock(inst.model, newBlockId);
             var originalNode = findLiveTextBlockElement(inst, splitTarget.blockId);
             if (!originalBlock || !newBlock || !originalNode) return false;
-            setLiveParagraphText(originalNode, _blockText(originalBlock));
+            replaceLiveParagraphHtml(inst, originalNode, originalBlock);
             if (!findLiveTextBlockElement(inst, newBlock.id)) {
-                originalNode.insertAdjacentHTML('afterend', renderLiveParagraphHtml(newBlock));
+                var refreshedOriginal = findLiveTextBlockElement(inst, splitTarget.blockId);
+                (refreshedOriginal || originalNode).insertAdjacentHTML('afterend', renderLiveParagraphHtml(inst, newBlock));
                 var inserted = findLiveTextBlockElement(inst, newBlock.id);
                 if (inserted && _blockText(newBlock).length === 0) setLiveParagraphText(inserted, '');
             }
@@ -6552,7 +7030,7 @@ window.tmDocumentEditorEngine = (function () {
             var targetBlock = _findBlock(inst.model, targetBlockId);
             var targetNode = findLiveTextBlockElement(inst, targetBlockId);
             if (!targetBlock || !targetNode || !removedNode) return false;
-            setLiveParagraphText(targetNode, _blockText(targetBlock));
+            replaceLiveParagraphHtml(inst, targetNode, targetBlock);
             if (removedNode !== targetNode) removedNode.remove();
         }
 
@@ -6567,6 +7045,7 @@ window.tmDocumentEditorEngine = (function () {
             operationType: type,
             blockId: inst.selection && inst.selection.blockId || ''
         });
+        recordInputDomApply(inst, type);
         return true;
     }
 
@@ -6651,6 +7130,13 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function invokeBoundaryMethod(inst, methodName, payload, failureCode) {
+        if (inst) {
+            var stats = ensureStrictPerformanceStats(inst);
+            stats.blazorInteropCallCount = Number(stats.blazorInteropCallCount || 0) + 1;
+            if (methodName === 'HandleSelectionChanged') {
+                stats.selectionNotifyCount = Number(stats.selectionNotifyCount || 0) + 1;
+            }
+        }
         if (!inst || !inst.dotNetRef || typeof inst.dotNetRef.invokeMethodAsync !== 'function') {
             return Promise.resolve({ ok: true, skipped: true });
         }
@@ -6712,8 +7198,12 @@ window.tmDocumentEditorEngine = (function () {
             region: region || 'Body',
             headerFooterId: '',
             activeTableCellId: '',
+            activeTableId: '',
             activeImageBlockId: '',
+            activeCommentId: '',
+            activeRevisionId: '',
             activeObjectId: '',
+            textBlockId: '',
             hitTargetKind: String(region || 'Body').toLowerCase()
         };
         if (!node || root && !root.contains(node)) return details;
@@ -6721,9 +7211,20 @@ window.tmDocumentEditorEngine = (function () {
         details.headerFooterId = regionNode && regionNode.getAttribute('data-hf-id') || '';
         var cell = node.closest && node.closest('td[data-cell-id], [data-table-cell-id], [data-cell-id]');
         details.activeTableCellId = cell && (cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id')) || '';
+        var table = cell && cell.closest && cell.closest('table[data-block-id], .tm-wysiwyg-block[data-block-id]');
+        details.activeTableId = table && table.getAttribute('data-block-id') || '';
+        var comment = node.closest && node.closest('.tm-document-inline--comment-anchor[data-comment-id], [data-testid="document-comment-marker"][data-comment-id]');
+        details.activeCommentId = comment && comment.getAttribute('data-comment-id') || '';
+        var revision = node.closest && node.closest('.tm-wysiwyg-revision[data-revision-id], .tm-document-inline--revision[data-revision-id], [data-testid="document-revision-marker"][data-revision-id]');
+        details.activeRevisionId = revision && revision.getAttribute('data-revision-id') || '';
         var image = node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget');
         details.activeImageBlockId = image && (image.getAttribute('data-block-id') || image.getAttribute('data-render-block-id') || image.getAttribute('data-model-id')) || '';
         details.activeObjectId = image && (image.getAttribute('data-render-object-id') || image.getAttribute('data-object-id') || details.activeImageBlockId) || '';
+        var textBlock = !details.activeImageBlockId && node.closest && node.closest('.tm-wysiwyg-block[data-block-id]');
+        details.textBlockId = textBlock && textBlock.getAttribute('data-block-id') || '';
+        if (details.textBlockId) details.hitTargetKind = details.activeTableCellId ? 'tableCell' : 'text';
+        if (details.activeCommentId) details.hitTargetKind = 'comment';
+        if (details.activeRevisionId) details.hitTargetKind = 'revision';
         return details;
     }
 
@@ -6761,15 +7262,41 @@ window.tmDocumentEditorEngine = (function () {
         var current = createSelectionSnapshot(inst.selection || {});
         var currentBlockId = current.blockId || current.anchor && current.anchor.blockId || current.focus && current.focus.blockId || null;
         var currentOffset = current.offset || current.anchor && current.anchor.offset || current.focus && current.focus.offset || 0;
-        inst.selection = createSelectionSnapshot(Object.assign({}, current, {
+        var nextSelection = Object.assign({}, current, {
             region: normalizedRegion,
             headerFooterId: details.headerFooterId || null,
             activeTableCellId: details.activeTableCellId || null,
+            activeTableId: details.activeTableId || null,
             activeImageBlockId: details.activeImageBlockId || null,
+            activeCommentId: details.activeCommentId || null,
+            activeRevisionId: details.activeRevisionId || null,
             activeObjectId: details.activeObjectId || null,
             hitTargetKind: details.hitTargetKind || normalizedRegion.toLowerCase()
-        }));
+        });
+        if (details.activeImageBlockId) {
+            nextSelection.blockId = details.activeImageBlockId;
+            nextSelection.objectId = details.activeObjectId || details.activeImageBlockId;
+            nextSelection.isObjectSelection = true;
+            nextSelection.isCollapsed = false;
+            nextSelection.range = createLogicalRange(
+                { region: normalizedRegion, blockId: details.activeImageBlockId, objectId: nextSelection.objectId, offset: 0, affinity: 'before' },
+                { region: normalizedRegion, blockId: details.activeImageBlockId, objectId: nextSelection.objectId, offset: 1, affinity: 'after' },
+                'none');
+        } else if (details.textBlockId) {
+            nextSelection.blockId = details.textBlockId;
+            nextSelection.objectId = null;
+            nextSelection.activeObjectId = null;
+            nextSelection.activeImageBlockId = null;
+            nextSelection.isObjectSelection = false;
+            nextSelection.isCollapsed = true;
+            nextSelection.range = createLogicalRange(
+                { region: normalizedRegion, blockId: details.textBlockId, offset: 0, affinity: 'after', cellId: details.activeTableCellId || null, tableId: details.activeTableId || null },
+                { region: normalizedRegion, blockId: details.textBlockId, offset: 0, affinity: 'after', cellId: details.activeTableCellId || null, tableId: details.activeTableId || null },
+                'none');
+        }
+        inst.selection = createSelectionSnapshot(nextSelection);
         markSelectionChanged(inst, reason || 'focus-region');
+        updateActiveImageSelectionDom(inst);
         if (previousRegion !== normalizedRegion) {
             scheduleAccessibilityAnnouncement(inst, getRegionLabel(inst, normalizedRegion) + ' selected', 'polite');
         }
@@ -6782,7 +7309,10 @@ window.tmDocumentEditorEngine = (function () {
             IsCollapsed: inst.selection.isCollapsed !== false,
             HeaderFooterId: inst.selection.headerFooterId || null,
             ActiveTableCellId: inst.selection.activeTableCellId || null,
+            ActiveTableId: inst.selection.activeTableId || inst.selection.tableId || null,
             ActiveImageBlockId: inst.selection.activeImageBlockId || null,
+            ActiveCommentId: inst.selection.activeCommentId || null,
+            ActiveRevisionId: inst.selection.activeRevisionId || null,
             ActiveObjectId: inst.selection.activeObjectId || null,
             HitTargetKind: inst.selection.hitTargetKind || null
         }, 'selection-changed-failed');
@@ -6791,8 +7321,8 @@ window.tmDocumentEditorEngine = (function () {
 
     function focusNextRegion(inst, backwards) {
         var regions = ['Body'];
-        if (_asArray(inst && inst.model && inst.model.headersFooters).some(function (hf) { return String(hf.type || hf.Type || '').toLowerCase() === 'header'; })) regions.unshift('Header');
-        if (_asArray(inst && inst.model && inst.model.headersFooters).some(function (hf) { return String(hf.type || hf.Type || '').toLowerCase() === 'footer'; })) regions.push('Footer');
+        if (_asArray(inst && inst.model && inst.model.headers).length > 0) regions.unshift('Header');
+        if (_asArray(inst && inst.model && inst.model.footers).length > 0) regions.push('Footer');
         var current = inst && (inst.activeFocusRegion || inst.selection && inst.selection.region) || 'Body';
         var index = Math.max(0, regions.indexOf(current));
         var next = regions[(index + (backwards ? -1 : 1) + regions.length) % regions.length] || 'Body';
@@ -6935,6 +7465,7 @@ window.tmDocumentEditorEngine = (function () {
 
     function handleEditorKeyDown(inst, event) {
         if (!inst || !event) return { handled: false };
+        recordTypingKeyDown(inst, event);
         var rawKey = String(event.key || '');
         var key = rawKey.toLowerCase();
         var ctrl = event.ctrlKey === true || event.metaKey === true;
@@ -6988,6 +7519,7 @@ window.tmDocumentEditorEngine = (function () {
 
         if (key === 's') {
             prevent();
+            flushTypingBoundaryPatchDispatch(inst);
             recordTimeline(inst, 'keyboard-command', { command: 'save' });
             invokeBoundaryMethod(inst, 'HandleSaveRequested', null, 'save-request-failed');
             return { handled: true, command: 'save' };
@@ -7014,29 +7546,217 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !inst.root || !target) return false;
         var element = target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement;
         if (!element || !inst.root.contains(element)) return false;
-        return !!(element.closest && element.closest('.tm-wysiwyg-page__body[contenteditable], .tm-wysiwyg-block[data-block-id]'));
+        return !!(element.closest && element.closest('.tm-wysiwyg-page__body[contenteditable], .tm-wysiwyg-page__header[contenteditable], .tm-wysiwyg-page__footer[contenteditable], .tm-wysiwyg-block[data-block-id]'));
     }
 
     function readDomSelectionSnapshot(inst) {
         var selection = window.getSelection && window.getSelection();
         if (!selection || selection.rangeCount === 0) return createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
         var range = selection.getRangeAt(0);
+        var tableContext = tableContextFromDomRange(range);
         var startRange = range.cloneRange();
         startRange.collapse(true);
         var start = domRangeToLogical(inst.root, inst.model, startRange);
         if (!start.ok) return createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        if (tableContext.cellId) {
+            start.position = Object.assign({}, start.position, {
+                region: 'TableCell',
+                cellId: tableContext.cellId,
+                tableId: tableContext.tableId
+            });
+        }
         if (selection.isCollapsed) return createSelectionSnapshot(start.position);
 
         var endRange = range.cloneRange();
         endRange.collapse(false);
         var end = domRangeToLogical(inst.root, inst.model, endRange);
         if (!end.ok) return createSelectionSnapshot(start.position);
+        if (tableContext.cellId) {
+            end.position = Object.assign({}, end.position, {
+                region: 'TableCell',
+                cellId: tableContext.cellId,
+                tableId: tableContext.tableId
+            });
+        }
         var direction = start.position.blockId === end.position.blockId && start.position.offset <= end.position.offset ? 'forward' : 'backward';
         return createSelectionSnapshot({ range: createLogicalRange(start.position, end.position, direction) });
     }
 
+    function tableContextFromDomRange(range) {
+        if (!range) return { cellId: null, tableId: null };
+        var nodes = [range.commonAncestorContainer, range.startContainer, range.endContainer];
+        for (var i = 0; i < nodes.length; i++) {
+            var node = nodes[i] && (nodes[i].nodeType === Node.ELEMENT_NODE ? nodes[i] : nodes[i].parentElement);
+            var cell = node && node.closest && node.closest('td[data-cell-id], [data-table-cell-id], [data-cell-id]');
+            if (!cell) continue;
+            var table = cell.closest && cell.closest('table[data-block-id], .tm-wysiwyg-block[data-block-id]');
+            return {
+                cellId: cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id') || null,
+                tableId: table && table.getAttribute('data-block-id') || null
+            };
+        }
+        return { cellId: null, tableId: null };
+    }
+
+    function boundarySelectionSnapshot(selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        var anchor = createLogicalPosition(snapshot.anchor || {});
+        var focus = createLogicalPosition(snapshot.focus || anchor);
+        return {
+            Region: snapshot.region || anchor.region || focus.region || 'Body',
+            HeaderFooterId: snapshot.headerFooterId || anchor.headerFooterId || focus.headerFooterId || null,
+            AnchorNodeId: anchor.inlineId || null,
+            FocusNodeId: focus.inlineId || null,
+            AnchorBlockId: anchor.blockId || null,
+            AnchorInlineId: anchor.inlineId || null,
+            AnchorOffset: Math.max(0, Math.round(Number(anchor.offset || 0) || 0)),
+            AnchorBlockOffset: Math.max(0, Math.round(Number(anchor.offset || 0) || 0)),
+            FocusBlockId: focus.blockId || anchor.blockId || null,
+            FocusInlineId: focus.inlineId || null,
+            FocusOffset: Math.max(0, Math.round(Number(focus.offset || 0) || 0)),
+            FocusBlockOffset: Math.max(0, Math.round(Number(focus.offset || 0) || 0)),
+            IsCollapsed: snapshot.isCollapsed !== false,
+            Direction: snapshot.direction || 'forward',
+            ActiveTableCellId: snapshot.cellId || focus.cellId || anchor.cellId || null,
+            ActiveTableId: snapshot.activeTableId || snapshot.tableId || focus.tableId || anchor.tableId || null,
+            ActiveImageBlockId: snapshot.activeImageBlockId || null,
+            ActiveCommentId: snapshot.activeCommentId || null,
+            ActiveRevisionId: snapshot.activeRevisionId || null,
+            ActiveObjectId: snapshot.activeObjectId || snapshot.objectId || focus.objectId || anchor.objectId || null,
+            HitTargetKind: snapshot.hitTargetKind || (snapshot.activeCommentId ? 'comment' : (snapshot.activeRevisionId ? 'revision' : (snapshot.isObjectSelection ? 'object' : (snapshot.isCellSelection ? 'tableCell' : 'text'))))
+        };
+    }
+
+    function selectionBelongsToEditor(inst, selection) {
+        if (!inst || !inst.root || !selection || selection.rangeCount === 0) return false;
+        var range = selection.getRangeAt(0);
+        var start = range.startContainer && (range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement);
+        var end = range.endContainer && (range.endContainer.nodeType === Node.ELEMENT_NODE ? range.endContainer : range.endContainer.parentElement);
+        return !!(start && end && inst.root.contains(start) && inst.root.contains(end));
+    }
+
+    function selectionTargetsTextSurface(inst, selection) {
+        if (!selectionBelongsToEditor(inst, selection) || selection.isCollapsed) return false;
+        var range = selection.getRangeAt(0);
+        var common = range.commonAncestorContainer && (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+            ? range.commonAncestorContainer
+            : range.commonAncestorContainer.parentElement);
+        if (!common) return false;
+        if (common.closest && common.closest('.tm-wysiwyg-image, figure, [data-object-id], .tm-wysiwyg-layout-object')) return false;
+        return !!(common.closest && common.closest('.tm-wysiwyg-page__body[contenteditable], .tm-wysiwyg-page__header[contenteditable], .tm-wysiwyg-page__footer[contenteditable], .tm-wysiwyg-table-cell, .tm-wysiwyg-block[data-block-id]'));
+    }
+
+    function selectedDomRect(selection) {
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+        var range = selection.getRangeAt(0);
+        var rects = Array.from(range.getClientRects ? range.getClientRects() : [])
+            .filter(function (rect) { return rect && rect.width > 0.5 && rect.height > 0.5; });
+        if (rects.length === 0) {
+            var fallback = range.getBoundingClientRect ? range.getBoundingClientRect() : null;
+            if (fallback && fallback.width > 0.5 && fallback.height > 0.5) rects.push(fallback);
+        }
+        if (rects.length === 0) return null;
+        var left = Math.min.apply(null, rects.map(function (rect) { return rect.left; }));
+        var top = Math.min.apply(null, rects.map(function (rect) { return rect.top; }));
+        var right = Math.max.apply(null, rects.map(function (rect) { return rect.right; }));
+        var bottom = Math.max.apply(null, rects.map(function (rect) { return rect.bottom; }));
+        return { left: left, top: top, width: right - left, height: bottom - top, right: right, bottom: bottom };
+    }
+
+    function floatingViewportWidthAvoidingSidePanel() {
+        var width = window.innerWidth || document.documentElement && document.documentElement.clientWidth || 0;
+        var panel = document.querySelector('[data-testid="document-side-panel"]');
+        if (panel && panel.getBoundingClientRect) {
+            var rect = panel.getBoundingClientRect();
+            var style = window.getComputedStyle ? window.getComputedStyle(panel) : null;
+            if (rect.width > 1 && rect.height > 1 && (!style || style.visibility !== 'hidden' && style.display !== 'none')) {
+                width = Math.max(320, Math.min(width, rect.left - 8));
+            }
+        }
+        return width;
+    }
+
+    function showMiniToolbarForSelection(inst, source) {
+        if (!inst || !inst.root || inst.options && inst.options.readOnly === true) return false;
+        var selection = window.getSelection && window.getSelection();
+        if (!selectionTargetsTextSurface(inst, selection)) {
+            if (restoreLastMiniToolbarRequest(inst, source)) return true;
+            hideMiniToolbar(inst, source || 'selection-not-text');
+            return false;
+        }
+
+        var rect = selectedDomRect(selection);
+        if (!rect) {
+            if (restoreLastMiniToolbarRequest(inst, source)) return true;
+            hideMiniToolbar(inst, source || 'selection-no-rect');
+            return false;
+        }
+
+        var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+        if (!snapshot || snapshot.isCollapsed !== false || snapshot.isObjectSelection) {
+            if (restoreLastMiniToolbarRequest(inst, source)) return true;
+            hideMiniToolbar(inst, source || 'selection-collapsed');
+            return false;
+        }
+
+        inst.selection = snapshot;
+        markSelectionChanged(inst, source || 'selection-toolbar');
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot), 'selection-changed-failed');
+
+        var toolbarSize = { width: 356, height: 44 };
+        var viewportWidth = floatingViewportWidthAvoidingSidePanel();
+        var viewportHeight = window.innerHeight || document.documentElement && document.documentElement.clientHeight || 0;
+        var position = computeFloatingPosition(rect, toolbarSize, {
+            placement: 'top',
+            gutter: 10,
+            viewportWidth: viewportWidth,
+            viewportHeight: viewportHeight
+        });
+        inst.floatingUiOpen = true;
+        inst.lastMiniToolbarRequest = {
+            IsVisible: true,
+            Left: position.left,
+            Top: position.top,
+            Width: toolbarSize.width,
+            Height: toolbarSize.height,
+            ViewportWidth: viewportWidth,
+            ViewportHeight: viewportHeight,
+            Selection: boundarySelectionSnapshot(snapshot)
+        };
+        invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', inst.lastMiniToolbarRequest, 'mini-toolbar-open-failed');
+        return true;
+    }
+
+    function restoreLastMiniToolbarRequest(inst, source) {
+        if (!inst || !inst.lastMiniToolbarRequest) return false;
+        var reason = _asText(source || '');
+        var withinGrace = Date.now() <= Number(inst.preserveMiniToolbarUntil || 0);
+        if (!withinGrace && reason !== 'viewport-change') return false;
+        inst.floatingUiOpen = true;
+        invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', inst.lastMiniToolbarRequest, 'mini-toolbar-restore-failed');
+        return true;
+    }
+
+    function hideMiniToolbar(inst, reason) {
+        if (!inst || !inst.floatingUiOpen && !inst.lastMiniToolbarRequest) return;
+        inst.floatingUiOpen = false;
+        inst.lastMiniToolbarRequest = null;
+        recordTimeline(inst, 'mini-toolbar-hidden', { reason: reason || '' });
+        invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', null, 'mini-toolbar-close-failed');
+    }
+
+    function scheduleMiniToolbarRefresh(inst, source, delay) {
+        if (!inst) return;
+        if (inst.miniToolbarRefreshTimer) clearTimeout(inst.miniToolbarRefreshTimer);
+        inst.miniToolbarRefreshTimer = setTimeout(function () {
+            inst.miniToolbarRefreshTimer = null;
+            showMiniToolbarForSelection(inst, source || 'selection-refresh');
+        }, Number(delay || 0) || 0);
+    }
+
     function handleEditorBeforeInput(inst, event) {
         if (!inst || !event || !targetIsEditableDocumentSurface(inst, event.target)) return { handled: false };
+        recordBeforeInputEvent(inst);
         if (consumeSuppressedBeforeInput(inst, event)) return { handled: true, suppressed: true };
         var normalized = normalizeBeforeInput(event);
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
@@ -7102,17 +7822,72 @@ window.tmDocumentEditorEngine = (function () {
         var onPointerDown = function (event) {
             setActiveFocusRegion(inst, getFocusRegionFromElement(root, event.target), event.target, 'pointerdown');
         };
+        var onPointerUp = function () {
+            scheduleMiniToolbarRefresh(inst, 'pointerup-selection', 0);
+        };
+        var onClick = function (event) {
+            var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+            var marker = element && element.closest && element.closest('.tm-document-inline--comment-anchor[data-comment-id]');
+            if (marker && root.contains(marker)) {
+                selectCommentAnchor(inst, marker.getAttribute('data-comment-id'), false, true);
+                return;
+            }
+            var revision = element && element.closest && element.closest('.tm-wysiwyg-revision[data-revision-id], .tm-document-inline--revision[data-revision-id]');
+            if (!revision || !root.contains(revision)) return;
+            selectRevisionAnchor(inst, revision.getAttribute('data-revision-id'), false, true);
+        };
         var onKeyDown = function (event) {
             handleEditorKeyDown(inst, event);
         };
         var onBeforeInput = function (event) {
             handleEditorBeforeInput(inst, event);
         };
+        var onSelectionChange = function () {
+            var selection = window.getSelection && window.getSelection();
+            if (selectionBelongsToEditor(inst, selection)) {
+                scheduleMiniToolbarRefresh(inst, 'selectionchange', 40);
+            }
+        };
+        var onDocumentPointerDown = function (event) {
+            var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+            if (!element) return;
+            if (root.contains(element)) return;
+            if (element.closest && element.closest('[data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__floating-root, .tm-color-picker-dropdown, .tm-color-picker')) {
+                inst.preserveMiniToolbarUntil = Date.now() + 1200;
+                return;
+            }
+            hideMiniToolbar(inst, 'outside-pointerdown');
+        };
+        var onWindowScrollOrResize = function () {
+            if (inst.floatingUiOpen || inst.lastMiniToolbarRequest) {
+                scheduleMiniToolbarRefresh(inst, 'viewport-change', 20);
+            }
+        };
         root.addEventListener('focusin', onFocusIn);
         root.addEventListener('pointerdown', onPointerDown, true);
+        root.addEventListener('pointerup', onPointerUp, true);
+        root.addEventListener('click', onClick);
         root.addEventListener('beforeinput', onBeforeInput, true);
         root.addEventListener('keydown', onKeyDown);
-        inst.eventHandlers.push(['focusin', onFocusIn, false], ['pointerdown', onPointerDown, true], ['beforeinput', onBeforeInput, true], ['keydown', onKeyDown, false]);
+        document.addEventListener('selectionchange', onSelectionChange);
+        document.addEventListener('pointerdown', onDocumentPointerDown, true);
+        window.addEventListener('scroll', onWindowScrollOrResize, true);
+        window.addEventListener('resize', onWindowScrollOrResize);
+        inst.eventHandlers.push(
+            ['focusin', onFocusIn, false],
+            ['pointerdown', onPointerDown, true],
+            ['pointerup', onPointerUp, true],
+            ['click', onClick, false],
+            ['beforeinput', onBeforeInput, true],
+            ['keydown', onKeyDown, false]);
+        inst.documentEventHandlers = [
+            ['selectionchange', onSelectionChange, false],
+            ['pointerdown', onDocumentPointerDown, true]
+        ];
+        inst.windowEventHandlers = [
+            ['scroll', onWindowScrollOrResize, true],
+            ['resize', onWindowScrollOrResize, false]
+        ];
     }
 
     function removeAccessibilityAndKeyboardHandlers(inst) {
@@ -7121,6 +7896,18 @@ window.tmDocumentEditorEngine = (function () {
             inst.root.removeEventListener(entry[0], entry[1], entry[2]);
         });
         inst.eventHandlers = [];
+        _asArray(inst.documentEventHandlers).forEach(function (entry) {
+            document.removeEventListener(entry[0], entry[1], entry[2]);
+        });
+        inst.documentEventHandlers = [];
+        _asArray(inst.windowEventHandlers).forEach(function (entry) {
+            window.removeEventListener(entry[0], entry[1], entry[2]);
+        });
+        inst.windowEventHandlers = [];
+        if (inst.miniToolbarRefreshTimer) {
+            clearTimeout(inst.miniToolbarRefreshTimer);
+            inst.miniToolbarRefreshTimer = null;
+        }
         if (inst.accessibilityAnnouncementTimer) {
             clearTimeout(inst.accessibilityAnnouncementTimer);
             inst.accessibilityAnnouncementTimer = null;
@@ -7227,6 +8014,8 @@ window.tmDocumentEditorEngine = (function () {
     function scheduleTypingBoundaryPatchDispatch(inst, patch) {
         if (!inst || !patch) return;
         inst.pendingTypingBoundaryPatches = _asArray(inst.pendingTypingBoundaryPatches).concat([patch]);
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         if (inst.pendingTypingBoundaryTimer) clearTimeout(inst.pendingTypingBoundaryTimer);
         var delay = Math.max(0, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) || 500);
         inst.pendingTypingBoundaryTimer = setTimeout(function () {
@@ -7249,6 +8038,9 @@ window.tmDocumentEditorEngine = (function () {
         var pending = _asArray(inst.pendingTypingBoundaryPatches);
         if (!pending.length) return null;
         inst.pendingTypingBoundaryPatches = [];
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.typingFlushCount = Number(stats.typingFlushCount || 0) + 1;
+        stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), pending.length);
         var merged = mergeTypingBoundaryPatches(inst, pending);
         if (merged) {
             dispatchBoundaryPatch(inst, merged);
@@ -7327,6 +8119,7 @@ window.tmDocumentEditorEngine = (function () {
         inst.lastDiffer = committed.differ;
         inst.commands.push({ command: transactionType || 'remote', payload: operationList.map(function (operation) { return operation.toJSON(); }), at: Date.now(), transactionId: transaction.id });
         markModelChanged(inst, transactionType || 'operation-batch');
+        refreshRuntimeMarkerStore(inst);
         recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: operationList.length });
         render(inst);
         recordOperationPerformance(inst, operationList, Math.max(0, strictPerformanceNow() - operationStart), transaction.invalidatedScopes, transactionType || 'operation-batch');
@@ -7378,9 +8171,13 @@ window.tmDocumentEditorEngine = (function () {
             accessibilityAnnouncementTimer: null,
             lastAccessibilityAnnouncement: null,
             pendingTypingMarks: [],
+            jsOwnedInputCount: 0,
+            nativeInputCount: 0,
+            markerStore: null,
             performanceStats: createStrictPerformanceStats(),
             diagnostics: createDiagnosticsState()
         };
+        refreshRuntimeMarkerStore(inst);
         _instances.set(instanceId, inst);
         rootElement.setAttribute('data-instance-id', instanceId);
         rootElement.setAttribute('data-engine-mode', 'google-docs');
@@ -7458,6 +8255,7 @@ window.tmDocumentEditorEngine = (function () {
         }
         var document = snapshot && (snapshot.Document || snapshot.document) ? (snapshot.Document || snapshot.document) : snapshot;
         lookup.inst.model = importFromCSharpJson(document || {});
+        refreshRuntimeMarkerStore(lookup.inst);
         lookup.inst.selection = firstModelSelection(lookup.inst.model);
         lookup.inst.layout.invalidatedScopeIds = ['document'];
         lookup.inst.modelEpoch = Number(snapshot && (snapshot.epoch || snapshot.Epoch) || 0) || 0;
@@ -7477,11 +8275,267 @@ window.tmDocumentEditorEngine = (function () {
         return { ok: true, instanceId: instanceId, fullSnapshot: true, validation: validateModel(lookup.inst.model), dirtyState: _clone(lookup.inst.dirtyState) };
     }
 
+    function compactCommandName(value) {
+        return String(value || '').replace(/[\s_-]+/g, '').toLowerCase();
+    }
+
+    function wrapModeToValue(value) {
+        var mode = normalizeWrapModeName(value);
+        return mode === 'Square' ? 1
+            : mode === 'Tight' ? 2
+                : mode === 'Through' ? 3
+                    : mode === 'TopBottom' ? 4
+                        : mode === 'BehindText' ? 5
+                            : mode === 'InFrontOfText' ? 6
+                                : 0;
+    }
+
+    function normalizeHorizontalPositionName(value) {
+        if (value === 0) return 'Left';
+        if (value === 1) return 'Center';
+        if (value === 2) return 'Right';
+        var raw = String(value || '').replace(/[\s_-]+/g, '').toLowerCase();
+        if (raw === 'center' || raw === 'centre' || raw === 'middle') return 'Center';
+        if (raw === 'right' || raw === 'end') return 'Right';
+        return 'Left';
+    }
+
+    function horizontalPositionToValue(value) {
+        var normalized = normalizeHorizontalPositionName(value);
+        return normalized === 'Center' ? 1 : (normalized === 'Right' ? 2 : 0);
+    }
+
+    function syncImageLayoutCase(layout) {
+        var source = layout || {};
+        var wrap = source.Wrap || source.wrap || {};
+        var position = source.Position || source.position || {};
+        var anchor = source.Anchor || source.anchor || {};
+        var transform = source.Transform || source.transform || {};
+        var stacking = source.Stacking || source.stacking || {};
+        var mode = wrap.Mode ?? wrap.mode ?? 0;
+        wrap.Mode = mode;
+        wrap.mode = mode;
+        wrap.DistanceLeft = Number(wrap.DistanceLeft ?? wrap.distanceLeft ?? 0) || 0;
+        wrap.distanceLeft = wrap.DistanceLeft;
+        wrap.DistanceRight = Number(wrap.DistanceRight ?? wrap.distanceRight ?? 0) || 0;
+        wrap.distanceRight = wrap.DistanceRight;
+        wrap.DistanceTop = Number(wrap.DistanceTop ?? wrap.distanceTop ?? 0) || 0;
+        wrap.distanceTop = wrap.DistanceTop;
+        wrap.DistanceBottom = Number(wrap.DistanceBottom ?? wrap.distanceBottom ?? 0) || 0;
+        wrap.distanceBottom = wrap.DistanceBottom;
+        position.HorizontalAlignment = position.HorizontalAlignment ?? position.horizontalAlignment ?? 0;
+        position.horizontalAlignment = position.HorizontalAlignment;
+        position.HorizontalRelativeTo = position.HorizontalRelativeTo ?? position.horizontalRelativeTo ?? 0;
+        position.horizontalRelativeTo = position.HorizontalRelativeTo;
+        position.VerticalRelativeTo = position.VerticalRelativeTo ?? position.verticalRelativeTo ?? 3;
+        position.verticalRelativeTo = position.VerticalRelativeTo;
+        position.X = Number(position.X ?? position.x ?? 0) || 0;
+        position.x = position.X;
+        position.Y = Number(position.Y ?? position.y ?? 0) || 0;
+        position.y = position.Y;
+        anchor.MoveWithText = (anchor.MoveWithText ?? anchor.moveWithText ?? false) === true;
+        anchor.moveWithText = anchor.MoveWithText;
+        anchor.FixedOnPage = (anchor.FixedOnPage ?? anchor.fixedOnPage ?? false) === true;
+        anchor.fixedOnPage = anchor.FixedOnPage;
+        anchor.LockAnchor = (anchor.LockAnchor ?? anchor.lockAnchor ?? false) === true;
+        anchor.lockAnchor = anchor.LockAnchor;
+        transform.Width = Number(transform.Width ?? transform.width ?? 120) || 120;
+        transform.width = transform.Width;
+        transform.Height = Number(transform.Height ?? transform.height ?? 80) || 80;
+        transform.height = transform.Height;
+        transform.LockAspectRatio = (transform.LockAspectRatio ?? transform.lockAspectRatio ?? true) !== false;
+        transform.lockAspectRatio = transform.LockAspectRatio;
+        stacking.ZIndex = Number(stacking.ZIndex ?? stacking.zIndex ?? 0) || 0;
+        stacking.zIndex = stacking.ZIndex;
+        stacking.AllowOverlap = (stacking.AllowOverlap ?? stacking.allowOverlap ?? false) === true;
+        stacking.allowOverlap = stacking.AllowOverlap;
+        source.Kind = source.Kind ?? source.kind ?? 0;
+        source.kind = source.Kind;
+        source.Anchor = anchor;
+        source.anchor = anchor;
+        source.Position = position;
+        source.position = position;
+        source.Wrap = wrap;
+        source.wrap = wrap;
+        source.Transform = transform;
+        source.transform = transform;
+        source.Stacking = stacking;
+        source.stacking = stacking;
+        return _sortObject(source);
+    }
+
+    function cloneImageLayoutForUpdate(block) {
+        var content = block && block.content || {};
+        var source = _clone(content.layout || {});
+        var object = normalizeImageObject(block);
+        var sourceWrapMode = (source.Wrap && source.Wrap.Mode) ?? (source.wrap && source.wrap.mode) ?? object.wrapMode;
+        var wrapMode = normalizeWrapModeName(sourceWrapMode);
+        var position = _clone(source.Position || source.position || {});
+        var wrap = _clone(source.Wrap || source.wrap || {});
+        var anchor = _clone(source.Anchor || source.anchor || {});
+        var transform = _clone(source.Transform || source.transform || {});
+        var stacking = _clone(source.Stacking || source.stacking || {});
+        position.HorizontalAlignment = position.HorizontalAlignment ?? position.horizontalAlignment ?? horizontalPositionToValue(object.horizontalPosition && object.horizontalPosition.align);
+        position.X = position.X ?? position.x ?? (object.horizontalPosition && object.horizontalPosition.offset) ?? 0;
+        position.Y = position.Y ?? position.y ?? (object.verticalPosition && object.verticalPosition.offset) ?? 0;
+        position.HorizontalRelativeTo = position.HorizontalRelativeTo ?? position.horizontalRelativeTo ?? 0;
+        position.VerticalRelativeTo = position.VerticalRelativeTo ?? position.verticalRelativeTo ?? 3;
+        wrap.Mode = wrapModeToValue(wrapMode);
+        wrap.DistanceLeft = Number(wrap.DistanceLeft ?? wrap.distanceLeft ?? object.distanceLeft ?? 0) || 0;
+        wrap.DistanceRight = Number(wrap.DistanceRight ?? wrap.distanceRight ?? object.distanceRight ?? 0) || 0;
+        wrap.DistanceTop = Number(wrap.DistanceTop ?? wrap.distanceTop ?? object.distanceTop ?? 0) || 0;
+        wrap.DistanceBottom = Number(wrap.DistanceBottom ?? wrap.distanceBottom ?? object.distanceBottom ?? 0) || 0;
+        transform.Width = Number(transform.Width ?? transform.width ?? object.width ?? (content.size && content.size.width) ?? 120) || 120;
+        transform.Height = Number(transform.Height ?? transform.height ?? object.height ?? (content.size && content.size.height) ?? 80) || 80;
+        anchor.MoveWithText = (anchor.MoveWithText ?? anchor.moveWithText ?? wrapMode !== 'Inline') !== false;
+        anchor.FixedOnPage = (anchor.FixedOnPage ?? anchor.fixedOnPage ?? false) === true;
+        anchor.LockAnchor = (anchor.LockAnchor ?? anchor.lockAnchor ?? false) === true;
+        stacking.ZIndex = Number(stacking.ZIndex ?? stacking.zIndex ?? object.zIndex ?? 0) || 0;
+        stacking.AllowOverlap = (stacking.AllowOverlap ?? stacking.allowOverlap ?? (wrapMode === 'BehindText' || wrapMode === 'InFrontOfText')) === true;
+        return syncImageLayoutCase({
+            Kind: wrapMode === 'Inline' ? 0 : (anchor.FixedOnPage ? 2 : 1),
+            Anchor: _sortObject(anchor),
+            Position: _sortObject(position),
+            Wrap: _sortObject(wrap),
+            Transform: _sortObject(transform),
+            Stacking: _sortObject(stacking)
+        });
+    }
+
+    function activeImageBlock(inst, payload) {
+        var body = payload || {};
+        var blockId = body.blockId || body.BlockId || inst.selection && (inst.selection.activeImageBlockId || inst.selection.blockId) || '';
+        var objectId = body.objectId || body.ObjectId || inst.selection && (inst.selection.activeObjectId || inst.selection.objectId) || '';
+        var block = blockId ? _findBlock(inst.model, blockId) : null;
+        if (block && block.type === 'image') return block;
+        return findImageBlockByAsset(inst.model, body.assetId || body.AssetId || '', blockId, objectId);
+    }
+
+    function imageSelectionForBlock(block, region) {
+        var objectId = block && block.content && block.content.objectId || block && block.id || '';
+        return createSelectionSnapshot({
+            region: region || 'Image',
+            blockId: block && block.id || '',
+            objectId: objectId,
+            activeImageBlockId: block && block.id || '',
+            activeObjectId: objectId,
+            isObjectSelection: true,
+            isCollapsed: false,
+            range: createLogicalRange(
+                { region: region || 'Image', blockId: block && block.id || '', objectId: objectId, offset: 0, affinity: 'before' },
+                { region: region || 'Image', blockId: block && block.id || '', objectId: objectId, offset: 1, affinity: 'after' },
+                'none')
+        });
+    }
+
+    function applyRuntimeImageCommand(inst, commandName, payload) {
+        var compact = compactCommandName(commandName);
+        var imageCommands = [
+            'setimagealttext', 'setimagedecorative', 'toggleimagecaption', 'setimagecaption', 'setimageurl',
+            'setimagelink', 'setimagewrapmode', 'setimageposition', 'setimagesize', 'setimageobjectposition',
+            'setimageanchormode', 'setimagezorder', 'setimagewrapdistance', 'deleteimage', 'focusimageoptions'
+        ];
+        if (imageCommands.indexOf(compact) < 0) return null;
+        if (compact === 'focusimageoptions') return { ok: true, instanceId: inst.id, command: commandName, noop: true };
+        var body = payload || {};
+        var block = activeImageBlock(inst, body);
+        if (!block || block.type !== 'image') {
+            return { ok: false, instanceId: inst.id, command: commandName, error: { code: 'active-image-not-found' } };
+        }
+
+        if (compact === 'deleteimage') {
+            var nextModel = _clone(inst.model);
+            var container = _findBlockContainer(nextModel, block.id);
+            if (!container) return { ok: false, instanceId: inst.id, command: commandName, error: { code: 'active-image-container-not-found' } };
+            container.blocks.splice(container.index, 1);
+            buildIndexes(nextModel);
+            return applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
+                snapshot: nextModel,
+                selection: firstModelSelection(nextModel),
+                affectedScopeIds: ['document'],
+                source: 'image-command',
+                transactionType: TRANSACTION_TYPES.Default,
+                beforeSelection: inst.selection
+            });
+        }
+
+        if (compact === 'setimagewrapmode' || compact === 'setimageposition' || compact === 'setimagesize'
+            || compact === 'setimageobjectposition' || compact === 'setimageanchormode' || compact === 'setimagezorder'
+            || compact === 'setimagewrapdistance') {
+            var layout = cloneImageLayoutForUpdate(block);
+            if (compact === 'setimagewrapmode') {
+                var mode = normalizeWrapModeName(body.wrapMode ?? body.WrapMode ?? body.mode ?? body.Mode);
+                layout.Wrap.Mode = wrapModeToValue(mode);
+                layout.Kind = mode === 'Inline' ? 0 : (layout.Anchor.FixedOnPage ? 2 : 1);
+                layout.Anchor.MoveWithText = mode !== 'Inline' && layout.Anchor.FixedOnPage !== true;
+                if (mode === 'BehindText' || mode === 'InFrontOfText') layout.Stacking.AllowOverlap = true;
+            } else if (compact === 'setimageposition') {
+                layout.Position.HorizontalAlignment = horizontalPositionToValue(body.horizontalPosition ?? body.HorizontalPosition ?? body.alignment ?? body.Alignment);
+                if (normalizeWrapModeName(layout.Wrap.Mode) === 'Inline') {
+                    layout.Wrap.Mode = wrapModeToValue('Square');
+                    layout.Kind = 1;
+                    layout.Anchor.MoveWithText = true;
+                }
+            } else if (compact === 'setimagesize') {
+                if (body.width ?? body.Width) layout.Transform.Width = Math.max(1, Number(body.width ?? body.Width) || layout.Transform.Width || 1);
+                if (body.height ?? body.Height) layout.Transform.Height = Math.max(1, Number(body.height ?? body.Height) || layout.Transform.Height || 1);
+                if (body.lockAspectRatio !== undefined || body.LockAspectRatio !== undefined) layout.Transform.LockAspectRatio = (body.lockAspectRatio ?? body.LockAspectRatio) !== false;
+            } else if (compact === 'setimageobjectposition') {
+                if (body.x ?? body.X) layout.Position.X = Number(body.x ?? body.X) || 0;
+                if (body.y ?? body.Y) layout.Position.Y = Number(body.y ?? body.Y) || 0;
+                if (body.horizontalRelativeTo ?? body.HorizontalRelativeTo) layout.Position.HorizontalRelativeTo = body.horizontalRelativeTo ?? body.HorizontalRelativeTo;
+                if (body.verticalRelativeTo ?? body.VerticalRelativeTo) layout.Position.VerticalRelativeTo = body.verticalRelativeTo ?? body.VerticalRelativeTo;
+                if (body.horizontalAlignment ?? body.HorizontalAlignment) layout.Position.HorizontalAlignment = horizontalPositionToValue(body.horizontalAlignment ?? body.HorizontalAlignment);
+            } else if (compact === 'setimageanchormode') {
+                if (body.lockAnchor !== undefined || body.LockAnchor !== undefined) layout.Anchor.LockAnchor = (body.lockAnchor ?? body.LockAnchor) === true;
+                if (body.moveWithText !== undefined || body.MoveWithText !== undefined) layout.Anchor.MoveWithText = (body.moveWithText ?? body.MoveWithText) !== false;
+                if (body.fixedOnPage !== undefined || body.FixedOnPage !== undefined) layout.Anchor.FixedOnPage = (body.fixedOnPage ?? body.FixedOnPage) === true;
+                layout.Kind = layout.Anchor.FixedOnPage ? 2 : (normalizeWrapModeName(layout.Wrap.Mode) === 'Inline' ? 0 : 1);
+            } else if (compact === 'setimagezorder') {
+                var direction = String(body.direction || body.Direction || '').toLowerCase();
+                var delta = direction.indexOf('back') >= 0 ? -1 : 1;
+                layout.Stacking.ZIndex = (Number(layout.Stacking.ZIndex || 0) || 0) + delta;
+            } else if (compact === 'setimagewrapdistance') {
+                var distanceName = String(body.distanceName || body.DistanceName || '').toLowerCase();
+                var value = Math.max(0, Number(body.value ?? body.Value ?? 0) || 0);
+                if (distanceName.indexOf('left') >= 0) layout.Wrap.DistanceLeft = value;
+                else if (distanceName.indexOf('right') >= 0) layout.Wrap.DistanceRight = value;
+                else if (distanceName.indexOf('top') >= 0) layout.Wrap.DistanceTop = value;
+                else if (distanceName.indexOf('bottom') >= 0) layout.Wrap.DistanceBottom = value;
+            }
+            return applyCommand(inst.id, OPERATION_TYPES.UpdateImageLayout, {
+                target: { blockId: block.id, offset: 0 },
+                layout: layout,
+                affectedParagraphIds: affectedParagraphsAroundObject(inst.model, block.id),
+                source: 'image-command',
+                transactionType: TRANSACTION_TYPES.Default,
+                beforeSelection: inst.selection
+            });
+        }
+
+        var metadata = {};
+        if (compact === 'setimagealttext') metadata.altText = _asText(body.altText ?? body.AltText ?? '');
+        else if (compact === 'setimagedecorative') metadata.isDecorative = (body.isDecorative ?? body.IsDecorative) === true;
+        else if (compact === 'toggleimagecaption') metadata.caption = _asText(block.content && block.content.caption || '').trim() ? '' : _asText(body.caption ?? body.Caption ?? 'Caption');
+        else if (compact === 'setimagecaption') metadata.caption = _asText(body.caption ?? body.Caption ?? '');
+        else if (compact === 'setimageurl') metadata.url = body.url ?? body.Url ?? '';
+        else if (compact === 'setimagelink') metadata.linkUrl = body.url ?? body.Url ?? body.linkUrl ?? body.LinkUrl ?? '';
+        return applyCommand(inst.id, OPERATION_TYPES.UpdateImageMetadata, {
+            target: { blockId: block.id, offset: 0 },
+            metadata: metadata,
+            source: 'image-command',
+            transactionType: TRANSACTION_TYPES.Default,
+            beforeSelection: inst.selection
+        });
+    }
+
     function applyCommand(instanceId, command, payload) {
         var lookup = _get(instanceId, 'applyCommand');
         if (lookup.error) return lookup.error;
+        var operationStart = strictPerformanceNow();
         var commandName = _asText(command || '');
         var body = payload || {};
+        var normalizedCommandName = normalizeCommandId(commandName);
         if (commandName === 'undo') {
             recordTimeline(lookup.inst, 'input-event', { command: 'undo' });
             var undoResult = applyHistoryCommand(lookup.inst, true);
@@ -7495,6 +8549,13 @@ window.tmDocumentEditorEngine = (function () {
             return redoResult;
         }
         var operation = body.operation || body.Operation || null;
+        if (!operation && (inlineCommandTypes().indexOf(normalizedCommandName) >= 0 || normalizedCommandName === 'clearFormatting')) {
+            return applyRuntimeFormattingCommand(lookup.inst, normalizedCommandName, body);
+        }
+        if (!operation) {
+            var runtimeImageResult = applyRuntimeImageCommand(lookup.inst, commandName, body);
+            if (runtimeImageResult) return runtimeImageResult;
+        }
         if (!operation && OPERATION_TYPES[commandName]) {
             operation = createOperation(commandName, body, { source: body.source || 'command' });
         }
@@ -7537,6 +8598,7 @@ window.tmDocumentEditorEngine = (function () {
         lookup.inst.lastDiffer = committed.differ;
         lookup.inst.commands.push({ command: commandName || operation.type, payload: operation.toJSON(), at: Date.now(), transactionId: transaction.id });
         markModelChanged(lookup.inst, commandName || operation.type);
+        refreshRuntimeMarkerStore(lookup.inst);
         recordTimeline(lookup.inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: transaction.operations.length });
         lookup.inst.pendingDomSelectionRestore = _clone(lookup.inst.selection);
         var livePatched = applyLiveTypingDomPatch(lookup.inst, operation, committed);
@@ -7546,7 +8608,52 @@ window.tmDocumentEditorEngine = (function () {
             render(lookup.inst);
         }
         var boundaryPatch = commitBoundaryPatch(lookup.inst, transaction, transaction.operations, committed, transaction.type);
+        recordOperationPerformance(lookup.inst, transaction.operations, Math.max(0, strictPerformanceNow() - operationStart), transaction.invalidatedScopes, transaction.type);
         return Object.assign({ instanceId: instanceId, boundaryPatch: boundaryPatch, liveDomPatch: livePatched === true }, committed);
+    }
+
+    function applyRuntimeFormattingCommand(inst, commandName, payload) {
+        var beforeSelection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        var dispatcher = createCommandDispatcher(inst.model, {
+            selection: beforeSelection,
+            pendingTypingMarks: inst.pendingTypingMarks || []
+        });
+        var result = dispatcher.executeCommand(commandName, payload || {});
+        var operations = dispatcher.getCommittedOperations();
+        inst.commands.push({ command: commandName, payload: _clone(payload || {}), at: Date.now(), result: _clone(result) });
+        recordTimeline(inst, 'input-event', { command: commandName, source: payload && (payload.source || payload.Source) || 'command' });
+        if (!result || result.ok === false) {
+            inst.lastError = result && result.error && result.error.code || 'formatting-command-failed';
+            recordWatchdogFailure(inst, 'formatting-command', inst.lastError, { command: commandName });
+            return Object.assign({ instanceId: inst.id }, result || { ok: false });
+        }
+
+        inst.selection = createSelectionPostFixer(inst.schema).fix(
+            inst.model,
+            result.transaction && result.transaction.afterSelection || beforeSelection);
+        markSelectionChanged(inst, 'applyFormattingCommand');
+        if (operations.length > 0) {
+            markModelChanged(inst, commandName);
+            refreshRuntimeMarkerStore(inst);
+            var transaction = {
+                id: result.transaction && result.transaction.id || ('cmd-txn-' + Date.now() + '-' + Math.floor(Math.random() * 100000)),
+                type: TRANSACTION_TYPES.Default,
+                beforeSelection: beforeSelection,
+                afterSelection: _clone(inst.selection),
+                invalidatedScopes: transactionAffectedBlockIds(null, operations),
+                operations: _clone(operations)
+            };
+            inst.transactions.push(_clone(transaction));
+            inst.layout.invalidatedScopeIds = transaction.invalidatedScopes.slice();
+            inst.pendingDomSelectionRestore = _clone(inst.selection);
+            render(inst);
+            var boundaryPatch = commitBoundaryPatch(inst, transaction, operations, { operations: operations }, commandName);
+            return Object.assign({ instanceId: inst.id, boundaryPatch: boundaryPatch, operationCount: operations.length }, result);
+        }
+
+        inst.pendingDomSelectionRestore = _clone(inst.selection);
+        render(inst);
+        return Object.assign({ instanceId: inst.id, operationCount: 0 }, result);
     }
 
     function pushUndoTransaction(inst, transaction) {
@@ -7631,6 +8738,7 @@ window.tmDocumentEditorEngine = (function () {
     function getDocumentSnapshot(instanceId) {
         var lookup = _get(instanceId, 'getDocumentSnapshot');
         if (lookup.error) return lookup.error;
+        flushTypingBoundaryPatchDispatch(lookup.inst);
         return {
             ok: true,
             instanceId: instanceId,
@@ -7901,6 +9009,8 @@ window.tmDocumentEditorEngine = (function () {
             redoDepth: lookup.inst.redoTransactions.length,
             invalidatedScopes: _asArray(lookup.inst.layout && lookup.inst.layout.invalidatedScopeIds),
             performanceStats: _clone(stats),
+            JsOwnedInputCount: Number(lookup.inst.jsOwnedInputCount || stats.inputDomApplyCount || 0),
+            NativeInputCount: Number(lookup.inst.nativeInputCount || 0),
             timeline: _clone(diagnostics.timeline),
             lastErrors: _clone(diagnostics.lastErrors),
             watchdogFailures: diagnostics.watchdogFailures.length,
@@ -7938,6 +9048,7 @@ window.tmDocumentEditorEngine = (function () {
     function requestAutosaveSnapshot(instanceId) {
         var lookup = _get(instanceId, 'requestAutosaveSnapshot');
         if (lookup.error) return lookup.error;
+        flushTypingBoundaryPatchDispatch(lookup.inst);
         return _sortObject({
             ok: true,
             instanceId: instanceId,
@@ -8039,6 +9150,7 @@ window.tmDocumentEditorEngine = (function () {
         }
         var document = snapshot && (snapshot.Document || snapshot.document) ? (snapshot.Document || snapshot.document) : snapshot;
         lookup.inst.model = importFromCSharpJson(document || {});
+        refreshRuntimeMarkerStore(lookup.inst);
         lookup.inst.selection = firstModelSelection(lookup.inst.model);
         lookup.inst.layout.invalidatedScopeIds = ['document'];
         lookup.inst.lastCSharpUpdate = { type: 'snapshotRefresh', recovery: true, at: Date.now() };
@@ -8186,7 +9298,7 @@ window.tmDocumentEditorEngine = (function () {
     function getFormattingState(instanceId) {
         var lookup = _get(instanceId, 'getFormattingState');
         if (lookup.error) return {};
-        return collectFormattingState(lookup.inst.model, lookup.inst.selection, []);
+        return toBlazorFormattingState(collectFormattingState(lookup.inst.model, lookup.inst.selection, []));
     }
 
     function getSidePanelSyncState(instanceId) {
@@ -8255,8 +9367,23 @@ window.tmDocumentEditorEngine = (function () {
         if (lookup.error) return null;
         var stats = ensureStrictPerformanceStats(lookup.inst);
         return _sortObject({
-            FullRenderCount: stats.renderPassCount || 0,
-            IncrementalOperationCount: lookup.inst.transactions.length,
+            KeyDownCount: stats.keyDownCount || 0,
+            BeforeInputCount: stats.beforeInputCount || 0,
+            InputDomApplyCount: stats.inputDomApplyCount || 0,
+            FullRenderCount: stats.fullRenderCount || stats.renderPassCount || 0,
+            PartialRenderCount: stats.partialRenderCount || 0,
+            TextNodePatchCount: stats.textNodePatchCount || 0,
+            BlockPatchCount: stats.blockPatchCount || 0,
+            MarkerOverlayPatchCount: stats.markerOverlayPatchCount || 0,
+            ObjectOverlayPatchCount: stats.objectOverlayPatchCount || 0,
+            SelectionNotifyCount: stats.selectionNotifyCount || 0,
+            BlazorInteropCallCount: stats.blazorInteropCallCount || 0,
+            TypingFlushCount: stats.typingFlushCount || 0,
+            MaxTypingBatchSize: stats.maxTypingBatchSize || 0,
+            MedianKeyToDomMs: stats.medianKeyToDomMs || 0,
+            P95KeyToDomMs: stats.p95KeyToDomMs || 0,
+            LastKeyToDomMs: stats.lastKeyToDomMs || 0,
+            MaxKeyToDomMs: stats.maxKeyToDomMs || 0,
             LastRenderReason: stats.renderLastReason || '',
             LayoutPassCount: stats.layoutPassCount || 0,
             LastLayoutPassMs: stats.layoutPassLastMs || 0,
@@ -8272,6 +9399,7 @@ window.tmDocumentEditorEngine = (function () {
             InputOperationCount: stats.inputOperationCount || 0,
             LastInputOperationMs: stats.inputOperationLastMs || 0,
             MaxInputOperationMs: stats.inputOperationMaxMs || 0,
+            MaxInputLatencyMs: stats.maxKeyToDomMs || 0,
             TypingLatencyCount: stats.typingLatencyCount || 0,
             LastTypingLatencyMs: stats.typingLatencyLastMs || 0,
             MaxTypingLatencyMs: stats.typingLatencyMaxMs || 0,
@@ -8418,6 +9546,227 @@ window.tmDocumentEditorEngine = (function () {
         return { ok: true, instanceId: instanceId, blockId: imageBlock.id };
     }
 
+    function captureCommentAnchor(instanceId) {
+        var lookup = _get(instanceId, 'captureCommentAnchor');
+        if (lookup.error) return null;
+        var snapshot = readDomSelectionSnapshot(lookup.inst);
+        if (!snapshot || snapshot.isCollapsed !== false || !snapshot.anchor || !snapshot.focus) return null;
+        if (snapshot.anchor.blockId !== snapshot.focus.blockId) return null;
+        var start = Math.min(Number(snapshot.anchor.offset || 0), Number(snapshot.focus.offset || 0));
+        var end = Math.max(Number(snapshot.anchor.offset || 0), Number(snapshot.focus.offset || 0));
+        if (end <= start) return null;
+        return {
+            Type: 1,
+            BlockId: snapshot.anchor.blockId,
+            StartInlineIndex: 0,
+            StartOffset: start,
+            EndInlineIndex: 0,
+            EndOffset: end
+        };
+    }
+
+    function updateActiveCommentDom(inst) {
+        if (!inst || !inst.root) return;
+        var active = _asText(inst.activeCommentId || '');
+        Array.from(inst.root.querySelectorAll('.tm-document-inline--comment-anchor[data-comment-id]')).forEach(function (node) {
+            var selected = !!active && node.getAttribute('data-comment-id') === active;
+            node.classList.toggle('tm-document-inline--comment-anchor--selected', selected);
+            node.classList.toggle('tm-wysiwyg-marker--comment-active', selected);
+            node.setAttribute('aria-current', selected ? 'true' : 'false');
+        });
+    }
+
+    function updateActiveRevisionDom(inst) {
+        if (!inst || !inst.root) return;
+        var active = _asText(inst.activeRevisionId || '');
+        Array.from(inst.root.querySelectorAll('.tm-wysiwyg-revision[data-revision-id], .tm-document-inline--revision[data-revision-id]')).forEach(function (node) {
+            var selected = !!active && node.getAttribute('data-revision-id') === active;
+            node.classList.toggle('tm-wysiwyg-revision--selected', selected);
+            node.classList.toggle('tm-wysiwyg-marker--revision-active', selected);
+            node.setAttribute('aria-current', selected ? 'true' : 'false');
+        });
+    }
+
+    function updateActiveImageSelectionDom(inst) {
+        if (!inst || !inst.root) return;
+        var active = _asText(inst.selection && (inst.selection.activeImageBlockId || (inst.selection.isObjectSelection ? inst.selection.blockId : '')) || '');
+        var selectedFigure = null;
+        Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image[data-block-id]')).forEach(function (figure) {
+            var selected = !!active && figure.getAttribute('data-block-id') === active;
+            figure.classList.toggle('tm-wysiwyg-image--selected', selected);
+            figure.setAttribute('aria-selected', selected ? 'true' : 'false');
+            if (selected) selectedFigure = figure;
+        });
+        scheduleImageFloatingPanelPosition(inst, selectedFigure);
+    }
+
+    function scheduleImageFloatingPanelPosition(inst, selectedFigure) {
+        if (!inst || !inst.root) return;
+        var editor = inst.root.closest && inst.root.closest('.tm-document-editor') || inst.root;
+        var root = editor && editor.querySelector && editor.querySelector('[data-testid="document-wysiwyg-floating-root"]');
+        if (!selectedFigure) {
+            if (root) resetImageFloatingPanelPosition(root);
+            return;
+        }
+        var run = function () { positionImageFloatingPanel(inst, selectedFigure); };
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(run);
+            requestAnimationFrame(function () { requestAnimationFrame(run); });
+        }
+        setTimeout(run, 80);
+        setTimeout(run, 180);
+    }
+
+    function resetImageFloatingPanelPosition(root) {
+        root.classList.remove('tm-document-editor__floating-root--object-anchored');
+        root.style.left = '';
+        root.style.top = '';
+        root.style.right = '';
+        root.style.bottom = '';
+        root.style.maxHeight = '';
+    }
+
+    function positionImageFloatingPanel(inst, selectedFigure) {
+        if (!inst || !inst.root || !selectedFigure || !selectedFigure.isConnected) return;
+        var editor = inst.root.closest && inst.root.closest('.tm-document-editor') || inst.root;
+        var root = editor && editor.querySelector && editor.querySelector('[data-testid="document-wysiwyg-floating-root"]');
+        var panel = root && root.querySelector && root.querySelector('[data-testid="document-image-wrap-panel"]');
+        if (!root || !panel) return;
+        var figureRect = selectedFigure.getBoundingClientRect();
+        var panelRect = panel.getBoundingClientRect();
+        var viewport = {
+            left: 8,
+            top: 8,
+            right: Math.max(8, window.innerWidth - 8),
+            bottom: Math.max(8, window.innerHeight - 8)
+        };
+        var sidePanel = document.querySelector('[data-testid="document-editor-side-panel"], [data-testid="document-side-panel"], .tm-document-editor__side-panel, .tm-document-side-panel');
+        var sideRect = sidePanel && sidePanel.getBoundingClientRect ? sidePanel.getBoundingClientRect() : null;
+        if (sideRect && sideRect.width > 1 && sideRect.left > window.innerWidth * 0.45) {
+            viewport.right = Math.min(viewport.right, sideRect.left - 8);
+        }
+        var width = Math.max(1, panelRect.width || 320);
+        var height = Math.max(1, panelRect.height || 176);
+        var gutter = 10;
+        var candidates = [
+            { placement: 'right', left: figureRect.right + gutter, top: figureRect.top },
+            { placement: 'left', left: figureRect.left - width - gutter, top: figureRect.top },
+            { placement: 'top', left: figureRect.left, top: figureRect.top - height - gutter },
+            { placement: 'bottom', left: figureRect.left, top: figureRect.bottom + gutter },
+            { placement: 'top-center', left: figureRect.left + figureRect.width / 2 - width / 2, top: figureRect.top - height - gutter },
+            { placement: 'bottom-center', left: figureRect.left + figureRect.width / 2 - width / 2, top: figureRect.bottom + gutter }
+        ].map(function (candidate) {
+            var left = Math.max(viewport.left, Math.min(candidate.left, viewport.right - width));
+            var top = Math.max(viewport.top, Math.min(candidate.top, viewport.bottom - height));
+            var rect = { x: left, y: top, width: width, height: height };
+            return Object.assign(candidate, {
+                left: left,
+                top: top,
+                rect: rect,
+                textOverlap: textOverlapArea(inst.root, rect),
+                objectDistance: Math.abs((left + width / 2) - (figureRect.left + figureRect.width / 2)) + Math.abs((top + height / 2) - (figureRect.top + figureRect.height / 2))
+            });
+        });
+        candidates.sort(function (a, b) {
+            return a.textOverlap - b.textOverlap || a.objectDistance - b.objectDistance;
+        });
+        var best = candidates[0];
+        root.classList.add('tm-document-editor__floating-root--object-anchored');
+        root.style.left = Math.round(best.left) + 'px';
+        root.style.top = Math.round(best.top) + 'px';
+        root.style.right = 'auto';
+        root.style.bottom = 'auto';
+        root.style.maxHeight = Math.max(120, Math.floor(viewport.bottom - best.top)) + 'px';
+        root.setAttribute('data-placement', best.placement);
+        root.setAttribute('data-text-overlap-area', String(Math.round(best.textOverlap)));
+    }
+
+    function textOverlapArea(root, rect) {
+        if (!root || !document.createTreeWalker) return 0;
+        var total = 0;
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                var parent = node.parentElement;
+                if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+                if (!parent || parent.closest('figure, [role="menu"], [data-testid*="toolbar"], .tm-document-editor__floating-root, [data-testid="document-side-panel"]')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        while (walker.nextNode()) {
+            var range = document.createRange();
+            range.selectNodeContents(walker.currentNode);
+            Array.from(range.getClientRects()).forEach(function (lineRect) {
+                total += overlapArea(rect, {
+                    x: lineRect.x || lineRect.left || 0,
+                    y: lineRect.y || lineRect.top || 0,
+                    width: lineRect.width || 0,
+                    height: lineRect.height || 0
+                });
+            });
+        }
+        return total;
+    }
+
+    function overlapArea(a, b) {
+        var width = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+        var height = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+        return width * height;
+    }
+
+    function notifyInlineMarkerSelectionContext(inst, kind, id) {
+        if (!inst || !id) return;
+        var current = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        var next = Object.assign({}, current, {
+            activeCommentId: kind === 'comment' ? id : null,
+            activeRevisionId: kind === 'revision' ? id : null,
+            activeImageBlockId: null,
+            activeObjectId: null,
+            isObjectSelection: false,
+            hitTargetKind: kind
+        });
+        inst.selection = createSelectionSnapshot(next);
+        markSelectionChanged(inst, kind + '-marker');
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection), 'selection-changed-failed');
+    }
+
+    function selectCommentAnchor(inst, commentId, scroll, notify) {
+        if (!inst || !inst.root) return { ok: false, commentId: commentId || '' };
+        var id = _asText(commentId || '');
+        if (!id) return { ok: false, instanceId: inst.id, commentId: '' };
+        inst.activeCommentId = id;
+        updateActiveCommentDom(inst);
+        notifyInlineMarkerSelectionContext(inst, 'comment', id);
+        var selector = '.tm-document-inline--comment-anchor[data-comment-id="' + cssEscape(id) + '"]';
+        var target = inst.root.querySelector(selector);
+        if (scroll !== false && target && typeof target.scrollIntoView === 'function') {
+            target.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }
+        if (notify !== false) {
+            invokeBoundaryMethod(inst, 'HandleCommentSelected', id, 'comment-select-failed');
+        }
+        return { ok: !!target, instanceId: inst.id, commentId: id };
+    }
+
+    function selectRevisionAnchor(inst, revisionId, scroll, notify) {
+        if (!inst || !inst.root) return { ok: false, revisionId: revisionId || '' };
+        var id = _asText(revisionId || '');
+        if (!id) return { ok: false, instanceId: inst.id, revisionId: '' };
+        inst.activeRevisionId = id;
+        updateActiveRevisionDom(inst);
+        notifyInlineMarkerSelectionContext(inst, 'revision', id);
+        var selector = '.tm-wysiwyg-revision[data-revision-id="' + cssEscape(id) + '"], .tm-document-inline--revision[data-revision-id="' + cssEscape(id) + '"]';
+        var target = inst.root.querySelector(selector);
+        if (scroll !== false && target && typeof target.scrollIntoView === 'function') {
+            target.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }
+        if (notify !== false) {
+            invokeBoundaryMethod(inst, 'HandleRevisionSelected', id, 'revision-select-failed');
+        }
+        return { ok: !!target, instanceId: inst.id, revisionId: id };
+    }
+
     function upsertComment(instanceId, comment) {
         var lookup = _get(instanceId, 'upsertComment');
         if (lookup.error) return lookup.error;
@@ -8429,6 +9778,8 @@ window.tmDocumentEditorEngine = (function () {
         if (index >= 0) comments[index] = item; else comments.push(item);
         lookup.inst.model.comments = comments;
         buildIndexes(lookup.inst.model);
+        refreshRuntimeMarkerStore(lookup.inst);
+        render(lookup.inst);
         return { ok: true, instanceId: instanceId, commentId: id };
     }
 
@@ -8439,13 +9790,20 @@ window.tmDocumentEditorEngine = (function () {
             return (comment.id || comment.Id) !== commentId;
         });
         buildIndexes(lookup.inst.model);
+        refreshRuntimeMarkerStore(lookup.inst);
+        render(lookup.inst);
         return { ok: true, instanceId: instanceId, commentId: commentId };
     }
 
     function getMarkers(instanceId) {
         var lookup = _get(instanceId, 'getMarkers');
         if (lookup.error) return [];
-        return _clone([].concat(lookup.inst.searchMarkers || [], lookup.inst.protectionMarkers || [], lookup.inst.markers || []));
+        refreshRuntimeMarkerStore(lookup.inst);
+        return _clone([].concat(
+            lookup.inst.searchMarkers || [],
+            lookup.inst.protectionMarkers || [],
+            lookup.inst.markerStore ? lookup.inst.markerStore.all : [],
+            lookup.inst.markers || []));
     }
 
     function upsertMarker(instanceId, marker) {
@@ -8460,12 +9818,16 @@ window.tmDocumentEditorEngine = (function () {
         return { ok: true, instanceId: instanceId, markerId: id };
     }
 
-    function scrollToComment(instanceId) {
-        return focus(instanceId);
+    function scrollToComment(instanceId, commentId) {
+        var lookup = _get(instanceId, 'scrollToComment');
+        if (lookup.error) return lookup.error;
+        return selectCommentAnchor(lookup.inst, commentId, true, false);
     }
 
-    function scrollToRevision(instanceId) {
-        return focus(instanceId);
+    function scrollToRevision(instanceId, revisionId) {
+        var lookup = _get(instanceId, 'scrollToRevision');
+        if (lookup.error) return lookup.error;
+        return selectRevisionAnchor(lookup.inst, revisionId, true, false);
     }
 
     function setTrackChangesEnabled(instanceId, enabled) {
@@ -8483,11 +9845,33 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function reviewRevision(instanceId, revisionId, action) {
-        return { ok: true, instanceId: instanceId, revisionId: revisionId || '', action: action || '' };
+        var lookup = _get(instanceId, 'reviewRevision');
+        if (lookup.error) return lookup.error;
+        var inst = lookup.inst;
+        var reviewAction = String(action || '').toLowerCase().indexOf('reject') >= 0 ? 'RejectRevision' : 'AcceptRevision';
+        var engine = createRevisionEngine(inst.model, {});
+        var result = reviewAction === 'RejectRevision'
+            ? engine.rejectRevision(revisionId, inst.selection || null)
+            : engine.acceptRevision(revisionId, inst.selection || null);
+        buildIndexes(inst.model);
+        refreshRuntimeMarkerStore(inst);
+        markModelChanged(inst, 'review-revision');
+        render(inst);
+        invokeBoundaryMethod(inst, 'HandleRevisionsChanged', exportToCSharpJson(inst.model).Revisions, 'revisions-changed-failed');
+        return Object.assign({ instanceId: instanceId }, result || {});
     }
 
-    function reviewAllRevisions(instanceId, action) {
-        return { ok: true, instanceId: instanceId, action: action || '' };
+    function reviewAllRevisions(instanceId, action, payload) {
+        var lookup = _get(instanceId, 'reviewAllRevisions');
+        if (lookup.error) return lookup.error;
+        var ids = _asArray(payload && (payload.RevisionIds || payload.revisionIds));
+        if (!ids.length) {
+            ids = _asArray(lookup.inst.model && lookup.inst.model.revisions)
+                .filter(function (revision) { return readRevisionStatus(revision) === 'Pending'; })
+                .map(function (revision) { return revision.id || revision.Id; });
+        }
+        var results = ids.map(function (id) { return reviewRevision(instanceId, id, action); });
+        return { ok: results.every(function (item) { return item && item.ok !== false; }), instanceId: instanceId, action: action || '', count: results.length };
     }
 
     function clearRevisionDecorations(instanceId) {
@@ -8537,15 +9921,25 @@ window.tmDocumentEditorEngine = (function () {
                 pageIndex: pages.length,
                 pageNumber: pages.length + 1,
                 blocks: allBlocks.slice(index, index + config.blocksPerPage),
-                blockIds: allBlocks.slice(index, index + config.blocksPerPage).map(function (block) { return block.id; })
+                blockIds: allBlocks.slice(index, index + config.blocksPerPage).map(function (block) { return block.id; }),
+                header: null,
+                footer: null,
+                headerBlockIds: [],
+                footerBlockIds: []
             });
             if (allBlocks.length === 0) break;
         }
         var activeBlockId = previousSelection && previousSelection.blockId || inst && inst.selection && inst.selection.blockId || '';
         var activePageIndex = Number(inst && inst.activePageIndex || 0) || 0;
+        pages.forEach(function (page) {
+            page.header = resolveHeaderFooterRegion(inst && inst.model, 'header', page.pageNumber);
+            page.footer = resolveHeaderFooterRegion(inst && inst.model, 'footer', page.pageNumber);
+            page.headerBlockIds = _asArray(page.header && page.header.blocks).map(function (block) { return block.id; });
+            page.footerBlockIds = _asArray(page.footer && page.footer.blocks).map(function (block) { return block.id; });
+        });
         if (!inst || inst.activePageIndexPinned !== true) {
             pages.forEach(function (page) {
-                if (activeBlockId && page.blockIds.indexOf(activeBlockId) >= 0) activePageIndex = page.pageIndex;
+                if (activeBlockId && page.blockIds.concat(page.headerBlockIds, page.footerBlockIds).indexOf(activeBlockId) >= 0) activePageIndex = page.pageIndex;
             });
         }
         activePageIndex = Math.max(0, Math.min(activePageIndex, Math.max(0, pages.length - 1)));
@@ -8571,7 +9965,10 @@ window.tmDocumentEditorEngine = (function () {
         if (!id) return -1;
         var pages = _asArray(layout && layout.pages);
         for (var index = 0; index < pages.length; index++) {
-            if (_asArray(pages[index].blockIds || pages[index].BlockIds).indexOf(id) >= 0) return index;
+            var ids = _asArray(pages[index].blockIds || pages[index].BlockIds)
+                .concat(_asArray(pages[index].headerBlockIds || pages[index].HeaderBlockIds))
+                .concat(_asArray(pages[index].footerBlockIds || pages[index].FooterBlockIds));
+            if (ids.indexOf(id) >= 0) return index;
         }
         return -1;
     }
@@ -8595,11 +9992,44 @@ window.tmDocumentEditorEngine = (function () {
     function restoreDomSelectionFromSnapshot(inst, selection) {
         if (!inst || !inst.root || !selection || selection.isObjectSelection === true || selection.isCellSelection === true) return false;
         var snapshot = createSelectionSnapshot(selection);
-        if (!snapshot.blockId || snapshot.isCollapsed === false) return false;
+        if (!snapshot.blockId) return false;
+        if (snapshot.isCollapsed === false) {
+            if (snapshot.anchor.blockId !== snapshot.focus.blockId) return false;
+            var selectedBlock = inst.root.querySelector('[data-block-id="' + cssEscape(snapshot.anchor.blockId) + '"]');
+            if (!selectedBlock) return false;
+            var startOffset = Math.min(Number(snapshot.anchor.offset || 0), Number(snapshot.focus.offset || 0));
+            var endOffset = Math.max(Number(snapshot.anchor.offset || 0), Number(snapshot.focus.offset || 0));
+            var startPoint = domTextPointAtBlockOffset(selectedBlock, startOffset);
+            var endPoint = domTextPointAtBlockOffset(selectedBlock, endOffset);
+            if (!startPoint || !endPoint) return false;
+            try {
+                var range = document.createRange();
+                range.setStart(startPoint.node, startPoint.offset);
+                range.setEnd(endPoint.node, endPoint.offset);
+                var editable = selectedBlock.closest('[contenteditable="true"]');
+                if (editable && typeof editable.focus === 'function') editable.focus({ preventScroll: true });
+                var rangeSelection = window.getSelection && window.getSelection();
+                if (!rangeSelection) return false;
+                rangeSelection.removeAllRanges();
+                rangeSelection.addRange(range);
+                return true;
+            } catch (error) {
+                recordTimeline(inst, 'selection-restore-failed', { error: String(error && error.message || error) });
+                return false;
+            }
+        }
         var mapped = logicalToDomRange(inst.root, inst.model, snapshot);
         if (!mapped.ok || !mapped.range) return false;
         try {
-            var editable = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable="true"]');
+            var editable = null;
+            if (snapshot.region === 'Header' || snapshot.region === 'Footer') {
+                var regionSelector = '.tm-wysiwyg-page__' + snapshot.region.toLowerCase() + '[contenteditable="true"]';
+                var hfSelector = snapshot.headerFooterId
+                    ? regionSelector + '[data-hf-id="' + cssEscape(snapshot.headerFooterId) + '"]'
+                    : regionSelector;
+                editable = inst.root.querySelector(hfSelector) || inst.root.querySelector(regionSelector);
+            }
+            if (!editable) editable = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable="true"]');
             if (editable && typeof editable.focus === 'function') editable.focus({ preventScroll: true });
             var current = window.getSelection && window.getSelection();
             if (!current) return false;
@@ -8610,6 +10040,31 @@ window.tmDocumentEditorEngine = (function () {
             recordTimeline(inst, 'selection-restore-failed', { error: String(error && error.message || error) });
             return false;
         }
+    }
+
+    function domTextPointAtBlockOffset(block, offset) {
+        if (!block) return null;
+        var target = Math.max(0, Number(offset || 0));
+        var walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                return node.nodeValue !== null ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }
+        });
+        var currentOffset = 0;
+        var last = null;
+        while (walker.nextNode()) {
+            var node = walker.currentNode;
+            var length = node.nodeValue ? node.nodeValue.length : 0;
+            last = node;
+            if (target <= currentOffset + length) {
+                return { node: node, offset: Math.max(0, Math.min(length, target - currentOffset)) };
+            }
+            currentOffset += length;
+        }
+        if (last) {
+            return { node: last, offset: last.nodeValue ? last.nodeValue.length : 0 };
+        }
+        return { node: block, offset: 0 };
     }
 
     function renderImageFigureStyle(object) {
@@ -8643,7 +10098,10 @@ window.tmDocumentEditorEngine = (function () {
     function renderImageFigureClasses(selected, object) {
         var mode = normalizeWrapModeName(object && object.wrapMode);
         var align = String(object && object.horizontalPosition && object.horizontalPosition.align || '').toLowerCase();
-        var classes = ['tm-wysiwyg-block', 'tm-wysiwyg-image', 'tm-wysiwyg-image--wrap-' + mode.toLowerCase()];
+        var modeClass = mode === 'TopBottom'
+            ? 'top-bottom'
+            : (mode === 'BehindText' ? 'behind-text' : (mode === 'InFrontOfText' ? 'in-front-of-text' : mode.toLowerCase()));
+        var classes = ['tm-wysiwyg-block', 'tm-wysiwyg-image', 'tm-wysiwyg-image--wrap-' + modeClass];
         if (mode === 'Square' || mode === 'Tight' || mode === 'Through') {
             classes.push(align === 'right' || align === 'end' ? 'tm-wysiwyg-image--float-right' : 'tm-wysiwyg-image--float-left');
         }
@@ -8651,10 +10109,216 @@ window.tmDocumentEditorEngine = (function () {
         return classes.join(' ');
     }
 
-    function renderEngineBlockHtml(inst, block, imageAltMissing) {
+    function normalizeHeaderFooterScope(scope) {
+        var value = String(scope || '').toLowerCase();
+        if (value.indexOf('first') >= 0) return 'FirstPage';
+        if (value.indexOf('even') >= 0) return 'EvenPage';
+        return 'Primary';
+    }
+
+    function resolveHeaderFooterRegion(model, type, pageNumber) {
+        var list = type === 'footer' ? _asArray(model && model.footers) : _asArray(model && model.headers);
+        if (!list.length) return null;
+        var desiredScope = pageNumber === 1 ? 'FirstPage' : pageNumber % 2 === 0 ? 'EvenPage' : 'Primary';
+        var scoped = list.find(function (region) { return normalizeHeaderFooterScope(region.scope) === desiredScope; });
+        if (scoped) return scoped;
+        return list.find(function (region) { return normalizeHeaderFooterScope(region.scope) === 'Primary'; }) || list[0] || null;
+    }
+
+    function resolveInlineRunDisplayText(run, pageNumber, totalPages) {
+        var fieldType = String(run && (run.fieldType || run.FieldType) || '').toLowerCase();
+        if (run && run.kind === 'field') {
+            if (fieldType.indexOf('pagenumber') >= 0 || fieldType.indexOf('page-number') >= 0 || fieldType === 'page') return String(pageNumber || 1);
+            if (fieldType.indexOf('pagecount') >= 0 || fieldType.indexOf('page-count') >= 0 || fieldType.indexOf('numpages') >= 0) return String(totalPages || 1);
+        }
+        return _asText(run && run.text);
+    }
+
+    function textFromRunsForRender(runs, pageNumber, totalPages) {
+        return _asArray(runs).map(function (run) { return resolveInlineRunDisplayText(run, pageNumber, totalPages); }).join('');
+    }
+
+    function commentMarkersForBlock(inst, blockId) {
+        if (!inst || !inst.markerStore) refreshRuntimeMarkerStore(inst);
+        return _asArray(inst && inst.markerStore && inst.markerStore.byType('comment')).filter(function (marker) {
+            var range = marker.range || {};
+            return range.startBlockId === blockId || range.endBlockId === blockId;
+        });
+    }
+
+    function revisionMarkersForBlock(inst, blockId) {
+        if (!inst || !inst.markerStore) refreshRuntimeMarkerStore(inst);
+        return _asArray(inst && inst.markerStore && inst.markerStore.all).filter(function (marker) {
+            var range = marker.range || {};
+            return String(marker.type || '').indexOf('revision') === 0
+                && (range.startBlockId === blockId || range.endBlockId === blockId);
+        });
+    }
+
+    function renderCommentSpanHtml(inst, commentId, text, status) {
+        var id = _asText(commentId);
+        var active = id && inst && inst.activeCommentId === id;
+        var classes = [
+            'tm-document-inline',
+            'tm-document-inline--comment-anchor',
+            'tm-wysiwyg-marker',
+            'tm-wysiwyg-marker--comment'
+        ];
+        if (status === 'resolved') classes.push('tm-document-inline--comment-anchor--resolved');
+        if (active) classes.push('tm-document-inline--comment-anchor--selected', 'tm-wysiwyg-marker--comment-active');
+        return '<span class="' + classes.join(' ') + '" data-testid="document-comment-marker" data-comment-id="' + _escape(id) + '" data-marker-id="comment:' + _escape(id) + '" data-comment-status="' + _escape(status || 'open') + '" aria-current="' + (active ? 'true' : 'false') + '">' + _escape(text) + '</span>';
+    }
+
+    function renderRevisionSpanHtml(inst, revisionId, text, marker, innerHtml) {
+        var id = _asText(revisionId);
+        var revision = revisionById(inst && inst.model, id);
+        var markerType = marker && marker.type || readRevisionMarkerType(revision);
+        var typeClass = markerType === 'revisionDeletion'
+            ? 'delete'
+            : markerType === 'revisionFormat'
+                ? 'format'
+                : 'insert';
+        var active = id && inst && inst.activeRevisionId === id;
+        var classes = [
+            'tm-document-inline',
+            'tm-document-inline--revision',
+            'tm-document-inline--revision-' + typeClass,
+            'tm-wysiwyg-marker',
+            'tm-wysiwyg-marker--revision',
+            'tm-wysiwyg-marker--' + markerType,
+            'tm-wysiwyg-revision',
+            'tm-wysiwyg-revision--' + typeClass
+        ];
+        if (active) classes.push('tm-wysiwyg-revision--selected', 'tm-wysiwyg-marker--revision-active');
+        return '<span class="' + classes.join(' ') + '" data-testid="document-revision-marker" data-revision-id="' + _escape(id) + '" data-marker-id="revision:' + _escape(id) + '" data-revision-type="' + _escape(markerType) + '" aria-current="' + (active ? 'true' : 'false') + '">' + (innerHtml !== undefined ? innerHtml : _escape(text)) + '</span>';
+    }
+
+    function renderParagraphRunsHtml(inst, block, pageNumber, totalPages) {
+        var commentMarkers = commentMarkersForBlock(inst, block && block.id || '');
+        var revisionMarkers = revisionMarkersForBlock(inst, block && block.id || '');
+        var markers = commentMarkers.concat(revisionMarkers);
+        var cursor = 0;
+        var html = [];
+        _asArray(block && block.content && block.content.runs).forEach(function (run) {
+            var text = resolveInlineRunDisplayText(run, pageNumber, totalPages);
+            var runStart = cursor;
+            var runEnd = cursor + text.length;
+            var inlineCommentIds = readCommentIdsFromRun(run);
+            var inlineRevisionIds = readRevisionIdsFromRun(run);
+            var boundaries = [0, text.length];
+            markers.forEach(function (marker) {
+                var range = marker.range || {};
+                var start = Math.max(runStart, Number(range.startOffset || 0));
+                var end = Math.min(runEnd, Number(range.endOffset || 0));
+                if (end > start) {
+                    boundaries.push(start - runStart, end - runStart);
+                }
+            });
+            boundaries = _unique(boundaries.map(function (value) {
+                return Math.max(0, Math.min(text.length, Number(value || 0) || 0));
+            })).sort(function (a, b) { return a - b; });
+            for (var i = 0; i < boundaries.length - 1; i++) {
+                var localStart = boundaries[i];
+                var localEnd = boundaries[i + 1];
+                if (localEnd <= localStart) continue;
+                var chunk = text.slice(localStart, localEnd);
+                var absoluteStart = runStart + localStart;
+                var absoluteEnd = runStart + localEnd;
+                var commentId = inlineCommentIds[0] || '';
+                var commentMarker = null;
+                if (!commentId) {
+                    commentMarker = commentMarkers.find(function (candidate) {
+                        var range = candidate.range || {};
+                        return Number(range.startOffset || 0) < absoluteEnd && Number(range.endOffset || 0) > absoluteStart;
+                    }) || null;
+                    commentId = commentMarker && commentMarker.targetId || '';
+                }
+                var revisionId = inlineRevisionIds[0] || '';
+                var revisionMarker = null;
+                if (!revisionId) {
+                    revisionMarker = revisionMarkers.find(function (candidate) {
+                        var range = candidate.range || {};
+                        return Number(range.startOffset || 0) < absoluteEnd && Number(range.endOffset || 0) > absoluteStart;
+                    }) || null;
+                    revisionId = revisionMarker && revisionMarker.targetId || '';
+                } else {
+                    revisionMarker = revisionMarkers.find(function (candidate) { return candidate.targetId === revisionId; }) || null;
+                }
+                var chunkHtml = _escape(chunk);
+                if (commentId) {
+                    var comment = commentById(inst && inst.model, commentId);
+                    chunkHtml = renderCommentSpanHtml(inst, commentId, chunk, commentMarker && commentMarker.status || readCommentStatus(comment));
+                }
+                if (revisionId) chunkHtml = renderRevisionSpanHtml(inst, revisionId, chunk, revisionMarker, chunkHtml);
+                html.push(chunkHtml);
+            }
+            if (text.length === 0 && inlineCommentIds[0]) {
+                html.push(renderCommentSpanHtml(inst, inlineCommentIds[0], '', readCommentStatus(commentById(inst && inst.model, inlineCommentIds[0]))));
+            }
+            cursor = runEnd;
+        });
+        return html.join('');
+    }
+
+    function renderHeaderFooterHtml(inst, page, type, readOnly, totalPages) {
+        var isHeader = type === 'header';
+        var region = resolveHeaderFooterRegion(inst.model, type, page.pageNumber);
+        var regionName = isHeader ? 'Header' : 'Footer';
+        var cssName = isHeader ? 'header' : 'footer';
+        var placeholder = isHeader
+            ? (inst.options.HeaderPlaceholder || inst.options.headerPlaceholder || 'Header')
+            : (inst.options.FooterPlaceholder || inst.options.footerPlaceholder || 'Footer');
+        var label = isHeader
+            ? formatA11yLabel(inst.options.HeaderLabel || inst.options.headerLabel || 'Header, page {0}', page.pageNumber)
+            : formatA11yLabel(inst.options.FooterLabel || inst.options.footerLabel || 'Footer, page {0}', page.pageNumber);
+        var blocks = _asArray(region && region.blocks);
+        var empty = !blocks.length || blocks.every(function (block) { return !_blockText(block).trim(); });
+        var classes = ['tm-wysiwyg-page__' + cssName];
+        if (empty) classes.push('tm-wysiwyg-page__' + cssName + '--empty');
+        var html = ['<div class="' + classes.join(' ') + '" data-render-region="' + regionName + '" data-testid="' + (isHeader ? 'document-page-header' : 'document-page-footer') + '" data-hf-id="' + _escape(region && region.id || '') + '" data-placeholder="' + _escape(placeholder) + '" contenteditable="' + (readOnly ? 'false' : 'true') + '" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(label) + '" tabindex="0">'];
+        blocks.forEach(function (block) {
+            html.push(renderEngineBlockHtml(inst, block, inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.', page.pageNumber, totalPages));
+        });
+        if (!blocks.length) html.push('<p class="tm-wysiwyg-block" data-block-id="' + _escape((region && region.id || cssName) + '-empty') + '"><br></p>');
+        html.push('</div>');
+        return html.join('');
+    }
+
+    function buildSimpleHeaderFooterLayoutRegions(root, pagePlan) {
+        return _asArray(pagePlan && pagePlan.pages).flatMap(function (page) {
+            return ['Header', 'Footer'].map(function (regionName) {
+                var isHeader = regionName === 'Header';
+                var node = root && root.querySelector ? root.querySelector('.tm-wysiwyg-page[data-page-index="' + page.pageIndex + '"] .tm-wysiwyg-page__' + (isHeader ? 'header' : 'footer')) : null;
+                var rect = node && node.getBoundingClientRect ? node.getBoundingClientRect() : { x: 0, y: 0, width: 0, height: 0 };
+                var region = isHeader ? page.header : page.footer;
+                return _sortObject({
+                    id: (region && region.id || regionName.toLowerCase()) + '-page-' + page.pageIndex,
+                    headerFooterId: region && region.id || '',
+                    region: regionName,
+                    pageIndex: page.pageIndex,
+                    pageNumber: page.pageNumber,
+                    frame: { x: rect.x || 0, y: rect.y || 0, width: rect.width || 0, height: rect.height || 0 },
+                    blockIds: (isHeader ? page.headerBlockIds : page.footerBlockIds).slice(),
+                    blocks: _asArray(region && region.blocks).map(function (block) {
+                        return {
+                            id: 'layout-' + block.id + '-page-' + page.pageIndex,
+                            blockId: block.id,
+                            region: regionName,
+                            headerFooterId: region && region.id || '',
+                            pageIndex: page.pageIndex,
+                            rect: { x: rect.x || 0, y: rect.y || 0, width: rect.width || 0, height: rect.height || 0 }
+                        };
+                    })
+                });
+            });
+        });
+    }
+
+    function renderEngineBlockHtml(inst, block, imageAltMissing, pageNumber, totalPages) {
         if (!block) return '';
         if (block.type === 'paragraph') {
-            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" role="paragraph">' + _escape(_textFromRuns(block.content.runs)) + '</p>';
+            var content = renderParagraphRunsHtml(inst, block, pageNumber, totalPages);
+            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" role="paragraph">' + (content || '<br>') + '</p>';
         }
         if (block.type === 'image') {
             var object = normalizeImageObject(block);
@@ -8716,15 +10380,17 @@ window.tmDocumentEditorEngine = (function () {
                 if (page.isVirtual) {
                     html.push('<div class="tm-wysiwyg-page__virtual-placeholder" data-testid="document-wysiwyg-virtual-page" data-block-count="' + page.blockIds.length + '"></div>');
                 } else {
+                    html.push(renderHeaderFooterHtml(inst, page, 'header', readOnly, pagePlan.pages.length));
                     html.push('<div class="tm-wysiwyg-page__body" data-render-region="Body" contenteditable="' + (readOnly ? 'false' : 'true') + '" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(currentBodyLabel) + '" tabindex="0">');
                     if (blocks.length === 0) {
                         html.push('<p class="tm-wysiwyg-block" data-block-id="empty-paragraph"><br></p>');
                     } else {
                         page.blocks.forEach(function (block) {
-                            html.push(renderEngineBlockHtml(inst, block, imageAltMissing));
+                            html.push(renderEngineBlockHtml(inst, block, imageAltMissing, page.pageNumber, pagePlan.pages.length));
                         });
                     }
                     html.push('</div>');
+                    html.push(renderHeaderFooterHtml(inst, page, 'footer', readOnly, pagePlan.pages.length));
                 }
                 html.push('</section>');
             });
@@ -8741,11 +10407,15 @@ window.tmDocumentEditorEngine = (function () {
                         pageIndex: page.pageIndex,
                         pageNumber: page.pageNumber,
                         blockIds: page.blockIds.slice(),
+                        headerFooterIds: [page.header && page.header.id, page.footer && page.footer.id].filter(Boolean),
+                        headerBlockIds: page.headerBlockIds.slice(),
+                        footerBlockIds: page.footerBlockIds.slice(),
                         exclusions: [],
                         isVirtual: page.isVirtual === true,
                         isRendered: page.isRendered === true
                     };
                 }),
+                headerFooterRegions: buildSimpleHeaderFooterLayoutRegions(inst.root, pagePlan),
                 activePageIndex: pagePlan.activePageIndex,
                 virtualizationEnabled: pagePlan.virtualizationEnabled,
                 invalidatedScopeIds: invalidatedScopeIds
@@ -8754,19 +10424,23 @@ window.tmDocumentEditorEngine = (function () {
             diagnostics.layoutVersion++;
             recordLayoutMetric(inst, Math.max(0, strictPerformanceNow() - layoutStart), 'render', invalidatedScopeIds);
             var first = blocks[0] || null;
-            var selectionBlockId = previousSelection && previousSelection.blockId && _findBlock(inst.model, previousSelection.blockId)
-                ? previousSelection.blockId
+            var preservedSelection = createSelectionSnapshot(previousSelection || {});
+            var selectionBlockId = preservedSelection.blockId && _findBlock(inst.model, preservedSelection.blockId)
+                ? preservedSelection.blockId
                 : (first ? first.id : 'empty-paragraph');
             if (diagnostics.forceSelectionFailure) {
                 diagnostics.forceSelectionFailure = false;
                 throw new Error('forced strict selection restore failure');
             }
-            inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, {
-                region: previousSelection && previousSelection.region || 'Body',
-                blockId: selectionBlockId,
-                offset: previousSelection && Number(previousSelection.offset || 0) || 0,
-                isCollapsed: previousSelection ? previousSelection.isCollapsed !== false : true
-            });
+            if (selectionBlockId !== preservedSelection.blockId) {
+                preservedSelection = createSelectionSnapshot({
+                    region: preservedSelection.region || 'Body',
+                    blockId: selectionBlockId,
+                    offset: 0,
+                    isCollapsed: true
+                });
+            }
+            inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, preservedSelection);
             markSelectionChanged(inst, 'render');
             if (inst.pendingDomSelectionRestore) {
                 restoreDomSelectionFromSnapshot(inst, inst.pendingDomSelectionRestore);
@@ -8778,6 +10452,9 @@ window.tmDocumentEditorEngine = (function () {
             diagnostics.lastValidLayout = _clone(inst.layout);
             diagnostics.lastValidSelection = _clone(inst.selection);
             diagnostics.lastValidSnapshot = _clone(inst.model);
+            updateActiveCommentDom(inst);
+            updateActiveRevisionDom(inst);
+            updateActiveImageSelectionDom(inst);
             inst.root.removeAttribute('data-debug-recovery');
         } catch (error) {
             var message = String(error && error.message || error);
@@ -9337,6 +11014,247 @@ window.tmDocumentEditorEngine = (function () {
         return store;
     }
 
+    function readCommentId(comment) {
+        return _asText(comment && (comment.id || comment.Id) || '');
+    }
+
+    function readCommentStatus(comment) {
+        var raw = comment && (comment.status ?? comment.Status);
+        if (raw === 1) return 'resolved';
+        var text = _asText(raw || 'Open').toLowerCase();
+        return text.indexOf('resolved') >= 0 ? 'resolved' : 'open';
+    }
+
+    function commentById(model, commentId) {
+        return _asArray(model && model.comments).find(function (comment) {
+            return readCommentId(comment) === commentId;
+        }) || null;
+    }
+
+    function revisionById(model, revisionId) {
+        var id = _asText(revisionId);
+        return _asArray(model && model.revisions).find(function (revision) {
+            return _asText(revision && (revision.id || revision.Id)) === id;
+        }) || null;
+    }
+
+    function readRevisionStatus(revision) {
+        return normalizeRevisionStatus(revision && (revision.status ?? revision.Status ?? revision.action ?? revision.Action));
+    }
+
+    function readRevisionTypeName(revision) {
+        return normalizeRevisionType(revision && (revision.type ?? revision.Type));
+    }
+
+    function readRevisionMarkerType(revision) {
+        var type = readRevisionTypeName(revision);
+        if (type === 'Deletion') return 'revisionDeletion';
+        if (type === 'FormatChange' || type === 'Formatting') return 'revisionFormat';
+        return 'revisionInsertion';
+    }
+
+    function collectInlineCommentRanges(model) {
+        var ranges = {};
+        function remember(commentId, blockId, start, end) {
+            if (!commentId || !blockId || end <= start) return;
+            var existing = ranges[commentId];
+            if (!existing) {
+                ranges[commentId] = { startBlockId: blockId, endBlockId: blockId, startOffset: start, endOffset: end };
+                return;
+            }
+            if (existing.startBlockId === blockId && existing.endBlockId === blockId) {
+                existing.startOffset = Math.min(existing.startOffset, start);
+                existing.endOffset = Math.max(existing.endOffset, end);
+            }
+        }
+        function scanBlock(block) {
+            if (!block || block.type !== 'paragraph') {
+                if (block && block.type === 'table') {
+                    _asArray(block.content && block.content.rows).forEach(function (row) {
+                        _asArray(row.cells).forEach(function (cell) { _asArray(cell.blocks).forEach(scanBlock); });
+                    });
+                }
+                return;
+            }
+            var cursor = 0;
+            _asArray(block.content && block.content.runs).forEach(function (run) {
+                var text = resolveInlineRunDisplayText(run);
+                var start = cursor;
+                var end = cursor + text.length;
+                readCommentIdsFromRun(run).forEach(function (commentId) {
+                    remember(commentId, block.id, start, end);
+                });
+                cursor = end;
+            });
+        }
+        _asArray(model && model.body && model.body.blocks).forEach(scanBlock);
+        _asArray(model && model.headers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
+        _asArray(model && model.footers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
+        return ranges;
+    }
+
+    function collectInlineRevisionRanges(model) {
+        var ranges = {};
+        function remember(revisionId, blockId, start, end) {
+            if (!revisionId || !blockId || end <= start) return;
+            var existing = ranges[revisionId];
+            if (!existing) {
+                ranges[revisionId] = { startBlockId: blockId, endBlockId: blockId, startOffset: start, endOffset: end };
+                return;
+            }
+            if (existing.startBlockId === blockId && existing.endBlockId === blockId) {
+                existing.startOffset = Math.min(existing.startOffset, start);
+                existing.endOffset = Math.max(existing.endOffset, end);
+            }
+        }
+        function scanBlock(block) {
+            if (!block || block.type !== 'paragraph') {
+                if (block && block.type === 'table') {
+                    _asArray(block.content && block.content.rows).forEach(function (row) {
+                        _asArray(row.cells).forEach(function (cell) { _asArray(cell.blocks).forEach(scanBlock); });
+                    });
+                }
+                return;
+            }
+            var cursor = 0;
+            _asArray(block.content && block.content.runs).forEach(function (run) {
+                var text = resolveInlineRunDisplayText(run);
+                var start = cursor;
+                var end = cursor + text.length;
+                readRevisionIdsFromRun(run).forEach(function (revisionId) {
+                    remember(revisionId, block.id, start, end);
+                });
+                cursor = end;
+            });
+        }
+        _asArray(model && model.body && model.body.blocks).forEach(scanBlock);
+        _asArray(model && model.headers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
+        _asArray(model && model.footers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
+        return ranges;
+    }
+
+    function blockOffsetFromInlineIndex(block, inlineIndex, offset) {
+        var runs = _asArray(block && block.content && block.content.runs);
+        var index = Math.max(0, Math.min(runs.length - 1, Number(inlineIndex || 0) || 0));
+        var total = 0;
+        for (var i = 0; i < index; i++) total += resolveInlineRunDisplayText(runs[i]).length;
+        return total + Math.max(0, Number(offset || 0) || 0);
+    }
+
+    function rangeFromCommentAnchor(model, comment) {
+        var anchor = comment && (comment.anchor || comment.Anchor) || {};
+        var blockId = _asText(anchor.BlockId || anchor.blockId || anchor.StartBlockId || anchor.startBlockId || '');
+        if (!blockId) return null;
+        var block = _findBlock(model, blockId);
+        var length = _blockText(block).length;
+        var hasInlineStart = anchor.StartInlineIndex !== undefined || anchor.startInlineIndex !== undefined;
+        var hasInlineEnd = anchor.EndInlineIndex !== undefined || anchor.endInlineIndex !== undefined;
+        var start = hasInlineStart
+            ? blockOffsetFromInlineIndex(block, anchor.StartInlineIndex ?? anchor.startInlineIndex, anchor.StartOffset ?? anchor.startOffset ?? anchor.StartTextOffset ?? anchor.startTextOffset ?? 0)
+            : Number(anchor.StartOffset ?? anchor.startOffset ?? anchor.StartTextOffset ?? anchor.startTextOffset ?? 0) || 0;
+        var end = hasInlineEnd
+            ? blockOffsetFromInlineIndex(block, anchor.EndInlineIndex ?? anchor.endInlineIndex, anchor.EndOffset ?? anchor.endOffset ?? anchor.EndTextOffset ?? anchor.endTextOffset ?? length)
+            : Number(anchor.EndOffset ?? anchor.endOffset ?? anchor.EndTextOffset ?? anchor.endTextOffset ?? length) || length;
+        if (end <= start && length > start) end = length;
+        return {
+            startBlockId: blockId,
+            endBlockId: _asText(anchor.EndBlockId || anchor.endBlockId || blockId),
+            startOffset: Math.max(0, Math.min(start, length)),
+            endOffset: Math.max(0, Math.min(Math.max(start, end), length))
+        };
+    }
+
+    function rangeFromRevision(model, revision) {
+        var source = revision || {};
+        var revisionRange = source.range || source.Range || source.affectedRange || source.AffectedRange || {};
+        var blockId = _asText(revisionRange.BlockId || revisionRange.blockId || revisionRange.StartBlockId || revisionRange.startBlockId || '');
+        if (!blockId) return null;
+        var block = _findBlock(model, blockId);
+        var length = _blockText(block).length;
+        var hasInlineStart = revisionRange.StartInlineIndex !== undefined || revisionRange.startInlineIndex !== undefined;
+        var hasInlineEnd = revisionRange.EndInlineIndex !== undefined || revisionRange.endInlineIndex !== undefined;
+        var start = hasInlineStart
+            ? blockOffsetFromInlineIndex(block, revisionRange.StartInlineIndex ?? revisionRange.startInlineIndex, revisionRange.StartOffset ?? revisionRange.startOffset ?? revisionRange.start ?? 0)
+            : Number(revisionRange.StartOffset ?? revisionRange.startOffset ?? revisionRange.start ?? 0) || 0;
+        var end = hasInlineEnd
+            ? blockOffsetFromInlineIndex(block, revisionRange.EndInlineIndex ?? revisionRange.endInlineIndex, revisionRange.EndOffset ?? revisionRange.endOffset ?? revisionRange.end ?? length)
+            : Number(revisionRange.EndOffset ?? revisionRange.endOffset ?? revisionRange.end ?? length) || length;
+        if (end <= start && length > start) end = length;
+        return {
+            startBlockId: blockId,
+            endBlockId: _asText(revisionRange.EndBlockId || revisionRange.endBlockId || blockId),
+            startOffset: Math.max(0, Math.min(start, length)),
+            endOffset: Math.max(0, Math.min(Math.max(start, end), length))
+        };
+    }
+
+    function buildRuntimeCommentMarkers(model) {
+        var inlineRanges = collectInlineCommentRanges(model);
+        return _asArray(model && model.comments).map(function (comment) {
+            var commentId = readCommentId(comment);
+            if (!commentId) return null;
+            var range = inlineRanges[commentId] || rangeFromCommentAnchor(model, comment);
+            if (!range || !range.startBlockId || range.endOffset <= range.startOffset) return null;
+            var status = readCommentStatus(comment);
+            return _sortObject({
+                blockId: range.startBlockId,
+                id: 'comment:' + commentId,
+                isActive: false,
+                isResolved: status === 'resolved',
+                startOffset: range.startOffset,
+                endOffset: range.endOffset,
+                type: 'comment',
+                threadId: commentId,
+                targetId: commentId,
+                status: status,
+                range: range,
+                affectsData: true,
+                priority: 60,
+                source: 'document'
+            });
+        }).filter(Boolean);
+    }
+
+    function buildRuntimeRevisionMarkers(model) {
+        var inlineRanges = collectInlineRevisionRanges(model);
+        return _asArray(model && model.revisions).map(function (revision) {
+            var normalized = normalizeRevision(revision);
+            var revisionId = _asText(normalized.id);
+            if (!revisionId || readRevisionStatus(normalized) !== 'Pending') return null;
+            var range = inlineRanges[revisionId] || rangeFromRevision(model, normalized);
+            if (!range || !range.startBlockId || range.endOffset <= range.startOffset) return null;
+            var type = readRevisionMarkerType(normalized);
+            var payloadText = _asText(normalized.payloadJson || normalized.payload && normalized.payload.text || '');
+            return _sortObject({
+                author: normalized.author,
+                blockId: range.startBlockId,
+                createdAt: normalized.createdAt || normalized.timestamp || null,
+                endOffset: range.endOffset,
+                formatDelta: normalized.payload && normalized.payload.mark || null,
+                id: 'revision:' + revisionId,
+                insertedText: type === 'revisionInsertion' ? payloadText : '',
+                isActive: false,
+                originalText: type === 'revisionDeletion' ? payloadText : '',
+                priority: 50,
+                range: range,
+                source: 'document',
+                startOffset: range.startOffset,
+                status: readRevisionStatus(normalized),
+                targetId: revisionId,
+                threadId: revisionId,
+                type: type
+            });
+        }).filter(Boolean);
+    }
+
+    function refreshRuntimeMarkerStore(inst) {
+        if (!inst) return null;
+        inst.markerStore = createMarkerStore([].concat(
+            buildRuntimeCommentMarkers(inst.model),
+            buildRuntimeRevisionMarkers(inst.model)));
+        return inst.markerStore;
+    }
+
     function detectAutocompleteTriggerText(text, offset) {
         var before = _asText(text).slice(0, Number(offset || 0));
         var match = before.match(/(?:^|\s)(\{\{|@|\/)([A-Za-z0-9_-]*)$/);
@@ -9875,8 +11793,11 @@ window.tmDocumentEditorEngine = (function () {
             isCollapsed: source.isCollapsed ?? source.IsCollapsed ?? true,
             direction: source.direction || source.Direction || 'none',
             activeTableCellId: source.activeTableCellId || source.ActiveTableCellId || null,
+            activeTableId: source.activeTableId || source.ActiveTableId || null,
             tableCellPath: source.tableCellPath || source.TableCellPath || null,
-            activeImageBlockId: source.activeImageBlockId || source.ActiveImageBlockId || null
+            activeImageBlockId: source.activeImageBlockId || source.ActiveImageBlockId || null,
+            activeCommentId: source.activeCommentId || source.ActiveCommentId || null,
+            activeRevisionId: source.activeRevisionId || source.ActiveRevisionId || null
         });
     }
 
@@ -9894,8 +11815,11 @@ window.tmDocumentEditorEngine = (function () {
             isCollapsed: source.isCollapsed !== false,
             direction: source.direction || 'none',
             activeTableCellId: source.activeTableCellId || null,
+            activeTableId: source.activeTableId || null,
             tableCellPath: source.tableCellPath || null,
-            activeImageBlockId: source.activeImageBlockId || null
+            activeImageBlockId: source.activeImageBlockId || null,
+            activeCommentId: source.activeCommentId || null,
+            activeRevisionId: source.activeRevisionId || null
         });
     }
 
@@ -10115,6 +12039,7 @@ window.tmDocumentEditorEngine = (function () {
         applyRemoteOperationBatch: applyRemoteOperationBatch,
         applyRemoteCursor: applyRemoteCursor,
         insertImageNode: insertImageNode,
+        captureCommentAnchor: captureCommentAnchor,
         upsertComment: upsertComment,
         removeComment: removeComment,
         getMarkers: getMarkers,
@@ -10341,6 +12266,8 @@ window.tmDocumentEditorEngine = (function () {
             schemaAllowsToolbarBlockCommand: function (type, region) { return schemaAllowsBlockForTest(type, region); },
             normalizeInsertionBlocksForSchema: normalizeInsertionBlocksForSchema,
             createMarkerStore: createMarkerStore,
+            buildRuntimeCommentMarkers: buildRuntimeCommentMarkers,
+            buildRuntimeRevisionMarkers: buildRuntimeRevisionMarkers,
             detectAutocompleteTriggerText: detectAutocompleteTriggerText,
             computeFloatingPosition: computeFloatingPosition,
             buildPageMetrics: buildPageMetricsForTest,
@@ -12129,8 +14056,25 @@ window.tmDocumentEditorRuntime = (function () {
                 InstanceId: id,
                 HasInstance: snapshot.ok !== false && !snapshot.error,
                 SnapshotApplyCount: snapshot.lastCSharpUpdate ? 1 : 0,
-                FullRenderCount: metrics.renderPassCount || metrics.RenderPassCount || 0,
-                IncrementalOperationCount: snapshot.transactionCount || 0,
+                KeyDownCount: metrics.keyDownCount || metrics.KeyDownCount || 0,
+                BeforeInputCount: metrics.beforeInputCount || metrics.BeforeInputCount || 0,
+                InputDomApplyCount: metrics.inputDomApplyCount || metrics.InputDomApplyCount || 0,
+                FullRenderCount: metrics.fullRenderCount || metrics.FullRenderCount || metrics.renderPassCount || metrics.RenderPassCount || 0,
+                PartialRenderCount: metrics.partialRenderCount || metrics.PartialRenderCount || 0,
+                TextNodePatchCount: metrics.textNodePatchCount || metrics.TextNodePatchCount || 0,
+                BlockPatchCount: metrics.blockPatchCount || metrics.BlockPatchCount || 0,
+                MarkerOverlayPatchCount: metrics.markerOverlayPatchCount || metrics.MarkerOverlayPatchCount || 0,
+                ObjectOverlayPatchCount: metrics.objectOverlayPatchCount || metrics.ObjectOverlayPatchCount || 0,
+                SelectionNotifyCount: metrics.selectionNotifyCount || metrics.SelectionNotifyCount || 0,
+                BlazorInteropCallCount: metrics.blazorInteropCallCount || metrics.BlazorInteropCallCount || 0,
+                TypingFlushCount: metrics.typingFlushCount || metrics.TypingFlushCount || 0,
+                MaxTypingBatchSize: metrics.maxTypingBatchSize || metrics.MaxTypingBatchSize || 0,
+                MedianKeyToDomMs: metrics.medianKeyToDomMs || metrics.MedianKeyToDomMs || 0,
+                P95KeyToDomMs: metrics.p95KeyToDomMs || metrics.P95KeyToDomMs || 0,
+                MaxInputLatencyMs: metrics.maxKeyToDomMs || metrics.MaxInputLatencyMs || 0,
+                IncrementalOperationCount: metrics.incrementalOperationCount || metrics.IncrementalOperationCount || snapshot.transactionCount || 0,
+                InputOperationCount: metrics.inputOperationCount || metrics.InputOperationCount || 0,
+                MaxInputOperationMs: metrics.inputOperationMaxMs || metrics.MaxInputOperationMs || 0,
                 LastRenderReason: metrics.renderLastReason || metrics.RenderLastReason || '',
                 LayoutPassCount: metrics.layoutPassCount || metrics.LayoutPassCount || 0,
                 LastLayoutPassMs: metrics.layoutPassLastMs || metrics.LayoutPassLastMs || 0,

@@ -65,11 +65,34 @@
                            OnClose="ClosePasteReportAsync" />
 }
 
-@if (!ReadOnly && (_imageDialogOpen || _autocompleteMenuOpen || ActiveTableCell is not null))
+@if (!ReadOnly && (_imageDialogOpen || _autocompleteMenuOpen || ActiveTableCell is not null || ActiveImageContent is not null))
 {
     <div class="tm-document-editor__floating-root tm-document-editor__floating-root--wysiwyg"
          data-testid="document-wysiwyg-floating-root"
          @onclick:stopPropagation="true">
+        @if (ActiveImageContent is { } activeImage)
+        {
+            <TmDocumentImageWrapPanel CurrentWrapMode="@GetImageWrapMode(activeImage)"
+                                      CurrentHorizontalPosition="@GetImageHorizontalPosition(activeImage)"
+                                      DistanceLeft="@activeImage.Layout.Wrap.DistanceLeft"
+                                      DistanceRight="@activeImage.Layout.Wrap.DistanceRight"
+                                      DistanceTop="@activeImage.Layout.Wrap.DistanceTop"
+                                      DistanceBottom="@activeImage.Layout.Wrap.DistanceBottom"
+                                      LockAnchor="@activeImage.Layout.Anchor.LockAnchor"
+                                      OnWrapModeChanged="SetActiveImageWrapModeAsync"
+                                      OnHorizontalPositionChanged="SetActiveImageHorizontalPositionAsync"
+                                      OnDistanceLeftChanged="value => SetActiveImageWrapDistanceAsync(nameof(DocumentObjectWrap.DistanceLeft), value)"
+                                      OnDistanceRightChanged="value => SetActiveImageWrapDistanceAsync(nameof(DocumentObjectWrap.DistanceRight), value)"
+                                      OnDistanceTopChanged="value => SetActiveImageWrapDistanceAsync(nameof(DocumentObjectWrap.DistanceTop), value)"
+                                      OnDistanceBottomChanged="value => SetActiveImageWrapDistanceAsync(nameof(DocumentObjectWrap.DistanceBottom), value)"
+                                      OnLockAnchorChanged="SetActiveImageLockAnchorAsync"
+                                      OnCaptionToggle="ToggleActiveImageCaptionAsync"
+                                      OnReplaceRequested="OpenImageDialogAsync"
+                                      OnDelete="DeleteActiveImageAsync"
+                                      OnAltTextRequested="FocusActiveImageOptionsAsync"
+                                      OnMoreOptionsRequested="FocusActiveImageOptionsAsync" />
+        }
+
         @if (ActiveTableCell is { } activeCell)
         {
             <TmDocumentTableToolbar InsertRowBefore="InsertActiveTableRowBeforeAsync"
@@ -294,6 +317,9 @@
     /// <summary>Raised when the user selects a comment anchor inside the JS-owned surface.</summary>
     [Parameter] public EventCallback<string> CommentSelected { get; set; }
 
+    /// <summary>Raised when the user selects a revision marker inside the JS-owned surface.</summary>
+    [Parameter] public EventCallback<string> RevisionSelected { get; set; }
+
     /// <summary>Raised when a typing transaction is committed.</summary>
     [Parameter] public EventCallback TransactionCommitted { get; set; }
 
@@ -375,7 +401,7 @@
     {
         get
         {
-            if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveImageBlockId))
+            if (!string.IsNullOrWhiteSpace(GetActiveImageSelectionBlockId()))
             {
                 return "image";
             }
@@ -390,13 +416,32 @@
     }
 
     private DocumentBlock? ActiveImageBlock =>
-        string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveImageBlockId)
+        string.IsNullOrWhiteSpace(GetActiveImageSelectionBlockId())
             ? null
             : Document?.Blocks.FirstOrDefault(block =>
-                string.Equals(block.Id, _lastSelectionSnapshot.ActiveImageBlockId, StringComparison.Ordinal)
+                string.Equals(block.Id, GetActiveImageSelectionBlockId(), StringComparison.Ordinal)
                 && block.Content is ImageBlockContent);
 
     private ImageBlockContent? ActiveImageContent => ActiveImageBlock?.Content as ImageBlockContent;
+
+    private string? GetActiveImageSelectionBlockId()
+    {
+        if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveImageBlockId))
+        {
+            return _lastSelectionSnapshot.ActiveImageBlockId;
+        }
+
+        if (string.Equals(_lastSelectionSnapshot?.Region, "Image", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(_lastSelectionSnapshot?.HitTargetKind, "image", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(_lastSelectionSnapshot?.HitTargetKind, "object", StringComparison.OrdinalIgnoreCase))
+        {
+            return !string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.AnchorBlockId)
+                ? _lastSelectionSnapshot.AnchorBlockId
+                : _lastSelectionSnapshot?.FocusBlockId;
+        }
+
+        return null;
+    }
 
     private TableBlockContent? ActiveTableContent
     {
@@ -1328,6 +1373,15 @@
             : CommentSelected.InvokeAsync(commentId);
     }
 
+    /// <summary>Called by the JS engine when a tracked revision marker is selected.</summary>
+    [JSInvokable]
+    public Task HandleRevisionSelected(string revisionId)
+    {
+        return string.IsNullOrWhiteSpace(revisionId)
+            ? Task.CompletedTask
+            : RevisionSelected.InvokeAsync(revisionId);
+    }
+
     /// <summary>Called by the JS engine when a transaction is committed.</summary>
     [JSInvokable]
     public Task HandleTransactionCommitted()
@@ -1347,6 +1401,36 @@
     public Task HandleDirtyStateChanged(WysiwygDirtyState state)
     {
         return DirtyStateChanged.InvokeAsync(state);
+    }
+
+    /// <summary>Called by the JS engine when a runtime boundary patch carries a synchronized document snapshot.</summary>
+    [JSInvokable("HandleJsBoundaryPatchGenerated")]
+    public async Task HandleBoundaryPatchGenerated(JsonElement patch)
+    {
+        if (patch.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+        {
+            return;
+        }
+
+        var documentElement = TryGetJsonProperty(patch, "csharpDocument", "CSharpDocument");
+        if (documentElement?.ValueKind is not JsonValueKind.Object)
+        {
+            await TransactionCommitted.InvokeAsync();
+            return;
+        }
+
+        var options = new JsonSerializerOptions(DocumentEditorJson.Options)
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        var document = documentElement.Value.Deserialize<DocumentEditorDocument>(options);
+        if (document is not null)
+        {
+            RememberSynchronizedSnapshot(document);
+            await DocumentSnapshotChanged.InvokeAsync(document);
+        }
+
+        await TransactionCommitted.InvokeAsync();
     }
 
     /// <summary>Called by the JS engine when a screen-reader status announcement is ready.</summary>
@@ -1482,6 +1566,21 @@
     private Task SetActiveImageAlignmentAsync(DocumentImageAlignment alignment) =>
         ExecuteRuntimeCommandAsync("setImagePosition", new { HorizontalPosition = ToHorizontalPosition(alignment).ToString() });
 
+    private Task SetActiveImageHorizontalPositionAsync(DocumentImageHorizontalPosition position) =>
+        ExecuteRuntimeCommandAsync("setImagePosition", new { HorizontalPosition = position.ToString() });
+
+    private Task SetActiveImageWrapDistanceAsync(string distanceName, double value) =>
+        ExecuteRuntimeCommandAsync("setImageWrapDistance", new { DistanceName = distanceName, Value = value });
+
+    private Task SetActiveImageLockAnchorAsync(bool lockAnchor) =>
+        ExecuteRuntimeCommandAsync("setImageAnchorMode", new { LockAnchor = lockAnchor });
+
+    private Task DeleteActiveImageAsync() =>
+        ExecuteRuntimeCommandAsync("deleteImage");
+
+    private Task FocusActiveImageOptionsAsync() =>
+        ExecuteRuntimeCommandAsync("focusImageOptions");
+
     private Task SetActiveImageSizeAsync(DocumentImageSize size) =>
         ExecuteRuntimeCommandAsync("setImageSize", new
         {
@@ -1577,6 +1676,12 @@
             DocumentImageAlignment.End => DocumentImageHorizontalPosition.Right,
             _ => DocumentImageHorizontalPosition.Center
         };
+
+    private static DocumentWrapMode GetImageWrapMode(ImageBlockContent image) =>
+        image.Layout.Wrap.Mode;
+
+    private static DocumentImageHorizontalPosition? GetImageHorizontalPosition(ImageBlockContent image) =>
+        image.Layout.Position.HorizontalAlignment ?? ToHorizontalPosition(image.Alignment);
 
     /// <summary>Runs undo in the JS-owned WYSIWYG runtime.</summary>
     public async Task<bool> UndoRuntimeAsync()
@@ -2693,6 +2798,19 @@
         if (_disposed) return;
         _pasteReportWarnings = [];
         await InvokeAsync(StateHasChanged);
+    }
+
+    private static JsonElement? TryGetJsonProperty(JsonElement element, params string[] names)
+    {
+        foreach (var name in names)
+        {
+            if (element.TryGetProperty(name, out var value))
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 
     /// <inheritdoc />
