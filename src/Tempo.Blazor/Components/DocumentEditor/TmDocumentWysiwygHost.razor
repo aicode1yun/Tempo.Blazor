@@ -23,12 +23,14 @@
      data-table-properties-open="@_tablePropertiesPanelOpen.ToString().ToLowerInvariant()"
      data-cell-properties-open="@_cellPropertiesPanelOpen.ToString().ToLowerInvariant()"
      data-active-table-cell-resolved="@((ActiveTableCell is not null).ToString().ToLowerInvariant())"
-     data-active-region="Body"
+     data-active-region="@ActiveRegion"
+     data-focus-owner="@FocusOwner"
      role="textbox"
      aria-label="@Loc["TmDocumentEditor_WysiwygSurfaceLabel"]"
      aria-describedby="@_accessibilityDescriptionId"
      aria-multiline="true"
      aria-readonly="@(ReadOnly ? "true" : "false")"
+     aria-keyshortcuts="Control+B Control+I Control+U Control+Z Control+Y Control+S Shift+F10"
      tabindex="@(_jsReady && !_jsFailed ? "0" : "-1")">
     <span id="@_accessibilityDescriptionId"
           class="tm-document-wysiwyg-host__sr-only"
@@ -52,6 +54,9 @@
             <span class="tm-document-wysiwyg-host__sr-only">@Loc["TmDocumentEditor_Loading"]</span>
         </div>
     }
+    <div @ref="_engineRootElement"
+         class="tm-document-wysiwyg-host__engine-root"
+         data-testid="document-wysiwyg-engine-root"></div>
 </div>
 
 @if (_pasteReportWarnings.Count > 0)
@@ -169,6 +174,7 @@
 
 @code {
     private ElementReference _rootElement;
+    private ElementReference _engineRootElement;
     private string _instanceId = Guid.NewGuid().ToString("N");
     private string _accessibilityDescriptionId = $"tm-wysiwyg-a11y-{Guid.NewGuid():N}";
     private bool _jsReady;
@@ -297,6 +303,9 @@
     /// <summary>Raised when the JS-owned dirty/save state changes.</summary>
     [Parameter] public EventCallback<WysiwygDirtyState> DirtyStateChanged { get; set; }
 
+    /// <summary>Raised when the JS-owned editor has an accessibility status announcement.</summary>
+    [Parameter] public EventCallback<string> AccessibilityAnnouncementChanged { get; set; }
+
     /// <summary>Serialized JS-owned offline runtime state to restore after loading an offline draft.</summary>
     [Parameter] public string? RuntimeDraftStateJson { get; set; }
 
@@ -355,6 +364,28 @@
         {
             var zoom = Math.Clamp(ZoomPercent, 50, 200) / 100d;
             return string.Create(CultureInfo.InvariantCulture, $"--tm-document-zoom: {zoom:0.##};");
+        }
+    }
+
+    private string ActiveRegion => string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.Region)
+        ? "Body"
+        : _lastSelectionSnapshot.Region;
+
+    private string FocusOwner
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveImageBlockId))
+            {
+                return "image";
+            }
+
+            if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveTableCellId))
+            {
+                return "tablecell";
+            }
+
+            return ActiveRegion.ToLowerInvariant();
         }
     }
 
@@ -481,6 +512,7 @@
                 PageOverflowWarning = Loc["TmDocumentEditor_WysiwygPageOverflowWarning"],
                 InsertPageBreakLabel = Loc["TmDocumentEditor_InsertPageBreak"],
                 ImageResizeHandleLabel = Loc["TmDocumentEditor_WysiwygImageResizeHandleLabel"],
+                ImageAltMissing = Loc["TmDocumentEditor_ImageAltMissing"],
                 ImageRetryLabel = Loc["TmDocumentEditor_Retry"],
                 HasImageAssetOptions = ImageAssetOptions.Count > 0,
                 FontFamilies = FontFamilies,
@@ -493,7 +525,7 @@
 
             await JSRuntime.InvokeVoidAsync(
                 "tmDocumentEditorRuntime.create",
-                _rootElement,
+                _engineRootElement,
                 options,
                 _dotNetRef);
         }
@@ -1311,10 +1343,19 @@
     }
 
     /// <summary>Called by the JS engine when the dirty/save state changes.</summary>
-    [JSInvokable]
+    [JSInvokable("HandleJsDirtyStateChanged")]
     public Task HandleDirtyStateChanged(WysiwygDirtyState state)
     {
         return DirtyStateChanged.InvokeAsync(state);
+    }
+
+    /// <summary>Called by the JS engine when a screen-reader status announcement is ready.</summary>
+    [JSInvokable]
+    public Task HandleAccessibilityAnnouncement(string message)
+    {
+        return string.IsNullOrWhiteSpace(message)
+            ? Task.CompletedTask
+            : AccessibilityAnnouncementChanged.InvokeAsync(message);
     }
 
     /// <summary>Called by the JS engine when the user presses Ctrl+Z.</summary>
@@ -2423,7 +2464,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setSearchMarkers", _instanceId, blockIds, offsets, lengths);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.setSearchMarkers", _instanceId, blockIds, offsets, lengths);
         }
         catch (JSException) { }
     }
@@ -2433,7 +2474,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.clearSearchMarkers", _instanceId);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.clearSearchMarkers", _instanceId);
         }
         catch (JSException) { }
     }
@@ -2443,7 +2484,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToSearchResult", _instanceId, blockId, offset, length);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.scrollToSearchResult", _instanceId, blockId, offset, length);
         }
         catch (JSException) { }
     }
@@ -2453,7 +2494,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setShowBlocks", _instanceId, show);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.setShowBlocks", _instanceId, show);
         }
         catch (JSException) { }
     }
@@ -2464,7 +2505,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setShowNonPrintingCharacters", _instanceId, show);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.setShowNonPrintingCharacters", _instanceId, show);
         }
         catch (JSException) { }
     }
@@ -2474,7 +2515,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setProtectionMode", _instanceId, isProtected, markers);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.setProtectionMode", _instanceId, isProtected, markers);
         }
         catch (JSException) { }
     }
@@ -2484,7 +2525,7 @@
         if (_jsFailed || _disposed) return string.Empty;
         try
         {
-            return await JSRuntime.InvokeAsync<string>("tmDocumentWysiwyg.getBodyHtml", _instanceId) ?? string.Empty;
+            return await JSRuntime.InvokeAsync<string>("tmDocumentEditorRuntime.getBodyHtml", _instanceId) ?? string.Empty;
         }
         catch (JSException) { return string.Empty; }
     }
@@ -2501,7 +2542,7 @@
         if (_jsFailed || _disposed) return string.Empty;
         try
         {
-            return await JSRuntime.InvokeAsync<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _instanceId) ?? string.Empty;
+            return await JSRuntime.InvokeAsync<string>("tmDocumentEditorDebug.getRuntimeStateJson", _instanceId) ?? string.Empty;
         }
         catch (JSException) { return string.Empty; }
     }
@@ -2521,7 +2562,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToBlock", _instanceId, blockId);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.scrollToBlock", _instanceId, blockId);
         }
         catch (JSException) { }
     }
@@ -2532,7 +2573,7 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToPage", _instanceId, pageIndex);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.scrollToPage", _instanceId, pageIndex);
         }
         catch (JSException) { }
     }

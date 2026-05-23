@@ -470,13 +470,26 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         return Task.CompletedTask;
     }
 
-    private void StoreDocument(DocumentEditorDocument document, string? concurrencyToken = null)
+    /// <summary>Stores a document snapshot in memory.</summary>
+    protected void StoreDocument(DocumentEditorDocument document, string? concurrencyToken = null)
     {
         var clone = Clone(document);
         _documents[clone.DocumentId] = new StoredDocument(
             clone,
             DocumentEditorJson.Serialize(clone),
             concurrencyToken ?? CreateConcurrencyToken());
+    }
+
+    /// <summary>Stores a prepared document version in memory.</summary>
+    protected void StoreVersion(DocumentVersion version)
+    {
+        if (!_versions.TryGetValue(version.DocumentId, out var versions))
+        {
+            versions = [];
+            _versions[version.DocumentId] = versions;
+        }
+
+        versions.Add(Clone(version));
     }
 
     private static string CreateConcurrencyToken()

@@ -32,7 +32,7 @@ public sealed class DocumentEditorRuntimePhase6JavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             assert.strictEqual(hooks.schemaAllowsBlock(6, 'Body'), true);
             assert.strictEqual(hooks.schemaAllowsBlock(6, 'Header'), false);
             assert.strictEqual(hooks.schemaAllowsBlock(4, 'TableCell'), false);

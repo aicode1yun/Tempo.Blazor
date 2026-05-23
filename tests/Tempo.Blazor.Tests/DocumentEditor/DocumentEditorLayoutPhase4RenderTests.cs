@@ -38,7 +38,7 @@ public sealed class DocumentEditorLayoutPhase4RenderTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks.clearTextRunMeasureCache();
 
             const documentModel = {
@@ -241,12 +241,16 @@ public sealed class DocumentEditorLayoutPhase4RenderTests
         css.Should().Contain(".tm-wysiwyg-layout-bubble");
         css.Should().Contain(".tm-wysiwyg-guide-line");
 
-        script.Should().Contain("tm-wysiwyg-host--layout-snapshot");
-        script.Should().Contain("data-layout-line-id");
-        script.Should().Contain("data-layout-segment-id");
-        script.Should().Contain("data-layout-object-id");
-        script.Should().Contain("data-anchor-block-id");
-        script.Should().Contain("data-object-z-index");
+        script.Should().Contain("tm-render-snapshot");
+        script.Should().Contain("tm-render-page");
+        script.Should().Contain("tm-render-segment");
+        script.Should().Contain("tm-render-object tm-render-image-widget");
+        script.Should().Contain("data-render-layer");
+        script.Should().Contain("data-model-id");
+        script.Should().Contain("data-model-block-id");
+        script.Should().Contain("tm-wysiwyg-selection-box");
+        script.Should().Contain("tm-wysiwyg-object-resize-handle--");
+        script.Should().Contain("tm-wysiwyg-layout-bubble");
     }
 
     private static string GetWysiwygScriptPath()

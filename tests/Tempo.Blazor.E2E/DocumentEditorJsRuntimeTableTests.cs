@@ -431,7 +431,7 @@ public sealed class DocumentEditorJsRuntimeTableTests : DocumentEditorE2ETestBas
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const stats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 return Number(stats.FullRenderCount || 0);
             }
             """);

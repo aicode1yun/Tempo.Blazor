@@ -32,7 +32,7 @@ public sealed class DocumentEditorRuntimePhase8FloatingJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const compute = sandbox.window.tmDocumentWysiwyg.__testHooks.computeFloatingPosition;
+            const compute = sandbox.window.tmDocumentEditorEngine.__testHooks.computeFloatingPosition;
 
             const aboveSelection = compute(
                 { left: 200, top: 180, width: 80, height: 20 },

@@ -261,7 +261,7 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
                     selection?.addRange(range);
                 }
 
-                window.tmDocumentEditorWysiwyg.insertImageNode(instanceId, {
+                window.tmDocumentEditorEngine.insertImageNode(instanceId, {
                     Id: imageId,
                     Type: 5,
                     Order: 25,

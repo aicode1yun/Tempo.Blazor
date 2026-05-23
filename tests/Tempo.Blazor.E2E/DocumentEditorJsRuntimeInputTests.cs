@@ -158,7 +158,7 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const stats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 const editor = document.querySelector('[data-testid="document-editor-demo"]');
                 return {
                     fullRenderCount: Number(stats.FullRenderCount || 0),
@@ -181,7 +181,7 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                window.tmDocumentWysiwyg?.clearDebugMetrics?.(instanceId);
+                window.tmDocumentEditorEngine?.clearDebugMetrics?.(instanceId);
             }
             """);
     }
@@ -193,7 +193,7 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                return window.tmDocumentWysiwygDebug?.getRuntimeState?.(instanceId) || {};
+                return window.tmDocumentEditorDebug?.getRuntimeState?.(instanceId) || {};
             }
             """);
     }

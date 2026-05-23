@@ -52,7 +52,7 @@ public sealed class DocumentEditorPhase9FindReplaceE2ETests : DocumentEditorE2ET
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const markers = window.tmDocumentWysiwyg?.getMarkers?.(instanceId) || [];
+                const markers = window.tmDocumentEditorEngine?.getMarkers?.(instanceId) || [];
                 return !markers.some(marker => {
                     const type = marker.type || marker.Type || '';
                     return type === 'search' || type === 'searchActive';

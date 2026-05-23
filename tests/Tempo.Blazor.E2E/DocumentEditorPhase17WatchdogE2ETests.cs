@@ -240,9 +240,9 @@ public sealed class DocumentEditorPhase17WatchdogE2ETests : DocumentEditorE2ETes
                 const instanceId = host?.getAttribute('data-instance-id') || '';
                 const block = host?.querySelector('.tm-wysiwyg-block[data-block-id]');
                 const blockId = block?.getAttribute('data-block-id') || '';
-                if (!instanceId || !blockId || !window.tmDocumentWysiwyg?.upsertMarker) return false;
+                if (!instanceId || !blockId || !window.tmDocumentEditorEngine?.upsertMarker) return false;
 
-                window.tmDocumentWysiwyg.upsertMarker(instanceId, {
+                window.tmDocumentEditorEngine.upsertMarker(instanceId, {
                     id: 'phase17-comment-marker',
                     type: 'comment',
                     range: { startBlockId: blockId, startOffset: 0, endBlockId: blockId, endOffset: 6 },
@@ -250,7 +250,7 @@ public sealed class DocumentEditorPhase17WatchdogE2ETests : DocumentEditorE2ETes
                     affectsData: true,
                     targetId: 'phase17-comment-marker'
                 });
-                window.tmDocumentWysiwyg.upsertMarker(instanceId, {
+                window.tmDocumentEditorEngine.upsertMarker(instanceId, {
                     id: 'phase17-revision-marker',
                     type: 'revisionInsertion',
                     range: { startBlockId: blockId, startOffset: 1, endBlockId: blockId, endOffset: 7 },
@@ -270,7 +270,7 @@ public sealed class DocumentEditorPhase17WatchdogE2ETests : DocumentEditorE2ETes
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const markers = window.tmDocumentWysiwyg?.getMarkers?.(instanceId) || [];
+                const markers = window.tmDocumentEditorEngine?.getMarkers?.(instanceId) || [];
                 const typeOf = marker => marker.type || marker.Type || '';
                 return {
                     hasCommentMarker: markers.some(marker => marker.id === 'phase17-comment-marker' || marker.Id === 'phase17-comment-marker'),

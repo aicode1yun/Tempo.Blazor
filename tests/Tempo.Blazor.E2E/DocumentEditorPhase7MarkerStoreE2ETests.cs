@@ -41,7 +41,7 @@ public sealed class DocumentEditorPhase7MarkerStoreE2ETests : DocumentEditorE2ET
                 const blockId = block?.getAttribute('data-block-id') || '';
                 if (!instanceId || !blockId) return false;
 
-                window.tmDocumentWysiwyg?.applyRemoteCursor?.(instanceId, {
+                window.tmDocumentEditorEngine?.applyRemoteCursor?.(instanceId, {
                     sessionId: 'phase7-peer',
                     displayName: 'Phase 7 Peer',
                     blockId,
@@ -50,7 +50,7 @@ public sealed class DocumentEditorPhase7MarkerStoreE2ETests : DocumentEditorE2ET
                     color: '#2563eb'
                 });
 
-                window.tmDocumentWysiwyg?.setProtectionMode?.(instanceId, true, [{
+                window.tmDocumentEditorEngine?.setProtectionMode?.(instanceId, true, [{
                     id: 'phase7-region',
                     startBlockId: blockId,
                     startOffset: 0,
@@ -85,8 +85,8 @@ public sealed class DocumentEditorPhase7MarkerStoreE2ETests : DocumentEditorE2ET
                 const blockId = block?.getAttribute('data-block-id') || '';
                 if (!instanceId || !blockId) return false;
 
-                window.tmDocumentWysiwyg?.setSearchMarkers?.(instanceId, [blockId], [0], [4]);
-                window.tmDocumentWysiwyg?.upsertMarker?.(instanceId, {
+                window.tmDocumentEditorEngine?.setSearchMarkers?.(instanceId, [blockId], [0], [4]);
+                window.tmDocumentEditorEngine?.upsertMarker?.(instanceId, {
                     id: 'phase7-comment-overlap',
                     type: 'comment',
                     range: { startBlockId: blockId, startOffset: 1, endBlockId: blockId, endOffset: 5 },
@@ -94,7 +94,7 @@ public sealed class DocumentEditorPhase7MarkerStoreE2ETests : DocumentEditorE2ET
                     affectsData: true,
                     targetId: 'phase7-comment-overlap'
                 });
-                window.tmDocumentWysiwyg?.upsertMarker?.(instanceId, {
+                window.tmDocumentEditorEngine?.upsertMarker?.(instanceId, {
                     id: 'phase7-revision-overlap',
                     type: 'revisionDeletion',
                     range: { startBlockId: blockId, startOffset: 2, endBlockId: blockId, endOffset: 6 },
@@ -122,7 +122,7 @@ public sealed class DocumentEditorPhase7MarkerStoreE2ETests : DocumentEditorE2ET
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const markers = window.tmDocumentWysiwyg?.getMarkers?.(instanceId) || [];
+                const markers = window.tmDocumentEditorEngine?.getMarkers?.(instanceId) || [];
                 const typeOf = marker => marker.type || marker.Type || '';
                 const sourceOf = marker => marker.source || marker.Source || '';
                 const affectsDataOf = marker => !!(marker.affectsData ?? marker.AffectsData);

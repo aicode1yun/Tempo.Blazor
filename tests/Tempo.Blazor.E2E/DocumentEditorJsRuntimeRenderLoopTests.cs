@@ -57,7 +57,7 @@ public sealed class DocumentEditorJsRuntimeRenderLoopTests : DocumentEditorE2ETe
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const stats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 return stats.VirtualizationEnabled && Number(stats.TotalPages || 0) >= 30;
             }
             """);
@@ -83,7 +83,7 @@ public sealed class DocumentEditorJsRuntimeRenderLoopTests : DocumentEditorE2ETe
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const beforeStats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const beforeStats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 const applied = window.tmDocumentEditorRuntime?.applyRemoteOperation?.(instanceId, {
                     OperationId: 'phase16-remote-virtual-insert',
                     Type: 0,
@@ -97,7 +97,7 @@ public sealed class DocumentEditorJsRuntimeRenderLoopTests : DocumentEditorE2ETe
                 const target = blocks.find(block => (block.Id || block.id) === 'phase16-p29');
                 const inlines = (target?.Content || target?.content || {}).Inlines || (target?.Content || target?.content || {}).inlines || [];
                 const text = String(inlines[0]?.Text || inlines[0]?.text || '');
-                const afterStats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const afterStats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 const visibleTarget = !!host?.querySelector('[data-block-id="phase16-p29"]');
                 return {
                     applied: !!applied,
@@ -141,7 +141,7 @@ public sealed class DocumentEditorJsRuntimeRenderLoopTests : DocumentEditorE2ETe
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const stats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 return !host?.querySelector('[data-block-id="phase16-p29"]')
                     && stats.VirtualizationEnabled
                     && Number(stats.RenderedPages || 0) < Number(stats.TotalPages || 0);
@@ -172,7 +172,7 @@ public sealed class DocumentEditorJsRuntimeRenderLoopTests : DocumentEditorE2ETe
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const stats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 return {
                     fullRenderCount: Number(stats.FullRenderCount || 0),
                     incrementalOperationCount: Number(stats.IncrementalOperationCount || 0),
@@ -256,7 +256,7 @@ public sealed class DocumentEditorJsRuntimeRenderLoopTests : DocumentEditorE2ETe
                     ? Math.max(0, hostTop + host.scrollHeight - window.innerHeight)
                     : Math.max(0, hostTop - 16);
                 window.scrollTo(0, windowTarget);
-                window.tmDocumentWysiwyg?.refreshVirtualization?.(instanceId);
+                window.tmDocumentEditorEngine?.refreshVirtualization?.(instanceId);
             }
             """,
             toEnd);

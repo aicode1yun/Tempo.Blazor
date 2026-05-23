@@ -124,7 +124,7 @@ public class DocumentEditorQualitySmokeTests : WasmTestBase
                 const inline = targetBlock?.querySelector('[data-inline-id]');
                 if (!targetBlock || !inline) throw new Error('remote target block was not found');
                 const text = ' remote-phase19';
-                const applied = window.tmDocumentWysiwyg.applyRemoteOperationBatch(instanceId, {
+                const applied = window.tmDocumentEditorEngine.applyRemoteOperationBatch(instanceId, {
                     Operations: [{
                         OperationId: 'phase19-remote-' + Date.now(),
                         Type: 0,
@@ -137,7 +137,7 @@ public class DocumentEditorQualitySmokeTests : WasmTestBase
                         Text: text
                     }]
                 });
-                const metrics = window.tmDocumentWysiwyg.getDebugMetrics(instanceId);
+                const metrics = window.tmDocumentEditorEngine.getDebugMetrics(instanceId);
                 return {
                     Success: !!applied?.success,
                     TargetContainsText: targetBlock.textContent.includes(text.trim()),
@@ -205,10 +205,10 @@ public class DocumentEditorQualitySmokeTests : WasmTestBase
             .ContinueWith(task => task.Result ?? throw new InvalidOperationException("WYSIWYG instance id was not found."));
 
     private static Task ClearDebugMetricsAsync(IPage page, string instanceId)
-        => page.EvaluateAsync("instanceId => window.tmDocumentWysiwyg.clearDebugMetrics(instanceId)", instanceId);
+        => page.EvaluateAsync("instanceId => window.tmDocumentEditorEngine.clearDebugMetrics(instanceId)", instanceId);
 
     private static Task<DebugMetrics> GetDebugMetricsAsync(IPage page, string instanceId)
-        => page.EvaluateAsync<DebugMetrics>("instanceId => window.tmDocumentWysiwyg.getDebugMetrics(instanceId)", instanceId);
+        => page.EvaluateAsync<DebugMetrics>("instanceId => window.tmDocumentEditorEngine.getDebugMetrics(instanceId)", instanceId);
 
     private static Task PlaceCaretAtEndOfBodyAsync(IPage page)
     {

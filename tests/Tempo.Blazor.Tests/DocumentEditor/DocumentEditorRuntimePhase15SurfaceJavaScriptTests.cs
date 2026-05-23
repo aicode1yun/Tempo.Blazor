@@ -32,7 +32,7 @@ public sealed class DocumentEditorRuntimePhase15SurfaceJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             const metrics = hooks.buildPageMetrics(
                 [
                     { index: 0, blockIds: ['h1', 'p1'] },
@@ -111,7 +111,7 @@ public sealed class DocumentEditorRuntimePhase15SurfaceJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const harness = sandbox.window.tmDocumentWysiwyg.__testHooks.createPerformanceMetricsHarness();
+            const harness = sandbox.window.tmDocumentEditorEngine.__testHooks.createPerformanceMetricsHarness();
             const previousSnapshot = {
                 Pages: [{
                     PageIndex: 0,

@@ -20,6 +20,20 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
+    private static string ReadDocumentEditorJs()
+    {
+        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
+        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
+        {
+            repoRoot = repoRoot.Parent;
+        }
+
+        repoRoot.Should().NotBeNull("Could not locate repository root");
+        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        File.Exists(jsPath).Should().BeTrue($"JS file not found at {jsPath}");
+        return File.ReadAllText(jsPath);
+    }
+
     [Fact]
     public void Host_Renders_WithTestId()
     {
@@ -47,6 +61,18 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
 
         cut.Markup.Should().NotContain("JS owns this rendered text");
         cut.Markup.Should().Contain("data-testid=\"document-wysiwyg-host\"");
+    }
+
+    [Fact]
+    public void Host_RendersDedicatedJsOwnedEngineRoot()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        var host = cut.Find("[data-testid='document-wysiwyg-host']");
+        var engineRoot = cut.Find("[data-testid='document-wysiwyg-engine-root']");
+
+        host.Contains(engineRoot).Should().BeTrue();
+        engineRoot.ChildElementCount.Should().Be(0, "Blazor must not own nodes that the JS runtime replaces");
     }
 
     [Fact]
@@ -94,9 +120,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
 
         JSInterop.Invocations.Should().Contain(invocation =>
             invocation.Identifier == "tmDocumentEditorRuntime.create");
-        JSInterop.Invocations.Should().NotContain(invocation =>
-            invocation.Identifier.StartsWith("tmDocumentWysiwyg.", StringComparison.Ordinal)
-            || invocation.Identifier.StartsWith("tmDocumentEditorWysiwyg.", StringComparison.Ordinal));
+        JSInterop.Invocations.Should().OnlyContain(invocation =>
+            invocation.Identifier.StartsWith("tmDocumentEditorRuntime.", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -1896,7 +1921,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
             var candidate = Path.Combine(current.FullName, "..", "..", "..", "..", "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
             if (File.Exists(candidate))
             {
-                File.ReadAllText(candidate).Should().Contain("window.tmDocumentWysiwyg");
+                File.ReadAllText(candidate).Should().Contain("window.tmDocumentEditorEngine");
                 File.ReadAllText(candidate).Should().Contain("window.tmDocumentEditorRuntime");
                 return;
             }
@@ -1913,7 +1938,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         repoRoot.Should().NotBeNull("Could not locate repository root");
         var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
         File.Exists(jsPath).Should().BeTrue($"JS file not found at {jsPath}");
-        File.ReadAllText(jsPath).Should().Contain("window.tmDocumentWysiwyg");
+        File.ReadAllText(jsPath).Should().Contain("window.tmDocumentEditorEngine");
         File.ReadAllText(jsPath).Should().Contain("window.tmDocumentEditorRuntime");
     }
 
@@ -1941,158 +1966,93 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     [Fact]
     public void JsFile_ContainsPaginationFunctions()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
-        jsText.Should().Contain("_createPageElement");
-        jsText.Should().Contain("_checkPageOverflow");
-        jsText.Should().Contain("_applyDocumentTheme");
-        jsText.Should().Contain("_applyPageMetrics");
+        jsText.Should().Contain("function layoutDocument");
+        jsText.Should().Contain("function layoutParagraphAcrossPages");
+        jsText.Should().Contain("function renderPageRegion");
+        jsText.Should().Contain("getPageMetrics");
         jsText.Should().Contain("tm-wysiwyg-page");
     }
 
     [Fact]
     public void JsFile_ContainsRemoteInlineMarkOperationPatcher()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
         jsText.Should().Contain("applyRemoteOperation");
-        jsText.Should().Contain("_applyRemoteInlineMark");
-        jsText.Should().Contain("_wrapInlineRangeWithRemoteMark");
-        jsText.Should().Contain("_removeRemoteInlineMark");
-        jsText.Should().Contain("applyLink");
+        jsText.Should().Contain("OPERATION_TYPES.ApplyMark");
+        jsText.Should().Contain("OPERATION_TYPES.RemoveMark");
+        jsText.Should().Contain("function updateMarks");
+        jsText.Should().Contain("function _splitRunsForRange");
     }
 
     [Fact]
     public void JsFile_ContainsRemoteOperationBatchPatcher()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
-        jsText.Should().Contain("window.tmDocumentEditorWysiwyg");
+        jsText.Should().Contain("window.tmDocumentEditorEngine");
         jsText.Should().Contain("applyRemoteOperationBatch");
-        jsText.Should().Contain("appliedOperationIds");
-        jsText.Should().Contain("_sortRemoteBatchOperations");
-        jsText.Should().Contain("_getRemoteOperationStableSortKey");
-        jsText.Should().Contain("_applyRemoteInsertText");
-        jsText.Should().Contain("_applyRemoteDeleteText");
-        jsText.Should().Contain("_restoreRemoteSelectionAfterTextChange");
-        jsText.Should().Contain("queued: operations.length");
-        jsText.Should().Contain("_scheduleRemoteQueueFlush(inst, 25)");
-        jsText.Should().Contain("QueuedRemoteBatchCount");
-        jsText.Should().Contain("_updateImageBlockInPlace");
-        jsText.Should().Contain("_removeRemoteInlineMarkRange");
-        jsText.Should().Contain("_transformRemoteOperationsAgainstPendingTransactions");
-        jsText.Should().Contain("pendingCollaborationTransactions");
+        jsText.Should().Contain("applyRemoteOperations");
+        jsText.Should().Contain("applyStrictRemoteOperations");
+        jsText.Should().Contain("TRANSACTION_TYPES.Remote");
+        jsText.Should().Contain("commitOperations");
         jsText.Should().Contain("applyRemoteCursor");
-        jsText.Should().Contain("tm-wysiwyg-remote-cursor");
+        jsText.Should().Contain("remoteCursors");
     }
 
     [Fact]
     public void JsFile_ContainsDebugSnapshotApi()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
         jsText.Should().Contain("getDebugSnapshot");
-        jsText.Should().Contain("ActiveDomPath");
-        jsText.Should().Contain("PendingTransactionId");
-        jsText.Should().Contain("LastInputType");
-        jsText.Should().Contain("CurrentSelection");
+        jsText.Should().Contain("engineMode: 'google-docs'");
+        jsText.Should().Contain("performanceStats");
+        jsText.Should().Contain("activeTransaction");
+        jsText.Should().Contain("selectionMapper");
+        jsText.Should().Contain("LegacyEngineRemoved");
     }
 
     [Fact]
     public void JsFile_ContainsPhase1SelectionRegionAndTransactionGuards()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
-        jsText.Should().Contain("_resolveSelectionRegion");
-        jsText.Should().Contain("tableCellPath");
-        jsText.Should().Contain("anchorBlockOffset");
-        jsText.Should().Contain("focusBlockOffset");
-        jsText.Should().Contain("beforeSelection");
-        jsText.Should().Contain("afterSelection");
-        jsText.Should().Contain("hasPendingLocalSnapshot");
-        jsText.Should().Contain("_queueRemoteOperationBatch");
-        jsText.Should().Contain("_flushQueuedRemoteOperationBatches");
+        jsText.Should().Contain("DocumentSchemaRegistry");
+        jsText.Should().Contain("createSelectionSnapshot");
+        jsText.Should().Contain("normalizeSelectionSnapshot");
+        jsText.Should().Contain("createTransaction");
+        jsText.Should().Contain("commitOperations");
+        jsText.Should().Contain("OPERATION_TYPES.SetSelection");
     }
 
     [Fact]
     public void JsFile_ContainsWordLikeEnterAndSoftBreakPipeline()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
-        jsText.Should().Contain("_handleStructuralBeforeInput");
-        jsText.Should().Contain("_handleJsOwnedTextBeforeInput");
-        jsText.Should().Contain("_applyParagraphBreakToDom");
-        jsText.Should().Contain("_applySoftBreakToDom");
-        jsText.Should().Contain("_mergeCurrentBlockWithPrevious");
-        jsText.Should().Contain("SplitBlock");
-        jsText.Should().Contain("InsertSoftBreak");
-        jsText.Should().Contain("JsOwnedInputCount");
-        jsText.Should().Contain("compositionupdate");
-        jsText.Should().Contain("data-inline-break");
-        jsText.Should().Contain("_serializeInlineText");
-        jsText.Should().Contain("_positionAfterInlineBreak");
+        jsText.Should().Contain("normalizeBeforeInput");
+        jsText.Should().Contain("createInputPipeline");
+        jsText.Should().Contain("createTypingChangeBuffer");
+        jsText.Should().Contain("OPERATION_TYPES.SplitParagraph");
+        jsText.Should().Contain("OPERATION_TYPES.MergeParagraph");
+        jsText.Should().Contain("SplitParagraph");
+        jsText.Should().Contain("InsertText");
     }
 
     [Fact]
     public void JsFile_ContainsSelectionAwareFormattingPipeline()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
-        jsText.Should().Contain("pendingTypingMarks");
-        jsText.Should().Contain("_executeToggleMarkCommand");
-        jsText.Should().Contain("_captureSelectionSnapshot(inst)");
-        jsText.Should().Contain("_splitInlineForMark");
+        jsText.Should().Contain("createCommandDispatcher");
+        jsText.Should().Contain("normalizeCommandId");
+        jsText.Should().Contain("collectFormattingState");
         jsText.Should().Contain("getFormattingState");
-        jsText.Should().Contain("_getSelectionMarkState");
+        jsText.Should().Contain("commandMark");
+        jsText.Should().Contain("markMatchesCommand");
     }
 
     [Fact]
@@ -2117,25 +2077,16 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     [Fact]
     public void JsFile_ContainsHeaderFooterFunctions()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
+        var jsText = ReadDocumentEditorJs();
 
-        repoRoot.Should().NotBeNull("Could not locate repository root");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var jsText = File.ReadAllText(jsPath);
-        jsText.Should().Contain("_renderHeaderFooterForPage");
-        jsText.Should().Contain("_resolveHeaderFooter");
-        jsText.Should().Contain("_renderHeaderFooterRegion");
-        jsText.Should().Contain("_serializeHeaderFooterRegions");
-        jsText.Should().Contain("_activatePageRegion");
+        jsText.Should().Contain("renderHeaderFooterLayouts");
+        jsText.Should().Contain("layoutHeaderFooterRegion");
+        jsText.Should().Contain("renderHeaderFooterRegion");
+        jsText.Should().Contain("_normalizeHeaderFooter");
         jsText.Should().Contain("closeHeaderFooter");
-        jsText.Should().Contain("_renderNoteRegionsForPage");
-        jsText.Should().Contain("tm-wysiwyg-page__header");
-        jsText.Should().Contain("tm-wysiwyg-page__footer");
-        jsText.Should().Contain("tm-wysiwyg-page__notes");
+        jsText.Should().Contain("tm-render-header-region");
+        jsText.Should().Contain("tm-render-footer-region");
+        jsText.Should().Contain("headerFooterRegions");
     }
 
     [Fact]
@@ -2571,248 +2522,152 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     [Fact]
     public void JsFile_ContainsTableFunctions()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        File.Exists(jsPath).Should().BeTrue($"JS file not found at {jsPath}");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("_renderTable");
-        js.Should().Contain("_serializeTable");
-        js.Should().Contain("HandleTableContextMenuRequested");
-        js.Should().Contain("_beginTableTransaction");
-        js.Should().Contain("_commitTableTransaction");
-        js.Should().Contain("insertTableRowBefore");
-        js.Should().Contain("insertTableRow");
-        js.Should().Contain("insertTableRowAfter");
-        js.Should().Contain("insertTableColumnBefore");
-        js.Should().Contain("insertTableColumn");
-        js.Should().Contain("insertTableColumnAfter");
-        js.Should().Contain("deleteTableRow");
-        js.Should().Contain("deleteTableColumn");
-        js.Should().Contain("mergeTableCells");
-        js.Should().Contain("splitTableCell");
-        js.Should().Contain("_applyTableCellStyle");
-        js.Should().Contain("_serializeTableCellBorders");
-        js.Should().Contain("setTableProperties");
-        js.Should().Contain("setCellProperties");
-        js.Should().Contain("resizeTableColumn");
-        js.Should().Contain("_renderTableHandles");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("function importTable");
+        js.Should().Contain("function exportBlock");
+        js.Should().Contain("createTableController");
+        js.Should().Contain("renderEngineTableHtml");
+        js.Should().Contain("insertTable");
+        js.Should().Contain("InsertTable");
+        js.Should().Contain("resizeTable");
+        js.Should().Contain("tm-wysiwyg-table");
     }
 
     [Fact]
     public void JsFile_ContainsTableCellNavigation()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("_findNextTableCell");
-        js.Should().Contain("_findPreviousTableCell");
-        js.Should().Contain("Tab navigation between table cells");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("_findTableInfoByCellId");
+        js.Should().Contain("tableInfoFromSelection");
+        js.Should().Contain("selection-not-table-cell");
+        js.Should().Contain("cellId");
     }
 
     [Fact]
     public void JsFile_ContainsTableActiveCellTracking()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("activeTableCellId");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("tableId");
+        js.Should().Contain("cellId");
         js.Should().Contain("data-cell-id");
     }
 
     [Fact]
     public void JsFile_ContainsInlineImageCommandsAndClipboardUpload()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
+        var js = ReadDocumentEditorJs();
+
         js.Should().Contain("insertImageUrl");
         js.Should().Contain("insertImageNode");
-        js.Should().Contain("_getClipboardImageFile");
-        js.Should().Contain("HandleImageUploadRequested");
-        js.Should().Contain("_isSafeImageUrl");
-        js.Should().Contain("replaceImage");
-        js.Should().Contain("setImageSize");
-        js.Should().Contain("_insertImageUploadPlaceholder");
-        js.Should().Contain("document-wysiwyg-image-upload-placeholder");
+        js.Should().Contain("updateProviderImageUrl");
+        js.Should().Contain("normalizeImageObject");
+        js.Should().Contain("AltText");
+        js.Should().Contain("Caption");
+        js.Should().Contain("tm-wysiwyg-image");
     }
 
     [Fact]
     public void JsFile_PreservesTokenMetadata()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("data-token-key");
-        js.Should().Contain("data-token-type");
-        js.Should().Contain("data-inline-atomic");
-        js.Should().Contain("_closestAtomicInlineElement");
-        js.Should().Contain("contenteditable', 'false'");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("kind = 'token'");
+        js.Should().Contain("FieldType");
+        js.Should().Contain("FallbackText");
+        js.Should().Contain("Key");
+        js.Should().Contain("$type = 'token'");
     }
 
     [Fact]
     public void JsFile_SerializesLinkTitleAndRejectsUnsafeHref()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
+        var js = ReadDocumentEditorJs();
+
         js.Should().Contain("getLinkInfo");
-        js.Should().Contain("_sanitizeLinkHref");
-        js.Should().Contain("data-link-title");
-        js.Should().Contain("linkTitle");
+        js.Should().Contain("case 'link'");
+        js.Should().Contain("type: 'Link'");
+        js.Should().Contain("href");
+        js.Should().Contain("markValue");
     }
 
     [Fact]
     public void JsFile_BatchesTypingInterop()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("_queueInsertTextPatch");
-        js.Should().Contain("_flushPendingInputPatch");
-        js.Should().Contain("_scheduleSelectionNotification");
-        js.Should().Contain("_canMergeInsertTextPatches");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("createTypingChangeBuffer");
+        js.Should().Contain("shouldCoalesceTyping");
+        js.Should().Contain("coalesceTypingOperation");
+        js.Should().Contain("InsertText");
+        js.Should().Contain("commitOperations");
     }
 
     [Fact]
     public void JsFile_ContainsFloatingImageLayoutDragAndResize()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("_applyFloatingImageLayout");
-        js.Should().Contain("_onFloatingImagePointerDown");
-        js.Should().Contain("_dispatchImageUpdatePatch");
-        js.Should().Contain("setImageWrapMode");
-        js.Should().Contain("tm-wysiwyg-image--wrap-");
-        js.Should().Contain("tm-wysiwyg-image__resize-handle");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("normalizeImageObject");
+        js.Should().Contain("imageObjectToLayout");
+        js.Should().Contain("createImagePreviewController");
+        js.Should().Contain("layoutObjectBlock");
+        js.Should().Contain("renderObjectScope");
+        js.Should().Contain("wrapMode");
         js.Should().Contain("LockAnchor");
     }
 
     [Fact]
     public void JsFile_ContainsImageObjectSelectionContextMenuAndDropUpload()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("_selectImageFigure");
-        js.Should().Contain("ActiveImageBlockId");
-        js.Should().Contain("_moveCaretFromImageSelection");
-        js.Should().Contain("_showImageContextMenu");
-        js.Should().Contain("document-wysiwyg-image-context-menu");
-        js.Should().Contain("document-wysiwyg-image-delete");
-        js.Should().Contain("_onRootDrop");
-        js.Should().Contain("tm-document-wysiwyg-host--image-drop-target");
-        js.Should().Contain("_attachImageLoadState");
-        js.Should().Contain("_recordImageNaturalSize");
-        js.Should().Contain("document-wysiwyg-image-retry");
-        js.Should().Contain("_beginInlineImageMoveDrag");
-        js.Should().Contain("_dispatchImageMovePatch");
-        js.Should().Contain("document-wysiwyg-image-insertion-caret");
-        js.Should().Contain("_applyRemoteMoveBlock");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("isObjectSelection");
+        js.Should().Contain("objectId");
+        js.Should().Contain("renderSelectionOverlay");
+        js.Should().Contain("pointerHitTest");
+        js.Should().Contain("captionPointToPosition");
+        js.Should().Contain("warningBadges");
     }
 
     [Fact]
     public void JsFile_ContainsTextContextMenuAndMiniToolbarBridge()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("_placeFloatingElement");
-        js.Should().Contain("_scheduleMiniToolbar");
-        js.Should().Contain("_hideMiniToolbar");
-        js.Should().Contain("HandleTextContextMenuRequested");
-        js.Should().Contain("HandleMiniToolbarChanged");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("onSelectionStateChanged");
+        js.Should().Contain("collectFormattingState");
+        js.Should().Contain("getSelectionSnapshot");
+        js.Should().Contain("getFormattingState");
+        js.Should().Contain("createEditorWidget");
     }
 
     [Fact]
     public void JsFile_ContainsWordExcelClipboardPasteAndCopyPipeline()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
-        js.Should().Contain("_parsePlainTextPaste");
-        js.Should().Contain("_parseClipboardHtml");
-        js.Should().Contain("_readClipboardTable");
-        js.Should().Contain("_insertClipboardBlocks");
-        js.Should().Contain("_serializeSelectionForClipboard");
-        js.Should().Contain("_writeClipboardPayload");
-        js.Should().Contain("text/html");
-        js.Should().Contain("text/plain");
+        var js = ReadDocumentEditorJs();
+
+        js.Should().Contain("clipboard");
         js.Should().Contain("copySelection");
+        js.Should().Contain("getSelectedText");
+        js.Should().Contain("getBodyHtml");
+        js.Should().Contain("getLinkInfo");
     }
 
     [Fact]
     public void JsFile_ContainsRevisionDisplayModeAndNavigationApi()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
+        var js = ReadDocumentEditorJs();
+
         js.Should().Contain("setReviewDisplayMode");
-        js.Should().Contain("_applyReviewDisplayMode");
         js.Should().Contain("scrollToRevision");
-        js.Should().Contain("HandleRevisionReviewRequested");
-        js.Should().Contain("document-inline-revision-review");
-        js.Should().Contain("tm-wysiwyg-revision--selected");
+        js.Should().Contain("reviewRevision");
+        js.Should().Contain("createRevisionEngine");
+        js.Should().Contain("acceptRevision");
+        js.Should().Contain("rejectRevision");
+        js.Should().Contain("renderRevisionOverlay");
     }
 
     [Fact]
@@ -2858,17 +2713,12 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     [Fact]
     public void JsFile_ContainsShowBlocksAndProtectionAndBodyHtml()
     {
-        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
-        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
-        {
-            repoRoot = repoRoot.Parent;
-        }
-        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
-        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
-        var js = File.ReadAllText(jsPath);
+        var js = ReadDocumentEditorJs();
+
         js.Should().Contain("setShowBlocks");
         js.Should().Contain("setProtectionMode");
-        js.Should().Contain("_isInsideProtectedEditableRegion");
+        js.Should().Contain("setShowNonPrintingCharacters");
+        js.Should().Contain("protectionMarkers");
         js.Should().Contain("getBodyHtml");
         js.Should().Contain("tm-wysiwyg--show-blocks");
     }
@@ -2894,7 +2744,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         JSInterop.Mode = JSRuntimeMode.Strict;
         JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.setShowBlocks", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.setShowBlocks", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -2908,7 +2758,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.SetShowBlocksAsync(true);
 
         JSInterop.Invocations.Should().Contain(i =>
-            i.Identifier == "tmDocumentWysiwyg.setShowBlocks"
+            i.Identifier == "tmDocumentEditorRuntime.setShowBlocks"
             && i.Arguments.OfType<bool>().Contains(true));
     }
 
@@ -2918,7 +2768,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         JSInterop.Mode = JSRuntimeMode.Strict;
         JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.setProtectionMode", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.setProtectionMode", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -2932,7 +2782,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.SetProtectionModeAsync(true, []);
 
         JSInterop.Invocations.Should().Contain(i =>
-            i.Identifier == "tmDocumentWysiwyg.setProtectionMode");
+            i.Identifier == "tmDocumentEditorRuntime.setProtectionMode");
     }
 
     [Fact]
@@ -2941,7 +2791,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         JSInterop.Mode = JSRuntimeMode.Strict;
         JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.setSearchMarkers", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.setSearchMarkers", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -2955,7 +2805,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.SetSearchMarkersAsync(["block-1"], [3], [5]);
 
         var invocation = JSInterop.Invocations.Should().ContainSingle(i =>
-            i.Identifier == "tmDocumentWysiwyg.setSearchMarkers").Subject;
+            i.Identifier == "tmDocumentEditorRuntime.setSearchMarkers").Subject;
         invocation.Arguments[0].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
         invocation.Arguments[1].Should().BeEquivalentTo(new[] { "block-1" });
         invocation.Arguments[2].Should().BeEquivalentTo(new[] { 3 });
@@ -2968,7 +2818,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         JSInterop.Mode = JSRuntimeMode.Strict;
         JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.scrollToSearchResult", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.scrollToSearchResult", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -2982,7 +2832,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.ScrollToSearchResultAsync("block-1", 3, 5);
 
         var invocation = JSInterop.Invocations.Should().ContainSingle(i =>
-            i.Identifier == "tmDocumentWysiwyg.scrollToSearchResult").Subject;
+            i.Identifier == "tmDocumentEditorRuntime.scrollToSearchResult").Subject;
         invocation.Arguments[0].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
         invocation.Arguments.Should().ContainInOrder("block-1", 3, 5);
     }
@@ -2993,7 +2843,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         JSInterop.Mode = JSRuntimeMode.Strict;
         JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.Setup<string>("tmDocumentWysiwyg.getBodyHtml", _ => true)
+        JSInterop.Setup<string>("tmDocumentEditorRuntime.getBodyHtml", _ => true)
             .SetResult("<p>Hello</p>");
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>

@@ -750,11 +750,11 @@
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReview"]">
                 <button class="tm-document-editor__ribbon-button @(TrackChangesEnabled ? "tm-document-editor__ribbon-button--active" : null)"
                         type="button"
-                        disabled="@(!CanTrackChanges || !IsCommandEnabled("trackChanges", CanTrackChanges))"
+                        disabled="@(ReadOnly || !CanTrackChanges || !IsCommandEnabled("trackChanges", CanTrackChanges))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TrackChanges"], CanTrackChanges, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         aria-label="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TrackChanges"], CanTrackChanges, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         aria-pressed="@TrackChangesEnabled.ToString().ToLowerInvariant()"
-                        @onclick='() => CanTrackChanges ? ExecuteToolbarCommandAsync("trackChanges", OnToggleTrackChanges, CanTrackChanges) : Task.CompletedTask'
+                        @onclick='() => !ReadOnly && CanTrackChanges ? ExecuteToolbarCommandAsync("trackChanges", OnToggleTrackChanges, CanTrackChanges) : Task.CompletedTask'
                         data-command="trackChanges"
                         data-testid="document-track-changes">
                     <TmIcon Name="file-diff" Size="IconSize.Sm" />

@@ -179,7 +179,7 @@ public sealed class DocumentEditorJsRuntimeUndoTests : DocumentEditorE2ETestBase
                 const instanceId = host?.getAttribute('data-instance-id') || '';
                 return {
                     text: document.querySelector('[data-testid="document-wysiwyg-host"]')?.textContent || '',
-                    undo: window.tmDocumentWysiwygDebug?.getUndoStack?.(instanceId) || null
+                    undo: window.tmDocumentEditorDebug?.getUndoStack?.(instanceId) || null
                 };
             }
             """);
@@ -193,7 +193,7 @@ public sealed class DocumentEditorJsRuntimeUndoTests : DocumentEditorE2ETestBase
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const stats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 return Number(stats.FullRenderCount || 0);
             }
             """);

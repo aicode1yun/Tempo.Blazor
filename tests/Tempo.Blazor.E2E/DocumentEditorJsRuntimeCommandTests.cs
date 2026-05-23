@@ -149,7 +149,7 @@ public sealed class DocumentEditorJsRuntimeCommandTests : DocumentEditorE2ETestB
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
+                const stats = window.tmDocumentEditorDebug?.getRenderStats?.(instanceId) || {};
                 return {
                     fullRenderCount: Number(stats.FullRenderCount || 0),
                     incrementalOperationCount: Number(stats.IncrementalOperationCount || 0),

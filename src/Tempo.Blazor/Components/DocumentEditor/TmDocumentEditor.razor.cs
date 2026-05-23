@@ -5718,6 +5718,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await RefreshCommandRegistryAsync();
     }
 
+    private Task HandleWysiwygAccessibilityAnnouncementAsync(string message)
+    {
+        Announce(message);
+        return InvokeAsync(StateHasChanged);
+    }
+
     private async Task OpenFindPanelAsync(bool replaceMode)
     {
         _findReplaceMode = replaceMode;

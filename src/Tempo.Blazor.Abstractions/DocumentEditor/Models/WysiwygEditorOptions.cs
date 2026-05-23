@@ -54,6 +54,9 @@ public sealed class WysiwygEditorOptions
     /// <summary>Accessible label for floating image resize handles.</summary>
     public string ImageResizeHandleLabel { get; set; } = "Resize image";
 
+    /// <summary>Accessible warning text shown for images without alternative text.</summary>
+    public string ImageAltMissing { get; set; } = "Image is missing alternative text.";
+
     /// <summary>Label for retrying a failed image load.</summary>
     public string ImageRetryLabel { get; set; } = "Retry";
 

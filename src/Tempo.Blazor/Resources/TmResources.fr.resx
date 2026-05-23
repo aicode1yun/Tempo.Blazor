@@ -2897,4 +2897,33 @@
   <data name="TmNotionTokenDropdown_CreateToken"        xml:space="preserve"><value>Créer un jeton</value></data>
   <data name="TmNotionTokenDropdown_CreateTokenNamed"   xml:space="preserve"><value>Créer le jeton « {0} »</value></data>
 
+  <!-- Document editor page layout -->
+  <data name="TmDocumentEditor_FileName"               xml:space="preserve"><value>Nom du fichier</value></data>
+  <data name="TmDocumentEditor_InsertField"            xml:space="preserve"><value>Insérer un champ</value></data>
+  <data name="TmDocumentEditor_HeaderFooterPresets"    xml:space="preserve"><value>Préréglages</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScope"      xml:space="preserve"><value>Portée des en-têtes et pieds de page</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopePrimary" xml:space="preserve"><value>Principal</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeFirstPage" xml:space="preserve"><value>Première page</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeEvenPages" xml:space="preserve"><value>Pages paires</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeOddPages" xml:space="preserve"><value>Pages impaires</value></data>
+  <data name="TmDocumentEditor_PresetPageNumberRightFooter" xml:space="preserve"><value>Numéro de page, en bas à droite</value></data>
+  <data name="TmDocumentEditor_PresetPageNumberCenterFooter" xml:space="preserve"><value>Numéro de page, en bas au centre</value></data>
+  <data name="TmDocumentEditor_PresetTitlePageHeader"  xml:space="preserve"><value>Titre à gauche, numéro de page à droite</value></data>
+  <data name="TmDocumentEditor_PresetPageXOfYRightFooter" xml:space="preserve"><value>Page X sur Y, en bas à droite</value></data>
+  <data name="TmDocumentEditor_PageSize"               xml:space="preserve"><value>Taille de page</value></data>
+  <data name="TmDocumentEditor_Orientation"            xml:space="preserve"><value>Orientation</value></data>
+  <data name="TmDocumentEditor_OrientationPortrait"    xml:space="preserve"><value>Portrait</value></data>
+  <data name="TmDocumentEditor_OrientationLandscape"   xml:space="preserve"><value>Paysage</value></data>
+  <data name="TmDocumentEditor_MarginsPreset"          xml:space="preserve"><value>Marges</value></data>
+  <data name="TmDocumentEditor_MarginsNormal"          xml:space="preserve"><value>Normales</value></data>
+  <data name="TmDocumentEditor_MarginsNarrow"          xml:space="preserve"><value>Étroites</value></data>
+  <data name="TmDocumentEditor_MarginsWide"            xml:space="preserve"><value>Larges</value></data>
+  <data name="TmDocumentEditor_MarginsCustom"          xml:space="preserve"><value>Personnalisées</value></data>
+  <data name="TmDocumentEditor_MarginTop"              xml:space="preserve"><value>Haut</value></data>
+  <data name="TmDocumentEditor_MarginRight"            xml:space="preserve"><value>Droite</value></data>
+  <data name="TmDocumentEditor_MarginBottom"           xml:space="preserve"><value>Bas</value></data>
+  <data name="TmDocumentEditor_MarginLeft"             xml:space="preserve"><value>Gauche</value></data>
+  <data name="TmDocumentEditor_HeaderDistance"         xml:space="preserve"><value>Distance de l'en-tête</value></data>
+  <data name="TmDocumentEditor_FooterDistance"         xml:space="preserve"><value>Distance du pied de page</value></data>
+
 </root>

@@ -36,7 +36,7 @@ public sealed class DocumentEditorRuntimePhase7MarkerJavaScriptTests
                 assert.strictEqual(JSON.stringify(actual), JSON.stringify(expected));
             }
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             const store = hooks.createMarkerStore([
                 {
                     id: 'search-1',
@@ -124,7 +124,7 @@ public sealed class DocumentEditorRuntimePhase7MarkerJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             assert.deepStrictEqual(JSON.parse(JSON.stringify(hooks.detectAutocompleteTriggerText('Hello {{client', 14))), {
                 triggerId: 'token',
                 marker: '{{',

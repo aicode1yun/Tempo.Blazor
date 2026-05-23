@@ -36,7 +36,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             assert.ok(hooks, 'test hooks are exposed');
             assert.deepStrictEqual(JSON.parse(JSON.stringify(hooks.operationRendererKeys())), [
                 'acceptRevision',
@@ -511,7 +511,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             assert.strictEqual(snapshot.Document.DocumentId, 'doc-rich');
             assert.strictEqual(snapshot.Document.Blocks[0].Content.Inlines[0].Text, 'Hello');
 
-            const renderHooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const renderHooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             const renderPlan = renderHooks.createRenderPlan(normalized);
             assert.strictEqual(renderPlan.source, 'runtimeDocument');
             assert.strictEqual(renderPlan.documentId, 'doc-rich');
@@ -566,7 +566,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             const base = [{
                 Id: 'c1',
                 Status: 0,
@@ -1147,7 +1147,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
     // ─── Phase 12: Watchdog recovery ─────────────────────────────────────────
 
-    // Helper inline comment: tests inject a mock tmDocumentEditorWysiwyg AFTER loading the
+    // Helper inline comment: tests inject a mock runtime engine AFTER loading the
     // file so the runtime facade's _call/_engine() picks up the mock instead of the real engine.
     // A synchronous setTimeout stub is used so recovery callbacks fire inline.
 
@@ -1184,9 +1184,17 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 create: function (rootEl, opts) { return opts && (opts.InstanceId || opts.instanceId) || 'inst'; },
                 dispose: function () {},
                 loadDocument: function () {},
+                getDocumentSnapshot: function () {
+                    const snapshot = this.getSnapshot();
+                    const document = typeof snapshot === 'string'
+                        ? JSON.parse(snapshot)
+                        : (snapshot || { SchemaVersion: 1, DocumentId: 'doc', Blocks: [] });
+                    return { ok: true, csharpDocument: document };
+                },
                 getDocument: function () { return JSON.stringify({ SchemaVersion: 1, DocumentId: 'doc', Blocks: [] }); },
                 getOfflineState: function () { return JSON.stringify({ version: 1, dirtyState: { IsDirty: false } }); },
                 applyOfflineState: function () { return true; },
+                applyCommand: function () { return this.executeCommand.apply(this, arguments); },
                 executeCommand: function () {},
                 applyRemoteOperationBatch: function () {},
                 applyRemoteOperation: function () {},
@@ -1226,6 +1234,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 setSearchMarkers: function () {},
                 clearSearchMarkers: function () {},
                 scrollToSearchResult: function () {},
+                loadDocument: function () { return this.applySnapshot.apply(this, arguments); },
                 applySnapshot: function () {},
                 getSnapshot: function () { return null; }
             }, overrides || {});
@@ -1261,7 +1270,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
         var nodeScript = WatchdogSandboxSetup +
             """
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine();
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine();
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             const fakeEl = {};
             runtime.create(fakeEl, { InstanceId: 'inst-1' }, null);
@@ -1309,7 +1318,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                     if (executeCalled === 1) throw new Error('Simulated engine failure');
                 }
             });
-            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            sandbox.window.tmDocumentEditorEngine = mock;
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-r' }, null);
 
@@ -1341,7 +1350,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             // runtime.dispose (via _origDispose) calls engine.dispose.
             // Track through mock engine — no cross-vm-context spy needed.
             const callOrder = [];
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 executeCommand: function () { throw new Error('fail'); },
                 getSnapshot: function () { callOrder.push('getSnapshot'); return null; },
                 getOfflineState: function () { callOrder.push('getOfflineState'); return null; },
@@ -1384,7 +1393,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             // engine.create is called by _origCreate during recovery.
             const callOrder = [];
             const fakeOfflineJson = JSON.stringify({ version: 1, dirtyState: { IsDirty: true } });
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 executeCommand: function () { throw new Error('fail'); },
                 getSnapshot: function () {
                     return JSON.stringify({ SchemaVersion: 1, DocumentId: 'doc', Sections: [], Blocks: [], Metadata: {}, PageSettings: { Size: 'A4' } });
@@ -1437,7 +1446,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                     return 'inst-fail';
                 }
             });
-            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            sandbox.window.tmDocumentEditorEngine = mock;
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-fail' }, null);
             runtime.executeCommand('inst-fail', 'cmd', {});
@@ -1465,7 +1474,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             const mock = makeMockEngine({
                 executeCommand: function () { throw new Error('fail'); }
             });
-            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            sandbox.window.tmDocumentEditorEngine = mock;
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-dn' }, fakeDotNet);
             runtime.executeCommand('inst-dn', 'cmd', {});
@@ -1500,7 +1509,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                     return 'inst-df';
                 }
             });
-            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            sandbox.window.tmDocumentEditorEngine = mock;
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-df' }, fakeDotNet);
             runtime.executeCommand('inst-df', 'cmd', {});
@@ -1527,7 +1536,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             const mock = makeMockEngine({
                 applyRemoteOperationBatch: function () { throw new Error('batch fail'); }
             });
-            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            sandbox.window.tmDocumentEditorEngine = mock;
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-batch' }, null);
             runtime.applyRemoteOperationBatch('inst-batch', { operations: [] });
@@ -1551,7 +1560,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
         var nodeScript = WatchdogSandboxSetup +
             """
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine();
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine();
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-disp' }, null);
             assert.strictEqual(runtime.__watchdog.getState('inst-disp'), 'ready', 'must be ready before dispose');
@@ -1579,7 +1588,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 executeCommand: function () { throw new Error('fail'); },
                 dispose: function () { disposeCalls++; }
             });
-            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            sandbox.window.tmDocumentEditorEngine = mock;
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-nr' }, null);
 
@@ -1607,7 +1616,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
         var nodeScript = WatchdogSandboxSetup +
             """
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 getSnapshot: function () {
                     return JSON.stringify({ SchemaVersion: 1, DocumentId: 'doc-stable', Sections: [], Blocks: [{ Id: 'p1' }], Metadata: {}, PageSettings: { Size: 'A4' } });
                 },
@@ -1654,7 +1663,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
         var nodeScript = WatchdogSandboxSetup +
             """
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 executeCommand: function () { throw new Error('command exploded'); }
             });
             const runtime = sandbox.window.tmDocumentEditorRuntime;
@@ -1684,7 +1693,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
         var nodeScript = WatchdogSandboxSetup +
             """
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 applyRemoteOperationBatch: function () { throw new Error('remote exploded'); }
             });
             const runtime = sandbox.window.tmDocumentEditorRuntime;
@@ -1710,7 +1719,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
         var nodeScript = WatchdogSandboxSetup +
             """
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 applySnapshot: function () { throw new Error('render exploded'); }
             });
             const runtime = sandbox.window.tmDocumentEditorRuntime;
@@ -1734,7 +1743,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
 
         var nodeScript = WatchdogSandboxSetup +
             """
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine();
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine();
             const runtime = sandbox.window.tmDocumentEditorRuntime;
             runtime.create({}, { InstanceId: 'inst-serialization' }, null);
             runtime.__watchdog.simulateCrash('inst-serialization', 'serialization', { message: 'serialize exploded' });
@@ -1759,7 +1768,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         var nodeScript = WatchdogSandboxSetup +
             """
             let createCount = 0;
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 create: function (el, opts) {
                     createCount++;
                     if (createCount > 1) throw new Error('create failed');
@@ -1798,7 +1807,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             """
             let snapshotAvailable = true;
             let loadedDocumentId = '';
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 getSnapshot: function () {
                     return snapshotAvailable
                         ? JSON.stringify({ SchemaVersion: 1, DocumentId: 'stable-doc', Sections: [], Blocks: [], Metadata: {}, PageSettings: { Size: 'A4' } })
@@ -2034,14 +2043,14 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const editor = sandbox.window.tmDocumentEditorWysiwyg;
+            const editor = sandbox.window.tmDocumentEditorEngine;
             // setImageWrapMode must route without throwing even for an unknown instance
             let threw = false;
             try {
-                editor.executeCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'Square' });
-                editor.executeCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'TopBottom' });
-                editor.executeCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'InFrontOfText' });
-                editor.executeCommand('no-such-instance', 'setImageSize', { width: 240 });
+                editor.applyCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'Square' });
+                editor.applyCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'TopBottom' });
+                editor.applyCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'InFrontOfText' });
+                editor.applyCommand('no-such-instance', 'setImageSize', { width: 240 });
             } catch (e) {
                 threw = true;
             }
@@ -2183,10 +2192,10 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 querySelectorAll(selector) { return []; }
             };
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks._instances.set('inst-1', { root: fakeRoot, options: {}, disposed: false });
 
-            sandbox.window.tmDocumentWysiwyg.setShowBlocks('inst-1', true);
+            sandbox.window.tmDocumentEditorEngine.setShowBlocks('inst-1', true);
 
             assert.strictEqual(classes.has('tm-wysiwyg--show-blocks'), true, 'class must be added');
             console.log('OK');
@@ -2227,10 +2236,10 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 }
             };
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks._instances.set('inst-2', { root: fakeRoot, options: {}, disposed: false });
 
-            sandbox.window.tmDocumentWysiwyg.setShowBlocks('inst-2', false);
+            sandbox.window.tmDocumentEditorEngine.setShowBlocks('inst-2', false);
 
             assert.strictEqual(classes.has('tm-wysiwyg--show-blocks'), false, 'class must be removed');
             console.log('OK');
@@ -2371,10 +2380,10 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 }
             };
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks._instances.set('inst-scroll', { root: fakeRoot, options: {}, disposed: false });
 
-            sandbox.window.tmDocumentWysiwyg.scrollToBlock('inst-scroll', 'block-42');
+            sandbox.window.tmDocumentEditorEngine.scrollToBlock('inst-scroll', 'block-42');
 
             assert.strictEqual(scrolledEl, fakeBlock, 'scrollIntoView must be called on the block element');
             console.log('OK');
@@ -2411,10 +2420,10 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 querySelector(selector) { return null; }
             };
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks._instances.set('inst-scroll2', { root: fakeRoot, options: {}, disposed: false });
 
-            sandbox.window.tmDocumentWysiwyg.scrollToBlock('inst-scroll2', 'nonexistent-block');
+            sandbox.window.tmDocumentEditorEngine.scrollToBlock('inst-scroll2', 'nonexistent-block');
 
             console.log('OK');
             """;
@@ -2452,11 +2461,11 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 querySelector() { return null; }
             };
             const inst = { root: fakeRoot, options: {}, disposed: false };
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks._instances.set('inst-prot1', inst);
 
             const markers = [{ startBlockId: 'b1', startOffset: 0, endBlockId: 'b1', endOffset: 10 }];
-            sandbox.window.tmDocumentWysiwyg.setProtectionMode('inst-prot1', true, markers);
+            sandbox.window.tmDocumentEditorEngine.setProtectionMode('inst-prot1', true, markers);
 
             assert.strictEqual(inst._isProtected, true, '_isProtected must be true');
             assert.strictEqual(inst._protectedMarkers.length, 1, 'markers must be stored');
@@ -2494,10 +2503,10 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 querySelector() { return null; }
             };
             const inst = { root: fakeRoot, options: {}, disposed: false, _isProtected: true, _protectedMarkers: [{}] };
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks._instances.set('inst-prot2', inst);
 
-            sandbox.window.tmDocumentWysiwyg.setProtectionMode('inst-prot2', false, []);
+            sandbox.window.tmDocumentEditorEngine.setProtectionMode('inst-prot2', false, []);
 
             assert.strictEqual(inst._isProtected, false, '_isProtected must be false after disable');
             assert.strictEqual(inst._protectedMarkers.length, 0, 'markers must be cleared');
@@ -2529,7 +2538,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            sandbox.window.tmDocumentWysiwyg.setProtectionMode('no-such-instance', true, []);
+            sandbox.window.tmDocumentEditorEngine.setProtectionMode('no-such-instance', true, []);
             console.log('OK');
             """;
 
@@ -2545,12 +2554,11 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
         var script = File.ReadAllText(scriptPath);
 
-        script.Should().Contain("case 'acceptAllRevisions'");
-        script.Should().Contain("case 'rejectAllRevisions'");
         script.Should().Contain("function reviewAllRevisions");
-        script.Should().Contain("'tm-wysiwyg-host--review-original'");
-        script.Should().Contain("if (value === '3') return 'Original'");
-        script.Should().Contain("function _scheduleCommentRailAlignment");
-        script.Should().Contain("function _updateCommentRailAlignment");
+        script.Should().Contain("function setReviewDisplayMode");
+        script.Should().Contain("reviewRevision: reviewRevision");
+        script.Should().Contain("reviewAllRevisions: reviewAllRevisions");
+        script.Should().Contain("setReviewDisplayMode: setReviewDisplayMode");
+        script.Should().Contain("clearRevisionDecorations: clearRevisionDecorations");
     }
 }

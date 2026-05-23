@@ -28,11 +28,14 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
                 'applyRemoteOperations',
                 'captureCommentAnchor',
                 'clearRevisionDecorations',
+                'clearSearchMarkers',
                 'closeHeaderFooter',
+                'copySelection',
                 'create',
                 'dispose',
                 'executeCommand',
                 'focus',
+                'getBodyHtml',
                 'getDebugSnapshot',
                 'getDebugUndoStack',
                 'getDirtyState',
@@ -40,10 +43,14 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
                 'getFormattingState',
                 'getLastCommandTransaction',
                 'getLinkInfo',
+                'getMigrationStatus',
                 'getOfflineState',
                 'getPageMetrics',
+                'getRemovedLegacyPathAudit',
                 'getRuntimeSelection',
+                'getSelectedText',
                 'getSelectionSnapshot',
+                'getSidePanelSyncState',
                 'getUndoState',
                 'insertImageNode',
                 'loadDocument',
@@ -55,10 +62,17 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
                 'restoreSelection',
                 'reviewAllRevisions',
                 'reviewRevision',
+                'scrollToBlock',
                 'scrollToComment',
+                'scrollToPage',
                 'scrollToRevision',
+                'scrollToSearchResult',
+                'setProtectionMode',
                 'setReadOnly',
                 'setReviewDisplayMode',
+                'setSearchMarkers',
+                'setShowBlocks',
+                'setShowNonPrintingCharacters',
                 'setTrackChangesEnabled',
                 'undo',
                 'upsertComment'
@@ -73,8 +87,10 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
                 'formatting',
                 'image',
                 'input',
+                'migration',
                 'rendering',
                 'revisions',
+                'search',
                 'selection',
                 'serialization',
                 'table',
@@ -91,6 +107,8 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
             assert.strictEqual(typeof internal.modules.table.insertTable, 'function');
             assert.strictEqual(typeof internal.modules.comments.upsertComment, 'function');
             assert.strictEqual(typeof internal.modules.revisions.setReviewDisplayMode, 'function');
+            assert.strictEqual(typeof internal.modules.search.setSearchMarkers, 'function');
+            assert.strictEqual(typeof internal.modules.migration.getRemovedLegacyPathAudit, 'function');
             assert.strictEqual(typeof internal.modules.serialization.normalizeSnapshot, 'function');
             assert.strictEqual(typeof internal.modules.watchdog.getState, 'function');
 
@@ -111,13 +129,13 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
         var nodeScript = RuntimeSandboxSetup +
             """
             const calls = [];
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
                 create(root, options) {
                     calls.push(['create', options.InstanceId]);
                     return options.InstanceId;
                 },
-                executeCommand(instanceId, command, payload) {
-                    calls.push(['executeCommand', instanceId, command, payload || null]);
+                applyCommand(instanceId, command, payload) {
+                    calls.push(['applyCommand', instanceId, command, payload || null]);
                 },
                 undo(instanceId) {
                     calls.push(['undo', instanceId]);
@@ -149,11 +167,11 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
 
             assert.deepStrictEqual(calls.map(call => call[0]), [
                 'create',
-                'executeCommand',
+                'applyCommand',
                 'getUndoState',
-                'executeCommand',
+                'applyCommand',
                 'getUndoState',
-                'executeCommand',
+                'applyCommand',
                 'getUndoState',
                 'insertImageNode',
                 'undo',
@@ -184,12 +202,16 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
         var nodeScript = RuntimeSandboxSetup +
             """
             let appliedSnapshot = null;
-            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
-                applySnapshot(instanceId, snapshot) {
+            sandbox.window.tmDocumentEditorEngine = makeMockEngine({
+                loadDocument(instanceId, snapshot) {
                     appliedSnapshot = snapshot;
                 },
-                getSnapshot() {
-                    return null;
+                getDocumentSnapshot(instanceId) {
+                    return {
+                        ok: true,
+                        document: sandbox.window.tmDocumentEditorRuntime.__testHooks.fromCanonicalDocument(appliedSnapshot.Document).document,
+                        csharpDocument: appliedSnapshot.Document
+                    };
                 }
             });
 
@@ -263,7 +285,10 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
                 dispose: function () {},
                 executeCommand: function () {},
                 applySnapshot: function () {},
+                loadDocument: function () {},
                 getSnapshot: function () { return null; },
+                getDocumentSnapshot: function () { return null; },
+                applyCommand: function () {},
                 applyRemoteOperation: function () {},
                 applyRemoteOperationBatch: function () {},
                 applyRemoteOperations: function () {},

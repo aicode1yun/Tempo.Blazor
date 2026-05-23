@@ -171,10 +171,10 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
             .ContinueWith(task => task.Result ?? throw new InvalidOperationException("WYSIWYG instance id was not found."));
 
     private static Task ClearDebugMetricsAsync(IPage page, string instanceId)
-        => page.EvaluateAsync("instanceId => window.tmDocumentWysiwyg.clearDebugMetrics(instanceId)", instanceId);
+        => page.EvaluateAsync("instanceId => window.tmDocumentEditorEngine.clearDebugMetrics(instanceId)", instanceId);
 
     private static Task<DebugMetrics> GetDebugMetricsAsync(IPage page, string instanceId)
-        => page.EvaluateAsync<DebugMetrics>("instanceId => window.tmDocumentWysiwyg.getDebugMetrics(instanceId)", instanceId);
+        => page.EvaluateAsync<DebugMetrics>("instanceId => window.tmDocumentEditorEngine.getDebugMetrics(instanceId)", instanceId);
 
     private static async Task<DebugMetrics> WaitForMetricAsync(IPage page, string instanceId, Func<DebugMetrics, bool> predicate)
     {
@@ -264,7 +264,7 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
                 const block = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) [data-block-id]');
                 const text = (block?.textContent || '').trim();
                 if (!block || text.length < 4) throw new Error('Search marker target block was not found.');
-                window.tmDocumentWysiwyg.setSearchMarkers(instanceId, [{
+                window.tmDocumentEditorEngine.setSearchMarkers(instanceId, [{
                     id: 'phase20-search-marker',
                     blockId: block.getAttribute('data-block-id'),
                     offset: 0,
@@ -281,7 +281,7 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
         return page.EvaluateAsync(
             """
             ({ instanceId, blockId, offset, length, active }) => {
-                window.tmDocumentWysiwyg.setSearchMarkers(instanceId, [{
+                window.tmDocumentEditorEngine.setSearchMarkers(instanceId, [{
                     id: 'phase20-long-search',
                     blockId,
                     offset,
@@ -300,7 +300,7 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
 
     private static Task ScrollToPageAsync(IPage page, string instanceId, int pageIndex)
         => page.EvaluateAsync(
-            "({ instanceId, pageIndex }) => window.tmDocumentWysiwyg.scrollToPage(instanceId, pageIndex)",
+            "({ instanceId, pageIndex }) => window.tmDocumentEditorEngine.scrollToPage(instanceId, pageIndex)",
             new { instanceId, pageIndex });
 
     private static Task LoadSingleTableDocumentAsync(IPage page, string instanceId)
@@ -414,7 +414,7 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
         return page.EvaluateAsync(
             """
             ({ instanceId, blockId }) => {
-                window.tmDocumentWysiwyg.upsertComment(instanceId, {
+                window.tmDocumentEditorEngine.upsertComment(instanceId, {
                     Id: 'phase20-comment',
                     Anchor: { Type: 0, BlockId: blockId },
                     Status: 0,

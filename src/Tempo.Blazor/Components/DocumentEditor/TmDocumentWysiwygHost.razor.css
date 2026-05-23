@@ -24,6 +24,11 @@
     padding: var(--tm-space-4, 16px);
 }
 
+.tm-document-wysiwyg-host__engine-root {
+    width: 100%;
+    min-height: inherit;
+}
+
 .tm-document-wysiwyg-host__sr-only {
     position: absolute;
     width: 1px;

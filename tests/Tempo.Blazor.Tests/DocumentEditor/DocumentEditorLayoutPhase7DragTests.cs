@@ -25,7 +25,7 @@ public sealed class DocumentEditorLayoutPhase7DragTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const snap = sandbox.window.tmDocumentWysiwyg.__testHooks.computeImageMoveSnap;
+            const snap = sandbox.window.tmDocumentEditorEngine.__testHooks.computeImageMoveSnap;
             const base = {
                 bodyRect: { X: 0, Y: 0, Width: 520, Height: 720 },
                 objectSize: { Width: 120, Height: 80 },

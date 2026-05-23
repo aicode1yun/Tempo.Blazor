@@ -65,8 +65,9 @@ public class TmDocumentEditorCssTests
         css.Should().Contain("content: attr(aria-label)");
         css.Should().Contain(".tm-document-revision-panel__item");
         css.Should().Contain("box-shadow: 0 0.75rem 2rem");
-        css.Should().Contain(".tm-wysiwyg-image--wrap-square");
-        css.Should().Contain(".tm-wysiwyg-image--wrap-square.tm-wysiwyg-image--position-right");
+        css.Should().Contain(".tm-wysiwyg-page__layer--object");
+        css.Should().Contain(".tm-wysiwyg-layout-object");
+        css.Should().Contain(".tm-wysiwyg-object-resize-handle--se");
         css.Should().Contain(".tm-wysiwyg--protected .tm-wysiwyg-restricted-editable");
 
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-editor__page-surface");
@@ -77,18 +78,22 @@ public class TmDocumentEditorCssTests
     }
 
     [Fact]
-    public void CssFiles_ContainImageWrappingResponsiveFallback()
+    public void CssFiles_UseStrictLayeredImageLayoutWithoutWysiwygFloatFallback()
     {
         var root = FindRepositoryRoot();
         var css = File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css"));
 
-        css.Should().Contain(".tm-wysiwyg-image--wrap-square");
-        css.Should().Contain("float: left;");
-        css.Should().Contain(".tm-wysiwyg-image--wrap-square.tm-wysiwyg-image--position-right");
-        css.Should().Contain("float: right;");
+        css.Should().Contain(".tm-wysiwyg-page__layer--body-text");
+        css.Should().Contain(".tm-wysiwyg-page__layer--object");
+        css.Should().Contain(".tm-wysiwyg-layout-object");
+        css.Should().Contain(".tm-wysiwyg-selection-box");
+        css.Should().Contain(".tm-wysiwyg-object-resize-handle--nw");
+        css.Should().Contain(".tm-wysiwyg-object-resize-handle--se");
+        css.Should().Contain(".tm-wysiwyg-layout-bubble");
         css.Should().Contain("@media (max-width: 40rem)");
-        css.Should().Contain("float: none;");
-        css.Should().Contain("clear: both;");
+        css.Should().NotContain(".tm-wysiwyg-image--wrap-square");
+        css.Should().NotContain(".tm-wysiwyg-image-sidecar-text");
+        css.Should().NotContain("data-wrap-sidecar-for");
     }
 
     [Fact]

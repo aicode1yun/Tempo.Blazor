@@ -39,7 +39,7 @@ public sealed class DocumentEditorLayoutPhase5HitTestTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hitTest = sandbox.window.tmDocumentWysiwyg.__testHooks.hitTestLayoutGeometry;
+            const hitTest = sandbox.window.tmDocumentEditorEngine.__testHooks.hitTestLayoutGeometry;
             const base = {
                 RootRect: { X: 0, Y: 0, Width: 640, Height: 760 },
                 PageRects: [{ PageIndex: 0, Rect: { X: 20, Y: 20, Width: 560, Height: 700 } }],
@@ -82,7 +82,7 @@ public sealed class DocumentEditorLayoutPhase5HitTestTests
             assert.strictEqual(at(40, 180).Kind, 'PageMargin');
             assert.strictEqual(at(620, 180).Kind, 'None');
 
-            assert.strictEqual(typeof sandbox.window.tmDocumentWysiwyg.DocumentHitTestService, 'function');
+            assert.strictEqual(typeof sandbox.window.tmDocumentEditorEngine.DocumentHitTestService, 'function');
 
             console.log('OK');
             """;
@@ -125,7 +125,7 @@ public sealed class DocumentEditorLayoutPhase5HitTestTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hitTest = sandbox.window.tmDocumentWysiwyg.__testHooks.hitTestLayoutGeometry;
+            const hitTest = sandbox.window.tmDocumentEditorEngine.__testHooks.hitTestLayoutGeometry;
             const line = (index, y, startOffset) => ({
                 Id: `line-${index}`,
                 BlockId: 'paragraph-1',
@@ -246,7 +246,7 @@ public sealed class DocumentEditorLayoutPhase5HitTestTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hitTest = sandbox.window.tmDocumentWysiwyg.__testHooks.hitTestLayoutGeometry;
+            const hitTest = sandbox.window.tmDocumentEditorEngine.__testHooks.hitTestLayoutGeometry;
             const request = {
                 RootRect: { X: 0, Y: 0, Width: 720, Height: 760 },
                 PageRects: [{ PageIndex: 0, Rect: { X: 0, Y: 0, Width: 680, Height: 740 } }],

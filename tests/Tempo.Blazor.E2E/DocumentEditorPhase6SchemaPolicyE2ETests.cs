@@ -18,8 +18,8 @@ public sealed class DocumentEditorPhase6SchemaPolicyE2ETests : DocumentEditorE2E
 
         var bridge = await page.EvaluateAsync<bool>(
             """
-            () => window.tmDocumentWysiwyg?.__testHooks?.schemaAllowsBlock?.(6, 'Body') === true
-                && window.tmDocumentWysiwyg?.__testHooks?.schemaAllowsBlock?.(6, 'Header') === false
+            () => window.tmDocumentEditorEngine?.__testHooks?.schemaAllowsBlock?.(6, 'Body') === true
+                && window.tmDocumentEditorEngine?.__testHooks?.schemaAllowsBlock?.(6, 'Header') === false
             """);
         Assert.IsTrue(bridge, "Runtime schema bridge must expose the same page-break placement rule.");
 
@@ -62,7 +62,7 @@ public sealed class DocumentEditorPhase6SchemaPolicyE2ETests : DocumentEditorE2E
 
         var pageBreakStillBodyOnly = await page.EvaluateAsync<bool>(
             """
-            () => window.tmDocumentWysiwyg.__testHooks.normalizeInsertionBlocksForSchema(
+            () => window.tmDocumentEditorEngine.__testHooks.normalizeInsertionBlocksForSchema(
                 [{ Id: 'pb', Type: 6, Content: { $type: 'pageBreak' } }],
                 'Footer'
             ).blocks.length === 0

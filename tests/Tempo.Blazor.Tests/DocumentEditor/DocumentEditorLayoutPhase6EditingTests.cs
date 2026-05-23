@@ -25,7 +25,7 @@ public sealed class DocumentEditorLayoutPhase6EditingTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const edit = sandbox.window.tmDocumentWysiwyg.__testHooks.applyLayoutTextEditModel;
+            const edit = sandbox.window.tmDocumentEditorEngine.__testHooks.applyLayoutTextEditModel;
             const text = 'First visual line wraps into second visual line and then into third visual line.';
             const segments = [
                 { Id: 's1', StartOffset: 0, Text: text.slice(0, 19) },
@@ -73,7 +73,7 @@ public sealed class DocumentEditorLayoutPhase6EditingTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const edit = sandbox.window.tmDocumentWysiwyg.__testHooks.applyLayoutTextEditModel;
+            const edit = sandbox.window.tmDocumentEditorEngine.__testHooks.applyLayoutTextEditModel;
             const text = 'abcdefghijABCDEFGHIJklmnopqrst';
             const segments = [
                 { Id: 'line-1', StartOffset: 0, Text: text.slice(0, 10) },
@@ -127,7 +127,7 @@ public sealed class DocumentEditorLayoutPhase6EditingTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const edit = sandbox.window.tmDocumentWysiwyg.__testHooks.applyLayoutTextEditModel;
+            const edit = sandbox.window.tmDocumentEditorEngine.__testHooks.applyLayoutTextEditModel;
             const text = 'One wrapped paragraph split from the second visual line.';
             const segments = [
                 { Id: 'line-1', StartOffset: 0, Text: text.slice(0, 14) },
@@ -179,7 +179,7 @@ public sealed class DocumentEditorLayoutPhase6EditingTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const layout = sandbox.window.tmDocumentWysiwyg.__testHooks.createLayoutSnapshotForRender({
+            const layout = sandbox.window.tmDocumentEditorEngine.__testHooks.createLayoutSnapshotForRender({
                 Blocks: [{
                     Id: 'p1',
                     Type: 0,
@@ -235,7 +235,7 @@ public sealed class DocumentEditorLayoutPhase6EditingTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const layout = sandbox.window.tmDocumentWysiwyg.__testHooks.createLayoutSnapshotForRender({
+            const layout = sandbox.window.tmDocumentEditorEngine.__testHooks.createLayoutSnapshotForRender({
                 Blocks: [{
                     Id: 'empty-paragraph',
                     Type: 0,
@@ -282,7 +282,7 @@ public sealed class DocumentEditorLayoutPhase6EditingTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const normalize = sandbox.window.tmDocumentWysiwyg.__testHooks.normalizeMarkType;
+            const normalize = sandbox.window.tmDocumentEditorEngine.__testHooks.normalizeMarkType;
             assert.strictEqual(normalize('Revision'), 'Revision');
             assert.strictEqual(normalize(8), 'Revision');
             assert.strictEqual(normalize('revision-anchor'), 'Revision');

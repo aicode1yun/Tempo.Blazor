@@ -38,7 +38,7 @@ public sealed class DocumentEditorLayoutPhase3JavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             hooks.clearTextRunMeasureCache();
 
             const normalRequest = {

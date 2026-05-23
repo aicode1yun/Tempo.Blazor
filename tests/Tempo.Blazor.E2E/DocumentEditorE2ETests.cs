@@ -6513,7 +6513,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                     const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                     const figure = host?.querySelector(`figure.tm-wysiwyg-image img[alt="${CSS.escape(fileName)}"]`)?.closest('figure.tm-wysiwyg-image');
                     const instanceId = host?.getAttribute('data-instance-id') || '';
-                    const debug = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId) || {};
+                    const debug = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId) || {};
                     const runtimeSelection = debug.CurrentSelection || debug.currentSelection || {};
                     return {
                         FigureSelected: !!figure?.classList.contains('tm-wysiwyg-image--selected'),
@@ -8407,7 +8407,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             .Except(Phase19AllowedCommandLevelTests, StringComparer.Ordinal)
             .ToArray();
         executeCommandBypassTests.Should().BeEmpty(
-            "tests that claim to validate UI behavior must not bypass human entrypoints through window.tmDocumentEditorWysiwyg.executeCommand");
+            "tests that claim to validate UI behavior must not bypass human entrypoints through direct engine command APIs");
 
         TestContext.WriteLine("Phase 19 strictened legacy tests:");
         foreach (var name in Phase19StrictenedLegacyTests)
@@ -9691,7 +9691,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id');
                 if (!instanceId) throw new Error('Document editor instance id was not found.');
-                window.tmDocumentEditorWysiwyg.executeCommand(instanceId, 'setImageCaption', { imageId, caption });
+                window.tmDocumentEditorEngine.applyCommand(instanceId, 'setImageCaption', { imageId, caption });
             }
             """,
             new { imageId, caption });
@@ -10168,8 +10168,8 @@ public class DocumentEditorE2ETests : WasmTestBase
                             const block = revision.closest('[data-block-id]');
                             const inlineId = segment.getAttribute('data-inline-id') || revision.getAttribute('data-inline-id') || '';
                             const blockId = block?.getAttribute('data-block-id') || '';
-                            if (instanceId && blockId && inlineId && window.tmDocumentEditorWysiwyg?.restoreSelection) {
-                                window.tmDocumentEditorWysiwyg.restoreSelection(instanceId, {
+                            if (instanceId && blockId && inlineId && window.tmDocumentEditorEngine?.restoreSelection) {
+                                window.tmDocumentEditorEngine.restoreSelection(instanceId, {
                                     region: 'Body',
                                     anchorBlockId: blockId,
                                     focusBlockId: blockId,
@@ -10346,7 +10346,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const formatting = window.tmDocumentEditorWysiwyg?.getFormattingState?.(instanceId) || {};
+                const formatting = window.tmDocumentEditorEngine?.getFormattingState?.(instanceId) || {};
                 return {
                     Underline: formatting.Underline ?? formatting.underline ?? 0,
                     TextColor: formatting.TextColor ?? formatting.textColor ?? '',
@@ -10683,7 +10683,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const snapshot = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId);
+                const snapshot = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId);
                 return snapshot?.CurrentSelection?.ActiveTableCellId
                     || snapshot?.LastSelection?.ActiveTableCellId
                     || null;
@@ -10749,7 +10749,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                     activeRow = rows.indexOf(active.closest('tr'));
                     activeColumn = Array.from(active.closest('tr')?.querySelectorAll('td[data-cell-id], th[data-cell-id]') || []).indexOf(active);
                 }
-                const snapshot = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId);
+                const snapshot = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId);
                 return {
                     Rows: rows.length,
                     FirstRowCells: rows[0]?.querySelectorAll('td[data-cell-id], th[data-cell-id]').length || 0,
@@ -10806,7 +10806,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                         Alignment: 1
                     }
                 };
-                window.tmDocumentEditorWysiwyg.insertImageNode(instanceId, block, true);
+                window.tmDocumentEditorEngine.insertImageNode(instanceId, block, true);
             }
             """,
             new { imageId, altText, width, order });
@@ -10925,7 +10925,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                     .find(isVisible);
                 figure?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 91, clientX: 10, clientY: 10 }));
                 figure?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 91, clientX: 10, clientY: 10 }));
-                window.tmDocumentEditorWysiwyg.executeCommand(instanceId, 'setImageWrapMode', { wrapMode });
+                window.tmDocumentEditorEngine.applyCommand(instanceId, 'setImageWrapMode', { wrapMode });
             }
             """,
             new { imageId, wrapMode });
@@ -10951,7 +10951,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                     .find(isVisible);
                 figure?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 92, clientX: 10, clientY: 10 }));
                 figure?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 92, clientX: 10, clientY: 10 }));
-                window.tmDocumentEditorWysiwyg.executeCommand(instanceId, 'setImagePosition', { horizontalPosition });
+                window.tmDocumentEditorEngine.applyCommand(instanceId, 'setImagePosition', { horizontalPosition });
             }
             """,
             new { imageId, horizontalPosition });
@@ -10963,7 +10963,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             ({ command, payload }) => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                window.tmDocumentEditorWysiwyg?.executeCommand?.(instanceId, command, payload || {});
+                window.tmDocumentEditorEngine?.executeCommand?.(instanceId, command, payload || {});
             }
             """,
             new { command, payload });
@@ -11903,7 +11903,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                 }
 
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const runtime = window.tmDocumentEditorWysiwyg || window.tmDocumentWysiwyg;
+                const runtime = window.tmDocumentEditorEngine || window.tmDocumentEditorEngine;
                 const runtimeDebug = runtime?.getDebugSnapshot?.(instanceId) || {};
                 const runtimeSelection = runtime?.getSelectionSnapshot?.(instanceId)
                     || runtimeDebug?.CurrentSelection
@@ -12101,7 +12101,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             ({ imageId, visualLineIndex }) => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const runtime = window.tmDocumentEditorWysiwyg || window.tmDocumentWysiwyg;
+                const runtime = window.tmDocumentEditorEngine || window.tmDocumentEditorEngine;
                 const selection = runtime?.getSelectionSnapshot?.(instanceId)
                     || runtime?.getDebugSnapshot?.(instanceId)?.CurrentSelection
                     || null;
@@ -13813,7 +13813,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const debug = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId) || {};
+                const debug = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId) || {};
                 const selection = window.getSelection();
                 const anchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE
                     ? selection.anchorNode
@@ -14630,7 +14630,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                 const sidePanel = document.querySelector('[data-testid="document-side-panel"]');
                 const selection = window.getSelection();
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const runtimeDebug = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId)
+                const runtimeDebug = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId)
                     || { InstanceId: instanceId, HasInstance: false, Error: 'getDebugSnapshot unavailable' };
 
                 const isVisible = el => {
@@ -15357,7 +15357,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const figure = host?.querySelector(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const debug = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId) || {};
+                const debug = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId) || {};
                 const runtimeSelection = debug.CurrentSelection || debug.currentSelection || {};
                 return {
                     FigureSelected: !!figure?.classList.contains('tm-wysiwyg-image--selected'),
@@ -15454,7 +15454,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             previousPatchId => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const snapshot = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId) || {};
+                const snapshot = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId) || {};
                 const patchId = snapshot.LastPatchId || '';
                 return !!patchId && patchId !== (previousPatchId || '');
             }
@@ -15971,7 +15971,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const debug = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId);
+                const debug = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId);
                 const selection = debug?.LastSelection || debug?.CurrentSelection || {};
                 return {
                     Text: '',
@@ -16330,7 +16330,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             () => {
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id') || '';
-                const snapshot = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId)
+                const snapshot = window.tmDocumentEditorEngine?.getDebugSnapshot?.(instanceId)
                     || { InstanceId: instanceId, HasInstance: false, Error: 'getDebugSnapshot unavailable' };
                 return JSON.stringify(snapshot, null, 2);
             }
@@ -16425,10 +16425,10 @@ public class DocumentEditorE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const instanceId = host?.getAttribute('data-instance-id');
                 if (!instanceId) throw new Error('WYSIWYG instance id was not found.');
-                if (!window.tmDocumentEditorWysiwyg?.applyRemoteOperationBatch) {
+                if (!window.tmDocumentEditorEngine?.applyRemoteOperationBatch) {
                     throw new Error('Public remote operation batch API was not found.');
                 }
-                return window.tmDocumentEditorWysiwyg.applyRemoteOperationBatch(instanceId, { operations });
+                return window.tmDocumentEditorEngine.applyRemoteOperationBatch(instanceId, { operations });
             }
             """,
             new { operations });
@@ -19325,7 +19325,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                 ({ imageId, linkUrl }) => {
                     const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
                     const instanceId = host?.getAttribute('data-instance-id') || '';
-                    window.tmDocumentEditorWysiwyg?.executeCommand?.(instanceId, 'setImageLink', { url: linkUrl });
+                    window.tmDocumentEditorEngine?.executeCommand?.(instanceId, 'setImageLink', { url: linkUrl });
                 }
                 """,
                 new { imageId, linkUrl });
@@ -19523,7 +19523,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                 """
                 ({ x, y }) => {
                     const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
-                    const service = new window.tmDocumentEditorWysiwyg.DocumentHitTestService(host);
+                    const service = new window.tmDocumentEditorEngine.DocumentHitTestService(host);
                     return JSON.stringify(service.hitTest(x, y));
                 }
                 """,

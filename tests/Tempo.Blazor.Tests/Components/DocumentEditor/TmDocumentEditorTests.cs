@@ -2135,7 +2135,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.applyRemoteOperationBatch");
         JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
             .Should().Be(snapshotCallsBeforeRemote, "successful remote JS apply must not refresh the WYSIWYG surface snapshot");
-        JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier == "tmDocumentWysiwyg.restoreSelection");
+        JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
 
         cut.Find("[data-testid='document-save']").Click();
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
@@ -3206,7 +3206,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void DebugJsonInspector_ShowsCanonicalDocumentAndRuntimeDebugState()
     {
-        JSInterop.Setup<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _ => true)
+        JSInterop.Setup<string>("tmDocumentEditorDebug.getRuntimeStateJson", _ => true)
             .SetResult("""{"HasRuntimeDocument":true,"RuntimeAuthority":"JsCanonicalBoundary"}""");
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
@@ -3228,7 +3228,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void DebugJsonInspector_CopyButtonWritesCombinedPayloadToClipboard()
     {
-        JSInterop.Setup<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _ => true)
+        JSInterop.Setup<string>("tmDocumentEditorDebug.getRuntimeStateJson", _ => true)
             .SetResult("""{"HasRuntimeDocument":true}""");
         JSInterop.SetupVoid("navigator.clipboard.writeText", _ => true).SetVoidResult();
         var provider = new InMemoryDocumentEditorProvider();
@@ -3279,7 +3279,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void PublicHtmlSourceEditing_IsNotExposedInDebugModal()
     {
-        JSInterop.Setup<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _ => true).SetResult("{}");
+        JSInterop.Setup<string>("tmDocumentEditorDebug.getRuntimeStateJson", _ => true).SetResult("{}");
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
         var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
