@@ -6702,6 +6702,7 @@ window.tmDocumentEditorEngine = (function () {
             blazorInteropCallCount: 0,
             typingFlushCount: 0,
             maxTypingBatchSize: 0,
+            maxBoundaryPatchBatchSize: 0,
             keyToDomSamples: [],
             medianKeyToDomMs: 0,
             p95KeyToDomMs: 0,
@@ -6797,6 +6798,7 @@ window.tmDocumentEditorEngine = (function () {
         var samples = _asArray(stats.keyToDomSamples).concat([latency]).slice(-200);
         stats.keyToDomSamples = samples;
         stats.inputDomApplyCount = Number(stats.inputDomApplyCount || 0) + 1;
+        stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), 1);
         inst.jsOwnedInputCount = Number(inst.jsOwnedInputCount || 0) + 1;
         stats.partialRenderCount = Number(stats.partialRenderCount || 0) + 1;
         stats.lastKeyToDomMs = latency;
@@ -8015,7 +8017,7 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !patch) return;
         inst.pendingTypingBoundaryPatches = _asArray(inst.pendingTypingBoundaryPatches).concat([patch]);
         var stats = ensureStrictPerformanceStats(inst);
-        stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
+        stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         if (inst.pendingTypingBoundaryTimer) clearTimeout(inst.pendingTypingBoundaryTimer);
         var delay = Math.max(0, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) || 500);
         inst.pendingTypingBoundaryTimer = setTimeout(function () {
@@ -8040,7 +8042,7 @@ window.tmDocumentEditorEngine = (function () {
         inst.pendingTypingBoundaryPatches = [];
         var stats = ensureStrictPerformanceStats(inst);
         stats.typingFlushCount = Number(stats.typingFlushCount || 0) + 1;
-        stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), pending.length);
+        stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), pending.length);
         var merged = mergeTypingBoundaryPatches(inst, pending);
         if (merged) {
             dispatchBoundaryPatch(inst, merged);
@@ -11569,6 +11571,8 @@ window.tmDocumentEditorEngine = (function () {
             visualStability: createVisualStabilityTracker(options),
             computeObjectChromeLayout: computeObjectChromeLayout,
             createObjectChromeModel: createObjectChromeModel,
+            createStrictPerformanceStats: createStrictPerformanceStats,
+            recordOperationPerformance: recordOperationPerformance,
             previewImmediateTextEdit: previewImmediateTextEdit,
             createSidePanelSyncState: createSidePanelSyncState,
             createPanelCommandDebouncer: createPanelCommandDebouncer
@@ -12144,6 +12148,8 @@ window.tmDocumentEditorEngine = (function () {
             createVisualStabilityTracker: createVisualStabilityTracker,
             computeObjectChromeLayout: computeObjectChromeLayout,
             createObjectChromeModel: createObjectChromeModel,
+            createStrictPerformanceStats: createStrictPerformanceStats,
+            recordOperationPerformance: recordOperationPerformance,
             previewImmediateTextEdit: previewImmediateTextEdit,
             createSidePanelSyncState: createSidePanelSyncState,
             createPanelCommandDebouncer: createPanelCommandDebouncer,
@@ -12277,6 +12283,8 @@ window.tmDocumentEditorEngine = (function () {
             createVisualStabilityTracker: createVisualStabilityTracker,
             computeObjectChromeLayout: computeObjectChromeLayout,
             createObjectChromeModel: createObjectChromeModel,
+            createStrictPerformanceStats: createStrictPerformanceStats,
+            recordOperationPerformance: recordOperationPerformance,
             previewImmediateTextEdit: previewImmediateTextEdit,
             createSidePanelSyncState: createSidePanelSyncState,
             createPanelCommandDebouncer: createPanelCommandDebouncer,
@@ -14069,6 +14077,7 @@ window.tmDocumentEditorRuntime = (function () {
                 BlazorInteropCallCount: metrics.blazorInteropCallCount || metrics.BlazorInteropCallCount || 0,
                 TypingFlushCount: metrics.typingFlushCount || metrics.TypingFlushCount || 0,
                 MaxTypingBatchSize: metrics.maxTypingBatchSize || metrics.MaxTypingBatchSize || 0,
+                MaxBoundaryPatchBatchSize: metrics.maxBoundaryPatchBatchSize || metrics.MaxBoundaryPatchBatchSize || 0,
                 MedianKeyToDomMs: metrics.medianKeyToDomMs || metrics.MedianKeyToDomMs || 0,
                 P95KeyToDomMs: metrics.p95KeyToDomMs || metrics.P95KeyToDomMs || 0,
                 MaxInputLatencyMs: metrics.maxKeyToDomMs || metrics.MaxInputLatencyMs || 0,

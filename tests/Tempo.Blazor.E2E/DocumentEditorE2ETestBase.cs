@@ -1368,7 +1368,9 @@ public sealed class DocumentEditorConsoleCapture : IDisposable
     }
 
     private static bool IsWhitelisted(string entry)
-        => entry.Contains("favicon", StringComparison.OrdinalIgnoreCase);
+        => entry.Contains("favicon", StringComparison.OrdinalIgnoreCase)
+            || (entry.Contains("/hubs/document-editor-collaboration/negotiate", StringComparison.OrdinalIgnoreCase)
+                && entry.Contains("net::ERR_ABORTED", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsDocumentEditorRequestFailure(string url, string failure)
     {

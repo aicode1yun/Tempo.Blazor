@@ -65,6 +65,18 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Inspector_WrapButtons_AreIconSegmentsWithAccessibleLabels()
+    {
+        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+            .Add(p => p.Image, new ImageBlockContent()));
+
+        var square = cut.Find("[data-testid='document-image-inspector-wrap-square']");
+        square.QuerySelector(".tm-icon").Should().NotBeNull();
+        square.QuerySelector(".tm-document-editor__sr-only")!.TextContent.Should().NotBeNullOrWhiteSpace();
+        square.GetAttribute("title").Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
     public void Inspector_CaptionCheckboxReflectsCaption()
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters

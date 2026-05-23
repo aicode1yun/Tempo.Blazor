@@ -15,7 +15,8 @@
                 data-testid="document-image-alt-text"
                 title="@Loc["TmDocumentEditor_ImageAltText"]"
                 @onclick="() => OnAltTextRequested.InvokeAsync()">
-            @Loc["TmDocumentEditor_ImageAltText"]
+            <TmIcon Name="info" Size="IconSize.Xs" />
+            <span>@Loc["TmDocumentEditor_ImageAltText"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn"
@@ -23,7 +24,8 @@
                 data-testid="document-image-caption-toggle"
                 title="@Loc["TmDocumentEditor_ImageCaption"]"
                 @onclick="() => OnCaptionToggle.InvokeAsync()">
-            @Loc["TmDocumentEditor_ImageCaption"]
+            <TmIcon Name="type" Size="IconSize.Xs" />
+            <span>@Loc["TmDocumentEditor_ImageCaption"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn"
@@ -31,7 +33,8 @@
                 data-testid="document-image-replace"
                 title="@Loc["TmDocumentEditor_ImageReplace"]"
                 @onclick="() => OnReplaceRequested.InvokeAsync()">
-            @Loc["TmDocumentEditor_ImageReplace"]
+            <TmIcon Name="refresh" Size="IconSize.Xs" />
+            <span>@Loc["TmDocumentEditor_ImageReplace"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn tm-document-image-wrap-panel__btn--danger"
@@ -39,11 +42,12 @@
                 data-testid="document-image-delete"
                 title="@Loc["TmDocumentEditor_ImageDelete"]"
                 @onclick="() => OnDelete.InvokeAsync()">
-            @Loc["TmDocumentEditor_ImageDelete"]
+            <TmIcon Name="trash-2" Size="IconSize.Xs" />
+            <span>@Loc["TmDocumentEditor_ImageDelete"]</span>
         </button>
     </div>
 
-    <div class="tm-document-image-wrap-panel__group">
+    <div class="tm-document-image-wrap-panel__group tm-document-image-wrap-panel__group--segmented">
         <span class="tm-document-image-wrap-panel__label">@Loc["TmDocumentEditor_ImageWrapMode"]</span>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Inline ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -54,7 +58,8 @@
                 title="@Loc["TmDocumentEditor_ImageWrapInline"]"
                 aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Inline)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Inline)">
-            @Loc["TmDocumentEditor_ImageWrapInline"]
+            <TmIcon Name="@WrapIcon(DocumentWrapMode.Inline)" Size="IconSize.Xs" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapInline"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Square ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -65,7 +70,8 @@
                 title="@Loc["TmDocumentEditor_ImageWrapSquare"]"
                 aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Square)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Square)">
-            @Loc["TmDocumentEditor_ImageWrapSquare"]
+            <TmIcon Name="@WrapIcon(DocumentWrapMode.Square)" Size="IconSize.Xs" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapSquare"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Tight ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -76,7 +82,8 @@
                 title="@Loc["TmDocumentEditor_ImageWrapTight"]"
                 aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Tight)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Tight)">
-            @Loc["TmDocumentEditor_ImageWrapTight"]
+            <TmIcon Name="@WrapIcon(DocumentWrapMode.Tight)" Size="IconSize.Xs" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapTight"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Through ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -87,7 +94,8 @@
                 title="@Loc["TmDocumentEditor_ImageWrapThrough"]"
                 aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.Through)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Through)">
-            @Loc["TmDocumentEditor_ImageWrapThrough"]
+            <TmIcon Name="@WrapIcon(DocumentWrapMode.Through)" Size="IconSize.Xs" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapThrough"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.TopBottom ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -98,7 +106,8 @@
                 title="@Loc["TmDocumentEditor_ImageWrapTopBottom"]"
                 aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.TopBottom)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.TopBottom)">
-            @Loc["TmDocumentEditor_ImageWrapTopBottom"]
+            <TmIcon Name="@WrapIcon(DocumentWrapMode.TopBottom)" Size="IconSize.Xs" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapTopBottom"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.BehindText ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -109,7 +118,8 @@
                 title="@Loc["TmDocumentEditor_ImageWrapBehindText"]"
                 aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.BehindText)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.BehindText)">
-            @Loc["TmDocumentEditor_ImageWrapBehindText"]
+            <TmIcon Name="@WrapIcon(DocumentWrapMode.BehindText)" Size="IconSize.Xs" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapBehindText"]</span>
         </button>
 
         <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.InFrontOfText ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -120,13 +130,14 @@
                 title="@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]"
                 aria-pressed="@AriaPressed(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
                 @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.InFrontOfText)">
-            @Loc["TmDocumentEditor_ImageWrapInFrontOfText"]
+            <TmIcon Name="@WrapIcon(DocumentWrapMode.InFrontOfText)" Size="IconSize.Xs" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]</span>
         </button>
     </div>
 
     @if (CurrentWrapMode != DocumentWrapMode.Inline)
     {
-        <div class="tm-document-image-wrap-panel__group">
+        <div class="tm-document-image-wrap-panel__group tm-document-image-wrap-panel__group--segmented">
             <span class="tm-document-image-wrap-panel__label">@Loc["TmDocumentEditor_ImagePosition"]</span>
 
             <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Left ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -135,7 +146,8 @@
                     title="@Loc["TmDocumentEditor_ImagePositionLeft"]"
                     aria-pressed="@AriaPressed(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Left)"
                     @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Left)">
-                @Loc["TmDocumentEditor_ImagePositionLeft"]
+                <TmIcon Name="@PositionIcon(DocumentImageHorizontalPosition.Left)" Size="IconSize.Xs" />
+                <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImagePositionLeft"]</span>
             </button>
 
             <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Center ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -144,7 +156,8 @@
                     title="@Loc["TmDocumentEditor_ImagePositionCenter"]"
                     aria-pressed="@AriaPressed(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Center)"
                     @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Center)">
-                @Loc["TmDocumentEditor_ImagePositionCenter"]
+                <TmIcon Name="@PositionIcon(DocumentImageHorizontalPosition.Center)" Size="IconSize.Xs" />
+                <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImagePositionCenter"]</span>
             </button>
 
             <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Right ? "tm-document-image-wrap-panel__btn--active" : "")"
@@ -153,7 +166,8 @@
                     title="@Loc["TmDocumentEditor_ImagePositionRight"]"
                     aria-pressed="@AriaPressed(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Right)"
                     @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Right)">
-                @Loc["TmDocumentEditor_ImagePositionRight"]
+                <TmIcon Name="@PositionIcon(DocumentImageHorizontalPosition.Right)" Size="IconSize.Xs" />
+                <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImagePositionRight"]</span>
             </button>
         </div>
     }
@@ -217,7 +231,8 @@
                 data-testid="document-image-more-options"
                 title="@Loc["TmDocumentEditor_ImageMoreOptions"]"
                 @onclick="() => OnMoreOptionsRequested.InvokeAsync()">
-            @Loc["TmDocumentEditor_ImageMoreOptions"]
+            <TmIcon Name="sliders" Size="IconSize.Xs" />
+            <span>@Loc["TmDocumentEditor_ImageMoreOptions"]</span>
         </button>
     </div>
 </div>
@@ -266,4 +281,24 @@
         double.TryParse(value?.ToString(), out var d) ? Math.Max(0, d) : 0;
 
     private static string AriaPressed(bool value) => value ? "true" : "false";
+
+    private static string WrapIcon(DocumentWrapMode mode) => mode switch
+    {
+        DocumentWrapMode.Inline => "align-center",
+        DocumentWrapMode.Square => "square",
+        DocumentWrapMode.Tight => "scan-line",
+        DocumentWrapMode.Through => "scan-line",
+        DocumentWrapMode.TopBottom => "between-horizontal-start",
+        DocumentWrapMode.BehindText => "layers",
+        DocumentWrapMode.InFrontOfText => "layout-panel-top",
+        _ => "square"
+    };
+
+    private static string PositionIcon(DocumentImageHorizontalPosition position) => position switch
+    {
+        DocumentImageHorizontalPosition.Left => "align-left",
+        DocumentImageHorizontalPosition.Center => "align-center",
+        DocumentImageHorizontalPosition.Right => "align-right",
+        _ => "align-center"
+    };
 }

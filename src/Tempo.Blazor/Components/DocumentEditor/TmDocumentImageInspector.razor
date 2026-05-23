@@ -125,8 +125,10 @@
                         data-testid="document-image-inspector-wrap-inline"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Inline"
+                        title="@Loc["TmDocumentEditor_ImageWrapInline"]"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Inline)">
-                    @Loc["TmDocumentEditor_ImageWrapInline"]
+                    <TmIcon Name="@WrapIcon(DocumentWrapMode.Inline)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapInline"]</span>
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Square)"
@@ -134,8 +136,10 @@
                         data-testid="document-image-inspector-wrap-square"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Square"
+                        title="@Loc["TmDocumentEditor_ImageWrapSquare"]"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Square)">
-                    @Loc["TmDocumentEditor_ImageWrapSquare"]
+                    <TmIcon Name="@WrapIcon(DocumentWrapMode.Square)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapSquare"]</span>
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Tight)"
@@ -143,8 +147,10 @@
                         data-testid="document-image-inspector-wrap-tight"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Tight"
+                        title="@Loc["TmDocumentEditor_ImageWrapTight"]"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Tight)">
-                    @Loc["TmDocumentEditor_ImageWrapTight"]
+                    <TmIcon Name="@WrapIcon(DocumentWrapMode.Tight)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapTight"]</span>
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.Through)"
@@ -152,8 +158,10 @@
                         data-testid="document-image-inspector-wrap-through"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="Through"
+                        title="@Loc["TmDocumentEditor_ImageWrapThrough"]"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.Through)">
-                    @Loc["TmDocumentEditor_ImageWrapThrough"]
+                    <TmIcon Name="@WrapIcon(DocumentWrapMode.Through)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapThrough"]</span>
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.TopBottom)"
@@ -161,8 +169,10 @@
                         data-testid="document-image-inspector-wrap-top-bottom"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="TopBottom"
+                        title="@Loc["TmDocumentEditor_ImageWrapTopBottom"]"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.TopBottom)">
-                    @Loc["TmDocumentEditor_ImageWrapTopBottom"]
+                    <TmIcon Name="@WrapIcon(DocumentWrapMode.TopBottom)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapTopBottom"]</span>
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.BehindText)"
@@ -170,8 +180,10 @@
                         data-testid="document-image-inspector-wrap-behind"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="BehindText"
+                        title="@Loc["TmDocumentEditor_ImageWrapBehindText"]"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.BehindText)">
-                    @Loc["TmDocumentEditor_ImageWrapBehindText"]
+                    <TmIcon Name="@WrapIcon(DocumentWrapMode.BehindText)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapBehindText"]</span>
                 </button>
                 <button type="button"
                         class="@WrapButtonClass(DocumentWrapMode.InFrontOfText)"
@@ -179,8 +191,10 @@
                         data-testid="document-image-inspector-wrap-in-front"
                         data-human-testid="document-image-wrap-button"
                         data-wrap-mode="InFrontOfText"
+                        title="@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]"
                         @onclick="() => WrapModeChanged.InvokeAsync(DocumentWrapMode.InFrontOfText)">
-                    @Loc["TmDocumentEditor_ImageWrapInFrontOfText"]
+                    <TmIcon Name="@WrapIcon(DocumentWrapMode.InFrontOfText)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]</span>
                 </button>
             </div>
         </div>
@@ -197,22 +211,28 @@
                         class="@AlignmentButtonClass(DocumentImageAlignment.Start)"
                         aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.Start)"
                         data-testid="document-image-inspector-align-start"
+                        title="@Loc["TmDocumentEditor_ImageAlignStart"]"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.Start)">
-                    @Loc["TmDocumentEditor_ImageAlignStart"]
+                    <TmIcon Name="@AlignmentIcon(DocumentImageAlignment.Start)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageAlignStart"]</span>
                 </button>
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.Center)"
                         aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.Center)"
                         data-testid="document-image-inspector-align-center"
+                        title="@Loc["TmDocumentEditor_ImageAlignCenter"]"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.Center)">
-                    @Loc["TmDocumentEditor_ImageAlignCenter"]
+                    <TmIcon Name="@AlignmentIcon(DocumentImageAlignment.Center)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageAlignCenter"]</span>
                 </button>
                 <button type="button"
                         class="@AlignmentButtonClass(DocumentImageAlignment.End)"
                         aria-pressed="@AriaPressed(CurrentAlignment == DocumentImageAlignment.End)"
                         data-testid="document-image-inspector-align-end"
+                        title="@Loc["TmDocumentEditor_ImageAlignEnd"]"
                         @onclick="() => AlignmentChanged.InvokeAsync(DocumentImageAlignment.End)">
-                    @Loc["TmDocumentEditor_ImageAlignEnd"]
+                    <TmIcon Name="@AlignmentIcon(DocumentImageAlignment.End)" Size="IconSize.Xs" />
+                    <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_ImageAlignEnd"]</span>
                 </button>
             </div>
             <div class="tm-document-image-inspector__size">
@@ -502,6 +522,26 @@
 
     private string AlignmentButtonClass(DocumentImageAlignment alignment) =>
         $"tm-document-image-inspector__swatch{(CurrentAlignment == alignment ? " tm-document-image-inspector__swatch--active" : "")}";
+
+    private static string WrapIcon(DocumentWrapMode mode) => mode switch
+    {
+        DocumentWrapMode.Inline => "align-center",
+        DocumentWrapMode.Square => "square",
+        DocumentWrapMode.Tight => "scan-line",
+        DocumentWrapMode.Through => "scan-line",
+        DocumentWrapMode.TopBottom => "between-horizontal-start",
+        DocumentWrapMode.BehindText => "layers",
+        DocumentWrapMode.InFrontOfText => "layout-panel-top",
+        _ => "square"
+    };
+
+    private static string AlignmentIcon(DocumentImageAlignment alignment) => alignment switch
+    {
+        DocumentImageAlignment.Start => "align-left",
+        DocumentImageAlignment.Center => "align-center",
+        DocumentImageAlignment.End => "align-right",
+        _ => "align-center"
+    };
 
     private Task HandleAltTextInputAsync(ChangeEventArgs args)
     {

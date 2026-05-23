@@ -2911,4 +2911,50 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         jsText.Should().Contain("HeaderFooterId");
         jsText.Should().Contain("flushTypingBoundaryPatchDispatch");
     }
+
+    [Fact]
+    public async Task Phase13PerformanceStatsAggregation_SeparatesIncrementalTypingFromFullDocumentLayout()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON, performance: { now: () => 100 } };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            sandbox.window.performance = sandbox.performance;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const inst = { performanceStats: hooks.createStrictPerformanceStats(), diagnostics: { timeline: [], lastErrors: [], watchdogFailures: [], debugWarnings: [], modelVersion: 0, selectionVersion: 0 } };
+            hooks.recordOperationPerformance(inst, [
+                { type: 'InsertText' },
+                { type: 'SplitParagraph' }
+            ], 3.5, ['block:one'], 'typing');
+            hooks.recordOperationPerformance(inst, [{ type: 'UpdateImageLayout' }], 7, ['block:image'], 'image');
+            hooks.recordOperationPerformance(inst, [{ type: 'InsertText' }], 11, ['document'], 'recovery');
+
+            assert.strictEqual(inst.performanceStats.inputOperationCount, 4);
+            assert.strictEqual(inst.performanceStats.incrementalOperationCount, 3);
+            assert.strictEqual(inst.performanceStats.fullDocumentLayoutCount, 1);
+            assert.strictEqual(inst.performanceStats.typingLatencyCount, 3);
+            assert.strictEqual(inst.performanceStats.imageDragLatencyCount, 1);
+            assert.strictEqual(inst.performanceStats.inputOperationMaxMs, 11);
+            assert.ok(inst.diagnostics.timeline.some(entry => entry.kind === 'operation-performance'));
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
 }

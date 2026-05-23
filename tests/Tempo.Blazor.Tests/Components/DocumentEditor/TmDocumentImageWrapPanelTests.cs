@@ -37,6 +37,17 @@ public sealed class TmDocumentImageWrapPanelTests : LocalizationTestBase
         cut.Find("[data-testid='document-image-wrap-in-front']").Should().NotBeNull();
     }
 
+    [Fact]
+    public void Panel_WrapModeButtons_AreIconSegmentsWithAccessibleLabels()
+    {
+        var cut = RenderComponent<TmDocumentImageWrapPanel>();
+
+        var square = cut.Find("[data-testid='document-image-wrap-square']");
+        square.QuerySelector(".tm-icon").Should().NotBeNull();
+        square.QuerySelector(".tm-document-editor__sr-only")!.TextContent.Should().NotBeNullOrWhiteSpace();
+        square.GetAttribute("title").Should().NotBeNullOrWhiteSpace();
+    }
+
     // ─── Position buttons ─────────────────────────────────────────────────────
 
     [Fact]
