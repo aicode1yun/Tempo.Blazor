@@ -394,6 +394,8 @@ window.tmDocumentEditorEngine = (function () {
             if (comment && (comment.id || comment.Id)) indexes.comments[comment.id || comment.Id] = comment;
         });
         model.indexes = indexes;
+        model.indexVersion = Number(model.indexVersion || 0) + 1;
+        model.indexesBuiltAt = Date.now();
         return indexes;
     }
 
@@ -722,6 +724,10 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function exportRevisionsToCSharpJson(model) {
+        return _asArray(model && model.revisions).map(exportRevision);
+    }
+
     function validateModel(model) {
         var errors = [];
         var seen = new Set();
@@ -832,6 +838,11 @@ window.tmDocumentEditorEngine = (function () {
         Preview: 'preview',
         Remote: 'remote'
     });
+
+    function isTypingLikeTransactionType(value) {
+        var type = String(value || '').toLowerCase();
+        return type === TRANSACTION_TYPES.Typing || type === 'typing' || type === 'delete' || type === 'keyboarddelete';
+    }
 
     function createOperation(type, payload, options) {
         var opts = options || {};
@@ -1018,8 +1029,12 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function _findBlock(model, blockId) {
-        buildIndexes(model);
-        return model.indexes.blocks[blockId] || null;
+        var id = _asText(blockId);
+        if (!model || !id) return null;
+        if (!model.indexes || !model.indexes.blocks || !model.indexes.blocks[id]) {
+            buildIndexes(model);
+        }
+        return model.indexes && model.indexes.blocks ? model.indexes.blocks[id] || null : null;
     }
 
     function _findCell(model, cellId) {
@@ -1590,8 +1605,8 @@ window.tmDocumentEditorEngine = (function () {
                 break;
         }
         if (result.ok) {
-            normalizeRevisionGroups(model);
-            buildIndexes(model);
+            var revisionNormalization = normalizeRevisionGroups(model, result.invalidatedLayoutScopes || operationAffectedBlockIds(op));
+            if (!revisionNormalization || revisionNormalization.indexesRebuilt !== true) buildIndexes(model);
             result.differ = differ.snapshot();
             result.operation = op;
         }
@@ -2254,7 +2269,7 @@ window.tmDocumentEditorEngine = (function () {
         delete run.Marks;
     }
 
-    function normalizeRevisionGroups(model) {
+    function normalizeRevisionGroups(model, scopeIds) {
         ensureRevisionList(model);
         var revisionsById = {};
         _asArray(model && model.revisions).forEach(function (revision) {
@@ -2262,6 +2277,11 @@ window.tmDocumentEditorEngine = (function () {
         });
         var removedIds = new Set();
         var merged = 0;
+        var scopes = _asArray(scopeIds).map(_asText).filter(function (id) {
+            return id && id !== 'document' && id !== 'revisions';
+        });
+        var scoped = scopes.length > 0;
+        var scopeLookup = new Set(scopes);
 
         function mergeRevision(sourceRevision, targetRevision, blockId, start, end, sourceText) {
             if (!sourceRevision || !targetRevision || sourceRevision.id === targetRevision.id) return;
@@ -2303,14 +2323,29 @@ window.tmDocumentEditorEngine = (function () {
             block.content.runs = mergeAdjacentTextRuns(block.content.runs);
         }
 
-        _asArray(model && model.body && model.body.blocks).forEach(scanBlock);
-        _asArray(model && model.headers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
-        _asArray(model && model.footers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
+        function scanScopedBlock(block) {
+            if (!block) return;
+            if (scoped && !scopeLookup.has(block.id)) {
+                if (block.type === 'table') {
+                    _asArray(block.content && block.content.rows).forEach(function (row) {
+                        _asArray(row.cells).forEach(function (cell) {
+                            _asArray(cell.blocks).forEach(scanScopedBlock);
+                        });
+                    });
+                }
+                return;
+            }
+            scanBlock(block);
+        }
+
+        _asArray(model && model.body && model.body.blocks).forEach(scanScopedBlock);
+        _asArray(model && model.headers).forEach(function (region) { _asArray(region.blocks).forEach(scanScopedBlock); });
+        _asArray(model && model.footers).forEach(function (region) { _asArray(region.blocks).forEach(scanScopedBlock); });
         if (removedIds.size > 0) {
             model.revisions = _asArray(model.revisions).filter(function (revision) { return !removedIds.has(revision.id); });
         }
         buildIndexes(model);
-        return _sortObject({ ok: true, merged: merged, removed: removedIds.size });
+        return _sortObject({ ok: true, merged: merged, removed: removedIds.size, scoped: scoped, indexesRebuilt: true });
     }
 
     function revisionDecorativeStyle(revision) {
@@ -8118,6 +8153,12 @@ window.tmDocumentEditorEngine = (function () {
             lastPartialRenderScopeIds: [],
             partialRenderScopeSamples: [],
             formattingCommandPartialRenderCount: 0,
+            lightweightBoundaryPatchCount: 0,
+            boundarySnapshotExportCount: 0,
+            deferredBoundaryPatchDispatchCount: 0,
+            deferredRevisionNotifyCount: 0,
+            revisionNotifyCount: 0,
+            markerStoreDeferredRefreshCount: 0,
             toolbarStateLayoutAuditCount: 0,
             toolbarStateLayoutThrashCount: 0,
             lastToolbarStateLayoutAudit: null,
@@ -8290,7 +8331,7 @@ window.tmDocumentEditorEngine = (function () {
         stats.selectionMovementTotalMs = Number(stats.selectionMovementTotalMs || 0) + elapsed;
         stats.selectionMovementMaxMs = Math.max(Number(stats.selectionMovementMaxMs || 0), elapsed);
         inst.lastSelectionStateChangeAt = started;
-        var isTypingReason = reason === TRANSACTION_TYPES.Typing || reason === 'typing';
+        var isTypingReason = isTypingLikeTransactionType(reason);
         var delayMs = isTypingReason
             ? Math.max(120, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) + 80)
             : 60;
@@ -8562,9 +8603,29 @@ window.tmDocumentEditorEngine = (function () {
             || type === OPERATION_TYPES.RejectRevision);
     }
 
+    function operationMayChangeRevisions(operation) {
+        var type = operation && (operation.type || operation.Type) || '';
+        return operationTouchesRevisions(operation) || type === OPERATION_TYPES.RestoreSnapshot;
+    }
+
     function notifyRuntimeRevisionsChanged(inst) {
         if (!inst) return Promise.resolve({ ok: true, skipped: true });
-        return invokeBoundaryMethod(inst, 'HandleRevisionsChanged', exportToCSharpJson(inst.model).Revisions, 'revisions-changed-failed');
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.revisionNotifyCount = Number(stats.revisionNotifyCount || 0) + 1;
+        return invokeBoundaryMethod(inst, 'HandleRevisionsChanged', exportRevisionsToCSharpJson(inst.model), 'revisions-changed-failed');
+    }
+
+    function scheduleRuntimeRevisionsChanged(inst) {
+        if (!inst) return;
+        inst.pendingRevisionNotify = true;
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.deferredRevisionNotifyCount = Number(stats.deferredRevisionNotifyCount || 0) + 1;
+    }
+
+    function flushRuntimeRevisionsChanged(inst) {
+        if (!inst || !inst.pendingRevisionNotify) return Promise.resolve({ ok: true, skipped: true });
+        inst.pendingRevisionNotify = false;
+        return notifyRuntimeRevisionsChanged(inst);
     }
 
     function invokeBoundaryMethod(inst, methodName, payload, failureCode) {
@@ -10399,13 +10460,26 @@ window.tmDocumentEditorEngine = (function () {
         }
     }
 
-    function createBoundaryPatch(inst, transaction, operations, committed, source) {
+    function hydrateBoundaryPatchSnapshot(inst, patch) {
+        if (!inst || !patch || patch.csharpDocument) return patch;
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.boundarySnapshotExportCount = Number(stats.boundarySnapshotExportCount || 0) + 1;
+        patch.snapshot = _clone(inst.model);
+        patch.csharpDocument = exportToCSharpJson(inst.model);
+        patch.lightweight = false;
+        patch.deferredSnapshot = false;
+        patch.snapshotHydratedAt = Date.now();
+        return patch;
+    }
+
+    function createBoundaryPatch(inst, transaction, operations, committed, source, options) {
+        var opts = options || {};
         var operationList = _asArray(operations).map(function (operation) {
             return attachOperationMethods(operation).toJSON ? attachOperationMethods(operation).toJSON() : _clone(operation);
         });
         var transactionJson = transaction && transaction.toJSON ? transaction.toJSON() : _clone(transaction || {});
         var affectedBlockIds = transactionAffectedBlockIds(transaction, operationList);
-        return _sortObject({
+        var patch = {
             instanceId: inst.id,
             transactionId: transactionJson.id || '',
             transactionType: transactionJson.type || source || 'default',
@@ -10417,12 +10491,19 @@ window.tmDocumentEditorEngine = (function () {
                 kind: operationList.length > 0 ? 'operations' : 'snapshot',
                 operations: operationList
             },
-            snapshot: _clone(inst.model),
-            csharpDocument: exportToCSharpJson(inst.model),
             dirtyState: _clone(inst.dirtyState || createInitialDirtyState()),
             differ: committed && committed.differ || inst.lastDiffer || null,
+            lightweight: opts.deferSnapshot === true,
+            deferredSnapshot: opts.deferSnapshot === true,
             createdAt: Date.now()
-        });
+        };
+        if (opts.deferSnapshot === true) {
+            var stats = ensureStrictPerformanceStats(inst);
+            stats.lightweightBoundaryPatchCount = Number(stats.lightweightBoundaryPatchCount || 0) + 1;
+            return _sortObject(patch);
+        }
+        hydrateBoundaryPatchSnapshot(inst, patch);
+        return _sortObject(patch);
     }
 
     function updateDirtyState(inst, patch, source) {
@@ -10437,6 +10518,15 @@ window.tmDocumentEditorEngine = (function () {
         return inst.dirtyState;
     }
 
+    function shouldDeferBoundarySnapshot(transaction, operations, source) {
+        var transactionType = transaction && (transaction.type || transaction.Type) || source || '';
+        if (isTypingLikeTransactionType(transactionType) || isTypingLikeTransactionType(source)) return true;
+        var normalizedSource = String(source || transactionType || '').toLowerCase();
+        if (normalizedSource === TRANSACTION_TYPES.Undo || normalizedSource === TRANSACTION_TYPES.Redo || normalizedSource === 'undo' || normalizedSource === 'redo') return true;
+        var operationList = _asArray(operations);
+        return operationList.length > 0 && operationList.every(isFormattingVisualOperation);
+    }
+
     function dispatchDirtyState(inst) {
         var payload = _clone(inst.dirtyState || createInitialDirtyState());
         invokeBoundaryMethod(inst, 'HandleJsDirtyStateChanged', payload, 'dirty-state-dispatch-failed');
@@ -10444,15 +10534,23 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function commitBoundaryPatch(inst, transaction, operations, committed, source) {
-        var patch = createBoundaryPatch(inst, transaction, operations, committed, source);
+        var isTypingPatch = isTypingLikeTransactionType(transaction && transaction.type) || isTypingLikeTransactionType(source);
+        var deferSnapshot = shouldDeferBoundarySnapshot(transaction, operations, source);
+        var patch = createBoundaryPatch(inst, transaction, operations, committed, source, { deferSnapshot: deferSnapshot });
         inst.boundaryPatches.push(patch);
         updateDirtyState(inst, patch, source);
         patch.dirtyState = _clone(inst.dirtyState);
-        if (patch.transactionType === TRANSACTION_TYPES.Typing || source === TRANSACTION_TYPES.Typing || source === 'typing') {
+        if (isTypingPatch) {
             scheduleTypingBoundaryPatchDispatch(inst, patch);
             return patch;
         }
+        if (deferSnapshot) {
+            flushTypingBoundaryPatchDispatch(inst);
+            scheduleDeferredBoundaryPatchDispatch(inst, patch);
+            return patch;
+        }
         flushTypingBoundaryPatchDispatch(inst);
+        flushDeferredBoundaryPatchDispatch(inst);
         dispatchBoundaryPatch(inst, patch);
         dispatchDirtyState(inst);
         return patch;
@@ -10469,7 +10567,7 @@ window.tmDocumentEditorEngine = (function () {
         invokeBoundaryMethod(inst, 'HandleJsBoundaryPatchGenerated', patch, 'boundary-patch-dispatch-failed');
     }
 
-    function mergeTypingBoundaryPatches(inst, patches) {
+    function mergeBoundaryPatches(inst, patches, fallbackTransactionType) {
         var list = _asArray(patches).filter(Boolean);
         var latest = list[list.length - 1] || null;
         if (!latest) return null;
@@ -10482,7 +10580,7 @@ window.tmDocumentEditorEngine = (function () {
         });
         return _sortObject(Object.assign({}, _clone(latest), {
             transactionId: latest.transactionId || (list[0] && list[0].transactionId) || '',
-            transactionType: TRANSACTION_TYPES.Typing,
+            transactionType: fallbackTransactionType || latest.transactionType || 'default',
             operationIds: operations.map(getOperationId).filter(Boolean),
             operations: operations,
             affectedBlockIds: affected,
@@ -10494,6 +10592,10 @@ window.tmDocumentEditorEngine = (function () {
             coalescedPatchCount: list.length,
             createdAt: latest.createdAt || Date.now()
         }));
+    }
+
+    function mergeTypingBoundaryPatches(inst, patches) {
+        return mergeBoundaryPatches(inst, patches, TRANSACTION_TYPES.Typing);
     }
 
     function scheduleTypingBoundaryPatchDispatch(inst, patch) {
@@ -10529,8 +10631,52 @@ window.tmDocumentEditorEngine = (function () {
         stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), pending.length);
         var merged = mergeTypingBoundaryPatches(inst, pending);
         if (merged) {
+            hydrateBoundaryPatchSnapshot(inst, merged);
             dispatchBoundaryPatch(inst, merged);
             dispatchDirtyState(inst);
+            flushRuntimeRevisionsChanged(inst);
+        }
+        return merged;
+    }
+
+    function scheduleDeferredBoundaryPatchDispatch(inst, patch) {
+        if (!inst || !patch) return;
+        inst.pendingDeferredBoundaryPatches = _asArray(inst.pendingDeferredBoundaryPatches).concat([patch]);
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), inst.pendingDeferredBoundaryPatches.length);
+        if (inst.pendingDeferredBoundaryTimer) clearTimeout(inst.pendingDeferredBoundaryTimer);
+        var configuredDelay = inst.options ? (inst.options.BoundaryPatchBatchMs ?? inst.options.boundaryPatchBatchMs) : null;
+        var delay = Math.max(0, Number(configuredDelay ?? 16) || 16);
+        inst.pendingDeferredBoundaryTimer = setTimeout(function () {
+            flushDeferredBoundaryPatchDispatch(inst);
+        }, delay);
+        if (inst.timers && inst.timers.indexOf(inst.pendingDeferredBoundaryTimer) < 0) inst.timers.push(inst.pendingDeferredBoundaryTimer);
+        recordTimeline(inst, 'blazor-patch-deferred', {
+            transactionId: patch.transactionId,
+            transactionType: patch.transactionType,
+            pendingPatchCount: inst.pendingDeferredBoundaryPatches.length
+        });
+    }
+
+    function flushDeferredBoundaryPatchDispatch(inst) {
+        if (!inst) return null;
+        if (inst.pendingDeferredBoundaryTimer) {
+            clearTimeout(inst.pendingDeferredBoundaryTimer);
+            inst.pendingDeferredBoundaryTimer = null;
+        }
+        var pending = _asArray(inst.pendingDeferredBoundaryPatches);
+        if (!pending.length) return null;
+        inst.pendingDeferredBoundaryPatches = [];
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.deferredBoundaryPatchDispatchCount = Number(stats.deferredBoundaryPatchDispatchCount || 0) + 1;
+        stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), pending.length);
+        var latest = pending[pending.length - 1] || null;
+        var merged = mergeBoundaryPatches(inst, pending, latest && latest.transactionType || 'deferred');
+        if (merged) {
+            hydrateBoundaryPatchSnapshot(inst, merged);
+            dispatchBoundaryPatch(inst, merged);
+            dispatchDirtyState(inst);
+            flushRuntimeRevisionsChanged(inst);
         }
         return merged;
     }
@@ -10608,7 +10754,7 @@ window.tmDocumentEditorEngine = (function () {
         var committed = transaction.commit();
         inst.activeTransaction = null;
         inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, transaction.afterSelection || inst.selection);
-        markSelectionChanged(inst, transaction.type === TRANSACTION_TYPES.Typing ? 'typing' : 'operation-batch');
+        markSelectionChanged(inst, isTypingLikeTransactionType(transaction.type) ? 'typing' : 'operation-batch');
         transaction.afterSelection = _clone(inst.selection);
         transaction.afterModelSnapshot = _clone(inst.model);
         inst.transactions.push(transaction.toJSON());
@@ -10622,10 +10768,16 @@ window.tmDocumentEditorEngine = (function () {
         inst.commands.push({ command: transactionType || 'remote', payload: operationList.map(function (operation) { return operation.toJSON(); }), at: Date.now(), transactionId: transaction.id });
         if (affectsDocument) {
             markModelChanged(inst, transactionType || 'operation-batch');
-            refreshRuntimeMarkerStore(inst);
+            if (isTypingLikeTransactionType(transaction.type)) {
+                inst.markerStoreDirty = true;
+                ensureStrictPerformanceStats(inst).markerStoreDeferredRefreshCount = Number(ensureStrictPerformanceStats(inst).markerStoreDeferredRefreshCount || 0) + 1;
+            } else {
+                refreshRuntimeMarkerStore(inst);
+            }
         }
         if (affectsDocument && operationList.some(operationTouchesRevisions)) {
-            notifyRuntimeRevisionsChanged(inst);
+            if (isTypingLikeTransactionType(transaction.type)) scheduleRuntimeRevisionsChanged(inst);
+            else notifyRuntimeRevisionsChanged(inst);
         }
         recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: operationList.length });
         render(inst);
@@ -10690,6 +10842,10 @@ window.tmDocumentEditorEngine = (function () {
             jsOwnedInputCount: 0,
             nativeInputCount: 0,
             markerStore: null,
+            markerStoreDirty: false,
+            pendingRevisionNotify: false,
+            pendingDeferredBoundaryPatches: [],
+            pendingDeferredBoundaryTimer: null,
             performanceStats: createStrictPerformanceStats(),
             diagnostics: createDiagnosticsState()
         };
@@ -10727,6 +10883,12 @@ window.tmDocumentEditorEngine = (function () {
             cleanup.clearedTimers++;
         }
         inst.pendingTypingBoundaryPatches = [];
+        if (inst.pendingDeferredBoundaryTimer) {
+            clearTimeout(inst.pendingDeferredBoundaryTimer);
+            inst.pendingDeferredBoundaryTimer = null;
+            cleanup.clearedTimers++;
+        }
+        inst.pendingDeferredBoundaryPatches = [];
         if (inst.accessibilityAnnouncementTimer) cleanup.clearedTimers++;
         removeAccessibilityAndKeyboardHandlers(inst);
         _asArray(inst.timers).forEach(function (timerId) {
@@ -11178,7 +11340,7 @@ window.tmDocumentEditorEngine = (function () {
         var committed = transaction.commit();
         lookup.inst.activeTransaction = null;
         lookup.inst.selection = createSelectionPostFixer(lookup.inst.schema).fix(lookup.inst.model, transaction.afterSelection || lookup.inst.selection);
-        markSelectionChanged(lookup.inst, transaction.type === TRANSACTION_TYPES.Typing ? 'typing' : 'applyCommand');
+        markSelectionChanged(lookup.inst, isTypingLikeTransactionType(transaction.type) ? 'typing' : 'applyCommand');
         transaction.afterSelection = _clone(lookup.inst.selection);
         transaction.afterModelSnapshot = _clone(lookup.inst.model);
         lookup.inst.transactions.push(transaction.toJSON());
@@ -11186,17 +11348,23 @@ window.tmDocumentEditorEngine = (function () {
         if (affectsDocument) {
             pushUndoTransaction(lookup.inst, transaction);
             lookup.inst.redoTransactions = [];
-            notifyUndoState(lookup.inst, { defer: transaction.type === TRANSACTION_TYPES.Typing });
+            notifyUndoState(lookup.inst, { defer: isTypingLikeTransactionType(transaction.type) });
         }
         lookup.inst.layout.invalidatedScopeIds = transaction.invalidatedScopes.slice();
         lookup.inst.lastDiffer = committed.differ;
         lookup.inst.commands.push({ command: commandName || operation.type, payload: operation.toJSON(), at: Date.now(), transactionId: transaction.id });
         if (affectsDocument) {
             markModelChanged(lookup.inst, commandName || operation.type);
-            refreshRuntimeMarkerStore(lookup.inst);
+            if (isTypingLikeTransactionType(transaction.type)) {
+                lookup.inst.markerStoreDirty = true;
+                ensureStrictPerformanceStats(lookup.inst).markerStoreDeferredRefreshCount = Number(ensureStrictPerformanceStats(lookup.inst).markerStoreDeferredRefreshCount || 0) + 1;
+            } else {
+                refreshRuntimeMarkerStore(lookup.inst);
+            }
         }
         if (affectsDocument && operationTouchesRevisions(operation)) {
-            notifyRuntimeRevisionsChanged(lookup.inst);
+            if (isTypingLikeTransactionType(transaction.type)) scheduleRuntimeRevisionsChanged(lookup.inst);
+            else notifyRuntimeRevisionsChanged(lookup.inst);
         }
         recordTimeline(lookup.inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: transaction.operations.length });
         lookup.inst.pendingDomSelectionRestore = _clone(lookup.inst.selection);
@@ -11395,7 +11563,7 @@ window.tmDocumentEditorEngine = (function () {
         inst.lastDiffer = committed.differ;
         inst.commands.push({ command: undo ? 'undo' : 'redo', payload: {}, at: Date.now(), transactionId: transaction.id });
         markModelChanged(inst, undo ? 'undo' : 'redo');
-        notifyRuntimeRevisionsChanged(inst);
+        if (orderedOperations.some(operationMayChangeRevisions)) notifyRuntimeRevisionsChanged(inst);
         recordTimeline(inst, 'normalized-operation', { operationTypes: orderedOperations.map(function (operation) { return operation.type || operation.Type || ''; }) });
         recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: orderedOperations.length });
         inst.pendingDomSelectionRestore = _clone(inst.selection);
@@ -11437,6 +11605,7 @@ window.tmDocumentEditorEngine = (function () {
         var lookup = _get(instanceId, 'getDocumentSnapshot');
         if (lookup.error) return lookup.error;
         flushTypingBoundaryPatchDispatch(lookup.inst);
+        flushDeferredBoundaryPatchDispatch(lookup.inst);
         return {
             ok: true,
             instanceId: instanceId,
@@ -12233,6 +12402,12 @@ window.tmDocumentEditorEngine = (function () {
             MaxSelectionMovementMs: stats.selectionMovementMaxMs || 0,
             MaxLiveDomBlockCount: stats.maxLiveDomBlockCount || 0,
             FormattingCommandPartialRenderCount: stats.formattingCommandPartialRenderCount || 0,
+            LightweightBoundaryPatchCount: stats.lightweightBoundaryPatchCount || 0,
+            BoundarySnapshotExportCount: stats.boundarySnapshotExportCount || 0,
+            DeferredBoundaryPatchDispatchCount: stats.deferredBoundaryPatchDispatchCount || 0,
+            DeferredRevisionNotifyCount: stats.deferredRevisionNotifyCount || 0,
+            RevisionNotifyCount: stats.revisionNotifyCount || 0,
+            MarkerStoreDeferredRefreshCount: stats.markerStoreDeferredRefreshCount || 0,
             LastPartialRenderScopeIds: _clone(stats.lastPartialRenderScopeIds || []),
             PartialRenderScopeSamples: _clone(stats.partialRenderScopeSamples || []),
             ToolbarStateLayoutAuditCount: stats.toolbarStateLayoutAuditCount || 0,
@@ -13344,6 +13519,7 @@ window.tmDocumentEditorEngine = (function () {
     function render(inst) {
         if (!inst || inst.disposed || !inst.root) return;
         var diagnostics = ensureDiagnostics(inst);
+        if (inst.markerStoreDirty) refreshRuntimeMarkerStore(inst);
         var blocks = _asArray(inst.model && inst.model.body && inst.model.body.blocks);
         var previousSelection = inst.selection ? _clone(inst.selection) : null;
         var invalidatedScopeIds = inst.layout && inst.layout.invalidatedScopeIds || [];
@@ -14259,6 +14435,7 @@ window.tmDocumentEditorEngine = (function () {
         inst.markerStore = createMarkerStore([].concat(
             buildRuntimeCommentMarkers(inst.model),
             buildRuntimeRevisionMarkers(inst.model)));
+        inst.markerStoreDirty = false;
         return inst.markerStore;
     }
 
@@ -17349,7 +17526,13 @@ window.tmDocumentWysiwygCommand = (function () {
                 RenderedPages: snapshot.layout && Array.isArray(snapshot.layout.pages) ? snapshot.layout.pages.length : 0,
                 VirtualizedPages: 0,
                 ToolbarStateLayoutThrashCount: metrics.toolbarStateLayoutThrashCount || metrics.ToolbarStateLayoutThrashCount || 0,
-                FormattingCommandPartialRenderCount: metrics.formattingCommandPartialRenderCount || metrics.FormattingCommandPartialRenderCount || 0
+                FormattingCommandPartialRenderCount: metrics.formattingCommandPartialRenderCount || metrics.FormattingCommandPartialRenderCount || 0,
+                LightweightBoundaryPatchCount: metrics.lightweightBoundaryPatchCount || metrics.LightweightBoundaryPatchCount || 0,
+                BoundarySnapshotExportCount: metrics.boundarySnapshotExportCount || metrics.BoundarySnapshotExportCount || 0,
+                DeferredBoundaryPatchDispatchCount: metrics.deferredBoundaryPatchDispatchCount || metrics.DeferredBoundaryPatchDispatchCount || 0,
+                DeferredRevisionNotifyCount: metrics.deferredRevisionNotifyCount || metrics.DeferredRevisionNotifyCount || 0,
+                RevisionNotifyCount: metrics.revisionNotifyCount || metrics.RevisionNotifyCount || 0,
+                MarkerStoreDeferredRefreshCount: metrics.markerStoreDeferredRefreshCount || metrics.MarkerStoreDeferredRefreshCount || 0
             };
         },
         getUndoStack: function (instanceId) {
