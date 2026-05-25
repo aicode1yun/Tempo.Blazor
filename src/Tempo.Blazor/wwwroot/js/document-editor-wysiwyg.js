@@ -937,6 +937,13 @@ window.tmDocumentEditorEngine = (function () {
         ].indexOf(type) >= 0;
     }
 
+    function supportsLightweightTransactionSnapshots(operations, transactionType) {
+        var list = _asArray(operations);
+        return list.length > 0
+            && isTypingLikeTransactionType(transactionType)
+            && list.every(supportsOperationHistory);
+    }
+
     function isSelectionOnlyOperation(operation) {
         var type = operation && (operation.type || operation.Type) || '';
         return type === OPERATION_TYPES.SetSelection;
@@ -973,7 +980,9 @@ window.tmDocumentEditorEngine = (function () {
         var target = value || {};
         return {
             blockId: _asText(target.blockId || target.BlockId),
-            offset: Number(target.offset ?? target.Offset ?? 0)
+            offset: Number(target.offset ?? target.Offset ?? 0),
+            region: target.region || target.Region || null,
+            headerFooterId: target.headerFooterId || target.HeaderFooterId || null
         };
     }
 
@@ -984,7 +993,9 @@ window.tmDocumentEditorEngine = (function () {
         return {
             blockId: _asText(range.blockId || range.BlockId),
             start: Math.min(start, end),
-            end: Math.max(start, end)
+            end: Math.max(start, end),
+            region: range.region || range.Region || null,
+            headerFooterId: range.headerFooterId || range.HeaderFooterId || null
         };
     }
 
@@ -1629,7 +1640,7 @@ window.tmDocumentEditorEngine = (function () {
         _insertTextRun(block, target.offset, inserted, { marks: marks, style: style, revisionId: revisionId });
         var range = { blockId: block.id, start: target.offset, end: target.offset + inserted.length };
         differ.record({ insertedRange: range, invalidatedLayoutScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.end, isCollapsed: true } };
+        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.end, target) };
     }
 
     function applyDeleteRange(model, op, differ) {
@@ -1669,11 +1680,11 @@ window.tmDocumentEditorEngine = (function () {
                 invalidatedLayoutScopes: [block.id],
                 invalidatedOverlayScopes: ['revisions', block.id]
             });
-            return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.start, isCollapsed: true } };
+            return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.start, range) };
         }
         _deleteTextRange(block, range.start, range.end);
         differ.record({ removedRange: { blockId: block.id, start: range.start, end: range.end, text: removed }, invalidatedLayoutScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.start, isCollapsed: true } };
+        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.start, range) };
     }
 
     function applySplitParagraph(model, op, differ) {
@@ -1720,7 +1731,7 @@ window.tmDocumentEditorEngine = (function () {
         if (revisionId) {
             differ.record({ markerChange: { revisionId: revisionId, status: 'Pending', type: 'Structure' }, invalidatedOverlayScopes: ['revisions'] });
         }
-        return { ok: true, invalidatedLayoutScopes: [block.id, newBlock.id], nextSelection: { region: 'Body', blockId: newBlock.id, offset: 0, isCollapsed: true }, insertedBlockId: newBlock.id };
+        return { ok: true, invalidatedLayoutScopes: [block.id, newBlock.id], nextSelection: nextSelectionForOperation(model, op, newBlock.id, 0, operationRegionInfo(model, op, block.id, target)), insertedBlockId: newBlock.id };
     }
 
     function applyMergeParagraph(model, op, differ) {
@@ -1736,7 +1747,7 @@ window.tmDocumentEditorEngine = (function () {
         _setParagraphText(previous, _blockText(previous) + _blockText(block));
         container.blocks.splice(index, 1);
         differ.record({ removedRange: { blockId: block.id, start: 0, end: _blockText(block).length }, invalidatedLayoutScopes: [previous.id, block.id] });
-        return { ok: true, invalidatedLayoutScopes: [previous.id, block.id], nextSelection: { region: 'Body', blockId: previous.id, offset: offset, isCollapsed: true } };
+        return { ok: true, invalidatedLayoutScopes: [previous.id, block.id], nextSelection: nextSelectionForOperation(model, op, previous.id, offset, operationRegionInfo(model, op, block.id, target)) };
     }
 
     function applyMarkOperation(model, op, differ, remove) {
@@ -1744,7 +1755,7 @@ window.tmDocumentEditorEngine = (function () {
         var block = _findBlock(model, range.blockId);
         _splitRunsForRange(block, range.start, range.end, op.mark || op.Mark || {}, remove);
         differ.record({ attributeChange: { blockId: block.id, range: range, attributeName: 'marks' }, invalidatedLayoutScopes: [block.id], invalidatedOverlayScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.end, isCollapsed: true } };
+        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.end, range) };
     }
 
     function applySetParagraphAttribute(model, op, differ) {
@@ -1755,7 +1766,7 @@ window.tmDocumentEditorEngine = (function () {
         op.previousValue = block.content[name];
         block.content[name] = op.value ?? op.Value;
         differ.record({ attributeChange: { blockId: block.id, attributeName: name, value: block.content[name] }, invalidatedLayoutScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: target.offset, isCollapsed: true } };
+        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, target.offset, target) };
     }
 
     function applyInsertImage(model, op, differ) {
@@ -3544,12 +3555,13 @@ window.tmDocumentEditorEngine = (function () {
 
     function createTransaction(model, options) {
         var opts = options || {};
-        var snapshot = _clone(model);
+        var lightweightSnapshots = opts.lightweightSnapshots === true || opts.LightweightSnapshots === true;
+        var snapshot = lightweightSnapshots ? null : _clone(model);
         var instanceId = _asText(opts.instanceId || opts.InstanceId || opts.documentInstanceId || opts.DocumentInstanceId || '');
         var beforeSelection = opts.beforeSelection || opts.BeforeSelection
             ? withStableSelectionToken(instanceId, opts.beforeSelection || opts.BeforeSelection, model)
             : null;
-        var beforeDocFingerprint = opts.beforeDocFingerprint || opts.BeforeDocFingerprint || createDocumentFingerprint(model);
+        var beforeDocFingerprint = lightweightSnapshots ? '' : (opts.beforeDocFingerprint || opts.BeforeDocFingerprint || createDocumentFingerprint(model));
         var commandName = opts.commandName || opts.CommandName || opts.label || opts.Label || opts.type || opts.Type || 'Document change';
         var transaction = {
             id: opts.id || ('txn-' + (++_transactionCounter)),
@@ -3565,12 +3577,13 @@ window.tmDocumentEditorEngine = (function () {
             afterSelection: _clone(beforeSelection),
             operations: [],
             invalidatedScopes: [],
+            lightweightSnapshots: lightweightSnapshots,
             differ: createDiffer(),
             committed: false,
             rolledBack: false,
             renderSuppressed: true,
             rollback: function () {
-                replaceModelContents(model, snapshot);
+                if (snapshot) replaceModelContents(model, snapshot);
                 this.rolledBack = true;
                 this.renderSuppressed = false;
                 return { ok: true, transaction: this.toJSON() };
@@ -3591,8 +3604,12 @@ window.tmDocumentEditorEngine = (function () {
             commit: function () {
                 this.committed = true;
                 this.renderSuppressed = false;
-                this.afterModelSnapshot = _clone(model);
-                this.afterDocFingerprint = createDocumentFingerprint(model);
+                if (!this.lightweightSnapshots) {
+                    this.afterModelSnapshot = _clone(model);
+                    this.afterDocFingerprint = createDocumentFingerprint(model);
+                } else {
+                    this.afterDocFingerprint = '';
+                }
                 if (this.afterSelection) {
                     this.afterSelection = withStableSelectionToken(this.instanceId, this.afterSelection, model);
                 }
@@ -3616,6 +3633,7 @@ window.tmDocumentEditorEngine = (function () {
                     afterSelection: this.afterSelection,
                     invalidatedScopes: this.invalidatedScopes,
                     operationCount: this.operations.length,
+                    lightweightSnapshots: this.lightweightSnapshots === true,
                     committed: this.committed,
                     rolledBack: this.rolledBack,
                     renderSuppressed: this.renderSuppressed
@@ -3636,18 +3654,22 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function createHistoryEntryFromTransaction(transaction) {
-        var beforeSnapshot = _clone(transaction.beforeModelSnapshot || null);
-        var afterSnapshot = _clone(transaction.afterModelSnapshot || null);
         var instanceId = transaction.instanceId || transaction.InstanceId || '';
-        var beforeSelection = transaction.beforeSelection
-            ? withStableSelectionToken(instanceId, transaction.beforeSelection, beforeSnapshot || null)
-            : createSelectionSnapshot(null);
-        var afterSelection = transaction.afterSelection
-            ? withStableSelectionToken(instanceId, transaction.afterSelection, afterSnapshot || beforeSnapshot || null)
-            : createSelectionSnapshot(beforeSelection);
-        var scopes = _asArray(transaction.invalidatedScopes).length ? _asArray(transaction.invalidatedScopes) : ['document'];
         var operations = transaction.operations.map(function (operation) { return attachOperationMethods(operation).toJSON(); });
         var useOperationHistory = operations.length > 0 && operations.every(supportsOperationHistory);
+        var beforeSnapshot = useOperationHistory ? _clone(transaction.beforeModelSnapshot || null) : _clone(transaction.beforeModelSnapshot || null);
+        var afterSnapshot = useOperationHistory ? _clone(transaction.afterModelSnapshot || null) : _clone(transaction.afterModelSnapshot || null);
+        if (useOperationHistory && transaction.lightweightSnapshots === true) {
+            beforeSnapshot = null;
+            afterSnapshot = null;
+        }
+        var beforeSelection = transaction.beforeSelection
+            ? (useOperationHistory && !beforeSnapshot ? createSelectionSnapshot(transaction.beforeSelection) : withStableSelectionToken(instanceId, transaction.beforeSelection, beforeSnapshot || null))
+            : createSelectionSnapshot(null);
+        var afterSelection = transaction.afterSelection
+            ? (useOperationHistory && !afterSnapshot && !beforeSnapshot ? createSelectionSnapshot(transaction.afterSelection) : withStableSelectionToken(instanceId, transaction.afterSelection, afterSnapshot || beforeSnapshot || null))
+            : createSelectionSnapshot(beforeSelection);
+        var scopes = _asArray(transaction.invalidatedScopes).length ? _asArray(transaction.invalidatedScopes) : ['document'];
         return {
             id: transaction.id,
             transaction: transaction.toJSON(),
@@ -4281,6 +4303,85 @@ window.tmDocumentEditorEngine = (function () {
         }
         scan(model && model.body && model.body.blocks);
         return found || 'body';
+    }
+
+    function findRegionInfoForBlock(model, blockId) {
+        var id = _asText(blockId);
+        if (!id) return { region: 'Body', headerFooterId: null, cellId: null, tableId: null };
+        if (_asArray(model && model.body && model.body.blocks).some(function (block) { return block && block.id === id; })) {
+            return { region: 'Body', headerFooterId: null, cellId: null, tableId: null };
+        }
+        for (var h = 0; h < _asArray(model && model.headers).length; h++) {
+            var header = model.headers[h];
+            if (_asArray(header && header.blocks).some(function (block) { return block && block.id === id; })) {
+                return { region: 'Header', headerFooterId: header.id || null, cellId: null, tableId: null };
+            }
+        }
+        for (var f = 0; f < _asArray(model && model.footers).length; f++) {
+            var footer = model.footers[f];
+            if (_asArray(footer && footer.blocks).some(function (block) { return block && block.id === id; })) {
+                return { region: 'Footer', headerFooterId: footer.id || null, cellId: null, tableId: null };
+            }
+        }
+        var found = null;
+        function scanTableBlocks(blocks, owner) {
+            _asArray(blocks).forEach(function (block) {
+                if (!block || block.type !== 'table') return;
+                _asArray(block.content && block.content.rows).forEach(function (row) {
+                    _asArray(row.cells).forEach(function (cell) {
+                        if (_asArray(cell.blocks).some(function (child) { return child && child.id === id; })) {
+                            found = {
+                                region: 'TableCell',
+                                headerFooterId: owner && owner.headerFooterId || null,
+                                cellId: cell.id || null,
+                                tableId: block.id || null
+                            };
+                        }
+                        scanTableBlocks(cell.blocks, owner);
+                    });
+                });
+            });
+        }
+        scanTableBlocks(model && model.body && model.body.blocks, { region: 'Body' });
+        _asArray(model && model.headers).forEach(function (header) {
+            scanTableBlocks(header && header.blocks, { region: 'Header', headerFooterId: header && header.id || null });
+        });
+        _asArray(model && model.footers).forEach(function (footer) {
+            scanTableBlocks(footer && footer.blocks, { region: 'Footer', headerFooterId: footer && footer.id || null });
+        });
+        return found || { region: 'Body', headerFooterId: null, cellId: null, tableId: null };
+    }
+
+    function operationRegionInfo(model, op, blockId, fallback) {
+        var source = op && (op.beforeSelection || op.BeforeSelection || op.selection || op.Selection || op.target || op.Target || op.range || op.Range) || {};
+        var info = findRegionInfoForBlock(model, blockId);
+        var snapshot = createSelectionSnapshot(source || {});
+        var sourceRegion = _asText(source.region || source.Region || snapshot.region || '');
+        var sourceHeaderFooterId = source.headerFooterId || source.HeaderFooterId || snapshot.headerFooterId || null;
+        var sourceCellId = source.cellId || source.CellId || snapshot.cellId || null;
+        var sourceTableId = source.tableId || source.TableId || snapshot.tableId || null;
+        if (snapshot.blockId === blockId || !snapshot.blockId || source.blockId === blockId || source.BlockId === blockId) {
+            if (sourceRegion && sourceRegion !== 'Body') info.region = sourceRegion;
+            if (sourceHeaderFooterId) info.headerFooterId = sourceHeaderFooterId;
+            if (sourceCellId) info.cellId = sourceCellId;
+            if (sourceTableId) info.tableId = sourceTableId;
+        }
+        if (fallback && fallback.region && (!info.region || info.region === 'Body')) info.region = fallback.region;
+        if (fallback && fallback.headerFooterId && !info.headerFooterId) info.headerFooterId = fallback.headerFooterId;
+        return info;
+    }
+
+    function nextSelectionForOperation(model, op, blockId, offset, fallback) {
+        var info = operationRegionInfo(model, op, blockId, fallback);
+        return _sortObject({
+            region: info.region || 'Body',
+            blockId: _asText(blockId),
+            offset: Math.max(0, Number(offset || 0) || 0),
+            isCollapsed: true,
+            headerFooterId: info.headerFooterId || null,
+            cellId: info.cellId || null,
+            tableId: info.tableId || null
+        });
     }
 
     function normalizeLogicalPosition(model, position) {
@@ -8419,6 +8520,102 @@ window.tmDocumentEditorEngine = (function () {
         return node;
     }
 
+    function liveBlockElementMatchesSelection(node, selection) {
+        if (!node || !selection) return true;
+        var region = _asText(selection.region || selection.Region || '');
+        var headerFooterId = selection.headerFooterId || selection.HeaderFooterId || null;
+        if (region) {
+            var regionNode = node.closest && node.closest('[data-render-region]');
+            var nodeRegion = regionNode && regionNode.getAttribute('data-render-region') || 'Body';
+            if (nodeRegion !== region) return false;
+            if ((region === 'Header' || region === 'Footer') && headerFooterId) {
+                var nodeHeaderFooterId = regionNode && regionNode.getAttribute('data-hf-id') || null;
+                if (nodeHeaderFooterId && nodeHeaderFooterId !== headerFooterId) return false;
+            }
+        }
+        return true;
+    }
+
+    function findLiveTextBlockElements(inst, blockId, selection) {
+        if (!inst || !inst.root || !blockId || typeof inst.root.querySelectorAll !== 'function') return [];
+        var selector = '.tm-wysiwyg-block[data-block-id="' + cssEscape(blockId) + '"]';
+        return Array.from(inst.root.querySelectorAll(selector))
+            .filter(function (node) {
+                return node
+                    && !node.matches('figure, table, .tm-wysiwyg-image, .tm-wysiwyg-table')
+                    && liveBlockElementMatchesSelection(node, selection);
+            });
+    }
+
+    function currentDomBlockElement(inst, blockId) {
+        var selection = window.getSelection && window.getSelection();
+        if (!selectionBelongsToEditor(inst, selection) || selection.rangeCount === 0) return null;
+        var range = selection.getRangeAt(0);
+        var node = range.startContainer && (range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement);
+        var block = node && node.closest && node.closest('.tm-wysiwyg-block[data-block-id]');
+        return block && block.getAttribute('data-block-id') === blockId ? block : null;
+    }
+
+    function liveBlockContextFromElement(node) {
+        if (!node) return null;
+        var page = node.closest && node.closest('.tm-wysiwyg-page[data-page-index]');
+        var regionNode = node.closest && node.closest('[data-render-region]');
+        return {
+            pageIndex: page && page.getAttribute('data-page-index') || null,
+            region: regionNode && regionNode.getAttribute('data-render-region') || 'Body',
+            headerFooterId: regionNode && regionNode.getAttribute('data-hf-id') || null
+        };
+    }
+
+    function findLiveTextBlockElementForContext(inst, blockId, context, selection) {
+        var nodes = findLiveTextBlockElements(inst, blockId, selection);
+        if (!nodes.length) return null;
+        if (context) {
+            var match = nodes.find(function (node) {
+                var candidate = liveBlockContextFromElement(node);
+                return candidate
+                    && (context.pageIndex === null || candidate.pageIndex === context.pageIndex)
+                    && (!context.region || candidate.region === context.region)
+                    && (!context.headerFooterId || candidate.headerFooterId === context.headerFooterId);
+            });
+            if (match) return match;
+        }
+        return nodes[0] || null;
+    }
+
+    function restoreDomSelectionInLiveBlock(inst, selection, blockElement) {
+        if (!inst || !selection || !blockElement || typeof document === 'undefined') return restoreDomSelectionFromSnapshot(inst, selection);
+        var snapshot = createSelectionSnapshot(selection);
+        if (snapshot.isObjectSelection === true || snapshot.isCellSelection === true || !snapshot.blockId) return false;
+        try {
+            var range = document.createRange();
+            if (snapshot.isCollapsed === false && snapshot.anchor.blockId === snapshot.focus.blockId) {
+                var startOffset = Math.min(Number(snapshot.anchor.offset || 0), Number(snapshot.focus.offset || 0));
+                var endOffset = Math.max(Number(snapshot.anchor.offset || 0), Number(snapshot.focus.offset || 0));
+                var startPoint = domTextPointAtBlockOffset(blockElement, startOffset);
+                var endPoint = domTextPointAtBlockOffset(blockElement, endOffset);
+                if (!startPoint || !endPoint) return restoreDomSelectionFromSnapshot(inst, selection);
+                range.setStart(startPoint.node, startPoint.offset);
+                range.setEnd(endPoint.node, endPoint.offset);
+            } else {
+                var point = domTextPointAtBlockOffset(blockElement, snapshot.offset);
+                if (!point || !point.node) return restoreDomSelectionFromSnapshot(inst, selection);
+                range.setStart(point.node, point.offset);
+                range.collapse(true);
+            }
+            var editable = blockElement.closest && blockElement.closest('[contenteditable="true"]');
+            if (editable && typeof editable.focus === 'function') editable.focus({ preventScroll: true });
+            var current = window.getSelection && window.getSelection();
+            if (!current) return false;
+            current.removeAllRanges();
+            current.addRange(range);
+            return true;
+        } catch (error) {
+            recordTimeline(inst, 'selection-restore-failed', { error: String(error && error.message || error) });
+            return restoreDomSelectionFromSnapshot(inst, selection);
+        }
+    }
+
     function setLiveParagraphText(node, text) {
         if (!node) return false;
         var value = _asText(text);
@@ -8442,6 +8639,21 @@ window.tmDocumentEditorEngine = (function () {
         return true;
     }
 
+    function replaceLiveParagraphCopies(inst, blockId, block, selection) {
+        var activeNode = currentDomBlockElement(inst, blockId);
+        var context = liveBlockContextFromElement(activeNode) || liveBlockContextFromElement(findLiveTextBlockElementForContext(inst, blockId, null, selection));
+        var nodes = findLiveTextBlockElements(inst, blockId, selection);
+        if (!nodes.length) return { ok: false, restoredNode: null, updatedCount: 0 };
+        nodes.forEach(function (node) {
+            replaceLiveParagraphHtml(inst, node, block);
+        });
+        return {
+            ok: true,
+            restoredNode: findLiveTextBlockElementForContext(inst, blockId, context, selection),
+            updatedCount: nodes.length
+        };
+    }
+
     function applyLiveTypingDomPatch(inst, operation, committed) {
         if (!inst || !inst.root || !operation) return false;
         var op = attachOperationMethods(operation);
@@ -8453,27 +8665,31 @@ window.tmDocumentEditorEngine = (function () {
         if (type === OPERATION_TYPES.InsertText) {
             var insertTarget = _normalizeTarget(op.target || op.Target);
             var insertBlock = _findBlock(inst.model, insertTarget.blockId);
-            var insertNode = findLiveTextBlockElement(inst, insertTarget.blockId);
-            if (!insertBlock || !insertNode) return false;
-            replaceLiveParagraphHtml(inst, insertNode, insertBlock);
+            if (!insertBlock) return false;
+            var insertPatch = replaceLiveParagraphCopies(inst, insertTarget.blockId, insertBlock, inst.selection);
+            if (!insertPatch.ok) return false;
+            var restoredNode = insertPatch.restoredNode;
         } else if (type === OPERATION_TYPES.DeleteRange) {
             var range = _normalizeRange(op.range || op.Range);
             var deleteBlock = _findBlock(inst.model, range.blockId);
-            var deleteNode = findLiveTextBlockElement(inst, range.blockId);
-            if (!deleteBlock || !deleteNode) return false;
-            replaceLiveParagraphHtml(inst, deleteNode, deleteBlock);
+            if (!deleteBlock) return false;
+            var deletePatch = replaceLiveParagraphCopies(inst, range.blockId, deleteBlock, inst.selection);
+            if (!deletePatch.ok) return false;
+            restoredNode = deletePatch.restoredNode;
         } else if (type === OPERATION_TYPES.ApplyMark || type === OPERATION_TYPES.RemoveMark) {
             var markRange = _normalizeRange(op.range || op.Range);
             var markBlock = _findBlock(inst.model, markRange.blockId);
-            var markNode = findLiveTextBlockElement(inst, markRange.blockId);
-            if (!markBlock || !markNode) return false;
-            replaceLiveParagraphHtml(inst, markNode, markBlock);
+            if (!markBlock) return false;
+            var markPatch = replaceLiveParagraphCopies(inst, markRange.blockId, markBlock, inst.selection);
+            if (!markPatch.ok) return false;
+            restoredNode = markPatch.restoredNode;
         } else if (type === OPERATION_TYPES.SetParagraphAttribute) {
             var paragraphTarget = _normalizeTarget(op.target || op.Target);
             var paragraphBlock = _findBlock(inst.model, paragraphTarget.blockId);
-            var paragraphNode = findLiveTextBlockElement(inst, paragraphTarget.blockId);
-            if (!paragraphBlock || !paragraphNode) return false;
-            replaceLiveParagraphHtml(inst, paragraphNode, paragraphBlock);
+            if (!paragraphBlock) return false;
+            var paragraphPatch = replaceLiveParagraphCopies(inst, paragraphTarget.blockId, paragraphBlock, inst.selection);
+            if (!paragraphPatch.ok) return false;
+            restoredNode = paragraphPatch.restoredNode;
         } else if (type === OPERATION_TYPES.SplitParagraph) {
             var splitTarget = _normalizeTarget(op.target || op.Target);
             var originalBlock = _findBlock(inst.model, splitTarget.blockId);
@@ -8505,10 +8721,11 @@ window.tmDocumentEditorEngine = (function () {
         });
         inst.root.setAttribute('data-live-typing-patch', String(Date.now()));
         inst.root.setAttribute('data-logical-selection', JSON.stringify(_sortObject(inst.selection || {})));
-        restoreDomSelectionFromSnapshot(inst, inst.selection);
+        restoreDomSelectionInLiveBlock(inst, inst.selection, restoredNode);
         recordTimeline(inst, 'live-typing-dom-patch', {
             operationType: type,
-            blockId: inst.selection && inst.selection.blockId || ''
+            blockId: inst.selection && inst.selection.blockId || '',
+            region: inst.selection && inst.selection.region || 'Body'
         });
         recordInputDomApply(inst, type, op);
         return true;
@@ -9081,7 +9298,7 @@ window.tmDocumentEditorEngine = (function () {
             ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
-            target: { blockId: selection.blockId, offset: offset },
+            target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
             text: text,
             marks: marks,
             revisionId: revisionPayload && revisionPayload.id || null,
@@ -9104,7 +9321,7 @@ window.tmDocumentEditorEngine = (function () {
             ? createStructureRevisionPayload({ blockId: selection.blockId, start: offset, end: offset }, 'SplitBlock', resolveRevisionUserId(inst.options || {}), 'keydown')
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
-            target: { blockId: selection.blockId, offset: offset },
+            target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
             newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
             revisionId: structureRevision && structureRevision.id || null,
             revision: structureRevision || null,
@@ -9130,7 +9347,7 @@ window.tmDocumentEditorEngine = (function () {
                     ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: rangeStart, end: rangeEnd }, resolveRevisionUserId(inst.options || {}), 'keydown')
                     : null;
                 var rangeResult = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
-                    range: { blockId: selection.blockId, start: rangeStart, end: rangeEnd },
+                    range: { blockId: selection.blockId, start: rangeStart, end: rangeEnd, region: selection.region, headerFooterId: selection.headerFooterId || null },
                     revisionId: selectionRevision && selectionRevision.id || null,
                     revision: selectionRevision || null,
                     source: 'keydown',
@@ -9146,7 +9363,7 @@ window.tmDocumentEditorEngine = (function () {
         var textValue = _blockText(block);
         if (backward && offset === 0) {
             var mergeResult = applyCommand(inst.id, OPERATION_TYPES.MergeParagraph, {
-                target: { blockId: selection.blockId, offset: 0 },
+                target: { blockId: selection.blockId, offset: 0, region: selection.region, headerFooterId: selection.headerFooterId || null },
                 source: 'keydown',
                 transactionType: 'delete',
                 beforeSelection: selection
@@ -9162,7 +9379,7 @@ window.tmDocumentEditorEngine = (function () {
             ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: start, end: end }, resolveRevisionUserId(inst.options || {}), 'keydown')
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
-            range: { blockId: selection.blockId, start: start, end: end },
+            range: { blockId: selection.blockId, start: start, end: end, region: selection.region, headerFooterId: selection.headerFooterId || null },
             revisionId: deletionRevision && deletionRevision.id || null,
             revision: deletionRevision || null,
             source: 'keydown',
@@ -10098,7 +10315,7 @@ window.tmDocumentEditorEngine = (function () {
             ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
-            target: { blockId: selection.blockId, offset: selection.offset },
+            target: { blockId: selection.blockId, offset: selection.offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
             text: text,
             marks: marks,
             revisionId: revisionPayload && revisionPayload.id || null,
@@ -10155,7 +10372,7 @@ window.tmDocumentEditorEngine = (function () {
                 }
             }
             result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
-                target: { blockId: selection.blockId, offset: offset },
+                target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
                 text: text,
                 marks: marks,
                 revisionId: revisionPayload && revisionPayload.id || null,
@@ -10170,7 +10387,7 @@ window.tmDocumentEditorEngine = (function () {
                 ? createStructureRevisionPayload({ blockId: selection.blockId, start: offset, end: offset }, 'SplitBlock', resolveRevisionUserId(inst.options || {}), 'beforeinput')
                 : null;
             result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
-                target: { blockId: selection.blockId, offset: offset },
+                target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
                 newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
                 revisionId: structureRevision && structureRevision.id || null,
                 revision: structureRevision || null,
@@ -10193,7 +10410,7 @@ window.tmDocumentEditorEngine = (function () {
                 ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: start, end: end }, resolveRevisionUserId(inst.options || {}), 'beforeinput')
                 : null;
             result = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
-                range: { blockId: selection.blockId, start: start, end: end },
+                range: { blockId: selection.blockId, start: start, end: end, region: selection.region, headerFooterId: selection.headerFooterId || null },
                 revisionId: deletionRevision && deletionRevision.id || null,
                 revision: deletionRevision || null,
                 source: 'beforeinput',
@@ -10227,7 +10444,7 @@ window.tmDocumentEditorEngine = (function () {
                 ? createDeletionRevisionPayload(inst.model, range, userId, 'paste')
                 : null;
             operations.push(createOperation(OPERATION_TYPES.DeleteRange, {
-                range: range,
+                range: Object.assign({}, range, { region: selection.region, headerFooterId: selection.headerFooterId || null }),
                 revisionId: deletionRevision && deletionRevision.id || null,
                 revision: deletionRevision || null
             }, { source: 'paste' }));
@@ -10238,7 +10455,7 @@ window.tmDocumentEditorEngine = (function () {
             ? createInsertionRevisionPayload({ blockId: range.blockId, start: range.start, end: range.start + firstLine.length }, firstLine, userId, 'paste')
             : null;
         operations.push(createOperation(OPERATION_TYPES.InsertText, {
-            target: { blockId: range.blockId, offset: range.start },
+            target: { blockId: range.blockId, offset: range.start, region: selection.region, headerFooterId: selection.headerFooterId || null },
             text: firstLine,
             marks: _clone(inst.pendingTypingMarks || []),
             revisionId: revisionPayload && revisionPayload.id || null,
@@ -10738,7 +10955,8 @@ window.tmDocumentEditorEngine = (function () {
             commandName: transactionType || label || 'operation-batch',
             type: transactionType || TRANSACTION_TYPES.Remote,
             label: label || transactionType || 'Remote update',
-            beforeSelection: inst.selection
+            beforeSelection: inst.selection,
+            lightweightSnapshots: supportsLightweightTransactionSnapshots(operationList, transactionType || TRANSACTION_TYPES.Remote)
         });
         inst.activeTransaction = transaction;
         for (var i = 0; i < operationList.length; i++) {
@@ -10756,7 +10974,7 @@ window.tmDocumentEditorEngine = (function () {
         inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, transaction.afterSelection || inst.selection);
         markSelectionChanged(inst, isTypingLikeTransactionType(transaction.type) ? 'typing' : 'operation-batch');
         transaction.afterSelection = _clone(inst.selection);
-        transaction.afterModelSnapshot = _clone(inst.model);
+        if (transaction.lightweightSnapshots !== true) transaction.afterModelSnapshot = _clone(inst.model);
         inst.transactions.push(transaction.toJSON());
         var affectsDocument = transactionAffectsDocument(transaction);
         if (pushToUndo && affectsDocument) {
@@ -11321,12 +11539,14 @@ window.tmDocumentEditorEngine = (function () {
         recordTimeline(lookup.inst, 'input-event', { command: commandName, source: body.source || body.Source || 'command' });
         recordTimeline(lookup.inst, 'normalized-operation', { operationType: operation.type || operation.Type || '', operation: operation.toJSON ? operation.toJSON() : _clone(operation) });
         var operationSelection = operation.selection || operation.Selection || null;
+        var transactionType = body.transactionType || body.TransactionType || (operation.type === OPERATION_TYPES.InsertText ? TRANSACTION_TYPES.Typing : TRANSACTION_TYPES.Default);
         var transaction = createTransaction(lookup.inst.model, {
             instanceId: lookup.inst.id,
             commandName: commandName || operation.type,
-            type: body.transactionType || body.TransactionType || (operation.type === OPERATION_TYPES.InsertText ? TRANSACTION_TYPES.Typing : TRANSACTION_TYPES.Default),
+            type: transactionType,
             label: body.label || body.Label || operation.type,
-            beforeSelection: body.beforeSelection || body.BeforeSelection || operationSelection || lookup.inst.selection
+            beforeSelection: body.beforeSelection || body.BeforeSelection || operationSelection || lookup.inst.selection,
+            lightweightSnapshots: supportsLightweightTransactionSnapshots([operation], transactionType)
         });
         lookup.inst.activeTransaction = transaction;
         var result = transaction.apply(operation);
@@ -11342,7 +11562,7 @@ window.tmDocumentEditorEngine = (function () {
         lookup.inst.selection = createSelectionPostFixer(lookup.inst.schema).fix(lookup.inst.model, transaction.afterSelection || lookup.inst.selection);
         markSelectionChanged(lookup.inst, isTypingLikeTransactionType(transaction.type) ? 'typing' : 'applyCommand');
         transaction.afterSelection = _clone(lookup.inst.selection);
-        transaction.afterModelSnapshot = _clone(lookup.inst.model);
+        if (transaction.lightweightSnapshots !== true) transaction.afterModelSnapshot = _clone(lookup.inst.model);
         lookup.inst.transactions.push(transaction.toJSON());
         var affectsDocument = transactionAffectsDocument(transaction);
         if (affectsDocument) {
@@ -11497,11 +11717,12 @@ window.tmDocumentEditorEngine = (function () {
             && shouldCoalesceTyping(attachOperationMethods(previous.operations[0]), attachOperationMethods(entry.operations[0]), entry.operations[0].timestamp, 1000)) {
             var merged = coalesceTypingOperation(attachOperationMethods(previous.operations[0]), attachOperationMethods(entry.operations[0]));
             previous.operations = [merged.toJSON()];
-            previous.afterModelSnapshot = _clone(transaction.afterModelSnapshot || inst.model || null);
+            previous.afterModelSnapshot = supportsOperationHistory(merged) ? null : _clone(transaction.afterModelSnapshot || inst.model || null);
             previous.afterSelection = createSelectionSnapshot(transaction.afterSelection || previous.afterSelection);
             previous.transaction.afterSelection = previous.afterSelection;
             previous.transaction.invalidatedScopes = _unique(_asArray(previous.transaction.invalidatedScopes).concat(_asArray(transaction.invalidatedScopes)));
             previous.transaction.operationCount = 1;
+            previous.transaction.lightweightSnapshots = previous.transaction.lightweightSnapshots === true || transaction.lightweightSnapshots === true;
             if (supportsOperationHistory(merged)) {
                 previous.redoOperations = createRedoHistoryOperations(previous.operations);
                 previous.inverseOperations = createUndoHistoryOperations(previous.operations);
@@ -15507,6 +15728,9 @@ window.tmDocumentEditorEngine = (function () {
                 }, tokenOrPayload);
             },
             normalizeSelectionSnapshot: normalizeSelectionSnapshot,
+            findRegionInfoForBlock: findRegionInfoForBlock,
+            operationRegionInfo: operationRegionInfo,
+            nextSelectionForOperation: nextSelectionForOperation,
             createTextMeasurementService: createTextMeasurementService,
             tokenizeText: tokenizeText,
             createLineBreaker: createLineBreaker,

@@ -549,6 +549,141 @@ public sealed class DocumentEditorRuntimePhase18PerformanceJavaScriptTests
         result.StandardOutput.Trim().Should().Be("OK");
     }
 
+    [Fact]
+    public async Task Phase18_HeaderFooterTypingOperationsPreserveRegionSelection()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON,
+                Date,
+                Math
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            sandbox.window.performance = { now: () => Date.now() };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const types = sandbox.window.tmDocumentEditorEngine.operations.types;
+            const model = hooks.importFromCSharpJson({
+                DocumentId: 'phase18-hf-region',
+                Blocks: [
+                    { Id: 'body-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'body-r1', Text: 'Body' }] } }
+                ],
+                HeadersFooters: [
+                    { Id: 'header-primary', Type: 'Header', Region: 'Header', Scope: 'Primary', Blocks: [
+                        { Id: 'header-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'header-r1', Text: 'Header' }] } }
+                    ] },
+                    { Id: 'footer-primary', Type: 1, Region: 'Footer', Scope: 'Primary', Blocks: [
+                        { Id: 'footer-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'footer-r1', Text: 'Footer' }] } }
+                    ] }
+                ]
+            });
+
+            const headerSelection = { region: 'Header', headerFooterId: 'header-primary', blockId: 'header-p1', offset: 6, isCollapsed: true };
+            const insertHeader = hooks.applyOperation(model, hooks.createOperation(types.InsertText, {
+                target: { blockId: 'header-p1', offset: 6, region: 'Header', headerFooterId: 'header-primary' },
+                text: ' X',
+                beforeSelection: headerSelection
+            }, { source: 'typing' }));
+            assert.strictEqual(insertHeader.ok, true);
+            assert.strictEqual(insertHeader.nextSelection.region, 'Header');
+            assert.strictEqual(insertHeader.nextSelection.headerFooterId, 'header-primary');
+            assert.strictEqual(insertHeader.nextSelection.blockId, 'header-p1');
+            assert.strictEqual(insertHeader.nextSelection.offset, 8);
+
+            const deleteHeader = hooks.applyOperation(model, hooks.createOperation(types.DeleteRange, {
+                range: { blockId: 'header-p1', start: 6, end: 8, region: 'Header', headerFooterId: 'header-primary' },
+                beforeSelection: { region: 'Header', headerFooterId: 'header-primary', blockId: 'header-p1', offset: 8, isCollapsed: true }
+            }, { source: 'delete' }));
+            assert.strictEqual(deleteHeader.ok, true);
+            assert.strictEqual(deleteHeader.nextSelection.region, 'Header');
+            assert.strictEqual(deleteHeader.nextSelection.headerFooterId, 'header-primary');
+            assert.strictEqual(deleteHeader.nextSelection.offset, 6);
+
+            const footerSelection = { region: 'Footer', headerFooterId: 'footer-primary', blockId: 'footer-p1', offset: 6, isCollapsed: true };
+            const insertFooter = hooks.applyOperation(model, hooks.createOperation(types.InsertText, {
+                target: { blockId: 'footer-p1', offset: 6, region: 'Footer', headerFooterId: 'footer-primary' },
+                text: ' Y',
+                beforeSelection: footerSelection
+            }, { source: 'typing' }));
+            assert.strictEqual(insertFooter.ok, true);
+            assert.strictEqual(insertFooter.nextSelection.region, 'Footer');
+            assert.strictEqual(insertFooter.nextSelection.headerFooterId, 'footer-primary');
+            assert.strictEqual(insertFooter.nextSelection.blockId, 'footer-p1');
+
+            const inferredHeader = hooks.findRegionInfoForBlock(model, 'header-p1');
+            assert.strictEqual(inferredHeader.region, 'Header');
+            assert.strictEqual(inferredHeader.headerFooterId, 'header-primary');
+            const inferredFooter = hooks.findRegionInfoForBlock(model, 'footer-p1');
+            assert.strictEqual(inferredFooter.region, 'Footer');
+            assert.strictEqual(inferredFooter.headerFooterId, 'footer-primary');
+
+            function createRoot() {
+                return {
+                    innerHTML: '',
+                    attributes: {},
+                    classList: { add() {}, toggle() {}, remove() {} },
+                    setAttribute(name, value) { this.attributes[name] = String(value); },
+                    removeAttribute(name) { delete this.attributes[name]; },
+                    querySelector() { return null; },
+                    querySelectorAll() { return []; }
+                };
+            }
+
+            const engine = sandbox.window.tmDocumentEditorEngine;
+            engine.create(createRoot(), { InstanceId: 'phase18-hf-command', TypingBatchMs: 50 }, null);
+            engine.loadDocument('phase18-hf-command', {
+                Document: {
+                    DocumentId: 'phase18-hf-command-doc',
+                    Blocks: [
+                        { Id: 'body-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'body-r1', Text: 'Body' }] } }
+                    ],
+                    HeadersFooters: [
+                        { Id: 'header-primary', Type: 'Header', Region: 'Header', Scope: 'Primary', Blocks: [
+                            { Id: 'header-p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'header-r1', Text: 'Header' }] } }
+                        ] }
+                    ]
+                }
+            });
+            const commandResult = engine.applyCommand('phase18-hf-command', 'InsertText', {
+                transactionType: 'typing',
+                target: { blockId: 'header-p1', offset: 6, region: 'Header', headerFooterId: 'header-primary' },
+                text: '!',
+                beforeSelection: { region: 'Header', headerFooterId: 'header-primary', blockId: 'header-p1', offset: 6, isCollapsed: true }
+            });
+            assert.strictEqual(commandResult.ok, true);
+            assert.strictEqual(commandResult.transaction.afterSelection.region, 'Header');
+            assert.strictEqual(commandResult.transaction.afterSelection.headerFooterId, 'header-primary');
+            assert.strictEqual(commandResult.transaction.lightweightSnapshots, true);
+            assert.strictEqual(commandResult.transaction.beforeDocFingerprint, '');
+            assert.strictEqual(commandResult.transaction.afterDocFingerprint, '');
+            assert.strictEqual(commandResult.boundaryPatch.lightweight, true);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
     private static string GetWysiwygScriptPath()
     {
         var root = FindRepositoryRoot();
