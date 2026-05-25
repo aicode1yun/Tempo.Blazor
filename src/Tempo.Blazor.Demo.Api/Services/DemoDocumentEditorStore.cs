@@ -36,6 +36,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
         var exhibits = CreateExhibitsDocument("exhibits-demo");
         var table = CreateTablePropertiesDocument("table-demo");
         var recovery = SeedRecoveryDocument();
+        var onlyOfficeParity = SeedOnlyOfficeParityDocument();
 
         SeedProviderImages();
         PrepareContractDemo(contract);
@@ -64,6 +65,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
         }).GetAwaiter().GetResult();
 
         StoreDocument(recovery, "recovery-2026-05-23-canonical-v1");
+        StoreDocument(onlyOfficeParity, "onlyoffice-parity-2026-05-24-canonical-v1");
     }
 
     private void SeedProviderImages()

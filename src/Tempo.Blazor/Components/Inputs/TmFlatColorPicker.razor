@@ -13,16 +13,34 @@
         </div>
     }
 
-    <TmColorGradient Value="@_currentValue"
-                     ValueChanged="OnGradientValueChanged"
-                     Format="Format"
-                     ShowAlpha="ShowAlpha" />
+    @if (ShowGradient)
+    {
+        <TmColorGradient Value="@_currentValue"
+                         ValueChanged="OnGradientValueChanged"
+                         Format="Format"
+                         ShowAlpha="ShowAlpha" />
+    }
+
+    @if (ShowHexInput)
+    {
+        <label class="tm-flat-color-picker-hex">
+            <span>@Loc["TmColorPicker_Hex"]</span>
+            <input type="text"
+                   value="@_hexValue"
+                   maxlength="7"
+                   spellcheck="false"
+                   @onchange="OnHexValueChangedAsync"
+                   aria-label="@Loc["TmColorPicker_Hex"]" />
+        </label>
+    }
 
     @if (ShowPalette)
     {
         <div class="tm-flat-color-picker-divider"></div>
         <TmColorPalette Value="@_currentValue"
                         ValueChanged="OnPaletteValueChanged"
+                        Colors="PaletteColors"
+                        Columns="PaletteColumns"
                         ShowClearButton="ShowClearButton" />
     }
 </div>

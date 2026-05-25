@@ -68,6 +68,43 @@ public class DocumentReviewUxModelTests
         filter.Matches(Revision("author-1", DocumentRevisionType.Insertion)).Should().BeFalse();
     }
 
+    [Fact]
+    public void RevisionGrouper_GroupsAdjacentPendingTypingByAuthorTypeAndBlock()
+    {
+        var revisions = new[]
+        {
+            Revision("author-1", DocumentRevisionType.Insertion, "p1", 0, 1, "r1"),
+            Revision("author-1", DocumentRevisionType.Insertion, "p1", 1, 2, "r2"),
+            Revision("author-1", DocumentRevisionType.Insertion, "p1", 2, 3, "r3")
+        };
+
+        var groups = DocumentRevisionGrouper.GroupAdjacentPending(revisions);
+
+        groups.Should().ContainSingle();
+        groups[0].GroupId.Should().Be("r1");
+        groups[0].Revisions.Select(revision => revision.Id).Should().Equal("r1", "r2", "r3");
+        groups[0].Range.StartOffset.Should().Be(0);
+        groups[0].Range.EndOffset.Should().Be(3);
+    }
+
+    [Fact]
+    public void RevisionGrouper_DoesNotGroupAcrossAuthorTypeBlockOrReviewedStatus()
+    {
+        var revisions = new[]
+        {
+            Revision("author-1", DocumentRevisionType.Insertion, "p1", 0, 1, "r1"),
+            Revision("author-2", DocumentRevisionType.Insertion, "p1", 1, 2, "r2"),
+            Revision("author-2", DocumentRevisionType.Deletion, "p1", 2, 3, "r3"),
+            Revision("author-2", DocumentRevisionType.Deletion, "p2", 3, 4, "r4"),
+            Revision("author-2", DocumentRevisionType.Deletion, "p2", 4, 5, "r5", DocumentRevisionAction.Accepted)
+        };
+
+        var groups = DocumentRevisionGrouper.GroupAdjacentPending(revisions);
+
+        groups.Should().HaveCount(5);
+        groups.Should().OnlyContain(group => group.Revisions.Count == 1);
+    }
+
     private static DocumentComment Comment(
         string id,
         string blockId,
@@ -100,5 +137,29 @@ public class DocumentReviewUxModelTests
         {
             Type = type,
             Author = new DocumentRevisionAuthor { Id = authorId }
+        };
+
+    private static DocumentRevision Revision(
+        string authorId,
+        DocumentRevisionType type,
+        string blockId,
+        int start,
+        int end,
+        string id,
+        DocumentRevisionAction action = DocumentRevisionAction.Pending)
+        => new()
+        {
+            Id = id,
+            Type = type,
+            Author = new DocumentRevisionAuthor { Id = authorId },
+            Action = action,
+            Range = new DocumentRevisionRange
+            {
+                BlockId = blockId,
+                StartInlineIndex = 0,
+                EndInlineIndex = 0,
+                StartOffset = start,
+                EndOffset = end
+            }
         };
 }

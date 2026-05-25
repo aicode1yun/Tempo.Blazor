@@ -804,6 +804,7 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmColorPalette
         ["TmColorPicker_SelectColor"] = "Select color",
+        ["TmColorPicker_Hex"] = "Hex",
         ["TmColorPalette_SelectColor"] = "Select color",
         ["TmColorPalette_Clear"] = "Clear",
 
@@ -2701,6 +2702,7 @@ public abstract class LocalizationTestBase : TestContext
 
         // TmColorPalette
         ["TmColorPicker_SelectColor"] = "Vybrat barvu",
+        ["TmColorPicker_Hex"] = "Hex",
         ["TmColorPalette_SelectColor"] = "Vybrat barvu",
         ["TmColorPalette_Clear"] = "Vymazat",
 

@@ -48,6 +48,31 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     }
 
     [Fact]
+    public void Toolbar_FormattingControlsPreserveEditorSelectionOnPointerDown()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>();
+
+        foreach (var testId in new[]
+        {
+            "document-font-family",
+            "document-font-size",
+            "document-bold",
+            "document-italic",
+            "document-underline",
+            "document-strikethrough",
+            "document-font-color-trigger",
+            "document-highlight-color-trigger",
+            "document-link",
+            "document-clear-formatting"
+        })
+        {
+            cut.Find($"[data-testid='{testId}']").OuterHtml
+                .Should()
+                .Contain("preventdefault", $"'{testId}' must not let pointer focus collapse the editor selection before the command runs");
+        }
+    }
+
+    [Fact]
     public void BuiltInToolbar_InsertReviewViewAndHeaderFooterMetadataCoversRenderedCommands()
     {
         AssertMetadata(DocumentToolbarTab.Insert, "insertTable", "insertImage", "insertPageBreak");

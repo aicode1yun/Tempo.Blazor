@@ -10,6 +10,8 @@ namespace Tempo.Blazor.E2E;
 /// </summary>
 public abstract class DocumentEditorE2ETestBase : WasmTestBase
 {
+    protected const string DocumentEditorHostSelector = "[data-testid='document-wysiwyg-host']";
+
     private static readonly JsonSerializerOptions StrictJsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -45,6 +47,22 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         StartMandatoryDocumentEditorConsoleCapture(page);
         await page.SetViewportSizeAsync(width, height);
         await page.GotoAsync($"{BaseUrl}/document-editor?tmDocumentEditorEngine=google-docs&recovery=2026-05-23", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60000
+        });
+        await WaitForDocumentEditorReadyAsync(page);
+        return page;
+    }
+
+    /// <summary>Opens the deterministic 2026-05-24 ONLYOFFICE parity baseline document.</summary>
+    protected async Task<IPage> OpenOnlyOfficeParityDocumentAsync(int width = 1280, int height = 720)
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        StartMandatoryDocumentEditorConsoleCapture(page);
+        await page.SetViewportSizeAsync(width, height);
+        await page.GotoAsync($"{BaseUrl}/document-editor?documentId=onlyoffice-parity-2026-05-24", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000
@@ -109,6 +127,754 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 };
             }
             """);
+    }
+
+    /// <summary>Selects visible text in one block with real mouse movement and returns a strict selection snapshot.</summary>
+    protected static async Task<DocumentEditorSelectionSnapshot> SelectTextByMouseAsync(
+        IPage page,
+        string blockId,
+        string text,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var target = await ReadTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
+        await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new() { Steps = 12 });
+        await page.Mouse.UpAsync();
+        return await WaitForTextSelectionAsync(page, blockId, text, target, hostSelector);
+    }
+
+    /// <summary>Selects the first visible occurrence of text with real mouse movement.</summary>
+    protected static async Task<DocumentEditorSelectionSnapshot> SelectFirstTextByMouseAsync(
+        IPage page,
+        string text,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var target = await ReadTextSelectionMouseTargetAsync(page, null, text, hostSelector);
+        await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new() { Steps = 12 });
+        await page.Mouse.UpAsync();
+        return await WaitForTextSelectionAsync(page, target.BlockId, text, target, hostSelector);
+    }
+
+    /// <summary>Selects a logical text range in a visible block with real mouse movement.</summary>
+    protected static async Task<DocumentEditorSelectionSnapshot> SelectTextByMouseAsync(
+        IPage page,
+        string blockId,
+        int startOffset,
+        int endOffset,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var target = await ReadTextSelectionMouseTargetAsync(page, blockId, startOffset, endOffset, hostSelector);
+        await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new() { Steps = 12 });
+        await page.Mouse.UpAsync();
+        return await WaitForTextSelectionAsync(page, blockId, target.ExpectedText, target, hostSelector);
+    }
+
+    /// <summary>Selects visible text in one block using a collapsed caret plus Shift+ArrowRight.</summary>
+    protected static async Task<DocumentEditorSelectionSnapshot> SelectTextByKeyboardAsync(
+        IPage page,
+        string blockId,
+        string text,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var target = await ReadTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
+        await ClickDocumentEditorBlockOffsetAsync(page, blockId, target.StartOffset, hostSelector);
+        await page.Keyboard.DownAsync("Shift");
+        for (var index = target.StartOffset; index < target.EndOffset; index++)
+        {
+            await page.Keyboard.PressAsync("ArrowRight");
+        }
+
+        await page.Keyboard.UpAsync("Shift");
+        return await WaitForTextSelectionAsync(page, blockId, text, target, hostSelector);
+    }
+
+    /// <summary>Selects text that must span at least two rendered text nodes or inline runs.</summary>
+    protected static async Task<DocumentEditorSelectionSnapshot> SelectTextAcrossInlineRunsByMouseAsync(
+        IPage page,
+        string blockId,
+        string text,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var target = await ReadTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
+        if (target.TextNodeCount < 2)
+        {
+            throw new AssertFailedException($"Expected '{text}' in block '{blockId}' to span at least two text nodes/inline runs, but target node count was {target.TextNodeCount}. Target: {target.Debug}");
+        }
+
+        await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new() { Steps = 12 });
+        await page.Mouse.UpAsync();
+        return await WaitForTextSelectionAsync(page, blockId, text, target, hostSelector);
+    }
+
+    /// <summary>Selects text and verifies that the selected range exposes mixed computed formatting.</summary>
+    protected static async Task<DocumentEditorSelectionSnapshot> SelectMixedFormattingTextByMouseAsync(
+        IPage page,
+        string blockId,
+        string text,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var selection = await SelectTextByMouseAsync(page, blockId, text, hostSelector);
+        var styles = await ReadTextRunComputedStylesAsync(page, blockId, text, hostSelector);
+        if (!styles.HasMixedFormatting)
+        {
+            throw new AssertFailedException($"Expected selected text '{text}' in block '{blockId}' to have mixed formatting. Styles: {styles.Debug}");
+        }
+
+        return selection;
+    }
+
+    /// <summary>Reads the current native/runtime document selection without changing the document.</summary>
+    protected static Task<DocumentEditorSelectionSnapshot> ReadDocumentEditorSelectionSnapshotAsync(
+        IPage page,
+        string hostSelector = DocumentEditorHostSelector)
+        => page.EvaluateAsync<DocumentEditorSelectionSnapshot>(
+            """
+            (hostSelector) => {
+                const host = document.querySelector(hostSelector);
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const selection = window.getSelection();
+                const runtimeSelection = getRuntimeSelection(instanceId);
+                const runtimeToken = findSelectionToken(runtimeSelection) || findSelectionToken(getRuntimeDebug(instanceId));
+                const empty = {
+                    targetBlockId: '',
+                    expectedText: '',
+                    selectedText: selection?.toString() || '',
+                    isCollapsed: true,
+                    anchorBlockId: '',
+                    anchorInlineId: '',
+                    anchorBlockOffset: -1,
+                    focusBlockId: '',
+                    focusInlineId: '',
+                    focusBlockOffset: -1,
+                    startBlockId: '',
+                    startInlineId: '',
+                    startBlockOffset: -1,
+                    endBlockId: '',
+                    endInlineId: '',
+                    endBlockOffset: -1,
+                    rect: zeroRect(),
+                    runtimeSelectionJson: safeJson(runtimeSelection),
+                    runtimeSelectionToken: runtimeToken,
+                    hasRuntimeSelection: !!runtimeSelection,
+                    hasRuntimeSelectionToken: !!runtimeToken,
+                    debug: ''
+                };
+                if (!selection || selection.rangeCount === 0) {
+                    empty.debug = safeJson({ reason: 'no native selection range', runtimeSelection });
+                    return empty;
+                }
+
+                const range = selection.getRangeAt(0).cloneRange();
+                const anchor = positionOf(selection.anchorNode, selection.anchorOffset);
+                const focus = positionOf(selection.focusNode, selection.focusOffset);
+                const start = positionOf(range.startContainer, range.startOffset);
+                const end = positionOf(range.endContainer, range.endOffset);
+                const rect = unionRects(Array.from(range.getClientRects()).filter(rect => rect.width > 0.5 && rect.height > 0.5));
+                return {
+                    targetBlockId: '',
+                    expectedText: '',
+                    selectedText: selection.toString() || '',
+                    isCollapsed: selection.isCollapsed,
+                    anchorBlockId: anchor.blockId,
+                    anchorInlineId: anchor.inlineId,
+                    anchorBlockOffset: anchor.blockOffset,
+                    focusBlockId: focus.blockId,
+                    focusInlineId: focus.inlineId,
+                    focusBlockOffset: focus.blockOffset,
+                    startBlockId: start.blockId,
+                    startInlineId: start.inlineId,
+                    startBlockOffset: start.blockOffset,
+                    endBlockId: end.blockId,
+                    endInlineId: end.inlineId,
+                    endBlockOffset: end.blockOffset,
+                    rect,
+                    runtimeSelectionJson: safeJson(runtimeSelection),
+                    runtimeSelectionToken: runtimeToken,
+                    hasRuntimeSelection: !!runtimeSelection,
+                    hasRuntimeSelectionToken: !!runtimeToken,
+                    debug: safeJson({ selectedText: selection.toString(), anchor, focus, start, end, rect, runtimeSelection, runtimeToken })
+                };
+
+                function positionOf(node, offset) {
+                    const element = elementOf(node);
+                    const block = element?.closest?.('[data-block-id], [data-render-block-id]');
+                    const inline = element?.closest?.('[data-inline-id]');
+                    let blockOffset = -1;
+                    if (block && node) {
+                        try {
+                            const pre = document.createRange();
+                            pre.selectNodeContents(block);
+                            pre.setEnd(node, Math.max(0, Number(offset) || 0));
+                            blockOffset = pre.toString().length;
+                        } catch {
+                            blockOffset = -1;
+                        }
+                    }
+
+                    return {
+                        blockId: block?.getAttribute('data-block-id') || block?.getAttribute('data-render-block-id') || '',
+                        inlineId: inline?.getAttribute('data-inline-id') || '',
+                        blockOffset
+                    };
+                }
+
+                function elementOf(node) {
+                    if (!node) return null;
+                    if (node.nodeType === Node.ELEMENT_NODE) return node;
+                    if (node.parentElement) return node.parentElement;
+                    return node.parentNode?.nodeType === Node.ELEMENT_NODE ? node.parentNode : null;
+                }
+
+                function getRuntimeSelection(id) {
+                    try {
+                        const runtime = window.tmDocumentEditorRuntime || window.tmDocumentEditorEngine;
+                        const snapshot = runtime?.getSelectionSnapshot?.(id)
+                            || runtime?.getCurrentSelection?.(id)
+                            || runtime?.selection?.getSelectionSnapshot?.(id)
+                            || null;
+                        if (snapshot) return snapshot;
+                        const state = window.tmDocumentEditorDebug?.getRuntimeState?.(id) || null;
+                        return state?.currentSelection || state?.CurrentSelection || state?.lastSelection || state?.LastSelection || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function getRuntimeDebug(id) {
+                    try {
+                        return window.tmDocumentEditorRuntime?.getDebugSnapshot?.(id)
+                            || window.tmDocumentEditorEngine?.getDebugSnapshot?.(id)
+                            || window.tmDocumentEditorDebug?.getRuntimeState?.(id)
+                            || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function findSelectionToken(value, depth = 0) {
+                    if (!value || typeof value !== 'object' || depth > 3) return '';
+                    for (const key of ['selectionToken', 'SelectionToken', 'stableSelectionToken', 'StableSelectionToken', 'token', 'Token']) {
+                        const candidate = value[key];
+                        if (typeof candidate === 'string' && candidate.trim()) return candidate;
+                    }
+                    for (const key of ['selection', 'Selection', 'currentSelection', 'CurrentSelection', 'lastSelection', 'LastSelection']) {
+                        const nested = findSelectionToken(value[key], depth + 1);
+                        if (nested) return nested;
+                    }
+                    return '';
+                }
+
+                function unionRects(rects) {
+                    if (!rects.length) return zeroRect();
+                    const left = Math.min(...rects.map(rect => rect.left));
+                    const top = Math.min(...rects.map(rect => rect.top));
+                    const right = Math.max(...rects.map(rect => rect.right));
+                    const bottom = Math.max(...rects.map(rect => rect.bottom));
+                    return { x: left, y: top, width: right - left, height: bottom - top };
+                }
+
+                function zeroRect() {
+                    return { x: 0, y: 0, width: 0, height: 0 };
+                }
+
+                function safeJson(value) {
+                    try { return JSON.stringify(value ?? null); }
+                    catch (error) { return JSON.stringify({ error: String(error) }); }
+                }
+            }
+            """,
+            hostSelector);
+
+    /// <summary>Asserts that the current range selection still represents the captured snapshot.</summary>
+    protected static async Task AssertSelectionStillEqualsAsync(
+        IPage page,
+        DocumentEditorSelectionSnapshot expected,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var actual = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        if (actual.IsCollapsed
+            || !actual.SelectedText.Contains(expected.SelectedText, StringComparison.Ordinal)
+            || !string.Equals(actual.StartBlockId, expected.StartBlockId, StringComparison.Ordinal)
+            || !string.Equals(actual.EndBlockId, expected.EndBlockId, StringComparison.Ordinal)
+            || actual.StartBlockOffset != expected.StartBlockOffset
+            || actual.EndBlockOffset != expected.EndBlockOffset)
+        {
+            throw new AssertFailedException($"Selection moved or collapsed. Expected: {expected.Debug}; Actual: {actual.Debug}");
+        }
+    }
+
+    /// <summary>Asserts that the current selection is a collapsed caret at a logical block offset.</summary>
+    protected static async Task AssertSelectionCollapsedAtAsync(
+        IPage page,
+        string blockId,
+        int offset,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var actual = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        if (!actual.IsCollapsed
+            || !string.Equals(actual.FocusBlockId, blockId, StringComparison.Ordinal)
+            || Math.Abs(actual.FocusBlockOffset - offset) > 1)
+        {
+            throw new AssertFailedException($"Expected collapsed caret at block '{blockId}' offset {offset}, actual selection was {actual.Debug}.");
+        }
+    }
+
+    /// <summary>Checks that a toolbar pointerdown does not destroy the captured text selection before command execution.</summary>
+    protected static async Task<DocumentEditorToolbarActionResult> AssertSelectionDoesNotMoveDuringToolbarPointerDownAsync(
+        IPage page,
+        string testId,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+        => await ClickToolbarElementWithPointerAsync(
+            page,
+            page.GetByTestId(testId),
+            testId,
+            "ribbon",
+            expectedSelection,
+            requireRuntimeSelectionToken,
+            hostSelector,
+            assertCommandStatePublished: false);
+
+    /// <summary>Clicks a ribbon button command with real pointer events and strict selection diagnostics.</summary>
+    protected static Task<DocumentEditorToolbarActionResult> ClickRibbonCommandAsync(
+        IPage page,
+        string testId,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+        => ClickToolbarElementWithPointerAsync(
+            page,
+            page.GetByTestId(testId),
+            testId,
+            "ribbon",
+            expectedSelection,
+            requireRuntimeSelectionToken,
+            hostSelector);
+
+    /// <summary>Clicks a floating toolbar button command with real pointer events and strict selection diagnostics.</summary>
+    protected static Task<DocumentEditorToolbarActionResult> ClickFloatingToolbarCommandAsync(
+        IPage page,
+        string testId,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+        => ClickToolbarElementWithPointerAsync(
+            page,
+            page.GetByTestId(testId),
+            testId,
+            "floating",
+            expectedSelection,
+            requireRuntimeSelectionToken,
+            hostSelector);
+
+    /// <summary>Opens a ribbon native select with a real pointer click.</summary>
+    protected static Task<DocumentEditorToolbarActionResult> OpenRibbonSelectAsync(
+        IPage page,
+        string testId,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+        => ClickToolbarElementWithPointerAsync(
+            page,
+            page.GetByTestId(testId),
+            testId,
+            "ribbon",
+            expectedSelection,
+            requireRuntimeSelectionToken,
+            hostSelector,
+            assertCommandStatePublished: false);
+
+    /// <summary>Chooses a ribbon select option while preserving the captured editor selection.</summary>
+    protected static async Task<DocumentEditorToolbarActionResult> ChooseRibbonSelectOptionAsync(
+        IPage page,
+        string testId,
+        string value,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var action = await OpenRibbonSelectAsync(page, testId, expectedSelection, requireRuntimeSelectionToken, hostSelector);
+        await page.GetByTestId(testId).SelectOptionAsync(value);
+        await WaitForEditorStableAsync(page, $"ribbon select '{testId}'", expectedSelection?.StartBlockId, expectedSelection?.SelectedText, hostSelector);
+        action.AfterSelection = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        action.AfterRibbonState = await ReadRibbonFormattingStateAsync(page);
+        return action;
+    }
+
+    /// <summary>Opens a floating toolbar select with a real pointer click.</summary>
+    protected static Task<DocumentEditorToolbarActionResult> OpenFloatingSelectAsync(
+        IPage page,
+        string testId,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+        => ClickToolbarElementWithPointerAsync(
+            page,
+            page.GetByTestId(testId),
+            testId,
+            "floating",
+            expectedSelection,
+            requireRuntimeSelectionToken,
+            hostSelector,
+            assertCommandStatePublished: false);
+
+    /// <summary>Chooses a floating toolbar select option while preserving the captured editor selection.</summary>
+    protected static async Task<DocumentEditorToolbarActionResult> ChooseFloatingSelectOptionAsync(
+        IPage page,
+        string testId,
+        string value,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var action = await OpenFloatingSelectAsync(page, testId, expectedSelection, requireRuntimeSelectionToken, hostSelector);
+        await page.GetByTestId(testId).SelectOptionAsync(value);
+        await WaitForEditorStableAsync(page, $"floating select '{testId}'", expectedSelection?.StartBlockId, expectedSelection?.SelectedText, hostSelector);
+        action.AfterSelection = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        action.AfterFloatingState = await ReadFloatingFormattingStateAsync(page);
+        return action;
+    }
+
+    /// <summary>Opens a ribbon color picker popover using a real pointer click on its trigger.</summary>
+    protected static async Task<DocumentEditorToolbarActionResult> OpenRibbonColorPickerAsync(
+        IPage page,
+        string pickerTestId,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var action = await ClickToolbarElementWithPointerAsync(
+            page,
+            page.GetByTestId(pickerTestId).Locator(".tm-color-picker-trigger"),
+            pickerTestId,
+            "ribbon",
+            expectedSelection,
+            requireRuntimeSelectionToken,
+            hostSelector,
+            assertCommandStatePublished: false);
+        await Assertions.Expect(page.GetByTestId(pickerTestId).Locator(".tm-color-picker-dropdown")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        return action;
+    }
+
+    /// <summary>Opens a floating toolbar color picker popover using a real pointer click on its trigger.</summary>
+    protected static async Task<DocumentEditorToolbarActionResult> OpenFloatingColorPickerAsync(
+        IPage page,
+        string pickerTestId,
+        DocumentEditorSelectionSnapshot? expectedSelection = null,
+        bool requireRuntimeSelectionToken = true,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var action = await ClickToolbarElementWithPointerAsync(
+            page,
+            page.GetByTestId(pickerTestId).Locator(".tm-color-picker-trigger"),
+            pickerTestId,
+            "floating",
+            expectedSelection,
+            requireRuntimeSelectionToken,
+            hostSelector,
+            assertCommandStatePublished: false);
+        await Assertions.Expect(page.GetByTestId(pickerTestId).Locator(".tm-color-picker-dropdown")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        return action;
+    }
+
+    /// <summary>Chooses an open color-palette swatch by hex value with a real mouse click.</summary>
+    protected static async Task ChooseColorPaletteSwatchAsync(IPage page, string hex)
+    {
+        var point = await page.EvaluateAsync<DocumentEditorPointProbe>(
+            """
+            (hex) => {
+                const expected = normalizeColor(hex);
+                const dropdown = Array.from(document.querySelectorAll('.tm-color-picker--open .tm-color-picker-dropdown'))
+                    .find(isVisible);
+                if (!dropdown) throw new Error('No open color picker dropdown was found.');
+                const swatch = Array.from(dropdown.querySelectorAll('.tm-color-palette-swatch'))
+                    .find(node => normalizeColor(getComputedStyle(node).backgroundColor) === expected);
+                if (!swatch) throw new Error(`No visible color swatch matched '${hex}'.`);
+                const rect = swatch.getBoundingClientRect();
+                return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+
+                function normalizeColor(value) {
+                    if (!value) return '';
+                    const text = String(value).trim().toLowerCase();
+                    if (/^#[0-9a-f]{6}$/i.test(text)) return text;
+                    const match = text.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)$/i);
+                    if (!match || match[4] === '0') return '';
+                    return '#' + [match[1], match[2], match[3]]
+                        .map(part => Math.max(0, Math.min(255, parseInt(part, 10))).toString(16).padStart(2, '0'))
+                        .join('');
+                }
+
+                function isVisible(node) {
+                    const rect = node?.getBoundingClientRect();
+                    const style = node ? getComputedStyle(node) : null;
+                    return !!(rect && style && rect.width > 0.5 && rect.height > 0.5 && style.display !== 'none' && style.visibility !== 'hidden');
+                }
+            }
+            """,
+            hex);
+        await page.Mouse.ClickAsync((float)point.X, (float)point.Y);
+        await page.Locator(".tm-color-picker--open .tm-color-picker-apply").ClickAsync();
+        await WaitForEditorStableAsync(page, $"choose color swatch '{hex}'");
+    }
+
+    /// <summary>Enters a hex value into the open color picker and applies it.</summary>
+    protected static async Task EnterColorHexAsync(IPage page, string hex)
+    {
+        var input = page.Locator(".tm-color-picker--open .tm-flat-color-picker-hex input").First;
+        await input.FillAsync(hex);
+        await input.PressAsync("Tab");
+        await page.Locator(".tm-color-picker--open .tm-color-picker-apply").ClickAsync();
+        await WaitForEditorStableAsync(page, $"enter color hex '{hex}'");
+    }
+
+    /// <summary>Clears the currently open color picker and applies the empty color value.</summary>
+    protected static async Task ClearOpenColorPickerAsync(IPage page)
+    {
+        await page.Locator(".tm-color-picker--open .tm-color-palette-clear").ClickAsync();
+        await page.Locator(".tm-color-picker--open .tm-color-picker-apply").ClickAsync();
+        await WaitForEditorStableAsync(page, "clear color picker");
+    }
+
+    /// <summary>Reads computed styles for the visible text range in a document block.</summary>
+    protected static Task<DocumentEditorTextRunComputedStyleProbe> ReadTextRunComputedStylesAsync(
+        IPage page,
+        string blockId,
+        string text,
+        string hostSelector = DocumentEditorHostSelector)
+        => page.EvaluateAsync<DocumentEditorTextRunComputedStyleProbe>(
+            """
+            ({ hostSelector, blockId, text }) => {
+                const host = document.querySelector(hostSelector);
+                const block = visibleBlock(host, blockId);
+                if (!block) throw new Error(`Could not find visible block '${blockId}'.`);
+                const entries = collectTextEntries(block);
+                const blockText = entries.map(entry => entry.text).join('');
+                const start = blockText.indexOf(text);
+                if (start < 0) throw new Error(`Text '${text}' was not found in block '${blockId}'. Block text: '${blockText}'.`);
+                const end = start + text.length;
+                const targetStyles = entries.filter(entry => entry.end > start && entry.start < end).map(toStyleEntry);
+                const beforeStyles = entries.filter(entry => entry.end <= start).map(toStyleEntry);
+                const afterStyles = entries.filter(entry => entry.start >= end).map(toStyleEntry);
+                return {
+                    blockId,
+                    text,
+                    blockText,
+                    startOffset: start,
+                    endOffset: end,
+                    nodeCount: targetStyles.length,
+                    targetStyles,
+                    beforeStyles,
+                    afterStyles,
+                    hasMixedFormatting: hasMixedFormatting(targetStyles),
+                    debug: JSON.stringify({ blockId, text, blockText, start, end, targetStyles, beforeStyles, afterStyles })
+                };
+
+                function visibleBlock(root, id) {
+                    const escaped = CSS.escape(id);
+                    return Array.from(root?.querySelectorAll(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`) || [])
+                        .find(node => {
+                            const rect = node.getBoundingClientRect();
+                            const style = getComputedStyle(node);
+                            return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && !node.closest('.tm-wysiwyg-page--virtual');
+                        });
+                }
+
+                function collectTextEntries(root) {
+                    const entries = [];
+                    let offset = 0;
+                    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                        acceptNode(node) {
+                            return node.nodeValue && node.nodeValue.length > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }
+                    });
+                    while (walker.nextNode()) {
+                        const node = walker.currentNode;
+                        const textValue = node.nodeValue || '';
+                        entries.push({ node, text: textValue, start: offset, end: offset + textValue.length });
+                        offset += textValue.length;
+                    }
+                    return entries;
+                }
+
+                function toStyleEntry(entry) {
+                    const element = entry.node.parentElement;
+                    const style = getComputedStyle(element);
+                    const fontSizePx = parseFloat(style.fontSize || '0') || 0;
+                    const decoration = `${element?.style?.textDecoration || ''} ${style.textDecorationLine || ''} ${style.textDecoration || ''}`.toLowerCase();
+                    const fontWeightNumber = parseInt(style.fontWeight || '400', 10);
+                    return {
+                        text: entry.text,
+                        startOffset: entry.start,
+                        endOffset: entry.end,
+                        inlineId: element?.closest('[data-inline-id]')?.getAttribute('data-inline-id') || '',
+                        parentHtml: element?.outerHTML?.slice(0, 700) || '',
+                        fontWeight: style.fontWeight || '',
+                        bold: style.fontWeight === 'bold' || (Number.isFinite(fontWeightNumber) && fontWeightNumber >= 600),
+                        fontStyle: style.fontStyle || '',
+                        italic: style.fontStyle === 'italic',
+                        textDecorationLine: style.textDecorationLine || '',
+                        underline: decoration.includes('underline'),
+                        strikethrough: decoration.includes('line-through'),
+                        fontSize: style.fontSize || '',
+                        fontSizePx,
+                        fontSizePt: fontSizePx * 0.75,
+                        fontFamily: style.fontFamily || '',
+                        color: style.color || '',
+                        colorHex: normalizeColor(style.color || ''),
+                        backgroundColor: style.backgroundColor || '',
+                        backgroundColorHex: normalizeColor(style.backgroundColor || '')
+                    };
+                }
+
+                function hasMixedFormatting(styles) {
+                    if (styles.length < 2) return false;
+                    const keys = ['fontWeight', 'fontStyle', 'textDecorationLine', 'fontSize', 'fontFamily', 'colorHex', 'backgroundColorHex'];
+                    return keys.some(key => new Set(styles.map(style => String(style[key] || '').toLowerCase())).size > 1);
+                }
+
+                function normalizeColor(value) {
+                    if (!value) return '';
+                    const text = String(value).trim().toLowerCase();
+                    if (text === 'transparent' || text === 'rgba(0, 0, 0, 0)') return '';
+                    if (/^#[0-9a-f]{6}$/i.test(text)) return text;
+                    const match = text.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)$/i);
+                    if (!match || match[4] === '0') return '';
+                    return '#' + [match[1], match[2], match[3]]
+                        .map(part => Math.max(0, Math.min(255, parseInt(part, 10))).toString(16).padStart(2, '0'))
+                        .join('');
+                }
+            }
+            """,
+            new { hostSelector, blockId, text });
+
+    /// <summary>Reads visible formatting state from the main ribbon and runtime debug bridge.</summary>
+    protected static Task<DocumentEditorFormattingToolbarState> ReadRibbonFormattingStateAsync(IPage page)
+        => ReadFormattingToolbarStateAsync(page, "ribbon");
+
+    /// <summary>Reads visible formatting state from the floating toolbar and runtime debug bridge.</summary>
+    protected static Task<DocumentEditorFormattingToolbarState> ReadFloatingFormattingStateAsync(IPage page)
+        => ReadFormattingToolbarStateAsync(page, "floating");
+
+    /// <summary>Asserts that ribbon and floating toolbar visible formatting states agree.</summary>
+    protected static async Task AssertRibbonAndFloatingStateEqualAsync(IPage page)
+    {
+        var ribbon = await ReadRibbonFormattingStateAsync(page);
+        var floating = await ReadFloatingFormattingStateAsync(page);
+        if (!floating.IsVisible)
+        {
+            throw new AssertFailedException($"Floating toolbar is not visible. Ribbon state: {ribbon.Debug}");
+        }
+
+        Assert.AreEqual(ribbon.Bold, floating.Bold, $"Bold state differs. Ribbon={ribbon.Debug}; Floating={floating.Debug}");
+        Assert.AreEqual(ribbon.Italic, floating.Italic, $"Italic state differs. Ribbon={ribbon.Debug}; Floating={floating.Debug}");
+        Assert.AreEqual(ribbon.Underline, floating.Underline, $"Underline state differs. Ribbon={ribbon.Debug}; Floating={floating.Debug}");
+        Assert.AreEqual(ribbon.Strikethrough, floating.Strikethrough, $"Strikethrough state differs. Ribbon={ribbon.Debug}; Floating={floating.Debug}");
+        if (!string.IsNullOrWhiteSpace(ribbon.FontSize) && !string.IsNullOrWhiteSpace(floating.FontSize))
+        {
+            Assert.AreEqual(NormalizeFontSizeToken(ribbon.FontSize), NormalizeFontSizeToken(floating.FontSize), $"Font size state differs. Ribbon={ribbon.Debug}; Floating={floating.Debug}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(ribbon.TextColor) && !string.IsNullOrWhiteSpace(floating.TextColor))
+        {
+            AssertCssColorEquals(ribbon.TextColor, floating.TextColor, $"Text color state differs. Ribbon={ribbon.Debug}; Floating={floating.Debug}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(ribbon.HighlightColor) && !string.IsNullOrWhiteSpace(floating.HighlightColor))
+        {
+            AssertCssColorEquals(ribbon.HighlightColor, floating.HighlightColor, $"Highlight state differs. Ribbon={ribbon.Debug}; Floating={floating.Debug}");
+        }
+    }
+
+    /// <summary>Asserts that a toolbar state reflects the computed style of the target text.</summary>
+    protected static void AssertToolbarStateMatchesTextStyles(DocumentEditorFormattingToolbarState state, DocumentEditorTextRunComputedStyleProbe styles)
+    {
+        if (styles.TargetStyles.Length == 0)
+        {
+            throw new AssertFailedException($"No target text styles were captured. Styles: {styles.Debug}");
+        }
+
+        var allBold = styles.TargetStyles.All(style => style.Bold);
+        var allItalic = styles.TargetStyles.All(style => style.Italic);
+        var allUnderline = styles.TargetStyles.All(style => style.Underline);
+        var allStrike = styles.TargetStyles.All(style => style.Strikethrough);
+        Assert.AreEqual(allBold, state.Bold, $"Toolbar bold state does not match text styles. State={state.Debug}; Styles={styles.Debug}");
+        Assert.AreEqual(allItalic, state.Italic, $"Toolbar italic state does not match text styles. State={state.Debug}; Styles={styles.Debug}");
+        Assert.AreEqual(allUnderline, state.Underline, $"Toolbar underline state does not match text styles. State={state.Debug}; Styles={styles.Debug}");
+        Assert.AreEqual(allStrike, state.Strikethrough, $"Toolbar strike state does not match text styles. State={state.Debug}; Styles={styles.Debug}");
+    }
+
+    protected static void AssertTextRunsAreBold(DocumentEditorTextRunComputedStyleProbe probe)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        Assert.IsTrue(probe.TargetStyles.All(style => style.Bold),
+            $"Expected all target text runs to be bold. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertTextRunsAreNormalWeight(DocumentEditorTextRunComputedStyleProbe probe)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        Assert.IsTrue(probe.TargetStyles.All(style => !style.Bold),
+            $"Expected all target text runs to have normal font weight. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertTextRunsFontStyle(DocumentEditorTextRunComputedStyleProbe probe, string expectedFontStyle)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        Assert.IsTrue(probe.TargetStyles.All(style => string.Equals(style.FontStyle, expectedFontStyle, StringComparison.OrdinalIgnoreCase)),
+            $"Expected all target text runs to have font-style '{expectedFontStyle}'. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertTextRunsTextDecorationContains(DocumentEditorTextRunComputedStyleProbe probe, string expectedDecoration)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        Assert.IsTrue(probe.TargetStyles.All(style => style.TextDecorationLine.Contains(expectedDecoration, StringComparison.OrdinalIgnoreCase)),
+            $"Expected all target text runs to contain text decoration '{expectedDecoration}'. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertTextRunsFontFamilyContains(DocumentEditorTextRunComputedStyleProbe probe, string expectedFontFamily)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        Assert.IsTrue(probe.TargetStyles.All(style => style.FontFamily.Contains(expectedFontFamily, StringComparison.OrdinalIgnoreCase)),
+            $"Expected all target text runs to use font family '{expectedFontFamily}'. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertTextRunsFontSizeNearPt(DocumentEditorTextRunComputedStyleProbe probe, double expectedPt, double tolerancePt = 1.75)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        var sizes = probe.TargetStyles.Select(style => style.FontSizePt).Where(size => size > 0).ToArray();
+        Assert.IsTrue(sizes.Length > 0, $"No target font sizes captured. Debug: {probe.Debug}");
+        Assert.IsTrue(sizes.All(size => Math.Abs(size - expectedPt) <= tolerancePt),
+            $"Expected all target font sizes near {expectedPt:0.##}pt, got {string.Join(", ", sizes.Select(size => size.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)))}pt. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertTextRunsColorEquals(DocumentEditorTextRunComputedStyleProbe probe, string expectedHex)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        Assert.IsTrue(probe.TargetStyles.All(style => CssColorMatches(style.ColorHex, expectedHex) || CssColorMatches(style.Color, expectedHex)),
+            $"Expected all target text colors to match {expectedHex}. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertTextRunsBackgroundColorEquals(DocumentEditorTextRunComputedStyleProbe probe, string expectedHex)
+    {
+        Assert.IsTrue(probe.TargetStyles.Length > 0, $"No target styles captured. Debug: {probe.Debug}");
+        Assert.IsTrue(probe.TargetStyles.All(style => CssColorMatches(style.BackgroundColorHex, expectedHex) || CssColorMatches(style.BackgroundColor, expectedHex)),
+            $"Expected all target background colors to match {expectedHex}. Debug: {probe.Debug}");
+    }
+
+    protected static void AssertSurroundingTextStylesUnchanged(
+        DocumentEditorTextRunComputedStyleProbe before,
+        DocumentEditorTextRunComputedStyleProbe after)
+    {
+        AssertStyleArraysEquivalent(before.BeforeStyles, after.BeforeStyles, "before target text", before, after);
+        AssertStyleArraysEquivalent(before.AfterStyles, after.AfterStyles, "after target text", before, after);
     }
 
     /// <summary>Waits briefly for the editor to settle and captures a full-page screenshot.</summary>
@@ -313,6 +1079,114 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 const escaped = window.CSS?.escape ? window.CSS.escape(blockId) : String(blockId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 const block = host?.querySelector(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
                 return block?.innerText || block?.textContent || '';
+            }
+            """,
+            new { hostSelector, blockId });
+
+    /// <summary>Diagnostic read-only helper: reads text from the JS-owned runtime document model.</summary>
+    protected static Task<string> ReadDocumentEditorModelBlockTextAsync(
+        IPage page,
+        string blockId,
+        string hostSelector = "[data-testid='document-wysiwyg-host']")
+        => page.EvaluateAsync<string>(
+            """
+            ({ hostSelector, blockId }) => {
+                const host = document.querySelector(hostSelector);
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const raw = window.tmDocumentEditorRuntime?.getDocumentSnapshot?.(instanceId)
+                    || window.tmDocumentEditorEngine?.getDocumentSnapshot?.(instanceId)
+                    || window.tmDocumentEditorRuntime?.getDocument?.(instanceId)
+                    || window.tmDocumentEditorEngine?.getDocument?.(instanceId)
+                    || null;
+                const snapshot = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                const documentModel = snapshot?.Document || snapshot?.document || snapshot?.csharpDocument || snapshot;
+                const block = findBlock(documentModel);
+                if (!block) {
+                    return typeof raw === 'string' ? raw : JSON.stringify(raw ?? null);
+                }
+                return collectBlockText(block);
+
+                function findBlock(value) {
+                    if (!value || typeof value !== 'object') return null;
+                    if ((value.Id || value.id) === blockId) return value;
+                    const childCollections = [
+                        value.Blocks,
+                        value.blocks,
+                        value.Children,
+                        value.children,
+                        value.Rows,
+                        value.rows,
+                        value.Cells,
+                        value.cells,
+                        value.Inlines,
+                        value.inlines
+                    ];
+                    for (const collection of childCollections) {
+                        if (!Array.isArray(collection)) continue;
+                        for (const child of collection) {
+                            const found = findBlock(child);
+                            if (found) return found;
+                        }
+                    }
+                    for (const key of ['Document', 'document', 'Body', 'body', 'Content', 'content']) {
+                        const found = findBlock(value[key]);
+                        if (found) return found;
+                    }
+                    return null;
+                }
+
+                function collectBlockText(value) {
+                    if (!value || typeof value !== 'object') return '';
+                    if (typeof value.Text === 'string') return value.Text;
+                    if (typeof value.text === 'string') return value.text;
+                    if (typeof value.Content === 'string') return value.Content;
+                    if (typeof value.content === 'string') return value.content;
+                    if (typeof value.Data === 'string') return value.Data;
+                    if (typeof value.data === 'string') return value.data;
+                    const inlines = value.Inlines || value.inlines || value.Runs || value.runs || [];
+                    if (Array.isArray(inlines) && inlines.length) {
+                        return inlines.map(collectInlineText).join('');
+                    }
+                    const cells = value.Cells || value.cells || value.Rows || value.rows || [];
+                    if (Array.isArray(cells) && cells.length) {
+                        return cells.map(collectBlockText).join('');
+                    }
+                    return collectNamedTextStrings(value).join('');
+                }
+
+                function collectInlineText(value) {
+                    if (!value || typeof value !== 'object') return '';
+                    const direct = value.Text ?? value.text ?? value.Content ?? value.content ?? value.Value ?? value.value ?? value.Data ?? value.data;
+                    if (direct !== undefined && direct !== null) return String(direct);
+                    return collectNamedTextStrings(value).join('');
+                }
+
+                function collectNamedTextStrings(value, depth = 0) {
+                    if (!value || typeof value !== 'object' || depth > 4) return [];
+                    const result = [];
+                    for (const [key, child] of Object.entries(value)) {
+                        if (child === null || child === undefined) continue;
+                        if (typeof child === 'string') {
+                            if (/^(text|content|value|data|plainText|displayText)$/i.test(key)) {
+                                result.push(child);
+                            }
+                            continue;
+                        }
+
+                        if (Array.isArray(child)) {
+                            for (const item of child) {
+                                result.push(...collectNamedTextStrings(item, depth + 1));
+                            }
+                            continue;
+                        }
+
+                        if (typeof child === 'object' && !/^(style|marks|metadata|layout|range|selection|author)$/i.test(key)) {
+                            result.push(...collectNamedTextStrings(child, depth + 1));
+                        }
+                    }
+
+                    return result;
+                }
             }
             """,
             new { hostSelector, blockId });
@@ -899,6 +1773,22 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         }
     }
 
+    /// <summary>Asserts that a user-facing element is fully inside the browser viewport.</summary>
+    protected static async Task ExpectRectInsideViewportAsync(IPage page, ILocator locator, string name)
+    {
+        var rect = await GetLocatorRectAsync(locator, name);
+        var viewport = await page.EvaluateAsync<DocumentEditorRectProbe>(
+            "() => ({ x: 0, y: 0, width: window.innerWidth || document.documentElement.clientWidth || 0, height: window.innerHeight || document.documentElement.clientHeight || 0 })");
+        if (!RectInside(rect, viewport, 1.5))
+        {
+            throw new AssertFailedException($"Expected {name} rect {FormatRect(rect)} to stay inside viewport {FormatRect(viewport)}.");
+        }
+    }
+
+    /// <summary>Asserts that the floating toolbar does not overlap the main ribbon.</summary>
+    protected static Task ExpectToolbarAvoidsRibbonAsync(IPage page, ILocator toolbar)
+        => ExpectNoOverlapAsync(toolbar, page.GetByTestId("document-toolbar"), 1.5);
+
     /// <summary>Asserts that a comment or revision marker intersects the visual text range for expected text.</summary>
     protected static async Task ExpectMarkerIntersectsTextRangeAsync(IPage page, ILocator marker, string expectedText)
     {
@@ -971,6 +1861,62 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             throw new AssertFailedException($"Toolbar rect {FormatRect(toolbarRect)} should be near selection rect {FormatRect(selectionRect)}.");
         }
     }
+
+    /// <summary>Scrolls the nearest scrollable document viewport and reports the applied delta.</summary>
+    protected static Task<DocumentEditorScrollProbe> ScrollDocumentViewportAsync(
+        IPage page,
+        double deltaY,
+        string hostSelector = DocumentEditorHostSelector)
+        => page.EvaluateAsync<DocumentEditorScrollProbe>(
+            """
+            async ({ hostSelector, deltaY }) => {
+                const host = document.querySelector(hostSelector);
+                const candidates = [];
+                for (let node = host; node; node = node.parentElement) {
+                    const style = getComputedStyle(node);
+                    const scrollable = /(auto|scroll|overlay)/.test(style.overflowY)
+                        && node.scrollHeight > node.clientHeight + 20;
+                    if (scrollable) candidates.push(node);
+                }
+                const documentScroller = document.scrollingElement || document.documentElement;
+                candidates.push(documentScroller);
+                const target = candidates.find(node => node && node.scrollHeight > node.clientHeight + 20);
+                if (!target) return { target: '', deltaY: 0, debug: 'no scrollable target' };
+
+                const isDocumentScroller = target === documentScroller
+                    || target === document.documentElement
+                    || target === document.body;
+                const readTop = () => isDocumentScroller
+                    ? (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0)
+                    : target.scrollTop;
+                const writeTop = value => {
+                    if (isDocumentScroller) {
+                        window.scrollTo(0, value);
+                        document.documentElement.scrollTop = value;
+                        document.body.scrollTop = value;
+                    } else {
+                        target.scrollTop = value;
+                        target.dispatchEvent(new Event('scroll', { bubbles: true }));
+                    }
+                };
+
+                const before = readTop();
+                if (target === documentScroller) {
+                    writeTop(before + deltaY);
+                } else {
+                    writeTop(before + deltaY);
+                }
+
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                const after = readTop();
+                return {
+                    target: isDocumentScroller ? 'document' : (target.getAttribute('data-testid') || target.className || target.tagName || ''),
+                    deltaY: after - before,
+                    debug: JSON.stringify({ before, after, scrollHeight: target.scrollHeight, clientHeight: target.clientHeight })
+                };
+            }
+            """,
+            new { hostSelector, deltaY });
 
     /// <summary>Asserts that a properties panel is visibly bound to the active object.</summary>
     protected static async Task ExpectPanelShowsActiveObjectAsync(ILocator panel, string objectId)
@@ -1052,7 +1998,179 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             State = WaitForSelectorState.Attached,
             Timeout = 60000
         });
+        await WaitForEditorStableAsync(page, "initial editor ready", timeoutMs: 60000);
     }
+
+    /// <summary>
+    /// Waits for a local editor assertion point: host attached, visible blocks rendered, expected text visible when supplied,
+    /// and no Blazor/runtime error UI. This intentionally does not wait for save/autosave.
+    /// </summary>
+    protected static async Task WaitForEditorStableAsync(
+        IPage page,
+        string reason,
+        string? targetBlockId = null,
+        string? expectedVisibleText = null,
+        string hostSelector = DocumentEditorHostSelector,
+        int timeoutMs = 5000)
+    {
+        var args = new
+        {
+            hostSelector,
+            reason,
+            targetBlockId = targetBlockId ?? string.Empty,
+            expectedVisibleText = expectedVisibleText ?? string.Empty
+        };
+
+        try
+        {
+            await page.WaitForFunctionAsync(
+                """
+                async (args) => {
+                    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                    const probe = buildProbe(args);
+                    window.__tmDocumentEditorLastStableProbe = probe;
+                    return probe.isStable === true;
+
+                    function buildProbe(input) {
+                        const host = document.querySelector(input.hostSelector);
+                        const visibleBlocks = Array.from(host?.querySelectorAll('.tm-wysiwyg-block, [data-block-id], [data-render-block-id]') || [])
+                            .filter(isVisible)
+                            .filter(node => !node.closest('.tm-wysiwyg-page--virtual'));
+                        const targetBlock = input.targetBlockId
+                            ? visibleBlocks.find(node => node.getAttribute('data-block-id') === input.targetBlockId
+                                || node.getAttribute('data-render-block-id') === input.targetBlockId)
+                            : null;
+                        const targetText = textOf(targetBlock);
+                        const hostText = textOf(host);
+                        const errorTexts = visibleErrorTexts();
+                        const expectedFound = !input.expectedVisibleText
+                            || targetText.includes(input.expectedVisibleText)
+                            || hostText.includes(input.expectedVisibleText);
+                        const activeElement = document.activeElement;
+                        const probe = {
+                            reason: input.reason || '',
+                            isStable: !!host
+                                && visibleBlocks.length > 0
+                                && (!input.targetBlockId || !!targetBlock)
+                                && expectedFound
+                                && errorTexts.length === 0,
+                            hostFound: !!host,
+                            visibleBlockCount: visibleBlocks.length,
+                            targetBlockFound: !input.targetBlockId || !!targetBlock,
+                            expectedTextFound: expectedFound,
+                            blazorErrorVisible: errorTexts.length > 0,
+                            documentReadyState: document.readyState || '',
+                            selectionText: window.getSelection?.()?.toString?.() || '',
+                            activeElement: activeElement?.outerHTML?.slice(0, 500) || '',
+                            targetText: targetText.slice(0, 500),
+                            hostText: hostText.slice(0, 500),
+                            debug: ''
+                        };
+                        probe.debug = JSON.stringify({
+                            reason: probe.reason,
+                            hostFound: probe.hostFound,
+                            visibleBlockCount: probe.visibleBlockCount,
+                            targetBlockId: input.targetBlockId,
+                            targetBlockFound: probe.targetBlockFound,
+                            expectedVisibleText: input.expectedVisibleText,
+                            expectedTextFound: probe.expectedTextFound,
+                            errorTexts,
+                            documentReadyState: probe.documentReadyState,
+                            selectionText: probe.selectionText,
+                            activeElement: probe.activeElement,
+                            targetText: probe.targetText
+                        });
+                        return probe;
+                    }
+
+                    function isVisible(node) {
+                        const rect = node?.getBoundingClientRect?.();
+                        const style = node ? getComputedStyle(node) : null;
+                        return !!(rect && style && rect.width > 0.5 && rect.height > 0.5 && style.display !== 'none' && style.visibility !== 'hidden');
+                    }
+
+                    function textOf(node) {
+                        return node ? (node.innerText || node.textContent || '') : '';
+                    }
+
+                    function visibleErrorTexts() {
+                        const selectors = [
+                            '#blazor-error-ui',
+                            '.blazor-error-boundary',
+                            '[data-testid="document-runtime-error"]',
+                            '[data-testid="document-editor-runtime-message"]'
+                        ];
+                        return selectors
+                            .flatMap(selector => Array.from(document.querySelectorAll(selector)))
+                            .filter(node => {
+                                if (!isVisible(node)) return false;
+                                const text = textOf(node).trim();
+                                if (!text) return false;
+                                if (node.id === 'blazor-error-ui' && getComputedStyle(node).display === 'none') return false;
+                                return /error|exception|failed|crash|unhandled|runtime/i.test(text);
+                            })
+                            .map(node => textOf(node).trim().slice(0, 500));
+                    }
+                }
+                """,
+                args,
+                new() { Timeout = timeoutMs, PollingInterval = 50 });
+        }
+        catch (Exception ex) when (ex is TimeoutException || ex is PlaywrightException)
+        {
+            var probe = await ReadEditorStableProbeAsync(page, reason, targetBlockId, expectedVisibleText, hostSelector);
+            throw new AssertFailedException($"Document editor did not become stable after '{reason}' within {timeoutMs}ms. Probe: {probe.Debug}", ex);
+        }
+    }
+
+    /// <summary>Reads the last known local editor stability probe for timeout diagnostics.</summary>
+    protected static Task<DocumentEditorStableProbe> ReadEditorStableProbeAsync(
+        IPage page,
+        string reason,
+        string? targetBlockId = null,
+        string? expectedVisibleText = null,
+        string hostSelector = DocumentEditorHostSelector)
+        => page.EvaluateAsync<DocumentEditorStableProbe>(
+            """
+            (args) => {
+                const existing = window.__tmDocumentEditorLastStableProbe;
+                if (existing && existing.reason === args.reason) return existing;
+                const host = document.querySelector(args.hostSelector);
+                const blocks = Array.from(host?.querySelectorAll('.tm-wysiwyg-block, [data-block-id], [data-render-block-id]') || [])
+                    .filter(node => {
+                        const rect = node.getBoundingClientRect();
+                        const style = getComputedStyle(node);
+                        return rect.width > 0.5 && rect.height > 0.5 && style.display !== 'none' && style.visibility !== 'hidden' && !node.closest('.tm-wysiwyg-page--virtual');
+                    });
+                const target = args.targetBlockId
+                    ? blocks.find(node => node.getAttribute('data-block-id') === args.targetBlockId || node.getAttribute('data-render-block-id') === args.targetBlockId)
+                    : null;
+                const targetText = target ? (target.innerText || target.textContent || '') : '';
+                const hostText = host ? (host.innerText || host.textContent || '') : '';
+                const errorText = Array.from(document.querySelectorAll('#blazor-error-ui, .blazor-error-boundary, [data-testid="document-runtime-error"], [data-testid="document-editor-runtime-message"]'))
+                    .map(node => (node.innerText || node.textContent || '').trim())
+                    .filter(Boolean);
+                const expectedFound = !args.expectedVisibleText || targetText.includes(args.expectedVisibleText) || hostText.includes(args.expectedVisibleText);
+                const probe = {
+                    reason: args.reason || '',
+                    isStable: !!host && blocks.length > 0 && (!args.targetBlockId || !!target) && expectedFound && errorText.length === 0,
+                    hostFound: !!host,
+                    visibleBlockCount: blocks.length,
+                    targetBlockFound: !args.targetBlockId || !!target,
+                    expectedTextFound: expectedFound,
+                    blazorErrorVisible: errorText.length > 0,
+                    documentReadyState: document.readyState || '',
+                    selectionText: window.getSelection?.()?.toString?.() || '',
+                    activeElement: document.activeElement?.outerHTML?.slice(0, 500) || '',
+                    targetText: targetText.slice(0, 500),
+                    hostText: hostText.slice(0, 500),
+                    debug: ''
+                };
+                probe.debug = JSON.stringify({ ...probe, errorText });
+                return probe;
+            }
+            """,
+            new { hostSelector, reason, targetBlockId = targetBlockId ?? string.Empty, expectedVisibleText = expectedVisibleText ?? string.Empty });
 
     /// <summary>Returns the visible contenteditable body from the first non-virtual page.</summary>
     protected static async Task<ILocator> WaitForWysiwygBodyAsync(IPage page)
@@ -1062,6 +2180,742 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         var body = host.Locator(".tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-page__body[contenteditable]").First;
         await body.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 60000 });
         return body;
+    }
+
+    /// <summary>Captures screenshot plus JSON diagnostics for a human-facing document editor failure.</summary>
+    protected async Task<string> CaptureDocumentEditorDiagnosticArtifactAsync(
+        IPage page,
+        string behavior,
+        string? targetBlockId = null,
+        DocumentEditorConsoleCapture? console = null,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var safe = SanitizeFileName($"document_editor_diagnostic_{behavior}");
+        var screenshotPath = await CaptureDocumentEditorPageScreenshotAsync(page, safe, hostSelector);
+        var selection = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        var ribbonState = await ReadRibbonFormattingStateAsync(page);
+        var floatingState = await ReadFloatingFormattingStateAsync(page);
+        var browser = await page.EvaluateAsync<DocumentEditorBrowserDiagnosticArtifact>(
+            """
+            ({ hostSelector, targetBlockId }) => {
+                const host = document.querySelector(hostSelector);
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const targetBlock = targetBlockId
+                    ? Array.from(host?.querySelectorAll(`[data-block-id="${CSS.escape(targetBlockId)}"], [data-render-block-id="${CSS.escape(targetBlockId)}"]`) || []).find(isVisible)
+                    : null;
+                const runtimeSnapshot = getRuntimeSnapshot(instanceId);
+                return {
+                    instanceId,
+                    documentText: host?.innerText || host?.textContent || '',
+                    activeElement: document.activeElement?.outerHTML?.slice(0, 800) || '',
+                    toolbarHtml: document.querySelector('[data-testid="document-toolbar"]')?.outerHTML?.slice(0, 4000) || '',
+                    floatingToolbarHtml: document.querySelector('[data-testid="document-mini-toolbar"]')?.outerHTML?.slice(0, 2500) || '',
+                    targetBlockHtml: targetBlock?.outerHTML?.slice(0, 4000) || '',
+                    runtimeSnapshotJson: safeJson(runtimeSnapshot),
+                    runtimeStateJson: safeJson(window.tmDocumentEditorDebug?.getRuntimeState?.(instanceId) || null),
+                    formattingStateJson: safeJson(
+                        window.tmDocumentEditorRuntime?.getFormattingState?.(instanceId)
+                        || window.tmDocumentEditorEngine?.getFormattingState?.(instanceId)
+                        || null),
+                    undoStackJson: safeJson(
+                        window.tmDocumentWysiwygDebug?.getUndoStack?.(instanceId)
+                        || runtimeSnapshot?.undoStack
+                        || runtimeSnapshot?.UndoStack
+                        || null)
+                };
+
+                function getRuntimeSnapshot(id) {
+                    try {
+                        return window.tmDocumentEditorRuntime?.getDebugSnapshot?.(id)
+                            || window.tmDocumentEditorEngine?.getDebugSnapshot?.(id)
+                            || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function isVisible(node) {
+                    const rect = node?.getBoundingClientRect();
+                    const style = node ? getComputedStyle(node) : null;
+                    return !!(rect && style && rect.width > 0.5 && rect.height > 0.5 && style.display !== 'none' && style.visibility !== 'hidden');
+                }
+
+                function safeJson(value) {
+                    try { return JSON.stringify(value ?? null); }
+                    catch (error) { return JSON.stringify({ error: String(error) }); }
+                }
+            }
+            """,
+            new { hostSelector, targetBlockId = targetBlockId ?? string.Empty });
+
+        var directory = TestContext.TestResultsDirectory ?? ".";
+        Directory.CreateDirectory(directory);
+        var artifactPath = Path.Combine(directory, $"{safe}_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+        var payload = new
+        {
+            behavior,
+            capturedAt = DateTimeOffset.Now,
+            screenshotPath,
+            selection,
+            ribbonState,
+            floatingState,
+            consoleEntries = console?.Entries.ToArray() ?? [],
+            fatalConsoleErrors = console?.FatalErrors.ToArray() ?? [],
+            browser
+        };
+        await File.WriteAllTextAsync(artifactPath, JsonSerializer.Serialize(payload, StrictJsonOptions));
+        TestContext.AddResultFile(artifactPath);
+        return artifactPath;
+    }
+
+    private static Task<DocumentEditorTextSelectionMouseTarget> ReadTextSelectionMouseTargetAsync(
+        IPage page,
+        string? blockId,
+        string text,
+        string hostSelector)
+        => page.EvaluateAsync<DocumentEditorTextSelectionMouseTarget>(
+            """
+            async ({ hostSelector, blockId, text }) => {
+                const host = document.querySelector(hostSelector);
+                const block = blockId ? visibleBlock(host, blockId) : visibleBlocks(host).find(candidate => (candidate.textContent || '').includes(text));
+                if (!block) throw new Error(blockId ? `Could not find visible block '${blockId}'.` : `Could not find visible block containing '${text}'.`);
+                await scrollIntoMouseViewport(block);
+                const entries = collectTextEntries(block);
+                const blockText = entries.map(entry => entry.text).join('');
+                const start = blockText.indexOf(text);
+                if (start < 0) throw new Error(`Text '${text}' was not found in block text '${blockText}'.`);
+                return createTarget(block, entries, start, start + text.length, text);
+
+                function visibleBlocks(root) {
+                    return Array.from(root?.querySelectorAll('[data-block-id], [data-render-block-id]') || [])
+                        .filter(node => {
+                            const rect = node.getBoundingClientRect();
+                            const style = getComputedStyle(node);
+                            return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && !node.closest('.tm-wysiwyg-page--virtual');
+                        });
+                }
+
+                function visibleBlock(root, id) {
+                    const escaped = CSS.escape(id);
+                    return visibleBlocks(root)
+                        .find(node => node.getAttribute('data-block-id') === id || node.getAttribute('data-render-block-id') === id || node.matches(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`));
+                }
+
+                function collectTextEntries(root) {
+                    const entries = [];
+                    let offset = 0;
+                    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                        acceptNode(node) {
+                            return node.nodeValue && node.nodeValue.length > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }
+                    });
+                    while (walker.nextNode()) {
+                        const node = walker.currentNode;
+                        const value = node.nodeValue || '';
+                        entries.push({ node, text: value, start: offset, end: offset + value.length });
+                        offset += value.length;
+                    }
+                    return entries;
+                }
+
+                function createTarget(block, entries, start, end, expectedText) {
+                    const first = positionAt(entries, start);
+                    const last = positionAt(entries, Math.max(start, end - 1));
+                    const range = document.createRange();
+                    const endPosition = positionAt(entries, end);
+                    range.setStart(first.node, first.offset);
+                    range.setEnd(endPosition.node, endPosition.offset);
+                    const startRect = rectFor(first.node, first.offset, 1, block);
+                    const endRect = rectFor(last.node, last.offset, 1, block);
+                    const rect = unionRects(Array.from(range.getClientRects()).filter(item => item.width > 0.5 && item.height > 0.5));
+                    const blockIdValue = block.getAttribute('data-block-id') || block.getAttribute('data-render-block-id') || '';
+                    const selectedEntries = entries.filter(entry => entry.end > start && entry.start < end);
+                    return {
+                        blockId: blockIdValue,
+                        startOffset: start,
+                        endOffset: end,
+                        expectedText,
+                        startX: startRect.left + 1,
+                        startY: pointerY(startRect),
+                        endX: endRect.right - 1,
+                        endY: pointerY(endRect),
+                        rect,
+                        blockText: entries.map(entry => entry.text).join(''),
+                        textNodeCount: selectedEntries.length,
+                        debug: JSON.stringify({ blockId: blockIdValue, start, end, expectedText, rect, selectedEntries: selectedEntries.map(entry => ({ text: entry.text, start: entry.start, end: entry.end })) })
+                    };
+                }
+
+                function positionAt(entries, offset) {
+                    for (const entry of entries) {
+                        if (offset <= entry.end) {
+                            return { node: entry.node, offset: Math.max(0, Math.min(entry.node.nodeValue.length, offset - entry.start)) };
+                        }
+                    }
+                    const last = entries[entries.length - 1];
+                    if (!last) throw new Error('No text nodes were available for selection target.');
+                    return { node: last.node, offset: last.node.nodeValue.length };
+                }
+
+                function rectFor(node, offset, length, fallback) {
+                    const range = document.createRange();
+                    const start = Math.max(0, Math.min(node.nodeValue.length, offset));
+                    const end = Math.max(start + 1, Math.min(node.nodeValue.length, start + Math.max(1, length)));
+                    range.setStart(node, start);
+                    range.setEnd(node, Math.min(node.nodeValue.length, end));
+                    return Array.from(range.getClientRects())[0] || fallback.getBoundingClientRect();
+                }
+
+                function pointerY(rect) {
+                    return Math.max(rect.top + 1, Math.min(rect.bottom - 1, rect.top + Math.min(10, Math.max(4, rect.height * 0.38))));
+                }
+
+                function unionRects(rects) {
+                    if (!rects.length) {
+                        const fallback = block.getBoundingClientRect();
+                        return { x: fallback.x, y: fallback.y, width: fallback.width, height: fallback.height };
+                    }
+                    const left = Math.min(...rects.map(rect => rect.left));
+                    const top = Math.min(...rects.map(rect => rect.top));
+                    const right = Math.max(...rects.map(rect => rect.right));
+                    const bottom = Math.max(...rects.map(rect => rect.bottom));
+                    return { x: left, y: top, width: right - left, height: bottom - top };
+                }
+
+                async function scrollIntoMouseViewport(node) {
+                    node.scrollIntoView({ block: 'center', inline: 'nearest' });
+                    await nextFrame();
+                    for (const scroller of scrollableAncestors(node)) {
+                        const rect = node.getBoundingClientRect();
+                        const container = scroller === document.scrollingElement || scroller === document.documentElement || scroller === document.body
+                            ? { top: 0, height: window.innerHeight }
+                            : scroller.getBoundingClientRect();
+                        const delta = rect.top - container.top - (container.height / 2) + (rect.height / 2);
+                        if (Math.abs(delta) > 2) {
+                            scroller.scrollTop += delta;
+                            await nextFrame();
+                        }
+                    }
+                    const rect = node.getBoundingClientRect();
+                    if (rect.top < 80 || rect.bottom > window.innerHeight - 40) {
+                        window.scrollBy({ top: rect.top - (window.innerHeight / 2) + (rect.height / 2), behavior: 'instant' });
+                        await nextFrame();
+                    }
+                }
+
+                function scrollableAncestors(node) {
+                    const result = [];
+                    for (let current = node.parentElement; current; current = current.parentElement) {
+                        const style = getComputedStyle(current);
+                        const overflow = `${style.overflow} ${style.overflowY}`.toLowerCase();
+                        if (/(auto|scroll|overlay)/.test(overflow) && current.scrollHeight > current.clientHeight + 1) {
+                            result.push(current);
+                        }
+                    }
+                    result.push(document.scrollingElement || document.documentElement);
+                    return result;
+                }
+
+                function nextFrame() {
+                    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+                }
+            }
+            """,
+            new { hostSelector, blockId = blockId ?? string.Empty, text });
+
+    private static Task<DocumentEditorTextSelectionMouseTarget> ReadTextSelectionMouseTargetAsync(
+        IPage page,
+        string blockId,
+        int startOffset,
+        int endOffset,
+        string hostSelector)
+        => page.EvaluateAsync<DocumentEditorTextSelectionMouseTarget>(
+            """
+            async ({ hostSelector, blockId, startOffset, endOffset }) => {
+                const host = document.querySelector(hostSelector);
+                const escaped = CSS.escape(blockId);
+                const block = Array.from(host?.querySelectorAll(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`) || [])
+                    .find(node => {
+                        const rect = node.getBoundingClientRect();
+                        const style = getComputedStyle(node);
+                        return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && !node.closest('.tm-wysiwyg-page--virtual');
+                    });
+                if (!block) throw new Error(`Could not find visible block '${blockId}'.`);
+                await scrollIntoMouseViewport(block);
+                const entries = [];
+                let text = '';
+                const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+                    acceptNode(node) {
+                        return node.nodeValue && node.nodeValue.length > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                    }
+                });
+                while (walker.nextNode()) {
+                    const node = walker.currentNode;
+                    const value = node.nodeValue || '';
+                    entries.push({ node, text: value, start: text.length, end: text.length + value.length });
+                    text += value;
+                }
+                const start = Math.max(0, Math.min(Number(startOffset) || 0, text.length));
+                const end = Math.max(start, Math.min(Number(endOffset) || 0, text.length));
+                const first = positionAt(start);
+                const last = positionAt(Math.max(start, end - 1));
+                const endPos = positionAt(end);
+                const startRect = rectFor(first.node, first.offset, 1, block);
+                const endRect = rectFor(last.node, last.offset, 1, block);
+                const range = document.createRange();
+                range.setStart(first.node, first.offset);
+                range.setEnd(endPos.node, endPos.offset);
+                const rect = unionRects(Array.from(range.getClientRects()).filter(item => item.width > 0.5 && item.height > 0.5));
+                const selectedEntries = entries.filter(entry => entry.end > start && entry.start < end);
+                return {
+                    blockId,
+                    startOffset: start,
+                    endOffset: end,
+                    expectedText: text.slice(start, end),
+                    startX: startRect.left + 1,
+                    startY: pointerY(startRect),
+                    endX: endRect.right - 1,
+                    endY: pointerY(endRect),
+                    rect,
+                    blockText: text,
+                    textNodeCount: selectedEntries.length,
+                    debug: JSON.stringify({ blockId, start, end, expectedText: text.slice(start, end), rect })
+                };
+
+                function positionAt(offset) {
+                    for (const entry of entries) {
+                        if (offset <= entry.end) {
+                            return { node: entry.node, offset: Math.max(0, Math.min(entry.node.nodeValue.length, offset - entry.start)) };
+                        }
+                    }
+                    const last = entries[entries.length - 1];
+                    if (!last) throw new Error('No text nodes were available for selection target.');
+                    return { node: last.node, offset: last.node.nodeValue.length };
+                }
+
+                function rectFor(node, offset, length, fallback) {
+                    const range = document.createRange();
+                    const start = Math.max(0, Math.min(node.nodeValue.length, offset));
+                    const end = Math.max(start + 1, Math.min(node.nodeValue.length, start + Math.max(1, length)));
+                    range.setStart(node, start);
+                    range.setEnd(node, Math.min(node.nodeValue.length, end));
+                    return Array.from(range.getClientRects())[0] || fallback.getBoundingClientRect();
+                }
+
+                function pointerY(rect) {
+                    return Math.max(rect.top + 1, Math.min(rect.bottom - 1, rect.top + Math.min(10, Math.max(4, rect.height * 0.38))));
+                }
+
+                function unionRects(rects) {
+                    if (!rects.length) {
+                        const fallback = block.getBoundingClientRect();
+                        return { x: fallback.x, y: fallback.y, width: fallback.width, height: fallback.height };
+                    }
+                    const left = Math.min(...rects.map(rect => rect.left));
+                    const top = Math.min(...rects.map(rect => rect.top));
+                    const right = Math.max(...rects.map(rect => rect.right));
+                    const bottom = Math.max(...rects.map(rect => rect.bottom));
+                    return { x: left, y: top, width: right - left, height: bottom - top };
+                }
+
+                async function scrollIntoMouseViewport(node) {
+                    node.scrollIntoView({ block: 'center', inline: 'nearest' });
+                    await nextFrame();
+                    for (const scroller of scrollableAncestors(node)) {
+                        const rect = node.getBoundingClientRect();
+                        const container = scroller === document.scrollingElement || scroller === document.documentElement || scroller === document.body
+                            ? { top: 0, height: window.innerHeight }
+                            : scroller.getBoundingClientRect();
+                        const delta = rect.top - container.top - (container.height / 2) + (rect.height / 2);
+                        if (Math.abs(delta) > 2) {
+                            scroller.scrollTop += delta;
+                            await nextFrame();
+                        }
+                    }
+                    const rect = node.getBoundingClientRect();
+                    if (rect.top < 80 || rect.bottom > window.innerHeight - 40) {
+                        window.scrollBy({ top: rect.top - (window.innerHeight / 2) + (rect.height / 2), behavior: 'instant' });
+                        await nextFrame();
+                    }
+                }
+
+                function scrollableAncestors(node) {
+                    const result = [];
+                    for (let current = node.parentElement; current; current = current.parentElement) {
+                        const style = getComputedStyle(current);
+                        const overflow = `${style.overflow} ${style.overflowY}`.toLowerCase();
+                        if (/(auto|scroll|overlay)/.test(overflow) && current.scrollHeight > current.clientHeight + 1) {
+                            result.push(current);
+                        }
+                    }
+                    result.push(document.scrollingElement || document.documentElement);
+                    return result;
+                }
+
+                function nextFrame() {
+                    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+                }
+            }
+            """,
+            new { hostSelector, blockId, startOffset, endOffset });
+
+    private static async Task<DocumentEditorSelectionSnapshot> WaitForTextSelectionAsync(
+        IPage page,
+        string blockId,
+        string expectedText,
+        DocumentEditorTextSelectionMouseTarget target,
+        string hostSelector)
+    {
+        DocumentEditorSelectionSnapshot? last = null;
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            last = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+            last.TargetBlockId = blockId;
+            last.ExpectedText = expectedText;
+            last.TargetStartOffset = target.StartOffset;
+            last.TargetEndOffset = target.EndOffset;
+            if (!last.IsCollapsed
+                && last.SelectedText.Contains(expectedText, StringComparison.Ordinal)
+                && (string.IsNullOrWhiteSpace(blockId)
+                    || string.Equals(last.StartBlockId, blockId, StringComparison.Ordinal)
+                    || string.Equals(last.AnchorBlockId, blockId, StringComparison.Ordinal)
+                    || string.Equals(last.FocusBlockId, blockId, StringComparison.Ordinal)))
+            {
+                return last;
+            }
+
+            await page.WaitForTimeoutAsync(75);
+        }
+
+        var actual = last is null ? "<no selection snapshot>" : last.Debug;
+        throw new AssertFailedException($"Human mouse text selection failed. Expected '{expectedText}' in block '{blockId}'. Target: {target.Debug}. Actual selection: {actual}");
+    }
+
+    private static async Task<DocumentEditorToolbarActionResult> ClickToolbarElementWithPointerAsync(
+        IPage page,
+        ILocator locator,
+        string name,
+        string scope,
+        DocumentEditorSelectionSnapshot? expectedSelection,
+        bool requireRuntimeSelectionToken,
+        string hostSelector,
+        bool assertCommandStatePublished = true)
+    {
+        var beforeSelection = expectedSelection ?? await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        if (expectedSelection is not null)
+        {
+            await AssertSelectionStillEqualsAsync(page, expectedSelection, hostSelector);
+        }
+
+        await locator.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        var box = await locator.BoundingBoxAsync();
+        if (box is null)
+        {
+            throw new AssertFailedException($"Could not click toolbar control '{name}' because it has no bounding box.");
+        }
+
+        var x = box.X + box.Width / 2;
+        var y = box.Y + box.Height / 2;
+        await page.Mouse.MoveAsync((float)x, (float)y);
+        await page.Mouse.DownAsync();
+        var pointerDownSelection = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        var pointerDownFailure = ValidatePointerDownSelection(beforeSelection, pointerDownSelection, name, requireRuntimeSelectionToken);
+        await page.Mouse.UpAsync();
+        await WaitForEditorStableAsync(page, $"toolbar {scope} '{name}'", beforeSelection.StartBlockId, beforeSelection.SelectedText, hostSelector);
+
+        var afterSelection = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        var afterRibbonState = await ReadRibbonFormattingStateAsync(page);
+        var afterFloatingState = await ReadFloatingFormattingStateAsync(page);
+        var result = new DocumentEditorToolbarActionResult
+        {
+            Name = name,
+            Scope = scope,
+            BeforeSelection = beforeSelection,
+            PointerDownSelection = pointerDownSelection,
+            AfterSelection = afterSelection,
+            AfterRibbonState = afterRibbonState,
+            AfterFloatingState = afterFloatingState
+        };
+
+        if (pointerDownFailure is not null)
+        {
+            throw new AssertFailedException(pointerDownFailure);
+        }
+
+        if (assertCommandStatePublished && !afterRibbonState.HasRuntimeFormattingState)
+        {
+            throw new AssertFailedException($"Toolbar command '{name}' did not publish a runtime formatting state. Action: {JsonSerializer.Serialize(result, StrictJsonOptions)}");
+        }
+
+        return result;
+    }
+
+    private static string? ValidatePointerDownSelection(
+        DocumentEditorSelectionSnapshot before,
+        DocumentEditorSelectionSnapshot pointerDown,
+        string actionName,
+        bool requireRuntimeSelectionToken)
+    {
+        if (!string.IsNullOrWhiteSpace(before.SelectedText))
+        {
+            if (pointerDown.IsCollapsed || !pointerDown.SelectedText.Contains(before.SelectedText, StringComparison.Ordinal))
+            {
+                return $"Toolbar pointerdown for '{actionName}' destroyed the selected text. Before={DescribeSelectionForFailure(before)}; PointerDown={DescribeSelectionForFailure(pointerDown)}";
+            }
+
+            if (!string.Equals(pointerDown.StartBlockId, before.StartBlockId, StringComparison.Ordinal)
+                || !string.Equals(pointerDown.EndBlockId, before.EndBlockId, StringComparison.Ordinal)
+                || pointerDown.StartBlockOffset != before.StartBlockOffset
+                || pointerDown.EndBlockOffset != before.EndBlockOffset)
+            {
+                return $"Toolbar pointerdown for '{actionName}' moved the selected range. Before={DescribeSelectionForFailure(before)}; PointerDown={DescribeSelectionForFailure(pointerDown)}";
+            }
+        }
+
+        if (requireRuntimeSelectionToken && !pointerDown.HasRuntimeSelectionToken)
+        {
+            return $"Toolbar pointerdown for '{actionName}' did not preserve a runtime selection token. PointerDown={DescribeSelectionForFailure(pointerDown)}";
+        }
+
+        return null;
+    }
+
+    private static string DescribeSelectionForFailure(DocumentEditorSelectionSnapshot selection)
+        => $"text='{selection.SelectedText}', collapsed={selection.IsCollapsed}, start={selection.StartBlockId}:{selection.StartBlockOffset}, end={selection.EndBlockId}:{selection.EndBlockOffset}, runtimeSelection={selection.HasRuntimeSelection}, runtimeToken={selection.HasRuntimeSelectionToken}";
+
+    private static Task<DocumentEditorFormattingToolbarState> ReadFormattingToolbarStateAsync(IPage page, string scope)
+        => page.EvaluateAsync<DocumentEditorFormattingToolbarState>(
+            """
+            (scope) => {
+                const isFloating = scope === 'floating';
+                const root = document.querySelector(isFloating ? '[data-testid="document-mini-toolbar"]' : '[data-testid="document-toolbar"]');
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtimeFormatting = getRuntimeFormatting(instanceId);
+                const runtimeSelection = getRuntimeSelection(instanceId);
+                const ids = isFloating
+                    ? {
+                        bold: 'document-mini-bold',
+                        italic: 'document-mini-italic',
+                        underline: 'document-mini-underline',
+                        strike: 'document-mini-strikethrough',
+                        fontFamily: '',
+                        fontSize: 'document-mini-font-size',
+                        textColor: 'document-mini-text-color',
+                        highlight: 'document-mini-highlight'
+                    }
+                    : {
+                        bold: 'document-bold',
+                        italic: 'document-italic',
+                        underline: 'document-underline',
+                        strike: 'document-strikethrough',
+                        fontFamily: 'document-font-family',
+                        fontSize: 'document-font-size',
+                        textColor: 'document-font-color-trigger',
+                        highlight: 'document-highlight-color-trigger'
+                    };
+                const bold = buttonState(ids.bold);
+                const italic = buttonState(ids.italic);
+                const underline = buttonState(ids.underline);
+                const strike = buttonState(ids.strike);
+                const fontFamily = selectState(ids.fontFamily);
+                const fontSize = selectState(ids.fontSize);
+                const textColor = colorState(ids.textColor);
+                const highlight = colorState(ids.highlight);
+                const state = {
+                    scope,
+                    isVisible: isVisible(root),
+                    bold: bold.active,
+                    boldMixed: bold.mixed,
+                    boldDisabled: bold.disabled,
+                    italic: italic.active,
+                    italicMixed: italic.mixed,
+                    italicDisabled: italic.disabled,
+                    underline: underline.active,
+                    underlineMixed: underline.mixed,
+                    underlineDisabled: underline.disabled,
+                    strikethrough: strike.active,
+                    strikethroughMixed: strike.mixed,
+                    strikethroughDisabled: strike.disabled,
+                    fontFamily: fontFamily.value,
+                    fontFamilyMixed: fontFamily.mixed,
+                    fontFamilyDisabled: fontFamily.disabled,
+                    fontSize: fontSize.value,
+                    fontSizeMixed: fontSize.mixed,
+                    fontSizeDisabled: fontSize.disabled,
+                    textColor: textColor.value,
+                    textColorMixed: textColor.mixed,
+                    textColorDisabled: textColor.disabled,
+                    highlightColor: highlight.value,
+                    highlightColorMixed: highlight.mixed,
+                    highlightColorDisabled: highlight.disabled,
+                    runtimeFormattingJson: safeJson(runtimeFormatting),
+                    runtimeSelectionJson: safeJson(runtimeSelection),
+                    hasRuntimeFormattingState: !!runtimeFormatting && Object.keys(runtimeFormatting).length > 0,
+                    hasRuntimeSelection: !!runtimeSelection,
+                    hasRuntimeSelectionToken: !!findSelectionToken(runtimeSelection),
+                    debug: ''
+                };
+                state.debug = safeJson(state);
+                return state;
+
+                function byTestId(id) {
+                    if (!id) return null;
+                    const escaped = CSS.escape(id);
+                    return root?.querySelector(`[data-testid="${escaped}"]`) || document.querySelector(`[data-testid="${escaped}"]`);
+                }
+
+                function buttonState(id) {
+                    const node = byTestId(id);
+                    const aria = node?.getAttribute('aria-pressed') || '';
+                    const className = String(node?.className || '');
+                    return {
+                        active: aria === 'true' || className.includes('--active') || className.includes('is-active'),
+                        mixed: aria === 'mixed' || className.includes('--mixed'),
+                        disabled: !node || !!node.disabled || node.getAttribute('aria-disabled') === 'true'
+                    };
+                }
+
+                function selectState(id) {
+                    const node = byTestId(id);
+                    return {
+                        value: node?.value || '',
+                        mixed: !node ? false : node.value === '' && Array.from(node.options || []).some(option => /mixed/i.test(option.textContent || '')),
+                        disabled: !node || !!node.disabled || node.getAttribute('aria-disabled') === 'true'
+                    };
+                }
+
+                function colorState(id) {
+                    const node = byTestId(id);
+                    const text = node?.querySelector('.tm-color-picker-trigger-text')?.textContent?.trim() || '';
+                    const swatch = node?.querySelector('.tm-color-picker-trigger-color');
+                    const color = normalizeColor(text) || normalizeColor(swatch ? getComputedStyle(swatch).backgroundColor : '');
+                    const className = String(node?.className || '');
+                    return {
+                        value: color,
+                        mixed: className.includes('--mixed'),
+                        disabled: !node || node.classList.contains('tm-color-picker--disabled') || node.getAttribute('aria-disabled') === 'true'
+                    };
+                }
+
+                function getRuntimeFormatting(id) {
+                    try {
+                        return window.tmDocumentEditorRuntime?.getFormattingState?.(id)
+                            || window.tmDocumentEditorEngine?.getFormattingState?.(id)
+                            || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function getRuntimeSelection(id) {
+                    try {
+                        return window.tmDocumentEditorRuntime?.getSelectionSnapshot?.(id)
+                            || window.tmDocumentEditorEngine?.getSelectionSnapshot?.(id)
+                            || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function findSelectionToken(value, depth = 0) {
+                    if (!value || typeof value !== 'object' || depth > 3) return '';
+                    for (const key of ['selectionToken', 'SelectionToken', 'stableSelectionToken', 'StableSelectionToken', 'token', 'Token']) {
+                        const candidate = value[key];
+                        if (typeof candidate === 'string' && candidate.trim()) return candidate;
+                    }
+                    for (const key of ['selection', 'Selection', 'currentSelection', 'CurrentSelection', 'lastSelection', 'LastSelection']) {
+                        const nested = findSelectionToken(value[key], depth + 1);
+                        if (nested) return nested;
+                    }
+                    return '';
+                }
+
+                function normalizeColor(value) {
+                    if (!value) return '';
+                    const text = String(value).trim().toLowerCase();
+                    if (/^#[0-9a-f]{6}$/i.test(text)) return text;
+                    const match = text.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)$/i);
+                    if (!match || match[4] === '0') return '';
+                    return '#' + [match[1], match[2], match[3]]
+                        .map(part => Math.max(0, Math.min(255, parseInt(part, 10))).toString(16).padStart(2, '0'))
+                        .join('');
+                }
+
+                function isVisible(node) {
+                    const rect = node?.getBoundingClientRect();
+                    const style = node ? getComputedStyle(node) : null;
+                    return !!(rect && style && rect.width > 0.5 && rect.height > 0.5 && style.display !== 'none' && style.visibility !== 'hidden');
+                }
+
+                function safeJson(value) {
+                    try { return JSON.stringify(value ?? null); }
+                    catch (error) { return JSON.stringify({ error: String(error) }); }
+                }
+            }
+            """,
+            scope);
+
+    private static void AssertStyleArraysEquivalent(
+        DocumentEditorCssStyleEntry[] expected,
+        DocumentEditorCssStyleEntry[] actual,
+        string label,
+        DocumentEditorTextRunComputedStyleProbe before,
+        DocumentEditorTextRunComputedStyleProbe after)
+    {
+        var expectedSignature = StyleSignature(expected);
+        var actualSignature = StyleSignature(actual);
+        Assert.AreEqual(expectedSignature, actualSignature, $"Expected surrounding {label} styles to remain unchanged. Before={before.Debug}; After={after.Debug}");
+    }
+
+    private static string StyleSignature(IEnumerable<DocumentEditorCssStyleEntry> styles)
+        => string.Join("|", styles.Select(style => string.Join(":", style.Bold, style.Italic, style.Underline, style.Strikethrough, NormalizeFontSizeToken(style.FontSize), NormalizeCssColor(style.ColorHex), NormalizeCssColor(style.BackgroundColorHex), style.FontFamily)));
+
+    private static string NormalizeFontSizeToken(string value)
+    {
+        var cleaned = value.Trim().Replace("pt", string.Empty, StringComparison.OrdinalIgnoreCase).Replace("px", string.Empty, StringComparison.OrdinalIgnoreCase);
+        return double.TryParse(cleaned, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            ? parsed.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+            : value.Trim();
+    }
+
+    private static void AssertCssColorEquals(string actual, string expected, string message)
+    {
+        if (!CssColorMatches(actual, expected))
+        {
+            throw new AssertFailedException($"{message} Actual color '{actual}' did not match expected '{expected}'.");
+        }
+    }
+
+    protected static bool CssColorMatches(string actual, string expected)
+    {
+        var actualHex = NormalizeCssColor(actual);
+        var expectedHex = NormalizeCssColor(expected);
+        return !string.IsNullOrWhiteSpace(actualHex)
+            && !string.IsNullOrWhiteSpace(expectedHex)
+            && string.Equals(actualHex, expectedHex, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeCssColor(string value)
+    {
+        var text = value.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(text) || text is "transparent" or "rgba(0, 0, 0, 0)")
+        {
+            return string.Empty;
+        }
+
+        if (text.Length == 7 && text[0] == '#' && text.Skip(1).All(Uri.IsHexDigit))
+        {
+            return text;
+        }
+
+        var numbers = System.Text.RegularExpressions.Regex.Matches(text, @"\d+")
+            .Select(match => int.Parse(match.Value, System.Globalization.CultureInfo.InvariantCulture))
+            .ToArray();
+        return numbers.Length >= 3
+            ? $"#{numbers[0]:x2}{numbers[1]:x2}{numbers[2]:x2}"
+            : text;
     }
 
     private static async Task<DocumentEditorRectProbe> GetLocatorRectAsync(ILocator locator, string name)
@@ -1169,6 +3023,183 @@ public sealed record DocumentEditorToolbarState(
     [property: JsonPropertyName("fontFamily")] string FontFamily,
     [property: JsonPropertyName("fontSize")] string FontSize,
     [property: JsonPropertyName("alignment")] string Alignment);
+
+/// <summary>Local editor stability probe used by E2E waits that must not depend on autosave.</summary>
+public sealed class DocumentEditorStableProbe
+{
+    [JsonPropertyName("reason")] public string Reason { get; set; } = string.Empty;
+    [JsonPropertyName("isStable")] public bool IsStable { get; set; }
+    [JsonPropertyName("hostFound")] public bool HostFound { get; set; }
+    [JsonPropertyName("visibleBlockCount")] public int VisibleBlockCount { get; set; }
+    [JsonPropertyName("targetBlockFound")] public bool TargetBlockFound { get; set; }
+    [JsonPropertyName("expectedTextFound")] public bool ExpectedTextFound { get; set; }
+    [JsonPropertyName("blazorErrorVisible")] public bool BlazorErrorVisible { get; set; }
+    [JsonPropertyName("documentReadyState")] public string DocumentReadyState { get; set; } = string.Empty;
+    [JsonPropertyName("selectionText")] public string SelectionText { get; set; } = string.Empty;
+    [JsonPropertyName("activeElement")] public string ActiveElement { get; set; } = string.Empty;
+    [JsonPropertyName("targetText")] public string TargetText { get; set; } = string.Empty;
+    [JsonPropertyName("hostText")] public string HostText { get; set; } = string.Empty;
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Strict human-selection snapshot captured from native selection and runtime diagnostics.</summary>
+public sealed class DocumentEditorSelectionSnapshot
+{
+    [JsonPropertyName("targetBlockId")] public string TargetBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("expectedText")] public string ExpectedText { get; set; } = string.Empty;
+    [JsonPropertyName("targetStartOffset")] public int TargetStartOffset { get; set; }
+    [JsonPropertyName("targetEndOffset")] public int TargetEndOffset { get; set; }
+    [JsonPropertyName("selectedText")] public string SelectedText { get; set; } = string.Empty;
+    [JsonPropertyName("isCollapsed")] public bool IsCollapsed { get; set; }
+    [JsonPropertyName("anchorBlockId")] public string AnchorBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("anchorInlineId")] public string AnchorInlineId { get; set; } = string.Empty;
+    [JsonPropertyName("anchorBlockOffset")] public int AnchorBlockOffset { get; set; }
+    [JsonPropertyName("focusBlockId")] public string FocusBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("focusInlineId")] public string FocusInlineId { get; set; } = string.Empty;
+    [JsonPropertyName("focusBlockOffset")] public int FocusBlockOffset { get; set; }
+    [JsonPropertyName("startBlockId")] public string StartBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("startInlineId")] public string StartInlineId { get; set; } = string.Empty;
+    [JsonPropertyName("startBlockOffset")] public int StartBlockOffset { get; set; }
+    [JsonPropertyName("endBlockId")] public string EndBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("endInlineId")] public string EndInlineId { get; set; } = string.Empty;
+    [JsonPropertyName("endBlockOffset")] public int EndBlockOffset { get; set; }
+    [JsonPropertyName("rect")] public DocumentEditorRectProbe Rect { get; set; } = new();
+    [JsonPropertyName("runtimeSelectionJson")] public string RuntimeSelectionJson { get; set; } = "null";
+    [JsonPropertyName("runtimeSelectionToken")] public string RuntimeSelectionToken { get; set; } = string.Empty;
+    [JsonPropertyName("hasRuntimeSelection")] public bool HasRuntimeSelection { get; set; }
+    [JsonPropertyName("hasRuntimeSelectionToken")] public bool HasRuntimeSelectionToken { get; set; }
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Mouse target used to select a visible document text range.</summary>
+public sealed class DocumentEditorTextSelectionMouseTarget
+{
+    [JsonPropertyName("blockId")] public string BlockId { get; set; } = string.Empty;
+    [JsonPropertyName("startOffset")] public int StartOffset { get; set; }
+    [JsonPropertyName("endOffset")] public int EndOffset { get; set; }
+    [JsonPropertyName("expectedText")] public string ExpectedText { get; set; } = string.Empty;
+    [JsonPropertyName("startX")] public double StartX { get; set; }
+    [JsonPropertyName("startY")] public double StartY { get; set; }
+    [JsonPropertyName("endX")] public double EndX { get; set; }
+    [JsonPropertyName("endY")] public double EndY { get; set; }
+    [JsonPropertyName("rect")] public DocumentEditorRectProbe Rect { get; set; } = new();
+    [JsonPropertyName("blockText")] public string BlockText { get; set; } = string.Empty;
+    [JsonPropertyName("textNodeCount")] public int TextNodeCount { get; set; }
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Result of a strict toolbar pointer action.</summary>
+public sealed class DocumentEditorToolbarActionResult
+{
+    [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("scope")] public string Scope { get; set; } = string.Empty;
+    [JsonPropertyName("beforeSelection")] public DocumentEditorSelectionSnapshot BeforeSelection { get; set; } = new();
+    [JsonPropertyName("pointerDownSelection")] public DocumentEditorSelectionSnapshot PointerDownSelection { get; set; } = new();
+    [JsonPropertyName("afterSelection")] public DocumentEditorSelectionSnapshot AfterSelection { get; set; } = new();
+    [JsonPropertyName("afterRibbonState")] public DocumentEditorFormattingToolbarState AfterRibbonState { get; set; } = new();
+    [JsonPropertyName("afterFloatingState")] public DocumentEditorFormattingToolbarState AfterFloatingState { get; set; } = new();
+}
+
+/// <summary>Scroll result returned by document editor viewport probes.</summary>
+public sealed class DocumentEditorScrollProbe
+{
+    [JsonPropertyName("target")] public string Target { get; set; } = string.Empty;
+    [JsonPropertyName("deltaY")] public double DeltaY { get; set; }
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Computed styles for a visible text range and its surrounding text.</summary>
+public sealed class DocumentEditorTextRunComputedStyleProbe
+{
+    [JsonPropertyName("blockId")] public string BlockId { get; set; } = string.Empty;
+    [JsonPropertyName("text")] public string Text { get; set; } = string.Empty;
+    [JsonPropertyName("blockText")] public string BlockText { get; set; } = string.Empty;
+    [JsonPropertyName("startOffset")] public int StartOffset { get; set; }
+    [JsonPropertyName("endOffset")] public int EndOffset { get; set; }
+    [JsonPropertyName("nodeCount")] public int NodeCount { get; set; }
+    [JsonPropertyName("targetStyles")] public DocumentEditorCssStyleEntry[] TargetStyles { get; set; } = [];
+    [JsonPropertyName("beforeStyles")] public DocumentEditorCssStyleEntry[] BeforeStyles { get; set; } = [];
+    [JsonPropertyName("afterStyles")] public DocumentEditorCssStyleEntry[] AfterStyles { get; set; } = [];
+    [JsonPropertyName("hasMixedFormatting")] public bool HasMixedFormatting { get; set; }
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Computed style values for one rendered text node/inline run.</summary>
+public sealed class DocumentEditorCssStyleEntry
+{
+    [JsonPropertyName("text")] public string Text { get; set; } = string.Empty;
+    [JsonPropertyName("startOffset")] public int StartOffset { get; set; }
+    [JsonPropertyName("endOffset")] public int EndOffset { get; set; }
+    [JsonPropertyName("inlineId")] public string InlineId { get; set; } = string.Empty;
+    [JsonPropertyName("parentHtml")] public string ParentHtml { get; set; } = string.Empty;
+    [JsonPropertyName("fontWeight")] public string FontWeight { get; set; } = string.Empty;
+    [JsonPropertyName("bold")] public bool Bold { get; set; }
+    [JsonPropertyName("fontStyle")] public string FontStyle { get; set; } = string.Empty;
+    [JsonPropertyName("italic")] public bool Italic { get; set; }
+    [JsonPropertyName("textDecorationLine")] public string TextDecorationLine { get; set; } = string.Empty;
+    [JsonPropertyName("underline")] public bool Underline { get; set; }
+    [JsonPropertyName("strikethrough")] public bool Strikethrough { get; set; }
+    [JsonPropertyName("fontSize")] public string FontSize { get; set; } = string.Empty;
+    [JsonPropertyName("fontSizePx")] public double FontSizePx { get; set; }
+    [JsonPropertyName("fontSizePt")] public double FontSizePt { get; set; }
+    [JsonPropertyName("fontFamily")] public string FontFamily { get; set; } = string.Empty;
+    [JsonPropertyName("color")] public string Color { get; set; } = string.Empty;
+    [JsonPropertyName("colorHex")] public string ColorHex { get; set; } = string.Empty;
+    [JsonPropertyName("backgroundColor")] public string BackgroundColor { get; set; } = string.Empty;
+    [JsonPropertyName("backgroundColorHex")] public string BackgroundColorHex { get; set; } = string.Empty;
+}
+
+/// <summary>Visible formatting state from a ribbon or floating toolbar.</summary>
+public sealed class DocumentEditorFormattingToolbarState
+{
+    [JsonPropertyName("scope")] public string Scope { get; set; } = string.Empty;
+    [JsonPropertyName("isVisible")] public bool IsVisible { get; set; }
+    [JsonPropertyName("bold")] public bool Bold { get; set; }
+    [JsonPropertyName("boldMixed")] public bool BoldMixed { get; set; }
+    [JsonPropertyName("boldDisabled")] public bool BoldDisabled { get; set; }
+    [JsonPropertyName("italic")] public bool Italic { get; set; }
+    [JsonPropertyName("italicMixed")] public bool ItalicMixed { get; set; }
+    [JsonPropertyName("italicDisabled")] public bool ItalicDisabled { get; set; }
+    [JsonPropertyName("underline")] public bool Underline { get; set; }
+    [JsonPropertyName("underlineMixed")] public bool UnderlineMixed { get; set; }
+    [JsonPropertyName("underlineDisabled")] public bool UnderlineDisabled { get; set; }
+    [JsonPropertyName("strikethrough")] public bool Strikethrough { get; set; }
+    [JsonPropertyName("strikethroughMixed")] public bool StrikethroughMixed { get; set; }
+    [JsonPropertyName("strikethroughDisabled")] public bool StrikethroughDisabled { get; set; }
+    [JsonPropertyName("fontFamily")] public string FontFamily { get; set; } = string.Empty;
+    [JsonPropertyName("fontFamilyMixed")] public bool FontFamilyMixed { get; set; }
+    [JsonPropertyName("fontFamilyDisabled")] public bool FontFamilyDisabled { get; set; }
+    [JsonPropertyName("fontSize")] public string FontSize { get; set; } = string.Empty;
+    [JsonPropertyName("fontSizeMixed")] public bool FontSizeMixed { get; set; }
+    [JsonPropertyName("fontSizeDisabled")] public bool FontSizeDisabled { get; set; }
+    [JsonPropertyName("textColor")] public string TextColor { get; set; } = string.Empty;
+    [JsonPropertyName("textColorMixed")] public bool TextColorMixed { get; set; }
+    [JsonPropertyName("textColorDisabled")] public bool TextColorDisabled { get; set; }
+    [JsonPropertyName("highlightColor")] public string HighlightColor { get; set; } = string.Empty;
+    [JsonPropertyName("highlightColorMixed")] public bool HighlightColorMixed { get; set; }
+    [JsonPropertyName("highlightColorDisabled")] public bool HighlightColorDisabled { get; set; }
+    [JsonPropertyName("runtimeFormattingJson")] public string RuntimeFormattingJson { get; set; } = "null";
+    [JsonPropertyName("runtimeSelectionJson")] public string RuntimeSelectionJson { get; set; } = "null";
+    [JsonPropertyName("hasRuntimeFormattingState")] public bool HasRuntimeFormattingState { get; set; }
+    [JsonPropertyName("hasRuntimeSelection")] public bool HasRuntimeSelection { get; set; }
+    [JsonPropertyName("hasRuntimeSelectionToken")] public bool HasRuntimeSelectionToken { get; set; }
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Browser-side diagnostic payload attached to strict document editor failures.</summary>
+public sealed class DocumentEditorBrowserDiagnosticArtifact
+{
+    [JsonPropertyName("instanceId")] public string InstanceId { get; set; } = string.Empty;
+    [JsonPropertyName("documentText")] public string DocumentText { get; set; } = string.Empty;
+    [JsonPropertyName("activeElement")] public string ActiveElement { get; set; } = string.Empty;
+    [JsonPropertyName("toolbarHtml")] public string ToolbarHtml { get; set; } = string.Empty;
+    [JsonPropertyName("floatingToolbarHtml")] public string FloatingToolbarHtml { get; set; } = string.Empty;
+    [JsonPropertyName("targetBlockHtml")] public string TargetBlockHtml { get; set; } = string.Empty;
+    [JsonPropertyName("runtimeSnapshotJson")] public string RuntimeSnapshotJson { get; set; } = "null";
+    [JsonPropertyName("runtimeStateJson")] public string RuntimeStateJson { get; set; } = "null";
+    [JsonPropertyName("formattingStateJson")] public string FormattingStateJson { get; set; } = "null";
+    [JsonPropertyName("undoStackJson")] public string UndoStackJson { get; set; } = "null";
+}
 
 /// <summary>Captured strict visual frame probe for document editor E2E gates.</summary>
 public sealed class DocumentEditorFrameProbe

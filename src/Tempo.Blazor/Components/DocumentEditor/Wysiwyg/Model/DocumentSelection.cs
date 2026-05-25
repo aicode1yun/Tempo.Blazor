@@ -23,6 +23,15 @@ public class DocumentSelection
     /// <summary>The end position of the selection (max of anchor/focus).</summary>
     public DocumentPosition End => IsForward ? Focus : Anchor;
 
+    /// <summary>Stable runtime selection token used after toolbar focus moves away from the editor surface.</summary>
+    public string? SelectionToken { get; set; }
+
+    /// <summary>Compatibility alias for <see cref="SelectionToken"/> used by JavaScript diagnostics.</summary>
+    public string? StableSelectionToken { get; set; }
+
+    /// <summary>Structured diagnostics for the token boundaries, when provided by the runtime.</summary>
+    public object? SelectionTokenData { get; set; }
+
     private static bool IsPositionBeforeOrEqual(DocumentPosition a, DocumentPosition b)
     {
         if (a.BlockId != b.BlockId)
@@ -42,6 +51,12 @@ public class DocumentPosition
     /// <summary>Index of the inline within the block.</summary>
     public int InlineIndex { get; set; } = 0;
 
+    /// <summary>Stable inline identifier for token restoration after run split or merge.</summary>
+    public string? InlineId { get; set; }
+
     /// <summary>Character offset within the inline text.</summary>
     public int TextOffset { get; set; } = 0;
+
+    /// <summary>Absolute character offset in the block for selection-token boundary restoration.</summary>
+    public int BlockOffset { get; set; } = 0;
 }

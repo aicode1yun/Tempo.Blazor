@@ -19,7 +19,7 @@ window.tmColorPicker = window.tmColorPicker || (function () {
 
         unregister(root);
 
-        const close = function (event) {
+        const close = function (event, restoreFocus) {
             if (!document.body.contains(root)) {
                 unregister(root);
                 return;
@@ -37,7 +37,7 @@ window.tmColorPicker = window.tmColorPicker || (function () {
                 }
             }
 
-            dotNetRef.invokeMethodAsync("CloseFromGlobalEscapeAsync");
+            dotNetRef.invokeMethodAsync("CloseFromGlobalAsync", restoreFocus === true);
         };
 
         const keydownHandler = function (event) {
@@ -45,7 +45,7 @@ window.tmColorPicker = window.tmColorPicker || (function () {
                 return;
             }
 
-            close(event);
+            close(event, true);
         };
 
         const pointerdownHandler = function (event) {
@@ -53,7 +53,7 @@ window.tmColorPicker = window.tmColorPicker || (function () {
                 return;
             }
 
-            close(null);
+            close(null, false);
         };
 
         handlers.set(root, { keydownHandler: keydownHandler, pointerdownHandler: pointerdownHandler });
@@ -61,7 +61,19 @@ window.tmColorPicker = window.tmColorPicker || (function () {
         document.addEventListener("pointerdown", pointerdownHandler, true);
     }
 
+    function focusPaletteSwatch(root, index) {
+        if (!root) {
+            return;
+        }
+
+        const swatch = root.querySelector(`.tm-color-palette-swatch[data-palette-index="${index}"]`);
+        if (swatch && typeof swatch.focus === "function") {
+            swatch.focus({ preventScroll: true });
+        }
+    }
+
     return {
+        focusPaletteSwatch: focusPaletteSwatch,
         registerEscape: registerEscape,
         unregister: unregister
     };

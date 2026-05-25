@@ -41,6 +41,31 @@ public sealed class DocumentEditorJsRuntimeRevisionTests : DocumentEditorE2ETest
     }
 
     [TestMethod]
+    public async Task Phase9_TrackChangesTypingKeepsCaretOrderAcrossInlineRevisionSpans()
+    {
+        var page = _page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        const string typed = "jak se mas";
+
+        await EnableTrackChangesAsync(page);
+        var blockId = await FirstVisibleTextBlockIdAsync(page);
+        var original = await ReadDocumentEditorBlockTextAsync(page, blockId);
+        await ClickDocumentEditorBlockOffsetAsync(page, blockId, 0);
+
+        await page.Keyboard.TypeAsync(typed, new() { Delay = 0 });
+        await page.WaitForTimeoutAsync(300);
+
+        var current = await ReadDocumentEditorBlockTextAsync(page, blockId);
+        Assert.IsTrue(
+            current.StartsWith(typed + original, StringComparison.Ordinal),
+            $"Typing with track changes must preserve character order at the caret. Expected prefix '{typed}', got '{current}'.");
+
+        var revisionText = await ReadInsertedRevisionTextForBlockAsync(page, blockId);
+        Assert.IsTrue(
+            revisionText.Contains(typed, StringComparison.Ordinal),
+            $"Typed text should be visible as insertion revision markup. Revision text was '{revisionText}'.");
+    }
+
+    [TestMethod]
     public async Task Phase9_TrackChangesDeleteKeepsDeletedTextAsRedStrike()
     {
         var page = _page = await OpenDocumentEditorAsync(width: 1440, height: 900);
@@ -138,6 +163,32 @@ public sealed class DocumentEditorJsRuntimeRevisionTests : DocumentEditorE2ETest
         {
             await button.ClickAsync();
         }
+    }
+
+    private static Task<string> FirstVisibleTextBlockIdAsync(IPage page)
+    {
+        return page.EvaluateAsync<string>(
+            """
+            () => {
+                const block = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-block[data-block-id]:not(figure):not(table):not(hr)');
+                return block?.getAttribute('data-block-id') || '';
+            }
+            """);
+    }
+
+    private static Task<string> ReadInsertedRevisionTextForBlockAsync(IPage page, string blockId)
+    {
+        return page.EvaluateAsync<string>(
+            """
+            blockId => {
+                const escaped = window.CSS?.escape ? window.CSS.escape(blockId) : String(blockId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const block = document.querySelector(`[data-testid="document-wysiwyg-host"] [data-block-id="${escaped}"]`);
+                return Array.from(block?.querySelectorAll('.tm-wysiwyg-revision--insert, .tm-document-inline--revision-insert') || [])
+                    .map(node => node.textContent || '')
+                    .join('');
+            }
+            """,
+            blockId);
     }
 
     private static Task SelectFirstTextRunRangeAsync(IPage page, int length)

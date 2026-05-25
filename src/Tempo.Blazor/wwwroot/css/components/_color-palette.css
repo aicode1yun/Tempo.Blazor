@@ -30,6 +30,13 @@
     border-color: var(--tm-text-primary);
 }
 
+.tm-color-palette-swatch:focus-visible,
+.tm-color-palette-swatch--keyboard-focus {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: 2px;
+    z-index: 1;
+}
+
 .tm-color-palette-swatch--selected {
     border-color: var(--tm-text-primary);
     box-shadow: 0 0 0 1px var(--tm-surface), 0 0 0 3px var(--tm-color-primary);

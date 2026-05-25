@@ -210,6 +210,65 @@ public sealed class DocumentEditorRuntimePhase23UxPolishJavaScriptTests
     }
 
     [Fact]
+    public async Task Phase23_ToolbarFloatingAndSidePanelShareOneFormattingSnapshot()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON, Date, Math };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            sandbox.window.performance = { now: () => Date.now() };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const model = hooks.importFromCSharpJson({
+                DocumentId: 'phase23-toolbar-sync',
+                Blocks: [
+                    { Id: 'p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'r1', Text: 'Hello world' }] } }
+                ]
+            });
+            const dispatcher = hooks.createCommandDispatcher(model, {
+                selection: {
+                    blockId: 'p1',
+                    anchor: { blockId: 'p1', inlineId: 'r1', offset: 0 },
+                    focus: { blockId: 'p1', inlineId: 'r1', offset: 5 },
+                    isCollapsed: false
+                }
+            });
+
+            const before = dispatcher.getBlazorToolbarState();
+            const command = dispatcher.executeCommand('textColor', { value: '#2563eb' });
+            const after = dispatcher.getBlazorToolbarState();
+
+            assert.strictEqual(command.ok, true);
+            assert.deepStrictEqual(before.ribbon.commandValues, before.floating.commandValues);
+            assert.deepStrictEqual(before.ribbon.commandValues, before.sidePanel.commandValues);
+            assert.deepStrictEqual(after.ribbon.commandValues, after.floating.commandValues);
+            assert.deepStrictEqual(after.ribbon.commandValues, after.sidePanel.commandValues);
+            assert.strictEqual(after.ribbon.commandValues.textColor, '#2563eb');
+            assert.strictEqual(after.floating.commandValues.textColor, '#2563eb');
+            assert.strictEqual(command.usedRuntimeSelection, true);
+            assert.strictEqual(command.readDomSelection, false);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
     public async Task Phase23_RuntimeInstance_RendersSelectedImageChromeAndPanelState()
     {
         var scriptPath = GetWysiwygScriptPath();

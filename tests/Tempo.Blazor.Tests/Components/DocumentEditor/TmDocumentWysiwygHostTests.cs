@@ -306,6 +306,71 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task Host_FormattingStateChanged_ForwardsCanonicalRuntimeState()
+    {
+        var calls = new List<WysiwygFormattingState>();
+        var selection = new WysiwygSelectionSnapshot
+        {
+            Region = "Body",
+            AnchorBlockId = "p1",
+            AnchorOffset = 2,
+            FocusBlockId = "p1",
+            FocusOffset = 2,
+            IsCollapsed = true
+        };
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters => parameters
+            .Add(p => p.FormattingStateChanged, state => calls.Add(state)));
+
+        await cut.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+        {
+            Version = 7,
+            Bold = WysiwygFormattingValue.Active,
+            FontSize = "28pt",
+            TextColor = "#2563eb",
+            CurrentSelection = selection
+        });
+
+        calls.Should().ContainSingle();
+        calls[0].Version.Should().Be(7);
+        calls[0].Bold.Should().Be(WysiwygFormattingValue.Active);
+        calls[0].FontSize.Should().Be("28pt");
+        calls[0].TextColor.Should().Be("#2563eb");
+        calls[0].CurrentSelection.Should().BeSameAs(selection);
+    }
+
+    [Fact]
+    public async Task Host_UndoStateChanged_ForwardsCanonicalRuntimeState()
+    {
+        var calls = new List<WysiwygUndoState>();
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters => parameters
+            .Add(p => p.UndoStateChanged, state => calls.Add(state)));
+
+        await cut.Instance.HandleUndoStateChanged(new WysiwygUndoState
+        {
+            CanUndo = true,
+            CanRedo = true,
+            UndoDepth = 3,
+            RedoDepth = 1,
+            NextUndoDescription = "Typing session",
+            NextRedoDescription = "Formatting command",
+            PendingTransactionId = "tx-pending",
+            LastTransactionId = "tx-last",
+            JsOwnedUndo = true
+        });
+
+        calls.Should().ContainSingle();
+        calls[0].CanUndo.Should().BeTrue();
+        calls[0].CanRedo.Should().BeTrue();
+        calls[0].UndoDepth.Should().Be(3);
+        calls[0].RedoDepth.Should().Be(1);
+        calls[0].NextUndoDescription.Should().Be("Typing session");
+        calls[0].NextRedoDescription.Should().Be("Formatting command");
+        calls[0].PendingTransactionId.Should().Be("tx-pending");
+        calls[0].LastTransactionId.Should().Be("tx-last");
+        calls[0].JsOwnedUndo.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Host_ApplyRemoteOperationBatch_CallsJsBatchPatcher()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
@@ -1340,6 +1405,89 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task Host_ExecuteRuntimeCommandAsync_PassesSelectionTokenPayloadToJsRuntime()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.executeCommand", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        var payload = new
+        {
+            SelectionToken = "stable-selection-token",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i1",
+                AnchorOffset = 1,
+                FocusBlockId = "b1",
+                FocusInlineId = "i1",
+                FocusOffset = 4,
+                IsCollapsed = false,
+                SelectionToken = "stable-selection-token"
+            }
+        };
+
+        await cut.Instance.ExecuteRuntimeCommandAsync("toggleBold", payload);
+
+        var invocation = JSInterop.Invocations.LastOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.executeCommand");
+        invocation.Should().NotBeNull();
+        invocation!.Arguments.Should().HaveCount(3);
+        invocation.Arguments[1].Should().Be("toggleBold");
+        invocation.Arguments[2].Should().BeSameAs(payload);
+    }
+
+    [Fact]
+    public async Task Host_PatchGenerated_DoesNotRefreshFullSnapshotDuringTyping()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        var patches = new List<WysiwygPatch>();
+        var document = CreateEmptyDocument();
+        document.Blocks.Add(CreateParagraphBlock("A"));
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, document)
+                .Add(p => p.DocumentPatchGenerated, EventCallback.Factory.Create<WysiwygPatch>(this, patches.Add)));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+        var snapshotCallsBeforeTyping = JSInterop.Invocations.Count(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+
+        await cut.Instance.HandlePatchGenerated(new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = "b",
+            TransactionId = "typing-1",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = document.Blocks[0].Id,
+                AnchorOffset = 1,
+                IsCollapsed = true
+            }
+        });
+
+        patches.Should().ContainSingle();
+        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
+            .Should()
+            .Be(snapshotCallsBeforeTyping,
+                "typing patches are runtime-owned deltas and must not trigger a Blazor full snapshot reload");
+    }
+
+    [Fact]
     public async Task Host_HandleCommandToggleMark_GeneratesToggleMarkPatch()
     {
         var patches = new List<WysiwygPatch>();
@@ -1875,6 +2023,36 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         ((ParagraphBlockContent)paragraph.Content).Inlines[0] = new TextRun { Id = "typed", Text = "Hello!" };
         cut.SetParametersAndRender(parameters =>
             parameters.Add(p => p.Document, doc));
+
+        var applySnapshotCalls = JSInterop.Invocations
+            .Where(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument")
+            .ToList();
+
+        applySnapshotCalls.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task Host_DuplicateEngineReady_DoesNotReloadDocument()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+
+        var doc = CreateEmptyDocument();
+        doc.Blocks.Add(CreateParagraphBlock("Hello"));
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, doc));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
 
         var applySnapshotCalls = JSInterop.Invocations
             .Where(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument")
@@ -2588,7 +2766,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
 
         js.Should().Contain("getLinkInfo");
         js.Should().Contain("case 'link'");
-        js.Should().Contain("type: 'Link'");
+        js.Should().Contain("type: 6");
         js.Should().Contain("href");
         js.Should().Contain("markValue");
     }

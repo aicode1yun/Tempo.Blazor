@@ -348,6 +348,208 @@ public class DocumentSerializerTests
     }
 
     [Fact]
+    public void RoundTrip_ModelToPersistenceToModel_PreservesFormattingCommentsAndRevisions()
+    {
+        var createdAt = DateTimeOffset.Parse("2026-05-24T08:00:00Z");
+        var original = new DocumentModel();
+        var paragraph = new ParagraphBlock();
+        var run = new Wyg.TextRun { Text = "Reviewed text" };
+        run.Marks.Add(new BoldMark());
+        run.Marks.Add(new ItalicMark());
+        run.Marks.Add(new FontMark { Family = "Georgia, serif", Size = "28pt" });
+        run.Marks.Add(new ColorMark { Color = "#2563eb" });
+        run.Marks.Add(new HighlightMark { Color = "#fef08a" });
+        run.Marks.Add(new LinkMark { Href = "https://example.com", Title = "Example" });
+        paragraph.Inlines.Add(run);
+        original.Body.Add(paragraph);
+        original.Comments.Add(new Wyg.DocumentComment
+        {
+            Id = "comment-1",
+            IsResolved = true,
+            Anchor = new Wyg.DocumentCommentAnchor
+            {
+                StartBlockId = paragraph.Id,
+                StartInlineIndex = 0,
+                StartTextOffset = 0,
+                EndBlockId = paragraph.Id,
+                EndInlineIndex = 0,
+                EndTextOffset = 8
+            },
+            Entries =
+            {
+                new Wyg.DocumentCommentEntry
+                {
+                    Id = "entry-1",
+                    AuthorId = "author-1",
+                    AuthorName = "Reviewer",
+                    Text = "Looks good",
+                    CreatedAt = createdAt
+                }
+            }
+        });
+        original.Revisions.Add(new Wyg.DocumentRevision
+        {
+            Id = "revision-1",
+            Type = Wyg.DocumentRevisionType.Formatting,
+            AuthorId = "author-1",
+            AuthorName = "Reviewer",
+            CreatedAt = createdAt,
+            Action = Wyg.DocumentRevisionAction.Pending
+        });
+
+        var persistence = _serializer.ToPersistenceModel(original);
+        var roundTrip = _serializer.FromPersistenceModel(persistence);
+
+        var rtRun = ((ParagraphBlock)roundTrip.Body.Single()).Inlines.OfType<Wyg.TextRun>().Single();
+        rtRun.Text.Should().Be("Reviewed text");
+        rtRun.Marks.Should().Contain(mark => mark is BoldMark);
+        rtRun.Marks.Should().Contain(mark => mark is ItalicMark);
+        rtRun.Marks.OfType<FontMark>().Should().Contain(mark => mark.Family == "Georgia, serif");
+        rtRun.Marks.OfType<FontMark>().Should().Contain(mark => mark.Size == "28pt");
+        rtRun.Marks.OfType<ColorMark>().Should().ContainSingle(mark => mark.Color == "#2563eb");
+        rtRun.Marks.OfType<HighlightMark>().Should().ContainSingle(mark => mark.Color == "#fef08a");
+        rtRun.Marks.OfType<LinkMark>().Should().ContainSingle(mark =>
+            mark.Href == "https://example.com" && mark.Title == "Example");
+
+        var comment = roundTrip.Comments.Should().ContainSingle().Subject;
+        comment.Id.Should().Be("comment-1");
+        comment.IsResolved.Should().BeTrue();
+        comment.Anchor.StartBlockId.Should().Be(paragraph.Id);
+        comment.Anchor.StartTextOffset.Should().Be(0);
+        comment.Anchor.EndTextOffset.Should().Be(8);
+        var entry = comment.Entries.Should().ContainSingle().Subject;
+        entry.Id.Should().Be("entry-1");
+        entry.AuthorId.Should().Be("author-1");
+        entry.AuthorName.Should().Be("Reviewer");
+        entry.CreatedAt.Should().Be(createdAt);
+
+        var revision = roundTrip.Revisions.Should().ContainSingle().Subject;
+        revision.Id.Should().Be("revision-1");
+        revision.Type.Should().Be(Wyg.DocumentRevisionType.Formatting);
+        revision.AuthorId.Should().Be("author-1");
+        revision.AuthorName.Should().Be("Reviewer");
+        revision.CreatedAt.Should().Be(createdAt);
+        revision.Action.Should().Be(Wyg.DocumentRevisionAction.Pending);
+    }
+
+    [Fact]
+    public void RoundTrip_ModelToPersistenceToModel_PreservesStableTextPropertiesAndRevisionMetadata()
+    {
+        var createdAt = DateTimeOffset.Parse("2026-05-24T09:30:00Z");
+        var original = new DocumentModel { Id = "phase16-serializer-doc" };
+        var paragraph = new ParagraphBlock
+        {
+            Id = "phase16-block",
+            Properties = new Wyg.ParagraphProperties
+            {
+                Alignment = Wyg.TextAlignment.Justify,
+                LineSpacing = 1.5,
+                SpaceBefore = "6pt",
+                SpaceAfter = "12pt",
+                LeftIndent = "18pt",
+                RightIndent = "9pt",
+                FirstLineIndent = "24pt"
+            }
+        };
+        paragraph.Inlines.Add(new Wyg.TextRun
+        {
+            Id = "phase16-run-a",
+            Text = "First ",
+            Marks = { new BoldMark() }
+        });
+        paragraph.Inlines.Add(new Wyg.TextRun
+        {
+            Id = "phase16-run-b",
+            Text = "second",
+            Marks =
+            {
+                new FontMark { Family = "Aptos", Size = "16pt" },
+                new ColorMark { Color = "#111827" },
+                new HighlightMark { Color = "#fef08a" }
+            }
+        });
+        original.Body.Add(paragraph);
+        original.Comments.Add(new Wyg.DocumentComment
+        {
+            Id = "phase16-comment",
+            Anchor = new Wyg.DocumentCommentAnchor
+            {
+                StartBlockId = "phase16-block",
+                StartInlineIndex = 1,
+                StartTextOffset = 0,
+                EndBlockId = "phase16-block",
+                EndInlineIndex = 1,
+                EndTextOffset = 6
+            }
+        });
+        original.Revisions.Add(new Wyg.DocumentRevision
+        {
+            Id = "phase16-revision",
+            Type = Wyg.DocumentRevisionType.Deletion,
+            AuthorId = "reviewer",
+            AuthorName = "Reviewer",
+            CreatedAt = createdAt,
+            Action = Wyg.DocumentRevisionAction.Pending,
+            GroupId = "phase16-group",
+            PayloadJson = """{"text":"second"}""",
+            Range = new Wyg.DocumentRevisionRange
+            {
+                BlockId = "phase16-block",
+                StartInlineIndex = 1,
+                StartOffset = 0,
+                EndInlineIndex = 1,
+                EndOffset = 6
+            }
+        });
+
+        var persistence = _serializer.ToPersistenceModel(original);
+        var roundTrip = _serializer.FromPersistenceModel(persistence);
+
+        var persistedBlock = persistence.Blocks.Should().ContainSingle().Subject;
+        persistedBlock.Id.Should().Be("phase16-block");
+        persistedBlock.ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Justify);
+        persistedBlock.ParagraphProperties.LineSpacing.Should().Be(1.5);
+        persistedBlock.ParagraphProperties.SpacingBefore.Should().Be(6);
+        persistedBlock.ParagraphProperties.SpacingAfter.Should().Be(12);
+        persistedBlock.ParagraphProperties.LeftIndent.Should().Be(18);
+        persistedBlock.ParagraphProperties.RightIndent.Should().Be(9);
+        persistedBlock.ParagraphProperties.FirstLineIndent.Should().Be(24);
+        var persistedRuns = ((ParagraphBlockContent)persistedBlock.Content).Inlines.OfType<Persistence.TextRun>().ToList();
+        persistedRuns.Should().HaveCount(2);
+        persistedRuns[0].Id.Should().Be("phase16-run-a");
+        persistedRuns[1].Id.Should().Be("phase16-run-b");
+        var persistedRevision = persistence.Revisions.Should().ContainSingle().Subject;
+        persistedRevision.GroupId.Should().Be("phase16-group");
+        persistedRevision.PayloadJson.Should().Be("""{"text":"second"}""");
+        persistedRevision.Range.BlockId.Should().Be("phase16-block");
+        persistedRevision.Range.StartInlineIndex.Should().Be(1);
+        persistedRevision.Range.EndOffset.Should().Be(6);
+
+        var roundTripParagraph = roundTrip.Body.Should().ContainSingle().Subject.Should().BeOfType<ParagraphBlock>().Subject;
+        roundTripParagraph.Id.Should().Be("phase16-block");
+        roundTripParagraph.Properties!.Alignment.Should().Be(Wyg.TextAlignment.Justify);
+        roundTripParagraph.Properties.LineSpacing.Should().Be(1.5);
+        roundTripParagraph.Properties.SpaceBefore.Should().Be("6pt");
+        roundTripParagraph.Properties.SpaceAfter.Should().Be("12pt");
+        roundTripParagraph.Properties.LeftIndent.Should().Be("18pt");
+        roundTripParagraph.Properties.RightIndent.Should().Be("9pt");
+        roundTripParagraph.Properties.FirstLineIndent.Should().Be("24pt");
+        roundTripParagraph.Inlines.OfType<Wyg.TextRun>().Select(run => run.Id)
+            .Should().Equal("phase16-run-a", "phase16-run-b");
+        roundTrip.Comments.Should().ContainSingle().Subject.Anchor.StartInlineIndex.Should().Be(1);
+        var roundTripRevision = roundTrip.Revisions.Should().ContainSingle().Subject;
+        roundTripRevision.GroupId.Should().Be("phase16-group");
+        roundTripRevision.PayloadJson.Should().Be("""{"text":"second"}""");
+        roundTripRevision.Range.BlockId.Should().Be("phase16-block");
+        roundTripRevision.Range.StartInlineIndex.Should().Be(1);
+        roundTripRevision.Range.EndOffset.Should().Be(6);
+        roundTripRevision.AuthorId.Should().Be("reviewer");
+        roundTripRevision.AuthorName.Should().Be("Reviewer");
+        roundTripRevision.CreatedAt.Should().Be(createdAt);
+        roundTripRevision.Type.Should().Be(Wyg.DocumentRevisionType.Deletion);
+    }
+
+    [Fact]
     public void Deserialize_OldJsonWithoutNewProperties_DoesNotThrow()
     {
         var persistence = new DocumentEditorDocument();

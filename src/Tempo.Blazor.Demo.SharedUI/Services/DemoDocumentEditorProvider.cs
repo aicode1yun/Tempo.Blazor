@@ -22,6 +22,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         var exhibits = CreateExhibitsDocument("exhibits-demo");
         var table = CreateTablePropertiesDocument("table-demo");
         var recovery = SeedRecoveryDocument();
+        var onlyOfficeParity = SeedOnlyOfficeParityDocument();
 
         PrepareContractDemo(contract);
 
@@ -57,6 +58,13 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         {
             DocumentId = recovery.DocumentId,
             Document = recovery,
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        }).GetAwaiter().GetResult();
+
+        _ = base.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = onlyOfficeParity.DocumentId,
+            Document = onlyOfficeParity,
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         }).GetAwaiter().GetResult();
 

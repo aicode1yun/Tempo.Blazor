@@ -80,4 +80,13 @@ public sealed class WysiwygSelectionSnapshot
 
     /// <summary>Kind of target found by the WYSIWYG hit-test service.</summary>
     public string? HitTargetKind { get; set; }
+
+    /// <summary>Stable runtime-owned selection token used to execute toolbar commands after focus moves away from the surface.</summary>
+    public string? SelectionToken { get; set; }
+
+    /// <summary>Compatibility alias for <see cref="SelectionToken"/> used by JavaScript diagnostics and older test probes.</summary>
+    public string? StableSelectionToken { get; set; }
+
+    /// <summary>Structured token diagnostics emitted by the JavaScript runtime for failed command analysis.</summary>
+    public object? SelectionTokenData { get; set; }
 }

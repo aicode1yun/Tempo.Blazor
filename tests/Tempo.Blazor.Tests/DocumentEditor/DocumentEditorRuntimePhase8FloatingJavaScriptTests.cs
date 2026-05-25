@@ -69,6 +69,13 @@ public sealed class DocumentEditorRuntimePhase8FloatingJavaScriptTests
             assert.strictEqual(constrainedToScrollContainer.left, 432);
             assert.strictEqual(constrainedToScrollContainer.top + constrainedToScrollContainer.height <= 412, true);
 
+            const constrainedBelowRibbon = compute(
+                { left: 220, top: 122, width: 80, height: 20 },
+                { width: 220, height: 44 },
+                { viewportLeft: 0, viewportTop: 96, viewportWidth: 640, viewportHeight: 480, placement: 'top' });
+            assert.strictEqual(constrainedBelowRibbon.top >= 104, true);
+            assert.strictEqual(constrainedBelowRibbon.top < 122, true);
+
             const containerRelative = compute(
                 { left: 400, top: 220, width: 40, height: 20 },
                 { width: 120, height: 40 },
@@ -83,6 +90,64 @@ public sealed class DocumentEditorRuntimePhase8FloatingJavaScriptTests
                 });
             assert.strictEqual(containerRelative.left, 280);
             assert.strictEqual(containerRelative.top, 238);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase8_MiniToolbarVisibility_RequiresRealTextRangeSelection()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const shouldShow = sandbox.window.tmDocumentEditorEngine.__testHooks.shouldShowMiniToolbarForSelection;
+
+            assert.strictEqual(shouldShow({ blockId: 'p1', offset: 4, isCollapsed: true }), false);
+            assert.strictEqual(shouldShow({
+                blockId: 'p1',
+                anchor: { blockId: 'p1', offset: 1 },
+                focus: { blockId: 'p1', offset: 5 },
+                isCollapsed: false
+            }), true);
+            assert.strictEqual(shouldShow({
+                blockId: 'img1',
+                offset: 0,
+                isCollapsed: false,
+                isObjectSelection: true,
+                objectId: 'image-object'
+            }), false);
+            assert.strictEqual(shouldShow({
+                blockId: 'img1',
+                offset: 0,
+                isCollapsed: false,
+                activeObjectId: 'image-object'
+            }), false);
 
             console.log('OK');
             """;

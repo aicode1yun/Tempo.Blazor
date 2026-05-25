@@ -4,6 +4,9 @@
 {
     <aside class="tm-document-side-panel"
            data-testid="document-side-panel"
+           data-panel-layout="docked-tabs"
+           data-active-tab="@GetTabDataValue(EffectiveActiveTab)"
+           data-visible-panel-count="1"
            role="complementary"
            aria-label="@Loc["TmDocumentEditor_SidePanelLabel"]">
         <header class="tm-document-side-panel__header">
@@ -121,6 +124,8 @@
                  class="tm-document-side-panel__body"
                  role="tabpanel"
                  aria-labelledby="@GetTabId(EffectiveActiveTab)"
+                 data-active-tab="@GetTabDataValue(EffectiveActiveTab)"
+                 data-visible-panel-count="1"
                  data-testid="document-side-panel-body">
             @GetActiveContent()
         </section>
@@ -228,6 +233,9 @@ else if (ShowEdgeToggle)
 
     private static string GetTabId(DocumentSidePanelTab tab)
         => $"document-side-panel-tab-{tab.ToString().ToLowerInvariant()}";
+
+    private static string GetTabDataValue(DocumentSidePanelTab tab)
+        => tab.ToString().ToLowerInvariant();
 
     private string GetTabClass(DocumentSidePanelTab tab)
         => EffectiveActiveTab == tab

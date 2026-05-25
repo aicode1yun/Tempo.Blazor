@@ -18,6 +18,8 @@
         data-testid="document-toolbar"
         data-keyboard-mode="@_keyboardMode.ToString().ToLowerInvariant()"
         data-toolbar-mode="@ToolbarMode.ToString()"
+        data-active-ribbon-tab="@ActiveRibbonTabDataValue"
+        data-track-changes-state="@TrackChangesState"
         @onkeydown="HandleToolbarKeyDown">
     @if (HasToolbarFloatingUi)
     {
@@ -38,9 +40,15 @@
                 id="@GetRibbonTabId(DocumentRibbonTab.Home)"
                 role="tab"
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Home)"
+                aria-current="@GetRibbonTabCurrent(DocumentRibbonTab.Home)"
+                aria-controls="@RibbonPanelId"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Home)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Home)"
                 @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Home)"
+                @onpointerdown:preventDefault="true"
+                @onmousedown:preventDefault="true"
+                data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Home)"
+                data-active="@GetRibbonTabSelected(DocumentRibbonTab.Home)"
                 data-testid="document-ribbon-tab-home">@Loc["TmDocumentEditor_TabHome"]</button>
         <button type="button"
                 @ref="_insertTab"
@@ -48,9 +56,15 @@
                 id="@GetRibbonTabId(DocumentRibbonTab.Insert)"
                 role="tab"
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Insert)"
+                aria-current="@GetRibbonTabCurrent(DocumentRibbonTab.Insert)"
+                aria-controls="@RibbonPanelId"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Insert)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Insert)"
                 @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Insert)"
+                @onpointerdown:preventDefault="true"
+                @onmousedown:preventDefault="true"
+                data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Insert)"
+                data-active="@GetRibbonTabSelected(DocumentRibbonTab.Insert)"
                 data-testid="document-ribbon-tab-insert">@Loc["TmDocumentEditor_TabInsert"]</button>
         <button type="button"
                 @ref="_layoutTab"
@@ -58,9 +72,15 @@
                 id="@GetRibbonTabId(DocumentRibbonTab.Layout)"
                 role="tab"
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Layout)"
+                aria-current="@GetRibbonTabCurrent(DocumentRibbonTab.Layout)"
+                aria-controls="@RibbonPanelId"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Layout)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Layout)"
                 @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Layout)"
+                @onpointerdown:preventDefault="true"
+                @onmousedown:preventDefault="true"
+                data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Layout)"
+                data-active="@GetRibbonTabSelected(DocumentRibbonTab.Layout)"
                 data-testid="document-ribbon-tab-layout">@Loc["TmDocumentEditor_TabLayout"]</button>
         <button type="button"
                 @ref="_referencesTab"
@@ -68,9 +88,15 @@
                 id="@GetRibbonTabId(DocumentRibbonTab.References)"
                 role="tab"
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.References)"
+                aria-current="@GetRibbonTabCurrent(DocumentRibbonTab.References)"
+                aria-controls="@RibbonPanelId"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.References)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.References)"
                 @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.References)"
+                @onpointerdown:preventDefault="true"
+                @onmousedown:preventDefault="true"
+                data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.References)"
+                data-active="@GetRibbonTabSelected(DocumentRibbonTab.References)"
                 data-testid="document-ribbon-tab-references">@Loc["TmDocumentEditor_TabReferences"]</button>
         <button type="button"
                 @ref="_reviewTab"
@@ -78,9 +104,15 @@
                 id="@GetRibbonTabId(DocumentRibbonTab.Review)"
                 role="tab"
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Review)"
+                aria-current="@GetRibbonTabCurrent(DocumentRibbonTab.Review)"
+                aria-controls="@RibbonPanelId"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Review)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Review)"
                 @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Review)"
+                @onpointerdown:preventDefault="true"
+                @onmousedown:preventDefault="true"
+                data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.Review)"
+                data-active="@GetRibbonTabSelected(DocumentRibbonTab.Review)"
                 data-testid="document-ribbon-tab-review">@Loc["TmDocumentEditor_TabReview"]</button>
         <button type="button"
                 @ref="_viewTab"
@@ -88,9 +120,15 @@
                 id="@GetRibbonTabId(DocumentRibbonTab.View)"
                 role="tab"
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.View)"
+                aria-current="@GetRibbonTabCurrent(DocumentRibbonTab.View)"
+                aria-controls="@RibbonPanelId"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.View)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.View)"
                 @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.View)"
+                @onpointerdown:preventDefault="true"
+                @onmousedown:preventDefault="true"
+                data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.View)"
+                data-active="@GetRibbonTabSelected(DocumentRibbonTab.View)"
                 data-testid="document-ribbon-tab-view">@Loc["TmDocumentEditor_TabView"]</button>
         @if (IsHeaderFooterMode)
         {
@@ -100,9 +138,15 @@
                     id="@GetRibbonTabId(DocumentRibbonTab.HeaderFooter)"
                     role="tab"
                     aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.HeaderFooter)"
+                    aria-current="@GetRibbonTabCurrent(DocumentRibbonTab.HeaderFooter)"
+                    aria-controls="@RibbonPanelId"
                     tabindex="@GetRibbonTabIndex(DocumentRibbonTab.HeaderFooter)"
                     @onclick="() => SelectRibbonTab(DocumentRibbonTab.HeaderFooter)"
                     @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.HeaderFooter)"
+                    @onpointerdown:preventDefault="true"
+                    @onmousedown:preventDefault="true"
+                    data-ribbon-tab="@GetRibbonTabDataValue(DocumentRibbonTab.HeaderFooter)"
+                    data-active="@GetRibbonTabSelected(DocumentRibbonTab.HeaderFooter)"
                     data-testid="document-ribbon-tab-header-footer">@Loc["TmDocumentEditor_TabHeaderFooter"]</button>
         }
     </div>
@@ -115,6 +159,7 @@
                 disabled="@(!CanExecuteSave)"
                 title="@SaveTitle"
                 aria-label="@SaveTitle"
+                aria-disabled="@AriaDisabled(!CanExecuteSave)"
                 @onclick='() => ExecuteToolbarCommandAsync("save", OnSave, !ReadOnly && !IsSaving)'
                 data-command="save"
                 data-testid="document-save">
@@ -126,6 +171,7 @@
                 disabled="@(!CanExecuteUndo)"
                 title="@UndoTitle"
                 aria-label="@UndoTitle"
+                aria-disabled="@AriaDisabled(!CanExecuteUndo)"
                 @onclick='() => ExecuteToolbarCommandAsync("undo", OnUndo, !ReadOnly && CanUndo)'
                 data-command="undo"
                 data-testid="document-undo">
@@ -137,6 +183,7 @@
                 disabled="@(!CanExecuteRedo)"
                 title="@RedoTitle"
                 aria-label="@RedoTitle"
+                aria-disabled="@AriaDisabled(!CanExecuteRedo)"
                 @onclick='() => ExecuteToolbarCommandAsync("redo", OnRedo, !ReadOnly && CanRedo)'
                 data-command="redo"
                 data-testid="document-redo">
@@ -144,7 +191,13 @@
             <span>@Loc["TmDocumentEditor_Redo"]</span>
         </button>
     </section>
-    <div class="tm-document-editor__ribbon-groups" role="tabpanel" aria-labelledby="@GetRibbonTabId(_activeRibbonTab)" @ref="_ribbonGroupsRef">
+    <div id="@RibbonPanelId"
+         class="tm-document-editor__ribbon-groups"
+         role="tabpanel"
+         aria-labelledby="@GetRibbonTabId(_activeRibbonTab)"
+         data-testid="document-ribbon-panel"
+         data-active-ribbon-tab="@ActiveRibbonTabDataValue"
+         @ref="_ribbonGroupsRef">
         @if (_activeRibbonTab == DocumentRibbonTab.Home)
         {
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupFormatting"]">
@@ -155,7 +208,11 @@
                             value="@(FontFamilyMixed ? string.Empty : CurrentFontFamily)"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontFamily"]))"
                             aria-label="@Loc["TmDocumentEditor_FontFamily"]"
+                            aria-disabled="@AriaDisabled(!IsCommandEnabled("fontFamily"))"
+                            @oninput="HandleFontFamilyChangedAsync"
                             @onchange="HandleFontFamilyChangedAsync"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             data-testid="document-font-family">
                         <option value="">@Loc["TmDocumentEditor_FontFamilyDefault"]</option>
                         @foreach (var font in FontFamilies)
@@ -170,7 +227,11 @@
                             value="@(FontSizeMixed ? string.Empty : NormalizeFontSizeValue(CurrentFontSize))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontSize"]))"
                             aria-label="@Loc["TmDocumentEditor_FontSize"]"
+                            aria-disabled="@AriaDisabled(!IsCommandEnabled("fontSize"))"
+                            @oninput="HandleFontSizeChangedAsync"
                             @onchange="HandleFontSizeChangedAsync"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             data-testid="document-font-size">
                         @if (FontSizeMixed)
                         {
@@ -178,7 +239,7 @@
                         }
                         @foreach (var size in FontSizes)
                         {
-                            <option value="@size">@size</option>
+                            <option value="@size">@($"{size} pt")</option>
                         }
                     </select>
                 </label>
@@ -188,6 +249,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_Bold"]))"
                         aria-label="@Loc["TmDocumentEditor_Bold"]"
                         aria-pressed="@GetRegistryFormattingAriaPressed("bold", BoldState)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("bold"))"
                         @onclick='() => ExecuteToolbarCommandAsync("bold", OnBold)'
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
@@ -202,6 +264,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_Italic"]))"
                         aria-label="@Loc["TmDocumentEditor_Italic"]"
                         aria-pressed="@GetRegistryFormattingAriaPressed("italic", ItalicState)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("italic"))"
                         @onclick='() => ExecuteToolbarCommandAsync("italic", OnItalic)'
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
@@ -216,6 +279,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_Underline"]))"
                         aria-label="@Loc["TmDocumentEditor_Underline"]"
                         aria-pressed="@GetRegistryFormattingAriaPressed("underline", UnderlineState)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("underline"))"
                         @onclick='() => ExecuteToolbarCommandAsync("underline", OnUnderline)'
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
@@ -230,6 +294,7 @@
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_Strikethrough"]))"
                         aria-label="@Loc["TmDocumentEditor_Strikethrough"]"
                         aria-pressed="@GetRegistryFormattingAriaPressed("strikethrough", StrikethroughState)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("strikethrough"))"
                         @onclick='() => ExecuteToolbarCommandAsync("strikethrough", OnStrikethrough)'
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
@@ -242,6 +307,7 @@
                         type="button"
                         disabled="@(!IsCommandEnabled("link"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_Link"]))"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("link"))"
                         @onclick='() => ExecuteToolbarCommandAsync("link", ToggleLinkDialogAsync)'
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
@@ -254,6 +320,7 @@
                         type="button"
                         disabled="@(!IsCommandEnabled("clearFormatting"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_ClearFormatting"]))"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("clearFormatting"))"
                         @onclick='() => ExecuteToolbarCommandAsync("clearFormatting", OnClearFormatting)'
                         @onpointerdown:preventDefault="true"
                         @onmousedown:preventDefault="true"
@@ -264,11 +331,15 @@
                 </button>
                 <div class="tm-document-editor__ribbon-color-picker"
                      title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontColor"]))">
-                    <TmColorPicker Value="@NormalizeColorValue(CurrentTextColor, "#111827")"
+                    <TmColorPicker Value="@NormalizeColorValue(CurrentTextColor, string.Empty)"
                                    ValueChanged="HandleTextColorAppliedAsync"
                                    Format="ColorFormat.Hex"
                                    ShowAlpha="false"
+                                   ShowGradient="false"
+                                   ShowHexInput="true"
                                    ShowPalette="true"
+                                   PaletteColors="DocumentTextColors"
+                                   PaletteColumns="6"
                                    ShowClearButton="false"
                                    ShowApplyButton="true"
                                    ShowCancelButton="true"
@@ -281,12 +352,16 @@
                 </div>
                 <div class="tm-document-editor__ribbon-color-picker"
                      title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_HighlightColor"]))">
-                    <TmColorPicker Value="@NormalizeColorValue(CurrentHighlightColor, "#ffffff")"
+                    <TmColorPicker Value="@NormalizeColorValue(CurrentHighlightColor, string.Empty)"
                                    ValueChanged="HandleHighlightColorAppliedAsync"
                                    Format="ColorFormat.Hex"
                                    ShowAlpha="false"
+                                   ShowGradient="false"
+                                   ShowHexInput="true"
                                    ShowPalette="true"
-                                   ShowClearButton="false"
+                                   PaletteColors="DocumentHighlightColors"
+                                   PaletteColumns="6"
+                                   ShowClearButton="true"
                                    ShowApplyButton="true"
                                    ShowCancelButton="true"
                                    Disabled="@(!IsCommandEnabled("highlightColor"))"
@@ -304,6 +379,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignLeft"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Left)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Left)"
                         data-command="alignLeft"
                         data-testid="document-align-left">
@@ -315,6 +391,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignCenter"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Center)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Center)"
                         data-command="alignCenter"
                         data-testid="document-align-center">
@@ -326,6 +403,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignRight"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Right)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Right)"
                         data-command="alignRight"
                         data-testid="document-align-right">
@@ -337,6 +415,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignJustify"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Justify)"
+                        aria-disabled="@AriaDisabled(!IsCommandEnabled("paragraphAlignment"))"
                         @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Justify)"
                         data-command="alignJustify"
                         data-testid="document-align-justify">
@@ -350,6 +429,7 @@
                             value="@NormalizeLineSpacingValue(GetEffectiveLineSpacing())"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_LineSpacing"]))"
                             aria-label="@Loc["TmDocumentEditor_LineSpacing"]"
+                            aria-disabled="@AriaDisabled(!IsCommandEnabled("lineSpacing"))"
                             @onchange="HandleLineSpacingChangedAsync"
                             data-testid="document-line-spacing">
                         @foreach (var spacing in LineSpacingOptions)
@@ -364,6 +444,7 @@
                             value="@(SpacingBeforeMixed ? string.Empty : NormalizeParagraphSpacingValue(CurrentSpacingBefore))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_SpacingBefore"]))"
                             aria-label="@Loc["TmDocumentEditor_SpacingBefore"]"
+                            aria-disabled="@AriaDisabled(!IsCommandEnabled("lineSpacing"))"
                             @onchange="HandleSpacingBeforeChangedAsync"
                             data-testid="document-spacing-before">
                         @if (SpacingBeforeMixed)
@@ -382,6 +463,7 @@
                             value="@(SpacingAfterMixed ? string.Empty : NormalizeParagraphSpacingValue(CurrentSpacingAfter))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_SpacingAfter"]))"
                             aria-label="@Loc["TmDocumentEditor_SpacingAfter"]"
+                            aria-disabled="@AriaDisabled(!IsCommandEnabled("lineSpacing"))"
                             @onchange="HandleSpacingAfterChangedAsync"
                             data-testid="document-spacing-after">
                         @if (SpacingAfterMixed)
@@ -748,14 +830,17 @@
         else if (_activeRibbonTab == DocumentRibbonTab.Review)
         {
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReview"]">
-                <button class="tm-document-editor__ribbon-button @(TrackChangesEnabled ? "tm-document-editor__ribbon-button--active" : null)"
+                <button class="@GetTrackChangesButtonClass()"
                         type="button"
                         disabled="@(ReadOnly || !CanTrackChanges || !IsCommandEnabled("trackChanges", CanTrackChanges))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TrackChanges"], CanTrackChanges, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         aria-label="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TrackChanges"], CanTrackChanges, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         aria-pressed="@TrackChangesEnabled.ToString().ToLowerInvariant()"
+                        aria-disabled="@AriaDisabled(ReadOnly || !CanTrackChanges || !IsCommandEnabled("trackChanges", CanTrackChanges))"
                         @onclick='() => !ReadOnly && CanTrackChanges ? ExecuteToolbarCommandAsync("trackChanges", OnToggleTrackChanges, CanTrackChanges) : Task.CompletedTask'
                         data-command="trackChanges"
+                        data-toggle="true"
+                        data-state="@TrackChangesState"
                         data-testid="document-track-changes">
                     <TmIcon Name="file-diff" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_TrackChanges"]</span>
@@ -765,6 +850,7 @@
                     <span>@Loc["TmDocumentEditor_ShowMarkup"]</span>
                     <select disabled="@(!IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) || !IsCommandEnabled("reviewDisplayMode", fallback: true))"
                             value="@ReviewDisplayMode"
+                            aria-disabled="@AriaDisabled(!IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) || !IsCommandEnabled("reviewDisplayMode", fallback: true))"
                             @onchange="HandleReviewDisplayModeChanged"
                             data-testid="document-review-display-mode">
                         <option value="@DocumentReviewDisplayMode.AllMarkup">@Loc["TmDocumentEditor_ReviewModeAllMarkup"]</option>
@@ -1237,6 +1323,7 @@
 </header>
 
 @code {
+    private const string RibbonPanelId = "tm-document-ribbon-panel";
     private DocumentRibbonTab _activeRibbonTab = DocumentRibbonTab.Home;
     private ElementReference _homeTab;
     private ElementReference _insertTab;
@@ -1278,7 +1365,21 @@
     private bool _focusHeaderFooterPresetMenuOnRender;
     private bool _focusPageLayoutInspectorOnRender;
     private string[] _overflowedCommandNames = [];
+    private string? _lastFontFamilyChangeValue;
+    private DateTimeOffset _lastFontFamilyChangeAt;
+    private string? _lastFontSizeChangeValue;
+    private DateTimeOffset _lastFontSizeChangeAt;
     private static readonly int[] FontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72];
+    private static readonly string[] DocumentTextColors =
+    [
+        "#111827", "#374151", "#6b7280", "#000000", "#ffffff", "#dc2626",
+        "#ea580c", "#d97706", "#059669", "#2563eb", "#4f46e5", "#7c3aed"
+    ];
+    private static readonly string[] DocumentHighlightColors =
+    [
+        "#ffffff", "#fef3c7", "#fde68a", "#fee2e2", "#ffedd5", "#dcfce7",
+        "#dbeafe", "#e0e7ff", "#f3e8ff", "#f3f4f6", "#d1d5db", "#9ca3af"
+    ];
     private static readonly double[] LineSpacingOptions = [1, 1.15, 1.5, 2];
     private static readonly int[] ParagraphSpacingOptions = [0, 6, 12, 18, 24];
     private static readonly DocumentRibbonTab[] BaseRibbonTabs =
@@ -1322,6 +1423,10 @@
             return string.Join(' ', classes);
         }
     }
+
+    private string ActiveRibbonTabDataValue => GetRibbonTabDataValue(_activeRibbonTab);
+
+    private string TrackChangesState => TrackChangesEnabled ? "on" : "off";
 
     /// <summary>Moves focus to the currently active ribbon tab.</summary>
     public async ValueTask FocusActiveTabAsync()
@@ -2065,16 +2170,19 @@
         CommandRegistry?.GetState("save")?.IsEnabled ?? (!ReadOnly && !IsSaving);
 
     private bool CanExecuteUndo =>
-        CommandRegistry?.GetState("undo")?.IsEnabled ?? (!ReadOnly && CanUndo);
+        !ReadOnly && (CanUndo || (CommandRegistry?.GetState("undo")?.IsEnabled ?? false));
 
     private bool CanExecuteRedo =>
-        CommandRegistry?.GetState("redo")?.IsEnabled ?? (!ReadOnly && CanRedo);
+        !ReadOnly && (CanRedo || (CommandRegistry?.GetState("redo")?.IsEnabled ?? false));
 
     private bool IsCommandEnabled(string commandName) =>
         CommandRegistry?.GetState(commandName)?.IsEnabled ?? !ReadOnly;
 
     private bool IsCommandEnabled(string commandName, bool fallback) =>
         CommandRegistry?.GetState(commandName)?.IsEnabled ?? fallback;
+
+    private static string AriaDisabled(bool disabled)
+        => disabled ? "true" : "false";
 
     private Task ExecuteToolbarCommandAsync(string commandName, EventCallback callback, bool fallback = true)
     {
@@ -2098,14 +2206,8 @@
 
     private string GetRegistryFormattingAriaPressed(string commandName, WysiwygFormattingValue fallback)
     {
-        var value = CommandRegistry?.GetState(commandName)?.Value;
-        return value switch
-        {
-            "active" => "true",
-            "mixed"  => "mixed",
-            _ when value is not null => "false",
-            _ => GetFormattingAriaPressed(fallback)
-        };
+        _ = commandName;
+        return GetFormattingAriaPressed(fallback);
     }
 
     private string SaveTitle => ReadOnly
@@ -2204,10 +2306,15 @@
 
     private string GetRibbonTabSelected(DocumentRibbonTab tab) => IsActiveRibbonTab(tab) ? "true" : "false";
 
+    private string GetRibbonTabCurrent(DocumentRibbonTab tab) => IsActiveRibbonTab(tab) ? "page" : "false";
+
     private string GetRibbonTabIndex(DocumentRibbonTab tab) => IsActiveRibbonTab(tab) ? "0" : "-1";
 
     private static string GetRibbonTabId(DocumentRibbonTab tab)
         => $"tm-document-ribbon-tab-{tab.ToString().ToLowerInvariant()}";
+
+    private static string GetRibbonTabDataValue(DocumentRibbonTab tab)
+        => tab.ToString().ToLowerInvariant();
 
     private ElementReference GetActiveTabReference()
     {
@@ -2281,6 +2388,11 @@
         => active
             ? "tm-document-editor__ribbon-button tm-document-editor__ribbon-button--active"
             : "tm-document-editor__ribbon-button";
+
+    private string GetTrackChangesButtonClass()
+        => TrackChangesEnabled
+            ? "tm-document-editor__ribbon-button tm-document-editor__ribbon-button--active tm-document-editor__track-toggle tm-document-editor__track-toggle--on"
+            : "tm-document-editor__ribbon-button tm-document-editor__track-toggle tm-document-editor__track-toggle--off";
 
     private string GetListButtonClass(bool active, bool isBullet)
     {
@@ -2463,6 +2575,11 @@
     private Task HandleFontFamilyChangedAsync(ChangeEventArgs args)
     {
         var value = args.Value?.ToString();
+        if (ShouldSkipDuplicateSelectChange(value, ref _lastFontFamilyChangeValue, ref _lastFontFamilyChangeAt))
+        {
+            return Task.CompletedTask;
+        }
+
         return string.IsNullOrWhiteSpace(value)
             ? Task.CompletedTask
             : OnFontFamilyChanged.InvokeAsync(value);
@@ -2470,9 +2587,32 @@
 
     private Task HandleFontSizeChangedAsync(ChangeEventArgs args)
     {
-        return double.TryParse(args.Value?.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
+        var value = args.Value?.ToString();
+        if (ShouldSkipDuplicateSelectChange(value, ref _lastFontSizeChangeValue, ref _lastFontSizeChangeAt))
+        {
+            return Task.CompletedTask;
+        }
+
+        return double.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
             ? OnFontSizeChanged.InvokeAsync(size)
             : Task.CompletedTask;
+    }
+
+    private bool ShouldSkipDuplicateSelectChange(
+        string? value,
+        ref string? lastValue,
+        ref DateTimeOffset lastChangedAt)
+    {
+        var now = DateTimeOffset.UtcNow;
+        if (string.Equals(value, lastValue, StringComparison.Ordinal)
+            && now - lastChangedAt < TimeSpan.FromMilliseconds(150))
+        {
+            return true;
+        }
+
+        lastValue = value;
+        lastChangedAt = now;
+        return false;
     }
 
     private Task HandleTextColorAppliedAsync(string? value)
@@ -2486,9 +2626,7 @@
     private Task HandleHighlightColorAppliedAsync(string? value)
     {
         var normalized = NormalizeColorValue(value, string.Empty);
-        return string.IsNullOrWhiteSpace(normalized)
-            ? Task.CompletedTask
-            : OnHighlightColorChanged.InvokeAsync(normalized);
+        return OnHighlightColorChanged.InvokeAsync(normalized);
     }
 
     private Task HandleParagraphAlignmentClickedAsync(DocumentTextAlignment alignment)

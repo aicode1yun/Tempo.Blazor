@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 
 namespace Tempo.Blazor.Components.Inputs;
 
@@ -8,6 +10,11 @@ namespace Tempo.Blazor.Components.Inputs;
 /// </summary>
 public partial class TmColorPalette
 {
+    private ElementReference _rootElement;
+    private int _keyboardIndex;
+    private bool _hasKeyboardFocus;
+    private bool _focusSwatchAfterRender;
+
     // ── Default palette ──────────────────────────────────────────
     private static readonly string[] DefaultColors =
     [
@@ -44,6 +51,8 @@ public partial class TmColorPalette
     /// <summary>Additional attributes spread onto the wrapper.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
     // ── Computed ─────────────────────────────────────────────────
 
     private IReadOnlyList<string> _effectiveColors => Colors ?? DefaultColors;
@@ -51,11 +60,86 @@ public partial class TmColorPalette
     private bool IsSelected(string color)
         => string.Equals(color, Value, StringComparison.OrdinalIgnoreCase);
 
+    private string GetSwatchClass(string color, int index)
+    {
+        var classes = new List<string> { "tm-color-palette-swatch" };
+        if (IsSelected(color))
+        {
+            classes.Add("tm-color-palette-swatch--selected");
+        }
+
+        if (_hasKeyboardFocus && index == _keyboardIndex)
+        {
+            classes.Add("tm-color-palette-swatch--keyboard-focus");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetSwatchTabIndex(int index)
+        => index == _keyboardIndex ? "0" : "-1";
+
+    private static string AriaBool(bool value)
+        => value ? "true" : "false";
+
+    // ── Lifecycle ────────────────────────────────────────────────
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var colors = _effectiveColors;
+        if (colors.Count == 0)
+        {
+            _keyboardIndex = 0;
+            return;
+        }
+
+        var selectedIndex = !string.IsNullOrWhiteSpace(Value)
+            ? colors.ToList().FindIndex(color => string.Equals(color, Value, StringComparison.OrdinalIgnoreCase))
+            : -1;
+
+        if (selectedIndex >= 0 && !_hasKeyboardFocus)
+        {
+            _keyboardIndex = selectedIndex;
+        }
+        else
+        {
+            _keyboardIndex = Math.Clamp(_keyboardIndex, 0, colors.Count - 1);
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusSwatchAfterRender)
+        {
+            return;
+        }
+
+        _focusSwatchAfterRender = false;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmColorPicker.focusPaletteSwatch", _rootElement, _keyboardIndex);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
     // ── Actions ──────────────────────────────────────────────────
 
     private async Task SelectColorAsync(string color)
     {
         Value = color;
+        var index = _effectiveColors.ToList().FindIndex(candidate => string.Equals(candidate, color, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+        {
+            _keyboardIndex = index;
+        }
+
         await ValueChanged.InvokeAsync(color);
     }
 
@@ -63,5 +147,67 @@ public partial class TmColorPalette
     {
         Value = null;
         await ValueChanged.InvokeAsync(string.Empty);
+    }
+
+    private void SetKeyboardIndex(int index)
+    {
+        _hasKeyboardFocus = true;
+        _keyboardIndex = Math.Clamp(index, 0, Math.Max(0, _effectiveColors.Count - 1));
+    }
+
+    private async Task HandleSwatchKeyDownAsync(KeyboardEventArgs args, int index)
+    {
+        if (_effectiveColors.Count == 0)
+        {
+            return;
+        }
+
+        _hasKeyboardFocus = true;
+        _keyboardIndex = Math.Clamp(index, 0, _effectiveColors.Count - 1);
+
+        var nextIndex = args.Key switch
+        {
+            "ArrowRight" => MoveIndex(_keyboardIndex, 1),
+            "ArrowLeft" => MoveIndex(_keyboardIndex, -1),
+            "ArrowDown" => MoveIndex(_keyboardIndex, Math.Max(1, Columns)),
+            "ArrowUp" => MoveIndex(_keyboardIndex, -Math.Max(1, Columns)),
+            "Home" => 0,
+            "End" => _effectiveColors.Count - 1,
+            _ => _keyboardIndex
+        };
+
+        if (nextIndex != _keyboardIndex)
+        {
+            _keyboardIndex = nextIndex;
+            _focusSwatchAfterRender = true;
+            return;
+        }
+
+        if (args.Key is "Enter" or " " or "Space" or "Spacebar")
+        {
+            await SelectColorAsync(_effectiveColors[_keyboardIndex]);
+        }
+    }
+
+    private int MoveIndex(int index, int delta)
+    {
+        var count = _effectiveColors.Count;
+        if (count == 0)
+        {
+            return 0;
+        }
+
+        var next = index + delta;
+        if (next < 0)
+        {
+            return 0;
+        }
+
+        if (next >= count)
+        {
+            return count - 1;
+        }
+
+        return next;
     }
 }

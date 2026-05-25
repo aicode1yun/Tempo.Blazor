@@ -384,7 +384,7 @@ public sealed class DocumentWysiwygOperationMapperTests
     }
 
     [Fact]
-    public void CreateBatch_IgnoresMarkSelectionAcrossMultipleInlines()
+    public void CreateBatch_MapsMarkSelectionAcrossMultipleInlinesToBlockRange()
     {
         var document = CreateDocument();
         ((ParagraphBlockContent)document.Blocks[0].Content).Inlines.Add(new TextRun { Id = "i2", Text = "Beta" });
@@ -404,7 +404,14 @@ public sealed class DocumentWysiwygOperationMapperTests
             }
         };
 
-        _mapper.CreateBatch(document, patch, Metadata()).Operations.Should().BeEmpty();
+        var operation = _mapper.CreateBatch(document, patch, Metadata()).Operations.Should().ContainSingle().Subject;
+
+        operation.Type.Should().Be(DocumentOperationType.AddInlineMark);
+        operation.Target.BlockId.Should().Be("b1");
+        operation.Target.InlineId.Should().BeNull();
+        operation.Target.Offset.Should().Be(1);
+        operation.Target.Length.Should().Be(6);
+        operation.Mark!.Type.Should().Be(InlineMarkType.Bold);
     }
 
     [Fact]

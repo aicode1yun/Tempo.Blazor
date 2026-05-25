@@ -37,6 +37,33 @@
     color: var(--tm-text-primary);
 }
 
+.tm-flat-color-picker-hex {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: 0;
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-flat-color-picker-hex input {
+    width: 100%;
+    min-width: 0;
+    height: 2rem;
+    padding: 0 var(--tm-space-2);
+    color: var(--tm-color-text);
+    background: var(--tm-color-surface);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    font: inherit;
+    font-family: var(--tm-font-mono, monospace);
+}
+
+.tm-flat-color-picker-hex input:focus {
+    border-color: var(--tm-color-primary);
+    outline: 2px solid color-mix(in srgb, var(--tm-color-primary) 22%, transparent);
+    outline-offset: 1px;
+}
+
 .tm-flat-color-picker-divider {
     height: 1px;
     background: var(--tm-border-color);

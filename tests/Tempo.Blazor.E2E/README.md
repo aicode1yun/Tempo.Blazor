@@ -121,6 +121,15 @@ Document editor WYSIWYG tests should exercise the real demo editor and the JS-ow
 
 Use `window.tmDocumentEditorRuntime` and `window.tmDocumentEditorDebug` only for runtime invariants and diagnostics such as undo state, dirty state, snapshot reload counts, render stats, and selection snapshots. Keep coverage spread across typing, undo/redo, formatting, track changes, comments, images, tables, headers/footers, collaboration, save/reload, DOCX import/export, PDF export, and comparison. Additional runtime details are documented in `docs/document-editor-js-owned-runtime.md`.
 
+Document editor E2E files are classified by `DocumentEditorE2EContractAuditTests`:
+- `DocumentEditor:HumanWorkflow` covers user-visible behavior through Playwright mouse, keyboard, locator and provider interactions.
+- `DocumentEditor:DiagnosticRuntime` covers strict runtime/layout probes and must not be counted as UX parity coverage by itself.
+- `DocumentEditor:ProviderBoundary` covers save/load/import/export/collaboration boundaries.
+- `DocumentEditor:LayoutVisual` covers visible geometry, viewport safety and UI placement.
+- `LegacyMixed` or obsolete coverage must point at a stricter replacement file before it can remain green.
+
+For local editor assertions, prefer `WaitForEditorStableAsync(page, reason, blockId, expectedText)` over fixed sleeps. The helper waits for the host, visible blocks, optional expected text and absence of Blazor/runtime error UI; it deliberately does not wait for save/autosave.
+
 ## CI/CD Integration
 
 For CI/CD pipelines, use headless mode and ensure demo apps are running:

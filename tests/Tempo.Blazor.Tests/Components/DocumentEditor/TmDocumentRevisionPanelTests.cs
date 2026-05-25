@@ -35,6 +35,59 @@ public class TmDocumentRevisionPanelTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-revision-accept']").HasAttribute("disabled").Should().BeTrue();
         cut.Find("[data-testid='document-revision-reject']").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("[data-testid='document-revision-accept']").GetAttribute("aria-disabled").Should().Be("true");
+        cut.Find("[data-testid='document-revision-reject']").GetAttribute("aria-disabled").Should().Be("true");
+        cut.Find("[data-testid='document-revision-accept']").ClassList
+            .Should()
+            .Contain("tm-document-revision-panel__action--accept");
+        cut.Find("[data-testid='document-revision-reject']").ClassList
+            .Should()
+            .Contain("tm-document-revision-panel__action--reject");
+    }
+
+    [Fact]
+    public void Panel_ReviewActionsUseSemanticHierarchyAndIcons()
+    {
+        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+            .Add(p => p.Revisions, new[] { CreateRevision("revision-1", DocumentRevisionAction.Pending) })
+            .Add(p => p.CanReview, true));
+
+        var acceptAll = cut.Find("[data-testid='document-revision-accept-all']");
+        acceptAll.ClassList.Should().Contain("tm-document-revision-panel__batch-action--accept");
+        acceptAll.GetAttribute("data-review-action").Should().Be("accept-all");
+        acceptAll.GetAttribute("aria-disabled").Should().Be("false");
+        acceptAll.QuerySelector(".tm-icon").Should().NotBeNull();
+
+        var rejectAll = cut.Find("[data-testid='document-revision-reject-all']");
+        rejectAll.ClassList.Should().Contain("tm-document-revision-panel__batch-action--reject");
+        rejectAll.GetAttribute("data-review-action").Should().Be("reject-all");
+        rejectAll.GetAttribute("aria-disabled").Should().Be("false");
+        rejectAll.QuerySelector(".tm-icon").Should().NotBeNull();
+
+        var accept = cut.Find("[data-testid='document-revision-accept']");
+        accept.ClassList.Should().Contain("tm-document-revision-panel__action--accept");
+        accept.GetAttribute("data-review-action").Should().Be("accept");
+        accept.GetAttribute("aria-disabled").Should().Be("false");
+        accept.QuerySelector(".tm-icon").Should().NotBeNull();
+
+        var reject = cut.Find("[data-testid='document-revision-reject']");
+        reject.ClassList.Should().Contain("tm-document-revision-panel__action--reject");
+        reject.GetAttribute("data-review-action").Should().Be("reject");
+        reject.GetAttribute("aria-disabled").Should().Be("false");
+        reject.QuerySelector(".tm-icon").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Panel_DisablesBatchReviewButtonsWhenUserCannotReview()
+    {
+        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+            .Add(p => p.Revisions, new[] { CreateRevision("revision-1", DocumentRevisionAction.Pending) })
+            .Add(p => p.CanReview, false));
+
+        cut.Find("[data-testid='document-revision-accept-all']").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("[data-testid='document-revision-reject-all']").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("[data-testid='document-revision-accept-all']").GetAttribute("aria-disabled").Should().Be("true");
+        cut.Find("[data-testid='document-revision-reject-all']").GetAttribute("aria-disabled").Should().Be("true");
     }
 
     [Fact]

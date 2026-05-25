@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.Forms;
+using System.Globalization;
 using Tempo.Blazor.Components.DocumentEditor.Features;
 using Tempo.Blazor.Components.DocumentEditor.Registry;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -287,6 +288,7 @@ public partial class TmDocumentEditor
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "fontFamily", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingTextValue(ctx.FormattingState.FontFamily, ctx.FormattingState.FontFamilyMixed),
             execute: (_, payload) => payload is string family ? ApplyFontFamilyAsync(family) : Task.CompletedTask,
             descriptionKey: "TmDocumentEditor_FontFamily",
             tooltipKey: "TmDocumentEditor_FontFamily",
@@ -296,6 +298,7 @@ public partial class TmDocumentEditor
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "fontSize", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingTextValue(ctx.FormattingState.FontSize, ctx.FormattingState.FontSizeMixed),
             execute: (_, payload) => payload is double size ? ApplyFontSizeAsync(size) : Task.CompletedTask,
             descriptionKey: "TmDocumentEditor_FontSize",
             tooltipKey: "TmDocumentEditor_FontSize",
@@ -305,6 +308,9 @@ public partial class TmDocumentEditor
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "paragraphAlignment", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => ctx.FormattingState.ParagraphAlignmentMixed
+                ? "mixed"
+                : ctx.FormattingState.ParagraphAlignment.ToString(),
             execute: (_, payload) => payload is DocumentTextAlignment alignment
                 ? ApplyParagraphAlignmentAsync(alignment)
                 : Task.CompletedTask,
@@ -327,6 +333,7 @@ public partial class TmDocumentEditor
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "textColor", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingTextValue(ctx.FormattingState.TextColor, ctx.FormattingState.TextColorMixed),
             execute: (_, payload) => payload is string color ? ApplyTextColorAsync(color) : Task.CompletedTask,
             descriptionKey: "TmDocumentEditor_FontColor",
             tooltipKey: "TmDocumentEditor_FontColor",
@@ -336,6 +343,7 @@ public partial class TmDocumentEditor
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "highlightColor", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingTextValue(ctx.FormattingState.HighlightColor, ctx.FormattingState.HighlightColorMixed),
             execute: (_, payload) => payload is string color ? ApplyHighlightColorAsync(color) : Task.CompletedTask,
             descriptionKey: "TmDocumentEditor_HighlightColor",
             tooltipKey: "TmDocumentEditor_HighlightColor",
@@ -345,6 +353,9 @@ public partial class TmDocumentEditor
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "lineSpacing", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => ctx.FormattingState.LineSpacingMixed
+                ? "mixed"
+                : ctx.FormattingState.LineSpacing.ToString("0.##", CultureInfo.InvariantCulture),
             execute: (_, payload) => payload is double spacing ? ApplyLineSpacingAsync(spacing) : Task.CompletedTask,
             descriptionKey: "TmDocumentEditor_LineSpacing",
             tooltipKey: "TmDocumentEditor_LineSpacing",
@@ -644,4 +655,7 @@ public partial class TmDocumentEditor
             WysiwygFormattingValue.Mixed => "mixed",
             _ => "inactive"
         };
+
+    private static string? FormattingTextValue(string? value, bool mixed) =>
+        mixed ? "mixed" : value;
 }

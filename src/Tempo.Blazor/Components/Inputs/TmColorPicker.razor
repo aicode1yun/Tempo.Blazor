@@ -9,11 +9,13 @@
     <div class="tm-color-picker-trigger"
          @ref="_triggerElement"
          @onclick="ToggleDropdownAsync"
-         @onkeydown="HandleKeyDownAsync"
+         @onkeydown="HandleTriggerKeyDownAsync"
+         @onpointerdown:preventDefault="true"
+         @onmousedown:preventDefault="true"
          role="button"
          tabindex="@(Disabled ? "-1" : "0")"
-         aria-haspopup="true"
-         aria-expanded="@_isOpen"
+         aria-haspopup="dialog"
+         aria-expanded="@(_isOpen ? "true" : "false")"
          aria-disabled="@(Disabled ? "true" : "false")">
         <div class="tm-color-picker-trigger-bg">
             <div class="tm-color-picker-trigger-color"
@@ -32,7 +34,11 @@
                                ValueChanged="OnFlatValueChangedAsync"
                                Format="Format"
                                ShowAlpha="ShowAlpha"
+                               ShowGradient="ShowGradient"
+                               ShowHexInput="ShowHexInput"
                                ShowPalette="ShowPalette"
+                               PaletteColors="PaletteColors"
+                               PaletteColumns="PaletteColumns"
                                ShowPreview="false"
                                ShowClearButton="ShowClearButton" />
 

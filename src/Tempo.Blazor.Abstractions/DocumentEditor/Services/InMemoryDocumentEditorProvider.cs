@@ -10,6 +10,9 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
     /// <summary>Stable document id for the 2026-05-23 Google Docs engine recovery baseline.</summary>
     public const string Recovery20260523DocumentId = "recovery-2026-05-23";
 
+    /// <summary>Stable document id for the 2026-05-24 ONLYOFFICE parity baseline.</summary>
+    public const string OnlyOfficeParity20260524DocumentId = "onlyoffice-parity-2026-05-24";
+
     private const string RecoverySectionId = "recovery-section-main";
     private const string RecoveryUrlImageUrl = "/document-editor-evidence.svg";
     private const string RecoveryProviderAssetId = "contract-evidence-asset";
@@ -454,6 +457,101 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
             5));
 
         StoreDocument(document, "recovery-2026-05-23-canonical-v1");
+        return Clone(document);
+    }
+
+    /// <summary>Seeds the deterministic ONLYOFFICE parity baseline used by P0 editor engine E2E tests.</summary>
+    public DocumentEditorDocument SeedOnlyOfficeParityDocument(string documentId = OnlyOfficeParity20260524DocumentId)
+    {
+        var document = SeedRecoveryDocument(documentId);
+        document.Metadata.Title = "ONLYOFFICE parity baseline";
+        document.Metadata.Description = "Deterministic baseline for selection, formatting, track changes, comments, and undo parity tests.";
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-formatting-paragraph",
+            52,
+            "Apply formatting to this exact target phrase and keep the surrounding text unchanged.",
+            spacingAfter: 9));
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-mixed-formatting-paragraph",
+            53,
+            [
+                new TextRun
+                {
+                    Id = "onlyoffice-mixed-bold-run",
+                    Text = "Bold mixed segment",
+                    Marks = [new InlineMark { Type = InlineMarkType.Bold }]
+                },
+                new TextRun { Id = "onlyoffice-mixed-plain-run", Text = " and plain mixed segment." }
+            ],
+            spacingAfter: 9));
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-collapsed-caret-paragraph",
+            54,
+            "Collapsed caret typing style starts here.",
+            spacingAfter: 9));
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-track-changes-paragraph",
+            55,
+            "Track changes typing target.",
+            spacingAfter: 9));
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-comment-boundary-paragraph",
+            56,
+            [
+                new TextRun { Id = "onlyoffice-comment-boundary-prefix", Text = "Text before " },
+                new TextRun
+                {
+                    Id = "onlyoffice-comment-boundary-anchor",
+                    Text = "commented range",
+                    Marks =
+                    [
+                        new InlineMark
+                        {
+                            Type = InlineMarkType.CommentAnchor,
+                            CommentAnchor = new CommentAnchorMarkData
+                            {
+                                CommentId = "onlyoffice-comment-boundary",
+                                AnchorId = "onlyoffice-comment-boundary-anchor"
+                            }
+                        }
+                    ]
+                },
+                new TextRun { Id = "onlyoffice-comment-boundary-suffix", Text = " and editable suffix." }
+            ],
+            spacingAfter: 9));
+
+        document.Comments.Add(new DocumentComment
+        {
+            Id = "onlyoffice-comment-boundary",
+            Anchor = new DocumentCommentAnchor
+            {
+                Type = DocumentCommentAnchorType.TextRange,
+                BlockId = "onlyoffice-comment-boundary-paragraph",
+                StartInlineIndex = 1,
+                EndInlineIndex = 1,
+                StartOffset = 0,
+                EndOffset = "commented range".Length,
+                ExternalAnchorId = "onlyoffice-comment-boundary-anchor"
+            },
+            Visibility = DocumentCommentVisibility.Internal,
+            Entries =
+            [
+                new DocumentCommentEntry
+                {
+                    Id = "onlyoffice-comment-boundary-entry",
+                    Author = new DocumentEditorAuthor { Id = "onlyoffice-reviewer", DisplayName = "ONLYOFFICE Reviewer" },
+                    Text = "Typing after this comment must not extend the comment range.",
+                    CreatedAt = new DateTimeOffset(2026, 5, 24, 8, 0, 0, TimeSpan.Zero)
+                }
+            ]
+        });
+
+        StoreDocument(document, "onlyoffice-parity-2026-05-24-canonical-v1");
         return Clone(document);
     }
 

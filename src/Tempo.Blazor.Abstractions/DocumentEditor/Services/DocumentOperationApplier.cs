@@ -111,80 +111,122 @@ public class DocumentOperationApplier
             return DocumentOperationValidationResult.Valid();
         }
 
-        var inline = inlines[inlineIndex];
-        if (add)
-        {
-            if (operation.Mark.Type == InlineMarkType.Link)
-            {
-                inline.Marks.RemoveAll(mark => mark.Type == InlineMarkType.Link);
-            }
-
-            if (!inline.Marks.Any(mark => SameMark(mark, operation.Mark)))
-            {
-                inline.Marks.Add(Clone(operation.Mark));
-            }
-        }
-        else
-        {
-            inline.Marks.RemoveAll(mark => SameMark(mark, operation.Mark));
-        }
+        ApplyMarkToInline(inlines[inlineIndex], operation.Mark, add);
 
         return DocumentOperationValidationResult.Valid();
     }
 
     private static void ApplyMarkRange(List<InlineContent> inlines, DocumentOperation operation, bool add, int inlineIndex)
     {
-        var range = ResolveMarkRange(inlines, operation, inlineIndex);
-        if (range is null)
+        var length = operation.Target.Length ?? 0;
+        if (operation.Mark is null || length <= 0)
         {
             return;
         }
 
-        var (targetInlineIndex, rangeStart, rangeEnd) = range.Value;
-        var inline = inlines[targetInlineIndex];
-        var text = GetInlineText(inline);
-        if (rangeEnd <= rangeStart)
+        var start = ResolveAbsoluteRangeStart(inlines, operation.Target, inlineIndex);
+        ApplyMarkAbsoluteRange(inlines, start, start + length, operation.Mark, add);
+    }
+
+    private static int ResolveAbsoluteRangeStart(List<InlineContent> inlines, DocumentOperationTarget target, int inlineIndex)
+    {
+        var offset = Math.Max(0, target.Offset ?? 0);
+        if (string.IsNullOrWhiteSpace(target.InlineId))
         {
-            return;
+            return offset;
         }
 
-        var replacement = new List<InlineContent>();
-        if (rangeStart > 0)
-        {
-            replacement.Add(SplitInline(inline, 0, rangeStart));
-        }
+        var clampedIndex = Math.Clamp(inlineIndex, 0, Math.Max(0, inlines.Count - 1));
+        return inlines.Take(clampedIndex).Sum(inline => GetInlineText(inline).Length) + offset;
+    }
 
-        var marked = SplitInline(inline, rangeStart, rangeEnd);
-        if (add)
+    private static void ApplyMarkAbsoluteRange(List<InlineContent> inlines, int start, int end, InlineMark mark, bool add)
+    {
+        var rangeStart = Math.Max(0, Math.Min(start, end));
+        var rangeEnd = Math.Max(rangeStart, Math.Max(start, end));
+        var currentOffset = 0;
+        var newInlines = new List<InlineContent>();
+
+        foreach (var inline in inlines)
         {
-            if (operation.Mark!.Type == InlineMarkType.Link)
+            var text = GetInlineText(inline);
+            var inlineStart = currentOffset;
+            var inlineEnd = inlineStart + text.Length;
+            currentOffset = inlineEnd;
+
+            if (inlineEnd <= rangeStart || inlineStart >= rangeEnd || text.Length == 0)
             {
-                marked.Marks.RemoveAll(mark => mark.Type == InlineMarkType.Link);
+                newInlines.Add(Clone(inline));
+                continue;
             }
 
-            if (!marked.Marks.Any(mark => SameMark(mark, operation.Mark!)))
+            var localStart = Math.Max(0, rangeStart - inlineStart);
+            var localEnd = Math.Min(text.Length, rangeEnd - inlineStart);
+            localStart = ClampTextBoundary(text, localStart, isEnd: false);
+            localEnd = ClampTextBoundary(text, localEnd, isEnd: true);
+            if (localEnd < localStart)
             {
-                marked.Marks.Add(Clone(operation.Mark!));
+                localEnd = localStart;
+            }
+
+            if (localStart > 0)
+            {
+                newInlines.Add(SplitInline(inline, 0, localStart));
+            }
+
+            var marked = SplitInline(inline, localStart, localEnd);
+            ApplyMarkToInline(marked, mark, add);
+            if (GetInlineText(marked).Length > 0)
+            {
+                newInlines.Add(marked);
+            }
+
+            if (localEnd < text.Length)
+            {
+                newInlines.Add(SplitInline(inline, localEnd, text.Length));
+            }
+        }
+
+        inlines.Clear();
+        inlines.AddRange(MergeAdjacentTextRuns(newInlines));
+    }
+
+    private static void ApplyMarkToInline(InlineContent inline, InlineMark mark, bool add)
+    {
+        if (add)
+        {
+            if (IsSingletonFormattingMark(mark.Type))
+            {
+                inline.Marks.RemoveAll(existing => existing.Type == mark.Type);
+            }
+
+            if (!inline.Marks.Any(existing => SameMark(existing, mark)))
+            {
+                inline.Marks.Add(Clone(mark));
             }
         }
         else
         {
-            marked.Marks.RemoveAll(mark => SameMark(mark, operation.Mark!));
-        }
-        replacement.Add(marked);
-
-        if (rangeEnd < text.Length)
-        {
-            replacement.Add(SplitInline(inline, rangeEnd, text.Length));
+            inline.Marks.RemoveAll(existing => ShouldRemoveMark(existing, mark));
         }
 
-        var newInlines = new List<InlineContent>();
-        newInlines.AddRange(inlines.Take(targetInlineIndex).Select(Clone));
-        newInlines.AddRange(replacement);
-        newInlines.AddRange(inlines.Skip(targetInlineIndex + 1).Select(Clone));
+        inline.Marks = NormalizeMarks(inline.Marks);
+    }
 
-        inlines.Clear();
-        inlines.AddRange(newInlines);
+    private static bool ShouldRemoveMark(InlineMark existing, InlineMark requested)
+    {
+        return IsFormattingMark(requested)
+            ? existing.Type == requested.Type
+            : SameMark(existing, requested);
+    }
+
+    private static bool IsSingletonFormattingMark(InlineMarkType type)
+    {
+        return type is InlineMarkType.Link
+            or InlineMarkType.Highlight
+            or InlineMarkType.TextColor
+            or InlineMarkType.FontFamily
+            or InlineMarkType.FontSize;
     }
 
     private static (int InlineIndex, int RangeStart, int RangeEnd)? ResolveMarkRange(
@@ -948,7 +990,7 @@ public class DocumentOperationApplier
     }
 
     private static List<InlineMark> CopyMarks(IEnumerable<InlineMark> marks)
-        => marks.Select(Clone).ToList();
+        => NormalizeMarks(marks);
 
     private static List<InlineContent> MergeAdjacentTextRuns(IEnumerable<InlineContent> inlines)
     {
@@ -965,10 +1007,13 @@ public class DocumentOperationApplier
                 && MarksEqual(previous.Marks, current.Marks))
             {
                 previous.Text += current.Text;
+                previous.Marks = NormalizeMarks(previous.Marks);
                 continue;
             }
 
-            result.Add(Clone(inline));
+            var cloned = Clone(inline);
+            cloned.Marks = NormalizeMarks(cloned.Marks);
+            result.Add(cloned);
         }
 
         if (result.Count == 0)
@@ -1001,9 +1046,16 @@ public class DocumentOperationApplier
     private static InlineContent SplitInline(InlineContent inline, int start, int end)
     {
         var text = GetInlineText(inline);
-        var length = Math.Min(end, text.Length) - start;
+        var rangeStart = ClampTextBoundary(text, start, isEnd: false);
+        var rangeEnd = ClampTextBoundary(text, end, isEnd: true);
+        if (rangeEnd < rangeStart)
+        {
+            rangeEnd = rangeStart;
+        }
+
+        var length = Math.Min(rangeEnd, text.Length) - rangeStart;
         length = Math.Max(length, 0);
-        var slice = length > 0 ? text.Substring(start, length) : string.Empty;
+        var slice = length > 0 ? text.Substring(rangeStart, length) : string.Empty;
 
         var cloned = Clone(inline);
         switch (cloned)
@@ -1020,6 +1072,20 @@ public class DocumentOperationApplier
         }
 
         return cloned;
+    }
+
+    private static int ClampTextBoundary(string text, int index, bool isEnd)
+    {
+        var value = Math.Clamp(index, 0, text.Length);
+        if (value > 0
+            && value < text.Length
+            && char.IsHighSurrogate(text[value - 1])
+            && char.IsLowSurrogate(text[value]))
+        {
+            return isEnd ? value + 1 : value - 1;
+        }
+
+        return value;
     }
 
     private static T? ReadJsonValue<T>(string? json)
@@ -1042,9 +1108,29 @@ public class DocumentOperationApplier
 
     private static bool MarksEqual(IReadOnlyList<InlineMark> left, IReadOnlyList<InlineMark> right)
     {
-        return left.Count == right.Count
-            && left.Zip(right).All(pair => SameMark(pair.First, pair.Second));
+        var normalizedLeft = NormalizeMarks(left);
+        var normalizedRight = NormalizeMarks(right);
+        return normalizedLeft.Count == normalizedRight.Count
+            && normalizedLeft.Zip(normalizedRight).All(pair => SameMark(pair.First, pair.Second));
     }
+
+    private static List<InlineMark> NormalizeMarks(IEnumerable<InlineMark> marks)
+        => marks
+            .Select(Clone)
+            .GroupBy(MarkComparisonKey, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .OrderBy(MarkComparisonKey, StringComparer.Ordinal)
+            .ToList();
+
+    private static string MarkComparisonKey(InlineMark mark)
+        => string.Join("\u001f",
+            ((int)mark.Type).ToString(),
+            mark.Value ?? string.Empty,
+            mark.Link?.Href ?? string.Empty,
+            mark.Link?.Title ?? string.Empty,
+            mark.CommentAnchor?.CommentId ?? string.Empty,
+            mark.CommentAnchor?.AnchorId ?? string.Empty,
+            mark.RevisionId ?? string.Empty);
 
     private static T Clone<T>(T value)
     {

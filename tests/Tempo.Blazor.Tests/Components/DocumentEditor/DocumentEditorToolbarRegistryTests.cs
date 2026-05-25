@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Components.DocumentEditor;
 using Tempo.Blazor.Components.DocumentEditor.Registry;
+using Tempo.Blazor.DocumentEditor.Models;
 
 namespace Tempo.Blazor.Tests.Components.DocumentEditor;
 
@@ -257,6 +258,71 @@ public class DocumentEditorToolbarRegistryTests
         var available = registry.GetAvailableItems().ToList();
 
         available.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void CommandRegistry_UsesCanonicalFormattingUndoAndSelectionTokenStateBindings()
+    {
+        var commandRegistry = new DocumentEditorCommandRegistry();
+        commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "bold", affectsData: true,
+            computeEnabled: context => context.HasDocument && !context.FormattingState.IsDisabled,
+            computeValue: context => context.FormattingState.Bold switch
+            {
+                WysiwygFormattingValue.Active => "active",
+                WysiwygFormattingValue.Mixed => "mixed",
+                _ => "inactive"
+            },
+            execute: (_, _) => Task.CompletedTask));
+        commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "undo", affectsData: true,
+            computeEnabled: context => context.UndoState.CanUndo,
+            computeValue: context => context.UndoState.NextUndoDescription,
+            execute: (_, _) => Task.CompletedTask));
+        commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "selectionTokenProbe", affectsData: true,
+            computeEnabled: context => !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.SelectionToken),
+            computeValue: context => context.SelectionSnapshot?.SelectionToken,
+            execute: (_, _) => Task.CompletedTask));
+
+        commandRegistry.RefreshAllAsync(new DocumentEditorCommandContext
+        {
+            HasDocument = true,
+            FormattingState = new WysiwygFormattingState { Bold = WysiwygFormattingValue.Mixed },
+            UndoState = new WysiwygUndoState { CanUndo = true, NextUndoDescription = "Typing session" },
+            SelectionSnapshot = new WysiwygSelectionSnapshot
+            {
+                SelectionToken = "stable-selection-token",
+                StableSelectionToken = "stable-selection-token"
+            }
+        }).GetAwaiter().GetResult();
+
+        commandRegistry.GetState("bold")!.Value.Should().Be("mixed");
+        commandRegistry.GetState("undo")!.IsEnabled.Should().BeTrue();
+        commandRegistry.GetState("undo")!.Value.Should().Be("Typing session");
+        commandRegistry.GetState("selectionTokenProbe")!.IsEnabled.Should().BeTrue();
+        commandRegistry.GetState("selectionTokenProbe")!.Value.Should().Be("stable-selection-token");
+    }
+
+    [Fact]
+    public void ToolbarRenderContext_CarriesSelectionTokenValueForDeclarativeRenderers()
+    {
+        var item = new DocumentToolbarItem { Id = "token-aware", CommandName = "bold" };
+        var values = new Dictionary<string, object?>
+        {
+            ["SelectionToken"] = "stable-selection-token",
+            ["FormattingState"] = new WysiwygFormattingState { Bold = WysiwygFormattingValue.Active },
+            ["UndoState"] = new WysiwygUndoState { CanUndo = true }
+        };
+
+        var context = new DocumentToolbarRenderContext(item, values);
+
+        context.Values.Should().NotBeNull();
+        context.Values!["SelectionToken"].Should().Be("stable-selection-token");
+        context.Values["FormattingState"].Should().BeOfType<WysiwygFormattingState>()
+            .Which.Bold.Should().Be(WysiwygFormattingValue.Active);
+        context.Values["UndoState"].Should().BeOfType<WysiwygUndoState>()
+            .Which.CanUndo.Should().BeTrue();
     }
 
     [Fact]

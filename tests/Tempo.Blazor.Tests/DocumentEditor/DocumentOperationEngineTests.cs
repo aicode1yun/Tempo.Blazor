@@ -124,11 +124,10 @@ public sealed class DocumentOperationEngineTests
 
         result.IsValid.Should().BeTrue();
         var inlines = InlinesOf(document, "a").OfType<TextRun>().ToList();
-        inlines.Select(run => run.Text).Should().Equal("Alpha", "B", "et", "a");
+        inlines.Select(run => run.Text).Should().Equal("AlphaB", "et", "a");
         inlines[0].Marks.Should().BeEmpty();
-        inlines[1].Marks.Should().BeEmpty();
-        inlines[2].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Italic);
-        inlines[3].Marks.Should().BeEmpty();
+        inlines[1].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Italic);
+        inlines[2].Marks.Should().BeEmpty();
     }
 
     [Fact]
@@ -149,6 +148,123 @@ public sealed class DocumentOperationEngineTests
         inlines[0].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Bold);
         inlines[1].Marks.Should().BeEmpty();
         inlines[2].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Italic);
+    }
+
+    [Fact]
+    public void OperationApplier_AppliesInlineMarkAcrossMultipleRunsAndMergesCompatibleSegments()
+    {
+        var document = CreateDocument("doc-1", "a", string.Empty);
+        var paragraph = (ParagraphBlockContent)document.Blocks[0].Content;
+        paragraph.Inlines =
+        [
+            new TextRun { Id = "r1", Text = "Hel" },
+            new TextRun { Id = "r2", Text = "lo " },
+            new TextRun { Id = "r3", Text = "world" }
+        ];
+        var operation = AddInlineMark("a", "", offset: 2, length: 7, InlineMarkType.Bold);
+
+        var result = new DocumentOperationApplier().Apply(document, Batch("doc-1", operation));
+
+        result.IsValid.Should().BeTrue();
+        var inlines = InlinesOf(document, "a").OfType<TextRun>().ToList();
+        inlines.Select(run => run.Text).Should().Equal("He", "llo wor", "ld");
+        inlines[0].Marks.Should().BeEmpty();
+        inlines[1].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Bold);
+        inlines[2].Marks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void OperationApplier_RemovesInlineMarkAcrossMultipleRunsAndMergesBack()
+    {
+        var document = CreateDocument("doc-1", "a", string.Empty);
+        var paragraph = (ParagraphBlockContent)document.Blocks[0].Content;
+        paragraph.Inlines =
+        [
+            new TextRun { Text = "He" },
+            new TextRun { Text = "llo ", Marks = [new InlineMark { Type = InlineMarkType.Bold }] },
+            new TextRun { Text = "wor", Marks = [new InlineMark { Type = InlineMarkType.Bold }] },
+            new TextRun { Text = "ld" }
+        ];
+        var operation = AddInlineMark("a", "", offset: 2, length: 7, InlineMarkType.Bold);
+        operation.Type = DocumentOperationType.RemoveInlineMark;
+
+        var result = new DocumentOperationApplier().Apply(document, Batch("doc-1", operation));
+
+        result.IsValid.Should().BeTrue();
+        var run = InlinesOf(document, "a").OfType<TextRun>().Should().ContainSingle().Subject;
+        run.Text.Should().Be("Hello world");
+        run.Marks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void OperationApplier_DoesNotMergeRunsWithDifferentCommentOrRevisionMembership()
+    {
+        var document = CreateDocument("doc-1", "a", string.Empty);
+        var paragraph = (ParagraphBlockContent)document.Blocks[0].Content;
+        paragraph.Inlines =
+        [
+            new TextRun
+            {
+                Text = "Alpha",
+                Marks =
+                [
+                    new InlineMark
+                    {
+                        Type = InlineMarkType.CommentAnchor,
+                        CommentAnchor = new CommentAnchorMarkData { CommentId = "comment-1", AnchorId = "comment-1" }
+                    }
+                ]
+            },
+            new TextRun
+            {
+                Text = "Beta",
+                Marks =
+                [
+                    new InlineMark
+                    {
+                        Type = InlineMarkType.Revision,
+                        RevisionId = "revision-1",
+                        Value = DocumentRevisionType.Formatting.ToString()
+                    }
+                ]
+            }
+        ];
+        var operation = AddInlineMark("a", "", offset: 0, length: 9, InlineMarkType.Highlight);
+
+        var result = new DocumentOperationApplier().Apply(document, Batch("doc-1", operation));
+
+        result.IsValid.Should().BeTrue();
+        var inlines = InlinesOf(document, "a").OfType<TextRun>().ToList();
+        inlines.Select(run => run.Text).Should().Equal("Alpha", "Beta");
+        inlines[0].Marks.Should().Contain(mark => mark.Type == InlineMarkType.CommentAnchor);
+        inlines[0].Marks.Should().Contain(mark => mark.Type == InlineMarkType.Highlight);
+        inlines[1].Marks.Should().Contain(mark => mark.Type == InlineMarkType.Revision);
+        inlines[1].Marks.Should().Contain(mark => mark.Type == InlineMarkType.Highlight);
+    }
+
+    [Fact]
+    public void OperationApplier_ValueMarkReplacesExistingValueWithoutChangingSurroundingText()
+    {
+        var document = CreateDocument("doc-1", "a", string.Empty);
+        var paragraph = (ParagraphBlockContent)document.Blocks[0].Content;
+        paragraph.Inlines =
+        [
+            new TextRun
+            {
+                Text = "Hello world",
+                Marks = [new InlineMark { Type = InlineMarkType.TextColor, Value = "#111111" }]
+            }
+        ];
+        var operation = AddInlineMark("a", "", offset: 6, length: 5, InlineMarkType.TextColor);
+        operation.Mark!.Value = "#2563eb";
+
+        var result = new DocumentOperationApplier().Apply(document, Batch("doc-1", operation));
+
+        result.IsValid.Should().BeTrue();
+        var inlines = InlinesOf(document, "a").OfType<TextRun>().ToList();
+        inlines.Select(run => run.Text).Should().Equal("Hello ", "world");
+        inlines[0].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.TextColor && mark.Value == "#111111");
+        inlines[1].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.TextColor && mark.Value == "#2563eb");
     }
 
     [Fact]

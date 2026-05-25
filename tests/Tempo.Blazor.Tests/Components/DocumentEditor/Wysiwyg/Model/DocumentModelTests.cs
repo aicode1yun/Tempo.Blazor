@@ -284,6 +284,38 @@ public class DocumentModelTests
     }
 
     [Fact]
+    public void ParagraphBlock_CanRepresentSplitRunsWithIndependentFormatting()
+    {
+        var block = new ParagraphBlock();
+        block.Inlines.Add(new TextRun { Text = "Hello " });
+        block.Inlines.Add(new TextRun { Text = "world", Marks = { new BoldMark() } });
+        block.Inlines.Add(new TextRun { Text = "!" });
+
+        block.Inlines.OfType<TextRun>().Select(run => run.Text)
+            .Should()
+            .Equal("Hello ", "world", "!");
+        block.Inlines.OfType<TextRun>().ElementAt(1).Marks.Should().ContainSingle(mark => mark is BoldMark);
+        block.Inlines.OfType<TextRun>().ElementAt(0).Marks.Should().BeEmpty();
+        block.Inlines.OfType<TextRun>().ElementAt(2).Marks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ParagraphBlock_CanRepresentMergedRunAfterFormattingRemoval()
+    {
+        var block = new ParagraphBlock();
+        block.Inlines.Add(new TextRun { Text = "Hello " });
+        block.Inlines.Add(new TextRun { Text = "world" });
+
+        var merged = string.Concat(block.Inlines.OfType<TextRun>().Select(run => run.Text));
+        block.Inlines.Clear();
+        block.Inlines.Add(new TextRun { Text = merged });
+
+        block.Inlines.Should().ContainSingle()
+            .Which.Should().BeOfType<TextRun>()
+            .Which.Text.Should().Be("Hello world");
+    }
+
+    [Fact]
     public void BoldMark_HasTypeBold()
     {
         var mark = new BoldMark();

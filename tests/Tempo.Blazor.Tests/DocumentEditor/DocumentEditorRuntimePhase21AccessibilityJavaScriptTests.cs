@@ -203,7 +203,8 @@ public sealed class DocumentEditorRuntimePhase21AccessibilityJavaScriptTests
 
             const hooks = engine.__testHooks;
             const inst = hooks.instances.get('phase21-keyboard');
-            inst.model.headersFooters = [{ id: 'h1', type: 'Header' }, { id: 'f1', type: 'Footer' }];
+            inst.model.headers = [{ id: 'h1', type: 'header', blocks: [] }];
+            inst.model.footers = [{ id: 'f1', type: 'footer', blocks: [] }];
 
             const cell = { getAttribute: name => name === 'data-cell-id' ? 'cell1' : '' };
             const cellTarget = {
@@ -231,7 +232,7 @@ public sealed class DocumentEditorRuntimePhase21AccessibilityJavaScriptTests
             const boldResult = hooks.handleEditorKeyDown(inst, boldEvent);
             assert.strictEqual(boldResult.handled, true);
             assert.strictEqual(boldEvent.prevented, true);
-            assert.ok(inst.commands.some(command => command.command === 'bold' && command.source === 'keyboard'));
+            assert.ok(inst.commands.some(command => command.command === 'bold' && command.payload && command.payload.source === 'keyboard'));
             hooks.handleEditorKeyDown(inst, keyEvent('F10', { shiftKey: true }));
             hooks.handleEditorKeyDown(inst, keyEvent('Escape'));
             await new Promise(resolve => setTimeout(resolve, 200));

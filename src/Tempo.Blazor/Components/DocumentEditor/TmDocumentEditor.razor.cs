@@ -198,6 +198,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private bool _runtimeFailed;
     private WysiwygRuntimeRecoveryDetail? _lastRuntimeRecoveryDetail;
     private WysiwygFormattingState _formattingState = new();
+    private long _lastFormattingStateVersion;
     private DocumentTextAlignment? _pendingParagraphAlignment;
     private string? _pendingParagraphAlignmentBlockId;
     private DateTimeOffset _pendingParagraphAlignmentExpiresAt;
@@ -294,6 +295,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private DateTimeOffset _ignoreFloatingCollapsedSelectionUntil;
     private string? _optimisticFloatingTextColor;
     private string? _optimisticFloatingHighlightColor;
+    private string? _optimisticFloatingFontSize;
     private string? _optimisticFloatingFormattingSelectionKey;
     private DateTimeOffset _optimisticFloatingFormattingExpiresAt;
     private WysiwygUndoState _wysiwygUndoState = new();
@@ -526,6 +528,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         : "tm-document-editor__workspace tm-document-editor__workspace--side-panel-closed";
 
     private DocumentSidePanelTab ActiveSidePanelTab => NormalizeSidePanelTab(_activeSidePanelTab);
+
+    private string ActiveSidePanelDataValue => ActiveSidePanelTab.ToString().ToLowerInvariant();
 
     private bool EffectiveTrackChangesEnabled => _trackChangesEnabled;
 
@@ -979,6 +983,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         {
             DocumentId = documentToSave.DocumentId,
             Document = documentToSave,
+            JsonSnapshot = DocumentEditorJson.Serialize(documentToSave),
             BaseConcurrencyToken = _concurrencyToken,
             ConcurrencyMode = DocumentEditorConcurrencyMode.Optional,
             Author = Author,
@@ -1425,10 +1430,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         snapshot.PageSettings = CloneForEditor(currentDocument.PageSettings);
         snapshot.Theme = CloneForEditor(currentDocument.Theme);
         snapshot.Sections = CloneForEditor(currentDocument.Sections);
-        snapshot.Comments = CloneForEditor(currentDocument.Comments);
         snapshot.Notes = CloneForEditor(currentDocument.Notes);
         snapshot.Assets = CloneForEditor(currentDocument.Assets);
         snapshot.Anchors = CloneForEditor(currentDocument.Anchors);
+
+        if (snapshot.Comments.Count == 0 && currentDocument.Comments.Count > 0)
+        {
+            snapshot.Comments = CloneForEditor(currentDocument.Comments);
+        }
 
         if (snapshot.HeadersFooters.Count == 0 && currentDocument.HeadersFooters.Count > 0)
         {
@@ -2361,6 +2370,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             {
                 _lastBodyRangeSelectionSnapshot = snapshot;
             }
+            else if (_miniToolbar is null
+                && !_miniToolbarColorPickerOpen
+                && DateTimeOffset.UtcNow > _ignoreFloatingCollapsedSelectionUntil)
+            {
+                _lastBodyRangeSelectionSnapshot = null;
+            }
         }
 
         var range = new DocumentEditorInlineRange
@@ -2566,6 +2581,81 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return fallback;
     }
 
+    private async Task HandleWysiwygFormattingStateChangedAsync(WysiwygFormattingState state)
+    {
+        if (state.Version > 0 && state.Version < _lastFormattingStateVersion)
+        {
+            return;
+        }
+
+        if (state.Version > 0)
+        {
+            _lastFormattingStateVersion = state.Version;
+        }
+
+        state.CurrentSelection ??= _lastWysiwygSelectionSnapshot ?? _lastBodySelectionSnapshot;
+        if (string.IsNullOrWhiteSpace(state.ActiveRegion))
+        {
+            state.ActiveRegion = _activeWysiwygRegion;
+        }
+
+        _formattingState = state;
+        if (state.CurrentSelection is not null)
+        {
+            _activeWysiwygRegion = string.IsNullOrWhiteSpace(state.CurrentSelection.Region)
+                ? state.ActiveRegion
+                : state.CurrentSelection.Region;
+            if (IsBodySelection(state.CurrentSelection))
+            {
+                _lastBodySelectionSnapshot = state.CurrentSelection;
+                if (state.CurrentSelection.IsCollapsed == false)
+                {
+                    _lastBodyRangeSelectionSnapshot = state.CurrentSelection;
+                }
+                else if (_miniToolbar is null
+                    && !_miniToolbarColorPickerOpen
+                    && DateTimeOffset.UtcNow > _ignoreFloatingCollapsedSelectionUntil)
+                {
+                    _lastBodyRangeSelectionSnapshot = null;
+                }
+            }
+
+            ApplyPendingParagraphFormattingOverride(state.CurrentSelection);
+        }
+
+        _selectionContext = state.CurrentSelection is null
+            ? _selectionContext
+            : DocumentEditorSelectionContext.FromSnapshot(state.CurrentSelection, _formattingState, GetActiveObjectPropertiesSnapshot(state.CurrentSelection));
+        ApplyPendingFloatingFormattingOverride();
+        await RefreshCommandRegistryAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshFormattingStateFromRuntimeAsync(WysiwygSelectionSnapshot? selection)
+    {
+        if (_wysiwygHost is null)
+        {
+            return;
+        }
+
+        var runtimeState = await _wysiwygHost.RequestRuntimeSelectionStateAsync();
+        if (runtimeState is null)
+        {
+            return;
+        }
+
+        runtimeState.CurrentSelection ??= selection
+            ?? _lastBodyRangeSelectionSnapshot
+            ?? _lastBodySelectionSnapshot
+            ?? _lastWysiwygSelectionSnapshot;
+        if (string.IsNullOrWhiteSpace(runtimeState.ActiveRegion))
+        {
+            runtimeState.ActiveRegion = _activeWysiwygRegion;
+        }
+
+        await HandleWysiwygFormattingStateChangedAsync(runtimeState);
+    }
+
     private void ApplyPendingParagraphFormattingOverride(WysiwygSelectionSnapshot snapshot)
     {
         if (!snapshot.IsCollapsed)
@@ -2655,7 +2745,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private Task HandleMiniToolbarChangedAsync(WysiwygMiniToolbarRequest? request)
     {
-        _miniToolbar = request?.IsVisible == true ? request : null;
+        if (ShouldPreserveMiniToolbarDuringFloatingInteraction(request))
+        {
+            return Task.CompletedTask;
+        }
+
+        _miniToolbar = IsVisibleRangeMiniToolbarRequest(request) ? request : null;
         if (_miniToolbar is not null)
         {
             _lastMiniToolbarRequest = _miniToolbar;
@@ -2681,22 +2776,92 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
         else
         {
+            _lastMiniToolbarRequest = null;
             _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
         }
 
         return InvokeAsync(StateHasChanged);
     }
 
+    private static bool IsVisibleRangeMiniToolbarRequest(WysiwygMiniToolbarRequest? request)
+        => request?.IsVisible == true
+        && request.Selection?.IsCollapsed == false;
+
+    private bool ShouldPreserveMiniToolbarDuringFloatingInteraction(WysiwygMiniToolbarRequest? request)
+    {
+        if (IsVisibleRangeMiniToolbarRequest(request))
+        {
+            return false;
+        }
+
+        if (_miniToolbar is null && _lastMiniToolbarRequest is null)
+        {
+            return false;
+        }
+
+        if (!_miniToolbarColorPickerOpen && DateTimeOffset.UtcNow > _keepMiniToolbarVisibleUntil)
+        {
+            return false;
+        }
+
+        var reason = request?.Reason ?? string.Empty;
+        if (reason.Contains("editable-pointerdown", StringComparison.OrdinalIgnoreCase)
+            || reason.Contains("outside-pointerdown", StringComparison.OrdinalIgnoreCase)
+            || reason.Contains("api-hide", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return FirstRangeSelection(
+            _miniToolbar?.Selection,
+            _lastMiniToolbarRequest?.Selection,
+            _lastBodyRangeSelectionSnapshot) is not null;
+    }
+
+    private static readonly int[] MiniToolbarFontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72];
+    private static readonly string[] MiniToolbarTextColors =
+    [
+        "#111827", "#374151", "#6b7280", "#000000", "#ffffff", "#dc2626",
+        "#ea580c", "#d97706", "#059669", "#2563eb", "#4f46e5", "#7c3aed"
+    ];
+    private static readonly string[] MiniToolbarHighlightColors =
+    [
+        "#ffffff", "#fef3c7", "#fde68a", "#fee2e2", "#ffedd5", "#dcfce7",
+        "#dbeafe", "#e0e7ff", "#f3e8ff", "#f3f4f6", "#d1d5db", "#9ca3af"
+    ];
+
+    private string NormalizeMiniToolbarFontSize()
+    {
+        var value = _formattingState.FontSize;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "11";
+        }
+
+        var normalized = value.Trim().Replace("pt", string.Empty, StringComparison.OrdinalIgnoreCase);
+        return double.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
+            ? size.ToString("0.##", CultureInfo.InvariantCulture)
+            : "11";
+    }
+
     private string NormalizeMiniToolbarTextColor()
-        => NormalizeMiniToolbarColorValue(_formattingState.TextColor, "#111827");
+        => NormalizeMiniToolbarColorValue(_formattingState.TextColor, string.Empty);
 
     private string NormalizeMiniToolbarHighlightColor()
-        => NormalizeMiniToolbarColorValue(_formattingState.HighlightColor, "#ffffff");
+        => NormalizeMiniToolbarColorValue(_formattingState.HighlightColor, string.Empty);
 
     private static string GetMiniToolbarColorPickerClass(bool mixed)
         => mixed
             ? "tm-document-editor__mini-color-picker tm-document-editor__mini-color-picker--mixed"
             : "tm-document-editor__mini-color-picker";
+
+    private Task HandleMiniToolbarFontSizeChangedAsync(ChangeEventArgs args)
+    {
+        var selection = GetMiniToolbarSelectionSnapshot();
+        return double.TryParse(args.Value?.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
+            ? RunFloatingSelectionRegistryCommandAsync(selection, "fontSize", size, false)
+            : Task.CompletedTask;
+    }
 
     private Task HandleMiniToolbarTextColorAppliedAsync(string? value)
     {
@@ -2723,7 +2888,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             ? DateTimeOffset.UtcNow.AddMinutes(10)
             : DateTimeOffset.UtcNow.AddSeconds(1);
 
-        if (isOpen && _miniToolbar is null && _lastMiniToolbarRequest is not null)
+        if (isOpen && _miniToolbar is null && IsVisibleRangeMiniToolbarRequest(_lastMiniToolbarRequest))
         {
             _lastMiniToolbarRequest.IsVisible = true;
             return HandleMiniToolbarChangedAsync(_lastMiniToolbarRequest);
@@ -2733,10 +2898,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     }
 
     private WysiwygSelectionSnapshot? GetMiniToolbarSelectionSnapshot()
-        => _miniToolbar?.Selection
-            ?? _lastMiniToolbarRequest?.Selection
-            ?? _lastBodyRangeSelectionSnapshot
-            ?? _lastBodySelectionSnapshot;
+        => FirstRangeSelection(
+            _miniToolbar?.Selection,
+            _lastMiniToolbarRequest?.Selection,
+            _lastBodyRangeSelectionSnapshot);
+
+    private static WysiwygSelectionSnapshot? FirstRangeSelection(params WysiwygSelectionSnapshot?[] selections)
+        => selections.FirstOrDefault(selection => selection?.IsCollapsed == false);
 
     private static string NormalizeMiniToolbarColorValue(string? value, string fallback)
     {
@@ -2921,7 +3089,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var previousMiniToolbar = _miniToolbar ?? _lastMiniToolbarRequest;
         if (!closeAfterCommand)
         {
-            _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(1);
+            _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(4);
             _ignoreFloatingCollapsedSelectionUntil = DateTimeOffset.UtcNow.AddSeconds(1);
         }
 
@@ -2962,7 +3130,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         if (!closeAfterCommand)
         {
-            _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(1);
+            _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(4);
             _ignoreFloatingCollapsedSelectionUntil = DateTimeOffset.UtcNow.AddSeconds(1);
         }
 
@@ -3035,7 +3203,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
-        previousMiniToolbar.Selection = selection ?? previousMiniToolbar.Selection;
+        previousMiniToolbar.Selection = FirstRangeSelection(selection, previousMiniToolbar.Selection);
+        if (previousMiniToolbar.Selection is null)
+        {
+            _miniToolbar = null;
+            _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         previousMiniToolbar.IsVisible = true;
         await HandleMiniToolbarChangedAsync(previousMiniToolbar);
     }
@@ -3068,15 +3244,39 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 _formattingState.HighlightColor = highlightColor;
                 _formattingState.HighlightColorMixed = false;
                 break;
+            case "fontSize" when payload is double fontSize:
+                _optimisticFloatingFontSize = $"{fontSize.ToString("0.##", CultureInfo.InvariantCulture)}pt";
+                _optimisticFloatingFormattingSelectionKey = GetFloatingFormattingSelectionKey(selection);
+                _optimisticFloatingFormattingExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+                _formattingState.FontSize = _optimisticFloatingFontSize;
+                _formattingState.FontSizeMixed = false;
+                break;
+            case "fontSize" when payload is int fontSize:
+                _optimisticFloatingFontSize = $"{fontSize.ToString(CultureInfo.InvariantCulture)}pt";
+                _optimisticFloatingFormattingSelectionKey = GetFloatingFormattingSelectionKey(selection);
+                _optimisticFloatingFormattingExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+                _formattingState.FontSize = _optimisticFloatingFontSize;
+                _formattingState.FontSizeMixed = false;
+                break;
+            case "fontSize" when payload is string fontSize:
+                _optimisticFloatingFontSize = fontSize.EndsWith("pt", StringComparison.OrdinalIgnoreCase) ? fontSize : $"{fontSize}pt";
+                _optimisticFloatingFormattingSelectionKey = GetFloatingFormattingSelectionKey(selection);
+                _optimisticFloatingFormattingExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+                _formattingState.FontSize = _optimisticFloatingFontSize;
+                _formattingState.FontSizeMixed = false;
+                break;
             case "clearFormatting":
                 _optimisticFloatingTextColor = null;
                 _optimisticFloatingHighlightColor = null;
+                _optimisticFloatingFontSize = null;
                 _optimisticFloatingFormattingSelectionKey = null;
                 _optimisticFloatingFormattingExpiresAt = default;
                 _formattingState.Bold = WysiwygFormattingValue.Inactive;
                 _formattingState.Italic = WysiwygFormattingValue.Inactive;
                 _formattingState.Underline = WysiwygFormattingValue.Inactive;
                 _formattingState.Strikethrough = WysiwygFormattingValue.Inactive;
+                _formattingState.FontSize = null;
+                _formattingState.FontSizeMixed = false;
                 _formattingState.TextColor = null;
                 _formattingState.TextColorMixed = false;
                 _formattingState.HighlightColor = null;
@@ -3102,9 +3302,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         {
             _optimisticFloatingTextColor = null;
             _optimisticFloatingHighlightColor = null;
+            _optimisticFloatingFontSize = null;
             _optimisticFloatingFormattingSelectionKey = null;
             _optimisticFloatingFormattingExpiresAt = default;
             return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_optimisticFloatingFontSize))
+        {
+            _formattingState.FontSize = _optimisticFloatingFontSize;
+            _formattingState.FontSizeMixed = false;
         }
 
         if (!string.IsNullOrWhiteSpace(_optimisticFloatingTextColor))
@@ -3178,6 +3385,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return string.Create(
             CultureInfo.InvariantCulture,
             $"left: {position.Left:0.##}px; top: {position.Top:0.##}px;");
+    }
+
+    private static string MiniToolbarFloatingStyle(WysiwygMiniToolbarRequest position)
+    {
+        var width = Math.Max(240, position.Width);
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"left: {position.Left:0.##}px; top: {position.Top:0.##}px; inline-size: min({width:0.##}px, calc(100vw - 1rem));");
     }
 
     private WysiwygFormattingState ComputeFormattingState(WysiwygSelectionSnapshot snapshot)
@@ -3745,11 +3960,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             }
 
             existing.Type = runtimeRevision.Type;
-            existing.Range = Clone(runtimeRevision.Range);
+            existing.Range = ChooseRuntimeRevisionRange(existing, runtimeRevision);
             existing.Author = Clone(runtimeRevision.Author);
             existing.CreatedAt = runtimeRevision.CreatedAt;
             existing.Action = runtimeRevision.Action;
-            existing.PayloadJson = runtimeRevision.PayloadJson;
+            existing.PayloadJson = ChooseRuntimeRevisionPayload(existing, runtimeRevision);
             changed = true;
         }
 
@@ -3760,6 +3975,43 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         _currentDocument = _document;
         return InvokeAsync(StateHasChanged);
+    }
+
+    private static string? ChooseRuntimeRevisionPayload(DocumentRevision existing, DocumentRevision runtimeRevision)
+    {
+        var current = existing.PayloadJson;
+        var incoming = runtimeRevision.PayloadJson;
+        if (string.IsNullOrWhiteSpace(current) || string.IsNullOrWhiteSpace(incoming))
+        {
+            return string.IsNullOrWhiteSpace(incoming) ? current : incoming;
+        }
+
+        if (existing.Action == DocumentRevisionAction.Pending
+            && runtimeRevision.Action == DocumentRevisionAction.Pending
+            && existing.Type == runtimeRevision.Type
+            && current.Contains(incoming, StringComparison.Ordinal)
+            && current.Length > incoming.Length)
+        {
+            return current;
+        }
+
+        return incoming;
+    }
+
+    private static DocumentRevisionRange ChooseRuntimeRevisionRange(DocumentRevision existing, DocumentRevision runtimeRevision)
+    {
+        var current = existing.Range;
+        var incoming = runtimeRevision.Range;
+        if (existing.Action == DocumentRevisionAction.Pending
+            && runtimeRevision.Action == DocumentRevisionAction.Pending
+            && existing.Type == runtimeRevision.Type
+            && string.Equals(current.BlockId, incoming.BlockId, StringComparison.Ordinal)
+            && (current.EndOffset ?? 0) > (incoming.EndOffset ?? 0))
+        {
+            return Clone(current);
+        }
+
+        return Clone(incoming);
     }
 
     private Task HandleWysiwygCommentsChangedAsync(IReadOnlyList<DocumentComment> runtimeComments)
@@ -5408,6 +5660,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var synchronizedDocument = CreateProviderBoundarySnapshot(_document, runtimeDocument);
         _document = synchronizedDocument;
         _currentDocument = synchronizedDocument;
+        _wysiwygHost.MarkRuntimeDocumentSynchronized(synchronizedDocument);
         _templatePreviewDocument = null;
         _templatePreviewEnabled = false;
         _templatePreviewMessage = null;
@@ -5469,6 +5722,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         if (_wysiwygHost is not null)
         {
+            var selection = await ResolveInlineCommandSelectionAsync();
+            if (selection is not null)
+            {
+                RememberBodySelection(selection);
+            }
+
             var command = markType switch
             {
                 InlineMarkType.Bold => "toggleBold",
@@ -5477,11 +5736,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 InlineMarkType.Strikethrough => "toggleStrikethrough",
                 _ => "toggleMark"
             };
-            var payload = command == "toggleMark"
-                ? new WysiwygMarkPayload { MarkType = markType.ToString() }
-                : null;
+            var payload = WithSelectionPayload(
+                command == "toggleMark"
+                    ? new WysiwygMarkPayload { MarkType = markType.ToString() }
+                    : null,
+                selection);
 
             await _wysiwygHost.ExecuteEditorCommandAsync(command, payload);
+            await RefreshFormattingStateFromRuntimeAsync(selection);
         }
     }
 
@@ -5497,10 +5759,17 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
-        await _wysiwygHost.ExecuteEditorCommandAsync("setFontFamily", new
+        var selection = await ResolveInlineCommandSelectionAsync();
+        if (selection is not null)
+        {
+            RememberBodySelection(selection);
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync("setFontFamily", WithSelectionPayload(new
         {
             Value = cssFamily
-        });
+        }, selection));
+        await RefreshFormattingStateFromRuntimeAsync(selection);
     }
 
     private async Task ApplyFontSizeAsync(double sizePt)
@@ -5510,10 +5779,17 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
-        await _wysiwygHost.ExecuteEditorCommandAsync("setFontSize", new
+        var selection = await ResolveInlineCommandSelectionAsync();
+        if (selection is not null)
+        {
+            RememberBodySelection(selection);
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync("setFontSize", WithSelectionPayload(new
         {
             Value = FormattableString.Invariant($"{sizePt:0.##}pt")
-        });
+        }, selection));
+        await RefreshFormattingStateFromRuntimeAsync(selection);
     }
 
     private Task ApplyTextColorAsync(string color)
@@ -5523,6 +5799,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private Task ApplyHighlightColorAsync(string color)
     {
+        if (string.IsNullOrWhiteSpace(color))
+        {
+            return ClearColorMarkAsync(InlineMarkType.Highlight);
+        }
+
         return ApplyColorMarkAsync(InlineMarkType.Highlight, color);
     }
 
@@ -5532,12 +5813,94 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _pendingParagraphAlignment = alignment;
         _pendingParagraphAlignmentBlockId = selection?.AnchorBlockId;
         _pendingParagraphAlignmentExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+        ApplyParagraphAlignmentToLocalSnapshots(selection, alignment);
 
-        await ExecuteParagraphCommandAsync("setParagraphAlignment", new { Alignment = alignment });
+        await ExecuteParagraphCommandAsync("setParagraphAlignment", new { Alignment = alignment }, selection);
         _formattingState.ParagraphAlignment = alignment;
         _formattingState.ParagraphAlignmentMixed = false;
         await RefreshCommandRegistryAsync();
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearColorMarkAsync(InlineMarkType markType)
+    {
+        if (_wysiwygHost is null || EffectiveReadOnly)
+        {
+            return;
+        }
+
+        var command = markType == InlineMarkType.TextColor
+            ? "textColor"
+            : "backgroundColor";
+        var selection = await ResolveInlineCommandSelectionAsync();
+        if (selection is not null)
+        {
+            RememberBodySelection(selection);
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync(command, WithSelectionPayload(new
+        {
+            Value = (string?)null
+        }, selection));
+        await RefreshFormattingStateFromRuntimeAsync(selection);
+        ApplyFloatingFormattingOptimisticState(
+            selection,
+            markType == InlineMarkType.TextColor ? "textColor" : "highlightColor",
+            string.Empty);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ApplyParagraphAlignmentToLocalSnapshots(WysiwygSelectionSnapshot? selection, DocumentTextAlignment alignment)
+    {
+        if (selection is null)
+        {
+            return;
+        }
+
+        if (_document is not null)
+        {
+            ApplyParagraphAlignmentToDocument(_document, selection, alignment);
+        }
+
+        if (_currentDocument is not null && !ReferenceEquals(_currentDocument, _document))
+        {
+            ApplyParagraphAlignmentToDocument(_currentDocument, selection, alignment);
+        }
+    }
+
+    private static void ApplyParagraphAlignmentToDocument(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot selection,
+        DocumentTextAlignment alignment)
+    {
+        var blocks = ResolveSelectionBlocks(document, selection);
+        var anchorIndex = blocks.FindIndex(block => block.Id == selection.AnchorBlockId);
+        if (anchorIndex < 0)
+        {
+            return;
+        }
+
+        var focusBlockId = string.IsNullOrWhiteSpace(selection.FocusBlockId)
+            ? selection.AnchorBlockId
+            : selection.FocusBlockId;
+        var focusIndex = blocks.FindIndex(block => block.Id == focusBlockId);
+        if (focusIndex < 0)
+        {
+            focusIndex = anchorIndex;
+        }
+
+        var start = Math.Min(anchorIndex, focusIndex);
+        var end = Math.Max(anchorIndex, focusIndex);
+        foreach (var block in blocks.Skip(start).Take(end - start + 1))
+        {
+            if (block.Content is not (ParagraphBlockContent or HeadingBlockContent or ListBlockContent or QuoteBlockContent))
+            {
+                continue;
+            }
+
+            block.ParagraphProperties ??= new DocumentParagraphProperties();
+            block.ParagraphProperties.Alignment = alignment;
+        }
     }
 
     private async Task ApplyLineSpacingAsync(double lineSpacing)
@@ -5612,20 +5975,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         });
     }
 
-    private async Task ExecuteParagraphCommandAsync(string command, object? payload = null)
+    private async Task ExecuteParagraphCommandAsync(string command, object? payload = null, WysiwygSelectionSnapshot? resolvedSelection = null)
     {
         if (_wysiwygHost is null || EffectiveReadOnly)
         {
             return;
         }
 
-        var selection = await ResolveParagraphCommandSelectionAsync();
+        var selection = resolvedSelection ?? await ResolveParagraphCommandSelectionAsync();
         if (selection is not null)
         {
-            await _wysiwygHost.RestoreSelectionAsync(selection);
+            RememberBodySelection(selection);
         }
 
-        await _wysiwygHost.ExecuteEditorCommandAsync(command, payload);
+        await _wysiwygHost.ExecuteEditorCommandAsync(command, WithSelectionPayload(payload, selection));
     }
 
     private async Task<WysiwygSelectionSnapshot?> ResolveParagraphCommandSelectionAsync()
@@ -5649,6 +6012,50 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot ?? current;
     }
 
+    private async Task<WysiwygSelectionSnapshot?> ResolveInlineCommandSelectionAsync()
+    {
+        var current = _formattingState.CurrentSelection;
+        var currentCollapsedBodySelection = current is not null
+            && current.IsCollapsed
+            && IsBodySelection(current)
+                ? current
+                : null;
+
+        if (current is not null && current.IsCollapsed == false && IsBodySelection(current))
+        {
+            RememberBodySelection(current);
+            return current;
+        }
+
+        if (_wysiwygHost is not null)
+        {
+            var runtime = await _wysiwygHost.RequestRuntimeSelectionAsync();
+            if (runtime is not null && IsBodySelection(runtime))
+            {
+                RememberBodySelection(runtime);
+                if (runtime.IsCollapsed == false)
+                {
+                    return runtime;
+                }
+
+                if (currentCollapsedBodySelection is not null || _lastBodyRangeSelectionSnapshot is null)
+                {
+                    _lastBodyRangeSelectionSnapshot = null;
+                    return runtime;
+                }
+            }
+        }
+
+        if (currentCollapsedBodySelection is not null)
+        {
+            _lastBodyRangeSelectionSnapshot = null;
+            RememberBodySelection(currentCollapsedBodySelection);
+            return currentCollapsedBodySelection;
+        }
+
+        return _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot ?? current;
+    }
+
     private static bool IsBodySelection(WysiwygSelectionSnapshot snapshot)
         => !string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
             && (string.Equals(snapshot.Region, "Body", StringComparison.OrdinalIgnoreCase)
@@ -5665,7 +6072,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task ApplyColorMarkAsync(InlineMarkType markType, string color)
     {
-        if (_wysiwygHost is null || EffectiveReadOnly || !IsSafeHexColor(color))
+        var normalizedColor = NormalizeHexColor(color);
+        if (_wysiwygHost is null || EffectiveReadOnly || normalizedColor is null)
         {
             return;
         }
@@ -5673,27 +6081,88 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var command = markType == InlineMarkType.TextColor
             ? "textColor"
             : "backgroundColor";
-        var selection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
+        var selection = await ResolveInlineCommandSelectionAsync();
         if (selection is not null)
         {
-            await _wysiwygHost.RestoreSelectionAsync(selection);
+            RememberBodySelection(selection);
         }
 
-        await _wysiwygHost.ExecuteEditorCommandAsync(command, new
+        await _wysiwygHost.ExecuteEditorCommandAsync(command, WithSelectionPayload(new
         {
-            Value = color,
-            Selection = selection
-        });
+            Value = normalizedColor
+        }, selection));
+        await RefreshFormattingStateFromRuntimeAsync(selection);
+        ApplyFloatingFormattingOptimisticState(
+            selection,
+            markType == InlineMarkType.TextColor ? "textColor" : "highlightColor",
+            normalizedColor);
+        await InvokeAsync(StateHasChanged);
     }
 
-    private static bool IsSafeHexColor(string? color)
+    private static string? NormalizeHexColor(string? color)
     {
-        if (string.IsNullOrWhiteSpace(color) || color.Length != 7 || color[0] != '#')
+        if (string.IsNullOrWhiteSpace(color))
         {
-            return false;
+            return null;
         }
 
-        return color.Skip(1).All(Uri.IsHexDigit);
+        var trimmed = color.Trim();
+        if (trimmed.Length == 4
+            && trimmed[0] == '#'
+            && trimmed.Skip(1).All(Uri.IsHexDigit))
+        {
+            return string.Create(7, trimmed, static (span, source) =>
+            {
+                span[0] = '#';
+                span[1] = char.ToLowerInvariant(source[1]);
+                span[2] = char.ToLowerInvariant(source[1]);
+                span[3] = char.ToLowerInvariant(source[2]);
+                span[4] = char.ToLowerInvariant(source[2]);
+                span[5] = char.ToLowerInvariant(source[3]);
+                span[6] = char.ToLowerInvariant(source[3]);
+            });
+        }
+
+        return trimmed.Length == 7
+            && trimmed[0] == '#'
+            && trimmed.Skip(1).All(Uri.IsHexDigit)
+                ? trimmed.ToLowerInvariant()
+                : null;
+    }
+
+    private static IDictionary<string, object?> WithSelectionPayload(object? payload, WysiwygSelectionSnapshot? selection)
+    {
+        var values = new Dictionary<string, object?>(StringComparer.Ordinal);
+        if (payload is not null)
+        {
+            foreach (var property in payload.GetType().GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+            {
+                if (property.GetIndexParameters().Length == 0)
+                {
+                    values[property.Name] = property.GetValue(payload);
+                }
+            }
+        }
+
+        if (selection is not null)
+        {
+            values["Selection"] = selection;
+            var selectionToken = string.IsNullOrWhiteSpace(selection.SelectionToken)
+                ? selection.StableSelectionToken
+                : selection.SelectionToken;
+            if (!string.IsNullOrWhiteSpace(selectionToken))
+            {
+                values["SelectionToken"] = selectionToken;
+                values["StableSelectionToken"] = selectionToken;
+            }
+
+            if (selection.SelectionTokenData is not null)
+            {
+                values["SelectionTokenData"] = selection.SelectionTokenData;
+            }
+        }
+
+        return values;
     }
 
     private Task ClearInlineFormattingAsync()
@@ -5706,13 +6175,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             var selection = explicitSelection ?? _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
             if (selection is not null)
             {
-                await _wysiwygHost.RestoreSelectionAsync(selection);
+                RememberBodySelection(selection);
             }
 
-            await _wysiwygHost.ExecuteEditorCommandAsync("clearFormatting", new
-            {
-                Selection = selection
-            });
+            await _wysiwygHost.ExecuteEditorCommandAsync("clearFormatting", WithSelectionPayload(null, selection));
         }
     }
 
@@ -5738,15 +6204,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _pendingLinkSelectionSnapshot = null;
         if (selection is not null)
         {
-            await _wysiwygHost.RestoreSelectionAsync(selection);
+            RememberBodySelection(selection);
         }
 
-        await _wysiwygHost.ExecuteEditorCommandAsync("insertLink", new
+        await _wysiwygHost.ExecuteEditorCommandAsync("insertLink", WithSelectionPayload(new
         {
             Href = href,
-            Title = string.IsNullOrWhiteSpace(payload.Title) ? null : payload.Title.Trim(),
-            Selection = selection
-        });
+            Title = string.IsNullOrWhiteSpace(payload.Title) ? null : payload.Title.Trim()
+        }, selection));
     }
 
     private async Task RemoveLinkAsync()
@@ -5762,13 +6227,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _pendingLinkSelectionSnapshot = null;
         if (selection is not null)
         {
-            await _wysiwygHost.RestoreSelectionAsync(selection);
+            RememberBodySelection(selection);
         }
 
-        await _wysiwygHost.ExecuteEditorCommandAsync("removeLink", new
-        {
-            Selection = selection
-        });
+        await _wysiwygHost.ExecuteEditorCommandAsync("removeLink", WithSelectionPayload(null, selection));
     }
 
     private async Task<WysiwygLinkInfo?> GetCurrentLinkInfoAsync()

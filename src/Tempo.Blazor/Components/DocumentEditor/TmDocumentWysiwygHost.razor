@@ -201,6 +201,7 @@
     private string _instanceId = Guid.NewGuid().ToString("N");
     private string _accessibilityDescriptionId = $"tm-wysiwyg-a11y-{Guid.NewGuid():N}";
     private bool _jsReady;
+    private bool _jsReadySnapshotInitialized;
     private bool _jsFailed;
     private bool _disposed;
     private DotNetObjectReference<TmDocumentWysiwygHost>? _dotNetRef;
@@ -304,6 +305,9 @@
 
     /// <summary>Raised when the JS engine shows or hides the inline mini toolbar.</summary>
     [Parameter] public EventCallback<WysiwygMiniToolbarRequest?> MiniToolbarChanged { get; set; }
+
+    /// <summary>Raised when the JS runtime publishes canonical formatting state for the current selection.</summary>
+    [Parameter] public EventCallback<WysiwygFormattingState> FormattingStateChanged { get; set; }
 
     /// <summary>Raised when the JS-owned inline revision UI requests accept or reject.</summary>
     [Parameter] public EventCallback<WysiwygRevisionReviewRequest> RevisionReviewRequested { get; set; }
@@ -591,10 +595,19 @@
     [JSInvokable]
     public async Task HandleJsEngineReady(WysiwygEngineReadyEventArgs args)
     {
+        if (_jsReadySnapshotInitialized)
+        {
+            _jsReady = true;
+            await ApplyRuntimeDraftStateIfNeededAsync();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        _jsReadySnapshotInitialized = true;
         _jsReady = true;
-        await InvokeAsync(StateHasChanged);
         await SendSnapshotAsync(force: true);
         await ApplyRuntimeDraftStateIfNeededAsync(force: true);
+        await InvokeAsync(StateHasChanged);
     }
 
     /// <inheritdoc />
@@ -1093,6 +1106,12 @@
         return RequestRuntimeDocumentAsync();
     }
 
+    /// <summary>Marks a document pulled from the JS runtime as already synchronized with this host.</summary>
+    public void MarkRuntimeDocumentSynchronized(DocumentEditorDocument synchronizedDocument)
+    {
+        RememberSynchronizedSnapshot(synchronizedDocument);
+    }
+
     /// <summary>Requests a diagnostic snapshot of the live JS editor state.</summary>
     public async Task<WysiwygDebugSnapshot?> RequestDebugSnapshotAsync()
     {
@@ -1332,6 +1351,19 @@
         }
 
         return MiniToolbarChanged.InvokeAsync(request);
+    }
+
+    /// <summary>Called by the JS engine when canonical selection formatting changes.</summary>
+    [JSInvokable]
+    public Task HandleFormattingStateChanged(WysiwygFormattingState? state)
+    {
+        state ??= new WysiwygFormattingState { IsDisabled = true, DisabledReason = "missing-state" };
+        if (state.CurrentSelection is not null)
+        {
+            _lastSelectionSnapshot = state.CurrentSelection;
+        }
+
+        return FormattingStateChanged.InvokeAsync(state);
     }
 
     /// <summary>Called by the JS engine when an inline revision action is requested.</summary>

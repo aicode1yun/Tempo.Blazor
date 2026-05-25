@@ -544,23 +544,30 @@ public sealed class DocumentWysiwygOperationMapper
         }
 
         if (!selection.IsCollapsed
-            && (!string.Equals(selection.AnchorBlockId, selection.FocusBlockId, StringComparison.Ordinal)
-                || !string.Equals(selection.AnchorInlineId, selection.FocusInlineId, StringComparison.Ordinal)))
+            && !string.Equals(selection.AnchorBlockId, selection.FocusBlockId, StringComparison.Ordinal))
         {
             return null;
         }
 
-        var start = Math.Min(selection.AnchorOffset, selection.IsCollapsed ? selection.AnchorOffset : selection.FocusOffset);
-        var end = selection.IsCollapsed
-            ? selection.AnchorOffset
-            : Math.Max(selection.AnchorOffset, selection.FocusOffset);
-        var length = end - start;
-        if (length <= 0)
+        var range = ResolveSelectionRange(document, selection);
+        if (range is null || range.Value.End <= range.Value.Start)
         {
             return null;
         }
 
-        return CreateTarget(document, selection, start, length);
+        if (string.Equals(selection.AnchorInlineId, selection.FocusInlineId, StringComparison.Ordinal))
+        {
+            return CreateTarget(document, selection, range.Value.LocalStart, range.Value.End - range.Value.Start);
+        }
+
+        return new DocumentOperationTarget
+        {
+            BlockId = selection.AnchorBlockId,
+            TableCellId = selection.ActiveTableCellId,
+            InlineIndex = 0,
+            Offset = range.Value.Start,
+            Length = range.Value.End - range.Value.Start
+        };
     }
 
     private static InlineMark? CreateMark(WysiwygPatch patch)
@@ -622,6 +629,59 @@ public sealed class DocumentWysiwygOperationMapper
             Offset = Math.Max(0, offset),
             Length = Math.Max(0, length)
         };
+    }
+
+    private static (int Start, int End, int LocalStart)? ResolveSelectionRange(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot selection)
+    {
+        if (string.IsNullOrWhiteSpace(selection.AnchorBlockId)
+            || (!selection.IsCollapsed && !string.Equals(selection.AnchorBlockId, selection.FocusBlockId, StringComparison.Ordinal)))
+        {
+            return null;
+        }
+
+        if (string.Equals(selection.AnchorInlineId, selection.FocusInlineId, StringComparison.Ordinal))
+        {
+            var start = Math.Min(selection.AnchorOffset, selection.IsCollapsed ? selection.AnchorOffset : selection.FocusOffset);
+            var end = selection.IsCollapsed
+                ? selection.AnchorOffset
+                : Math.Max(selection.AnchorOffset, selection.FocusOffset);
+            var absoluteStart = ResolveAbsoluteInlineOffset(document, selection.AnchorBlockId, selection.AnchorInlineId, start, selection.AnchorBlockOffset);
+            return (absoluteStart, absoluteStart + Math.Max(0, end - start), Math.Max(0, start));
+        }
+
+        var anchor = ResolveAbsoluteInlineOffset(document, selection.AnchorBlockId, selection.AnchorInlineId, selection.AnchorOffset, selection.AnchorBlockOffset);
+        var focus = ResolveAbsoluteInlineOffset(document, selection.FocusBlockId, selection.FocusInlineId, selection.FocusOffset, selection.FocusBlockOffset);
+        return (Math.Min(anchor, focus), Math.Max(anchor, focus), Math.Min(selection.AnchorOffset, selection.FocusOffset));
+    }
+
+    private static int ResolveAbsoluteInlineOffset(
+        DocumentEditorDocument document,
+        string? blockId,
+        string? inlineId,
+        int inlineOffset,
+        int blockOffset)
+    {
+        var inlines = GetEditableInlines(document.Blocks.FirstOrDefault(block => block.Id == blockId)?.Content);
+        if (inlines is null)
+        {
+            return Math.Max(0, blockOffset);
+        }
+
+        if (!string.IsNullOrWhiteSpace(inlineId))
+        {
+            var inlineIndex = inlines.FindIndex(inline => string.Equals(inline.Id, inlineId, StringComparison.Ordinal));
+            if (inlineIndex >= 0)
+            {
+                var prefix = inlines.Take(inlineIndex).Sum(inline => GetInlineText(inline).Length);
+                var local = Math.Clamp(inlineOffset, 0, GetInlineText(inlines[inlineIndex]).Length);
+                return prefix + local;
+            }
+        }
+
+        var length = inlines.Sum(inline => GetInlineText(inline).Length);
+        return Math.Clamp(blockOffset, 0, length);
     }
 
     private static double CalculateInsertedBlockOrder(DocumentEditorDocument document, WysiwygSelectionSnapshot? selection)
@@ -693,27 +753,33 @@ public sealed class DocumentWysiwygOperationMapper
     private static bool RangeHasMark(DocumentEditorDocument document, WysiwygSelectionSnapshot selection, InlineMark mark)
     {
         var inlines = GetEditableInlines(document.Blocks.FirstOrDefault(block => block.Id == selection.AnchorBlockId)?.Content);
-        if (inlines is null)
+        var range = ResolveSelectionRange(document, selection);
+        if (inlines is null || range is null || range.Value.End <= range.Value.Start)
         {
             return false;
         }
 
-        var inlineIndex = ResolveInlineIndex(document, selection.AnchorBlockId, selection.AnchorInlineId);
-        if (inlineIndex < 0 || inlineIndex >= inlines.Count)
+        var hasText = false;
+        var currentOffset = 0;
+        foreach (var inline in inlines)
         {
-            return false;
+            var textLength = GetInlineText(inline).Length;
+            var inlineStart = currentOffset;
+            var inlineEnd = inlineStart + textLength;
+            currentOffset = inlineEnd;
+            if (inlineEnd <= range.Value.Start || inlineStart >= range.Value.End || textLength == 0)
+            {
+                continue;
+            }
+
+            hasText = true;
+            if (!inline.Marks.Any(existing => SameMark(existing, mark)))
+            {
+                return false;
+            }
         }
 
-        var startOffset = Math.Min(selection.AnchorOffset, selection.IsCollapsed ? selection.AnchorOffset : selection.FocusOffset);
-        var endOffset = selection.IsCollapsed
-            ? selection.AnchorOffset
-            : Math.Max(selection.AnchorOffset, selection.FocusOffset);
-
-        var inline = inlines[inlineIndex];
-        var textLength = GetInlineText(inline).Length;
-        return endOffset > startOffset
-            && startOffset < textLength
-            && inline.Marks.Any(existing => SameMark(existing, mark));
+        return hasText;
     }
 
     private static string GetInlineText(InlineContent inline)

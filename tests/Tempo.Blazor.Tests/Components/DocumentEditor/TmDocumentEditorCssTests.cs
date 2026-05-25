@@ -64,6 +64,18 @@ public class TmDocumentEditorCssTests
         css.Should().Contain("max-height: 70vh");
         css.Should().Contain("content: attr(aria-label)");
         css.Should().Contain(".tm-document-revision-panel__item");
+        css.Should().Contain(".tm-document-side-panel[data-panel-layout=\"docked-tabs\"]");
+        css.Should().Contain(".tm-document-revision-panel__action--accept");
+        css.Should().Contain(".tm-document-revision-panel__action--reject");
+        css.Should().Contain(".tm-document-revision-panel__batch-action--accept");
+        css.Should().Contain(".tm-document-revision-panel__batch-action--reject");
+        css.Should().Contain(".tm-document-revision-panel__action:disabled");
+        css.Should().Contain(".tm-document-revision-panel__batch-action:disabled");
+        css.Should().Contain(".tm-document-editor__ribbon-tab--active::after");
+        css.Should().Contain(".tm-document-editor__track-toggle--on");
+        css.Should().Contain(".tm-document-editor__track-toggle--off");
+        css.Should().Contain(".tm-document-editor__track-toggle::before");
+        css.Should().Contain(".tm-document-editor__track-toggle::after");
         css.Should().Contain("box-shadow: 0 0.75rem 2rem");
         css.Should().Contain(".tm-wysiwyg-page__layer--object");
         css.Should().Contain(".tm-wysiwyg-layout-object");

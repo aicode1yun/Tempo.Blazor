@@ -210,6 +210,9 @@ public class DocumentCommentAnchor
 /// <summary>Single comment entry.</summary>
 public class DocumentCommentEntry
 {
+    /// <summary>Entry identifier.</summary>
+    public string Id { get; init; } = Guid.NewGuid().ToString("N");
+
     /// <summary>Author identifier.</summary>
     public string? AuthorId { get; set; }
 
@@ -243,6 +246,37 @@ public class DocumentRevision
 
     /// <summary>Current action status.</summary>
     public DocumentRevisionAction Action { get; set; } = DocumentRevisionAction.Pending;
+
+    /// <summary>Range affected by the revision.</summary>
+    public DocumentRevisionRange Range { get; set; } = new();
+
+    /// <summary>Optional payload JSON for formatting or imported revision metadata.</summary>
+    public string? PayloadJson { get; set; }
+
+    /// <summary>Optional stable grouping id used by review UIs.</summary>
+    public string? GroupId { get; set; }
+}
+
+/// <summary>Range affected by a tracked revision.</summary>
+public class DocumentRevisionRange
+{
+    /// <summary>Target block id.</summary>
+    public string? BlockId { get; set; }
+
+    /// <summary>Optional source block id for move revisions.</summary>
+    public string? SourceBlockId { get; set; }
+
+    /// <summary>Start inline index.</summary>
+    public int? StartInlineIndex { get; set; }
+
+    /// <summary>Start character offset.</summary>
+    public int? StartOffset { get; set; }
+
+    /// <summary>End inline index.</summary>
+    public int? EndInlineIndex { get; set; }
+
+    /// <summary>End character offset.</summary>
+    public int? EndOffset { get; set; }
 }
 
 /// <summary>Revision type.</summary>

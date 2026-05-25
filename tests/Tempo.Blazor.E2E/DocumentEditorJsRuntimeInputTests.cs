@@ -112,6 +112,58 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
     }
 
     [TestMethod]
+    public async Task Phase4_CompositionPreviewSurvivesRuntimeSelectionRefreshAndCommitsOnce()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        await PlaceCaretInVisibleTextBlockAsync(page, 0, 6);
+
+        var result = await page.EvaluateAsync<CompositionProbe>(
+            """
+            async () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const selection = window.getSelection();
+                const block = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE
+                    ? selection.anchorNode.closest('[data-block-id]')
+                    : selection?.anchorNode?.parentElement?.closest('[data-block-id]');
+                const editable = block?.closest('[contenteditable="true"]');
+                if (!host || !instanceId || !block || !editable) {
+                    throw new Error('Composition test requires an active editable block.');
+                }
+
+                const blockId = block.getAttribute('data-block-id') || '';
+                const dispatch = (type, data) => editable.dispatchEvent(new CompositionEvent(type, {
+                    data,
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                const beforeUndo = window.tmDocumentEditorEngine?.getDebugUndoStack?.(instanceId)?.Undo?.length || 0;
+                dispatch('compositionstart', '');
+                dispatch('compositionupdate', 'ž');
+                const previewText = document.querySelector(`[data-block-id="${blockId}"]`)?.textContent || '';
+                window.tmDocumentEditorRuntime?.getSelectionSnapshot?.(instanceId);
+                const afterRefreshText = document.querySelector(`[data-block-id="${blockId}"]`)?.textContent || '';
+                dispatch('compositionend', 'ž');
+                await new Promise(resolve => setTimeout(resolve, 40));
+                const committedText = document.querySelector(`[data-block-id="${blockId}"]`)?.textContent || '';
+                const undo = window.tmDocumentEditorEngine?.getDebugUndoStack?.(instanceId)?.Undo || [];
+                return {
+                    previewText,
+                    afterRefreshText,
+                    committedText,
+                    undoDelta: undo.length - beforeUndo
+                };
+            }
+            """);
+
+        Assert.IsTrue(result.PreviewText.Contains('ž'), "Composition update should render a local preview.");
+        Assert.IsTrue(result.AfterRefreshText.Contains('ž'), "Selection/toolbar-state refresh must not erase composition preview.");
+        Assert.IsTrue(result.CommittedText.Contains('ž'), "Composition end should commit the composed text.");
+        Assert.AreEqual(1, result.UndoDelta, "Composition commit should produce one undo transaction.");
+    }
+
+    [TestMethod]
     public async Task Phase6_EnterCreatesVisibleEmptyParagraphImmediately()
     {
         var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
@@ -447,5 +499,20 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
 
         [JsonPropertyName("caretPlaceholderCount")]
         public int CaretPlaceholderCount { get; set; }
+    }
+
+    private sealed class CompositionProbe
+    {
+        [JsonPropertyName("previewText")]
+        public string PreviewText { get; set; } = string.Empty;
+
+        [JsonPropertyName("afterRefreshText")]
+        public string AfterRefreshText { get; set; } = string.Empty;
+
+        [JsonPropertyName("committedText")]
+        public string CommittedText { get; set; } = string.Empty;
+
+        [JsonPropertyName("undoDelta")]
+        public int UndoDelta { get; set; }
     }
 }

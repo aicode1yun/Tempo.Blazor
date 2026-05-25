@@ -174,8 +174,8 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             .ExecuteAsync(new DocumentEditorCommandContext { HasDocument = true }, payload));
 
         HasJsCall("insertLink").Should().BeTrue("link command must execute the runtime insertLink command");
-        HasJsArgument("https://example.test/phase-24").Should().BeTrue();
-        HasJsArgument("Phase 2.4 link").Should().BeTrue();
+        HasJsPayloadValue("Href", "https://example.test/phase-24").Should().BeTrue();
+        HasJsPayloadValue("Title", "Phase 2.4 link").Should().BeTrue();
     }
 
     [Fact]
@@ -502,6 +502,15 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         JSInterop.Invocations.Any(invocation =>
             invocation.Identifier == "tmDocumentEditorRuntime.executeCommand" &&
             invocation.Arguments.Any(arg => arg?.ToString()?.Contains(expected, StringComparison.Ordinal) == true));
+
+    private bool HasJsPayloadValue(string key, string expected) =>
+        JSInterop.Invocations.Any(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+            && invocation.Arguments
+                .OfType<IDictionary<string, object?>>()
+                .Any(payload =>
+                    payload.TryGetValue(key, out var value)
+                    && string.Equals(value?.ToString(), expected, StringComparison.Ordinal)));
 
     private static DocumentEditorCommandRegistry GetEditorRegistry(IRenderedComponent<TmDocumentEditor> cut) =>
         cut.FindComponent<TmDocumentEditorToolbar>().Instance.CommandRegistry

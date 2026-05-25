@@ -36,15 +36,23 @@
                 </select>
             </label>
             <button type="button"
+                    class="tm-document-revision-panel__batch-action tm-document-revision-panel__batch-action--accept"
                     disabled="@(!CanBatchReview)"
+                    aria-disabled="@BatchActionAriaDisabled"
+                    data-review-action="accept-all"
                     data-testid="document-revision-accept-all"
                     @onclick="AcceptAllAsync">
+                <TmIcon Name="check" Size="IconSize.Sm" />
                 @Loc["TmDocumentEditor_AcceptAllRevisions"]
             </button>
             <button type="button"
+                    class="tm-document-revision-panel__batch-action tm-document-revision-panel__batch-action--reject"
                     disabled="@(!CanBatchReview)"
+                    aria-disabled="@BatchActionAriaDisabled"
+                    data-review-action="reject-all"
                     data-testid="document-revision-reject-all"
                     @onclick="RejectAllAsync">
+                <TmIcon Name="x" Size="IconSize.Sm" />
                 @Loc["TmDocumentEditor_RejectAllRevisions"]
             </button>
         </div>
@@ -66,17 +74,25 @@
                     </button>
                     <div class="tm-document-revision-panel__actions">
                         <button type="button"
-                                disabled="@(!CanReview || IsBusy)"
+                                class="tm-document-revision-panel__action tm-document-revision-panel__action--accept"
+                                disabled="@ReviewActionDisabled"
+                                aria-disabled="@ReviewActionAriaDisabled"
                                 aria-label="@Loc["TmDocumentEditor_AcceptRevisionAria", GetAuthorLabel(revision)]"
                                 @onclick="() => OnAcceptRevision.InvokeAsync(revision)"
+                                data-review-action="accept"
                                 data-testid="document-revision-accept">
+                            <TmIcon Name="check" Size="IconSize.Sm" />
                             @Loc["TmDocumentEditor_AcceptRevision"]
                         </button>
                         <button type="button"
-                                disabled="@(!CanReview || IsBusy)"
+                                class="tm-document-revision-panel__action tm-document-revision-panel__action--reject"
+                                disabled="@ReviewActionDisabled"
+                                aria-disabled="@ReviewActionAriaDisabled"
                                 aria-label="@Loc["TmDocumentEditor_RejectRevisionAria", GetAuthorLabel(revision)]"
                                 @onclick="() => OnRejectRevision.InvokeAsync(revision)"
+                                data-review-action="reject"
                                 data-testid="document-revision-reject">
+                            <TmIcon Name="x" Size="IconSize.Sm" />
                             @Loc["TmDocumentEditor_RejectRevision"]
                         </button>
                     </div>
@@ -159,6 +175,12 @@
         };
 
     private bool CanBatchReview => CanReview && !IsBusy && FilteredPendingRevisions.Count > 0;
+
+    private bool ReviewActionDisabled => !CanReview || IsBusy;
+
+    private string ReviewActionAriaDisabled => ReviewActionDisabled ? "true" : "false";
+
+    private string BatchActionAriaDisabled => CanBatchReview ? "false" : "true";
 
     private string GetItemClass(DocumentRevision revision)
         => string.Equals(SelectedRevisionId, revision.Id, StringComparison.Ordinal)

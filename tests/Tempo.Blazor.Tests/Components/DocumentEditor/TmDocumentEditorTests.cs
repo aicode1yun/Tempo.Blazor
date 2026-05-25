@@ -193,26 +193,51 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .Add(p => p.CommentsCount, 2)
             .Add(p => p.RevisionsCount, 1)
             .Add(p => p.VersionsCount, 3)
-            .Add(p => p.CommentsContent, builder => builder.AddContent(0, "comments content"))
-            .Add(p => p.RevisionsContent, builder => builder.AddContent(0, "revisions content"))
-            .Add(p => p.VersionsContent, builder => builder.AddContent(0, "versions content"))
-            .Add(p => p.PropertiesContent, builder => builder.AddContent(0, "properties content"))
+            .Add(p => p.CommentsContent, builder => builder.AddMarkupContent(0, "<div data-testid='side-panel-comments-content'>comments content</div>"))
+            .Add(p => p.RevisionsContent, builder => builder.AddMarkupContent(0, "<div data-testid='side-panel-revisions-content'>revisions content</div>"))
+            .Add(p => p.VersionsContent, builder => builder.AddMarkupContent(0, "<div data-testid='side-panel-versions-content'>versions content</div>"))
+            .Add(p => p.PropertiesContent, builder => builder.AddMarkupContent(0, "<div data-testid='side-panel-properties-content'>properties content</div>"))
             .Add(p => p.ShowPages, true)
-            .Add(p => p.PagesContent, builder => builder.AddContent(0, "pages content")));
+            .Add(p => p.PagesContent, builder => builder.AddMarkupContent(0, "<div data-testid='side-panel-pages-content'>pages content</div>")));
 
+        cut.Find("[data-testid='document-side-panel']")
+            .GetAttribute("data-panel-layout")
+            .Should()
+            .Be("docked-tabs");
+        cut.Find("[data-testid='document-side-panel']")
+            .GetAttribute("data-visible-panel-count")
+            .Should()
+            .Be("1");
+        cut.Find("[data-testid='document-side-panel-body']")
+            .GetAttribute("data-active-tab")
+            .Should()
+            .Be("comments");
         cut.Find("[data-testid='document-side-panel-tab-comments']")
             .GetAttribute("aria-selected")
             .Should()
             .Be("true");
-        cut.Markup.Should().Contain("comments content");
+        cut.Find("[data-testid='side-panel-comments-content']").Should().NotBeNull();
+        cut.FindAll("[data-testid='side-panel-revisions-content']").Should().BeEmpty();
+        cut.FindAll("[data-testid='side-panel-versions-content']").Should().BeEmpty();
 
         cut.Find("[data-testid='document-side-panel-tab-revisions']").Click();
 
         activeTab.Should().Be(DocumentSidePanelTab.Revisions);
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.ActiveTab, activeTab));
+        cut.Find("[data-testid='document-side-panel-body']")
+            .GetAttribute("data-active-tab")
+            .Should()
+            .Be("revisions");
+        cut.Find("[data-testid='side-panel-revisions-content']").Should().NotBeNull();
+        cut.FindAll("[data-testid='side-panel-comments-content']").Should().BeEmpty();
+        cut.FindAll("[data-testid='side-panel-versions-content']").Should().BeEmpty();
 
         cut.Find("[data-testid='document-side-panel-tab-pages']").Click();
 
         activeTab.Should().Be(DocumentSidePanelTab.Pages);
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.ActiveTab, activeTab));
+        cut.Find("[data-testid='side-panel-pages-content']").Should().NotBeNull();
+        cut.FindAll("[data-testid='side-panel-revisions-content']").Should().BeEmpty();
     }
 
     [Fact]
@@ -272,7 +297,12 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .GetAttribute("aria-selected")
             .Should()
             .Be("true");
+        cut.Find("[data-testid='document-editor-workspace']")
+            .GetAttribute("data-active-side-panel-tab")
+            .Should()
+            .Be("revisions");
         cut.Find("[data-testid='document-revision-panel']").Should().NotBeNull();
+        cut.FindAll("[data-testid='document-version-panel']").Should().BeEmpty();
 
         cut.Find("[data-testid='document-side-panel-close']").Click();
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
@@ -282,7 +312,16 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .GetAttribute("aria-selected")
             .Should()
             .Be("true");
+        cut.Find("[data-testid='document-editor-workspace']")
+            .GetAttribute("data-side-panel-layout")
+            .Should()
+            .Be("docked-tabs");
+        cut.Find("[data-testid='document-editor-workspace']")
+            .GetAttribute("data-active-side-panel-tab")
+            .Should()
+            .Be("versions");
         cut.Find("[data-testid='document-version-panel']").Should().NotBeNull();
+        cut.FindAll("[data-testid='document-revision-panel']").Should().BeEmpty();
     }
 
     [Fact]
@@ -299,7 +338,28 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .GetAttribute("aria-selected")
             .Should()
             .Be("true");
+        cut.Find("[data-testid='document-toolbar']")
+            .GetAttribute("data-active-ribbon-tab")
+            .Should()
+            .Be("home");
+        cut.Find("[data-testid='document-ribbon-panel']")
+            .GetAttribute("data-active-ribbon-tab")
+            .Should()
+            .Be("home");
+        cut.Find("[data-testid='document-ribbon-tab-home']").ClassList
+            .Should()
+            .Contain("tm-document-editor__ribbon-tab--active");
+        cut.Find("[data-testid='document-ribbon-tab-home']")
+            .GetAttribute("aria-current")
+            .Should()
+            .Be("page");
+        cut.Find("[data-testid='document-ribbon-tab-home']")
+            .GetAttribute("data-active")
+            .Should()
+            .Be("true");
         cut.Find("[data-testid='document-save']").Should().NotBeNull();
+        cut.Find("[data-testid='document-bold']").Should().NotBeNull();
+        cut.Find("[data-testid='document-font-size']").Should().NotBeNull();
         cut.FindAll("[data-testid='document-toolbar-table']").Should().BeEmpty();
 
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
@@ -312,6 +372,17 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-import-docx-label']").Should().NotBeNull();
 
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+        cut.Find("[data-testid='document-toolbar']")
+            .GetAttribute("data-active-ribbon-tab")
+            .Should()
+            .Be("review");
+        cut.Find("[data-testid='document-ribbon-panel']")
+            .GetAttribute("data-active-ribbon-tab")
+            .Should()
+            .Be("review");
+        cut.Find("[data-testid='document-ribbon-tab-review']").ClassList
+            .Should()
+            .Contain("tm-document-editor__ribbon-tab--active");
         cut.Find("[data-testid='document-track-changes']").Should().NotBeNull();
         cut.Find("[data-testid='document-review-display-mode']").Should().NotBeNull();
         cut.Find("[data-testid='document-open-comments']").Should().NotBeNull();
@@ -319,12 +390,63 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-compare-open']").Should().NotBeNull();
         cut.Find("[data-testid='document-protect-document']").Should().NotBeNull();
         cut.Find("[data-testid='document-mark-editable-region']").Should().NotBeNull();
+        cut.FindAll("[data-testid='document-bold']").Should().BeEmpty();
+        cut.FindAll("[data-testid='document-font-size']").Should().BeEmpty();
         cut.FindAll("[data-testid='document-template-preview']").Should().BeEmpty();
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
         cut.Find("[data-testid='document-toggle-nonprinting']").Should().NotBeNull();
         cut.Find("[data-testid='document-template-preview']").Should().NotBeNull();
         cut.Find("[data-testid='document-open-versions']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TrackChangesButton_RendersAsToggleWithStateAndAriaPressed()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.CanTrackChanges, true)
+            .Add(p => p.TrackChangesEnabled, false));
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+
+        var offButton = cut.Find("[data-testid='document-track-changes']");
+        offButton.GetAttribute("aria-pressed").Should().Be("false");
+        offButton.GetAttribute("data-toggle").Should().Be("true");
+        offButton.GetAttribute("data-state").Should().Be("off");
+        offButton.ClassList.Should().Contain("tm-document-editor__track-toggle--off");
+        offButton.ClassList.Should().NotContain("tm-document-editor__track-toggle--on");
+        cut.Find("[data-testid='document-toolbar']")
+            .GetAttribute("data-track-changes-state")
+            .Should()
+            .Be("off");
+
+        cut.SetParametersAndRender(parameters => parameters
+            .Add(p => p.CanTrackChanges, true)
+            .Add(p => p.TrackChangesEnabled, true));
+
+        var onButton = cut.Find("[data-testid='document-track-changes']");
+        onButton.GetAttribute("aria-pressed").Should().Be("true");
+        onButton.GetAttribute("data-state").Should().Be("on");
+        onButton.ClassList.Should().Contain("tm-document-editor__track-toggle--on");
+        onButton.ClassList.Should().Contain("tm-document-editor__ribbon-button--active");
+        cut.Find("[data-testid='document-toolbar']")
+            .GetAttribute("data-track-changes-state")
+            .Should()
+            .Be("on");
+    }
+
+    [Fact]
+    public void TrackChangesButton_ClickInvokesToggleCallback()
+    {
+        var toggleCount = 0;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.CanTrackChanges, true)
+            .Add(p => p.OnToggleTrackChanges, () => toggleCount++));
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+        cut.Find("[data-testid='document-track-changes']").Click();
+
+        toggleCount.Should().Be(1);
     }
 
     [Fact]
@@ -817,6 +939,201 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task WysiwygFormattingStateChanged_UpdatesToolbarFromCanonicalEventAndIgnoresStaleVersions()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var selection = new WysiwygSelectionSnapshot
+        {
+            Region = "Body",
+            AnchorBlockId = paragraph.Id,
+            AnchorInlineId = inline.Id,
+            AnchorOffset = 0,
+            FocusBlockId = paragraph.Id,
+            FocusInlineId = inline.Id,
+            FocusOffset = 4,
+            IsCollapsed = false,
+            SelectionToken = "phase-6-selection-token",
+            StableSelectionToken = "phase-6-selection-token"
+        };
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+
+        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+        {
+            Version = 4,
+            Bold = WysiwygFormattingValue.Active,
+            FontSize = "28pt",
+            TextColor = "#2563eb",
+            HighlightColor = "#fde68a",
+            CurrentSelection = selection
+        }));
+
+        cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("true");
+        cut.Find("[data-testid='document-font-size']").GetAttribute("value").Should().Be("28");
+        cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#2563eb");
+        cut.Find("[data-testid='document-highlight-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#fde68a");
+
+        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+        {
+            Version = 3,
+            Bold = WysiwygFormattingValue.Inactive,
+            FontSize = "12pt",
+            TextColor = "#111827",
+            HighlightColor = "#ffffff",
+            CurrentSelection = selection
+        }));
+
+        cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("true");
+        cut.Find("[data-testid='document-font-size']").GetAttribute("value").Should().Be("28");
+        cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#2563eb");
+    }
+
+    [Fact]
+    public async Task ToolbarTextColorCommand_RefreshesCanonicalRuntimeStateAfterCommand()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var selection = new WysiwygSelectionSnapshot
+        {
+            Region = "Body",
+            AnchorBlockId = paragraph.Id,
+            AnchorInlineId = inline.Id,
+            AnchorOffset = 0,
+            FocusBlockId = paragraph.Id,
+            FocusInlineId = inline.Id,
+            FocusOffset = 4,
+            IsCollapsed = false,
+            SelectionToken = "phase-6-selection-token",
+            StableSelectionToken = "phase-6-selection-token"
+        };
+
+        JSInterop.Setup<WysiwygFormattingState>("tmDocumentEditorRuntime.getFormattingState", _ => true)
+            .SetResult(new WysiwygFormattingState
+            {
+                Version = 5,
+                TextColor = "#2563eb",
+                CurrentSelection = selection,
+                ActiveRegion = "Body"
+            });
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+
+        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+        {
+            Version = 4,
+            CurrentSelection = selection,
+            ActiveRegion = "Body"
+        }));
+
+        var textColorPicker = cut.FindComponents<TmColorPicker>()
+            .Single(component => component.Markup.Contains("document-font-color-trigger", StringComparison.Ordinal));
+
+        await cut.InvokeAsync(() => textColorPicker.Instance.ValueChanged.InvokeAsync("#2563EB"));
+
+        var textColorInvocation = JSInterop.Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+                && invocation.Arguments.Count > 1
+                && string.Equals(invocation.Arguments[1]?.ToString(), "textColor", StringComparison.Ordinal));
+        textColorInvocation
+            .Should()
+            .NotBeNull();
+        JsonSerializer.Serialize(textColorInvocation!.Arguments[2], DocumentEditorJson.Options)
+            .Should()
+            .Contain("#2563eb")
+            .And.Contain("phase-6-selection-token")
+            .And.NotContain("#2563EB");
+        cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#2563eb");
+    }
+
+    [Fact]
+    public async Task ToolbarHighlightClearCommand_RemovesHighlightWithSelectionToken()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var selection = new WysiwygSelectionSnapshot
+        {
+            Region = "Body",
+            AnchorBlockId = paragraph.Id,
+            AnchorInlineId = inline.Id,
+            AnchorOffset = 0,
+            FocusBlockId = paragraph.Id,
+            FocusInlineId = inline.Id,
+            FocusOffset = 4,
+            IsCollapsed = false,
+            SelectionToken = "phase-6-highlight-token",
+            StableSelectionToken = "phase-6-highlight-token"
+        };
+
+        JSInterop.Setup<WysiwygFormattingState>("tmDocumentEditorRuntime.getFormattingState", _ => true)
+            .SetResult(new WysiwygFormattingState
+            {
+                Version = 5,
+                HighlightColor = null,
+                CurrentSelection = selection,
+                ActiveRegion = "Body"
+            });
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+
+        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+        {
+            Version = 4,
+            CurrentSelection = selection,
+            HighlightColor = "#fde68a",
+            ActiveRegion = "Body"
+        }));
+
+        var highlightPicker = cut.FindComponents<TmColorPicker>()
+            .Single(component => component.Markup.Contains("document-highlight-color-trigger", StringComparison.Ordinal));
+
+        await cut.InvokeAsync(() => highlightPicker.Instance.ValueChanged.InvokeAsync(string.Empty));
+
+        var highlightInvocation = JSInterop.Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+                && invocation.Arguments.Count > 1
+                && string.Equals(invocation.Arguments[1]?.ToString(), "backgroundColor", StringComparison.Ordinal));
+        highlightInvocation
+            .Should()
+            .NotBeNull();
+        JsonSerializer.Serialize(highlightInvocation!.Arguments[2], DocumentEditorJson.Options)
+            .Should()
+            .Contain("phase-6-highlight-token")
+            .And.NotContain("#fde68a");
+        cut.Find("[data-testid='document-highlight-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().NotBe("#fde68a");
+    }
+
+    [Fact]
     public async Task Toolbar_FormattingControlsRouteToExplicitJsRuntimeCommands()
     {
         var provider = new InMemoryDocumentEditorProvider();
@@ -847,6 +1164,34 @@ public class TmDocumentEditorTests : LocalizationTestBase
         commands.Should().Contain("toggleBold");
         commands.Should().Contain("setFontSize");
         commands.Should().Contain("setParagraphAlignment");
+    }
+
+    [Fact]
+    public async Task ToolbarFontSizeCommand_RejectsOutOfRangeValue()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() =>
+            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+
+        await cut.Find("[data-testid='document-font-size']").ChangeAsync(new ChangeEventArgs { Value = "120" });
+
+        JSInterop.Invocations
+            .Where(invocation => invocation.Identifier == "tmDocumentEditorRuntime.executeCommand")
+            .Select(invocation => invocation.Arguments.Count > 1 ? invocation.Arguments[1]?.ToString() : null)
+            .Should()
+            .NotContain("setFontSize");
     }
 
     [Fact]
@@ -921,6 +1266,146 @@ public class TmDocumentEditorTests : LocalizationTestBase
         image.AssetId.Should().Be("asset-1");
         image.Url.Should().BeNull();
         JsonSerializer.Serialize(captured.Document, DocumentEditorJson.Options).Should().NotContain("display-only");
+    }
+
+    [Fact]
+    public async Task SaveRequest_UsesCanonicalRuntimeDocumentForFormattingCommentsRevisionsAndJsonSnapshot()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = DocumentEditorDocument.Empty("doc-phase16");
+        seeded.Blocks.Add(new DocumentBlock
+        {
+            Id = "phase16-paragraph",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = "phase16-run-old", Text = "Old provider text" }]
+            }
+        });
+        seeded.Comments.Add(new DocumentComment { Id = "old-comment" });
+        seeded.Revisions.Add(new DocumentRevision { Id = "old-revision", Type = DocumentRevisionType.Insertion });
+        await SeedDocumentAsync(provider, seeded);
+
+        var runtimeDocument = Clone(seeded);
+        var runtimeParagraph = (ParagraphBlockContent)runtimeDocument.Blocks.Single().Content;
+        runtimeParagraph.Inlines =
+        [
+            new TextRun
+            {
+                Id = "phase16-run-runtime",
+                Text = "Runtime persisted text",
+                Marks =
+                [
+                    new InlineMark { Type = InlineMarkType.Bold },
+                    new InlineMark { Type = InlineMarkType.FontFamily, Value = "Georgia, serif" },
+                    new InlineMark { Type = InlineMarkType.FontSize, Value = "22pt" },
+                    new InlineMark { Type = InlineMarkType.TextColor, Value = "#2563eb" },
+                    new InlineMark { Type = InlineMarkType.Highlight, Value = "#fef08a" },
+                    new InlineMark
+                    {
+                        Type = InlineMarkType.CommentAnchor,
+                        CommentAnchor = new CommentAnchorMarkData { CommentId = "runtime-comment" }
+                    },
+                    new InlineMark
+                    {
+                        Type = InlineMarkType.Revision,
+                        RevisionId = "runtime-revision",
+                        Value = "Insertion"
+                    }
+                ]
+            }
+        ];
+        runtimeDocument.Comments =
+        [
+            new DocumentComment
+            {
+                Id = "runtime-comment",
+                Anchor = new DocumentCommentAnchor
+                {
+                    Type = DocumentCommentAnchorType.TextRange,
+                    BlockId = "phase16-paragraph",
+                    StartInlineIndex = 0,
+                    StartOffset = 0,
+                    EndInlineIndex = 0,
+                    EndOffset = 7
+                },
+                Entries =
+                [
+                    new DocumentCommentEntry
+                    {
+                        Id = "runtime-comment-entry",
+                        Author = new DocumentEditorAuthor { Id = "reviewer", DisplayName = "Reviewer" },
+                        Text = "Runtime comment",
+                        CreatedAt = DateTimeOffset.Parse("2026-05-24T10:00:00Z")
+                    }
+                ]
+            }
+        ];
+        runtimeDocument.Revisions =
+        [
+            new DocumentRevision
+            {
+                Id = "runtime-revision",
+                Type = DocumentRevisionType.Insertion,
+                Range = new DocumentRevisionRange
+                {
+                    BlockId = "phase16-paragraph",
+                    StartInlineIndex = 0,
+                    StartOffset = 0,
+                    EndInlineIndex = 0,
+                    EndOffset = 22
+                },
+                Author = new DocumentRevisionAuthor { Id = "reviewer", DisplayName = "Reviewer" },
+                CreatedAt = DateTimeOffset.Parse("2026-05-24T10:01:00Z"),
+                Action = DocumentRevisionAction.Pending,
+                PayloadJson = """{"text":"Runtime persisted text"}""",
+                GroupId = "runtime-group"
+            }
+        ];
+        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
+            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = runtimeDocument }, DocumentEditorJson.Options));
+
+        DocumentEditorSaveRequest? captured = null;
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-phase16")
+                      .Add(p => p.Provider, provider)
+                      .Add(p => p.OnSaveRequested, request => captured = request));
+
+        cut.WaitForAssertion(() =>
+            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+
+        cut.Find("[data-testid='document-save']").Click();
+
+        cut.WaitForAssertion(() => captured.Should().NotBeNull());
+        captured!.Document.Should().NotBeNull();
+        captured.JsonSnapshot.Should().NotBeNullOrWhiteSpace();
+        GetParagraphText(captured.Document!).Should().Be("Runtime persisted text");
+        var savedRun = ((ParagraphBlockContent)captured.Document!.Blocks.Single().Content).Inlines.OfType<TextRun>().Single();
+        savedRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.Bold);
+        savedRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.FontFamily && mark.Value == "Georgia, serif");
+        savedRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.FontSize && mark.Value == "22pt");
+        savedRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.TextColor && mark.Value == "#2563eb");
+        savedRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.Highlight && mark.Value == "#fef08a");
+        captured.Document.Comments.Should().ContainSingle(comment => comment.Id == "runtime-comment");
+        captured.Document.Comments.Should().NotContain(comment => comment.Id == "old-comment");
+        var revision = captured.Document.Revisions.Should().ContainSingle(revision => revision.Id == "runtime-revision").Subject;
+        revision.GroupId.Should().Be("runtime-group");
+        revision.Range.BlockId.Should().Be("phase16-paragraph");
+        revision.PayloadJson.Should().Contain("Runtime persisted text");
+        captured.JsonSnapshot.Should().Contain("runtime-comment");
+        captured.JsonSnapshot.Should().Contain("runtime-revision");
+        captured.JsonSnapshot.Should().Contain("Runtime persisted text");
+        captured.JsonSnapshot.Should().NotContain("old-comment");
+
+        var saved = (await provider.LoadAsync("doc-phase16")).Document!;
+        GetParagraphText(saved).Should().Be("Runtime persisted text");
+        saved.Comments.Should().ContainSingle(comment => comment.Id == "runtime-comment");
+        saved.Revisions.Should().ContainSingle(revision => revision.Id == "runtime-revision");
     }
 
     [Fact]
@@ -1167,6 +1652,64 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task ToolbarUndo_RuntimeSnapshotSyncDoesNotEchoReloadIntoWysiwygHost()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<bool>("tmDocumentEditorRuntime.undo", _ => true).SetResult(true);
+        JSInterop.Setup<JsonElement>("tmDocumentEditorRuntime.getLastCommandTransaction", _ => true)
+            .SetResult(JsonSerializer.Deserialize<JsonElement>(
+                """
+                {
+                  "ok": true,
+                  "command": "undo",
+                  "transaction": { "operations": [] },
+                  "operations": []
+                }
+                """));
+        JSInterop.Setup<WysiwygUndoState>("tmDocumentEditorRuntime.getUndoState", _ => true)
+            .SetResult(new WysiwygUndoState { CanUndo = false, CanRedo = true, RedoDepth = 1, JsOwnedUndo = true, Epoch = 2 });
+        JSInterop.Setup<WysiwygDirtyState>("tmDocumentEditorRuntime.getDirtyState", _ => true)
+            .SetResult(new WysiwygDirtyState { IsDirty = true, DirtyEpoch = 2 });
+
+        var provider = new InMemoryDocumentEditorProvider();
+        var runtimeDocument = provider.SeedContractDocument("doc-1");
+        var (_, inline) = GetFirstParagraphTextRun(runtimeDocument);
+        inline.Text = "Undo restored runtime text";
+        var snapshotJson = JsonSerializer.Serialize(new WysiwygDocumentSnapshot
+        {
+            ProtocolVersion = 1,
+            Document = runtimeDocument
+        }, DocumentEditorJson.Options);
+        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true).SetResult(snapshotJson);
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await cut.InvokeAsync(() => host.Instance.HandleUndoStateChanged(new WysiwygUndoState
+        {
+            CanUndo = true,
+            UndoDepth = 1,
+            NextUndoDescription = "Bold",
+            JsOwnedUndo = true
+        }));
+
+        var snapshotCallsBeforeUndo = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        cut.Find("[data-testid='document-undo']").Click();
+
+        cut.WaitForAssertion(() => JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.getDocument"));
+        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
+            .Should().Be(snapshotCallsBeforeUndo, "a runtime-owned undo snapshot is already synchronized and must not be echoed back as a reload");
+        cut.FindComponent<TmDocumentWysiwygHost>().Instance.Should().BeSameAs(host.Instance);
+    }
+
+    [Fact]
     public async Task ImportDocx_ReloadsImportedDocumentIntoJsRuntimeExplicitly()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
@@ -1384,6 +1927,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             && invocation.Arguments.Count >= 2
             && invocation.Arguments[1] != null
             && invocation.Arguments[1]!.ToString() == "toggleBold");
+
     }
 
     [Fact]
@@ -1620,6 +2164,62 @@ public class TmDocumentEditorTests : LocalizationTestBase
             && invocation.Arguments.Count >= 2
             && invocation.Arguments[1] != null
             && invocation.Arguments[1]!.ToString() == "toggleBold");
+
+        await cut.InvokeAsync(() => host.Instance.HandleMiniToolbarChanged(new WysiwygMiniToolbarRequest
+        {
+            IsVisible = false,
+            Reason = "selection-collapsed"
+        }));
+        cut.FindAll("[data-testid='document-mini-toolbar']").Should().NotBeEmpty();
+
+        await cut.InvokeAsync(() => host.Instance.HandleMiniToolbarChanged(new WysiwygMiniToolbarRequest
+        {
+            IsVisible = false,
+            Reason = "editable-pointerdown"
+        }));
+        cut.FindAll("[data-testid='document-mini-toolbar']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task MiniToolbarChanged_IgnoresCollapsedSelectionRequest()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() =>
+            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+
+        await cut.InvokeAsync(() => host.Instance.HandleMiniToolbarChanged(new WysiwygMiniToolbarRequest
+        {
+            IsVisible = true,
+            Left = 220,
+            Top = 96,
+            Width = 184,
+            Height = 40,
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = inline.Id,
+                AnchorOffset = 4,
+                FocusBlockId = paragraph.Id,
+                FocusInlineId = inline.Id,
+                FocusOffset = 4,
+                IsCollapsed = true
+            }
+        }));
+
+        cut.FindAll("[data-testid='document-mini-toolbar']").Should().BeEmpty();
     }
 
     [Fact]

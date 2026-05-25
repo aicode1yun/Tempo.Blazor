@@ -2,6 +2,7 @@ using Bunit;
 using FluentAssertions;
 using Tempo.Blazor.Components.DocumentEditor;
 using Tempo.Blazor.Components.DocumentEditor.Registry;
+using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.Tests.Localization;
 
@@ -31,7 +32,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-save']").HasAttribute("disabled").Should().BeTrue();
+        var button = cut.Find("[data-testid='document-save']");
+        button.HasAttribute("disabled").Should().BeTrue();
+        button.GetAttribute("aria-disabled").Should().Be("true");
     }
 
     [Fact]
@@ -42,7 +45,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-save']").HasAttribute("disabled").Should().BeFalse();
+        var button = cut.Find("[data-testid='document-save']");
+        button.HasAttribute("disabled").Should().BeFalse();
+        button.GetAttribute("aria-disabled").Should().Be("false");
     }
 
     // ─── 3.3 Undo/Redo – registry-driven ────────────────────────────────────
@@ -66,7 +71,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-undo']").HasAttribute("disabled").Should().BeTrue();
+        var button = cut.Find("[data-testid='document-undo']");
+        button.HasAttribute("disabled").Should().BeTrue();
+        button.GetAttribute("aria-disabled").Should().Be("true");
     }
 
     [Fact]
@@ -77,7 +84,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-undo']").HasAttribute("disabled").Should().BeFalse();
+        var button = cut.Find("[data-testid='document-undo']");
+        button.HasAttribute("disabled").Should().BeFalse();
+        button.GetAttribute("aria-disabled").Should().Be("false");
     }
 
     [Fact]
@@ -87,6 +96,32 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
 
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
+
+        var button = cut.Find("[data-testid='document-redo']");
+        button.HasAttribute("disabled").Should().BeFalse();
+        button.GetAttribute("aria-disabled").Should().Be("false");
+    }
+
+    [Fact]
+    public void HomeTab_UndoButton_EnabledWhenRuntimeCanUndoEvenIfRegistryIsStaleDisabled()
+    {
+        var registry = BuildRegistry(("undo", enabled: false, value: null));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.CanUndo, true));
+
+        cut.Find("[data-testid='document-undo']").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public void HomeTab_RedoButton_EnabledWhenRuntimeCanRedoEvenIfRegistryIsStaleDisabled()
+    {
+        var registry = BuildRegistry(("redo", enabled: false, value: null));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.CanRedo, true));
 
         cut.Find("[data-testid='document-redo']").HasAttribute("disabled").Should().BeFalse();
     }
@@ -101,51 +136,63 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-bold']").HasAttribute("disabled").Should().BeTrue();
+        var button = cut.Find("[data-testid='document-bold']");
+        button.HasAttribute("disabled").Should().BeTrue();
+        button.GetAttribute("aria-disabled").Should().Be("true");
     }
 
     [Fact]
     public void HomeTab_BoldButton_IsEnabledAndAriaFalseWhenInactive()
     {
-        var registry = BuildRegistry(("bold", enabled: true, value: "inactive"));
-
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
-            .Add(x => x.CommandRegistry, registry));
-
-        var bold = cut.Find("[data-testid='document-bold']");
-        bold.HasAttribute("disabled").Should().BeFalse();
-        bold.GetAttribute("aria-pressed").Should().Be("false");
-    }
-
-    [Fact]
-    public void HomeTab_BoldButton_AriaIsTrueWhenActive()
-    {
         var registry = BuildRegistry(("bold", enabled: true, value: "active"));
 
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
-            .Add(x => x.CommandRegistry, registry));
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.BoldState, WysiwygFormattingValue.Inactive));
 
-        cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("true");
+        var bold = cut.Find("[data-testid='document-bold']");
+        bold.HasAttribute("disabled").Should().BeFalse();
+        bold.GetAttribute("aria-disabled").Should().Be("false");
+        bold.GetAttribute("aria-pressed").Should().Be("false",
+            "the canonical JS formatting state, not a stale registry value, owns the active state");
     }
 
     [Fact]
-    public void HomeTab_BoldButton_AriaIsMixedWhenMixed()
+    public void HomeTab_BoldButton_AriaAndClassComeFromCanonicalFormattingStateWhenActive()
     {
-        var registry = BuildRegistry(("bold", enabled: true, value: "mixed"));
+        var registry = BuildRegistry(("bold", enabled: true, value: "inactive"));
 
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
-            .Add(x => x.CommandRegistry, registry));
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.BoldState, WysiwygFormattingValue.Active));
 
-        cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("mixed");
+        var bold = cut.Find("[data-testid='document-bold']");
+        bold.GetAttribute("aria-pressed").Should().Be("true");
+        bold.GetAttribute("class").Should().Contain("tm-document-editor__ribbon-button--active");
+    }
+
+    [Fact]
+    public void HomeTab_BoldButton_AriaAndClassComeFromCanonicalFormattingStateWhenMixed()
+    {
+        var registry = BuildRegistry(("bold", enabled: true, value: "inactive"));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.BoldState, WysiwygFormattingValue.Mixed));
+
+        var bold = cut.Find("[data-testid='document-bold']");
+        bold.GetAttribute("aria-pressed").Should().Be("mixed");
+        bold.GetAttribute("class").Should().Contain("tm-document-editor__ribbon-button--mixed");
     }
 
     [Fact]
     public void HomeTab_ItalicButton_AriaIsTrueWhenActive()
     {
-        var registry = BuildRegistry(("italic", enabled: true, value: "active"));
+        var registry = BuildRegistry(("italic", enabled: true, value: "inactive"));
 
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
-            .Add(x => x.CommandRegistry, registry));
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.ItalicState, WysiwygFormattingValue.Active));
 
         cut.Find("[data-testid='document-italic']").GetAttribute("aria-pressed").Should().Be("true");
     }
@@ -153,10 +200,11 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     [Fact]
     public void HomeTab_UnderlineButton_AriaIsTrueWhenActive()
     {
-        var registry = BuildRegistry(("underline", enabled: true, value: "active"));
+        var registry = BuildRegistry(("underline", enabled: true, value: "inactive"));
 
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
-            .Add(x => x.CommandRegistry, registry));
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.UnderlineState, WysiwygFormattingValue.Active));
 
         cut.Find("[data-testid='document-underline']").GetAttribute("aria-pressed").Should().Be("true");
     }
@@ -283,7 +331,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
-        cut.Find("[data-testid='document-track-changes']").HasAttribute("disabled").Should().BeTrue();
+        var button = cut.Find("[data-testid='document-track-changes']");
+        button.HasAttribute("disabled").Should().BeTrue();
+        button.GetAttribute("aria-disabled").Should().Be("true");
     }
 
     [Fact]
@@ -295,7 +345,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
-        cut.Find("[data-testid='document-track-changes']").HasAttribute("disabled").Should().BeFalse();
+        var button = cut.Find("[data-testid='document-track-changes']");
+        button.HasAttribute("disabled").Should().BeFalse();
+        button.GetAttribute("aria-disabled").Should().Be("false");
     }
 
     // ─── 3.3 Font selectors – registry-driven ────────────────────────────────
@@ -308,7 +360,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-font-family']").HasAttribute("disabled").Should().BeTrue();
+        var select = cut.Find("[data-testid='document-font-family']");
+        select.HasAttribute("disabled").Should().BeTrue();
+        select.GetAttribute("aria-disabled").Should().Be("true");
     }
 
     [Fact]
@@ -319,7 +373,9 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-font-family']").HasAttribute("disabled").Should().BeFalse();
+        var select = cut.Find("[data-testid='document-font-family']");
+        select.HasAttribute("disabled").Should().BeFalse();
+        select.GetAttribute("aria-disabled").Should().Be("false");
     }
 
     [Fact]
@@ -330,7 +386,101 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
-        cut.Find("[data-testid='document-font-size']").HasAttribute("disabled").Should().BeTrue();
+        var select = cut.Find("[data-testid='document-font-size']");
+        select.HasAttribute("disabled").Should().BeTrue();
+        select.GetAttribute("aria-disabled").Should().Be("true");
+    }
+
+    [Fact]
+    public void HomeTab_FontSelects_ReflectCanonicalFormattingValues()
+    {
+        var registry = BuildRegistry(
+            ("fontFamily", enabled: true, value: "stale-font"),
+            ("fontSize", enabled: true, value: "13pt"));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.FontFamilies, new[]
+            {
+                new DocumentFontFamily { DisplayName = "Arial", CssFamily = "Arial, sans-serif" },
+                new DocumentFontFamily { DisplayName = "Georgia", CssFamily = "Georgia, serif" }
+            })
+            .Add(x => x.CurrentFontFamily, "Georgia, serif")
+            .Add(x => x.CurrentFontSize, "28pt"));
+
+        cut.Find("[data-testid='document-font-family']")
+            .GetAttribute("value")
+            .Should()
+            .Be("Georgia, serif");
+        cut.Find("[data-testid='document-font-size']")
+            .GetAttribute("value")
+            .Should()
+            .Be("28");
+    }
+
+    [Fact]
+    public void HomeTab_FontSelects_ShowMixedStateFromCanonicalFormattingValues()
+    {
+        var registry = BuildRegistry(
+            ("fontFamily", enabled: true, value: null),
+            ("fontSize", enabled: true, value: null));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.FontFamilyMixed, true)
+            .Add(x => x.FontSizeMixed, true));
+
+        cut.Find("[data-testid='document-font-family']")
+            .GetAttribute("value")
+            .Should()
+            .BeEmpty();
+        cut.Find("[data-testid='document-font-size']")
+            .GetAttribute("value")
+            .Should()
+            .BeEmpty();
+        cut.Find("[data-testid='document-font-size']").TextContent.Should().Contain("Mixed");
+    }
+
+    [Fact]
+    public void HomeTab_ColorPickers_ReflectCanonicalSwatchesAndMixedState()
+    {
+        var registry = BuildRegistry(
+            ("textColor", enabled: true, value: "#111827"),
+            ("highlightColor", enabled: true, value: "#ffffff"));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.CurrentTextColor, "#2563EB")
+            .Add(x => x.CurrentHighlightColor, "#FEF08A")
+            .Add(x => x.HighlightColorMixed, true));
+
+        var textColor = cut.Find("[data-testid='document-font-color-trigger']");
+        var highlight = cut.Find("[data-testid='document-highlight-color-trigger']");
+
+        textColor.TextContent.Should().Contain("#2563eb");
+        textColor.InnerHtml.Should().Contain("background: #2563eb");
+        highlight.TextContent.Should().Contain("#fef08a");
+        highlight.GetAttribute("class").Should().Contain("tm-document-editor__ribbon-tempo-color-picker--mixed");
+    }
+
+    [Fact]
+    public void HomeTab_ColorPickers_ExposeDisabledAriaStateFromRegistry()
+    {
+        var registry = BuildRegistry(
+            ("textColor", enabled: false, value: null),
+            ("highlightColor", enabled: true, value: null));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry));
+
+        cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger")
+            .GetAttribute("aria-disabled")
+            .Should()
+            .Be("true");
+        cut.Find("[data-testid='document-highlight-color-trigger'] .tm-color-picker-trigger")
+            .GetAttribute("aria-disabled")
+            .Should()
+            .Be("false");
     }
 
     [Fact]
@@ -582,6 +732,49 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             .Add(x => x.ReadOnly, true));
 
         cut.Find("[data-testid='document-save']").HasAttribute("disabled").Should().BeTrue();
+    }
+
+    [Fact]
+    public void HomeTab_UndoButton_FallsBackToRuntimeCanUndoWhenNoRegistry()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.ReadOnly, false)
+            .Add(x => x.CanUndo, true));
+
+        cut.Find("[data-testid='document-undo']").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public void HomeTab_RedoButton_FallsBackToRuntimeCanRedoWhenNoRegistry()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.ReadOnly, false)
+            .Add(x => x.CanRedo, true));
+
+        cut.Find("[data-testid='document-redo']").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public void HomeTab_UndoRedoButtons_ReflectRuntimeEnabledStateAndDescriptions()
+    {
+        var registry = BuildRegistry(
+            ("undo", enabled: false, value: "stale-disabled"),
+            ("redo", enabled: false, value: "stale-disabled"));
+
+        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+            .Add(x => x.CommandRegistry, registry)
+            .Add(x => x.CanUndo, true)
+            .Add(x => x.CanRedo, true)
+            .Add(x => x.NextUndoDescription, "Typing session")
+            .Add(x => x.NextRedoDescription, "Formatting command"));
+
+        var undo = cut.Find("[data-testid='document-undo']");
+        var redo = cut.Find("[data-testid='document-redo']");
+
+        undo.HasAttribute("disabled").Should().BeFalse();
+        redo.HasAttribute("disabled").Should().BeFalse();
+        undo.GetAttribute("title").Should().Contain("Typing session");
+        redo.GetAttribute("title").Should().Contain("Formatting command");
     }
 
     // ─── Helper ───────────────────────────────────────────────────────────────

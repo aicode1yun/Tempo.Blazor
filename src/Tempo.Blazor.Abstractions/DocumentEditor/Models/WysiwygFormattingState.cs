@@ -16,6 +16,15 @@ public enum WysiwygFormattingValue
 /// <summary>Formatting state near the current WYSIWYG selection.</summary>
 public sealed class WysiwygFormattingState
 {
+    /// <summary>Monotonic runtime formatting state version.</summary>
+    public long Version { get; set; }
+
+    /// <summary>Whether formatting commands are disabled for the current selection.</summary>
+    public bool IsDisabled { get; set; }
+
+    /// <summary>Reason why formatting commands are disabled, if known.</summary>
+    public string? DisabledReason { get; set; }
+
     /// <summary>Bold formatting state.</summary>
     public WysiwygFormattingValue Bold { get; set; }
 

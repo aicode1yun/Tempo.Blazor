@@ -288,7 +288,11 @@
                                  OpenComments="OpenCommentsPanelAsync"
                                  OpenRevisions="OpenRevisionsPanelAsync" />
 
-        <div class="@WorkspaceClass">
+        <div class="@WorkspaceClass"
+             data-testid="document-editor-workspace"
+             data-side-panel-state="@(_sidePanelOpen ? "open" : "closed")"
+             data-side-panel-layout="docked-tabs"
+             data-active-side-panel-tab="@ActiveSidePanelDataValue">
             <main class="tm-document-editor__surface" aria-label="@Loc["TmDocumentEditor_DocumentSurfaceLabel"]">
                 <article class="tm-document-editor__page-surface" aria-label="@Loc["TmDocumentEditor_PageLabel"]">
                     <header class="tm-document-editor__page-header">
@@ -331,6 +335,7 @@
                                                TextContextMenuRequested="HandleTextContextMenuRequestedAsync"
                                                TableContextMenuRequested="HandleTableContextMenuRequestedAsync"
                                                MiniToolbarChanged="HandleMiniToolbarChangedAsync"
+                                               FormattingStateChanged="HandleWysiwygFormattingStateChangedAsync"
                                                RevisionReviewRequested="ReviewInlineRevisionAsync"
                                                RevisionsChanged="HandleWysiwygRevisionsChangedAsync"
                                                CommentsChanged="HandleWysiwygCommentsChangedAsync"
@@ -520,7 +525,7 @@
             @if (_miniToolbar is { IsVisible: true })
             {
                 <section class="tm-document-editor__mini-toolbar"
-                         style="@FloatingStyle(_miniToolbar)"
+                         style="@MiniToolbarFloatingStyle(_miniToolbar)"
                          role="toolbar"
                          aria-label="@Loc["TmDocumentEditor_MiniToolbarLabel"]"
                          data-testid="document-mini-toolbar"
@@ -568,11 +573,29 @@
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "strikethrough", null, false)'>
                         <TmIcon Name="strikethrough" Size="IconSize.Sm" />
                     </button>
+                    <select class="tm-document-editor__mini-font-size"
+                            value="@NormalizeMiniToolbarFontSize()"
+                            disabled="@(!IsCommandEnabled("fontSize"))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
+                            @onchange="HandleMiniToolbarFontSizeChangedAsync"
+                            data-testid="document-mini-font-size"
+                            aria-label="@Loc["TmDocumentEditor_FontSize"]"
+                            title="@Loc["TmDocumentEditor_FontSize"]">
+                        @foreach (var size in MiniToolbarFontSizes)
+                        {
+                            <option value="@size">@($"{size} pt")</option>
+                        }
+                    </select>
                     <TmColorPicker Value="@NormalizeMiniToolbarTextColor()"
                                    ValueChanged="HandleMiniToolbarTextColorAppliedAsync"
                                    Format="ColorFormat.Hex"
                                    ShowAlpha="false"
+                                   ShowGradient="false"
+                                   ShowHexInput="true"
                                    ShowPalette="true"
+                                   PaletteColors="MiniToolbarTextColors"
+                                   PaletteColumns="6"
                                    ShowClearButton="false"
                                    ShowApplyButton="true"
                                    ShowCancelButton="true"
@@ -589,7 +612,11 @@
                                    ValueChanged="HandleMiniToolbarHighlightColorAppliedAsync"
                                    Format="ColorFormat.Hex"
                                    ShowAlpha="false"
+                                   ShowGradient="false"
+                                   ShowHexInput="true"
                                    ShowPalette="true"
+                                   PaletteColors="MiniToolbarHighlightColors"
+                                   PaletteColumns="6"
                                    ShowClearButton="false"
                                    ShowApplyButton="true"
                                    ShowCancelButton="true"

@@ -102,12 +102,16 @@ public class DocumentSerializer
         {
             Wyg.ParagraphBlock p => new DocumentBlock
             {
+                Id = p.Id,
                 Type = DocumentBlockType.Paragraph,
+                ParagraphProperties = ToPersistenceParagraphProperties(p.Properties),
                 Content = ToPersistenceParagraphContent(p)
             },
             Wyg.HeadingBlock h => new DocumentBlock
             {
+                Id = h.Id,
                 Type = DocumentBlockType.Heading,
+                ParagraphProperties = ToPersistenceParagraphProperties(h.Properties),
                 Content = new HeadingBlockContent
                 {
                     Level = h.Level,
@@ -116,7 +120,9 @@ public class DocumentSerializer
             },
             Wyg.ListItemBlock l => new DocumentBlock
             {
+                Id = l.Id,
                 Type = DocumentBlockType.List,
+                ParagraphProperties = ToPersistenceParagraphProperties(l.Properties),
                 Content = new ListBlockContent
                 {
                     Ordered = l.Ordered,
@@ -126,22 +132,30 @@ public class DocumentSerializer
             },
             Wyg.TableBlock t => new DocumentBlock
             {
+                Id = t.Id,
                 Type = DocumentBlockType.Table,
+                ParagraphProperties = ToPersistenceParagraphProperties(t.Properties),
                 Content = ToPersistenceTableContent(t)
             },
             Wyg.ImageBlock i => new DocumentBlock
             {
+                Id = i.Id,
                 Type = DocumentBlockType.Image,
+                ParagraphProperties = ToPersistenceParagraphProperties(i.Properties),
                 Content = ToPersistenceImageContent(i)
             },
-            Wyg.PageBreakBlock => new DocumentBlock
+            Wyg.PageBreakBlock pageBreak => new DocumentBlock
             {
+                Id = pageBreak.Id,
                 Type = DocumentBlockType.PageBreak,
+                ParagraphProperties = ToPersistenceParagraphProperties(pageBreak.Properties),
                 Content = new PageBreakBlockContent()
             },
-            Wyg.SectionBreakBlock => new DocumentBlock
+            Wyg.SectionBreakBlock sectionBreak => new DocumentBlock
             {
+                Id = sectionBreak.Id,
                 Type = DocumentBlockType.PageBreak,
+                ParagraphProperties = ToPersistenceParagraphProperties(sectionBreak.Properties),
                 Content = new PageBreakBlockContent()
             },
             _ => new DocumentBlock
@@ -176,6 +190,7 @@ public class DocumentSerializer
             {
                 Cells = r.Cells.Select(c => new TableCellContent
                 {
+                    Id = c.Id,
                     Blocks = c.Blocks.Select(ToPersistenceBlock).ToList(),
                     ColumnSpan = c.ColumnSpan,
                     RowSpan = c.RowSpan,
@@ -195,11 +210,12 @@ public class DocumentSerializer
         {
             Wyg.TextRun t => new TextRun
             {
+                Id = t.Id,
                 Text = t.Text,
                 Marks = t.Marks.SelectMany(ToPersistenceMarks).ToList()
             },
-            Wyg.HardBreak => new TextRun { Text = "\n" },
-            Wyg.TabInline => new TextRun { Text = "\t" },
+            Wyg.HardBreak hardBreak => new TextRun { Id = hardBreak.Id, Text = "\n" },
+            Wyg.TabInline tab => new TextRun { Id = tab.Id, Text = "\t" },
             _ => new TextRun { Text = string.Empty }
         };
     }
@@ -259,12 +275,16 @@ public class DocumentSerializer
         {
             DocumentBlockType.Paragraph => new Wyg.ParagraphBlock
             {
+                Id = block.Id,
+                Properties = FromPersistenceParagraphProperties(block.ParagraphProperties),
                 Inlines = block.Content is ParagraphBlockContent pc
                     ? pc.Inlines.Select(FromPersistenceInline).ToList()
                     : []
             },
             DocumentBlockType.Heading => new Wyg.HeadingBlock
             {
+                Id = block.Id,
+                Properties = FromPersistenceParagraphProperties(block.ParagraphProperties),
                 Level = block.Content is HeadingBlockContent hc ? hc.Level : 1,
                 Inlines = block.Content is HeadingBlockContent hc2
                     ? hc2.Inlines.Select(FromPersistenceInline).ToList()
@@ -272,15 +292,21 @@ public class DocumentSerializer
             },
             DocumentBlockType.List => new Wyg.ListItemBlock
             {
+                Id = block.Id,
+                Properties = FromPersistenceParagraphProperties(block.ParagraphProperties),
                 Ordered = block.Content is ListBlockContent lc ? lc.Ordered : false,
                 IndentLevel = block.Content is ListBlockContent lc2 ? lc2.IndentLevel : 0,
                 Inlines = block.Content is ListBlockContent lc3
                     ? lc3.Inlines.Select(FromPersistenceInline).ToList()
                     : []
             },
-            DocumentBlockType.Table => FromPersistenceTableBlock(block.Content as TableBlockContent),
-            DocumentBlockType.Image => FromPersistenceImageBlock(block.Content as ImageBlockContent),
-            DocumentBlockType.PageBreak => new Wyg.PageBreakBlock(),
+            DocumentBlockType.Table => FromPersistenceTableBlock(block),
+            DocumentBlockType.Image => FromPersistenceImageBlock(block),
+            DocumentBlockType.PageBreak => new Wyg.PageBreakBlock
+            {
+                Id = block.Id,
+                Properties = FromPersistenceParagraphProperties(block.ParagraphProperties)
+            },
             _ => new Wyg.ParagraphBlock()
         };
     }
@@ -338,11 +364,14 @@ public class DocumentSerializer
         };
     }
 
-    private static Wyg.ImageBlock FromPersistenceImageBlock(ImageBlockContent? content)
+    private static Wyg.ImageBlock FromPersistenceImageBlock(DocumentBlock block)
     {
+        var content = block.Content as ImageBlockContent;
         var layout = content?.Layout ?? DocumentObjectLayout.Inline();
         return new Wyg.ImageBlock
         {
+            Id = block.Id,
+            Properties = FromPersistenceParagraphProperties(block.ParagraphProperties),
             Src = content?.Url ?? content?.AssetId ?? string.Empty,
             Alt = content?.AltText ?? string.Empty,
             IsDecorative = content?.IsDecorative ?? false,
@@ -385,10 +414,13 @@ public class DocumentSerializer
             _ => Wyg.ImageWrapMode.Square
         };
 
-    private static Wyg.TableBlock FromPersistenceTableBlock(TableBlockContent? content)
+    private static Wyg.TableBlock FromPersistenceTableBlock(DocumentBlock block)
     {
+        var content = block.Content as TableBlockContent;
         var table = new Wyg.TableBlock
         {
+            Id = block.Id,
+            Properties = FromPersistenceParagraphProperties(block.ParagraphProperties),
             TableProperties = content?.Layout is { } layout
                 ? new Wyg.TableProperties
                 {
@@ -409,6 +441,7 @@ public class DocumentSerializer
             {
                 var tableCell = new Wyg.TableCell
                 {
+                    Id = cell.Id,
                     ColumnSpan = cell.ColumnSpan,
                     RowSpan = cell.RowSpan,
                     Width = cell.Width,
@@ -417,9 +450,9 @@ public class DocumentSerializer
                     VerticalAlignment = cell.VerticalAlignment,
                     Padding = cell.Padding
                 };
-                foreach (var block in cell.Blocks)
+                foreach (var cellBlock in cell.Blocks)
                 {
-                    tableCell.Blocks.Add(FromPersistenceBlock(block));
+                    tableCell.Blocks.Add(FromPersistenceBlock(cellBlock));
                 }
                 tableRow.Cells.Add(tableCell);
             }
@@ -448,7 +481,7 @@ public class DocumentSerializer
         if (inline is not TextRun textRun)
             return new Wyg.TextRun { Text = string.Empty };
 
-        var result = new Wyg.TextRun { Text = textRun.Text ?? string.Empty };
+        var result = new Wyg.TextRun { Id = textRun.Id ?? Guid.NewGuid().ToString("N"), Text = textRun.Text ?? string.Empty };
         foreach (var mark in textRun.Marks)
         {
             Wyg.Mark? wysiwygMark = mark.Type switch
@@ -548,6 +581,64 @@ public class DocumentSerializer
         };
     }
 
+    private static DocumentParagraphProperties ToPersistenceParagraphProperties(Wyg.ParagraphProperties? properties)
+    {
+        if (properties is null)
+        {
+            return new DocumentParagraphProperties();
+        }
+
+        return new DocumentParagraphProperties
+        {
+            Alignment = properties.Alignment switch
+            {
+                Wyg.TextAlignment.Center => DocumentTextAlignment.Center,
+                Wyg.TextAlignment.Right => DocumentTextAlignment.Right,
+                Wyg.TextAlignment.Justify => DocumentTextAlignment.Justify,
+                _ => DocumentTextAlignment.Left
+            },
+            LineSpacing = properties.LineSpacing,
+            SpacingBefore = CssLengthToPointsOrZero(properties.SpaceBefore),
+            SpacingAfter = CssLengthToPointsOrZero(properties.SpaceAfter),
+            LeftIndent = CssLengthToPointsOrZero(properties.LeftIndent),
+            RightIndent = CssLengthToPointsOrZero(properties.RightIndent),
+            FirstLineIndent = CssLengthToPointsOrZero(properties.FirstLineIndent)
+        };
+    }
+
+    private static Wyg.ParagraphProperties FromPersistenceParagraphProperties(DocumentParagraphProperties? properties)
+    {
+        if (properties is null)
+        {
+            return new Wyg.ParagraphProperties();
+        }
+
+        return new Wyg.ParagraphProperties
+        {
+            Alignment = properties.Alignment switch
+            {
+                DocumentTextAlignment.Center => Wyg.TextAlignment.Center,
+                DocumentTextAlignment.Right => Wyg.TextAlignment.Right,
+                DocumentTextAlignment.Justify => Wyg.TextAlignment.Justify,
+                _ => Wyg.TextAlignment.Left
+            },
+            LineSpacing = properties.LineSpacing,
+            SpaceBefore = ToCssPointLength(properties.SpacingBefore),
+            SpaceAfter = ToCssPointLength(properties.SpacingAfter),
+            LeftIndent = ToCssPointLength(properties.LeftIndent),
+            RightIndent = ToCssPointLength(properties.RightIndent),
+            FirstLineIndent = ToCssPointLength(properties.FirstLineIndent)
+        };
+    }
+
+    private static double CssLengthToPointsOrZero(string? css)
+        => string.IsNullOrWhiteSpace(css) ? 0 : CssLengthToPoints(css) ?? 0;
+
+    private static string? ToCssPointLength(double value)
+        => Math.Abs(value) < 0.0001
+            ? null
+            : $"{value.ToString(System.Globalization.CultureInfo.InvariantCulture)}pt";
+
     private static DocumentSection ToPersistenceSection(Wyg.Section section)
     {
         return new DocumentSection
@@ -585,6 +676,7 @@ public class DocumentSerializer
     {
         var result = new Wyg.HeaderFooter
         {
+            Id = headerFooter.Id,
             Type = headerFooter.Type == DocumentHeaderFooterType.Header
                 ? Wyg.HeaderFooterType.Header
                 : Wyg.HeaderFooterType.Footer,
@@ -618,6 +710,7 @@ public class DocumentSerializer
     {
         var result = new Wyg.DocumentNote
         {
+            Id = note.Id,
             NoteType = note.Type == DocumentNoteType.Endnote ? Wyg.DocumentNoteType.Endnote : Wyg.DocumentNoteType.Footnote,
             Marker = note.Marker ?? string.Empty
         };
@@ -645,8 +738,10 @@ public class DocumentSerializer
             Visibility = DocumentCommentVisibility.Internal,
             Entries = comment.Entries.Select(e => new DocumentCommentEntry
             {
+                Id = e.Id,
                 Author = new DocumentEditorAuthor { Id = e.AuthorId ?? string.Empty, DisplayName = e.AuthorName ?? string.Empty },
-                Text = e.Text
+                Text = e.Text,
+                CreatedAt = e.CreatedAt
             }).ToList(),
             Status = comment.IsResolved ? DocumentCommentStatus.Resolved : DocumentCommentStatus.Open
         };
@@ -656,6 +751,7 @@ public class DocumentSerializer
     {
         var result = new Wyg.DocumentComment
         {
+            Id = comment.Id,
             IsResolved = comment.Status == DocumentCommentStatus.Resolved
         };
         if (comment.Anchor is not null)
@@ -674,9 +770,11 @@ public class DocumentSerializer
         {
             result.Entries.Add(new Wyg.DocumentCommentEntry
             {
+                Id = entry.Id,
                 AuthorId = entry.Author?.Id,
                 AuthorName = entry.Author?.DisplayName,
-                Text = entry.Text
+                Text = entry.Text,
+                CreatedAt = entry.CreatedAt
             });
         }
         return result;
@@ -694,7 +792,10 @@ public class DocumentSerializer
                 DisplayName = revision.AuthorName ?? string.Empty
             },
             CreatedAt = revision.CreatedAt,
-            Action = (DocumentRevisionAction)revision.Action
+            Action = (DocumentRevisionAction)revision.Action,
+            Range = ToPersistenceRevisionRange(revision.Range),
+            PayloadJson = revision.PayloadJson,
+            GroupId = revision.GroupId
         };
     }
 
@@ -702,11 +803,37 @@ public class DocumentSerializer
     {
         return new Wyg.DocumentRevision
         {
+            Id = revision.Id,
             Type = (Wyg.DocumentRevisionType)revision.Type,
             AuthorId = revision.Author?.Id,
             AuthorName = revision.Author?.DisplayName,
             CreatedAt = revision.CreatedAt,
-            Action = (Wyg.DocumentRevisionAction)revision.Action
+            Action = (Wyg.DocumentRevisionAction)revision.Action,
+            Range = FromPersistenceRevisionRange(revision.Range),
+            PayloadJson = revision.PayloadJson,
+            GroupId = revision.GroupId
         };
     }
+
+    private static DocumentRevisionRange ToPersistenceRevisionRange(Wyg.DocumentRevisionRange range)
+        => new()
+        {
+            BlockId = range.BlockId,
+            SourceBlockId = range.SourceBlockId,
+            StartInlineIndex = range.StartInlineIndex,
+            StartOffset = range.StartOffset,
+            EndInlineIndex = range.EndInlineIndex,
+            EndOffset = range.EndOffset
+        };
+
+    private static Wyg.DocumentRevisionRange FromPersistenceRevisionRange(DocumentRevisionRange? range)
+        => new()
+        {
+            BlockId = range?.BlockId,
+            SourceBlockId = range?.SourceBlockId,
+            StartInlineIndex = range?.StartInlineIndex,
+            StartOffset = range?.StartOffset,
+            EndInlineIndex = range?.EndInlineIndex,
+            EndOffset = range?.EndOffset
+        };
 }

@@ -9,6 +9,7 @@ public partial class TmColorPicker : IAsyncDisposable
 {
     private bool _isOpen;
     private bool _focusTriggerAfterOpen;
+    private bool _focusTriggerAfterClose;
     private bool _escapeHandlerRegistered;
     private string? _pendingValue;
     private ElementReference _rootElement;
@@ -32,8 +33,20 @@ public partial class TmColorPicker : IAsyncDisposable
     /// <summary>Shows alpha channel controls.</summary>
     [Parameter] public bool ShowAlpha { get; set; } = true;
 
+    /// <summary>Shows the gradient color area.</summary>
+    [Parameter] public bool ShowGradient { get; set; } = true;
+
+    /// <summary>Shows the hex color input.</summary>
+    [Parameter] public bool ShowHexInput { get; set; } = true;
+
     /// <summary>Shows the preset color palette.</summary>
     [Parameter] public bool ShowPalette { get; set; } = true;
+
+    /// <summary>Predefined colors to display in the palette.</summary>
+    [Parameter] public IReadOnlyList<string>? PaletteColors { get; set; }
+
+    /// <summary>Number of columns in the palette grid.</summary>
+    [Parameter] public int PaletteColumns { get; set; } = 8;
 
     /// <summary>Shows the clear color command.</summary>
     [Parameter] public bool ShowClearButton { get; set; } = true;
@@ -72,11 +85,16 @@ public partial class TmColorPicker : IAsyncDisposable
             return;
         }
 
-        _isOpen = !_isOpen;
-        if (_isOpen)
+        var nextOpen = !_isOpen;
+        _isOpen = nextOpen;
+        if (nextOpen)
         {
             _pendingValue = Value;
             _focusTriggerAfterOpen = true;
+        }
+        else
+        {
+            _focusTriggerAfterClose = true;
         }
 
         await OpenChanged.InvokeAsync(_isOpen);
@@ -97,6 +115,12 @@ public partial class TmColorPicker : IAsyncDisposable
             _focusTriggerAfterOpen = false;
             await _triggerElement.FocusAsync(preventScroll: true);
         }
+
+        if (_focusTriggerAfterClose)
+        {
+            _focusTriggerAfterClose = false;
+            await _triggerElement.FocusAsync(preventScroll: true);
+        }
     }
 
     private async Task OnFlatValueChangedAsync(string? value)
@@ -111,6 +135,7 @@ public partial class TmColorPicker : IAsyncDisposable
         {
             await ValueChanged.InvokeAsync(value);
             _isOpen = false;
+            _focusTriggerAfterClose = true;
             await OpenChanged.InvokeAsync(false);
         }
     }
@@ -124,7 +149,27 @@ public partial class TmColorPicker : IAsyncDisposable
 
         await ValueChanged.InvokeAsync(_pendingValue);
         _isOpen = false;
+        _focusTriggerAfterClose = true;
         await OpenChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleTriggerKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (Disabled)
+        {
+            return;
+        }
+
+        if (IsActivationKey(args.Key))
+        {
+            await ToggleDropdownAsync();
+            return;
+        }
+
+        if (args.Key == "Escape" && _isOpen)
+        {
+            await CloseWithoutApplyingAsync();
+        }
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs args)
@@ -142,30 +187,38 @@ public partial class TmColorPicker : IAsyncDisposable
 
     [JSInvokable]
     public async Task CloseFromGlobalEscapeAsync()
+        => await CloseFromGlobalAsync(restoreFocus: true);
+
+    [JSInvokable]
+    public async Task CloseFromGlobalAsync(bool restoreFocus)
     {
         if (!_isOpen)
         {
             return;
         }
 
-        await CloseWithoutApplyingAsync();
+        await CloseWithoutApplyingAsync(restoreFocus);
         await InvokeAsync(StateHasChanged);
     }
 
     private Task CancelAsync()
         => CloseWithoutApplyingAsync();
 
-    private async Task CloseWithoutApplyingAsync()
+    private async Task CloseWithoutApplyingAsync(bool restoreFocus = true)
     {
         var wasOpen = _isOpen;
         _pendingValue = Value;
         _isOpen = false;
         _focusTriggerAfterOpen = false;
+        _focusTriggerAfterClose = wasOpen && restoreFocus;
         if (wasOpen)
         {
             await OpenChanged.InvokeAsync(false);
         }
     }
+
+    private static bool IsActivationKey(string? key)
+        => key is "Enter" or " " or "Space" or "Spacebar";
 
     private async Task UnregisterEscapeHandlerAsync()
     {

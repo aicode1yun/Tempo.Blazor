@@ -113,6 +113,9 @@ public class DocumentRevision
 
     /// <summary>Optional payload for format imports or future engine metadata.</summary>
     public string? PayloadJson { get; set; }
+
+    /// <summary>Optional stable grouping id used by review UIs to keep coalesced changes together across save/reload.</summary>
+    public string? GroupId { get; set; }
 }
 
 /// <summary>Structured payload stored for formatting tracked-change revisions.</summary>
@@ -225,5 +228,105 @@ public sealed class DocumentRevisionFilter
         }
 
         return Type is null || revision.Type == Type.Value;
+    }
+}
+
+/// <summary>Logical group of adjacent tracked revisions shown as one review item.</summary>
+public sealed class DocumentRevisionGroup
+{
+    /// <summary>Stable group id derived from the first revision in the group.</summary>
+    public string GroupId { get; init; } = string.Empty;
+
+    /// <summary>Revision type shared by the group.</summary>
+    public DocumentRevisionType Type { get; init; }
+
+    /// <summary>Author id shared by the group.</summary>
+    public string? AuthorId { get; init; }
+
+    /// <summary>Combined affected range for the group.</summary>
+    public DocumentRevisionRange Range { get; init; } = new();
+
+    /// <summary>Revisions contained in this group.</summary>
+    public IReadOnlyList<DocumentRevision> Revisions { get; init; } = [];
+}
+
+/// <summary>Groups adjacent pending revisions for review UI presentation.</summary>
+public static class DocumentRevisionGrouper
+{
+    /// <summary>
+    /// Groups contiguous pending revisions by author, type and block. Reviewed revisions always remain standalone.
+    /// </summary>
+    public static IReadOnlyList<DocumentRevisionGroup> GroupAdjacentPending(IEnumerable<DocumentRevision> revisions)
+    {
+        ArgumentNullException.ThrowIfNull(revisions);
+
+        var ordered = revisions
+            .OrderBy(revision => revision.Range.BlockId, StringComparer.Ordinal)
+            .ThenBy(revision => revision.Range.StartOffset ?? 0)
+            .ThenBy(revision => revision.CreatedAt)
+            .ToList();
+        var groups = new List<DocumentRevisionGroup>();
+        var current = new List<DocumentRevision>();
+
+        foreach (var revision in ordered)
+        {
+            if (current.Count == 0 || CanAppend(current[^1], revision))
+            {
+                current.Add(revision);
+                continue;
+            }
+
+            groups.Add(CreateGroup(current));
+            current = [revision];
+        }
+
+        if (current.Count > 0)
+        {
+            groups.Add(CreateGroup(current));
+        }
+
+        return groups;
+    }
+
+    private static bool CanAppend(DocumentRevision previous, DocumentRevision next)
+    {
+        if (previous.Action != DocumentRevisionAction.Pending || next.Action != DocumentRevisionAction.Pending)
+        {
+            return false;
+        }
+
+        if (previous.Type != next.Type
+            || !string.Equals(previous.Author.Id, next.Author.Id, StringComparison.Ordinal)
+            || !string.Equals(previous.Range.BlockId, next.Range.BlockId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var previousEnd = previous.Range.EndOffset ?? previous.Range.StartOffset ?? 0;
+        var nextStart = next.Range.StartOffset ?? previousEnd;
+        return nextStart <= previousEnd;
+    }
+
+    private static DocumentRevisionGroup CreateGroup(IReadOnlyList<DocumentRevision> revisions)
+    {
+        var first = revisions[0];
+        var last = revisions[^1];
+        return new DocumentRevisionGroup
+        {
+            GroupId = first.Id,
+            Type = first.Type,
+            AuthorId = first.Author.Id,
+            Range = new DocumentRevisionRange
+            {
+                BlockId = first.Range.BlockId,
+                SourceBlockId = first.Range.SourceBlockId,
+                StartInlineIndex = first.Range.StartInlineIndex,
+                StartOffset = revisions.Min(revision => revision.Range.StartOffset ?? 0),
+                EndInlineIndex = last.Range.EndInlineIndex,
+                EndOffset = revisions.Max(revision =>
+                    revision.Range.EndOffset ?? revision.Range.StartOffset ?? 0)
+            },
+            Revisions = revisions.ToList()
+        };
     }
 }

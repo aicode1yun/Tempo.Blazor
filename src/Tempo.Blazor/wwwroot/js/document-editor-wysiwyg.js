@@ -1,6 +1,8 @@
 window.tmDocumentEditorEngine = (function () {
     'use strict';
 
+    var TOOLBAR_NATIVE_BUTTON_BRIDGE_VERSION = 'toolbar-native-button-2026-05-24-02';
+
     var _instances = new Map();
     var _counter = 0;
     var _operationCounter = 0;
@@ -166,7 +168,7 @@ window.tmDocumentEditorEngine = (function () {
         var kind = 'text';
         if (type.indexOf('field') >= 0 || _hasOwn(raw, 'FieldType') || _hasOwn(raw, 'fieldType')) kind = 'field';
         if (type.indexOf('token') >= 0 || _hasOwn(raw, 'Key') || _hasOwn(raw, 'key')) kind = 'token';
-        var marks = _asArray(_read(raw, 'Marks', 'marks', [])).map(_sortObject);
+        var marks = normalizeMarks(_read(raw, 'Marks', 'marks', []));
         var revisionId = _read(raw, 'RevisionId', 'revisionId', null) || readRevisionIdFromMarks(marks);
         return _sortObject({
             id: _asText(_read(raw, 'Id', 'id', '')) || _stableId('inline', path),
@@ -231,19 +233,25 @@ window.tmDocumentEditorEngine = (function () {
         return ids;
     }
 
-    function importParagraphContent(source, path) {
+    function importParagraphContent(source, path, paragraphProperties) {
         var content = source || {};
+        var properties = paragraphProperties || {};
         var runs = _asArray(_read(content, 'Inlines', 'inlines', [])).map(function (run, index) {
             return importInlineRun(run, path + '-run-' + index);
         });
         if (runs.length === 0) {
             runs.push(importInlineRun({ Text: '' }, path + '-run-0'));
         }
+        runs = mergeAdjacentTextRuns(runs);
         return _sortObject({
             type: 'paragraph',
             runs: runs,
-            alignment: _read(content, 'Alignment', 'alignment', null),
-            lineSpacing: _read(content, 'LineSpacing', 'lineSpacing', null),
+            alignment: _read(content, 'Alignment', 'alignment', _read(properties, 'Alignment', 'alignment', null)),
+            lineSpacing: _read(content, 'LineSpacing', 'lineSpacing', _read(properties, 'LineSpacing', 'lineSpacing', null)),
+            spacingBefore: _read(properties, 'SpacingBefore', 'spacingBefore', null),
+            spacingAfter: _read(properties, 'SpacingAfter', 'spacingAfter', null),
+            leftIndent: _read(properties, 'LeftIndent', 'leftIndent', null),
+            rightIndent: _read(properties, 'RightIndent', 'rightIndent', null),
             style: _sortObject(_read(content, 'Style', 'style', {}) || {})
         });
     }
@@ -312,7 +320,7 @@ window.tmDocumentEditorEngine = (function () {
             normalizedContent = importImageObject(content, path + '-image');
             type = 'image';
         } else {
-            normalizedContent = importParagraphContent(content, path + '-paragraph');
+            normalizedContent = importParagraphContent(content, path + '-paragraph', _read(block, 'ParagraphProperties', 'paragraphProperties', {}));
             type = 'paragraph';
         }
 
@@ -546,6 +554,46 @@ window.tmDocumentEditorEngine = (function () {
         return 0;
     }
 
+    function exportRevisionAuthor(value, fallbackId) {
+        var source = value || {};
+        if (typeof source === 'string') {
+            return _sortObject({
+                Id: source || fallbackId || 'local',
+                DisplayName: source || fallbackId || 'local'
+            });
+        }
+
+        var id = _asText(source.Id || source.id || fallbackId || source.DisplayName || source.displayName || 'local');
+        return _sortObject({
+            Id: id,
+            DisplayName: _asText(source.DisplayName || source.displayName || id)
+        });
+    }
+
+    function exportDateTimeOffset(value) {
+        if (value instanceof Date && Number.isFinite(value.getTime())) {
+            return value.toISOString();
+        }
+
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return new Date(value).toISOString();
+        }
+
+        if (typeof value === 'string' && value.trim()) {
+            return value;
+        }
+
+        return new Date().toISOString();
+    }
+
+    function exportTextAlignment(value) {
+        var normalized = String(value ?? '').trim().toLowerCase();
+        if (value === 1 || normalized === '1' || normalized === 'center' || normalized === 'centre') return 1;
+        if (value === 2 || normalized === '2' || normalized === 'right' || normalized === 'end') return 2;
+        if (value === 3 || normalized === '3' || normalized === 'justify' || normalized === 'justified') return 3;
+        return 0;
+    }
+
     function exportRevision(revision) {
         var source = revision || {};
         var range = source.Range || source.range || source.affectedRange || source.AffectedRange || {};
@@ -553,6 +601,8 @@ window.tmDocumentEditorEngine = (function () {
         if (payload === undefined && source.payload !== undefined) {
             payload = typeof source.payload === 'string' ? source.payload : JSON.stringify(source.payload || {});
         }
+        var authorValue = source.Author || source.authorObject || source.author || {};
+        var authorId = source.AuthorId || source.authorId || source.author || source.Author || 'local';
         return _sortObject({
             Id: _asText(source.Id || source.id),
             Type: exportRevisionType(source.Type ?? source.type),
@@ -564,10 +614,11 @@ window.tmDocumentEditorEngine = (function () {
                 EndInlineIndex: range.EndInlineIndex ?? range.endInlineIndex ?? null,
                 EndOffset: range.EndOffset ?? range.endOffset ?? range.end ?? null
             },
-            Author: _clone(source.Author || source.authorObject || source.author || {}),
-            CreatedAt: source.CreatedAt ?? source.createdAt ?? source.timestamp ?? null,
+            Author: exportRevisionAuthor(authorValue, authorId),
+            CreatedAt: exportDateTimeOffset(source.CreatedAt ?? source.createdAt ?? source.timestamp ?? null),
             Action: exportRevisionAction(source.Action ?? source.action ?? source.status),
-            PayloadJson: payload ?? null
+            PayloadJson: payload ?? null,
+            GroupId: source.GroupId ?? source.groupId ?? null
         });
     }
 
@@ -622,9 +673,18 @@ window.tmDocumentEditorEngine = (function () {
                 Style: _clone(block.style || {})
             });
         }
+        var textContent = block.content || {};
         return _sortObject({
             Id: block.id,
             Type: exportBlockType(block),
+            ParagraphProperties: {
+                Alignment: exportTextAlignment(textContent.alignment ?? textContent.Alignment),
+                LineSpacing: Number(textContent.lineSpacing ?? textContent.LineSpacing ?? 1) || 1,
+                SpacingBefore: Number(textContent.spacingBefore ?? textContent.SpacingBefore ?? 0) || 0,
+                SpacingAfter: Number(textContent.spacingAfter ?? textContent.SpacingAfter ?? 0) || 0,
+                LeftIndent: Number(textContent.leftIndent ?? textContent.LeftIndent ?? 0) || 0,
+                RightIndent: Number(textContent.rightIndent ?? textContent.RightIndent ?? 0) || 0
+            },
             Content: {
                 $type: block.type === 'heading' ? 'heading' : block.type === 'list' ? 'list' : block.type === 'quote' ? 'quote' : 'paragraph',
                 Alignment: block.content.alignment,
@@ -852,6 +912,52 @@ window.tmDocumentEditorEngine = (function () {
         }
     }
 
+    function supportsOperationHistory(operation) {
+        var type = operation && (operation.type || operation.Type) || '';
+        if (operation && (operation.revisionId || operation.RevisionId || operation.revision || operation.Revision)) return false;
+        return [
+            OPERATION_TYPES.InsertText,
+            OPERATION_TYPES.DeleteRange,
+            OPERATION_TYPES.ApplyMark,
+            OPERATION_TYPES.RemoveMark,
+            OPERATION_TYPES.SetParagraphAttribute,
+            OPERATION_TYPES.SetSelection,
+            OPERATION_TYPES.RestoreSnapshot
+        ].indexOf(type) >= 0;
+    }
+
+    function isSelectionOnlyOperation(operation) {
+        var type = operation && (operation.type || operation.Type) || '';
+        return type === OPERATION_TYPES.SetSelection;
+    }
+
+    function operationsAffectDocument(operations) {
+        return _asArray(operations).some(function (operation) {
+            return operation && !isSelectionOnlyOperation(operation);
+        });
+    }
+
+    function transactionAffectsDocument(transaction) {
+        return !!(transaction && operationsAffectDocument(transaction.operations));
+    }
+
+    function toOperationJson(operation) {
+        var attached = attachOperationMethods(_clone(operation));
+        return attached.toJSON ? attached.toJSON() : _clone(attached);
+    }
+
+    function createReversedOperationJson(operation) {
+        return toOperationJson(getReversedOperation(attachOperationMethods(_clone(operation))));
+    }
+
+    function createRedoHistoryOperations(operations) {
+        return _asArray(operations).map(toOperationJson);
+    }
+
+    function createUndoHistoryOperations(operations) {
+        return _asArray(operations).map(createReversedOperationJson);
+    }
+
     function _normalizeTarget(value) {
         var target = value || {};
         return {
@@ -872,7 +978,13 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function _blockText(block) {
-        return block && block.type === 'paragraph' ? _textFromRuns(block.content && block.content.runs) : '';
+        return block && block.content && Array.isArray(block.content.runs)
+            ? _textFromRuns(block.content.runs)
+            : '';
+    }
+
+    function _isEditableTextBlock(block) {
+        return !!(block && block.content && Array.isArray(block.content.runs));
     }
 
     function _findBlockContainer(model, blockId) {
@@ -1006,15 +1118,74 @@ window.tmDocumentEditorEngine = (function () {
 
     function cloneRunSlice(run, start, end, suffix) {
         var text = _asText(run && run.text);
+        var range = clampTextRange(text, start, end);
         var next = _clone(run || {});
         next.id = _asText(next.id || next.Id || _stableId('inline', 'run')) + suffix;
-        next.text = text.slice(Math.max(0, start), Math.max(0, end));
-        return next;
+        next.text = text.slice(range.start, range.end);
+        return normalizeTextRunForMerge(next);
+    }
+
+    function clampTextBoundary(text, index, direction) {
+        var value = Math.max(0, Math.min(_asText(text).length, Number(index || 0)));
+        if (value > 0
+            && value < text.length
+            && text.charCodeAt(value - 1) >= 0xD800
+            && text.charCodeAt(value - 1) <= 0xDBFF
+            && text.charCodeAt(value) >= 0xDC00
+            && text.charCodeAt(value) <= 0xDFFF) {
+            return direction === 'end' ? value + 1 : value - 1;
+        }
+        return value;
+    }
+
+    function clampTextRange(text, start, end) {
+        var source = _asText(text);
+        var from = clampTextBoundary(source, Math.min(Number(start || 0), Number(end || 0)), 'start');
+        var to = clampTextBoundary(source, Math.max(Number(start || 0), Number(end || 0)), 'end');
+        if (to < from) to = from;
+        return { start: from, end: to };
+    }
+
+    function commentIdsAtInsertionOffset(block, offset) {
+        if (!block || block.type !== 'paragraph') return [];
+        var target = Math.max(0, Math.min(_blockText(block).length, Number(offset || 0) || 0));
+        var leftIds = [];
+        var rightIds = [];
+        var cursor = 0;
+        _asArray(block.content && block.content.runs).forEach(function (run) {
+            var runText = resolveInlineRunDisplayText(run);
+            var runStart = cursor;
+            var runEnd = cursor + runText.length;
+            cursor = runEnd;
+            if (runEnd <= runStart) return;
+            var runCommentIds = readCommentIdsFromRun(run);
+            if (runCommentIds.length === 0) return;
+            if (target > runStart && target <= runEnd) {
+                leftIds = _unique(leftIds.concat(runCommentIds));
+            }
+            if (target >= runStart && target < runEnd) {
+                rightIds = _unique(rightIds.concat(runCommentIds));
+            }
+        });
+        return _unique(leftIds.filter(function (commentId) { return rightIds.indexOf(commentId) >= 0; })).sort();
     }
 
     function _insertTextRun(block, offset, text, attributes) {
         if (!block.content) block.content = { type: 'paragraph', runs: [] };
         var attrs = attributes || {};
+        var hasExplicitCommentIds = _hasOwn(attrs, 'commentIds') || _hasOwn(attrs, 'CommentIds');
+        var inheritedCommentIds = hasExplicitCommentIds
+            ? _unique(_asArray(attrs.commentIds || attrs.CommentIds).map(_asText).filter(Boolean)).sort()
+            : commentIdsAtInsertionOffset(block, offset);
+        function createInsertedRun(index) {
+            return _sortObject(Object.assign({
+                id: attrs.id || _stableId('inline', block.id + '-insert-' + Date.now() + (index === undefined ? '' : '-' + index)),
+                kind: 'text',
+                text: _asText(text),
+                marks: normalizeMarks(attrs.marks || []),
+                style: _clone(attrs.style || {})
+            }, inheritedCommentIds.length ? { commentIds: inheritedCommentIds } : {}, attrs.revisionId ? { revisionId: attrs.revisionId } : {}));
+        }
         var result = [];
         var cursor = 0;
         var inserted = false;
@@ -1029,34 +1200,22 @@ window.tmDocumentEditorEngine = (function () {
                     var before = _clone(run);
                     before.id = run.id + '-before';
                     before.text = runText.slice(0, local);
-                    result.push(before);
+                    result.push(normalizeTextRunForMerge(before));
                 }
-                result.push(_sortObject(Object.assign({
-                    id: attrs.id || _stableId('inline', block.id + '-insert-' + Date.now() + '-' + index),
-                    kind: 'text',
-                    text: _asText(text),
-                    marks: _clone(attrs.marks || []),
-                    style: _clone(attrs.style || {})
-                }, attrs.revisionId ? { revisionId: attrs.revisionId } : {})));
+                result.push(createInsertedRun(index));
                 if (local < runText.length) {
                     var after = _clone(run);
                     after.id = run.id + '-after';
                     after.text = runText.slice(local);
-                    result.push(after);
+                    result.push(normalizeTextRunForMerge(after));
                 }
                 inserted = true;
             } else {
-                result.push(_clone(run));
+                result.push(normalizeTextRunForMerge(run));
             }
         });
         if (!inserted) {
-            result.push(_sortObject(Object.assign({
-                id: attrs.id || _stableId('inline', block.id + '-insert-' + Date.now()),
-                kind: 'text',
-                text: _asText(text),
-                marks: _clone(attrs.marks || []),
-                style: _clone(attrs.style || {})
-            }, attrs.revisionId ? { revisionId: attrs.revisionId } : {})));
+            result.push(createInsertedRun());
         }
         block.content.runs = mergeAdjacentTextRuns(result);
     }
@@ -1074,7 +1233,7 @@ window.tmDocumentEditorEngine = (function () {
             var runEnd = cursor + runText.length;
             cursor = runEnd;
             if (runEnd <= from || runStart >= to || runText.length === 0) {
-                result.push(_clone(run));
+                result.push(normalizeTextRunForMerge(run));
                 return;
             }
             var localStart = Math.max(0, from - runStart);
@@ -1095,11 +1254,11 @@ window.tmDocumentEditorEngine = (function () {
             var runEnd = cursor + runText.length;
             cursor = runEnd;
             if (runEnd <= offset) {
-                before.push(_clone(run));
+                before.push(normalizeTextRunForMerge(run));
                 return;
             }
             if (runStart >= offset) {
-                after.push(_clone(run));
+                after.push(normalizeTextRunForMerge(run));
                 return;
             }
             var local = Math.max(0, Math.min(runText.length, offset - runStart));
@@ -1121,47 +1280,132 @@ window.tmDocumentEditorEngine = (function () {
             var runEnd = cursor + text.length;
             cursor = runEnd;
             if (runEnd <= start || runStart >= end || text.length === 0) {
-                result.push(_clone(run));
+                result.push(normalizeTextRunForMerge(run));
                 return;
             }
             var localStart = Math.max(0, start - runStart);
             var localEnd = Math.min(text.length, end - runStart);
+            var localRange = clampTextRange(text, localStart, localEnd);
+            localStart = localRange.start;
+            localEnd = localRange.end;
             if (localStart > 0) {
                 var before = _clone(run);
                 before.id = run.id + '-a';
                 before.text = text.slice(0, localStart);
-                result.push(before);
+                result.push(normalizeTextRunForMerge(before));
             }
             var middle = _clone(run);
             middle.id = run.id + '-m';
             middle.text = text.slice(localStart, localEnd);
             middle.marks = updateMarks(middle.marks, mark, remove);
-            result.push(middle);
+            result.push(normalizeTextRunForMerge(middle));
             if (localEnd < text.length) {
                 var after = _clone(run);
                 after.id = run.id + '-b';
                 after.text = text.slice(localEnd);
-                result.push(after);
+                result.push(normalizeTextRunForMerge(after));
             }
         });
         block.content.runs = mergeAdjacentTextRuns(result);
     }
 
     function _markKey(mark) {
-        return JSON.stringify(_sortObject(mark || {}));
+        return JSON.stringify(normalizeMark(mark));
+    }
+
+    function normalizeMark(mark) {
+        return _sortObject(_clone(mark || {}));
+    }
+
+    function markSortKey(mark) {
+        var normalized = normalizeMark(mark);
+        return [
+            String(markOrderValue(normalized)).padStart(3, '0'),
+            String(markValue(normalized) ?? ''),
+            String(normalized.revisionId || normalized.RevisionId || ''),
+            String(normalized.commentId || normalized.CommentId || ''),
+            _markKey(normalized)
+        ].join('\u001f');
+    }
+
+    function markOrderValue(mark) {
+        var raw = mark && (mark.type ?? mark.Type);
+        if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+        var type = markType(mark);
+        var order = [
+            'bold',
+            'italic',
+            'underline',
+            'strikethrough',
+            'superscript',
+            'subscript',
+            'link',
+            'commentanchor',
+            'revision',
+            'highlight',
+            'textcolor',
+            'fontfamily',
+            'fontsize'
+        ].indexOf(type);
+        return order >= 0 ? order : 999;
+    }
+
+    function normalizeMarks(marks) {
+        var seen = new Set();
+        return _asArray(marks)
+            .map(normalizeMark)
+            .sort(function (left, right) {
+                var leftKey = markSortKey(left);
+                var rightKey = markSortKey(right);
+                return leftKey < rightKey ? -1 : (leftKey > rightKey ? 1 : 0);
+            })
+            .filter(function (mark) {
+                var key = _markKey(mark);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
     }
 
     function updateMarks(marks, mark, remove) {
-        var source = _asArray(marks).map(_clone);
+        var source = normalizeMarks(marks);
         var key = _markKey(mark);
         var without = source.filter(function (item) { return _markKey(item) !== key; });
-        if (remove) return without;
-        without.push(_clone(mark || {}));
-        return without;
+        if (remove) return normalizeMarks(without);
+        without.push(normalizeMark(mark || {}));
+        return normalizeMarks(without);
+    }
+
+    function normalizeTextRunForMerge(run) {
+        var clone = _clone(run || {});
+        clone.id = _asText(clone.id || clone.Id || '');
+        delete clone.Id;
+        clone.kind = clone.kind || clone.Kind || 'text';
+        delete clone.Kind;
+        clone.text = _asText(clone.text ?? clone.Text);
+        delete clone.Text;
+        if (clone.kind === 'text') {
+            delete clone.key;
+            delete clone.Key;
+            delete clone.fieldType;
+            delete clone.FieldType;
+            delete clone.fallbackText;
+            delete clone.FallbackText;
+        }
+        clone.marks = normalizeMarks(clone.marks || clone.Marks || []);
+        delete clone.Marks;
+        clone.style = _sortObject(clone.style || clone.Style || {});
+        delete clone.Style;
+        clone.commentIds = _unique(clone.commentIds || clone.CommentIds || []).sort();
+        delete clone.CommentIds;
+        if (clone.revisionId === undefined && clone.RevisionId !== undefined) clone.revisionId = clone.RevisionId;
+        delete clone.RevisionId;
+        if (clone.revisionId === undefined) clone.revisionId = null;
+        return _sortObject(clone);
     }
 
     function _runMergeKey(run) {
-        var clone = _clone(run) || {};
+        var clone = normalizeTextRunForMerge(run);
         delete clone.id;
         delete clone.text;
         return JSON.stringify(_sortObject(clone));
@@ -1171,13 +1415,14 @@ window.tmDocumentEditorEngine = (function () {
         var result = [];
         _asArray(runs).forEach(function (run) {
             if (!run) return;
-            var text = _asText(run.text);
+            var normalized = normalizeTextRunForMerge(run);
+            var text = _asText(normalized.text);
             if (text.length === 0 && result.length > 0) return;
             var previous = result[result.length - 1];
-            if (previous && previous.kind === run.kind && _runMergeKey(previous) === _runMergeKey(run)) {
+            if (previous && previous.kind === normalized.kind && _runMergeKey(previous) === _runMergeKey(normalized)) {
                 previous.text = _asText(previous.text) + text;
             } else {
-                result.push(_sortObject(run));
+                result.push(normalized);
             }
         });
         return result.length > 0 ? result : _plainRuns('', 'empty');
@@ -1345,6 +1590,7 @@ window.tmDocumentEditorEngine = (function () {
                 break;
         }
         if (result.ok) {
+            normalizeRevisionGroups(model);
             buildIndexes(model);
             result.differ = differ.snapshot();
             result.operation = op;
@@ -1357,9 +1603,14 @@ window.tmDocumentEditorEngine = (function () {
         var block = _findBlock(model, target.blockId);
         var text = _blockText(block);
         var inserted = _asText(op.text ?? op.Text);
-        var marks = _asArray(op.marks || op.Marks);
+        var marks = normalizeMarks(op.marks || op.Marks || []);
         var style = op.style || op.Style || {};
         var revisionId = op.revisionId || op.RevisionId || null;
+        var revisionPayload = op.revision || op.Revision || null;
+        if (revisionId && revisionPayload && !revisionById(model, revisionId)) {
+            if (!Array.isArray(model.revisions)) model.revisions = [];
+            model.revisions.push(_sortObject(revisionPayload));
+        }
         _insertTextRun(block, target.offset, inserted, { marks: marks, style: style, revisionId: revisionId });
         var range = { blockId: block.id, start: target.offset, end: target.offset + inserted.length };
         differ.record({ insertedRange: range, invalidatedLayoutScopes: [block.id] });
@@ -1372,6 +1623,39 @@ window.tmDocumentEditorEngine = (function () {
         var text = _blockText(block);
         var removed = text.slice(range.start, range.end);
         op.deletedText = removed;
+        var revisionId = op.revisionId || op.RevisionId || null;
+        var revisionPayload = op.revision || op.Revision || null;
+        if (revisionId || revisionPayload) {
+            var deletionRevision = normalizeRevision(revisionPayload || {
+                id: revisionId,
+                type: 'Deletion',
+                status: 'Pending',
+                affectedRange: range,
+                payload: { text: removed },
+                payloadJson: removed
+            });
+            revisionId = revisionId || deletionRevision.id;
+            deletionRevision.id = revisionId;
+            deletionRevision.type = 'Deletion';
+            deletionRevision.status = 'Pending';
+            deletionRevision.affectedRange = normalizeRevisionRange(Object.assign({}, deletionRevision.affectedRange || {}, range));
+            deletionRevision.range = deletionRevision.affectedRange;
+            if (!revisionPayload || !revisionPayload.payload && !revisionPayload.Payload) {
+                setRevisionPayloadText(deletionRevision, removed);
+            }
+            addRevision(model, deletionRevision);
+            setRevisionForRange(model, revisionId, range);
+            op.revisionId = revisionId;
+            op.revision = _clone(deletionRevision);
+            op.trackedDeletion = true;
+            differ.record({
+                markerChange: { revisionId: revisionId, status: 'Pending', type: 'Deletion' },
+                removedRange: { blockId: block.id, start: range.start, end: range.end, text: removed, tracked: true },
+                invalidatedLayoutScopes: [block.id],
+                invalidatedOverlayScopes: ['revisions', block.id]
+            });
+            return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.start, isCollapsed: true } };
+        }
         _deleteTextRange(block, range.start, range.end);
         differ.record({ removedRange: { blockId: block.id, start: range.start, end: range.end, text: removed }, invalidatedLayoutScopes: [block.id] });
         return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: { region: 'Body', blockId: block.id, offset: range.start, isCollapsed: true } };
@@ -1396,7 +1680,31 @@ window.tmDocumentEditorEngine = (function () {
         }, block.id + '-split');
         block.content.runs = splitRuns.before;
         container.blocks.splice(container.index + 1, 0, newBlock);
+        var revisionId = op.revisionId || op.RevisionId || null;
+        var revisionPayload = op.revision || op.Revision || null;
+        if (revisionId || revisionPayload) {
+            var splitRevision = normalizeRevision(revisionPayload || {
+                id: revisionId,
+                type: 'Structure',
+                status: 'Pending',
+                affectedRange: { blockId: block.id, start: target.offset, end: target.offset },
+                payload: { text: 'SplitBlock' },
+                payloadJson: 'SplitBlock'
+            });
+            revisionId = revisionId || splitRevision.id;
+            splitRevision.id = revisionId;
+            splitRevision.type = 'Structure';
+            splitRevision.status = 'Pending';
+            splitRevision.affectedRange = normalizeRevisionRange(splitRevision.affectedRange || { blockId: block.id, start: target.offset, end: target.offset });
+            splitRevision.range = splitRevision.affectedRange;
+            addRevision(model, splitRevision);
+            op.revisionId = revisionId;
+            op.revision = _clone(splitRevision);
+        }
         differ.record({ insertedRange: { blockId: newBlock.id, start: 0, end: _blockText(newBlock).length }, invalidatedLayoutScopes: [block.id, newBlock.id] });
+        if (revisionId) {
+            differ.record({ markerChange: { revisionId: revisionId, status: 'Pending', type: 'Structure' }, invalidatedOverlayScopes: ['revisions'] });
+        }
         return { ok: true, invalidatedLayoutScopes: [block.id, newBlock.id], nextSelection: { region: 'Body', blockId: newBlock.id, offset: 0, isCollapsed: true }, insertedBlockId: newBlock.id };
     }
 
@@ -1406,7 +1714,7 @@ window.tmDocumentEditorEngine = (function () {
         var index = container.index;
         var block = container.block;
         var previous = container.blocks[index - 1] || null;
-        if (!previous || previous.type !== 'paragraph' || block.type !== 'paragraph') {
+        if (!previous || !_isEditableTextBlock(previous) || !_isEditableTextBlock(block)) {
             return { ok: false, errors: [{ code: 'missing-previous-paragraph', path: 'operation.target.blockId', blockId: target.blockId }] };
         }
         var offset = _blockText(previous).length;
@@ -1574,6 +1882,7 @@ window.tmDocumentEditorEngine = (function () {
             author: _asText(author.DisplayName || author.displayName || source.authorName || source.AuthorName || source.author || source.Author || source.authorId || source.AuthorId || 'local'),
             authorObject: _sortObject(author || {}),
             createdAt: source.CreatedAt || source.createdAt || null,
+            groupId: source.GroupId || source.groupId || null,
             timestamp: Number(source.timestamp || source.Timestamp || Date.now()) || Date.now(),
             range: _sortObject(sourceRange || {}),
             affectedRange: range,
@@ -1635,17 +1944,21 @@ window.tmDocumentEditorEngine = (function () {
             }
             var localStart = Math.max(0, start - runStart);
             var localEnd = Math.min(text.length, end - runStart);
+            var localRange = clampTextRange(text, localStart, localEnd);
+            localStart = localRange.start;
+            localEnd = localRange.end;
             if (localStart > 0) {
                 var before = _clone(run);
                 before.id = run.id + '-pre-' + start;
                 before.text = text.slice(0, localStart);
-                result.push(before);
+                result.push(normalizeTextRunForMerge(before));
             }
             var middle = _clone(run);
             middle.id = run.id + '-rev-' + start + '-' + end;
             middle.text = text.slice(localStart, localEnd);
             middle = transform(middle) || middle;
             if (middle.text !== '') {
+                middle = normalizeTextRunForMerge(middle);
                 result.push(middle);
                 affected.push(middle);
             }
@@ -1653,7 +1966,7 @@ window.tmDocumentEditorEngine = (function () {
                 var after = _clone(run);
                 after.id = run.id + '-post-' + end;
                 after.text = text.slice(localEnd);
-                result.push(after);
+                result.push(normalizeTextRunForMerge(after));
             }
         });
         block.content.runs = mergeAdjacentTextRuns(result);
@@ -1738,9 +2051,9 @@ window.tmDocumentEditorEngine = (function () {
                     delete run.revisionId;
                     delete run.RevisionId;
                 }
-                run.marks = _asArray(run.marks || run.Marks).filter(function (mark) {
+                run.marks = normalizeMarks(_asArray(run.marks || run.Marks).filter(function (mark) {
                     return readRevisionIdFromMark(mark) !== revisionId;
-                });
+                }));
                 delete run.Marks;
             });
             block.content.runs = mergeAdjacentTextRuns(block.content.runs);
@@ -1785,6 +2098,221 @@ window.tmDocumentEditorEngine = (function () {
         buildIndexes(model);
     }
 
+    function readOptionalBoolean(source, keys) {
+        var valueSource = source || {};
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (!Object.prototype.hasOwnProperty.call(valueSource, key)) continue;
+            var value = valueSource[key];
+            if (value === null || value === undefined) continue;
+            if (typeof value === 'boolean') return value;
+            if (typeof value === 'number') return value !== 0;
+            var text = String(value).trim().toLowerCase();
+            if (text === 'true' || text === '1' || text === 'yes' || text === 'on') return true;
+            if (text === 'false' || text === '0' || text === 'no' || text === 'off') return false;
+        }
+        return null;
+    }
+
+    function resolveTrackChangesState(options) {
+        var opts = options || {};
+        var localEnabled = readOptionalBoolean(opts, ['trackChangesEnabled', 'TrackChangesEnabled', 'trackChanges', 'TrackChanges']);
+        var globalEnabled = readOptionalBoolean(opts, ['globalTrackChangesEnabled', 'GlobalTrackChangesEnabled', 'defaultTrackChangesEnabled', 'DefaultTrackChangesEnabled', 'trackChangesDefaultEnabled', 'TrackChangesDefaultEnabled']);
+        var displayMode = opts.reviewDisplayMode || opts.ReviewDisplayMode || opts.globalReviewDisplayMode || opts.GlobalReviewDisplayMode || 'AllMarkup';
+        var source = localEnabled !== null
+            ? 'local'
+            : globalEnabled !== null
+                ? 'global'
+                : 'default';
+        return _sortObject({
+            displayMode: _asText(displayMode || 'AllMarkup'),
+            enabled: localEnabled !== null ? localEnabled : (globalEnabled !== null ? globalEnabled : false),
+            globalEnabled: globalEnabled,
+            localEnabled: localEnabled,
+            source: source
+        });
+    }
+
+    function isTrackChangesEnabled(inst) {
+        return resolveTrackChangesState(inst && inst.options || {}).enabled === true;
+    }
+
+    function resolveRevisionUserId(options) {
+        var opts = options || {};
+        var author = opts.author || opts.Author || {};
+        return _asText(
+            author.Id || author.id ||
+            opts.currentUserId || opts.CurrentUserId ||
+            opts.userId || opts.UserId ||
+            author.DisplayName || author.displayName ||
+            'local');
+    }
+
+    function revisionPayloadText(revision) {
+        var payload = revision && (revision.payload || revision.Payload) || {};
+        return _asText(revision && (revision.payloadJson ?? revision.PayloadJson ?? payload.text ?? payload.Text ?? ''));
+    }
+
+    function stableRevisionStringify(value) {
+        if (Array.isArray(value)) return '[' + value.map(stableRevisionStringify).join(',') + ']';
+        if (value && typeof value === 'object') {
+            return '{' + Object.keys(value).sort().map(function (key) {
+                return JSON.stringify(key) + ':' + stableRevisionStringify(value[key]);
+            }).join(',') + '}';
+        }
+        return JSON.stringify(value);
+    }
+
+    function setRevisionPayloadText(revision, text) {
+        if (!revision) return;
+        var value = _asText(text);
+        revision.payload = _sortObject(Object.assign({}, revision.payload || {}, { text: value }));
+        revision.payloadJson = value;
+    }
+
+    function createTrackedRevisionPayload(type, range, text, userId, source, extra) {
+        var normalizedType = normalizeRevisionType(type);
+        var normalizedRange = normalizeRevisionRange(range);
+        var revisionText = _asText(text);
+        var opts = extra || {};
+        var payload = Object.assign({}, opts.payload || opts.Payload || {}, { text: revisionText });
+        return _sortObject({
+            id: opts.id || opts.Id || 'rev-' + normalizedType.toLowerCase() + '-' + Date.now() + '-' + Math.floor(Math.random() * 100000),
+            type: normalizedType,
+            status: 'Pending',
+            author: _asText(opts.author || opts.Author || userId || 'local'),
+            authorId: _asText(opts.authorId || opts.AuthorId || userId || 'local'),
+            source: source || opts.source || opts.Source || '',
+            affectedRange: normalizedRange,
+            range: normalizedRange,
+            payload: _sortObject(payload),
+            payloadJson: revisionText,
+            timestamp: opts.timestamp || opts.Timestamp || Date.now()
+        });
+    }
+
+    function createInsertionRevisionPayload(range, text, userId, source, extra) {
+        return createTrackedRevisionPayload('Insertion', range, text, userId, source || 'typing', extra);
+    }
+
+    function createDeletionRevisionPayload(model, range, userId, source, extra) {
+        var normalizedRange = normalizeRevisionRange(range);
+        var block = _findBlock(model, normalizedRange.blockId);
+        var deletedText = _asText(extra && (extra.text || extra.Text));
+        if (!deletedText && block) {
+            deletedText = _blockText(block).slice(normalizedRange.start, normalizedRange.end);
+        }
+        return createTrackedRevisionPayload('Deletion', normalizedRange, deletedText, userId, source || 'delete', extra);
+    }
+
+    function createStructureRevisionPayload(range, label, userId, source, extra) {
+        return createTrackedRevisionPayload('Structure', range, label || 'SplitBlock', userId, source || 'structure', extra);
+    }
+
+    function revisionAuthorMergeKey(revision) {
+        var author = revision && (revision.authorObject || revision.Author || revision.author || {});
+        return _asText(
+            author.Id || author.id ||
+            revision && (revision.authorId || revision.AuthorId || revision.author || revision.Author) ||
+            author.DisplayName || author.displayName ||
+            '');
+    }
+
+    function revisionRunFormattingMergeKey(run) {
+        var marks = normalizeMarks(_asArray(run && (run.marks || run.Marks)).filter(function (mark) {
+            return markType(mark) !== 'revision';
+        }));
+        return stableRevisionStringify({
+            commentIds: _asArray(run && (run.commentIds || run.CommentIds)).map(_asText).sort(),
+            marks: marks,
+            style: run && (run.style || run.Style) || {}
+        });
+    }
+
+    function canMergeAdjacentRevisionRuns(leftRevision, rightRevision, leftRun, rightRun, leftEnd, rightStart) {
+        if (!leftRevision || !rightRevision || leftRevision.id === rightRevision.id) return false;
+        if (Number(leftEnd || 0) !== Number(rightStart || 0)) return false;
+        if (readRevisionStatus(leftRevision) !== 'Pending' || readRevisionStatus(rightRevision) !== 'Pending') return false;
+        if (readRevisionTypeName(leftRevision) !== readRevisionTypeName(rightRevision)) return false;
+        if (revisionAuthorMergeKey(leftRevision) !== revisionAuthorMergeKey(rightRevision)) return false;
+        return revisionRunFormattingMergeKey(leftRun) === revisionRunFormattingMergeKey(rightRun);
+    }
+
+    function replaceRevisionIdOnRun(run, sourceId, targetId) {
+        if (!run) return;
+        if (run.revisionId === sourceId || run.RevisionId === sourceId) {
+            run.revisionId = targetId;
+            delete run.RevisionId;
+        }
+        run.marks = normalizeMarks(_asArray(run.marks || run.Marks).map(function (mark) {
+            if (readRevisionIdFromMark(mark) !== sourceId) return mark;
+            var next = _clone(mark);
+            next.revisionId = targetId;
+            next.RevisionId = targetId;
+            return next;
+        }));
+        delete run.Marks;
+    }
+
+    function normalizeRevisionGroups(model) {
+        ensureRevisionList(model);
+        var revisionsById = {};
+        _asArray(model && model.revisions).forEach(function (revision) {
+            revisionsById[revision.id] = revision;
+        });
+        var removedIds = new Set();
+        var merged = 0;
+
+        function mergeRevision(sourceRevision, targetRevision, blockId, start, end, sourceText) {
+            if (!sourceRevision || !targetRevision || sourceRevision.id === targetRevision.id) return;
+            var targetRange = normalizeRevisionRange(targetRevision.affectedRange || targetRevision.range || {});
+            var sourceRange = normalizeRevisionRange(sourceRevision.affectedRange || sourceRevision.range || {});
+            var nextRange = _sortObject({
+                blockId: blockId || targetRange.blockId || sourceRange.blockId,
+                start: Math.min(targetRange.start, sourceRange.start, Number(start || 0)),
+                end: Math.max(targetRange.end, sourceRange.end, Number(end || 0))
+            });
+            targetRevision.affectedRange = nextRange;
+            targetRevision.range = nextRange;
+            setRevisionPayloadText(targetRevision, (revisionPayloadText(targetRevision) || '') + (revisionPayloadText(sourceRevision) || _asText(sourceText)));
+            removedIds.add(sourceRevision.id);
+            merged++;
+        }
+
+        function scanBlock(block) {
+            if (!block || block.type !== 'paragraph') return;
+            var cursor = 0;
+            var previous = null;
+            _asArray(block.content && block.content.runs).forEach(function (run) {
+                var text = _asText(run.text);
+                var start = cursor;
+                var end = cursor + text.length;
+                cursor = end;
+                var revisionId = readRevisionIdsFromRun(run)[0] || '';
+                var revision = revisionId ? revisionsById[revisionId] : null;
+                if (previous && revision && canMergeAdjacentRevisionRuns(previous.revision, revision, previous.run, run, previous.end, start)) {
+                    mergeRevision(revision, previous.revision, block.id, previous.start, end, text);
+                    replaceRevisionIdOnRun(run, revision.id, previous.revision.id);
+                    revision = previous.revision;
+                    revisionId = previous.revision.id;
+                }
+                previous = revision && readRevisionStatus(revision) === 'Pending'
+                    ? { revision: revision, run: run, start: start, end: end }
+                    : null;
+            });
+            block.content.runs = mergeAdjacentTextRuns(block.content.runs);
+        }
+
+        _asArray(model && model.body && model.body.blocks).forEach(scanBlock);
+        _asArray(model && model.headers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
+        _asArray(model && model.footers).forEach(function (region) { _asArray(region.blocks).forEach(scanBlock); });
+        if (removedIds.size > 0) {
+            model.revisions = _asArray(model.revisions).filter(function (revision) { return !removedIds.has(revision.id); });
+        }
+        buildIndexes(model);
+        return _sortObject({ ok: true, merged: merged, removed: removedIds.size });
+    }
+
     function revisionDecorativeStyle(revision) {
         var type = normalizeRevisionType(revision && revision.type);
         if (revision && revision.payload && revision.payload.decorativeStyle) return revision.payload.decorativeStyle;
@@ -1819,6 +2347,14 @@ window.tmDocumentEditorEngine = (function () {
             'toggle-underline': 'underline',
             'strike': 'strike',
             'strikethrough': 'strike',
+            'font-family': 'fontFamily',
+            'fontfamily': 'fontFamily',
+            'set-font-family': 'fontFamily',
+            'setfontfamily': 'fontFamily',
+            'font-size': 'fontSize',
+            'fontsize': 'fontSize',
+            'set-font-size': 'fontSize',
+            'setfontsize': 'fontSize',
             'text-color': 'textColor',
             'textcolor': 'textColor',
             'set-text-color': 'textColor',
@@ -1841,15 +2377,37 @@ window.tmDocumentEditorEngine = (function () {
             'removeformatting': 'clearFormatting',
             'alignment': 'alignment',
             'align': 'alignment',
+            'paragraph-alignment': 'alignment',
+            'paragraphalignment': 'alignment',
+            'set-paragraph-alignment': 'alignment',
+            'setparagraphalignment': 'alignment',
             'line-spacing': 'lineSpacing',
             'linespacing': 'lineSpacing',
+            'set-line-spacing': 'lineSpacing',
+            'setlinespacing': 'lineSpacing',
             'spacing-before': 'spacingBefore',
             'spacingbefore': 'spacingBefore',
+            'set-spacing-before': 'spacingBefore',
+            'setspacingbefore': 'spacingBefore',
             'spacing-after': 'spacingAfter',
             'spacingafter': 'spacingAfter',
+            'set-spacing-after': 'spacingAfter',
+            'setspacingafter': 'spacingAfter',
             'list': 'list',
+            'bullet-list': 'list',
+            'bulletlist': 'list',
+            'toggle-bullet-list': 'list',
+            'togglebulletlist': 'list',
+            'numbered-list': 'list',
+            'numberedlist': 'list',
+            'toggle-numbered-list': 'list',
+            'togglenumberedlist': 'list',
             'indent': 'indent',
+            'increase-indent': 'indent',
+            'increaseindent': 'indent',
             'outdent': 'outdent',
+            'decrease-indent': 'outdent',
+            'decreaseindent': 'outdent',
             'insert-table': 'insertTable',
             'inserttable': 'insertTable',
             'insert-row-above': 'insertRowAbove',
@@ -1884,29 +2442,72 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function markType(mark) {
-        return String(mark && (mark.type || mark.Type) || '').replace(/\s+/g, '').toLowerCase();
+        var raw = mark && (mark.type ?? mark.Type);
+        var numericTypes = [
+            'bold',
+            'italic',
+            'underline',
+            'strikethrough',
+            'superscript',
+            'subscript',
+            'link',
+            'commentanchor',
+            'revision',
+            'highlight',
+            'textcolor',
+            'fontfamily',
+            'fontsize'
+        ];
+        if (typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw < numericTypes.length) {
+            return numericTypes[raw];
+        }
+        return String(raw ?? '').replace(/\s+/g, '').toLowerCase();
     }
 
     function markValue(mark) {
         return mark && (mark.value ?? mark.Value ?? mark.color ?? mark.Color ?? mark.href ?? mark.Href ?? null);
     }
 
+    function normalizeCommandColorValue(value) {
+        if (value === undefined || value === null) return null;
+        var text = String(value).trim();
+        if (/^#[0-9a-f]{3}$/i.test(text)) {
+            return '#' + text.slice(1).split('').map(function (part) { return part + part; }).join('').toLowerCase();
+        }
+        if (/^#[0-9a-f]{6}$/i.test(text)) {
+            return text.toLowerCase();
+        }
+        return text || null;
+    }
+
     function commandMark(id, payload) {
         var body = payload || {};
         switch (id) {
-            case 'bold': return { type: 'Bold' };
-            case 'italic': return { type: 'Italic' };
-            case 'underline': return { type: 'Underline' };
-            case 'strike': return { type: 'Strike' };
-            case 'textColor': return { type: 'TextColor', value: body.color || body.Color || body.value || body.Value || null };
-            case 'backgroundColor': return { type: 'Highlight', value: body.color || body.Color || body.value || body.Value || null };
-            case 'link': return { type: 'Link', href: body.href || body.Href || body.url || body.Url || '' };
+            case 'bold': return { type: 0 };
+            case 'italic': return { type: 1 };
+            case 'underline': return { type: 2 };
+            case 'strike': return { type: 3 };
+            case 'fontFamily': return { type: 11, value: body.family || body.Family || body.value || body.Value || null };
+            case 'fontSize': return { type: 12, value: body.size || body.Size || body.value || body.Value || null };
+            case 'textColor': return { type: 10, value: normalizeCommandColorValue(body.color || body.Color || body.value || body.Value || null) };
+            case 'backgroundColor': return { type: 9, value: normalizeCommandColorValue(body.color || body.Color || body.value || body.Value || null) };
+            case 'link': return { type: 6, href: body.href || body.Href || body.url || body.Url || '' };
             default: return null;
         }
     }
 
+    function isClearValueCommand(id, mark) {
+        return (id === 'textColor' || id === 'backgroundColor')
+            && mark
+            && (mark.value === null || mark.value === undefined || mark.value === '');
+    }
+
     function inlineCommandTypes() {
-        return ['bold', 'italic', 'underline', 'strike', 'textColor', 'backgroundColor', 'link'];
+        return ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link'];
+    }
+
+    function paragraphCommandTypes() {
+        return ['alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'list', 'indent', 'outdent'];
     }
 
     function markMatchesCommand(mark, id) {
@@ -1915,6 +2516,8 @@ window.tmDocumentEditorEngine = (function () {
         if (id === 'italic') return type === 'italic';
         if (id === 'underline') return type === 'underline';
         if (id === 'strike') return type === 'strike' || type === 'strikethrough';
+        if (id === 'fontFamily') return type === 'fontfamily';
+        if (id === 'fontSize') return type === 'fontsize';
         if (id === 'textColor') return type === 'textcolor' || type === 'fontcolor' || type === 'foregroundcolor';
         if (id === 'backgroundColor') return type === 'backgroundcolor' || type === 'highlight';
         if (id === 'link') return type === 'link';
@@ -1967,6 +2570,12 @@ window.tmDocumentEditorEngine = (function () {
         return fallback;
     }
 
+    function pendingMarkForCommand(pendingTypingMarks, id) {
+        return _asArray(pendingTypingMarks).slice().reverse().find(function (mark) {
+            return markMatchesCommand(mark, id);
+        }) || null;
+    }
+
     function selectionDisabledReason(model, selection, commandId) {
         var snapshot = createSelectionSnapshot(selection || {});
         var block = _findBlock(model, snapshot.blockId);
@@ -1974,7 +2583,7 @@ window.tmDocumentEditorEngine = (function () {
         if (inlineCommandTypes().indexOf(commandId) >= 0 || commandId === 'clearFormatting') {
             return block.type === 'paragraph' ? '' : 'selection-not-text';
         }
-        if (['alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'list', 'indent', 'outdent'].indexOf(commandId) >= 0) {
+        if (paragraphCommandTypes().indexOf(commandId) >= 0) {
             return block.type === 'paragraph' ? '' : 'selection-not-paragraph';
         }
         if (['insertRowAbove', 'insertRowBelow', 'insertColumnLeft', 'insertColumnRight', 'deleteRow', 'deleteColumn', 'mergeCells', 'splitCell', 'cellBackground', 'cellBorder'].indexOf(commandId) >= 0) {
@@ -1996,6 +2605,8 @@ window.tmDocumentEditorEngine = (function () {
             italic: false,
             underline: false,
             strike: false,
+            fontFamily: null,
+            fontSize: null,
             textColor: null,
             backgroundColor: null,
             link: null
@@ -2005,6 +2616,8 @@ window.tmDocumentEditorEngine = (function () {
             italic: false,
             underline: false,
             strike: false,
+            fontFamily: false,
+            fontSize: false,
             textColor: false,
             backgroundColor: false,
             link: false
@@ -2012,13 +2625,15 @@ window.tmDocumentEditorEngine = (function () {
         function valuesFor(id) {
             return runs.map(function (run) {
                 var found = _asArray(run.marks).find(function (mark) { return markMatchesCommand(mark, id); });
+                if (id === 'fontFamily') return found ? markValue(found) : (run.style && (run.style.fontFamily || run.style.FontFamily) || null);
+                if (id === 'fontSize') return found ? markValue(found) : (run.style && (run.style.fontSize || run.style.FontSize) || null);
                 if (id === 'textColor') return found ? markValue(found) : (run.style && (run.style.color || run.style.Color) || null);
                 if (id === 'backgroundColor') return found ? markValue(found) : (run.style && (run.style.backgroundColor || run.style.BackgroundColor) || null);
                 if (id === 'link') return found ? markValue(found) : null;
                 return !!found;
             });
         }
-        ['bold', 'italic', 'underline', 'strike', 'textColor', 'backgroundColor', 'link'].forEach(function (id) {
+        ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link'].forEach(function (id) {
             var values = valuesFor(id);
             if (values.length === 0 && id === 'textColor' && block) values = [findInheritedTextColor(block, snapshot.offset)];
             if (id === 'textColor' && values.every(function (value) { return value === null || value === undefined || value === ''; }) && block) {
@@ -2028,6 +2643,16 @@ window.tmDocumentEditorEngine = (function () {
             active[id] = first === undefined ? null : first;
             mixed[id] = values.some(function (value) { return JSON.stringify(value) !== JSON.stringify(first); });
         });
+        if (range.collapsed) {
+            ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link'].forEach(function (id) {
+                var pending = pendingMarkForCommand(pendingTypingMarks, id);
+                if (!pending) return;
+                active[id] = id === 'bold' || id === 'italic' || id === 'underline' || id === 'strike'
+                    ? true
+                    : markValue(pending);
+                mixed[id] = false;
+            });
+        }
         var paragraph = block && block.type === 'paragraph' ? {
             alignment: block.content && block.content.alignment || 'left',
             lineSpacing: block.content && block.content.lineSpacing || 1,
@@ -2051,6 +2676,8 @@ window.tmDocumentEditorEngine = (function () {
             italic: active.italic === true && mixed.italic !== true,
             underline: active.underline === true && mixed.underline !== true,
             strike: active.strike === true && mixed.strike !== true,
+            fontFamily: mixed.fontFamily ? null : active.fontFamily,
+            fontSize: mixed.fontSize ? null : active.fontSize,
             textColor: mixed.textColor ? null : active.textColor,
             backgroundColor: mixed.backgroundColor ? null : active.backgroundColor,
             link: mixed.link ? null : active.link,
@@ -2062,7 +2689,7 @@ window.tmDocumentEditorEngine = (function () {
             indent: paragraph.indentLevel || 0
         };
         var disabledReasons = {};
-        ['bold', 'italic', 'underline', 'strike', 'textColor', 'backgroundColor', 'link', 'clearFormatting', 'alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'list', 'indent', 'outdent'].forEach(function (id) {
+        ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link', 'clearFormatting', 'alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'list', 'indent', 'outdent'].forEach(function (id) {
             var reason = selectionDisabledReason(model, snapshot, id);
             if (reason) disabledReasons[id] = reason;
         });
@@ -2079,6 +2706,86 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function resolveFormattingSelection(model, selectionOrToken, inst) {
+        if (inst && selectionOrToken) {
+            var validation = validateStableSelectionToken(inst, selectionOrToken);
+            if (validation && validation.ok === true && validation.selection) {
+                return validation.selection;
+            }
+        }
+
+        var tokenData = parseSelectionTokenData(selectionOrToken) || readSelectionTokenData(selectionOrToken);
+        if (tokenData) {
+            var anchor = tokenData.anchor || tokenData.Anchor || tokenData.start || tokenData.Start || {};
+            var focus = tokenData.focus || tokenData.Focus || tokenData.end || tokenData.End || anchor;
+            var anchorOffset = Number(anchor.logicalOffset ?? anchor.LogicalOffset ?? anchor.offset ?? anchor.Offset ?? tokenData.startOffset ?? tokenData.StartOffset ?? 0) || 0;
+            var focusOffset = Number(focus.logicalOffset ?? focus.LogicalOffset ?? focus.offset ?? focus.Offset ?? tokenData.endOffset ?? tokenData.EndOffset ?? anchorOffset) || 0;
+            return createSelectionSnapshot({
+                region: tokenData.region || tokenData.Region || anchor.region || focus.region || 'Body',
+                anchor: {
+                    region: tokenData.region || anchor.region || 'Body',
+                    blockId: anchor.blockId || anchor.BlockId || tokenData.blockId || tokenData.BlockId || '',
+                    inlineId: anchor.inlineId || anchor.InlineId || anchor.runId || anchor.RunId || null,
+                    offset: anchorOffset,
+                    affinity: anchor.affinity || anchor.Affinity || 'after',
+                    tableId: anchor.tableId || anchor.TableId || tokenData.tableId || tokenData.TableId || null,
+                    cellId: anchor.cellId || anchor.CellId || tokenData.cellId || tokenData.CellId || null,
+                    headerFooterId: anchor.headerFooterId || anchor.HeaderFooterId || null
+                },
+                focus: {
+                    region: tokenData.region || focus.region || 'Body',
+                    blockId: focus.blockId || focus.BlockId || tokenData.blockId || tokenData.BlockId || '',
+                    inlineId: focus.inlineId || focus.InlineId || focus.runId || focus.RunId || null,
+                    offset: focusOffset,
+                    affinity: focus.affinity || focus.Affinity || 'after',
+                    tableId: focus.tableId || focus.TableId || tokenData.tableId || tokenData.TableId || null,
+                    cellId: focus.cellId || focus.CellId || tokenData.cellId || tokenData.CellId || null,
+                    headerFooterId: focus.headerFooterId || focus.HeaderFooterId || null
+                },
+                direction: tokenData.direction || tokenData.Direction || 'forward',
+                isCollapsed: tokenData.isCollapsed ?? tokenData.IsCollapsed ?? anchorOffset === focusOffset,
+                activeTableCellId: tokenData.cellId || tokenData.CellId || null,
+                activeTableId: tokenData.tableId || tokenData.TableId || null,
+                activeObjectId: tokenData.activeObjectId || tokenData.ActiveObjectId || null
+            });
+        }
+
+        if (selectionOrToken) return createSelectionSnapshot(selectionOrToken);
+        return firstModelSelection(model);
+    }
+
+    function formattingScalarValue(formatting, commandId, fallback) {
+        var inline = formatting && formatting.inline || {};
+        var mixed = inline.mixed || {};
+        var commandValues = formatting && formatting.commandValues || {};
+        if (mixed[commandId] === true) return 'mixed';
+        var value = commandValues[commandId];
+        return value === undefined || value === null ? fallback : value;
+    }
+
+    function computeFormattingState(model, selectionOrToken, pendingTypingMarks, inst) {
+        var selection = resolveFormattingSelection(model, selectionOrToken, inst);
+        var state = collectFormattingState(model, selection, pendingTypingMarks || []);
+        var block = _findBlock(model, state.selection && state.selection.blockId);
+        var disabledReason = !block
+            ? 'missing-selection'
+            : (state.disabledReasons && (state.disabledReasons.bold || state.disabledReasons.fontSize || state.disabledReasons.textColor || '')) || '';
+        return _sortObject(Object.assign({}, state, {
+            isDisabled: !!disabledReason,
+            disabled: !!disabledReason,
+            disabledReason: disabledReason || '',
+            bold: formattingScalarValue(state, 'bold', false),
+            italic: formattingScalarValue(state, 'italic', false),
+            underline: formattingScalarValue(state, 'underline', false),
+            strike: formattingScalarValue(state, 'strike', false),
+            fontFamily: formattingScalarValue(state, 'fontFamily', null),
+            fontSize: formattingScalarValue(state, 'fontSize', null),
+            textColor: formattingScalarValue(state, 'textColor', null),
+            highlightColor: formattingScalarValue(state, 'backgroundColor', null),
+            backgroundColor: formattingScalarValue(state, 'backgroundColor', null)
+        }));
+    }
+
     function toBlazorFormattingState(formatting) {
         var state = formatting || {};
         var commandValues = state.commandValues || {};
@@ -2090,19 +2797,32 @@ window.tmDocumentEditorEngine = (function () {
             return commandValues[commandId] === true ? 1 : 0;
         }
         function alignmentValue(value) {
-            var normalized = String(value || 'left').toLowerCase();
+            var normalized = normalizeParagraphAlignment(value);
             if (normalized === 'center') return 1;
             if (normalized === 'right' || normalized === 'end') return 2;
             if (normalized === 'justify') return 3;
             return 0;
         }
+        var boldState = triState('bold');
+        var italicState = triState('italic');
+        var underlineState = triState('underline');
+        var strikeState = triState('strike');
         return _sortObject(Object.assign({}, state, {
-            Bold: triState('bold'),
-            Italic: triState('italic'),
-            Underline: triState('underline'),
-            Strikethrough: triState('strike'),
+            bold: boldState,
+            italic: italicState,
+            underline: underlineState,
+            strike: strikeState,
+            strikethrough: strikeState,
+            Bold: boldState,
+            Italic: italicState,
+            Underline: underlineState,
+            Strikethrough: strikeState,
             ParagraphAlignment: alignmentValue(commandValues.alignment || paragraph.alignment),
             ParagraphAlignmentMixed: false,
+            FontFamily: commandValues.fontFamily || null,
+            FontFamilyMixed: mixed.fontFamily === true,
+            FontSize: commandValues.fontSize || null,
+            FontSizeMixed: mixed.fontSize === true,
             TextColor: commandValues.textColor || null,
             TextColorMixed: mixed.textColor === true,
             HighlightColor: commandValues.backgroundColor || null,
@@ -2115,7 +2835,9 @@ window.tmDocumentEditorEngine = (function () {
             IsNumberedList: String(commandValues.list || paragraph.listType || '').toLowerCase() === 'numbered',
             ListMixed: false,
             ActiveRegion: state.selection && state.selection.region || 'Body',
-            CurrentSelection: state.selection || null
+            CurrentSelection: state.selection || null,
+            IsDisabled: state.isDisabled === true || state.disabled === true,
+            DisabledReason: state.disabledReason || null
         }));
     }
 
@@ -2310,9 +3032,17 @@ window.tmDocumentEditorEngine = (function () {
     function removeMarksForCommandInRange(block, range, commandId) {
         if (!block || block.type !== 'paragraph') return;
         transformRunsInRange(block, range.start, range.end, function (run) {
-            run.marks = _asArray(run.marks).filter(function (mark) { return !markMatchesCommand(mark, commandId); });
+            run.marks = normalizeMarks(_asArray(run.marks).filter(function (mark) { return !markMatchesCommand(mark, commandId); }));
             return run;
         });
+    }
+
+    function normalizeParagraphAlignment(value) {
+        var normalized = String(value ?? 'left').trim().toLowerCase();
+        if (normalized === '1' || normalized === 'center' || normalized === 'centre') return 'center';
+        if (normalized === '2' || normalized === 'right' || normalized === 'end') return 'right';
+        if (normalized === '3' || normalized === 'justify' || normalized === 'justified') return 'justify';
+        return 'left';
     }
 
     function clearFormattingInRange(block, range) {
@@ -2320,14 +3050,14 @@ window.tmDocumentEditorEngine = (function () {
         transformRunsInRange(block, range.start, range.end, function (run) {
             run.marks = [];
             run.style = {};
-            return run;
+            return normalizeTextRunForMerge(run);
         });
     }
 
     function createCommandDispatcher(model, options) {
         var opts = options || {};
         var selection = createSelectionSnapshot(opts.selection || opts.Selection || {});
-        var pendingTypingMarks = _asArray(opts.pendingTypingMarks || opts.PendingTypingMarks).map(_clone);
+        var pendingTypingMarks = normalizeMarks(opts.pendingTypingMarks || opts.PendingTypingMarks || []);
         var debugLog = [];
         var committedOperations = [];
         var subscribers = [];
@@ -2369,7 +3099,11 @@ window.tmDocumentEditorEngine = (function () {
             var effectiveRange = range.collapsed ? { blockId: range.blockId, start: range.start, end: range.start, collapsed: true } : range;
             if (effectiveRange.collapsed) {
                 var mark = commandMark(id, payload);
-                if (mark) pendingTypingMarks = pendingTypingMarks.filter(function (item) { return !markMatchesCommand(item, id); }).concat([mark]);
+                if (isClearValueCommand(id, mark)) {
+                    pendingTypingMarks = normalizeMarks(pendingTypingMarks.filter(function (item) { return !markMatchesCommand(item, id); }));
+                    return { ok: true, operation: null, nextSelection: selection, pendingTyping: true };
+                }
+                if (mark) pendingTypingMarks = normalizeMarks(pendingTypingMarks.filter(function (item) { return !markMatchesCommand(item, id); }).concat([mark]));
                 return { ok: true, operation: null, nextSelection: selection, pendingTyping: true };
             }
             if (id === 'clearFormatting') {
@@ -2383,9 +3117,20 @@ window.tmDocumentEditorEngine = (function () {
             var beforeSnapshot = collectFormattingState(model, selection, pendingTypingMarks);
             var isActive = beforeSnapshot.commandValues[id] === true;
             if (id === 'textColor' || id === 'backgroundColor' || id === 'link') isActive = false;
+            var mark = commandMark(id, payload);
+            if (isClearValueCommand(id, mark)) {
+                removeMarksForCommandInRange(block, effectiveRange, id);
+                var clearOp = createOperation(OPERATION_TYPES.RemoveMark, { range: effectiveRange, mark: mark }, { source: 'command' });
+                committedOperations.push(clearOp.toJSON());
+                buildIndexes(model);
+                return { ok: true, operation: clearOp, nextSelection: selection };
+            }
+            if ((id === 'fontFamily' || id === 'fontSize' || id === 'textColor' || id === 'backgroundColor')
+                && mark && beforeSnapshot.commandValues[id] === mark.value) {
+                return { ok: true, operation: null, nextSelection: selection, noop: true };
+            }
             removeMarksForCommandInRange(block, effectiveRange, id);
             var opType = isActive ? OPERATION_TYPES.RemoveMark : OPERATION_TYPES.ApplyMark;
-            var mark = commandMark(id, payload);
             var op = createOperation(opType, { range: effectiveRange, mark: mark }, { source: 'command' });
             if (!isActive) _splitRunsForRange(block, effectiveRange.start, effectiveRange.end, mark, false);
             buildIndexes(model);
@@ -2399,7 +3144,7 @@ window.tmDocumentEditorEngine = (function () {
             var block = _findBlock(model, snapshot.blockId);
             if (!block || block.type !== 'paragraph') return { ok: false, errors: [{ code: 'selection-not-paragraph' }] };
             var values = [];
-            if (id === 'alignment') values.push(['alignment', body.value || body.Value || body.alignment || body.Alignment || 'left']);
+            if (id === 'alignment') values.push(['alignment', normalizeParagraphAlignment(body.value ?? body.Value ?? body.alignment ?? body.Alignment ?? 'left')]);
             if (id === 'lineSpacing') values.push(['lineSpacing', Number(body.value ?? body.Value ?? 1)]);
             if (id === 'spacingBefore') values.push(['spacingBefore', Number(body.value ?? body.Value ?? 0)]);
             if (id === 'spacingAfter') values.push(['spacingAfter', Number(body.value ?? body.Value ?? 0)]);
@@ -2459,14 +3204,14 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         var commands = {};
-        ['bold', 'italic', 'underline', 'strike', 'textColor', 'backgroundColor', 'link', 'clearFormatting'].forEach(function (id) {
+        ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link', 'clearFormatting'].forEach(function (id) {
             commands[id] = {
                 id: id,
                 refresh: function () { return getState(id); },
                 execute: function (payload) { return applyInlineCommand(id, payload); }
             };
         });
-        ['alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'list', 'indent', 'outdent'].forEach(function (id) {
+        paragraphCommandTypes().forEach(function (id) {
             commands[id] = {
                 id: id,
                 refresh: function () { return getState(id); },
@@ -2530,6 +3275,7 @@ window.tmDocumentEditorEngine = (function () {
             executeCommand: executeCommand,
             setSelection: function (nextSelection) { selection = createSelectionSnapshot(nextSelection || {}); return refresh(selection); },
             getSelection: function () { return createSelectionSnapshot(selection); },
+            getPendingTypingMarks: function () { return pendingTypingMarks.map(_clone); },
             getFormattingSnapshot: function () { return refresh(selection); },
             subscribeFormattingState: function (callback) {
                 if (typeof callback === 'function') subscribers.push(callback);
@@ -2548,8 +3294,8 @@ window.tmDocumentEditorEngine = (function () {
     function createRevisionEngine(model, options) {
         var opts = options || {};
         ensureRevisionList(model);
-        var userId = _asText(opts.userId || opts.UserId || 'local');
-        var trackChanges = opts.trackChanges === true || opts.TrackChanges === true;
+        var userId = resolveRevisionUserId(opts);
+        var trackChanges = resolveTrackChangesState(opts).enabled === true;
 
         function createRevision(type, range, payload, extra) {
             var normalizedType = normalizeRevisionType(type);
@@ -2764,14 +3510,24 @@ window.tmDocumentEditorEngine = (function () {
     function createTransaction(model, options) {
         var opts = options || {};
         var snapshot = _clone(model);
+        var instanceId = _asText(opts.instanceId || opts.InstanceId || opts.documentInstanceId || opts.DocumentInstanceId || '');
+        var beforeSelection = opts.beforeSelection || opts.BeforeSelection
+            ? withStableSelectionToken(instanceId, opts.beforeSelection || opts.BeforeSelection, model)
+            : null;
+        var beforeDocFingerprint = opts.beforeDocFingerprint || opts.BeforeDocFingerprint || createDocumentFingerprint(model);
+        var commandName = opts.commandName || opts.CommandName || opts.label || opts.Label || opts.type || opts.Type || 'Document change';
         var transaction = {
             id: opts.id || ('txn-' + (++_transactionCounter)),
             type: opts.type || TRANSACTION_TYPES.Default,
             label: opts.label || opts.type || 'Document change',
+            commandName: commandName,
+            instanceId: instanceId,
             beforeModelSnapshot: snapshot,
             afterModelSnapshot: null,
-            beforeSelection: _clone(opts.beforeSelection || null),
-            afterSelection: _clone(opts.beforeSelection || null),
+            beforeDocFingerprint: beforeDocFingerprint,
+            afterDocFingerprint: null,
+            beforeSelection: _clone(beforeSelection),
+            afterSelection: _clone(beforeSelection),
             operations: [],
             invalidatedScopes: [],
             differ: createDiffer(),
@@ -2792,13 +3548,19 @@ window.tmDocumentEditorEngine = (function () {
                 }
                 this.operations.push(result.operation);
                 this.invalidatedScopes = _unique(this.invalidatedScopes.concat(_asArray(result.invalidatedLayoutScopes)));
-                this.afterSelection = _clone(result.nextSelection || this.afterSelection);
+                this.afterSelection = result.nextSelection
+                    ? withStableSelectionToken(this.instanceId, result.nextSelection, model)
+                    : _clone(this.afterSelection);
                 return result;
             },
             commit: function () {
                 this.committed = true;
                 this.renderSuppressed = false;
                 this.afterModelSnapshot = _clone(model);
+                this.afterDocFingerprint = createDocumentFingerprint(model);
+                if (this.afterSelection) {
+                    this.afterSelection = withStableSelectionToken(this.instanceId, this.afterSelection, model);
+                }
                 return {
                     ok: true,
                     transaction: this.toJSON(),
@@ -2811,6 +3573,10 @@ window.tmDocumentEditorEngine = (function () {
                     id: this.id,
                     type: this.type,
                     label: this.label,
+                    commandName: this.commandName,
+                    instanceId: this.instanceId,
+                    beforeDocFingerprint: this.beforeDocFingerprint,
+                    afterDocFingerprint: this.afterDocFingerprint,
                     beforeSelection: this.beforeSelection,
                     afterSelection: this.afterSelection,
                     invalidatedScopes: this.invalidatedScopes,
@@ -2837,16 +3603,26 @@ window.tmDocumentEditorEngine = (function () {
     function createHistoryEntryFromTransaction(transaction) {
         var beforeSnapshot = _clone(transaction.beforeModelSnapshot || null);
         var afterSnapshot = _clone(transaction.afterModelSnapshot || null);
-        var beforeSelection = createSelectionSnapshot(transaction.beforeSelection || null);
-        var afterSelection = createSelectionSnapshot(transaction.afterSelection || beforeSelection);
+        var instanceId = transaction.instanceId || transaction.InstanceId || '';
+        var beforeSelection = transaction.beforeSelection
+            ? withStableSelectionToken(instanceId, transaction.beforeSelection, beforeSnapshot || null)
+            : createSelectionSnapshot(null);
+        var afterSelection = transaction.afterSelection
+            ? withStableSelectionToken(instanceId, transaction.afterSelection, afterSnapshot || beforeSnapshot || null)
+            : createSelectionSnapshot(beforeSelection);
         var scopes = _asArray(transaction.invalidatedScopes).length ? _asArray(transaction.invalidatedScopes) : ['document'];
         var operations = transaction.operations.map(function (operation) { return attachOperationMethods(operation).toJSON(); });
+        var useOperationHistory = operations.length > 0 && operations.every(supportsOperationHistory);
         return {
             id: transaction.id,
             transaction: transaction.toJSON(),
             operations: operations,
-            inverseOperations: [createHistoryRestoreOperation(beforeSnapshot, beforeSelection, 'undo', scopes, afterSnapshot, afterSelection).toJSON()],
-            redoOperations: [createHistoryRestoreOperation(afterSnapshot, afterSelection, 'redo', scopes, beforeSnapshot, beforeSelection).toJSON()],
+            inverseOperations: useOperationHistory
+                ? createUndoHistoryOperations(operations)
+                : [createHistoryRestoreOperation(beforeSnapshot, beforeSelection, 'undo', scopes, afterSnapshot, afterSelection).toJSON()],
+            redoOperations: useOperationHistory
+                ? createRedoHistoryOperations(operations)
+                : [createHistoryRestoreOperation(afterSnapshot, afterSelection, 'redo', scopes, beforeSnapshot, beforeSelection).toJSON()],
             beforeModelSnapshot: beforeSnapshot,
             afterModelSnapshot: afterSnapshot,
             beforeSelection: beforeSelection,
@@ -2876,20 +3652,25 @@ window.tmDocumentEditorEngine = (function () {
         previousEntry.transaction.invalidatedScopes = _unique(_asArray(previousEntry.transaction.invalidatedScopes).concat(_asArray(transaction.invalidatedScopes)));
         previousEntry.transaction.operationCount = 1;
         previousEntry.transaction.coalesced = true;
-        previousEntry.redoOperations = [createHistoryRestoreOperation(
-            previousEntry.afterModelSnapshot,
-            previousEntry.afterSelection,
-            'redo',
-            previousEntry.transaction.invalidatedScopes,
-            previousEntry.beforeModelSnapshot,
-            previousEntry.beforeSelection).toJSON()];
-        previousEntry.inverseOperations = [createHistoryRestoreOperation(
-            previousEntry.beforeModelSnapshot,
-            previousEntry.beforeSelection,
-            'undo',
-            previousEntry.transaction.invalidatedScopes,
-            previousEntry.afterModelSnapshot,
-            previousEntry.afterSelection).toJSON()];
+        if (supportsOperationHistory(mergedOperation)) {
+            previousEntry.redoOperations = createRedoHistoryOperations(previousEntry.operations);
+            previousEntry.inverseOperations = createUndoHistoryOperations(previousEntry.operations);
+        } else {
+            previousEntry.redoOperations = [createHistoryRestoreOperation(
+                previousEntry.afterModelSnapshot,
+                previousEntry.afterSelection,
+                'redo',
+                previousEntry.transaction.invalidatedScopes,
+                previousEntry.beforeModelSnapshot,
+                previousEntry.beforeSelection).toJSON()];
+            previousEntry.inverseOperations = [createHistoryRestoreOperation(
+                previousEntry.beforeModelSnapshot,
+                previousEntry.beforeSelection,
+                'undo',
+                previousEntry.transaction.invalidatedScopes,
+                previousEntry.afterModelSnapshot,
+                previousEntry.afterSelection).toJSON()];
+        }
         return previousEntry;
     }
 
@@ -2950,9 +3731,12 @@ window.tmDocumentEditorEngine = (function () {
             lastDiffer = committed.differ;
             lastTransaction = transaction.toJSON();
             transactions.push(transaction.toJSON());
-            var entry = pushHistory(transaction);
-            redoStack = [];
-            epoch++;
+            var entry = null;
+            if (transactionAffectsDocument(transaction)) {
+                entry = pushHistory(transaction);
+                redoStack = [];
+                epoch++;
+            }
             renderAtomic(transaction.type, transaction.invalidatedScopes);
             return _sortObject({
                 ok: true,
@@ -3110,6 +3894,14 @@ window.tmDocumentEditorEngine = (function () {
             range: range,
             anchor: createLogicalPosition(range.anchor),
             focus: createLogicalPosition(range.focus),
+            anchorOffset: createLogicalPosition(range.anchor).offset,
+            focusOffset: createLogicalPosition(range.focus).offset,
+            AnchorOffset: createLogicalPosition(range.anchor).offset,
+            FocusOffset: createLogicalPosition(range.focus).offset,
+            AnchorBlockOffset: createLogicalPosition(range.anchor).offset,
+            FocusBlockOffset: createLogicalPosition(range.focus).offset,
+            AnchorBlockId: createLogicalPosition(range.anchor).blockId,
+            FocusBlockId: createLogicalPosition(range.focus).blockId,
             blockId: createLogicalPosition(range.focus).blockId,
             inlineId: createLogicalPosition(range.focus).inlineId,
             offset: createLogicalPosition(range.focus).offset,
@@ -3133,6 +3925,280 @@ window.tmDocumentEditorEngine = (function () {
             activeRevisionId: value.activeRevisionId || value.ActiveRevisionId || null,
             hitTargetKind: value.hitTargetKind || value.HitTargetKind || (value.activeImageBlockId || value.ActiveImageBlockId || value.objectId || value.ObjectId || createLogicalPosition(range.focus).objectId ? 'image' : null)
         });
+    }
+
+    function stableJsonString(value) {
+        return JSON.stringify(_sortObject(value || {}));
+    }
+
+    function hashStableString(value) {
+        var text = _asText(value);
+        var hash = 2166136261;
+        for (var i = 0; i < text.length; i++) {
+            hash ^= text.charCodeAt(i);
+            hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+        }
+
+        return 'fnv1a-' + (hash >>> 0).toString(16).padStart(8, '0');
+    }
+
+    function createDocumentFingerprint(model) {
+        return hashStableString(stableJsonString(model || {}));
+    }
+
+    function createSelectionDocumentFingerprint(model) {
+        function blockFingerprint(block) {
+            if (!block) return null;
+            var type = block.type || block.Type || '';
+            var item = {
+                id: block.id || block.Id || '',
+                type: type
+            };
+            if (type === 'paragraph') {
+                item.text = _blockText(block);
+            } else if (type === 'table') {
+                item.rows = _asArray(block.content && block.content.rows || block.Content && block.Content.Rows).map(function (row) {
+                    return _asArray(row.cells || row.Cells).map(function (cell) {
+                        return {
+                            id: cell.id || cell.Id || '',
+                            blocks: _asArray(cell.blocks || cell.Blocks).map(blockFingerprint)
+                        };
+                    });
+                });
+            } else if (type === 'image') {
+                item.objectId = block.content && (block.content.objectId || block.content.ObjectId) || block.id || block.Id || '';
+            }
+
+            return _sortObject(item);
+        }
+
+        return hashStableString(stableJsonString({
+            documentId: model && (model.documentId || model.DocumentId) || '',
+            schemaVersion: model && (model.schemaVersion || model.SchemaVersion) || '',
+            body: _asArray(model && model.body && model.body.blocks || model && model.Body && model.Body.Blocks).map(blockFingerprint),
+            headers: _asArray(model && model.headers || model && model.Headers).map(function (header) {
+                return { id: header.id || header.Id || '', blocks: _asArray(header.blocks || header.Blocks).map(blockFingerprint) };
+            }),
+            footers: _asArray(model && model.footers || model && model.Footers).map(function (footer) {
+                return { id: footer.id || footer.Id || '', blocks: _asArray(footer.blocks || footer.Blocks).map(blockFingerprint) };
+            })
+        }));
+    }
+
+    function normalizeSelectionTokenRegion(value, selection) {
+        var snapshot = selection || {};
+        var raw = _asText(value || snapshot.region || snapshot.Region || snapshot.activeRegion || snapshot.ActiveRegion || 'Body').trim();
+        var lower = raw.toLowerCase();
+        if (snapshot.activeTableCellId || snapshot.ActiveTableCellId || snapshot.cellId || snapshot.CellId || lower === 'tablecell' || lower === 'table-cell') return 'tableCell';
+        if (lower === 'header' || lower === 'headers') return 'header';
+        if (lower === 'footer' || lower === 'footers') return 'footer';
+        if (lower === 'caption') return 'caption';
+        if (lower === 'image' || lower === 'object') return 'image';
+        return 'body';
+    }
+
+    function createSelectionTokenBoundary(model, position, logicalOffset) {
+        var pos = createLogicalPosition(position || {});
+        var offset = Math.max(0, Math.round(Number(logicalOffset ?? pos.offset ?? 0) || 0));
+        var block = _findBlock(model, pos.blockId);
+        var inline = block && block.type === 'paragraph'
+            ? _inlineAtOffset(block, offset)
+            : null;
+        var inlineId = (inline && inline.run && inline.run.id) || pos.inlineId || null;
+        var region = normalizeSelectionTokenRegion(pos.region, pos);
+        var limitId = pos.limitId || (block ? _findLimitForBlock(model, block.id) : null);
+        var boundary = {
+            region: region,
+            blockId: pos.blockId || '',
+            inlineId: inlineId,
+            runId: inlineId,
+            logicalOffset: offset,
+            offset: offset,
+            affinity: pos.affinity || 'after',
+            limitId: limitId || null,
+            tableId: pos.tableId || null,
+            cellId: pos.cellId || null,
+            headerFooterId: pos.headerFooterId || null,
+            objectId: pos.objectId || null
+        };
+        boundary.inlinePath = [
+            boundary.region,
+            boundary.limitId || '',
+            boundary.tableId || '',
+            boundary.cellId || '',
+            boundary.blockId || '',
+            boundary.inlineId || '',
+            String(boundary.logicalOffset)
+        ];
+        boundary.runBoundaryPath = boundary.inlinePath.slice();
+        return _sortObject(boundary);
+    }
+
+    function createStableSelectionTokenData(instanceId, selection, model) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        var anchorOffset = Number(snapshot.AnchorBlockOffset ?? snapshot.anchorBlockOffset ?? snapshot.anchorOffset ?? snapshot.AnchorOffset ?? (snapshot.anchor && snapshot.anchor.offset) ?? 0) || 0;
+        var focusOffset = Number(snapshot.FocusBlockOffset ?? snapshot.focusBlockOffset ?? snapshot.focusOffset ?? snapshot.FocusOffset ?? (snapshot.focus && snapshot.focus.offset) ?? anchorOffset) || 0;
+        var anchor = createSelectionTokenBoundary(model, snapshot.anchor || snapshot, anchorOffset);
+        var focus = createSelectionTokenBoundary(model, snapshot.focus || snapshot.anchor || snapshot, focusOffset);
+        var sameBlock = anchor.blockId === focus.blockId;
+        var start = sameBlock && anchor.logicalOffset > focus.logicalOffset ? focus : anchor;
+        var end = sameBlock && anchor.logicalOffset > focus.logicalOffset ? anchor : focus;
+        var region = normalizeSelectionTokenRegion(snapshot.region || anchor.region || focus.region, snapshot);
+        return _sortObject({
+            schema: 'tmde-selection-token/v1',
+            instanceId: _asText(instanceId || ''),
+            documentInstanceId: _asText(instanceId || ''),
+            documentFingerprint: model ? createSelectionDocumentFingerprint(model) : '',
+            selectionDocumentFingerprint: model ? createSelectionDocumentFingerprint(model) : '',
+            region: region,
+            blockId: focus.blockId || anchor.blockId || snapshot.blockId || '',
+            anchor: anchor,
+            focus: focus,
+            start: start,
+            end: end,
+            startOffset: Math.max(0, Math.round(Number(start.logicalOffset || 0) || 0)),
+            endOffset: Math.max(0, Math.round(Number(end.logicalOffset || 0) || 0)),
+            inlinePath: {
+                anchor: anchor.inlinePath,
+                focus: focus.inlinePath
+            },
+            runBoundaryPath: {
+                anchor: anchor.runBoundaryPath,
+                focus: focus.runBoundaryPath
+            },
+            isCollapsed: snapshot.isCollapsed !== false,
+            direction: snapshot.direction || 'none',
+            tableId: snapshot.activeTableId || snapshot.tableId || anchor.tableId || focus.tableId || null,
+            cellId: snapshot.activeTableCellId || snapshot.cellId || anchor.cellId || focus.cellId || null,
+            activeObjectId: snapshot.activeObjectId || snapshot.objectId || anchor.objectId || focus.objectId || null
+        });
+    }
+
+    function serializeStableSelectionToken(instanceId, selection, model) {
+        return stableJsonString(createStableSelectionTokenData(instanceId, selection, model));
+    }
+
+    function withStableSelectionToken(instanceId, selection, model) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        var data = createStableSelectionTokenData(instanceId, snapshot, model);
+        var token = stableJsonString(data);
+        snapshot.selectionToken = token;
+        snapshot.SelectionToken = token;
+        snapshot.stableSelectionToken = token;
+        snapshot.StableSelectionToken = token;
+        snapshot.token = token;
+        snapshot.Token = token;
+        snapshot.selectionTokenData = data;
+        snapshot.SelectionTokenData = data;
+        return _sortObject(snapshot);
+    }
+
+    function readSelectionTokenValue(value) {
+        if (!value || typeof value !== 'object') return null;
+        return value.selectionToken
+            || value.SelectionToken
+            || value.stableSelectionToken
+            || value.StableSelectionToken
+            || value.token
+            || value.Token
+            || null;
+    }
+
+    function parseSelectionTokenData(value) {
+        if (!value) return null;
+        if (typeof value === 'object') return _sortObject(_clone(value));
+        if (typeof value !== 'string') return null;
+        try {
+            return _sortObject(JSON.parse(value));
+        } catch {
+            return null;
+        }
+    }
+
+    function readSelectionTokenData(value) {
+        if (!value || typeof value !== 'object') return null;
+        return parseSelectionTokenData(readSelectionTokenValue(value))
+            || parseSelectionTokenData(value.selectionTokenData || value.SelectionTokenData)
+            || null;
+    }
+
+    function validateStableSelectionToken(inst, tokenOrPayload) {
+        var data = parseSelectionTokenData(tokenOrPayload) || readSelectionTokenData(tokenOrPayload);
+        if (!inst) {
+            return _sortObject({ ok: false, code: 'missing-instance', reason: 'missing-instance' });
+        }
+        if (!data) {
+            return _sortObject({ ok: false, code: 'missing-selection-token', reason: 'missing-selection-token' });
+        }
+        var tokenInstanceId = _asText(data.instanceId || data.documentInstanceId || data.InstanceId || data.DocumentInstanceId || '');
+        if (tokenInstanceId && tokenInstanceId !== inst.id) {
+            return _sortObject({ ok: false, code: 'stale-selection-token', reason: 'instance-id-mismatch', tokenInstanceId: tokenInstanceId, instanceId: inst.id });
+        }
+        var currentFingerprint = createSelectionDocumentFingerprint(inst.model || {});
+        var tokenFingerprint = _asText(data.selectionDocumentFingerprint || data.SelectionDocumentFingerprint || data.documentFingerprint || data.DocumentFingerprint || '');
+        if (tokenFingerprint && tokenFingerprint !== currentFingerprint) {
+            return _sortObject({ ok: false, code: 'stale-selection-token', reason: 'document-fingerprint-mismatch', tokenFingerprint: tokenFingerprint, currentFingerprint: currentFingerprint });
+        }
+        var anchor = data.anchor || data.Anchor || data.start || data.Start || {};
+        var focus = data.focus || data.Focus || data.end || data.End || anchor;
+        var blockId = _asText((focus && (focus.blockId || focus.BlockId)) || (anchor && (anchor.blockId || anchor.BlockId)) || data.blockId || data.BlockId || '');
+        var block = _findBlock(inst.model, blockId);
+        if (!block) {
+            return _sortObject({ ok: false, code: 'stale-selection-token', reason: 'block-not-found', blockId: blockId });
+        }
+        var max = block.type === 'paragraph' ? _blockText(block).length : 1;
+        var anchorOffset = Number(anchor.logicalOffset ?? anchor.LogicalOffset ?? anchor.offset ?? anchor.Offset ?? data.startOffset ?? data.StartOffset ?? 0) || 0;
+        var focusOffset = Number(focus.logicalOffset ?? focus.LogicalOffset ?? focus.offset ?? focus.Offset ?? data.endOffset ?? data.EndOffset ?? anchorOffset) || 0;
+        if (anchorOffset < 0 || focusOffset < 0 || anchorOffset > max || focusOffset > max) {
+            return _sortObject({ ok: false, code: 'stale-selection-token', reason: 'logical-offset-out-of-range', blockId: blockId, maxOffset: max, anchorOffset: anchorOffset, focusOffset: focusOffset });
+        }
+        var selection = createSelectionPostFixer(inst.schema).fix(inst.model, {
+            region: data.region || data.Region || anchor.region || focus.region || 'Body',
+            anchor: {
+                region: data.region || anchor.region || 'Body',
+                blockId: anchor.blockId || anchor.BlockId || blockId,
+                inlineId: anchor.inlineId || anchor.InlineId || anchor.runId || anchor.RunId || null,
+                offset: anchorOffset,
+                affinity: anchor.affinity || anchor.Affinity || 'after',
+                limitId: anchor.limitId || anchor.LimitId || null,
+                tableId: anchor.tableId || anchor.TableId || data.tableId || data.TableId || null,
+                cellId: anchor.cellId || anchor.CellId || data.cellId || data.CellId || null,
+                headerFooterId: anchor.headerFooterId || anchor.HeaderFooterId || null
+            },
+            focus: {
+                region: data.region || focus.region || 'Body',
+                blockId: focus.blockId || focus.BlockId || blockId,
+                inlineId: focus.inlineId || focus.InlineId || focus.runId || focus.RunId || null,
+                offset: focusOffset,
+                affinity: focus.affinity || focus.Affinity || 'after',
+                limitId: focus.limitId || focus.LimitId || null,
+                tableId: focus.tableId || focus.TableId || data.tableId || data.TableId || null,
+                cellId: focus.cellId || focus.CellId || data.cellId || data.CellId || null,
+                headerFooterId: focus.headerFooterId || focus.HeaderFooterId || null
+            },
+            direction: data.direction || data.Direction || 'forward',
+            isCollapsed: data.isCollapsed ?? data.IsCollapsed ?? anchorOffset === focusOffset,
+            activeTableCellId: data.cellId || data.CellId || null,
+            activeTableId: data.tableId || data.TableId || null,
+            activeObjectId: data.activeObjectId || data.ActiveObjectId || null
+        });
+        return _sortObject({
+            ok: true,
+            code: 'ok',
+            reason: 'valid',
+            tokenData: data,
+            selection: withStableSelectionToken(inst.id, selection, inst.model),
+            currentFingerprint: currentFingerprint
+        });
+    }
+
+    function rememberSelectionToken(inst, selection, reason) {
+        if (!inst) return null;
+        var snapshot = withStableSelectionToken(inst.id, selection || inst.selection || {}, inst.model);
+        inst.lastSelectionToken = snapshot.selectionToken || null;
+        inst.lastSelectionTokenData = snapshot.selectionTokenData || null;
+        inst.lastSelectionTokenReason = reason || '';
+        return snapshot;
     }
 
     function _firstTextBlock(model) {
@@ -3375,14 +4441,25 @@ window.tmDocumentEditorEngine = (function () {
     function mergeTextStyle(baseStyle, run) {
         var style = Object.assign({}, baseStyle || {}, run && run.style || run && run.Style || {});
         _asArray(run && (run.marks || run.Marks)).forEach(function (mark) {
-            var type = String(mark && (mark.type || mark.Type) || '').toLowerCase();
+            var type = markType(mark);
             var value = mark && (mark.value ?? mark.Value ?? mark.color ?? mark.Color ?? null);
             if (type === 'bold') style.fontWeight = style.fontWeight || '700';
             if (type === 'italic') style.fontStyle = style.fontStyle || 'italic';
+            if (type === 'fontfamily' && value) style.fontFamily = value;
+            if (type === 'fontsize' && value) style.fontSize = cssLengthToPixels(value, style.fontSize || 16);
             if ((type === 'textcolor' || type === 'fontcolor' || type === 'foregroundcolor') && value) style.color = value;
             if ((type === 'highlight' || type === 'backgroundcolor') && value) style.backgroundColor = value;
         });
         return style;
+    }
+
+    function cssLengthToPixels(value, fallback) {
+        if (typeof value === 'number') return Number.isFinite(value) && value > 0 ? value : fallback;
+        var text = _asText(value).trim().toLowerCase();
+        var number = parseFloat(text);
+        if (!Number.isFinite(number) || number <= 0) return fallback;
+        if (text.endsWith('pt')) return number * 4 / 3;
+        return number;
     }
 
     function isCjkCharacter(ch) {
@@ -3549,7 +4626,7 @@ window.tmDocumentEditorEngine = (function () {
             var lines = [];
             var segments = [];
             var caretStops = [];
-            var alignment = String((paragraph && (paragraph.alignment || paragraph.Alignment)) || opts.alignment || opts.Alignment || 'left').toLowerCase();
+            var alignment = normalizeParagraphAlignment((paragraph && (paragraph.alignment ?? paragraph.Alignment)) ?? opts.alignment ?? opts.Alignment ?? 'left');
             var y = normalizedOptions.y;
             var current = createLineDraft(0, normalizeInterval(normalizedOptions, 0), y);
             var nextSegmentId = 0;
@@ -5631,7 +6708,8 @@ window.tmDocumentEditorEngine = (function () {
     var BEFORE_INPUT_COMMANDS = Object.freeze({
         insertText: 'InsertText',
         insertParagraph: 'SplitParagraph',
-        insertLineBreak: 'SplitParagraph',
+        insertLineBreak: 'InsertText',
+        insertCompositionText: 'InsertCompositionText',
         deleteContentBackward: 'DeleteBackward',
         deleteContentForward: 'DeleteForward',
         deleteWordBackward: 'DeleteBackward',
@@ -5681,8 +6759,9 @@ window.tmDocumentEditorEngine = (function () {
         var renderer = opts.renderer || createAtomicRenderer();
         var currentSelection = createSelectionSnapshot(opts.selection || opts.Selection || firstModelSelection(model));
         var activeTypingMarks = _asArray(opts.activeTypingMarks || opts.ActiveTypingMarks).map(_clone);
-        var trackChanges = opts.trackChanges === true || opts.TrackChanges === true;
-        var userId = _asText(opts.userId || opts.UserId || 'local');
+        var trackChanges = resolveTrackChangesState(opts).enabled === true;
+        var userId = resolveRevisionUserId(opts);
+        var activeInputRevision = null;
         var debugLog = [];
         var boundaryPatches = [];
         var boundaryPatchFlushCount = 0;
@@ -5704,8 +6783,11 @@ window.tmDocumentEditorEngine = (function () {
                 case 'insertText':
                     return insertText(normalized.data || '', { normalized: normalized });
                 case 'insertParagraph':
-                case 'insertLineBreak':
                     return handleEnter(currentSelection, { normalized: normalized });
+                case 'insertLineBreak':
+                    return insertText('\n', { normalized: normalized });
+                case 'insertCompositionText':
+                    return handleCompositionUpdate({ data: normalized.data || '', selection: currentSelection });
                 case 'deleteContentBackward':
                 case 'deleteWordBackward':
                 case 'deleteContentForward':
@@ -5726,20 +6808,71 @@ window.tmDocumentEditorEngine = (function () {
             var operations = [];
             var insertOffset = range.start;
             if (!currentSelection.isCollapsed && range.start !== range.end) {
-                operations.push(createOperation(OPERATION_TYPES.DeleteRange, {
-                    range: { blockId: range.blockId, start: range.start, end: range.end }
-                }, { source: 'input' }));
+                activeInputRevision = null;
+                operations.push(createDeleteOperation({ blockId: range.blockId, start: range.start, end: range.end }, 'input'));
             }
+            var revisionPayload = trackChanges
+                ? createOrExtendInputRevision({ blockId: range.blockId, start: insertOffset, end: insertOffset + _asText(text).length }, text, 'typing')
+                : null;
             operations.push(createOperation(OPERATION_TYPES.InsertText, {
                 target: { blockId: range.blockId, offset: insertOffset },
                 text: _asText(text),
                 marks: _clone(activeTypingMarks),
-                revisionId: trackChanges ? createRevisionForInput(model, userId) : null
+                revisionId: revisionPayload && revisionPayload.id || null,
+                revision: revisionPayload && revisionPayload.revision || null
             }, { source: 'typing' }));
             return applyInputOperations(operations, { normalized: normalized, transactionType: 'typing', selectionRegion: currentSelection.region || 'Body' });
         }
 
+        function createOrExtendInputRevision(range, text, source) {
+            var inserted = _asText(text);
+            if (!inserted) return null;
+            var normalizedRange = normalizeRevisionRange(range);
+            var formattingKey = stableRevisionStringify(normalizeMarks(activeTypingMarks || []));
+            var canExtend = !!(activeInputRevision
+                && activeInputRevision.blockId === normalizedRange.blockId
+                && Number(activeInputRevision.end || 0) === Number(normalizedRange.start || 0)
+                && activeInputRevision.formattingKey === formattingKey);
+            if (canExtend) {
+                var existing = revisionById(model, activeInputRevision.id);
+                if (existing) {
+                    var nextText = _asText(activeInputRevision.text) + inserted;
+                    activeInputRevision.text = nextText;
+                    activeInputRevision.end = Number(activeInputRevision.end || normalizedRange.start) + inserted.length;
+                    existing.affectedRange = _sortObject({
+                        blockId: normalizedRange.blockId,
+                        start: Number(activeInputRevision.start ?? normalizedRange.start),
+                        end: Number(activeInputRevision.end || normalizedRange.end)
+                    });
+                    existing.range = existing.affectedRange;
+                    setRevisionPayloadText(existing, nextText);
+                    return _sortObject({ id: existing.id, revision: _clone(existing), reused: true });
+                }
+            }
+
+            var payload = createInsertionRevisionPayload(normalizedRange, inserted, userId, source || 'typing');
+            activeInputRevision = {
+                id: payload.id,
+                blockId: normalizedRange.blockId,
+                start: Number(normalizedRange.start || 0),
+                end: Number(normalizedRange.end || 0),
+                text: inserted,
+                formattingKey: formattingKey
+            };
+            return _sortObject({ id: payload.id, revision: payload, reused: false });
+        }
+
+        function createDeleteOperation(range, source) {
+            var revisionPayload = trackChanges ? createDeletionRevisionPayload(model, range, userId, source || 'delete') : null;
+            return createOperation(OPERATION_TYPES.DeleteRange, {
+                range: range,
+                revisionId: revisionPayload && revisionPayload.id || null,
+                revision: revisionPayload || null
+            }, { source: source || 'input' });
+        }
+
         function applyDeletion(selection, inputType, normalized) {
+            activeInputRevision = null;
             var plan = planDeletion(selection, inputType);
             if (plan.operations.length === 0) return Object.assign({ ok: true, normalized: normalized || null }, plan);
             return Object.assign(applyInputOperations(plan.operations, { normalized: normalized, transactionType: 'delete', selectionRegion: selection.region || 'Body' }), plan);
@@ -5761,7 +6894,7 @@ window.tmDocumentEditorEngine = (function () {
             var offset = Math.max(0, Math.min(text.length, Number(snapshot.offset || 0)));
             if (snapshot.isCollapsed === false) {
                 var range = selectionToRange(snapshot);
-                return deletionPlan([createOperation(OPERATION_TYPES.DeleteRange, { range: range }, { source: 'input' })], false, block);
+                return deletionPlan([createDeleteOperation(range, 'input')], false, block);
             }
             if (offset === 0 && inputType.indexOf('Backward') >= 0) {
                 return deletionPlan([createOperation(OPERATION_TYPES.MergeParagraph, { target: { blockId: snapshot.blockId, offset: 0 } }, { source: 'input' })], false, block);
@@ -5772,7 +6905,7 @@ window.tmDocumentEditorEngine = (function () {
             var end = backward ? offset : (word ? nextWordBoundary(text, offset) : Math.min(text.length, offset + 1));
             var inlineInfo = _inlineAtOffset(block, offset);
             var normalizedToPreviousRun = !!(inputType === 'deleteWordBackward' && inlineInfo && offset === inlineInfo.end);
-            return deletionPlan([createOperation(OPERATION_TYPES.DeleteRange, { range: { blockId: snapshot.blockId, start: start, end: end } }, { source: 'input' })], normalizedToPreviousRun, block);
+            return deletionPlan([createDeleteOperation({ blockId: snapshot.blockId, start: start, end: end }, 'input')], normalizedToPreviousRun, block);
         }
 
         function deletionPlan(operations, normalizedToPreviousRun, block) {
@@ -5788,6 +6921,7 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         function handleEnter(selection, options) {
+            activeInputRevision = null;
             var snapshot = createSelectionSnapshot(selection || currentSelection);
             var block = _findBlock(model, snapshot.blockId);
             if (block && block.type === 'image') {
@@ -5800,9 +6934,14 @@ window.tmDocumentEditorEngine = (function () {
                 });
             }
             var newBlockId = _stableId('block', snapshot.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000));
+            var structureRevision = trackChanges
+                ? createStructureRevisionPayload({ blockId: snapshot.blockId, start: Number(snapshot.offset || 0), end: Number(snapshot.offset || 0) }, 'SplitBlock', userId, 'input')
+                : null;
             var op = createOperation(OPERATION_TYPES.SplitParagraph, {
                 target: { blockId: snapshot.blockId, offset: Number(snapshot.offset || 0) },
-                newBlockId: newBlockId
+                newBlockId: newBlockId,
+                revisionId: structureRevision && structureRevision.id || null,
+                revision: structureRevision || null
             }, { source: 'input' });
             var result = applyInputOperations([op], {
                 normalized: options && options.normalized || null,
@@ -5816,6 +6955,7 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         function toggleBold(normalized) {
+            activeInputRevision = null;
             var hasBold = activeTypingMarks.some(function (mark) { return String(mark.type || mark.Type).toLowerCase() === 'bold'; });
             activeTypingMarks = hasBold
                 ? activeTypingMarks.filter(function (mark) { return String(mark.type || mark.Type).toLowerCase() !== 'bold'; })
@@ -5835,6 +6975,10 @@ window.tmDocumentEditorEngine = (function () {
         function handleCompositionUpdate(eventLike) {
             if (!composition) handleCompositionStart(eventLike);
             composition.preview = _asText(eventLike && eventLike.data);
+            var previewBlock = _clone(_findBlock(model, composition.beforeSelection.blockId) || null);
+            if (previewBlock) {
+                _insertTextRun(previewBlock, composition.beforeSelection.offset, composition.preview, { marks: _clone(activeTypingMarks) });
+            }
             var previewLayout = paragraphEngine.layoutAfterOperation(model, createOperation(OPERATION_TYPES.InsertText, {
                 target: { blockId: composition.beforeSelection.blockId, offset: composition.beforeSelection.offset },
                 text: composition.preview
@@ -5844,6 +6988,7 @@ window.tmDocumentEditorEngine = (function () {
                 transactionType: 'composition',
                 boundaryPatchQueued: false,
                 selection: composition.beforeSelection,
+                previewText: previewBlock ? _blockText(previewBlock) : '',
                 previewLayout: previewLayout
             });
         }
@@ -5858,18 +7003,24 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         function handlePaste(input) {
+            activeInputRevision = null;
             var source = input || {};
             var normalizedText = normalizePasteText(source.plainText || source.PlainText || source.text || source.Text || source.html || source.Html || '');
             currentSelection = createSelectionSnapshot(source.selection || source.Selection || currentSelection);
             var range = selectionToRange(currentSelection);
             var operations = [];
             if (!currentSelection.isCollapsed && range.start !== range.end) {
-                operations.push(createOperation(OPERATION_TYPES.DeleteRange, { range: range }, { source: 'paste' }));
+                operations.push(createDeleteOperation(range, 'paste'));
             }
             var lines = normalizedText.split('\n');
+            var pasteRevision = trackChanges
+                ? createInsertionRevisionPayload({ blockId: range.blockId, start: range.start, end: range.start + (lines[0] || '').length }, lines[0] || '', userId, 'paste')
+                : null;
             operations.push(createOperation(OPERATION_TYPES.InsertText, {
                 target: { blockId: range.blockId, offset: range.start },
-                text: lines[0] || ''
+                text: lines[0] || '',
+                revisionId: pasteRevision && pasteRevision.id || null,
+                revision: pasteRevision || null
             }, { source: 'paste' }));
             var activeBlockId = range.blockId;
             for (var i = 1; i < lines.length; i++) {
@@ -5980,9 +7131,68 @@ window.tmDocumentEditorEngine = (function () {
     function createRevisionForInput(model, userId) {
         var id = 'rev-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
         if (!Array.isArray(model.revisions)) model.revisions = [];
-        model.revisions.push({ id: id, status: 'Pending', authorId: userId || 'local', source: 'input' });
+        model.revisions.push({ id: id, type: 'Insertion', status: 'Pending', author: userId || 'local', authorId: userId || 'local', source: 'input', payload: { text: '' } });
         buildIndexes(model);
         return id;
+    }
+
+    function createLiveInsertionRevisionPayload(selection, text, userId) {
+        var range = selectionToRange(selection || {});
+        return createInsertionRevisionPayload({
+            blockId: range.blockId,
+            start: Number(range.start || 0),
+            end: Number(range.start || 0) + _asText(text).length
+        }, text, userId || 'local', 'keydown');
+    }
+
+    function createOrExtendLiveTypingRevision(inst, selection, text, marks) {
+        if (!inst || !inst.model) return null;
+        var inserted = _asText(text);
+        if (!inserted) return null;
+        var userId = resolveRevisionUserId(inst.options || {});
+        var range = selectionToRange(selection || {});
+        var now = Date.now();
+        var formattingKey = stableRevisionStringify(normalizeMarks(marks || []));
+        var session = inst.activeTypingRevision || null;
+        var canExtend = !!(session
+            && session.blockId === range.blockId
+            && Number(session.end || 0) === Number(range.start || 0)
+            && session.formattingKey === formattingKey
+            && now - Number(session.updatedAt || 0) <= 1250);
+
+        if (canExtend) {
+            var existing = revisionById(inst.model, session.id);
+            if (existing) {
+                var nextText = _asText(session.text) + inserted;
+                session.text = nextText;
+                session.end = Number(session.end || range.start) + inserted.length;
+                session.updatedAt = now;
+                existing.affectedRange = _sortObject(Object.assign({}, existing.affectedRange || {}, {
+                    blockId: range.blockId,
+                    start: Number(session.start ?? range.start),
+                    end: Number(session.end)
+                }));
+                existing.payload = _sortObject(Object.assign({}, existing.payload || {}, { text: nextText }));
+                existing.payloadJson = nextText;
+                return _sortObject({ id: session.id, revision: _clone(existing), reused: true });
+            }
+        }
+
+        var payload = createLiveInsertionRevisionPayload(selection, inserted, userId);
+        inst.activeTypingRevision = {
+            id: payload.id,
+            blockId: range.blockId,
+            start: Number(range.start || 0),
+            end: Number(range.start || 0) + inserted.length,
+            text: inserted,
+            formattingKey: formattingKey,
+            updatedAt: now
+        };
+        return _sortObject({ id: payload.id, revision: payload, reused: false });
+    }
+
+    function clearLiveTypingRevision(inst) {
+        if (inst) inst.activeTypingRevision = null;
     }
 
     function selectionToRange(selection) {
@@ -6381,14 +7591,14 @@ window.tmDocumentEditorEngine = (function () {
         var pos = normalizeLogicalPosition(model, position);
         var block = root && root.querySelector ? root.querySelector('[data-block-id="' + cssEscape(pos.blockId) + '"]') : null;
         if (!block) return { ok: false, error: { code: 'missing-dom-block', blockId: pos.blockId } };
-        var textNode = findTextNode(block);
         var range = document.createRange();
-        if (!textNode) {
+        var point = domTextPointAtBlockOffset(block, pos.offset);
+        if (!point || !point.node) {
             range.setStart(block, 0);
             range.collapse(true);
             return { ok: true, range: range, position: pos };
         }
-        range.setStart(textNode, Math.max(0, Math.min(textNode.nodeValue.length, pos.offset)));
+        range.setStart(point.node, Math.max(0, Math.min(point.node.nodeValue ? point.node.nodeValue.length : block.childNodes.length, point.offset)));
         range.collapse(true);
         return { ok: true, range: range, position: pos };
     }
@@ -6396,6 +7606,62 @@ window.tmDocumentEditorEngine = (function () {
     function domRangeToLogical(root, model, range) {
         if (!range) return { ok: false, error: { code: 'missing-dom-range' } };
         return domTextNodeToLogical(root, model, range.startContainer, range.startOffset);
+    }
+
+    function isInlineBreakNode(node) {
+        return !!(node
+            && node.nodeType === 1
+            && String(node.tagName || '').toLowerCase() === 'br'
+            && node.getAttribute
+            && node.getAttribute('data-inline-break') !== null);
+    }
+
+    function isCaretPlaceholderNode(node) {
+        return !!(node
+            && node.nodeType === 1
+            && String(node.tagName || '').toLowerCase() === 'br'
+            && node.getAttribute
+            && node.getAttribute('data-caret-placeholder') !== null);
+    }
+
+    function domLogicalLength(node) {
+        if (!node) return 0;
+        if (node.nodeType === 3) return node.nodeValue ? node.nodeValue.length : 0;
+        if (isInlineBreakNode(node)) return 1;
+        if (isCaretPlaceholderNode(node)) return 0;
+        var total = 0;
+        var children = node.childNodes || [];
+        for (var i = 0; i < children.length; i++) {
+            total += domLogicalLength(children[i]);
+        }
+        return total;
+    }
+
+    function domBoundaryLogicalOffset(root, node, offset) {
+        if (!root || !node) return 0;
+        if (root === node) {
+            if (node.nodeType === 3) {
+                return Math.max(0, Math.min(node.nodeValue ? node.nodeValue.length : 0, Number(offset || 0)));
+            }
+            var ownChildren = node.childNodes || [];
+            var childLimit = Math.max(0, Math.min(ownChildren.length, Number(offset || 0)));
+            var ownTotal = 0;
+            for (var ownIndex = 0; ownIndex < childLimit; ownIndex++) {
+                ownTotal += domLogicalLength(ownChildren[ownIndex]);
+            }
+            return ownTotal;
+        }
+
+        var children = root.childNodes || [];
+        var total = 0;
+        for (var index = 0; index < children.length; index++) {
+            var child = children[index];
+            if (child === node || child.contains && child.contains(node)) {
+                return total + domBoundaryLogicalOffset(child, node, offset);
+            }
+            total += domLogicalLength(child);
+        }
+        return total;
     }
 
     function domTextNodeToLogical(root, model, node, offset) {
@@ -6408,10 +7674,7 @@ window.tmDocumentEditorEngine = (function () {
         var regionNode = blockElement.closest('[data-render-region]');
         var region = regionNode && regionNode.getAttribute('data-render-region') || 'Body';
         var headerFooterId = regionNode && regionNode.getAttribute('data-hf-id') || null;
-        var pre = document.createRange();
-        pre.selectNodeContents(blockElement);
-        pre.setEnd(node, offset);
-        var logicalOffset = Math.max(0, Math.min(_blockText(block).length, pre.toString().length));
+        var logicalOffset = Math.max(0, Math.min(_blockText(block).length, domBoundaryLogicalOffset(blockElement, node, offset)));
         return { ok: true, position: normalizeLogicalPosition(model, { region: region, blockId: blockId, offset: logicalOffset, affinity: 'after', headerFooterId: headerFooterId }) };
     }
 
@@ -6687,6 +7950,107 @@ window.tmDocumentEditorEngine = (function () {
             : Date.now();
     }
 
+    var PERFORMANCE_HISTOGRAM_LIMIT = 500;
+
+    function createDefaultLatencyBudgets() {
+        return {
+            KeydownVisibleTextMs: 150,
+            SpaceVisibleTextMs: 150,
+            EnterVisibleTextMs: 220,
+            ToolbarCommandVisibleStyleMs: 250,
+            SelectionChangeToolbarStateMs: 200
+        };
+    }
+
+    function createLatencyHistogramState() {
+        return {
+            KeydownVisibleText: [],
+            SpaceVisibleText: [],
+            EnterVisibleText: [],
+            ToolbarCommandVisibleStyle: [],
+            SelectionChangeToolbarState: []
+        };
+    }
+
+    function ensureLatencyHistogramState(stats) {
+        if (!stats.latencyHistograms || typeof stats.latencyHistograms !== 'object') {
+            stats.latencyHistograms = createLatencyHistogramState();
+        }
+        Object.keys(createLatencyHistogramState()).forEach(function (key) {
+            if (!Array.isArray(stats.latencyHistograms[key])) stats.latencyHistograms[key] = [];
+        });
+        if (!stats.lastLatencyDetails || typeof stats.lastLatencyDetails !== 'object') {
+            stats.lastLatencyDetails = {};
+        }
+        if (!stats.latencyBudgets || typeof stats.latencyBudgets !== 'object') {
+            stats.latencyBudgets = createDefaultLatencyBudgets();
+        }
+        return stats.latencyHistograms;
+    }
+
+    function latencyBudgetForName(stats, name) {
+        var budgets = stats && stats.latencyBudgets || createDefaultLatencyBudgets();
+        switch (name) {
+            case 'SpaceVisibleText': return Number(budgets.SpaceVisibleTextMs || 0) || 150;
+            case 'EnterVisibleText': return Number(budgets.EnterVisibleTextMs || 0) || 220;
+            case 'ToolbarCommandVisibleStyle': return Number(budgets.ToolbarCommandVisibleStyleMs || 0) || 250;
+            case 'SelectionChangeToolbarState': return Number(budgets.SelectionChangeToolbarStateMs || 0) || 200;
+            case 'KeydownVisibleText':
+            default:
+                return Number(budgets.KeydownVisibleTextMs || 0) || 150;
+        }
+    }
+
+    function createLatencyHistogramSummary(samples, budgetMs) {
+        var values = _asArray(samples).map(Number).filter(function (value) { return Number.isFinite(value); });
+        return _sortObject({
+            Count: values.length,
+            LastMs: values.length ? values[values.length - 1] : 0,
+            MaxMs: values.length ? Math.max.apply(Math, values) : 0,
+            P50Ms: median(values),
+            P95Ms: percentileNearestRank(values, 0.95),
+            BudgetMs: Number(budgetMs || 0) || 0,
+            WithinBudget: values.length === 0 || percentileNearestRank(values, 0.95) <= (Number(budgetMs || 0) || Number.POSITIVE_INFINITY)
+        });
+    }
+
+    function recordLatencyHistogram(inst, name, elapsedMs, detail) {
+        if (!inst) return null;
+        var stats = ensureStrictPerformanceStats(inst);
+        var histograms = ensureLatencyHistogramState(stats);
+        var key = histograms[name] ? name : 'KeydownVisibleText';
+        var elapsed = Math.max(0, Number(elapsedMs || 0) || 0);
+        histograms[key] = histograms[key].concat([elapsed]).slice(-PERFORMANCE_HISTOGRAM_LIMIT);
+        stats.lastLatencyDetails[key] = _sortObject(Object.assign({}, _clone(detail || {}), {
+            elapsedMs: elapsed,
+            at: Date.now()
+        }));
+        return createLatencyHistogramSummary(histograms[key], latencyBudgetForName(stats, key));
+    }
+
+    function recordPartialRenderScope(inst, operationType, scopeIds, detail) {
+        if (!inst) return null;
+        var stats = ensureStrictPerformanceStats(inst);
+        var scopes = _unique(_asArray(scopeIds).map(_asText).filter(Boolean));
+        stats.lastPartialRenderScopeIds = scopes;
+        stats.partialRenderScopeSamples = _asArray(stats.partialRenderScopeSamples).concat([_sortObject({
+            operationType: _asText(operationType || ''),
+            scopeIds: scopes,
+            detail: _clone(detail || {}),
+            at: Date.now()
+        })]).slice(-100);
+        return scopes;
+    }
+
+    function isFormattingVisualOperation(operationOrType) {
+        var type = typeof operationOrType === 'string'
+            ? operationOrType
+            : (operationOrType && (operationOrType.type || operationOrType.Type) || '');
+        return type === OPERATION_TYPES.ApplyMark
+            || type === OPERATION_TYPES.RemoveMark
+            || type === OPERATION_TYPES.SetParagraphAttribute;
+    }
+
     function createStrictPerformanceStats() {
         return {
             keyDownCount: 0,
@@ -6700,6 +8064,9 @@ window.tmDocumentEditorEngine = (function () {
             objectOverlayPatchCount: 0,
             selectionNotifyCount: 0,
             blazorInteropCallCount: 0,
+            blazorCallbackDuringTypingCount: 0,
+            formattingStateEventCount: 0,
+            formattingStateNotifyCount: 0,
             typingFlushCount: 0,
             maxTypingBatchSize: 0,
             maxBoundaryPatchBatchSize: 0,
@@ -6745,6 +8112,15 @@ window.tmDocumentEditorEngine = (function () {
             virtualizedPages: 0,
             activePageIndex: 0,
             maxLiveDomBlockCount: 0,
+            latencyBudgets: createDefaultLatencyBudgets(),
+            latencyHistograms: createLatencyHistogramState(),
+            lastLatencyDetails: {},
+            lastPartialRenderScopeIds: [],
+            partialRenderScopeSamples: [],
+            formattingCommandPartialRenderCount: 0,
+            toolbarStateLayoutAuditCount: 0,
+            toolbarStateLayoutThrashCount: 0,
+            lastToolbarStateLayoutAudit: null,
             memoryDisposeCount: 0,
             lastDisposeCleanup: null
         };
@@ -6753,6 +8129,19 @@ window.tmDocumentEditorEngine = (function () {
     function ensureStrictPerformanceStats(inst) {
         if (!inst.performanceStats) inst.performanceStats = createStrictPerformanceStats();
         return inst.performanceStats;
+    }
+
+    function typingHotPathWindowMs(inst) {
+        return Math.max(100, Number(inst && inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) || 500);
+    }
+
+    function isTypingHotPath(inst, now) {
+        if (!inst) return false;
+        var current = Number(now || strictPerformanceNow()) || strictPerformanceNow();
+        var windowMs = typingHotPathWindowMs(inst);
+        return _asArray(inst.pendingTypingBoundaryPatches).length > 0
+            || Number(inst.suppressCollapsedSelectionChangeUntil || 0) >= current
+            || Number(inst.lastInputDomApplyAt || 0) > 0 && current - Number(inst.lastInputDomApplyAt || 0) <= windowMs + 32;
     }
 
     function percentileNearestRank(values, percentile) {
@@ -6795,22 +8184,34 @@ window.tmDocumentEditorEngine = (function () {
         var startedAt = starts.length ? starts.shift() : Number(inst.lastBeforeInputAt || now);
         inst.pendingKeyToDomStarts = starts;
         var latency = Math.max(0, now - startedAt);
+        var operation = arguments.length > 2 ? arguments[2] : null;
+        var insertedText = _asText(operation && (operation.text || operation.Text));
         var samples = _asArray(stats.keyToDomSamples).concat([latency]).slice(-200);
         stats.keyToDomSamples = samples;
         stats.inputDomApplyCount = Number(stats.inputDomApplyCount || 0) + 1;
         stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), 1);
         inst.jsOwnedInputCount = Number(inst.jsOwnedInputCount || 0) + 1;
+        inst.lastInputDomApplyAt = now;
+        inst.suppressCollapsedSelectionChangeUntil = now + typingHotPathWindowMs(inst) + 32;
         stats.partialRenderCount = Number(stats.partialRenderCount || 0) + 1;
         stats.lastKeyToDomMs = latency;
         stats.maxKeyToDomMs = Math.max(Number(stats.maxKeyToDomMs || 0), latency);
         stats.medianKeyToDomMs = median(samples);
         stats.p95KeyToDomMs = percentileNearestRank(samples, 0.95);
+        if (type === OPERATION_TYPES.SplitParagraph) {
+            recordLatencyHistogram(inst, 'EnterVisibleText', latency, { operationType: type });
+        } else if (type === OPERATION_TYPES.InsertText && insertedText === ' ') {
+            recordLatencyHistogram(inst, 'SpaceVisibleText', latency, { operationType: type });
+        } else if (type === OPERATION_TYPES.InsertText || type === OPERATION_TYPES.DeleteRange || type === OPERATION_TYPES.MergeParagraph) {
+            recordLatencyHistogram(inst, 'KeydownVisibleText', latency, { operationType: type });
+        }
         if (type === OPERATION_TYPES.InsertText || type === OPERATION_TYPES.DeleteRange) {
             stats.textNodePatchCount = Number(stats.textNodePatchCount || 0) + 1;
         } else if (type === OPERATION_TYPES.SplitParagraph || type === OPERATION_TYPES.MergeParagraph) {
             stats.blockPatchCount = Number(stats.blockPatchCount || 0) + 1;
         }
         stats.markerOverlayPatchCount = Number(stats.markerOverlayPatchCount || 0) + 1;
+        recordPartialRenderScope(inst, type, operation ? operationAffectedBlockIds(operation) : [], { liveDomPatch: true });
         recordTimeline(inst, 'input-dom-apply', {
             operationType: type || '',
             latencyMs: latency,
@@ -6880,6 +8281,7 @@ window.tmDocumentEditorEngine = (function () {
         var started = strictPerformanceNow();
         var diagnostics = ensureDiagnostics(inst);
         diagnostics.selectionVersion++;
+        rememberSelectionToken(inst, inst.selection || null, reason || 'selection-changed');
         if (reason) recordTimeline(inst, 'selection-restore', { reason: reason, selectionVersion: diagnostics.selectionVersion, selection: inst.selection || null });
         var elapsed = Math.max(0, strictPerformanceNow() - started);
         var stats = ensureStrictPerformanceStats(inst);
@@ -6887,6 +8289,12 @@ window.tmDocumentEditorEngine = (function () {
         stats.selectionMovementLastMs = elapsed;
         stats.selectionMovementTotalMs = Number(stats.selectionMovementTotalMs || 0) + elapsed;
         stats.selectionMovementMaxMs = Math.max(Number(stats.selectionMovementMaxMs || 0), elapsed);
+        inst.lastSelectionStateChangeAt = started;
+        var isTypingReason = reason === TRANSACTION_TYPES.Typing || reason === 'typing';
+        var delayMs = isTypingReason
+            ? Math.max(120, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) + 80)
+            : 60;
+        scheduleFormattingStatePublish(inst, reason || 'selection-changed', { delayMs: delayMs, startedAt: started });
         return diagnostics.selectionVersion;
     }
 
@@ -6974,7 +8382,9 @@ window.tmDocumentEditorEngine = (function () {
         if (!node) return false;
         var value = _asText(text);
         if (value.length === 0) {
-            node.replaceChildren(document.createElement('br'));
+            var placeholder = document.createElement('br');
+            placeholder.setAttribute('data-caret-placeholder', 'true');
+            node.replaceChildren(placeholder);
         } else {
             node.textContent = value;
         }
@@ -6995,7 +8405,7 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !inst.root || !operation) return false;
         var op = attachOperationMethods(operation);
         var type = op.type || op.Type || '';
-        if ([OPERATION_TYPES.InsertText, OPERATION_TYPES.DeleteRange, OPERATION_TYPES.SplitParagraph, OPERATION_TYPES.MergeParagraph].indexOf(type) < 0) {
+        if ([OPERATION_TYPES.InsertText, OPERATION_TYPES.DeleteRange, OPERATION_TYPES.SplitParagraph, OPERATION_TYPES.MergeParagraph, OPERATION_TYPES.ApplyMark, OPERATION_TYPES.RemoveMark, OPERATION_TYPES.SetParagraphAttribute].indexOf(type) < 0) {
             return false;
         }
 
@@ -7011,6 +8421,18 @@ window.tmDocumentEditorEngine = (function () {
             var deleteNode = findLiveTextBlockElement(inst, range.blockId);
             if (!deleteBlock || !deleteNode) return false;
             replaceLiveParagraphHtml(inst, deleteNode, deleteBlock);
+        } else if (type === OPERATION_TYPES.ApplyMark || type === OPERATION_TYPES.RemoveMark) {
+            var markRange = _normalizeRange(op.range || op.Range);
+            var markBlock = _findBlock(inst.model, markRange.blockId);
+            var markNode = findLiveTextBlockElement(inst, markRange.blockId);
+            if (!markBlock || !markNode) return false;
+            replaceLiveParagraphHtml(inst, markNode, markBlock);
+        } else if (type === OPERATION_TYPES.SetParagraphAttribute) {
+            var paragraphTarget = _normalizeTarget(op.target || op.Target);
+            var paragraphBlock = _findBlock(inst.model, paragraphTarget.blockId);
+            var paragraphNode = findLiveTextBlockElement(inst, paragraphTarget.blockId);
+            if (!paragraphBlock || !paragraphNode) return false;
+            replaceLiveParagraphHtml(inst, paragraphNode, paragraphBlock);
         } else if (type === OPERATION_TYPES.SplitParagraph) {
             var splitTarget = _normalizeTarget(op.target || op.Target);
             var originalBlock = _findBlock(inst.model, splitTarget.blockId);
@@ -7047,7 +8469,7 @@ window.tmDocumentEditorEngine = (function () {
             operationType: type,
             blockId: inst.selection && inst.selection.blockId || ''
         });
-        recordInputDomApply(inst, type);
+        recordInputDomApply(inst, type, op);
         return true;
     }
 
@@ -7116,6 +8538,7 @@ window.tmDocumentEditorEngine = (function () {
         if (range && (range.blockId || range.BlockId)) ids.push(range.blockId || range.BlockId);
         if (selection && (selection.blockId || selection.BlockId)) ids.push(selection.blockId || selection.BlockId);
         if (op.blockId || op.BlockId) ids.push(op.blockId || op.BlockId);
+        if (op.newBlockId || op.NewBlockId) ids.push(op.newBlockId || op.NewBlockId);
         if (op.revisionId || op.RevisionId) ids.push('revisions');
         _asArray(op.affectedScopeIds || op.AffectedScopeIds || op.affectedParagraphIds || op.AffectedParagraphIds || op.affectedSelectable || op.AffectedSelectable)
             .forEach(function (id) { if (id) ids.push(id); });
@@ -7131,12 +8554,33 @@ window.tmDocumentEditorEngine = (function () {
         return _unique(ids.map(_asText).filter(Boolean));
     }
 
+    function operationTouchesRevisions(operation) {
+        var op = operation || {};
+        var type = op.type || op.Type || '';
+        return !!(op.revisionId || op.RevisionId || op.revision || op.Revision
+            || type === OPERATION_TYPES.AcceptRevision
+            || type === OPERATION_TYPES.RejectRevision);
+    }
+
+    function notifyRuntimeRevisionsChanged(inst) {
+        if (!inst) return Promise.resolve({ ok: true, skipped: true });
+        return invokeBoundaryMethod(inst, 'HandleRevisionsChanged', exportToCSharpJson(inst.model).Revisions, 'revisions-changed-failed');
+    }
+
     function invokeBoundaryMethod(inst, methodName, payload, failureCode) {
         if (inst) {
             var stats = ensureStrictPerformanceStats(inst);
+            var now = strictPerformanceNow();
             stats.blazorInteropCallCount = Number(stats.blazorInteropCallCount || 0) + 1;
+            if (isTypingHotPath(inst, now)) {
+                stats.blazorCallbackDuringTypingCount = Number(stats.blazorCallbackDuringTypingCount || 0) + 1;
+                stats.lastBlazorCallbackDuringTypingMethod = methodName || '';
+            }
             if (methodName === 'HandleSelectionChanged') {
                 stats.selectionNotifyCount = Number(stats.selectionNotifyCount || 0) + 1;
+            } else if (methodName === 'HandleFormattingStateChanged') {
+                stats.formattingStateNotifyCount = Number(stats.formattingStateNotifyCount || 0) + 1;
+                stats.formattingStateEventCount = Number(stats.formattingStateEventCount || 0) + 1;
             }
         }
         if (!inst || !inst.dotNetRef || typeof inst.dotNetRef.invokeMethodAsync !== 'function') {
@@ -7157,6 +8601,102 @@ window.tmDocumentEditorEngine = (function () {
                 recordDiagnosticError(inst, failure.code, failure.message, { method: methodName });
                 return { ok: false, error: failure };
             });
+    }
+
+    function createFormattingStateBoundaryPayload(inst, reason, version) {
+        var selection = inst && (inst.selection || firstModelSelection(inst.model));
+        var formatting = computeFormattingState(inst.model, selection, inst.pendingTypingMarks || [], inst);
+        var tokenizedSelection = rememberSelectionToken(inst, formatting.selection || selection, reason || 'formatting-state');
+        formatting.selection = tokenizedSelection;
+        formatting.Selection = tokenizedSelection;
+        formatting.currentSelection = tokenizedSelection;
+        formatting.CurrentSelection = tokenizedSelection;
+        var payload = toBlazorFormattingState(formatting);
+        var nextVersion = Number(version || inst.formattingStateVersion || 0) || 0;
+        payload.Version = nextVersion;
+        payload.version = nextVersion;
+        payload.Reason = reason || '';
+        payload.reason = reason || '';
+        payload.Selection = tokenizedSelection;
+        payload.selection = tokenizedSelection;
+        payload.CurrentSelection = tokenizedSelection;
+        payload.currentSelection = tokenizedSelection;
+        return _sortObject(payload);
+    }
+
+    function dispatchFormattingState(inst, reason, version) {
+        if (!inst || inst.disposed) return null;
+        var publishedVersion = Number(inst.lastFormattingStatePublishedVersion || 0) || 0;
+        if (Number(version || 0) < publishedVersion) {
+            recordTimeline(inst, 'formatting-state-stale-skip', {
+                reason: reason || '',
+                version: version || 0,
+                publishedVersion: publishedVersion
+            });
+            return null;
+        }
+
+        var stats = ensureStrictPerformanceStats(inst);
+        var beforeRenderPassCount = Number(stats.renderPassCount || 0);
+        var beforeLayoutPassCount = Number(stats.layoutPassCount || 0);
+        var startedAt = Number(inst.pendingFormattingStateStartedAt || inst.lastSelectionStateChangeAt || strictPerformanceNow()) || strictPerformanceNow();
+        inst.lastFormattingStatePublishedVersion = Number(version || publishedVersion || 0) || publishedVersion;
+        var payload = createFormattingStateBoundaryPayload(inst, reason || 'formatting-state', inst.lastFormattingStatePublishedVersion);
+        recordTimeline(inst, 'formatting-state-publish', {
+            reason: reason || '',
+            version: payload.Version || payload.version || 0,
+            bold: payload.Bold,
+            fontSize: payload.FontSize || '',
+            textColor: payload.TextColor || ''
+        });
+        invokeBoundaryMethod(inst, 'HandleFormattingStateChanged', payload, 'formatting-state-changed-failed');
+        var afterRenderPassCount = Number(stats.renderPassCount || 0);
+        var afterLayoutPassCount = Number(stats.layoutPassCount || 0);
+        var thrash = afterRenderPassCount !== beforeRenderPassCount || afterLayoutPassCount !== beforeLayoutPassCount;
+        stats.toolbarStateLayoutAuditCount = Number(stats.toolbarStateLayoutAuditCount || 0) + 1;
+        if (thrash) stats.toolbarStateLayoutThrashCount = Number(stats.toolbarStateLayoutThrashCount || 0) + 1;
+        stats.lastToolbarStateLayoutAudit = _sortObject({
+            reason: reason || '',
+            renderPassDelta: afterRenderPassCount - beforeRenderPassCount,
+            layoutPassDelta: afterLayoutPassCount - beforeLayoutPassCount,
+            thrash: thrash,
+            at: Date.now()
+        });
+        recordLatencyHistogram(inst, 'SelectionChangeToolbarState', Math.max(0, strictPerformanceNow() - startedAt), {
+            reason: reason || '',
+            version: payload.Version || payload.version || 0
+        });
+        return payload;
+    }
+
+    function scheduleFormattingStatePublish(inst, reason, options) {
+        if (!inst || inst.disposed) return null;
+        var opts = options || {};
+        var version = Number(inst.formattingStateVersion || 0) + 1;
+        inst.formattingStateVersion = version;
+        inst.pendingFormattingStateVersion = version;
+        inst.pendingFormattingStateReason = reason || 'formatting-state';
+        inst.pendingFormattingStateStartedAt = Number(opts.startedAt || strictPerformanceNow()) || strictPerformanceNow();
+
+        if (inst.pendingFormattingStateTimer) {
+            clearTimeout(inst.pendingFormattingStateTimer);
+            inst.pendingFormattingStateTimer = null;
+        }
+
+        if (opts.immediate === true) {
+            return dispatchFormattingState(inst, reason || 'formatting-state', version);
+        }
+
+        var delay = Math.max(16, Number(opts.delayMs ?? opts.delay ?? 60) || 60);
+        inst.pendingFormattingStateTimer = setTimeout(function () {
+            inst.pendingFormattingStateTimer = null;
+            if (inst.disposed || inst.pendingFormattingStateVersion !== version) return;
+            dispatchFormattingState(inst, inst.pendingFormattingStateReason || reason || 'formatting-state', version);
+        }, delay);
+        if (inst.timers && inst.timers.indexOf(inst.pendingFormattingStateTimer) < 0) {
+            inst.timers.push(inst.pendingFormattingStateTimer);
+        }
+        return { scheduled: true, version: version, reason: reason || 'formatting-state', delayMs: delay };
     }
 
     function getRegionLabel(inst, region) {
@@ -7364,42 +8904,61 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function executeFormattingShortcut(inst, commandName) {
-        var dispatcher = createCommandDispatcher(inst.model, {
-            selection: inst.selection || firstModelSelection(inst.model),
-            pendingTypingMarks: inst.pendingTypingMarks || []
-        });
-        var result = dispatcher.executeCommand(commandName, {});
-        inst.commands.push({ command: commandName, payload: {}, source: 'keyboard', at: Date.now(), result: _clone(result) });
+        if (!inst) return { ok: false, error: { code: 'missing-instance' } };
+        var domSelection = window.getSelection && window.getSelection();
+        if (selectionBelongsToEditor(inst, domSelection)) {
+            inst.selection = readFixedDomSelection(inst, 'keyboard-formatting-shortcut');
+        }
+
+        var payload = {
+            source: 'keyboard',
+            selection: createSelectionSnapshot(inst.selection || firstModelSelection(inst.model))
+        };
+        var result = applyRuntimeFormattingCommand(inst, commandName, payload, commandName);
         recordTimeline(inst, 'keyboard-command', { command: commandName, result: result && result.ok !== false });
         if (result && result.ok !== false) {
-            markModelChanged(inst, commandName);
-            markSelectionChanged(inst, 'keyboard-' + commandName);
-            render(inst);
+            rememberKeyboardSelection(inst, inst.selection || payload.selection, 'keyboard-' + commandName);
         }
         return result;
     }
 
     function markKeyboardInputHandled(inst, inputType, data) {
-        inst.suppressedBeforeInput = {
+        var item = {
             inputType: inputType || '',
             data: _asText(data || ''),
             expiresAt: Date.now() + 120
         };
+        inst.suppressedBeforeInput = item;
+        inst.suppressedBeforeInputs = _asArray(inst.suppressedBeforeInputs).concat([item]).slice(-6);
     }
 
     function consumeSuppressedBeforeInput(inst, event) {
-        var suppressed = inst && inst.suppressedBeforeInput;
-        if (!suppressed) return false;
-        if (Date.now() > Number(suppressed.expiresAt || 0)) {
-            inst.suppressedBeforeInput = null;
+        var list = _asArray(inst && inst.suppressedBeforeInputs);
+        if (!list.length && inst && inst.suppressedBeforeInput) list = [inst.suppressedBeforeInput];
+        if (!list.length) return false;
+        var now = Date.now();
+        list = list.filter(function (item) { return now <= Number(item && item.expiresAt || 0); });
+        if (!list.length) {
+            if (inst) {
+                inst.suppressedBeforeInput = null;
+                inst.suppressedBeforeInputs = [];
+            }
             return false;
         }
         var inputType = _asText(event && event.inputType || '');
         var data = _asText(event && event.data || '');
-        var matches = inputType === suppressed.inputType
-            && (inputType !== 'insertText' || data === suppressed.data);
-        if (!matches) return false;
-        inst.suppressedBeforeInput = null;
+        var matchIndex = list.findIndex(function (suppressed) {
+            return inputType === suppressed.inputType
+                && (inputType !== 'insertText' || data === suppressed.data);
+        });
+        if (matchIndex < 0) {
+            inst.suppressedBeforeInputs = list;
+            inst.suppressedBeforeInput = list[list.length - 1] || null;
+            return false;
+        }
+        list.splice(matchIndex, 1);
+        inst.suppressedBeforeInputs = list;
+        inst.suppressedBeforeInput = list[list.length - 1] || null;
         if (typeof event.preventDefault === 'function') event.preventDefault();
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
         recordTimeline(inst, 'beforeinput-suppressed-after-keydown', {
@@ -7409,58 +8968,147 @@ window.tmDocumentEditorEngine = (function () {
         return true;
     }
 
+    function clearKeyboardSelectionMemory(inst) {
+        if (!inst) return;
+        inst.lastKeyboardSelection = null;
+        inst.lastKeyboardSelectionExpiresAt = 0;
+        inst.lastKeyboardInputAt = 0;
+    }
+
+    function rememberKeyboardSelection(inst, selection, source) {
+        if (!inst || !selection) return;
+        var snapshot = createSelectionSnapshot(selection);
+        if (!snapshot || snapshot.isCollapsed === false || snapshot.isObjectSelection || !snapshot.blockId) return;
+        inst.lastKeyboardSelection = snapshot;
+        inst.lastKeyboardSelectionExpiresAt = Date.now() + 900;
+        inst.lastKeyboardInputAt = Date.now();
+        inst.lastKeyboardSelectionSource = source || 'keyboard';
+    }
+
+    function chooseKeyboardSelection(inst, fixed, source) {
+        var reason = _asText(source || '');
+        if (reason.indexOf('keydown') < 0 && reason.indexOf('beforeinput') < 0) return fixed;
+        var remembered = inst && inst.lastKeyboardSelection;
+        if (!remembered || Date.now() > Number(inst.lastKeyboardSelectionExpiresAt || 0)) return fixed;
+        var snapshot = createSelectionSnapshot(remembered);
+        if (!snapshot || snapshot.isCollapsed === false || !snapshot.blockId) return fixed;
+        if (!fixed || !fixed.blockId) return snapshot;
+        if (fixed.blockId !== snapshot.blockId || fixed.isCollapsed === false) return fixed;
+        var domOffset = Number(fixed.offset || 0);
+        var rememberedOffset = Number(snapshot.offset || 0);
+        if (domOffset === rememberedOffset) return fixed;
+        var justTyped = Date.now() - Number(inst.lastKeyboardInputAt || 0) <= 350;
+        if (rememberedOffset > 0 && domOffset === 0) return snapshot;
+        if (justTyped && domOffset < rememberedOffset) return snapshot;
+        return fixed;
+    }
+
     function readFixedDomSelection(inst, source) {
         var fixed = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+        fixed = chooseKeyboardSelection(inst, fixed, source);
         inst.selection = fixed;
         markSelectionChanged(inst, source || 'dom-selection');
         return createSelectionSnapshot(fixed || firstModelSelection(inst.model));
     }
 
-    function applyKeyboardInsertText(inst, event, text) {
+    function applyKeyboardInsertText(inst, event, text, inputType) {
         var selection = readFixedDomSelection(inst, 'keydown-dom');
         var block = _findBlock(inst.model, selection.blockId);
         var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
+        var marks = _clone(inst.pendingTypingMarks || []);
+        var revisionPayload = isTrackChangesEnabled(inst)
+            ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
+            : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
             target: { blockId: selection.blockId, offset: offset },
             text: text,
+            marks: marks,
+            revisionId: revisionPayload && revisionPayload.id || null,
+            revision: revisionPayload && revisionPayload.revision || null,
             source: 'keydown',
             transactionType: TRANSACTION_TYPES.Typing,
             beforeSelection: selection
         });
-        markKeyboardInputHandled(inst, 'insertText', text);
+        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-insertText');
+        markKeyboardInputHandled(inst, inputType || 'insertText', text);
         return result;
     }
 
     function applyKeyboardSplitParagraph(inst) {
+        clearLiveTypingRevision(inst);
         var selection = readFixedDomSelection(inst, 'keydown-dom');
         var block = _findBlock(inst.model, selection.blockId);
         var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
+        var structureRevision = isTrackChangesEnabled(inst)
+            ? createStructureRevisionPayload({ blockId: selection.blockId, start: offset, end: offset }, 'SplitBlock', resolveRevisionUserId(inst.options || {}), 'keydown')
+            : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
             target: { blockId: selection.blockId, offset: offset },
             newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
+            revisionId: structureRevision && structureRevision.id || null,
+            revision: structureRevision || null,
             source: 'keydown',
             transactionType: TRANSACTION_TYPES.Typing,
             beforeSelection: selection
         });
+        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-insertParagraph');
         markKeyboardInputHandled(inst, 'insertParagraph', '');
         return result;
     }
 
     function applyKeyboardDelete(inst, inputType) {
+        clearLiveTypingRevision(inst);
         var selection = readFixedDomSelection(inst, 'keydown-dom');
         var block = _findBlock(inst.model, selection.blockId);
         var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
+        if (selection.isCollapsed === false && selection.anchor && selection.focus && selection.anchor.blockId === selection.focus.blockId) {
+            var rangeStart = Math.min(Number(selection.anchor.offset || 0), Number(selection.focus.offset || 0));
+            var rangeEnd = Math.max(Number(selection.anchor.offset || 0), Number(selection.focus.offset || 0));
+            if (rangeEnd > rangeStart) {
+                var selectionRevision = isTrackChangesEnabled(inst)
+                    ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: rangeStart, end: rangeEnd }, resolveRevisionUserId(inst.options || {}), 'keydown')
+                    : null;
+                var rangeResult = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
+                    range: { blockId: selection.blockId, start: rangeStart, end: rangeEnd },
+                    revisionId: selectionRevision && selectionRevision.id || null,
+                    revision: selectionRevision || null,
+                    source: 'keydown',
+                    transactionType: 'delete',
+                    beforeSelection: selection
+                });
+                if (rangeResult && rangeResult.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+                markKeyboardInputHandled(inst, inputType, '');
+                return rangeResult;
+            }
+        }
         var backward = inputType.indexOf('Backward') >= 0;
         var textValue = _blockText(block);
+        if (backward && offset === 0) {
+            var mergeResult = applyCommand(inst.id, OPERATION_TYPES.MergeParagraph, {
+                target: { blockId: selection.blockId, offset: 0 },
+                source: 'keydown',
+                transactionType: 'delete',
+                beforeSelection: selection
+            });
+            if (mergeResult && mergeResult.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+            markKeyboardInputHandled(inst, inputType, '');
+            return mergeResult;
+        }
         var start = backward ? Math.max(0, offset - 1) : offset;
         var end = backward ? offset : Math.min(textValue.length, offset + 1);
         if (start === end) return { ok: true, noop: true };
+        var deletionRevision = isTrackChangesEnabled(inst)
+            ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: start, end: end }, resolveRevisionUserId(inst.options || {}), 'keydown')
+            : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
             range: { blockId: selection.blockId, start: start, end: end },
+            revisionId: deletionRevision && deletionRevision.id || null,
+            revision: deletionRevision || null,
             source: 'keydown',
             transactionType: 'delete',
             beforeSelection: selection
         });
+        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
         markKeyboardInputHandled(inst, inputType, '');
         return result;
     }
@@ -7494,9 +9142,17 @@ window.tmDocumentEditorEngine = (function () {
             return { handled: true, command: 'contextMenu' };
         }
 
+        if (!ctrl && !event.altKey && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'home', 'end', 'pageup', 'pagedown'].indexOf(key) >= 0) {
+            clearKeyboardSelectionMemory(inst);
+            clearLiveTypingRevision(inst);
+        }
+
         if (!ctrl && !event.altKey && !event.isComposing && targetIsEditableDocumentSurface(inst, event.target)) {
             if (key === 'enter') {
                 prevent();
+                if (shift) {
+                    return { handled: true, command: 'insertLineBreak', result: applyKeyboardInsertText(inst, event, '\n', 'insertLineBreak') };
+                }
                 return { handled: true, command: 'insertParagraph', result: applyKeyboardSplitParagraph(inst) };
             }
             if (key === 'backspace') {
@@ -7531,7 +9187,6 @@ window.tmDocumentEditorEngine = (function () {
             prevent();
             var redo = key === 'y' || shift;
             var result = applyCommand(inst.id, redo ? 'redo' : 'undo', {});
-            invokeBoundaryMethod(inst, redo ? 'HandleRedoRequested' : 'HandleUndoRequested', null, redo ? 'redo-request-failed' : 'undo-request-failed');
             return { handled: true, command: redo ? 'redo' : 'undo', result: result };
         }
 
@@ -7600,8 +9255,480 @@ window.tmDocumentEditorEngine = (function () {
         return { cellId: null, tableId: null };
     }
 
-    function boundarySelectionSnapshot(selection) {
-        var snapshot = createSelectionSnapshot(selection || {});
+    function selectionSnapshotFromBoundarySnapshot(value) {
+        var source = value || {};
+        return createSelectionSnapshot({
+            region: source.Region || source.region || 'Body',
+            anchorBlockId: source.AnchorBlockId || source.anchorBlockId || source.BlockId || source.blockId || '',
+            focusBlockId: source.FocusBlockId || source.focusBlockId || source.AnchorBlockId || source.anchorBlockId || '',
+            anchorInlineId: source.AnchorInlineId || source.AnchorNodeId || source.anchorInlineId || source.anchorNodeId || null,
+            focusInlineId: source.FocusInlineId || source.FocusNodeId || source.focusInlineId || source.focusNodeId || null,
+            anchorOffset: source.AnchorOffset ?? source.AnchorBlockOffset ?? source.anchorOffset ?? source.anchorBlockOffset ?? 0,
+            focusOffset: source.FocusOffset ?? source.FocusBlockOffset ?? source.focusOffset ?? source.focusBlockOffset ?? source.AnchorOffset ?? source.anchorOffset ?? 0,
+            isCollapsed: source.IsCollapsed ?? source.isCollapsed ?? true,
+            direction: source.Direction || source.direction || 'forward',
+            headerFooterId: source.HeaderFooterId || source.headerFooterId || null,
+            cellId: source.ActiveTableCellId || source.activeTableCellId || null,
+            tableId: source.ActiveTableId || source.activeTableId || null,
+            activeImageBlockId: source.ActiveImageBlockId || source.activeImageBlockId || null,
+            activeCommentId: source.ActiveCommentId || source.activeCommentId || null,
+            activeRevisionId: source.ActiveRevisionId || source.activeRevisionId || null,
+            activeObjectId: source.ActiveObjectId || source.activeObjectId || null,
+            hitTargetKind: source.HitTargetKind || source.hitTargetKind || null
+        });
+    }
+
+    function getToolbarCommandSelection(inst) {
+        var miniSelection = inst && inst.lastMiniToolbarRequest && inst.lastMiniToolbarRequest.Selection;
+        if (miniSelection && miniSelection.IsCollapsed === false) {
+            return selectionSnapshotFromBoundarySnapshot(miniSelection);
+        }
+        var toolbarSelection = readRecentToolbarSelection(inst);
+        if (toolbarSelection) return toolbarSelection;
+        return createSelectionSnapshot(inst && (inst.lastKeyboardSelection || inst.selection) || {});
+    }
+
+    function readRecentToolbarSelection(inst) {
+        var memo = inst && inst.lastToolbarSelection;
+        if (!memo || Date.now() - Number(memo.at || 0) > 2500) return null;
+        var snapshot = createSelectionSnapshot(memo.selection || memo.Selection || {});
+        return snapshot && snapshot.isCollapsed === false ? snapshot : null;
+    }
+
+    function rememberToolbarSelectionBeforeFocusLoss(inst, event) {
+        var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+        if (!inst || !inst.root || !element) return false;
+        var shell = inst.root.closest && inst.root.closest('.tm-document-editor');
+        if (!shell || !shell.contains(element)) return false;
+        var toolbarTarget = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__ribbon, .tm-document-editor__floating-root');
+        if (!toolbarTarget) return false;
+        var selection = window.getSelection && window.getSelection();
+        if (!selectionTargetsTextSurface(inst, selection)) return true;
+        var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+        if (snapshot && snapshot.isCollapsed === false && snapshot.blockId) {
+            inst.lastToolbarSelection = { selection: _clone(snapshot), at: Date.now() };
+            inst.selection = snapshot;
+            markSelectionChanged(inst, 'toolbar-pointerdown-selection');
+        }
+        return true;
+    }
+
+    function preserveToolbarSelectionOnPointerEvent(inst, event, source) {
+        if (!rememberToolbarSelectionBeforeFocusLoss(inst, event)) return false;
+        var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+        var selection = readRecentToolbarSelection(inst);
+        if (!selection && inst && inst.selection && inst.selection.isCollapsed === false) {
+            selection = createSelectionSnapshot(inst.selection);
+        }
+
+        inst.preserveMiniToolbarUntil = Date.now() + 1200;
+        if (!selection || selection.isCollapsed !== false || !selection.blockId) return true;
+        if (isToolbarInteractivePopoverElement(element)) return true;
+
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        var restored = scheduleToolbarSelectionRestore(inst, selection, source || 'toolbar-pointer');
+        recordTimeline(inst, 'toolbar-pointer-selection-preserved', {
+            source: source || '',
+            restored: restored === true,
+            blockId: selection.blockId || '',
+            startOffset: Math.min(Number(selection.anchor && selection.anchor.offset || 0), Number(selection.focus && selection.focus.offset || 0)),
+            endOffset: Math.max(Number(selection.anchor && selection.anchor.offset || 0), Number(selection.focus && selection.focus.offset || 0))
+        });
+        return true;
+    }
+
+    function scheduleToolbarSelectionRestore(inst, selection, source) {
+        if (!inst || !selection || selection.isCollapsed !== false || !selection.blockId) return false;
+        inst.pendingToolbarSelectionRestore = {
+            selection: _clone(selection),
+            until: Date.now() + 250,
+            source: source || ''
+        };
+        var restored = restoreToolbarSelectionAttempt(inst, selection, source || 'toolbar-pointer');
+        var schedule = function (suffix, callback) {
+            try {
+                callback(function () {
+                    var pending = inst.pendingToolbarSelectionRestore;
+                    if (!pending || Date.now() > Number(pending.until || 0)) return;
+                    restoreToolbarSelectionAttempt(inst, pending.selection, (source || 'toolbar-pointer') + suffix);
+                });
+            } catch {
+                // Ignore scheduling failures in older browser contexts.
+            }
+        };
+        if (typeof queueMicrotask === 'function') {
+            schedule('-microtask', queueMicrotask);
+        }
+        schedule('-timeout', function (callback) { setTimeout(callback, 0); });
+        if (typeof requestAnimationFrame === 'function') {
+            schedule('-raf', requestAnimationFrame);
+        }
+        return restored;
+    }
+
+    function restoreToolbarSelectionAttempt(inst, selection, source) {
+        if (!inst || inst.restoringToolbarSelection === true) return false;
+        if (isToolbarInteractivePopoverElement(typeof document !== 'undefined' && document.activeElement)) return false;
+        var current = window.getSelection && window.getSelection();
+        if (selectionTargetsTextSurface(inst, current) && current && current.isCollapsed === false && current.toString()) {
+            return true;
+        }
+        inst.restoringToolbarSelection = true;
+        try {
+            var restored = restoreDomSelectionFromSnapshot(inst, selection);
+            recordTimeline(inst, 'toolbar-selection-restore-attempt', {
+                source: source || '',
+                restored: restored === true,
+                blockId: selection.blockId || '',
+                startOffset: Math.min(Number(selection.anchor && selection.anchor.offset || 0), Number(selection.focus && selection.focus.offset || 0)),
+                endOffset: Math.max(Number(selection.anchor && selection.anchor.offset || 0), Number(selection.focus && selection.focus.offset || 0))
+            });
+            return restored;
+        } finally {
+            inst.restoringToolbarSelection = false;
+        }
+    }
+
+    function restoreRecentToolbarSelectionIfNeeded(inst, source) {
+        if (!inst || Date.now() > Number(inst.preserveMiniToolbarUntil || 0)) return false;
+        if (isToolbarInteractivePopoverElement(typeof document !== 'undefined' && document.activeElement)) return false;
+        var pending = inst.pendingToolbarSelectionRestore;
+        var selection = pending && Date.now() <= Number(pending.until || 0)
+            ? createSelectionSnapshot(pending.selection || {})
+            : readRecentToolbarSelection(inst);
+        if (!selection && inst.selection && inst.selection.isCollapsed === false) selection = createSelectionSnapshot(inst.selection);
+        if (!selection || selection.isCollapsed !== false || !selection.blockId) return false;
+        return restoreToolbarSelectionAttempt(inst, selection, source || 'selectionchange');
+    }
+
+    function handleToolbarNativeSelectChange(inst, event) {
+        var target = event && event.target;
+        if (!inst || !target || target.nodeType !== Node.ELEMENT_NODE) return false;
+        var testId = target.getAttribute && target.getAttribute('data-testid') || '';
+        if (testId !== 'document-font-size' && testId !== 'document-font-family') return false;
+        var shell = inst.root && inst.root.closest ? inst.root.closest('.tm-document-editor') : null;
+        if (shell && !shell.contains(target)) return false;
+        var rawValue = _asText(target.value || '');
+        if (!rawValue) return false;
+        var command = testId === 'document-font-size' ? 'setFontSize' : 'setFontFamily';
+        var value = testId === 'document-font-size' && /^\d+(\.\d+)?$/.test(rawValue)
+            ? rawValue + 'pt'
+            : rawValue;
+        var now = Date.now();
+        var guardKey = command + '|' + value;
+        if (inst.lastNativeToolbarCommandKey === guardKey && now - Number(inst.lastNativeToolbarCommandAt || 0) < 120) {
+            return true;
+        }
+        inst.lastNativeToolbarCommandKey = guardKey;
+        inst.lastNativeToolbarCommandAt = now;
+        var selection = getToolbarCommandSelection(inst);
+        if (selection && selection.blockId) {
+            inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, selection);
+            markSelectionChanged(inst, 'toolbar-native-selection');
+        }
+        recordTimeline(inst, 'toolbar-native-select-command', { command: command, value: value });
+        applyCommand(inst.id, command, { Value: value, Selection: selection, source: 'toolbar-native' });
+        return true;
+    }
+
+    function resolveToolbarButtonCommand(element) {
+        var button = element && element.closest && element.closest('button');
+        if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true') return null;
+        var testId = button.getAttribute('data-testid') || '';
+        var raw = button.getAttribute('data-command') || '';
+        if (!raw && /^document-(mini|context)-/.test(testId)) {
+            raw = testId
+                .replace(/^document-(mini|context)-/, '')
+                .replace(/-/g, '');
+        }
+        var compact = String(raw || '').replace(/[\s_.:-]+/g, '').toLowerCase();
+        switch (compact) {
+            case 'bold':
+                return { command: 'toggleBold', payload: {} };
+            case 'italic':
+                return { command: 'toggleItalic', payload: {} };
+            case 'underline':
+                return { command: 'toggleUnderline', payload: {} };
+            case 'strikethrough':
+            case 'strike':
+                return { command: 'toggleStrikethrough', payload: {} };
+            case 'clearformatting':
+                return { command: 'clearFormatting', payload: {} };
+            case 'alignleft':
+                return { command: 'setParagraphAlignment', payload: { Alignment: 'left', Value: 'left' } };
+            case 'aligncenter':
+            case 'aligncentre':
+                return { command: 'setParagraphAlignment', payload: { Alignment: 'center', Value: 'center' } };
+            case 'alignright':
+                return { command: 'setParagraphAlignment', payload: { Alignment: 'right', Value: 'right' } };
+            case 'alignjustify':
+                return { command: 'setParagraphAlignment', payload: { Alignment: 'justify', Value: 'justify' } };
+            case 'bulletlist':
+                return { command: 'toggleBulletList', payload: { Value: 'bullet', ListType: 'bullet' } };
+            case 'numberedlist':
+                return { command: 'toggleNumberedList', payload: { Value: 'numbered', ListType: 'numbered' } };
+            default:
+                return null;
+        }
+    }
+
+    function handleToolbarNativeButtonClick(inst, event) {
+        try {
+            var target = event && event.target;
+            var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
+            if (!inst || !inst.root || !element) return false;
+            var shell = inst.root.closest && inst.root.closest('.tm-document-editor');
+            if (!shell || !shell.contains(element)) {
+                recordTimeline(inst, 'toolbar-native-button-skip', { reason: 'outside-shell' });
+                return false;
+            }
+            var toolbar = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root');
+            if (!toolbar) {
+                recordTimeline(inst, 'toolbar-native-button-skip', {
+                    reason: 'outside-toolbar',
+                    testId: element.getAttribute && element.getAttribute('data-testid') || ''
+                });
+                return false;
+            }
+            var resolved = resolveToolbarButtonCommand(element);
+            if (!resolved) {
+                var button = element.closest && element.closest('button');
+                recordTimeline(inst, 'toolbar-native-button-skip', {
+                    reason: 'unmapped-command',
+                    testId: button && button.getAttribute && button.getAttribute('data-testid') || '',
+                    command: button && button.getAttribute && button.getAttribute('data-command') || ''
+                });
+                return false;
+            }
+            recordTimeline(inst, 'toolbar-native-button-command', { command: resolved.command });
+            var selection = null;
+            try {
+                selection = getToolbarCommandSelection(inst);
+            } catch (selectionError) {
+                inst.lastError = 'toolbar-native-selection-failed';
+                recordWatchdogFailure(inst, 'toolbar-native-button', inst.lastError, {
+                    command: resolved.command,
+                    message: String(selectionError && selectionError.message || selectionError)
+                });
+                selection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+            }
+            if (selection && selection.blockId) {
+                try {
+                    inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, selection);
+                    markSelectionChanged(inst, 'toolbar-native-button-selection');
+                } catch (fixError) {
+                    inst.lastError = 'toolbar-native-selection-fix-failed';
+                    recordWatchdogFailure(inst, 'toolbar-native-button', inst.lastError, {
+                        command: resolved.command,
+                        message: String(fixError && fixError.message || fixError)
+                    });
+                }
+            }
+            var payload = Object.assign({}, resolved.payload || {}, {
+                Selection: selection,
+                source: 'toolbar-native'
+            });
+            var result = applyCommand(inst.id, resolved.command, payload);
+            if (result && result.ok !== false) {
+                event.preventDefault && event.preventDefault();
+                event.stopImmediatePropagation && event.stopImmediatePropagation();
+                event.stopPropagation && event.stopPropagation();
+                return true;
+            }
+        } catch (error) {
+            if (inst) {
+                inst.lastError = 'toolbar-native-button-failed';
+                recordWatchdogFailure(inst, 'toolbar-native-button', inst.lastError, {
+                    message: String(error && error.message || error)
+                });
+            }
+        }
+        return false;
+    }
+
+    function isToolbarInteractivePopoverElement(element) {
+        if (!element || !element.closest) return false;
+        return !!element.closest('.tm-color-picker-dropdown, .tm-flat-color-picker, .tm-color-picker-actions');
+    }
+
+    function dispatchToolbarNativeButtonCommand(inst, event, element, resolved) {
+        if (!inst || !resolved) return false;
+        recordTimeline(inst, 'toolbar-native-button-command', { command: resolved.command, delegated: true });
+        var selection = null;
+        try {
+            selection = getToolbarCommandSelection(inst);
+        } catch (selectionError) {
+            inst.lastError = 'toolbar-native-selection-failed';
+            recordWatchdogFailure(inst, 'toolbar-native-button', inst.lastError, {
+                command: resolved.command,
+                message: String(selectionError && selectionError.message || selectionError)
+            });
+            selection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        }
+        if (selection && selection.blockId) {
+            try {
+                inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, selection);
+                markSelectionChanged(inst, 'toolbar-native-button-selection');
+            } catch (fixError) {
+                inst.lastError = 'toolbar-native-selection-fix-failed';
+                recordWatchdogFailure(inst, 'toolbar-native-button', inst.lastError, {
+                    command: resolved.command,
+                    message: String(fixError && fixError.message || fixError)
+                });
+            }
+        }
+        var payload = Object.assign({}, resolved.payload || {}, {
+            Selection: selection,
+            source: 'toolbar-native'
+        });
+        var result = applyCommand(inst.id, resolved.command, payload);
+        if (result && result.ok !== false) {
+            event.preventDefault && event.preventDefault();
+            event.stopImmediatePropagation && event.stopImmediatePropagation();
+            event.stopPropagation && event.stopPropagation();
+            return true;
+        }
+        return false;
+    }
+
+    function dispatchToolbarRuntimeButtonCommand(instanceId, event, resolved) {
+        var runtime = window.tmDocumentEditorRuntime || null;
+        if (!instanceId || !resolved || !runtime || typeof runtime.executeCommand !== 'function') return false;
+        var selection = null;
+        if (typeof runtime.getRuntimeSelection === 'function') {
+            try {
+                selection = runtime.getRuntimeSelection(instanceId);
+                if (selection && selection.ok === false) selection = null;
+            } catch {
+                selection = null;
+            }
+        }
+        var payload = Object.assign({}, resolved.payload || {}, {
+            Selection: selection,
+            source: 'toolbar-native'
+        });
+        var result = runtime.executeCommand(instanceId, resolved.command, payload);
+        if (!result && window.tmDocumentEditorEngine && typeof window.tmDocumentEditorEngine.applyCommand === 'function') {
+            result = window.tmDocumentEditorEngine.applyCommand(instanceId, resolved.command, payload);
+        }
+        if (result && result.ok !== false) {
+            event.preventDefault && event.preventDefault();
+            event.stopImmediatePropagation && event.stopImmediatePropagation();
+            event.stopPropagation && event.stopPropagation();
+            return true;
+        }
+        return false;
+    }
+
+    function resolveToolbarInstanceFromElement(element) {
+        if (!element || !element.closest) return null;
+        var shell = element.closest('.tm-document-editor');
+        var host = shell && shell.querySelector && shell.querySelector('[data-testid="document-wysiwyg-host"][data-instance-id]');
+        if (!host) host = document.querySelector('[data-testid="document-wysiwyg-host"][data-instance-id]');
+        var instanceId = host && host.getAttribute && host.getAttribute('data-instance-id') || '';
+        return instanceId ? _instances.get(instanceId) || null : null;
+    }
+
+    function preserveToolbarSelectionFromGlobalEvent(event, source) {
+        var target = event && event.target;
+        var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
+        if (!element || !element.closest) return false;
+        var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root');
+        if (!toolbar) return false;
+        var inst = resolveToolbarInstanceFromElement(element);
+        if (!inst || !inst.root) return false;
+
+        var selection = window.getSelection && window.getSelection();
+        if (selectionTargetsTextSurface(inst, selection)) {
+            var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+            if (snapshot && snapshot.isCollapsed === false && snapshot.blockId) {
+                inst.lastToolbarSelection = { selection: _clone(snapshot), at: Date.now() };
+                inst.selection = snapshot;
+                markSelectionChanged(inst, 'toolbar-global-' + (source || 'pointer') + '-selection');
+            }
+        }
+
+        var commandSelection = readRecentToolbarSelection(inst);
+        if (!commandSelection && inst.selection && inst.selection.isCollapsed === false) {
+            commandSelection = createSelectionSnapshot(inst.selection);
+        }
+        if (!commandSelection || commandSelection.isCollapsed !== false || !commandSelection.blockId) return true;
+
+        inst.preserveMiniToolbarUntil = Date.now() + 1200;
+        if (isToolbarInteractivePopoverElement(element)) return true;
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        var restored = scheduleToolbarSelectionRestore(inst, commandSelection, 'global-' + (source || 'pointer'));
+        recordTimeline(inst, 'toolbar-global-selection-preserved', {
+            source: source || '',
+            restored: restored === true,
+            blockId: commandSelection.blockId || '',
+            startOffset: Math.min(Number(commandSelection.anchor && commandSelection.anchor.offset || 0), Number(commandSelection.focus && commandSelection.focus.offset || 0)),
+            endOffset: Math.max(Number(commandSelection.anchor && commandSelection.anchor.offset || 0), Number(commandSelection.focus && commandSelection.focus.offset || 0))
+        });
+        return true;
+    }
+
+    function installGlobalToolbarButtonBridge() {
+        if (typeof window.addEventListener !== 'function') return;
+        var existing = window.__tmDocumentEditorToolbarNativeButtonBridge;
+        if (existing && existing.version === TOOLBAR_NATIVE_BUTTON_BRIDGE_VERSION && existing.handler) {
+            window.__tmDocumentEditorToolbarNativeButtonBridgeInstalled = true;
+            return;
+        }
+
+        if (existing && existing.handler) {
+            try {
+                window.removeEventListener('click', existing.handler, true);
+                if (existing.preserveHandler) {
+                    window.removeEventListener('pointerdown', existing.preserveHandler, true);
+                    window.removeEventListener('mousedown', existing.preserveHandler, true);
+                }
+            } catch {
+                // Ignore stale listener cleanup failures.
+            }
+        }
+
+        var handler = function (event) {
+            try {
+                var target = event && event.target;
+                var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
+                if (!element || !element.closest) return;
+                var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root');
+                if (!toolbar) return;
+                var resolved = resolveToolbarButtonCommand(element);
+                if (!resolved) return;
+                var shell = element.closest('.tm-document-editor');
+                var host = shell && shell.querySelector && shell.querySelector('[data-testid="document-wysiwyg-host"][data-instance-id]');
+                var instanceId = host && host.getAttribute && host.getAttribute('data-instance-id') || '';
+                if (!instanceId) return;
+                dispatchToolbarRuntimeButtonCommand(instanceId, event, resolved);
+            } catch (error) {
+                // Keep toolbar event handling isolated from Blazor's own event pipeline.
+            }
+        };
+        var preserveHandler = function (event) {
+            try {
+                preserveToolbarSelectionFromGlobalEvent(event, event && event.type || '');
+            } catch {
+                // Keep toolbar selection preservation isolated from browser-native input.
+            }
+        };
+
+        window.__tmDocumentEditorToolbarNativeButtonBridge = {
+            version: TOOLBAR_NATIVE_BUTTON_BRIDGE_VERSION,
+            handler: handler,
+            preserveHandler: preserveHandler
+        };
+        window.__tmDocumentEditorToolbarNativeButtonBridgeInstalled = true;
+        window.addEventListener('pointerdown', preserveHandler, true);
+        window.addEventListener('mousedown', preserveHandler, true);
+        window.addEventListener('click', handler, true);
+    }
+
+    function boundarySelectionSnapshot(selection, inst) {
+        var snapshot = inst
+            ? withStableSelectionToken(inst.id, selection || {}, inst.model)
+            : createSelectionSnapshot(selection || {});
         var anchor = createLogicalPosition(snapshot.anchor || {});
         var focus = createLogicalPosition(snapshot.focus || anchor);
         return {
@@ -7625,7 +9752,10 @@ window.tmDocumentEditorEngine = (function () {
             ActiveCommentId: snapshot.activeCommentId || null,
             ActiveRevisionId: snapshot.activeRevisionId || null,
             ActiveObjectId: snapshot.activeObjectId || snapshot.objectId || focus.objectId || anchor.objectId || null,
-            HitTargetKind: snapshot.hitTargetKind || (snapshot.activeCommentId ? 'comment' : (snapshot.activeRevisionId ? 'revision' : (snapshot.isObjectSelection ? 'object' : (snapshot.isCellSelection ? 'tableCell' : 'text'))))
+            HitTargetKind: snapshot.hitTargetKind || (snapshot.activeCommentId ? 'comment' : (snapshot.activeRevisionId ? 'revision' : (snapshot.isObjectSelection ? 'object' : (snapshot.isCellSelection ? 'tableCell' : 'text')))),
+            SelectionToken: snapshot.SelectionToken || snapshot.selectionToken || null,
+            StableSelectionToken: snapshot.StableSelectionToken || snapshot.stableSelectionToken || snapshot.SelectionToken || snapshot.selectionToken || null,
+            SelectionTokenData: snapshot.SelectionTokenData || snapshot.selectionTokenData || null
         };
     }
 
@@ -7665,8 +9795,23 @@ window.tmDocumentEditorEngine = (function () {
         return { left: left, top: top, width: right - left, height: bottom - top, right: right, bottom: bottom };
     }
 
-    function floatingViewportWidthAvoidingSidePanel() {
+    function floatingViewportBoundsAvoidingChrome() {
         var width = window.innerWidth || document.documentElement && document.documentElement.clientWidth || 0;
+        var height = window.innerHeight || document.documentElement && document.documentElement.clientHeight || 0;
+        var left = 0;
+        var top = 0;
+        var gutter = 8;
+        var toolbar = document.querySelector('[data-testid="document-toolbar"], .tm-document-editor__ribbon');
+        if (toolbar && toolbar.getBoundingClientRect) {
+            var toolbarRect = toolbar.getBoundingClientRect();
+            var toolbarStyle = window.getComputedStyle ? window.getComputedStyle(toolbar) : null;
+            if (toolbarRect.width > 1
+                && toolbarRect.height > 1
+                && toolbarRect.bottom > 0
+                && (!toolbarStyle || toolbarStyle.visibility !== 'hidden' && toolbarStyle.display !== 'none')) {
+                top = Math.max(top, Math.min(height - 80, toolbarRect.bottom + gutter));
+            }
+        }
         var panel = document.querySelector('[data-testid="document-side-panel"]');
         if (panel && panel.getBoundingClientRect) {
             var rect = panel.getBoundingClientRect();
@@ -7675,7 +9820,38 @@ window.tmDocumentEditorEngine = (function () {
                 width = Math.max(320, Math.min(width, rect.left - 8));
             }
         }
-        return width;
+        return {
+            left: left,
+            top: top,
+            right: width,
+            bottom: height,
+            width: Math.max(0, width - left),
+            height: Math.max(0, height - top)
+        };
+    }
+
+    function floatingViewportWidthAvoidingSidePanel() {
+        return floatingViewportBoundsAvoidingChrome().right;
+    }
+
+    function shouldShowMiniToolbarForSelectionSnapshot(selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        return snapshot.isCollapsed === false
+            && snapshot.isObjectSelection !== true
+            && !snapshot.activeObjectId
+            && !snapshot.objectId;
+    }
+
+    function canRestoreLastMiniToolbarRequest(inst, source) {
+        if (!inst || !inst.lastMiniToolbarRequest) return false;
+        var selection = inst.lastMiniToolbarRequest.Selection || inst.lastMiniToolbarRequest.selection || null;
+        if (!selection || !shouldShowMiniToolbarForSelectionSnapshot(selection)) return false;
+        var reason = _asText(source || '');
+        if (reason === 'viewport-change') return false;
+        if (Date.now() > Number(inst.preserveMiniToolbarUntil || 0)) return false;
+        return reason.indexOf('toolbar') >= 0
+            || reason.indexOf('picker') >= 0
+            || reason.indexOf('popover') >= 0;
     }
 
     function showMiniToolbarForSelection(inst, source) {
@@ -7695,7 +9871,7 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
-        if (!snapshot || snapshot.isCollapsed !== false || snapshot.isObjectSelection) {
+        if (!snapshot || !shouldShowMiniToolbarForSelectionSnapshot(snapshot)) {
             if (restoreLastMiniToolbarRequest(inst, source)) return true;
             hideMiniToolbar(inst, source || 'selection-collapsed');
             return false;
@@ -7703,16 +9879,17 @@ window.tmDocumentEditorEngine = (function () {
 
         inst.selection = snapshot;
         markSelectionChanged(inst, source || 'selection-toolbar');
-        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot), 'selection-changed-failed');
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot, inst), 'selection-changed-failed');
 
-        var toolbarSize = { width: 356, height: 44 };
-        var viewportWidth = floatingViewportWidthAvoidingSidePanel();
-        var viewportHeight = window.innerHeight || document.documentElement && document.documentElement.clientHeight || 0;
+        var viewport = floatingViewportBoundsAvoidingChrome();
+        var toolbarSize = { width: Math.min(360, Math.max(280, viewport.width - 16)), height: 44 };
         var position = computeFloatingPosition(rect, toolbarSize, {
             placement: 'top',
             gutter: 10,
-            viewportWidth: viewportWidth,
-            viewportHeight: viewportHeight
+            viewportLeft: viewport.left,
+            viewportTop: viewport.top,
+            viewportWidth: viewport.right,
+            viewportHeight: viewport.bottom
         });
         inst.floatingUiOpen = true;
         inst.lastMiniToolbarRequest = {
@@ -7721,19 +9898,16 @@ window.tmDocumentEditorEngine = (function () {
             Top: position.top,
             Width: toolbarSize.width,
             Height: toolbarSize.height,
-            ViewportWidth: viewportWidth,
-            ViewportHeight: viewportHeight,
-            Selection: boundarySelectionSnapshot(snapshot)
+            ViewportWidth: viewport.right,
+            ViewportHeight: viewport.bottom,
+            Selection: boundarySelectionSnapshot(snapshot, inst)
         };
         invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', inst.lastMiniToolbarRequest, 'mini-toolbar-open-failed');
         return true;
     }
 
     function restoreLastMiniToolbarRequest(inst, source) {
-        if (!inst || !inst.lastMiniToolbarRequest) return false;
-        var reason = _asText(source || '');
-        var withinGrace = Date.now() <= Number(inst.preserveMiniToolbarUntil || 0);
-        if (!withinGrace && reason !== 'viewport-change') return false;
+        if (!canRestoreLastMiniToolbarRequest(inst, source)) return false;
         inst.floatingUiOpen = true;
         invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', inst.lastMiniToolbarRequest, 'mini-toolbar-restore-failed');
         return true;
@@ -7744,7 +9918,10 @@ window.tmDocumentEditorEngine = (function () {
         inst.floatingUiOpen = false;
         inst.lastMiniToolbarRequest = null;
         recordTimeline(inst, 'mini-toolbar-hidden', { reason: reason || '' });
-        invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', null, 'mini-toolbar-close-failed');
+        invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', {
+            IsVisible: false,
+            Reason: reason || ''
+        }, 'mini-toolbar-close-failed');
     }
 
     function scheduleMiniToolbarRefresh(inst, source, delay) {
@@ -7754,6 +9931,125 @@ window.tmDocumentEditorEngine = (function () {
             inst.miniToolbarRefreshTimer = null;
             showMiniToolbarForSelection(inst, source || 'selection-refresh');
         }, Number(delay || 0) || 0);
+    }
+
+    function clearMiniToolbarViewportRefreshTimers(inst) {
+        if (!inst || !Array.isArray(inst.miniToolbarViewportRefreshTimers)) return;
+        inst.miniToolbarViewportRefreshTimers.forEach(function (timer) { clearTimeout(timer); });
+        inst.miniToolbarViewportRefreshTimers = [];
+    }
+
+    function scheduleMiniToolbarViewportRefresh(inst, source) {
+        if (!inst) return;
+        scheduleMiniToolbarRefresh(inst, source || 'viewport-change', 20);
+        clearMiniToolbarViewportRefreshTimers(inst);
+        inst.miniToolbarViewportRefreshTimers = [120, 280].map(function (delay) {
+            return setTimeout(function () {
+                showMiniToolbarForSelection(inst, source || 'viewport-change');
+            }, delay);
+        });
+    }
+
+    function publishCollapsedDomSelectionChange(inst, source) {
+        if (!inst || !inst.root) return false;
+        var selection = window.getSelection && window.getSelection();
+        if (!selectionBelongsToEditor(inst, selection)) return false;
+
+        var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+        if (!snapshot || snapshot.isObjectSelection || snapshot.isCollapsed !== true) return false;
+
+        inst.selection = snapshot;
+        var typingHotPath = isTypingHotPath(inst);
+        markSelectionChanged(inst, typingHotPath ? 'typing' : (source || 'selectionchange-caret'));
+        if (!typingHotPath) {
+            scheduleFormattingStatePublish(inst, source || 'selectionchange-caret', { immediate: true });
+            invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot, inst), 'selection-changed-failed');
+        } else {
+            recordTimeline(inst, 'selectionchange-typing-debounced', {
+                blockId: snapshot.blockId || '',
+                offset: snapshot.offset || 0
+            });
+        }
+        return true;
+    }
+
+    function handleEditorCompositionStart(inst, event) {
+        if (!inst || !targetIsEditableDocumentSurface(inst, event && event.target)) return { handled: false };
+        var selection = readFixedDomSelection(inst, 'compositionstart-dom');
+        inst.compositionSession = {
+            beforeSelection: _clone(selection),
+            preview: '',
+            startedAt: Date.now()
+        };
+        recordTimeline(inst, 'composition-start', {
+            blockId: selection.blockId || '',
+            offset: selection.offset || 0
+        });
+        return { handled: true, selection: selection };
+    }
+
+    function renderEditorCompositionPreview(inst, text) {
+        var session = inst && inst.compositionSession;
+        if (!inst || !session || !session.beforeSelection) return false;
+        var selection = createSelectionSnapshot(session.beforeSelection);
+        var block = _findBlock(inst.model, selection.blockId);
+        var node = findLiveTextBlockElement(inst, selection.blockId);
+        if (!block || !node) return false;
+        var previewBlock = _clone(block);
+        _insertTextRun(previewBlock, selection.offset, _asText(text), { marks: _clone(inst.pendingTypingMarks || []) });
+        replaceLiveParagraphHtml(inst, node, previewBlock);
+        var previewSelection = createSelectionSnapshot({
+            region: selection.region || 'Body',
+            blockId: selection.blockId,
+            offset: Number(selection.offset || 0) + _asText(text).length,
+            isCollapsed: true
+        });
+        restoreDomSelectionFromSnapshot(Object.assign({}, inst, { model: { body: { blocks: [previewBlock] }, indexes: { blocks: _sortObject({ [previewBlock.id]: previewBlock }) } } }), previewSelection);
+        recordTimeline(inst, 'composition-preview', {
+            blockId: selection.blockId || '',
+            textLength: _asText(text).length
+        });
+        return true;
+    }
+
+    function handleEditorCompositionUpdate(inst, event) {
+        if (!inst || !targetIsEditableDocumentSurface(inst, event && event.target)) return { handled: false };
+        if (!inst.compositionSession) handleEditorCompositionStart(inst, event);
+        if (!inst.compositionSession) return { handled: false };
+        var preview = _asText(event && event.data);
+        inst.compositionSession.preview = preview;
+        renderEditorCompositionPreview(inst, preview);
+        return { handled: true, preview: preview };
+    }
+
+    function handleEditorCompositionEnd(inst, event) {
+        if (!inst || !targetIsEditableDocumentSurface(inst, event && event.target)) return { handled: false };
+        if (!inst.compositionSession) handleEditorCompositionStart(inst, event);
+        var session = inst.compositionSession;
+        var text = _asText(event && event.data || session && session.preview || '');
+        var selection = createSelectionSnapshot(session && session.beforeSelection || readFixedDomSelection(inst, 'compositionend-dom'));
+        inst.compositionSession = null;
+        if (!text) return { handled: true, noop: true };
+        inst.selection = selection;
+        restoreDomSelectionFromSnapshot(inst, selection);
+        var marks = _clone(inst.pendingTypingMarks || []);
+        var revisionPayload = isTrackChangesEnabled(inst)
+            ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
+            : null;
+        var result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
+            target: { blockId: selection.blockId, offset: selection.offset },
+            text: text,
+            marks: marks,
+            revisionId: revisionPayload && revisionPayload.id || null,
+            revision: revisionPayload && revisionPayload.revision || null,
+            source: 'composition',
+            transactionType: TRANSACTION_TYPES.Typing,
+            beforeSelection: selection
+        });
+        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'compositionend');
+        markKeyboardInputHandled(inst, 'insertCompositionText', text);
+        markKeyboardInputHandled(inst, 'insertText', text);
+        return { handled: true, result: result };
     }
 
     function handleEditorBeforeInput(inst, event) {
@@ -7769,49 +10065,137 @@ window.tmDocumentEditorEngine = (function () {
         });
         if (!normalized.supported) return { handled: true, normalized: normalized };
 
-        inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
-        markSelectionChanged(inst, 'beforeinput-dom');
-
-        var selection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        var selection = readFixedDomSelection(inst, 'beforeinput-dom');
         var block = _findBlock(inst.model, selection.blockId);
         var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
         var inputType = normalized.inputType;
         var result = null;
 
-        if (inputType === 'insertText' || inputType === 'insertFromPaste') {
-            var text = _asText(normalized.data || '');
+        if (inputType === 'insertCompositionText') {
+            handleEditorCompositionUpdate(inst, { data: normalized.data || '', target: event.target });
+            return { handled: true, normalized: normalized, composition: true };
+        }
+
+        if (inputType === 'insertText' || inputType === 'insertFromPaste' || inputType === 'insertLineBreak') {
+            var text = inputType === 'insertLineBreak' ? '\n' : _asText(normalized.data || '');
             if (!text) return { handled: true, normalized: normalized, noop: true };
+            var marks = _clone(inst.pendingTypingMarks || []);
+            var revisionPayload = null;
+            if (isTrackChangesEnabled(inst)) {
+                if (inputType === 'insertFromPaste') {
+                    clearLiveTypingRevision(inst);
+                    revisionPayload = {
+                        id: '',
+                        revision: createInsertionRevisionPayload({ blockId: selection.blockId, start: offset, end: offset + text.length }, text, resolveRevisionUserId(inst.options || {}), 'paste')
+                    };
+                    revisionPayload.id = revisionPayload.revision.id;
+                } else {
+                    revisionPayload = createOrExtendLiveTypingRevision(inst, selection, text, marks);
+                }
+            }
             result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
                 target: { blockId: selection.blockId, offset: offset },
                 text: text,
+                marks: marks,
+                revisionId: revisionPayload && revisionPayload.id || null,
+                revision: revisionPayload && revisionPayload.revision || null,
                 source: 'beforeinput',
                 transactionType: TRANSACTION_TYPES.Typing,
                 beforeSelection: selection
             });
-        } else if (inputType === 'insertParagraph' || inputType === 'insertLineBreak') {
+        } else if (inputType === 'insertParagraph') {
+            clearLiveTypingRevision(inst);
+            var structureRevision = isTrackChangesEnabled(inst)
+                ? createStructureRevisionPayload({ blockId: selection.blockId, start: offset, end: offset }, 'SplitBlock', resolveRevisionUserId(inst.options || {}), 'beforeinput')
+                : null;
             result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
                 target: { blockId: selection.blockId, offset: offset },
                 newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
+                revisionId: structureRevision && structureRevision.id || null,
+                revision: structureRevision || null,
                 source: 'beforeinput',
                 transactionType: TRANSACTION_TYPES.Typing,
                 beforeSelection: selection
             });
         } else if (inputType === 'deleteContentBackward' || inputType === 'deleteWordBackward' || inputType === 'deleteContentForward' || inputType === 'deleteWordForward') {
+            clearLiveTypingRevision(inst);
+            var selectedRange = selection.isCollapsed === false && selection.anchor && selection.focus && selection.anchor.blockId === selection.focus.blockId
+                ? selectionToRange(selection)
+                : null;
             var backward = inputType.indexOf('Backward') >= 0;
             var word = inputType.indexOf('Word') >= 0;
             var textValue = _blockText(block);
-            var start = backward ? (word ? previousWordBoundary(textValue, offset) : Math.max(0, offset - 1)) : offset;
-            var end = backward ? offset : (word ? nextWordBoundary(textValue, offset) : Math.min(textValue.length, offset + 1));
+            var start = selectedRange ? selectedRange.start : (backward ? (word ? previousWordBoundary(textValue, offset) : Math.max(0, offset - 1)) : offset);
+            var end = selectedRange ? selectedRange.end : (backward ? offset : (word ? nextWordBoundary(textValue, offset) : Math.min(textValue.length, offset + 1)));
             if (start === end) return { handled: true, normalized: normalized, noop: true };
+            var deletionRevision = isTrackChangesEnabled(inst)
+                ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: start, end: end }, resolveRevisionUserId(inst.options || {}), 'beforeinput')
+                : null;
             result = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
                 range: { blockId: selection.blockId, start: start, end: end },
+                revisionId: deletionRevision && deletionRevision.id || null,
+                revision: deletionRevision || null,
                 source: 'beforeinput',
                 transactionType: 'delete',
                 beforeSelection: selection
             });
         }
 
+        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'beforeinput-' + inputType);
         return { handled: true, normalized: normalized, result: result };
+    }
+
+    function handleEditorPaste(inst, event) {
+        if (!inst || !event || !targetIsEditableDocumentSurface(inst, event.target)) return { handled: false };
+        var clipboard = event.clipboardData || window.clipboardData || null;
+        var text = clipboard && typeof clipboard.getData === 'function'
+            ? clipboard.getData('text/plain') || clipboard.getData('text') || ''
+            : '';
+        text = normalizePasteText(text);
+        if (!text) return { handled: false };
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        clearLiveTypingRevision(inst);
+
+        var selection = readFixedDomSelection(inst, 'paste-dom');
+        var range = selectionToRange(selection);
+        var operations = [];
+        var userId = resolveRevisionUserId(inst.options || {});
+        if (selection.isCollapsed === false && range.start !== range.end) {
+            var deletionRevision = isTrackChangesEnabled(inst)
+                ? createDeletionRevisionPayload(inst.model, range, userId, 'paste')
+                : null;
+            operations.push(createOperation(OPERATION_TYPES.DeleteRange, {
+                range: range,
+                revisionId: deletionRevision && deletionRevision.id || null,
+                revision: deletionRevision || null
+            }, { source: 'paste' }));
+        }
+
+        var firstLine = text.split('\n')[0] || '';
+        var revisionPayload = isTrackChangesEnabled(inst)
+            ? createInsertionRevisionPayload({ blockId: range.blockId, start: range.start, end: range.start + firstLine.length }, firstLine, userId, 'paste')
+            : null;
+        operations.push(createOperation(OPERATION_TYPES.InsertText, {
+            target: { blockId: range.blockId, offset: range.start },
+            text: firstLine,
+            marks: _clone(inst.pendingTypingMarks || []),
+            revisionId: revisionPayload && revisionPayload.id || null,
+            revision: revisionPayload || null
+        }, { source: 'paste' }));
+
+        var result;
+        if (operations.length === 1) {
+            result = applyCommand(inst.id, OPERATION_TYPES.InsertText, Object.assign({}, operations[0].toJSON ? operations[0].toJSON() : operations[0], {
+                transactionType: TRANSACTION_TYPES.Default,
+                beforeSelection: selection
+            }));
+        } else {
+            result = applyOperationBatchToInstance(inst, operations, TRANSACTION_TYPES.Default, 'Paste', true);
+        }
+        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'paste');
+        markKeyboardInputHandled(inst, 'insertFromPaste', firstLine);
+        return { handled: true, result: result };
     }
 
     function installAccessibilityAndKeyboardHandlers(inst) {
@@ -7823,6 +10207,12 @@ window.tmDocumentEditorEngine = (function () {
         };
         var onPointerDown = function (event) {
             setActiveFocusRegion(inst, getFocusRegionFromElement(root, event.target), event.target, 'pointerdown');
+            if (targetIsEditableDocumentSurface(inst, event && event.target)) {
+                clearKeyboardSelectionMemory(inst);
+                clearLiveTypingRevision(inst);
+                inst.preserveMiniToolbarUntil = 0;
+                hideMiniToolbar(inst, 'editable-pointerdown');
+            }
         };
         var onPointerUp = function () {
             scheduleMiniToolbarRefresh(inst, 'pointerup-selection', 0);
@@ -7844,25 +10234,59 @@ window.tmDocumentEditorEngine = (function () {
         var onBeforeInput = function (event) {
             handleEditorBeforeInput(inst, event);
         };
+        var onPaste = function (event) {
+            handleEditorPaste(inst, event);
+        };
+        var onCompositionStart = function (event) {
+            handleEditorCompositionStart(inst, event);
+        };
+        var onCompositionUpdate = function (event) {
+            handleEditorCompositionUpdate(inst, event);
+        };
+        var onCompositionEnd = function (event) {
+            handleEditorCompositionEnd(inst, event);
+        };
         var onSelectionChange = function () {
             var selection = window.getSelection && window.getSelection();
             if (selectionBelongsToEditor(inst, selection)) {
+                publishCollapsedDomSelectionChange(inst, 'selectionchange-caret');
                 scheduleMiniToolbarRefresh(inst, 'selectionchange', 40);
+                return;
+            }
+            if (restoreRecentToolbarSelectionIfNeeded(inst, 'selectionchange-toolbar-preserve')) {
+                scheduleMiniToolbarRefresh(inst, 'selectionchange-toolbar-preserve', 40);
             }
         };
         var onDocumentPointerDown = function (event) {
             var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
             if (!element) return;
             if (root.contains(element)) return;
+            if (preserveToolbarSelectionOnPointerEvent(inst, event, 'pointerdown')) {
+                return;
+            }
             if (element.closest && element.closest('[data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__floating-root, .tm-color-picker-dropdown, .tm-color-picker')) {
                 inst.preserveMiniToolbarUntil = Date.now() + 1200;
                 return;
             }
             hideMiniToolbar(inst, 'outside-pointerdown');
         };
+        var onDocumentMouseDown = function (event) {
+            var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+            if (!element || root.contains(element)) return;
+            if (preserveToolbarSelectionOnPointerEvent(inst, event, 'mousedown')) return;
+            if (element.closest && element.closest('[data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__floating-root, .tm-color-picker-dropdown, .tm-color-picker')) {
+                inst.preserveMiniToolbarUntil = Date.now() + 1200;
+            }
+        };
+        var onToolbarSelectInput = function (event) {
+            handleToolbarNativeSelectChange(inst, event);
+        };
+        var onToolbarButtonClick = function (event) {
+            handleToolbarNativeButtonClick(inst, event);
+        };
         var onWindowScrollOrResize = function () {
             if (inst.floatingUiOpen || inst.lastMiniToolbarRequest) {
-                scheduleMiniToolbarRefresh(inst, 'viewport-change', 20);
+                scheduleMiniToolbarViewportRefresh(inst, 'viewport-change');
             }
         };
         root.addEventListener('focusin', onFocusIn);
@@ -7870,23 +10294,65 @@ window.tmDocumentEditorEngine = (function () {
         root.addEventListener('pointerup', onPointerUp, true);
         root.addEventListener('click', onClick);
         root.addEventListener('beforeinput', onBeforeInput, true);
+        root.addEventListener('paste', onPaste, true);
+        root.addEventListener('compositionstart', onCompositionStart, true);
+        root.addEventListener('compositionupdate', onCompositionUpdate, true);
+        root.addEventListener('compositionend', onCompositionEnd, true);
         root.addEventListener('keydown', onKeyDown);
-        document.addEventListener('selectionchange', onSelectionChange);
-        document.addEventListener('pointerdown', onDocumentPointerDown, true);
-        window.addEventListener('scroll', onWindowScrollOrResize, true);
-        window.addEventListener('resize', onWindowScrollOrResize);
+        var documentTarget = typeof document !== 'undefined' ? document : null;
+        var windowTarget = typeof window !== 'undefined' ? window : null;
+        if (documentTarget && typeof documentTarget.addEventListener === 'function') {
+            documentTarget.addEventListener('selectionchange', onSelectionChange);
+            documentTarget.addEventListener('pointerdown', onDocumentPointerDown, true);
+            documentTarget.addEventListener('mousedown', onDocumentMouseDown, true);
+            documentTarget.addEventListener('click', onToolbarButtonClick, true);
+            documentTarget.addEventListener('input', onToolbarSelectInput, true);
+            documentTarget.addEventListener('change', onToolbarSelectInput, true);
+        }
+        if (windowTarget && typeof windowTarget.addEventListener === 'function') {
+            windowTarget.addEventListener('click', onToolbarButtonClick, true);
+            windowTarget.addEventListener('scroll', onWindowScrollOrResize, true);
+            windowTarget.addEventListener('resize', onWindowScrollOrResize);
+        }
+        if (windowTarget && windowTarget.visualViewport && typeof windowTarget.visualViewport.addEventListener === 'function') {
+            window.visualViewport.addEventListener('scroll', onWindowScrollOrResize, true);
+            window.visualViewport.addEventListener('resize', onWindowScrollOrResize);
+            inst.visualViewportEventHandlers = [
+                ['scroll', onWindowScrollOrResize, true],
+                ['resize', onWindowScrollOrResize, false]
+            ];
+        }
+        if (typeof ResizeObserver !== 'undefined') {
+            inst.miniToolbarResizeObserver = new ResizeObserver(onWindowScrollOrResize);
+            inst.miniToolbarResizeObserver.observe(root);
+            var editorSurface = root.closest && root.closest('.tm-document-editor');
+            if (editorSurface) {
+                inst.miniToolbarResizeObserver.observe(editorSurface);
+                var workspace = editorSurface.querySelector && editorSurface.querySelector('.tm-document-editor__workspace, .tm-document-editor__surface');
+                if (workspace) inst.miniToolbarResizeObserver.observe(workspace);
+            }
+        }
         inst.eventHandlers.push(
             ['focusin', onFocusIn, false],
             ['pointerdown', onPointerDown, true],
             ['pointerup', onPointerUp, true],
             ['click', onClick, false],
             ['beforeinput', onBeforeInput, true],
+            ['paste', onPaste, true],
+            ['compositionstart', onCompositionStart, true],
+            ['compositionupdate', onCompositionUpdate, true],
+            ['compositionend', onCompositionEnd, true],
             ['keydown', onKeyDown, false]);
         inst.documentEventHandlers = [
             ['selectionchange', onSelectionChange, false],
-            ['pointerdown', onDocumentPointerDown, true]
+            ['pointerdown', onDocumentPointerDown, true],
+            ['mousedown', onDocumentMouseDown, true],
+            ['click', onToolbarButtonClick, true],
+            ['input', onToolbarSelectInput, true],
+            ['change', onToolbarSelectInput, true]
         ];
         inst.windowEventHandlers = [
+            ['click', onToolbarButtonClick, true],
             ['scroll', onWindowScrollOrResize, true],
             ['resize', onWindowScrollOrResize, false]
         ];
@@ -7898,18 +10364,35 @@ window.tmDocumentEditorEngine = (function () {
             inst.root.removeEventListener(entry[0], entry[1], entry[2]);
         });
         inst.eventHandlers = [];
-        _asArray(inst.documentEventHandlers).forEach(function (entry) {
-            document.removeEventListener(entry[0], entry[1], entry[2]);
-        });
+        var documentTarget = typeof document !== 'undefined' ? document : null;
+        if (documentTarget && typeof documentTarget.removeEventListener === 'function') {
+            _asArray(inst.documentEventHandlers).forEach(function (entry) {
+                documentTarget.removeEventListener(entry[0], entry[1], entry[2]);
+            });
+        }
         inst.documentEventHandlers = [];
-        _asArray(inst.windowEventHandlers).forEach(function (entry) {
-            window.removeEventListener(entry[0], entry[1], entry[2]);
-        });
+        var windowTarget = typeof window !== 'undefined' ? window : null;
+        if (windowTarget && typeof windowTarget.removeEventListener === 'function') {
+            _asArray(inst.windowEventHandlers).forEach(function (entry) {
+                windowTarget.removeEventListener(entry[0], entry[1], entry[2]);
+            });
+        }
         inst.windowEventHandlers = [];
+        if (windowTarget && windowTarget.visualViewport && typeof windowTarget.visualViewport.removeEventListener === 'function') {
+            _asArray(inst.visualViewportEventHandlers).forEach(function (entry) {
+                windowTarget.visualViewport.removeEventListener(entry[0], entry[1], entry[2]);
+            });
+        }
+        inst.visualViewportEventHandlers = [];
+        if (inst.miniToolbarResizeObserver && typeof inst.miniToolbarResizeObserver.disconnect === 'function') {
+            inst.miniToolbarResizeObserver.disconnect();
+        }
+        inst.miniToolbarResizeObserver = null;
         if (inst.miniToolbarRefreshTimer) {
             clearTimeout(inst.miniToolbarRefreshTimer);
             inst.miniToolbarRefreshTimer = null;
         }
+        clearMiniToolbarViewportRefreshTimers(inst);
         if (inst.accessibilityAnnouncementTimer) {
             clearTimeout(inst.accessibilityAnnouncementTimer);
             inst.accessibilityAnnouncementTimer = null;
@@ -8017,6 +10500,7 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !patch) return;
         inst.pendingTypingBoundaryPatches = _asArray(inst.pendingTypingBoundaryPatches).concat([patch]);
         var stats = ensureStrictPerformanceStats(inst);
+        stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         if (inst.pendingTypingBoundaryTimer) clearTimeout(inst.pendingTypingBoundaryTimer);
         var delay = Math.max(0, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) || 500);
@@ -8069,6 +10553,19 @@ window.tmDocumentEditorEngine = (function () {
         return inst.dirtyState;
     }
 
+    function clearRuntimeUndoStacks(inst) {
+        if (!inst) return _sortObject({ undoDepth: 0, redoDepth: 0 });
+        if (inst.pendingUndoStateTimer) {
+            clearTimeout(inst.pendingUndoStateTimer);
+            inst.pendingUndoStateTimer = null;
+        }
+        inst.pendingUndoStateNotify = false;
+        inst.undoTransactions = [];
+        inst.redoTransactions = [];
+        inst.activeTransaction = null;
+        return _sortObject({ undoDepth: 0, redoDepth: 0 });
+    }
+
     function markAutosaveFailure(inst, failure) {
         var error = failure || {};
         inst.dirtyState = _sortObject(Object.assign({}, inst.dirtyState || createInitialDirtyState(), {
@@ -8091,6 +10588,8 @@ window.tmDocumentEditorEngine = (function () {
         recordTimeline(inst, 'input-event', { source: transactionType || TRANSACTION_TYPES.Remote, operationCount: operationList.length });
         recordTimeline(inst, 'normalized-operation', { operationTypes: operationList.map(function (operation) { return operation.type || operation.Type || ''; }) });
         var transaction = createTransaction(inst.model, {
+            instanceId: inst.id,
+            commandName: transactionType || label || 'operation-batch',
             type: transactionType || TRANSACTION_TYPES.Remote,
             label: label || transactionType || 'Remote update',
             beforeSelection: inst.selection
@@ -8109,19 +10608,25 @@ window.tmDocumentEditorEngine = (function () {
         var committed = transaction.commit();
         inst.activeTransaction = null;
         inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, transaction.afterSelection || inst.selection);
-        markSelectionChanged(inst, 'operation-batch');
+        markSelectionChanged(inst, transaction.type === TRANSACTION_TYPES.Typing ? 'typing' : 'operation-batch');
         transaction.afterSelection = _clone(inst.selection);
         transaction.afterModelSnapshot = _clone(inst.model);
         inst.transactions.push(transaction.toJSON());
-        if (pushToUndo) {
+        var affectsDocument = transactionAffectsDocument(transaction);
+        if (pushToUndo && affectsDocument) {
             pushUndoTransaction(inst, transaction);
             inst.redoTransactions = [];
         }
         inst.layout.invalidatedScopeIds = transaction.invalidatedScopes.slice();
         inst.lastDiffer = committed.differ;
         inst.commands.push({ command: transactionType || 'remote', payload: operationList.map(function (operation) { return operation.toJSON(); }), at: Date.now(), transactionId: transaction.id });
-        markModelChanged(inst, transactionType || 'operation-batch');
-        refreshRuntimeMarkerStore(inst);
+        if (affectsDocument) {
+            markModelChanged(inst, transactionType || 'operation-batch');
+            refreshRuntimeMarkerStore(inst);
+        }
+        if (affectsDocument && operationList.some(operationTouchesRevisions)) {
+            notifyRuntimeRevisionsChanged(inst);
+        }
         recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: operationList.length });
         render(inst);
         recordOperationPerformance(inst, operationList, Math.max(0, strictPerformanceNow() - operationStart), transaction.invalidatedScopes, transactionType || 'operation-batch');
@@ -8150,6 +10655,10 @@ window.tmDocumentEditorEngine = (function () {
             activeTransaction: null,
             lastOperationValidation: null,
             lastDiffer: null,
+            lastSelectionToken: null,
+            lastSelectionTokenData: null,
+            lastSelectionTokenReason: '',
+            lastCommandTokenDiagnostic: null,
             boundaryPatches: [],
             boundaryFailures: [],
             modelEpoch: 0,
@@ -8158,6 +10667,11 @@ window.tmDocumentEditorEngine = (function () {
             dirtyState: createInitialDirtyState(),
             pendingTypingBoundaryPatches: [],
             pendingTypingBoundaryTimer: null,
+            formattingStateVersion: 0,
+            lastFormattingStatePublishedVersion: 0,
+            pendingFormattingStateVersion: 0,
+            pendingFormattingStateReason: '',
+            pendingFormattingStateTimer: null,
             lastCSharpUpdate: null,
             createdAt: Date.now(),
             lastError: null,
@@ -8187,6 +10701,7 @@ window.tmDocumentEditorEngine = (function () {
         rootElement.setAttribute('data-focus-owner', 'body');
         rootElement.setAttribute('aria-keyshortcuts', 'Control+B Control+I Control+U Control+Z Control+Y Control+S Shift+F10');
         rootElement.classList.add('tm-document-editor-engine-host');
+        installGlobalToolbarButtonBridge();
         installAccessibilityAndKeyboardHandlers(inst);
         render(inst);
         _notifyReady(inst);
@@ -8249,16 +10764,24 @@ window.tmDocumentEditorEngine = (function () {
         return { ok: true, instanceId: instanceId, disposed: true, cleanup: cleanup };
     }
 
-    function loadDocument(instanceId, snapshot) {
+    function loadDocument(instanceId, snapshot, forceResetUndo) {
         var lookup = _get(instanceId, 'loadDocument');
         if (lookup.error) return lookup.error;
         if (lookup.inst.activeTransaction) {
             return { ok: false, instanceId: instanceId, error: { code: 'active-transaction-conflict', updateType: 'loadDocument' } };
         }
         var document = snapshot && (snapshot.Document || snapshot.document) ? (snapshot.Document || snapshot.document) : snapshot;
-        lookup.inst.model = importFromCSharpJson(document || {});
+        var nextModel = importFromCSharpJson(document || {});
+        var currentFingerprint = lookup.inst.model ? createDocumentFingerprint(lookup.inst.model) : '';
+        var nextFingerprint = createDocumentFingerprint(nextModel);
+        var shouldResetUndo = forceResetUndo === true || currentFingerprint !== nextFingerprint;
+        if (shouldResetUndo) {
+            clearRuntimeUndoStacks(lookup.inst);
+        }
+        lookup.inst.model = nextModel;
         refreshRuntimeMarkerStore(lookup.inst);
         lookup.inst.selection = firstModelSelection(lookup.inst.model);
+        rememberSelectionToken(lookup.inst, lookup.inst.selection, 'loadDocument');
         lookup.inst.layout.invalidatedScopeIds = ['document'];
         lookup.inst.modelEpoch = Number(snapshot && (snapshot.epoch || snapshot.Epoch) || 0) || 0;
         lookup.inst.savedEpoch = lookup.inst.modelEpoch;
@@ -8274,6 +10797,9 @@ window.tmDocumentEditorEngine = (function () {
         markSelectionChanged(lookup.inst, 'loadDocument');
         render(lookup.inst);
         dispatchDirtyState(lookup.inst);
+        if (shouldResetUndo) {
+            notifyUndoState(lookup.inst);
+        }
         return { ok: true, instanceId: instanceId, fullSnapshot: true, validation: validateModel(lookup.inst.model), dirtyState: _clone(lookup.inst.dirtyState) };
     }
 
@@ -8531,12 +11057,72 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function resolveCommandSelectionToken(inst, commandName, payload) {
+        var body = payload || {};
+        var tokenValue = readSelectionTokenValue(body)
+            || readSelectionTokenValue(body.selection || body.Selection || {})
+            || readSelectionTokenValue(body.payload || body.Payload || {});
+        if (!tokenValue && !readSelectionTokenData(body)) {
+            rememberSelectionToken(inst, inst.selection, 'command-current-selection');
+            return _sortObject({ ok: true, usedSelectionToken: false, selection: withStableSelectionToken(inst.id, inst.selection || firstModelSelection(inst.model), inst.model) });
+        }
+
+        var validation = validateStableSelectionToken(inst, tokenValue || body);
+        inst.lastCommandTokenDiagnostic = _sortObject({
+            command: commandName || '',
+            at: Date.now(),
+            usedSelectionToken: true,
+            ok: validation.ok === true,
+            code: validation.code || '',
+            reason: validation.reason || '',
+            selectionToken: tokenValue || readSelectionTokenValue(body) || '',
+            tokenData: validation.tokenData || null
+        });
+        if (!validation.ok) {
+            inst.lastError = validation.reason || validation.code || 'stale-selection-token';
+            recordDiagnosticError(inst, 'command-selection-token-failed', validation.reason || validation.code, {
+                command: commandName || '',
+                diagnostic: inst.lastCommandTokenDiagnostic
+            });
+            return _sortObject({
+                ok: false,
+                usedSelectionToken: true,
+                error: {
+                    code: validation.code || 'stale-selection-token',
+                    reason: validation.reason || 'invalid-selection-token',
+                    diagnostic: validation
+                }
+            });
+        }
+
+        body.Selection = validation.selection;
+        body.selection = validation.selection;
+        inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, validation.selection);
+        rememberSelectionToken(inst, inst.selection, 'command-token');
+        return _sortObject({
+            ok: true,
+            usedSelectionToken: true,
+            selection: validation.selection,
+            tokenData: validation.tokenData || null
+        });
+    }
+
     function applyCommand(instanceId, command, payload) {
         var lookup = _get(instanceId, 'applyCommand');
         if (lookup.error) return lookup.error;
         var operationStart = strictPerformanceNow();
         var commandName = _asText(command || '');
         var body = payload || {};
+        var selectionTokenResolution = resolveCommandSelectionToken(lookup.inst, commandName, body);
+        if (!selectionTokenResolution.ok) {
+            return _sortObject({
+                ok: false,
+                instanceId: instanceId,
+                command: commandName,
+                error: selectionTokenResolution.error,
+                debugSnapshot: getDebugSnapshot(instanceId)
+            });
+        }
         var normalizedCommandName = normalizeCommandId(commandName);
         if (commandName === 'undo') {
             recordTimeline(lookup.inst, 'input-event', { command: 'undo' });
@@ -8551,8 +11137,8 @@ window.tmDocumentEditorEngine = (function () {
             return redoResult;
         }
         var operation = body.operation || body.Operation || null;
-        if (!operation && (inlineCommandTypes().indexOf(normalizedCommandName) >= 0 || normalizedCommandName === 'clearFormatting')) {
-            return applyRuntimeFormattingCommand(lookup.inst, normalizedCommandName, body);
+        if (!operation && (inlineCommandTypes().indexOf(normalizedCommandName) >= 0 || paragraphCommandTypes().indexOf(normalizedCommandName) >= 0 || normalizedCommandName === 'clearFormatting')) {
+            return applyRuntimeFormattingCommand(lookup.inst, normalizedCommandName, body, commandName);
         }
         if (!operation) {
             var runtimeImageResult = applyRuntimeImageCommand(lookup.inst, commandName, body);
@@ -8574,6 +11160,8 @@ window.tmDocumentEditorEngine = (function () {
         recordTimeline(lookup.inst, 'normalized-operation', { operationType: operation.type || operation.Type || '', operation: operation.toJSON ? operation.toJSON() : _clone(operation) });
         var operationSelection = operation.selection || operation.Selection || null;
         var transaction = createTransaction(lookup.inst.model, {
+            instanceId: lookup.inst.id,
+            commandName: commandName || operation.type,
             type: body.transactionType || body.TransactionType || (operation.type === OPERATION_TYPES.InsertText ? TRANSACTION_TYPES.Typing : TRANSACTION_TYPES.Default),
             label: body.label || body.Label || operation.type,
             beforeSelection: body.beforeSelection || body.BeforeSelection || operationSelection || lookup.inst.selection
@@ -8590,17 +11178,26 @@ window.tmDocumentEditorEngine = (function () {
         var committed = transaction.commit();
         lookup.inst.activeTransaction = null;
         lookup.inst.selection = createSelectionPostFixer(lookup.inst.schema).fix(lookup.inst.model, transaction.afterSelection || lookup.inst.selection);
-        markSelectionChanged(lookup.inst, 'applyCommand');
+        markSelectionChanged(lookup.inst, transaction.type === TRANSACTION_TYPES.Typing ? 'typing' : 'applyCommand');
         transaction.afterSelection = _clone(lookup.inst.selection);
         transaction.afterModelSnapshot = _clone(lookup.inst.model);
         lookup.inst.transactions.push(transaction.toJSON());
-        pushUndoTransaction(lookup.inst, transaction);
-        lookup.inst.redoTransactions = [];
+        var affectsDocument = transactionAffectsDocument(transaction);
+        if (affectsDocument) {
+            pushUndoTransaction(lookup.inst, transaction);
+            lookup.inst.redoTransactions = [];
+            notifyUndoState(lookup.inst, { defer: transaction.type === TRANSACTION_TYPES.Typing });
+        }
         lookup.inst.layout.invalidatedScopeIds = transaction.invalidatedScopes.slice();
         lookup.inst.lastDiffer = committed.differ;
         lookup.inst.commands.push({ command: commandName || operation.type, payload: operation.toJSON(), at: Date.now(), transactionId: transaction.id });
-        markModelChanged(lookup.inst, commandName || operation.type);
-        refreshRuntimeMarkerStore(lookup.inst);
+        if (affectsDocument) {
+            markModelChanged(lookup.inst, commandName || operation.type);
+            refreshRuntimeMarkerStore(lookup.inst);
+        }
+        if (affectsDocument && operationTouchesRevisions(operation)) {
+            notifyRuntimeRevisionsChanged(lookup.inst);
+        }
         recordTimeline(lookup.inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: transaction.operations.length });
         lookup.inst.pendingDomSelectionRestore = _clone(lookup.inst.selection);
         var livePatched = applyLiveTypingDomPatch(lookup.inst, operation, committed);
@@ -8609,21 +11206,32 @@ window.tmDocumentEditorEngine = (function () {
         } else {
             render(lookup.inst);
         }
-        var boundaryPatch = commitBoundaryPatch(lookup.inst, transaction, transaction.operations, committed, transaction.type);
+        var boundaryPatch = affectsDocument ? commitBoundaryPatch(lookup.inst, transaction, transaction.operations, committed, transaction.type) : null;
         recordOperationPerformance(lookup.inst, transaction.operations, Math.max(0, strictPerformanceNow() - operationStart), transaction.invalidatedScopes, transaction.type);
         return Object.assign({ instanceId: instanceId, boundaryPatch: boundaryPatch, liveDomPatch: livePatched === true }, committed);
     }
 
-    function applyRuntimeFormattingCommand(inst, commandName, payload) {
-        var beforeSelection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+    function applyRuntimeFormattingCommand(inst, commandName, payload, displayCommandName) {
+        var operationStart = strictPerformanceNow();
+        var body = payload || {};
+        clearLiveTypingRevision(inst);
+        var beforeModelSnapshot = _clone(inst.model);
+        var explicitSelection = body.selection || body.Selection || null;
+        var beforeSelection = createSelectionSnapshot(explicitSelection || inst.selection || firstModelSelection(inst.model));
+        if (explicitSelection) {
+            inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, beforeSelection);
+            beforeSelection = createSelectionSnapshot(inst.selection);
+        }
         var dispatcher = createCommandDispatcher(inst.model, {
             selection: beforeSelection,
             pendingTypingMarks: inst.pendingTypingMarks || []
         });
-        var result = dispatcher.executeCommand(commandName, payload || {});
+        var result = dispatcher.executeCommand(commandName, body);
         var operations = dispatcher.getCommittedOperations();
-        inst.commands.push({ command: commandName, payload: _clone(payload || {}), at: Date.now(), result: _clone(result) });
-        recordTimeline(inst, 'input-event', { command: commandName, source: payload && (payload.source || payload.Source) || 'command' });
+        inst.pendingTypingMarks = dispatcher.getPendingTypingMarks ? dispatcher.getPendingTypingMarks() : (inst.pendingTypingMarks || []);
+        var recordedCommandName = displayCommandName || commandName;
+        inst.commands.push({ command: recordedCommandName, normalizedCommand: commandName, payload: _clone(body), at: Date.now(), result: _clone(result) });
+        recordTimeline(inst, 'input-event', { command: recordedCommandName, normalizedCommand: commandName, source: body.source || body.Source || 'command' });
         if (!result || result.ok === false) {
             inst.lastError = result && result.error && result.error.code || 'formatting-command-failed';
             recordWatchdogFailure(inst, 'formatting-command', inst.lastError, { command: commandName });
@@ -8634,23 +11242,74 @@ window.tmDocumentEditorEngine = (function () {
             inst.model,
             result.transaction && result.transaction.afterSelection || beforeSelection);
         markSelectionChanged(inst, 'applyFormattingCommand');
+        scheduleFormattingStatePublish(inst, 'formatting-command', { immediate: true });
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
         if (operations.length > 0) {
             markModelChanged(inst, commandName);
             refreshRuntimeMarkerStore(inst);
             var transaction = {
                 id: result.transaction && result.transaction.id || ('cmd-txn-' + Date.now() + '-' + Math.floor(Math.random() * 100000)),
                 type: TRANSACTION_TYPES.Default,
-                beforeSelection: beforeSelection,
-                afterSelection: _clone(inst.selection),
+                label: recordedCommandName,
+                commandName: recordedCommandName,
+                instanceId: inst.id,
+                beforeModelSnapshot: beforeModelSnapshot,
+                afterModelSnapshot: _clone(inst.model),
+                beforeDocFingerprint: createDocumentFingerprint(beforeModelSnapshot),
+                afterDocFingerprint: createDocumentFingerprint(inst.model),
+                beforeSelection: withStableSelectionToken(inst.id, beforeSelection, beforeModelSnapshot),
+                afterSelection: withStableSelectionToken(inst.id, inst.selection, inst.model),
                 invalidatedScopes: transactionAffectedBlockIds(null, operations),
-                operations: _clone(operations)
+                operations: _clone(operations),
+                committed: true,
+                rolledBack: false,
+                renderSuppressed: false,
+                toJSON: function () {
+                    return _sortObject({
+                        id: this.id,
+                        type: this.type,
+                        label: this.label,
+                        commandName: this.commandName,
+                        instanceId: this.instanceId,
+                        beforeDocFingerprint: this.beforeDocFingerprint,
+                        afterDocFingerprint: this.afterDocFingerprint,
+                        beforeSelection: this.beforeSelection,
+                        afterSelection: this.afterSelection,
+                        invalidatedScopes: this.invalidatedScopes,
+                        operationCount: this.operations.length,
+                        committed: this.committed,
+                        rolledBack: this.rolledBack,
+                        renderSuppressed: this.renderSuppressed
+                    });
+                }
             };
-            inst.transactions.push(_clone(transaction));
+            inst.commands[inst.commands.length - 1].transactionId = transaction.id;
+            inst.transactions.push(transaction.toJSON());
+            pushUndoTransaction(inst, transaction);
+            inst.redoTransactions = [];
+            notifyUndoState(inst);
             inst.layout.invalidatedScopeIds = transaction.invalidatedScopes.slice();
             inst.pendingDomSelectionRestore = _clone(inst.selection);
-            render(inst);
+            var livePatched = operations.length === 1 && applyLiveTypingDomPatch(inst, operations[0], { operations: operations });
+            if (livePatched) {
+                inst.pendingDomSelectionRestore = null;
+                if (operations.some(isFormattingVisualOperation)) {
+                    var formattingStats = ensureStrictPerformanceStats(inst);
+                    formattingStats.formattingCommandPartialRenderCount = Number(formattingStats.formattingCommandPartialRenderCount || 0) + 1;
+                }
+            } else {
+                render(inst);
+            }
+            if (operations.some(isFormattingVisualOperation)) {
+                recordLatencyHistogram(inst, 'ToolbarCommandVisibleStyle', Math.max(0, strictPerformanceNow() - operationStart), {
+                    commandName: recordedCommandName,
+                    liveDomPatch: livePatched === true,
+                    affectedScopes: transaction.invalidatedScopes.slice()
+                });
+            }
             var boundaryPatch = commitBoundaryPatch(inst, transaction, operations, { operations: operations }, commandName);
-            return Object.assign({ instanceId: inst.id, boundaryPatch: boundaryPatch, operationCount: operations.length }, result);
+            recordOperationPerformance(inst, operations, Math.max(0, strictPerformanceNow() - operationStart), transaction.invalidatedScopes, commandName);
+            return Object.assign({ instanceId: inst.id, boundaryPatch: boundaryPatch, operationCount: operations.length, liveDomPatch: livePatched === true }, result);
         }
 
         inst.pendingDomSelectionRestore = _clone(inst.selection);
@@ -8675,8 +11334,13 @@ window.tmDocumentEditorEngine = (function () {
             previous.transaction.afterSelection = previous.afterSelection;
             previous.transaction.invalidatedScopes = _unique(_asArray(previous.transaction.invalidatedScopes).concat(_asArray(transaction.invalidatedScopes)));
             previous.transaction.operationCount = 1;
-            previous.redoOperations = [createHistoryRestoreOperation(previous.afterModelSnapshot, previous.afterSelection, 'redo', previous.transaction.invalidatedScopes, previous.beforeModelSnapshot, previous.beforeSelection).toJSON()];
-            previous.inverseOperations = [createHistoryRestoreOperation(previous.beforeModelSnapshot, previous.beforeSelection, 'undo', previous.transaction.invalidatedScopes, previous.afterModelSnapshot, previous.afterSelection).toJSON()];
+            if (supportsOperationHistory(merged)) {
+                previous.redoOperations = createRedoHistoryOperations(previous.operations);
+                previous.inverseOperations = createUndoHistoryOperations(previous.operations);
+            } else {
+                previous.redoOperations = [createHistoryRestoreOperation(previous.afterModelSnapshot, previous.afterSelection, 'redo', previous.transaction.invalidatedScopes, previous.beforeModelSnapshot, previous.beforeSelection).toJSON()];
+                previous.inverseOperations = [createHistoryRestoreOperation(previous.beforeModelSnapshot, previous.beforeSelection, 'undo', previous.transaction.invalidatedScopes, previous.afterModelSnapshot, previous.afterSelection).toJSON()];
+            }
             previous.reversedOperations = previous.inverseOperations;
             return previous;
         }
@@ -8698,14 +11362,17 @@ window.tmDocumentEditorEngine = (function () {
         var operations = (undo ? (entry.inverseOperations || entry.reversedOperations) : (entry.redoOperations || entry.operations)).map(function (operation) {
             return attachOperationMethods(_clone(operation));
         });
+        var orderedOperations = undo ? operations.slice().reverse() : operations;
         var transaction = createTransaction(inst.model, {
+            instanceId: inst.id,
+            commandName: undo ? 'Undo' : 'Redo',
             type: undo ? TRANSACTION_TYPES.Undo : TRANSACTION_TYPES.Redo,
             label: undo ? 'Undo' : 'Redo',
             beforeSelection: inst.selection
         });
         inst.activeTransaction = transaction;
-        for (var i = operations.length - 1; i >= 0; i--) {
-            var result = transaction.apply(operations[i]);
+        for (var i = 0; i < orderedOperations.length; i++) {
+            var result = transaction.apply(orderedOperations[i]);
             if (!result.ok) {
                 inst.activeTransaction = null;
                 inst.lastOperationValidation = _clone(result.errors || []);
@@ -8717,8 +11384,10 @@ window.tmDocumentEditorEngine = (function () {
         var committed = transaction.commit();
         inst.activeTransaction = null;
         targetStack.push(entry);
+        notifyUndoState(inst);
         inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, undo ? (entry.beforeSelection || transaction.afterSelection) : (entry.afterSelection || transaction.afterSelection));
         markSelectionChanged(inst, undo ? 'undo' : 'redo');
+        scheduleFormattingStatePublish(inst, undo ? 'undo' : 'redo', { immediate: true });
         transaction.afterSelection = _clone(inst.selection);
         transaction.afterModelSnapshot = _clone(inst.model);
         inst.transactions.push(transaction.toJSON());
@@ -8726,13 +11395,40 @@ window.tmDocumentEditorEngine = (function () {
         inst.lastDiffer = committed.differ;
         inst.commands.push({ command: undo ? 'undo' : 'redo', payload: {}, at: Date.now(), transactionId: transaction.id });
         markModelChanged(inst, undo ? 'undo' : 'redo');
-        recordTimeline(inst, 'normalized-operation', { operationTypes: operations.map(function (operation) { return operation.type || operation.Type || ''; }) });
-        recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: operations.length });
-        render(inst);
+        notifyRuntimeRevisionsChanged(inst);
+        recordTimeline(inst, 'normalized-operation', { operationTypes: orderedOperations.map(function (operation) { return operation.type || operation.Type || ''; }) });
+        recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: orderedOperations.length });
+        inst.pendingDomSelectionRestore = _clone(inst.selection);
+        var livePatched = orderedOperations.length > 0
+            && orderedOperations.every(function (operation) {
+                var type = operation.type || operation.Type || '';
+                return [
+                    OPERATION_TYPES.InsertText,
+                    OPERATION_TYPES.DeleteRange,
+                    OPERATION_TYPES.SplitParagraph,
+                    OPERATION_TYPES.MergeParagraph,
+                    OPERATION_TYPES.ApplyMark,
+                    OPERATION_TYPES.RemoveMark,
+                    OPERATION_TYPES.SetParagraphAttribute
+                ].indexOf(type) >= 0;
+            });
+        if (livePatched) {
+            for (var patchIndex = 0; patchIndex < orderedOperations.length; patchIndex++) {
+                if (!applyLiveTypingDomPatch(inst, orderedOperations[patchIndex], { operations: orderedOperations })) {
+                    livePatched = false;
+                    break;
+                }
+            }
+        }
+        if (livePatched) {
+            inst.pendingDomSelectionRestore = null;
+        } else {
+            render(inst);
+        }
         return Object.assign({
             instanceId: inst.id,
             transaction: transaction.toJSON(),
-            appliedOperations: operations.map(function (operation) { return operation.toJSON ? operation.toJSON() : _clone(operation); }),
+            appliedOperations: orderedOperations.map(function (operation) { return operation.toJSON ? operation.toJSON() : _clone(operation); }),
             historyEntry: entry
         }, committed);
     }
@@ -8752,7 +11448,20 @@ window.tmDocumentEditorEngine = (function () {
     function getSelectionSnapshot(instanceId) {
         var lookup = _get(instanceId, 'getSelectionSnapshot');
         if (lookup.error) return lookup.error;
-        return _sortObject(Object.assign({ ok: true, instanceId: instanceId }, lookup.inst.selection || {}));
+        var domSelection = window.getSelection && window.getSelection();
+        if (selectionBelongsToEditor(lookup.inst, domSelection)) {
+            var domSnapshot = createSelectionPostFixer(lookup.inst.schema).fix(lookup.inst.model, readDomSelectionSnapshot(lookup.inst));
+            if (domSnapshot && domSnapshot.blockId) {
+                lookup.inst.selection = domSnapshot;
+            }
+        }
+        var selection = createSelectionSnapshot(lookup.inst.selection || {});
+        var toolbarSelection = readRecentToolbarSelection(lookup.inst);
+        if (toolbarSelection && selection.isCollapsed !== false) {
+            selection = toolbarSelection;
+        }
+        var snapshot = rememberSelectionToken(lookup.inst, selection, 'getSelectionSnapshot') || withStableSelectionToken(instanceId, selection, lookup.inst.model);
+        return _sortObject(Object.assign({ ok: true, instanceId: instanceId }, snapshot));
     }
 
     function getLayoutSnapshot(instanceId) {
@@ -8990,6 +11699,7 @@ window.tmDocumentEditorEngine = (function () {
         var mapperDump = createModelLayoutDomMapper(lookup.inst.root, lookup.inst.model, lookup.inst.layout).debugDump();
         var diagnostics = ensureDiagnostics(lookup.inst);
         var stats = ensureStrictPerformanceStats(lookup.inst);
+        var currentSelection = rememberSelectionToken(lookup.inst, lookup.inst.selection || firstModelSelection(lookup.inst.model), 'getDebugSnapshot');
         return _sortObject({
             ok: true,
             instanceId: instanceId,
@@ -9020,15 +11730,28 @@ window.tmDocumentEditorEngine = (function () {
             debugWarnings: _clone(diagnostics.debugWarnings),
             debugWarningVisible: diagnostics.debugWarnings.length > 0,
             dirtyState: lookup.inst.dirtyState,
+            trackChangesState: resolveTrackChangesState(lookup.inst.options || {}),
             modelEpoch: lookup.inst.modelEpoch,
             savedEpoch: lookup.inst.savedEpoch,
             boundaryPatchCount: lookup.inst.boundaryPatches.length,
             boundaryFailures: lookup.inst.boundaryFailures,
             lastCSharpUpdate: lookup.inst.lastCSharpUpdate,
             lastTransaction: lookup.inst.transactions[lookup.inst.transactions.length - 1] || null,
+            lastSelectionToken: lookup.inst.lastSelectionToken || null,
+            LastSelectionToken: lookup.inst.lastSelectionToken || null,
+            selectionToken: lookup.inst.lastSelectionToken || null,
+            SelectionToken: lookup.inst.lastSelectionToken || null,
+            lastSelectionTokenData: _clone(lookup.inst.lastSelectionTokenData || null),
+            LastSelectionTokenData: _clone(lookup.inst.lastSelectionTokenData || null),
+            lastSelectionTokenReason: lookup.inst.lastSelectionTokenReason || '',
+            commandSelectionTokenDiagnostic: _clone(lookup.inst.lastCommandTokenDiagnostic || null),
+            CommandSelectionTokenDiagnostic: _clone(lookup.inst.lastCommandTokenDiagnostic || null),
             lastOperationValidation: lookup.inst.lastOperationValidation,
             lastDiffer: lookup.inst.lastDiffer,
             selectionMapper: mapperDump,
+            currentSelection: currentSelection,
+            CurrentSelection: currentSelection,
+            selection: currentSelection,
             lastError: lookup.inst.lastError
         });
     }
@@ -9294,13 +12017,22 @@ window.tmDocumentEditorEngine = (function () {
         markSelectionChanged(lookup.inst, 'restoreSelection');
         lookup.inst.pendingDomSelectionRestore = _clone(lookup.inst.selection);
         render(lookup.inst);
-        return { ok: true, instanceId: instanceId, selection: _clone(lookup.inst.selection) };
+        return { ok: true, instanceId: instanceId, selection: withStableSelectionToken(instanceId, lookup.inst.selection, lookup.inst.model) };
     }
 
     function getFormattingState(instanceId) {
         var lookup = _get(instanceId, 'getFormattingState');
         if (lookup.error) return {};
-        return toBlazorFormattingState(collectFormattingState(lookup.inst.model, lookup.inst.selection, []));
+        var computed = computeFormattingState(lookup.inst.model, lookup.inst.selection, lookup.inst.pendingTypingMarks || [], lookup.inst);
+        var state = toBlazorFormattingState(computed);
+        var selection = rememberSelectionToken(lookup.inst, computed.selection || lookup.inst.selection || firstModelSelection(lookup.inst.model), 'getFormattingState');
+        state.CurrentSelection = selection;
+        state.currentSelection = selection;
+        state.Selection = selection;
+        state.selection = selection;
+        state.Version = Number(lookup.inst.formattingStateVersion || lookup.inst.lastFormattingStatePublishedVersion || 0) || 0;
+        state.version = state.Version;
+        return _sortObject(state);
     }
 
     function getSidePanelSyncState(instanceId) {
@@ -9314,16 +12046,56 @@ window.tmDocumentEditorEngine = (function () {
     function getUndoState(instanceId) {
         var lookup = _get(instanceId, 'getUndoState');
         if (lookup.error) return lookup.error;
+        return undoStateForInstance(lookup.inst);
+    }
+
+    function undoStateForInstance(inst) {
+        var nextUndo = inst.undoTransactions[inst.undoTransactions.length - 1] || null;
+        var nextRedo = inst.redoTransactions[inst.redoTransactions.length - 1] || null;
+        var lastTransaction = inst.transactions[inst.transactions.length - 1] || null;
         return _sortObject({
             ok: true,
-            instanceId: instanceId,
+            instanceId: inst.id,
             JsOwnedUndo: true,
-            CanUndo: lookup.inst.undoTransactions.length > 0,
-            CanRedo: lookup.inst.redoTransactions.length > 0,
-            UndoDepth: lookup.inst.undoTransactions.length,
-            RedoDepth: lookup.inst.redoTransactions.length,
-            Epoch: lookup.inst.modelEpoch || 0
+            CanUndo: inst.undoTransactions.length > 0,
+            CanRedo: inst.redoTransactions.length > 0,
+            UndoDepth: inst.undoTransactions.length,
+            RedoDepth: inst.redoTransactions.length,
+            NextUndoDescription: historyEntryDescription(nextUndo),
+            NextRedoDescription: historyEntryDescription(nextRedo),
+            PendingTransactionId: inst.activeTransaction ? inst.activeTransaction.id || null : null,
+            LastTransactionId: lastTransaction ? lastTransaction.id || null : null,
+            Epoch: inst.modelEpoch || 0
         });
+    }
+
+    function historyEntryDescription(entry) {
+        if (!entry) return null;
+        var transaction = entry.transaction || {};
+        return _asText(transaction.commandName || transaction.label || transaction.type || entry.id || '').trim() || null;
+    }
+
+    function notifyUndoState(inst, options) {
+        if (!inst) return;
+        if (options && options.defer === true) {
+            inst.pendingUndoStateNotify = true;
+            if (inst.pendingUndoStateTimer) clearTimeout(inst.pendingUndoStateTimer);
+            var delay = Math.max(0, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) || 500);
+            inst.pendingUndoStateTimer = setTimeout(function () {
+                inst.pendingUndoStateTimer = null;
+                if (!inst.pendingUndoStateNotify) return;
+                inst.pendingUndoStateNotify = false;
+                invokeBoundaryMethod(inst, 'HandleUndoStateChanged', undoStateForInstance(inst), 'undo-state-changed-failed');
+            }, delay);
+            if (inst.timers && inst.timers.indexOf(inst.pendingUndoStateTimer) < 0) inst.timers.push(inst.pendingUndoStateTimer);
+            return;
+        }
+        if (inst.pendingUndoStateTimer) {
+            clearTimeout(inst.pendingUndoStateTimer);
+            inst.pendingUndoStateTimer = null;
+            inst.pendingUndoStateNotify = false;
+        }
+        invokeBoundaryMethod(inst, 'HandleUndoStateChanged', undoStateForInstance(inst), 'undo-state-changed-failed');
     }
 
     function getDebugUndoStack(instanceId) {
@@ -9336,6 +12108,46 @@ window.tmDocumentEditorEngine = (function () {
             Redo: _clone(lookup.inst.redoTransactions),
             Pending: lookup.inst.activeTransaction ? lookup.inst.activeTransaction.toJSON() : null,
             LastApply: lookup.inst.transactions[lookup.inst.transactions.length - 1] || null
+        });
+    }
+
+    function getLastCommandTransaction(instanceId) {
+        var lookup = _get(instanceId, 'getLastCommandTransaction');
+        if (lookup.error) return lookup.error;
+        var command = null;
+        for (var i = lookup.inst.commands.length - 1; i >= 0; i--) {
+            if (lookup.inst.commands[i] && !lookup.inst.commands[i].unsupported) {
+                command = lookup.inst.commands[i];
+                break;
+            }
+        }
+
+        var transaction = null;
+        if (command && command.transactionId) {
+            transaction = lookup.inst.transactions.find(function (item) { return item && item.id === command.transactionId; }) || null;
+        }
+        transaction = transaction || lookup.inst.transactions[lookup.inst.transactions.length - 1] || null;
+
+        var undoEntry = null;
+        if (transaction && transaction.id) {
+            undoEntry = lookup.inst.undoTransactions.find(function (item) {
+                return item && item.transaction && item.transaction.id === transaction.id;
+            }) || null;
+        }
+
+        return _sortObject({
+            ok: true,
+            instanceId: instanceId,
+            command: command && command.command || '',
+            transactionId: transaction && transaction.id || command && command.transactionId || '',
+            transaction: _clone(transaction || null),
+            commandName: transaction && (transaction.commandName || transaction.CommandName) || command && command.command || '',
+            beforeSelection: _clone(transaction && transaction.beforeSelection || null),
+            afterSelection: _clone(transaction && transaction.afterSelection || null),
+            beforeDocFingerprint: transaction && (transaction.beforeDocFingerprint || transaction.BeforeDocFingerprint) || '',
+            afterDocFingerprint: transaction && (transaction.afterDocFingerprint || transaction.AfterDocFingerprint) || '',
+            operations: _clone(transaction && transaction.operations || []),
+            inverseOperations: _clone(undoEntry && undoEntry.inverseOperations || [])
         });
     }
 
@@ -9368,6 +12180,7 @@ window.tmDocumentEditorEngine = (function () {
         var lookup = _get(instanceId, 'getDebugMetrics');
         if (lookup.error) return null;
         var stats = ensureStrictPerformanceStats(lookup.inst);
+        var histograms = ensureLatencyHistogramState(stats);
         return _sortObject({
             KeyDownCount: stats.keyDownCount || 0,
             BeforeInputCount: stats.beforeInputCount || 0,
@@ -9380,12 +12193,19 @@ window.tmDocumentEditorEngine = (function () {
             ObjectOverlayPatchCount: stats.objectOverlayPatchCount || 0,
             SelectionNotifyCount: stats.selectionNotifyCount || 0,
             BlazorInteropCallCount: stats.blazorInteropCallCount || 0,
+            BlazorCallbackDuringTypingCount: stats.blazorCallbackDuringTypingCount || 0,
+            FormattingStateEventCount: stats.formattingStateEventCount || stats.formattingStateNotifyCount || 0,
+            FormattingStateNotifyCount: stats.formattingStateNotifyCount || 0,
             TypingFlushCount: stats.typingFlushCount || 0,
             MaxTypingBatchSize: stats.maxTypingBatchSize || 0,
+            MaxBoundaryPatchBatchSize: stats.maxBoundaryPatchBatchSize || 0,
             MedianKeyToDomMs: stats.medianKeyToDomMs || 0,
             P95KeyToDomMs: stats.p95KeyToDomMs || 0,
             LastKeyToDomMs: stats.lastKeyToDomMs || 0,
             MaxKeyToDomMs: stats.maxKeyToDomMs || 0,
+            AverageInputLatencyMs: stats.keyToDomSamples && stats.keyToDomSamples.length
+                ? stats.keyToDomSamples.reduce(function (sum, value) { return sum + Number(value || 0); }, 0) / stats.keyToDomSamples.length
+                : 0,
             LastRenderReason: stats.renderLastReason || '',
             LayoutPassCount: stats.layoutPassCount || 0,
             LastLayoutPassMs: stats.layoutPassLastMs || 0,
@@ -9411,7 +12231,24 @@ window.tmDocumentEditorEngine = (function () {
             SelectionMovementCount: stats.selectionMovementCount || 0,
             LastSelectionMovementMs: stats.selectionMovementLastMs || 0,
             MaxSelectionMovementMs: stats.selectionMovementMaxMs || 0,
-            MaxLiveDomBlockCount: stats.maxLiveDomBlockCount || 0
+            MaxLiveDomBlockCount: stats.maxLiveDomBlockCount || 0,
+            FormattingCommandPartialRenderCount: stats.formattingCommandPartialRenderCount || 0,
+            LastPartialRenderScopeIds: _clone(stats.lastPartialRenderScopeIds || []),
+            PartialRenderScopeSamples: _clone(stats.partialRenderScopeSamples || []),
+            ToolbarStateLayoutAuditCount: stats.toolbarStateLayoutAuditCount || 0,
+            ToolbarStateLayoutThrashCount: stats.toolbarStateLayoutThrashCount || 0,
+            LastToolbarStateLayoutAudit: _clone(stats.lastToolbarStateLayoutAudit || null),
+            LatencyBudgets: _clone(stats.latencyBudgets || createDefaultLatencyBudgets()),
+            KeydownVisibleTextSamples: _clone(histograms.KeydownVisibleText),
+            SpaceVisibleTextSamples: _clone(histograms.SpaceVisibleText),
+            EnterVisibleTextSamples: _clone(histograms.EnterVisibleText),
+            ToolbarCommandVisibleStyleSamples: _clone(histograms.ToolbarCommandVisibleStyle),
+            SelectionChangeToolbarStateSamples: _clone(histograms.SelectionChangeToolbarState),
+            KeydownVisibleTextHistogram: createLatencyHistogramSummary(histograms.KeydownVisibleText, latencyBudgetForName(stats, 'KeydownVisibleText')),
+            SpaceVisibleTextHistogram: createLatencyHistogramSummary(histograms.SpaceVisibleText, latencyBudgetForName(stats, 'SpaceVisibleText')),
+            EnterVisibleTextHistogram: createLatencyHistogramSummary(histograms.EnterVisibleText, latencyBudgetForName(stats, 'EnterVisibleText')),
+            ToolbarCommandVisibleStyleHistogram: createLatencyHistogramSummary(histograms.ToolbarCommandVisibleStyle, latencyBudgetForName(stats, 'ToolbarCommandVisibleStyle')),
+            SelectionChangeToolbarStateHistogram: createLatencyHistogramSummary(histograms.SelectionChangeToolbarState, latencyBudgetForName(stats, 'SelectionChangeToolbarState'))
         });
     }
 
@@ -9419,6 +12256,12 @@ window.tmDocumentEditorEngine = (function () {
         var lookup = _get(instanceId, 'clearDebugMetrics');
         if (lookup.error) return lookup.error;
         lookup.inst.performanceStats = createStrictPerformanceStats();
+        lookup.inst.pendingKeyToDomStarts = [];
+        lookup.inst.lastBeforeInputAt = 0;
+        lookup.inst.lastInputDomApplyAt = 0;
+        lookup.inst.suppressCollapsedSelectionChangeUntil = 0;
+        lookup.inst.pendingFormattingStateStartedAt = 0;
+        lookup.inst.lastSelectionStateChangeAt = 0;
         return { ok: true, instanceId: instanceId };
     }
 
@@ -9730,7 +12573,7 @@ window.tmDocumentEditorEngine = (function () {
         });
         inst.selection = createSelectionSnapshot(next);
         markSelectionChanged(inst, kind + '-marker');
-        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection), 'selection-changed-failed');
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
     }
 
     function selectCommentAnchor(inst, commentId, scroll, notify) {
@@ -9836,13 +12679,26 @@ window.tmDocumentEditorEngine = (function () {
         var lookup = _get(instanceId, 'setTrackChangesEnabled');
         if (lookup.error) return lookup.error;
         lookup.inst.options.trackChangesEnabled = enabled === true;
-        return { ok: true, instanceId: instanceId, enabled: enabled === true };
+        lookup.inst.options.TrackChangesEnabled = enabled === true;
+        clearLiveTypingRevision(lookup.inst);
+        lookup.inst.commands.push({ command: 'setTrackChanges', payload: { enabled: enabled === true }, at: Date.now(), nonEditing: true });
+        lookup.inst.lastCommandTokenDiagnostic = _sortObject({
+            command: 'setTrackChanges',
+            at: Date.now(),
+            usedSelectionToken: false,
+            ok: true,
+            reason: 'non-editing-command'
+        });
+        render(lookup.inst);
+        return { ok: true, instanceId: instanceId, enabled: enabled === true, state: resolveTrackChangesState(lookup.inst.options) };
     }
 
     function setReviewDisplayMode(instanceId, mode) {
         var lookup = _get(instanceId, 'setReviewDisplayMode');
         if (lookup.error) return lookup.error;
         lookup.inst.options.reviewDisplayMode = mode || '';
+        lookup.inst.options.ReviewDisplayMode = mode || '';
+        render(lookup.inst);
         return { ok: true, instanceId: instanceId, mode: mode || '' };
     }
 
@@ -9851,15 +12707,16 @@ window.tmDocumentEditorEngine = (function () {
         if (lookup.error) return lookup.error;
         var inst = lookup.inst;
         var reviewAction = String(action || '').toLowerCase().indexOf('reject') >= 0 ? 'RejectRevision' : 'AcceptRevision';
-        var engine = createRevisionEngine(inst.model, {});
-        var result = reviewAction === 'RejectRevision'
-            ? engine.rejectRevision(revisionId, inst.selection || null)
-            : engine.acceptRevision(revisionId, inst.selection || null);
-        buildIndexes(inst.model);
-        refreshRuntimeMarkerStore(inst);
-        markModelChanged(inst, 'review-revision');
-        render(inst);
-        invokeBoundaryMethod(inst, 'HandleRevisionsChanged', exportToCSharpJson(inst.model).Revisions, 'revisions-changed-failed');
+        var result = applyCommand(instanceId, reviewAction, {
+            revisionId: revisionId,
+            selection: inst.selection || null,
+            beforeSelection: inst.selection || null,
+            source: 'review-panel',
+            transactionType: TRANSACTION_TYPES.Default
+        });
+        if (result && result.ok !== false) {
+            invokeBoundaryMethod(inst, 'HandleRevisionsChanged', exportToCSharpJson(inst.model).Revisions, 'revisions-changed-failed');
+        }
         return Object.assign({ instanceId: instanceId }, result || {});
     }
 
@@ -10047,24 +12904,51 @@ window.tmDocumentEditorEngine = (function () {
     function domTextPointAtBlockOffset(block, offset) {
         if (!block) return null;
         var target = Math.max(0, Number(offset || 0));
-        var walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
-            acceptNode: function (node) {
-                return node.nodeValue !== null ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-            }
-        });
         var currentOffset = 0;
         var last = null;
-        while (walker.nextNode()) {
-            var node = walker.currentNode;
-            var length = node.nodeValue ? node.nodeValue.length : 0;
-            last = node;
-            if (target <= currentOffset + length) {
-                return { node: node, offset: Math.max(0, Math.min(length, target - currentOffset)) };
+
+        function visit(node) {
+            if (!node) return null;
+            if (node.nodeType === 3) {
+                var length = node.nodeValue ? node.nodeValue.length : 0;
+                last = node;
+                if (target <= currentOffset + length) {
+                    return { node: node, offset: Math.max(0, Math.min(length, target - currentOffset)) };
+                }
+                currentOffset += length;
+                return null;
             }
-            currentOffset += length;
+            if (isInlineBreakNode(node)) {
+                last = node;
+                if (target <= currentOffset + 1) {
+                    var parent = node.parentNode || block;
+                    var children = parent.childNodes || [];
+                    var index = Array.prototype.indexOf.call(children, node);
+                    return { node: parent, offset: Math.max(0, index + 1) };
+                }
+                currentOffset += 1;
+                return null;
+            }
+            if (isCaretPlaceholderNode(node)) {
+                last = node;
+                return null;
+            }
+            var children = node.childNodes || [];
+            for (var i = 0; i < children.length; i++) {
+                var found = visit(children[i]);
+                if (found) return found;
+            }
+            return null;
         }
+
+        var foundPoint = visit(block);
+        if (foundPoint) return foundPoint;
         if (last) {
-            return { node: last, offset: last.nodeValue ? last.nodeValue.length : 0 };
+            if (last.nodeType === 3) return { node: last, offset: last.nodeValue ? last.nodeValue.length : 0 };
+            var parent = last.parentNode || block;
+            var children = parent.childNodes || [];
+            var index = Array.prototype.indexOf.call(children, last);
+            return { node: parent, offset: Math.max(0, index + 1) };
         }
         return { node: block, offset: 0 };
     }
@@ -10157,7 +13041,108 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
-    function renderCommentSpanHtml(inst, commentId, text, status) {
+    function isSafeInlineCssColor(value) {
+        var text = _asText(value).trim();
+        if (!text) return false;
+        if (/^#[0-9a-f]{3,8}$/i.test(text)) return true;
+        if (/^(rgb|rgba|hsl|hsla)\([0-9.,%\s-]+\)$/i.test(text)) return true;
+        return /^[a-z][a-z0-9-]{0,31}$/i.test(text);
+    }
+
+    function isSafeInlineFontFamily(value) {
+        var text = _asText(value).trim();
+        return !!text && /^[\w\s"',.-]{1,160}$/.test(text);
+    }
+
+    function normalizeInlineFontSize(value) {
+        var text = _asText(value).trim();
+        if (!text) return '';
+        if (/^\d+(\.\d+)?$/.test(text)) return text + 'pt';
+        if (/^\d+(\.\d+)?(px|pt|rem|em|%)$/i.test(text)) return text;
+        return '';
+    }
+
+    function renderInlineTextHtml(text) {
+        var source = _asText(text);
+        if (source.indexOf('\n') < 0) return _escape(source);
+        var html = [];
+        var segmentStart = 0;
+        for (var index = 0; index < source.length; index++) {
+            if (source[index] !== '\n') continue;
+            if (index > segmentStart) html.push(_escape(source.slice(segmentStart, index)));
+            html.push('<br data-inline-break="true">');
+            if (index === source.length - 1) {
+                html.push('<br data-caret-placeholder="true" aria-hidden="true">');
+            }
+            segmentStart = index + 1;
+        }
+        if (segmentStart < source.length) html.push(_escape(source.slice(segmentStart)));
+        return html.join('');
+    }
+
+    function renderFormattedInlineHtml(run, chunk, innerHtml) {
+        var marks = _asArray(run && (run.marks || run.Marks));
+        var classes = ['tm-document-inline'];
+        var styles = [];
+        var textDecoration = [];
+        var href = '';
+        marks.forEach(function (mark) {
+            var type = markType(mark);
+            var value = markValue(mark);
+            if (type === 'bold') {
+                classes.push('tm-document-inline--bold');
+            } else if (type === 'italic') {
+                classes.push('tm-document-inline--italic');
+            } else if (type === 'underline') {
+                classes.push('tm-document-inline--underline');
+                textDecoration.push('underline');
+            } else if (type === 'strikethrough' || type === 'strike') {
+                classes.push('tm-document-inline--strikethrough');
+                textDecoration.push('line-through');
+            } else if (type === 'superscript') {
+                classes.push('tm-document-inline--superscript');
+                styles.push('vertical-align:super', 'font-size:0.8em');
+            } else if (type === 'subscript') {
+                classes.push('tm-document-inline--subscript');
+                styles.push('vertical-align:sub', 'font-size:0.8em');
+            } else if (type === 'fontfamily' && isSafeInlineFontFamily(value)) {
+                classes.push('tm-document-inline--font-family');
+                styles.push('font-family:' + value);
+            } else if (type === 'fontsize') {
+                var fontSize = normalizeInlineFontSize(value);
+                if (fontSize) {
+                    classes.push('tm-document-inline--font-size');
+                    styles.push('font-size:' + fontSize);
+                }
+            } else if ((type === 'textcolor' || type === 'fontcolor' || type === 'foregroundcolor') && isSafeInlineCssColor(value)) {
+                classes.push('tm-document-inline--text-color');
+                styles.push('color:' + value);
+            } else if ((type === 'highlight' || type === 'backgroundcolor') && isSafeInlineCssColor(value)) {
+                classes.push('tm-document-inline--highlight');
+                styles.push('background-color:' + value);
+            } else if (type === 'link') {
+                classes.push('tm-document-inline--link');
+                href = _asText(mark && (mark.href || mark.Href || mark.url || mark.Url || value || ''));
+            }
+        });
+        if (textDecoration.length) {
+            styles.push('text-decoration-line:' + _unique(textDecoration).join(' '));
+        }
+        var hasFormatting = classes.length > 1 || styles.length > 0 || href;
+        var contentHtml = innerHtml !== undefined ? innerHtml : renderInlineTextHtml(chunk);
+        if (!hasFormatting) return contentHtml;
+        var inlineId = _asText(run && (run.id || run.Id) || '');
+        var attrs = [
+            'class="' + classes.join(' ') + '"',
+            'data-inline-id="' + _escape(inlineId) + '"',
+            'data-node-id="' + _escape(inlineId) + '"'
+        ];
+        if (styles.length) attrs.push('style="' + _escape(styles.join(';')) + '"');
+        if (href) attrs.push('data-href="' + _escape(href) + '"');
+        return '<span ' + attrs.join(' ') + '>' + contentHtml + '</span>';
+    }
+
+    function renderCommentSpanHtml(inst, commentId, text, status, innerHtml) {
         var id = _asText(commentId);
         var active = id && inst && inst.activeCommentId === id;
         var classes = [
@@ -10168,7 +13153,7 @@ window.tmDocumentEditorEngine = (function () {
         ];
         if (status === 'resolved') classes.push('tm-document-inline--comment-anchor--resolved');
         if (active) classes.push('tm-document-inline--comment-anchor--selected', 'tm-wysiwyg-marker--comment-active');
-        return '<span class="' + classes.join(' ') + '" data-testid="document-comment-marker" data-comment-id="' + _escape(id) + '" data-marker-id="comment:' + _escape(id) + '" data-comment-status="' + _escape(status || 'open') + '" aria-current="' + (active ? 'true' : 'false') + '">' + _escape(text) + '</span>';
+        return '<span class="' + classes.join(' ') + '" data-testid="document-comment-marker" data-comment-id="' + _escape(id) + '" data-marker-id="comment:' + _escape(id) + '" data-comment-status="' + _escape(status || 'open') + '" aria-current="' + (active ? 'true' : 'false') + '">' + (innerHtml !== undefined ? innerHtml : _escape(text)) + '</span>';
     }
 
     function renderRevisionSpanHtml(inst, revisionId, text, marker, innerHtml) {
@@ -10246,10 +13231,10 @@ window.tmDocumentEditorEngine = (function () {
                 } else {
                     revisionMarker = revisionMarkers.find(function (candidate) { return candidate.targetId === revisionId; }) || null;
                 }
-                var chunkHtml = _escape(chunk);
+                var chunkHtml = renderFormattedInlineHtml(run, chunk);
                 if (commentId) {
                     var comment = commentById(inst && inst.model, commentId);
-                    chunkHtml = renderCommentSpanHtml(inst, commentId, chunk, commentMarker && commentMarker.status || readCommentStatus(comment));
+                    chunkHtml = renderCommentSpanHtml(inst, commentId, chunk, commentMarker && commentMarker.status || readCommentStatus(comment), chunkHtml);
                 }
                 if (revisionId) chunkHtml = renderRevisionSpanHtml(inst, revisionId, chunk, revisionMarker, chunkHtml);
                 html.push(chunkHtml);
@@ -10320,7 +13305,10 @@ window.tmDocumentEditorEngine = (function () {
         if (!block) return '';
         if (block.type === 'paragraph') {
             var content = renderParagraphRunsHtml(inst, block, pageNumber, totalPages);
-            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" role="paragraph">' + (content || '<br>') + '</p>';
+            var blockContent = block.content || {};
+            var blockStyle = block.style || {};
+            var alignment = normalizeParagraphAlignment(blockContent.alignment ?? blockContent.Alignment ?? blockStyle.alignment ?? blockStyle.Alignment ?? 'left');
+            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" data-alignment="' + _escape(alignment) + '" style="text-align:' + _escape(alignment) + '" role="paragraph">' + (content || '<br data-caret-placeholder="true">') + '</p>';
         }
         if (block.type === 'image') {
             var object = normalizeImageObject(block);
@@ -10370,6 +13358,7 @@ window.tmDocumentEditorEngine = (function () {
             var bodyLabel = formatA11yLabel(inst.options.BodyLabel || inst.options.bodyLabel || 'Document body, page {0}', 1);
             var imageAltMissing = inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.';
             var readOnly = inst.options.readOnly || inst.options.ReadOnly;
+            applyReviewDisplayModeClass(inst.root, inst.options.reviewDisplayMode || inst.options.ReviewDisplayMode || 'AllMarkup');
             var pagePlan = buildPagePlan(inst, blocks, previousSelection);
             var html = [
                 '<div class="tm-wysiwyg-document tm-wysiwyg-document--google-docs-engine" data-testid="document-wysiwyg-engine-document" role="document" aria-label="' + _escape(pageLabel) + '">',
@@ -10482,6 +13471,22 @@ window.tmDocumentEditorEngine = (function () {
             recordRenderMetric(inst, Math.max(0, strictPerformanceNow() - renderStart), 'recovery');
             if (inst.root) inst.root.setAttribute('data-debug-recovery', message);
         }
+    }
+
+    function applyReviewDisplayModeClass(root, mode) {
+        if (!root || !root.classList) return;
+        ['tm-wysiwyg-host--review-all-markup', 'tm-wysiwyg-host--review-simple-markup', 'tm-wysiwyg-host--review-no-markup', 'tm-wysiwyg-host--review-original'].forEach(function (className) {
+            root.classList.remove(className);
+        });
+        var normalized = String(mode || 'AllMarkup').replace(/[\s_.:-]+/g, '').toLowerCase();
+        var className = normalized === 'simplemarkup'
+            ? 'tm-wysiwyg-host--review-simple-markup'
+            : normalized === 'nomarkup'
+                ? 'tm-wysiwyg-host--review-no-markup'
+                : normalized === 'original'
+                    ? 'tm-wysiwyg-host--review-original'
+                    : 'tm-wysiwyg-host--review-all-markup';
+        root.classList.add(className);
     }
 
     function renderEngineTableHtml(block) {
@@ -11291,7 +14296,12 @@ window.tmDocumentEditorEngine = (function () {
                 right: Number(opts.scrollContainerRect.left || 0) + Number(opts.scrollContainerRect.width || 0),
                 bottom: Number(opts.scrollContainerRect.top || 0) + Number(opts.scrollContainerRect.height || 0)
             }
-            : { left: 0, top: 0, right: Number(opts.viewportWidth || 0) || 0, bottom: Number(opts.viewportHeight || 0) || 0 };
+            : {
+                left: Number(opts.viewportLeft || 0) || 0,
+                top: Number(opts.viewportTop || 0) || 0,
+                right: Number(opts.viewportWidth || 0) || 0,
+                bottom: Number(opts.viewportHeight || 0) || 0
+            };
         var placement = opts.placement === 'top' ? 'top' : 'bottom';
         var left = Number(rect.left || 0) + Number(rect.width || 0) / 2 - width / 2;
         var top = placement === 'top'
@@ -11879,21 +14889,26 @@ window.tmDocumentEditorEngine = (function () {
             var clone = _clone(comment);
             var anchor = clone.Anchor || clone.anchor || {};
             if ((anchor.BlockId || anchor.blockId) !== blockId) return clone;
-            var delta = Number(length || 0) * (isDelete ? -1 : 1);
+            var count = Math.max(0, Number(length || 0) || 0);
+            var delta = count * (isDelete ? -1 : 1);
             var start = Number(anchor.StartOffset ?? anchor.startOffset ?? 0) || 0;
             var end = Number(anchor.EndOffset ?? anchor.endOffset ?? start) || start;
             if (!isDelete) {
-                if (offset <= start) start += length;
-                if (offset <= end) end += length;
+                if (offset <= start) {
+                    start += count;
+                    end += count;
+                } else if (offset < end) {
+                    end += count;
+                }
             } else {
-                if (offset + length <= start) {
+                if (offset + count <= start) {
                     start += delta;
                     end += delta;
                 } else if (offset >= end) {
                     // no-op
                 } else {
-                    end = Math.max(start, end - length);
-                    if (offset <= start && offset + length >= end) {
+                    end = Math.max(start, end - count);
+                    if (offset <= start && offset + count >= end) {
                         start = Math.max(0, offset);
                         end = start;
                         anchor.IsOrphaned = true;
@@ -11993,6 +15008,93 @@ window.tmDocumentEditorEngine = (function () {
         };
     }
 
+    function createUndoStackContractHarness(documentSnapshot) {
+        var model = importFromCSharpJson(documentSnapshot || {
+            DocumentId: 'phase11-undo-contract',
+            Blocks: [{ Id: 'p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'r1', Text: '' }] } }]
+        });
+        var inst = {
+            id: 'phase11-undo-contract-' + (++_counter),
+            model: model,
+            schema: createDefaultSchemaRegistry(),
+            selection: firstModelSelection(model),
+            layout: { invalidatedScopeIds: [] },
+            options: {},
+            dotNetRef: null,
+            commands: [],
+            transactions: [],
+            undoTransactions: [],
+            redoTransactions: [],
+            activeTransaction: null,
+            boundaryPatches: [],
+            modelEpoch: 0,
+            savedEpoch: 0,
+            savedVersion: null,
+            dirtyState: createInitialDirtyState(),
+            timers: [],
+            pendingUndoStateTimer: null,
+            pendingUndoStateNotify: false,
+            performanceStats: createStrictPerformanceStats(),
+            diagnostics: createDiagnosticsState()
+        };
+
+        function commitOperation(operation, meta) {
+            var body = meta || {};
+            var attached = attachOperationMethods(operation);
+            var transaction = createTransaction(inst.model, {
+                instanceId: inst.id,
+                commandName: body.commandName || body.CommandName || attached.type,
+                type: body.transactionType || body.TransactionType || (attached.type === OPERATION_TYPES.InsertText ? TRANSACTION_TYPES.Typing : TRANSACTION_TYPES.Default),
+                label: body.label || body.Label || attached.type,
+                beforeSelection: body.beforeSelection || body.BeforeSelection || inst.selection
+            });
+            inst.activeTransaction = transaction;
+            var result = transaction.apply(attached);
+            inst.activeTransaction = null;
+            if (!result.ok) return result;
+            transaction.commit();
+            inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, transaction.afterSelection || inst.selection);
+            transaction.afterSelection = _clone(inst.selection);
+            transaction.afterModelSnapshot = _clone(inst.model);
+            inst.transactions.push(transaction.toJSON());
+            if (transactionAffectsDocument(transaction)) {
+                pushUndoTransaction(inst, transaction);
+                inst.redoTransactions = [];
+                inst.modelEpoch++;
+            }
+            return Object.assign({ ok: true, undoState: undoStateForInstance(inst), transaction: transaction.toJSON() }, result);
+        }
+
+        function reload(nextDocumentSnapshot) {
+            clearRuntimeUndoStacks(inst);
+            inst.model = importFromCSharpJson(nextDocumentSnapshot || {
+                DocumentId: 'phase11-undo-contract-reload',
+                Blocks: [{ Id: 'p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'r1', Text: '' }] } }]
+            });
+            inst.selection = firstModelSelection(inst.model);
+            inst.modelEpoch = 0;
+            inst.savedEpoch = 0;
+            inst.dirtyState = createInitialDirtyState();
+            return undoStateForInstance(inst);
+        }
+
+        function text(blockId) {
+            var block = _findBlock(inst.model, blockId || 'p1');
+            return _blockText(block);
+        }
+
+        return {
+            inst: inst,
+            commitOperation: commitOperation,
+            saveAck: function (epoch) { return applySaveAckToInstance(inst, { epoch: epoch ?? inst.modelEpoch }); },
+            reload: reload,
+            state: function () { return undoStateForInstance(inst); },
+            text: text
+        };
+    }
+
+    installGlobalToolbarButtonBridge();
+
     return {
         create: create,
         dispose: dispose,
@@ -12026,6 +15128,7 @@ window.tmDocumentEditorEngine = (function () {
         getSidePanelSyncState: getSidePanelSyncState,
         getUndoState: getUndoState,
         getDebugUndoStack: getDebugUndoStack,
+        getLastCommandTransaction: getLastCommandTransaction,
         getPageMetrics: getPageMetrics,
         getDebugMetrics: getDebugMetrics,
         clearDebugMetrics: clearDebugMetrics,
@@ -12076,6 +15179,8 @@ window.tmDocumentEditorEngine = (function () {
             validateOperation: validateOperation,
             applyOperation: applyOperation,
             createTransaction: createTransaction,
+            createDocumentFingerprint: createDocumentFingerprint,
+            createSelectionDocumentFingerprint: createSelectionDocumentFingerprint,
             createHistoryController: createHistoryController,
             createDiffer: createDiffer,
             mergeAdjacentTextRuns: mergeAdjacentTextRuns,
@@ -12095,6 +15200,9 @@ window.tmDocumentEditorEngine = (function () {
             createLogicalPosition: createLogicalPosition,
             createLogicalRange: createLogicalRange,
             createSelectionSnapshot: createSelectionSnapshot,
+            createStableSelectionToken: serializeStableSelectionToken,
+            createStableSelectionTokenData: createStableSelectionTokenData,
+            withStableSelectionToken: withStableSelectionToken,
             normalizePosition: normalizeLogicalPosition,
             normalizeRange: normalizeLogicalRange,
             normalizeSelection: normalizeSelectionSnapshot,
@@ -12137,12 +15245,16 @@ window.tmDocumentEditorEngine = (function () {
         revisions: {
             createRevisionEngine: createRevisionEngine,
             normalizeRevision: normalizeRevision,
-            normalizeRevisionRange: normalizeRevisionRange
+            normalizeRevisionRange: normalizeRevisionRange,
+            normalizeRevisionGroups: normalizeRevisionGroups,
+            resolveTrackChangesState: resolveTrackChangesState
         },
         commands: {
             createCommandDispatcher: createCommandDispatcher,
             normalizeCommandId: normalizeCommandId,
-            collectFormattingState: collectFormattingState
+            collectFormattingState: collectFormattingState,
+            computeFormattingState: computeFormattingState,
+            toBlazorFormattingState: toBlazorFormattingState
         },
         uxPolish: {
             createVisualStabilityTracker: createVisualStabilityTracker,
@@ -12196,11 +15308,27 @@ window.tmDocumentEditorEngine = (function () {
             createTransaction: createTransaction,
             createHistoryController: createHistoryController,
             createHistoryRestoreOperation: createHistoryRestoreOperation,
+            createUndoStackContractHarness: createUndoStackContractHarness,
+            operationsAffectDocument: operationsAffectDocument,
+            clearRuntimeUndoStacks: clearRuntimeUndoStacks,
+            undoStateForInstance: undoStateForInstance,
             createBoundaryPatch: createBoundaryPatch,
             createInitialDirtyState: createInitialDirtyState,
             operationAffectedBlockIds: operationAffectedBlockIds,
             createDiffer: createDiffer,
             createSelectionEngine: createSelectionEngine,
+            createDocumentFingerprint: createDocumentFingerprint,
+            createSelectionDocumentFingerprint: createSelectionDocumentFingerprint,
+            createStableSelectionToken: serializeStableSelectionToken,
+            createStableSelectionTokenData: createStableSelectionTokenData,
+            withStableSelectionToken: withStableSelectionToken,
+            validateStableSelectionToken: function (instanceId, tokenOrPayload, model) {
+                return validateStableSelectionToken({
+                    id: instanceId || '',
+                    model: model || importFromCSharpJson({ DocumentId: 'test', Blocks: [] }),
+                    schema: createDefaultSchemaRegistry()
+                }, tokenOrPayload);
+            },
             normalizeSelectionSnapshot: normalizeSelectionSnapshot,
             createTextMeasurementService: createTextMeasurementService,
             tokenizeText: tokenizeText,
@@ -12220,9 +15348,23 @@ window.tmDocumentEditorEngine = (function () {
             createRevisionEngine: createRevisionEngine,
             normalizeRevision: normalizeRevision,
             normalizeRevisionRange: normalizeRevisionRange,
+            normalizeRevisionGroups: normalizeRevisionGroups,
+            resolveTrackChangesState: resolveTrackChangesState,
             createCommandDispatcher: createCommandDispatcher,
             normalizeCommandId: normalizeCommandId,
             collectFormattingState: collectFormattingState,
+            computeFormattingState: computeFormattingState,
+            toBlazorFormattingState: toBlazorFormattingState,
+            normalizeMark: normalizeMark,
+            normalizeMarks: normalizeMarks,
+            normalizeTextRun: normalizeTextRunForMerge,
+            mergeAdjacentTextRuns: mergeAdjacentTextRuns,
+            splitRunsForRange: function (block, start, end, mark, remove) {
+                var clone = _clone(block || {});
+                if (!clone.content) clone.content = { type: 'paragraph', runs: [] };
+                _splitRunsForRange(clone, start, end, mark, remove);
+                return _clone(clone.content.runs || []);
+            },
             createTableController: createTableController,
             normalizeImageObject: normalizeImageObject,
             createTextExclusion: createTextExclusion,
@@ -12276,6 +15418,7 @@ window.tmDocumentEditorEngine = (function () {
             buildRuntimeRevisionMarkers: buildRuntimeRevisionMarkers,
             detectAutocompleteTriggerText: detectAutocompleteTriggerText,
             computeFloatingPosition: computeFloatingPosition,
+            shouldShowMiniToolbarForSelection: shouldShowMiniToolbarForSelectionSnapshot,
             buildPageMetrics: buildPageMetricsForTest,
             formatNonPrintingText: formatNonPrintingText,
             findActiveHeadingBlockIdFromRects: findActiveHeadingBlockIdFromRects,
@@ -12284,6 +15427,10 @@ window.tmDocumentEditorEngine = (function () {
             computeObjectChromeLayout: computeObjectChromeLayout,
             createObjectChromeModel: createObjectChromeModel,
             createStrictPerformanceStats: createStrictPerformanceStats,
+            createLatencyHistogramSummary: createLatencyHistogramSummary,
+            recordLatencyHistogram: recordLatencyHistogram,
+            recordInputDomApply: recordInputDomApply,
+            invokeBoundaryMethod: invokeBoundaryMethod,
             recordOperationPerformance: recordOperationPerformance,
             previewImmediateTextEdit: previewImmediateTextEdit,
             createSidePanelSyncState: createSidePanelSyncState,
@@ -12298,6 +15445,7 @@ window.tmDocumentEditorEngine = (function () {
             getFocusTargetDetails: getFocusTargetDetails,
             setActiveFocusRegion: setActiveFocusRegion,
             handleEditorKeyDown: handleEditorKeyDown,
+            chooseKeyboardSelection: chooseKeyboardSelection,
             closeFloatingUiForKeyboard: closeFloatingUiForKeyboard,
             scheduleAccessibilityAnnouncement: scheduleAccessibilityAnnouncement
         }
@@ -13079,10 +16227,12 @@ window.tmDocumentEditorRuntime = (function () {
                 return _call('getDebugUndoStack', [instanceId], function () { return null; });
             },
             undo: function (instanceId) {
-                return _call('undo', [instanceId], function () { return false; });
+                var result = executeCommand(instanceId, 'undo', {});
+                return !!(result && result.ok !== false);
             },
             redo: function (instanceId) {
-                return _call('redo', [instanceId], function () { return false; });
+                var result = executeCommand(instanceId, 'redo', {});
+                return !!(result && result.ok !== false);
             }
         },
         clipboard: {
@@ -13333,6 +16483,9 @@ window.tmDocumentEditorRuntime = (function () {
             toCanonicalDocument: toCanonicalDocument,
             roundTripCanonicalDocument: roundTripCanonicalDocument,
             diffCanonicalDocuments: diffCanonicalDocuments,
+            computeFormattingState: function (model, selection, pendingTypingMarks) {
+                return _googleDocsEngine().__testHooks.computeFormattingState(model, selection, pendingTypingMarks || []);
+            },
             getRuntimeDocument: function (instanceId) {
                 return runtimeDocuments.has(instanceId) ? _cloneJson(runtimeDocuments.get(instanceId)) : null;
             },
@@ -13354,6 +16507,104 @@ window.tmDocumentEditorRuntime = (function () {
             }
         }
     };
+})();
+
+window.tmDocumentWysiwygCommand = (function () {
+    'use strict';
+
+    function cloneJson(value) {
+        if (value === undefined || value === null) return value;
+        try { return JSON.parse(JSON.stringify(value)); } catch { return value; }
+    }
+
+    function readCommandName(command) {
+        if (typeof command === 'string') return command;
+        var body = command || {};
+        return String(body.command || body.Command || body.commandName || body.CommandName || body.name || body.Name || body.id || body.Id || '');
+    }
+
+    function readPayload(command) {
+        if (!command || typeof command === 'string') return {};
+        var body = command || {};
+        return cloneJson(body.payload || body.Payload || {});
+    }
+
+    function readSelectionToken(command) {
+        if (!command || typeof command === 'string') return null;
+        var body = command || {};
+        var payload = body.payload || body.Payload || {};
+        var selection = body.selection || body.Selection || payload.selection || payload.Selection || {};
+        return body.selectionToken
+            || body.SelectionToken
+            || body.stableSelectionToken
+            || body.StableSelectionToken
+            || payload.selectionToken
+            || payload.SelectionToken
+            || payload.stableSelectionToken
+            || payload.StableSelectionToken
+            || selection.selectionToken
+            || selection.SelectionToken
+            || selection.stableSelectionToken
+            || selection.StableSelectionToken
+            || null;
+    }
+
+    function normalizeResult(instanceId, commandName, result) {
+        if (result && typeof result === 'object') {
+            if (result.ok === false) return result;
+            return Object.assign({ ok: true, instanceId: instanceId, command: commandName }, result);
+        }
+
+        return { ok: result !== false && result !== undefined, instanceId: instanceId, command: commandName, result: result };
+    }
+
+    function execute(instanceId, command) {
+        var commandName = readCommandName(command);
+        if (!instanceId || !commandName) {
+            return {
+                ok: false,
+                instanceId: instanceId || '',
+                command: commandName || '',
+                error: { code: 'invalid-command-request', reason: !instanceId ? 'missing-instance-id' : 'missing-command-name' }
+            };
+        }
+
+        var payload = readPayload(command);
+        var token = readSelectionToken(command);
+        if (token) {
+            payload.SelectionToken = token;
+            payload.selectionToken = token;
+        }
+        if (command && typeof command === 'object' && (command.selection || command.Selection) && !payload.Selection && !payload.selection) {
+            payload.Selection = cloneJson(command.Selection || command.selection);
+        }
+
+        var runtime = window.tmDocumentEditorRuntime;
+        if (!runtime || typeof runtime.executeCommand !== 'function') {
+            return {
+                ok: false,
+                instanceId: instanceId,
+                command: commandName,
+                error: { code: 'runtime-unavailable', reason: 'tmDocumentEditorRuntime.executeCommand is unavailable' }
+            };
+        }
+
+        try {
+            return normalizeResult(instanceId, commandName, runtime.executeCommand(instanceId, commandName, payload));
+        } catch (error) {
+            return {
+                ok: false,
+                instanceId: instanceId,
+                command: commandName,
+                error: {
+                    code: 'command-exception',
+                    reason: String(error && error.message || error || 'command-exception')
+                }
+            };
+        }
+    }
+
+    return { execute: execute };
 })();
 
 // Phase 12: Watchdog — wraps tmDocumentEditorRuntime with error recovery
@@ -14075,12 +17326,17 @@ window.tmDocumentEditorRuntime = (function () {
                 ObjectOverlayPatchCount: metrics.objectOverlayPatchCount || metrics.ObjectOverlayPatchCount || 0,
                 SelectionNotifyCount: metrics.selectionNotifyCount || metrics.SelectionNotifyCount || 0,
                 BlazorInteropCallCount: metrics.blazorInteropCallCount || metrics.BlazorInteropCallCount || 0,
+                BlazorCallbackDuringTypingCount: metrics.blazorCallbackDuringTypingCount || metrics.BlazorCallbackDuringTypingCount || 0,
+                FormattingStateEventCount: metrics.formattingStateEventCount || metrics.FormattingStateEventCount || metrics.formattingStateNotifyCount || metrics.FormattingStateNotifyCount || 0,
                 TypingFlushCount: metrics.typingFlushCount || metrics.TypingFlushCount || 0,
                 MaxTypingBatchSize: metrics.maxTypingBatchSize || metrics.MaxTypingBatchSize || 0,
                 MaxBoundaryPatchBatchSize: metrics.maxBoundaryPatchBatchSize || metrics.MaxBoundaryPatchBatchSize || 0,
                 MedianKeyToDomMs: metrics.medianKeyToDomMs || metrics.MedianKeyToDomMs || 0,
                 P95KeyToDomMs: metrics.p95KeyToDomMs || metrics.P95KeyToDomMs || 0,
                 MaxInputLatencyMs: metrics.maxKeyToDomMs || metrics.MaxInputLatencyMs || 0,
+                AverageInputLatencyMs: metrics.keyToDomSamples && metrics.keyToDomSamples.length
+                    ? metrics.keyToDomSamples.reduce(function (sum, value) { return sum + Number(value || 0); }, 0) / metrics.keyToDomSamples.length
+                    : (metrics.AverageInputLatencyMs || 0),
                 IncrementalOperationCount: metrics.incrementalOperationCount || metrics.IncrementalOperationCount || snapshot.transactionCount || 0,
                 InputOperationCount: metrics.inputOperationCount || metrics.InputOperationCount || 0,
                 MaxInputOperationMs: metrics.inputOperationMaxMs || metrics.MaxInputOperationMs || 0,
@@ -14091,7 +17347,9 @@ window.tmDocumentEditorRuntime = (function () {
                 LastLayoutReason: metrics.layoutLastReason || metrics.LayoutLastReason || '',
                 TotalPages: snapshot.layout && Array.isArray(snapshot.layout.pages) ? snapshot.layout.pages.length : 0,
                 RenderedPages: snapshot.layout && Array.isArray(snapshot.layout.pages) ? snapshot.layout.pages.length : 0,
-                VirtualizedPages: 0
+                VirtualizedPages: 0,
+                ToolbarStateLayoutThrashCount: metrics.toolbarStateLayoutThrashCount || metrics.ToolbarStateLayoutThrashCount || 0,
+                FormattingCommandPartialRenderCount: metrics.formattingCommandPartialRenderCount || metrics.FormattingCommandPartialRenderCount || 0
             };
         },
         getUndoStack: function (instanceId) {

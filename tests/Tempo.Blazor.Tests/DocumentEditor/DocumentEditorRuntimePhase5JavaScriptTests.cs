@@ -174,8 +174,8 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
                 'applyCommand',
                 'getUndoState',
                 'insertImageNode',
-                'undo',
-                'redo',
+                'applyCommand',
+                'applyCommand',
                 'getUndoState'
             ]);
             assert.strictEqual(calls[1][2], 'toggleBold');
@@ -183,6 +183,8 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
             assert.strictEqual(calls[3][3].rows, 3);
             assert.strictEqual(calls[5][2], 'insertImageUrl');
             assert.strictEqual(calls[7][2], 'img-1');
+            assert.strictEqual(calls[8][2], 'undo');
+            assert.strictEqual(calls[9][2], 'redo');
             assert.strictEqual(undo.CanUndo, true);
 
             console.log('OK');
@@ -245,6 +247,62 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
 
             const normalized = runtime.__internal.modules.serialization.normalizeSnapshot(snapshot);
             assert.strictEqual(normalized.Document.DocumentId, 'phase5-doc');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase5_SelectionTokenBoundary_ValidatesAgainstCurrentDocumentFingerprint()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = RuntimeSandboxSetup +
+            """
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const model = hooks.importFromCSharpJson({
+                DocumentId: 'phase5-token-doc',
+                Blocks: [
+                    {
+                        Id: 'p1',
+                        Type: 'Paragraph',
+                        Content: {
+                            Inlines: [
+                                { Id: 'r1', Text: 'Hello ' },
+                                { Id: 'r2', Text: 'world' }
+                            ]
+                        }
+                    }
+                ]
+            });
+
+            const selection = hooks.withStableSelectionToken('phase5-token-instance', {
+                blockId: 'p1',
+                anchor: { blockId: 'p1', inlineId: 'r1', offset: 2 },
+                focus: { blockId: 'p1', inlineId: 'r2', offset: 9 },
+                isCollapsed: false,
+                direction: 'forward'
+            }, model);
+            const token = JSON.parse(selection.SelectionToken);
+            const valid = hooks.validateStableSelectionToken('phase5-token-instance', selection.SelectionToken, model);
+
+            assert.strictEqual(token.anchor.blockId, 'p1');
+            assert.strictEqual(token.anchor.inlineId, 'r1');
+            assert.strictEqual(token.focus.inlineId, 'r1');
+            assert.strictEqual(token.isCollapsed, false);
+            assert.strictEqual(typeof token.selectionDocumentFingerprint, 'string');
+            assert.strictEqual(valid.ok, true);
+            assert.strictEqual(valid.selection.SelectionToken, selection.SelectionToken);
+
+            model.body.blocks[0].content.runs[0].text = 'Changed ';
+            const stale = hooks.validateStableSelectionToken('phase5-token-instance', selection.SelectionToken, model);
+            assert.strictEqual(stale.ok, false);
+            assert.strictEqual(stale.code, 'stale-selection-token');
+
             console.log('OK');
             """;
 

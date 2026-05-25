@@ -84,6 +84,76 @@ public sealed class DocumentEditorRuntimePhase6JavaScriptTests
         result.StandardOutput.Trim().Should().Be("OK");
     }
 
+    [Fact]
+    public async Task Phase6_InputSession_UsesModelOperationsAndCoalescesTrackedTyping()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON,
+                Date,
+                Math
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            sandbox.window.performance = { now: () => Date.now() };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const model = hooks.importFromCSharpJson({
+                DocumentId: 'phase6-input',
+                Blocks: [
+                    { Id: 'p1', Type: 'Paragraph', Content: { Inlines: [{ Id: 'r1', Text: '' }] } }
+                ]
+            });
+            let preventDefaultCount = 0;
+            const pipeline = hooks.createInputPipeline({
+                model,
+                selection: { blockId: 'p1', offset: 0, isCollapsed: true },
+                trackChanges: true,
+                userId: 'author-1'
+            });
+
+            const j = pipeline.handleBeforeInput({ inputType: 'insertText', data: 'j', preventDefault() { preventDefaultCount++; } });
+            const a = pipeline.handleBeforeInput({ inputType: 'insertText', data: 'a', preventDefault() { preventDefaultCount++; } });
+            const k = pipeline.handleBeforeInput({ inputType: 'insertText', data: 'k', preventDefault() { preventDefaultCount++; } });
+            const debug = pipeline.debug();
+            const exported = hooks.exportToCSharpJson(model);
+
+            assert.strictEqual(j.ok, true);
+            assert.strictEqual(a.ok, true);
+            assert.strictEqual(k.ok, true);
+            assert.strictEqual(preventDefaultCount, 3);
+            assert.strictEqual(exported.Blocks[0].Content.Inlines[0].Text, 'jak');
+            assert.strictEqual(model.revisions.length, 1, 'one input session should become one tracked insertion revision');
+            assert.strictEqual(model.revisions[0].payload.text, 'jak');
+            assert.strictEqual(debug.browserMutationUsed, false);
+            assert.strictEqual(debug.mutationObserverMode, 'diagnostic-only');
+            assert.ok(debug.boundaryPatchCount >= 1);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
     private static string GetWysiwygScriptPath()
     {
         var root = FindRepositoryRoot();

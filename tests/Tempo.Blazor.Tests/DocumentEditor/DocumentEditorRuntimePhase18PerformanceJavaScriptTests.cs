@@ -3,30 +3,10 @@ using FluentAssertions;
 
 namespace Tempo.Blazor.Tests.DocumentEditor;
 
-public sealed class DocumentEditorRuntimePhase20PerformanceJavaScriptTests
+public sealed class DocumentEditorRuntimePhase18PerformanceJavaScriptTests
 {
     [Fact]
-    public async Task Phase20_WysiwygScript_PassesNodeSyntaxCheck()
-    {
-        var scriptPath = GetWysiwygScriptPath();
-        if (!IsNodeAvailable()) return;
-
-        using var process = Process.Start(new ProcessStartInfo
-        {
-            FileName = "node",
-            ArgumentList = { "--check", scriptPath },
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        })!;
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        var stderr = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-
-        process.ExitCode.Should().Be(0, stdout + stderr);
-    }
-
-    [Fact]
-    public async Task Phase20_DebugMetrics_ReportNewEngineRenderAndLayoutCounters()
+    public async Task Phase18_DebugMetricsExposeRenderBudgetCountersAndLatencyHistograms()
     {
         var scriptPath = GetWysiwygScriptPath();
         if (!IsNodeAvailable()) return;
@@ -72,98 +52,29 @@ public sealed class DocumentEditorRuntimePhase20PerformanceJavaScriptTests
 
             const engine = sandbox.window.tmDocumentEditorEngine;
             const root = createRoot();
-            engine.create(root, { InstanceId: 'phase20' }, null);
-            engine.loadDocument('phase20', {
+            engine.create(root, { InstanceId: 'phase18' }, null);
+            engine.loadDocument('phase18', {
                 Document: {
-                    DocumentId: 'phase20-doc',
+                    DocumentId: 'phase18-doc',
                     Blocks: [
                         { Id: 'b1', Type: 'Paragraph', Content: { Type: 'Paragraph', Inlines: [{ Id: 'i1', Text: 'Hello' }] } }
                     ]
                 }
             });
 
-            const metrics = engine.getDebugMetrics('phase20');
-            assert.strictEqual(metrics.TotalPages, 1);
-            assert.strictEqual(metrics.RenderedPages, 1);
-            assert.strictEqual(metrics.VirtualizedPages, 0);
-            assert.ok(metrics.FullRenderCount >= 2);
-            assert.ok(metrics.LayoutPassCount >= 2);
-            assert.strictEqual(typeof metrics.LastLayoutPassMs, 'number');
-            assert.strictEqual(typeof metrics.MaxLayoutPassMs, 'number');
-
-            engine.clearDebugMetrics('phase20');
-            const cleared = engine.getDebugMetrics('phase20');
-            assert.strictEqual(cleared.FullRenderCount, 0);
-            assert.strictEqual(cleared.LayoutPassCount, 0);
-
-            console.log('OK');
-            """;
-
-        var result = await RunNodeAsync(scriptPath, nodeScript);
-        result.ExitCode.Should().Be(0, result.StandardError);
-        result.StandardOutput.Trim().Should().Be("OK");
-    }
-
-    [Fact]
-    public async Task Phase20_PageMetrics_ReportRenderedPagesFromNewEngineLayout()
-    {
-        var scriptPath = GetWysiwygScriptPath();
-        if (!IsNodeAvailable()) return;
-
-        var nodeScript =
-            """
-            const fs = require('fs');
-            const vm = require('vm');
-            const assert = require('assert');
-
-            const code = fs.readFileSync(process.argv[2], 'utf8');
-            const sandbox = {
-                window: {},
-                console,
-                setTimeout,
-                clearTimeout,
-                URL,
-                JSON
-            };
-            sandbox.window.setTimeout = setTimeout;
-            sandbox.window.clearTimeout = clearTimeout;
-            sandbox.window.console = console;
-            sandbox.window.performance = { now: () => Date.now() };
-            vm.createContext(sandbox);
-            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
-
-            function createRoot() {
-                return {
-                    innerHTML: '',
-                    attributes: {},
-                    classList: { add() {}, toggle() {}, remove() {} },
-                    setAttribute(name, value) { this.attributes[name] = String(value); },
-                    removeAttribute(name) { delete this.attributes[name]; },
-                    querySelector() { return null; },
-                    querySelectorAll() { return []; }
-                };
-            }
-
-            const engine = sandbox.window.tmDocumentEditorEngine;
-            const root = createRoot();
-            engine.create(root, { InstanceId: 'phase20-pages' }, null);
-            engine.loadDocument('phase20-pages', {
-                Document: {
-                    DocumentId: 'phase20-pages-doc',
-                    Blocks: Array.from({ length: 8 }, (_, index) => ({
-                        Id: 'b' + index,
-                        Type: 'Paragraph',
-                        Content: { Type: 'Paragraph', Inlines: [{ Id: 'i' + index, Text: 'Paragraph ' + index }] }
-                    }))
-                }
-            });
-
-            const metrics = engine.getPageMetrics('phase20-pages');
-            assert.ok(metrics.TotalPages >= 1);
-            assert.strictEqual(metrics.RenderedPages, metrics.TotalPages);
-            assert.strictEqual(metrics.VirtualizedPages, 0);
-            assert.strictEqual(metrics.Pages[0].IsVirtual, false);
-            assert.ok(metrics.Pages[0].BlockIds.length > 0);
+            engine.clearDebugMetrics('phase18');
+            const metrics = engine.getDebugMetrics('phase18');
+            assert.strictEqual(metrics.FullRenderCount, 0);
+            assert.strictEqual(metrics.PartialRenderCount, 0);
+            assert.strictEqual(metrics.BlazorCallbackDuringTypingCount, 0);
+            assert.strictEqual(metrics.FormattingStateEventCount, 0);
+            assert.strictEqual(metrics.ToolbarStateLayoutThrashCount, 0);
+            assert.ok(metrics.LatencyBudgets.KeydownVisibleTextMs > 0);
+            assert.strictEqual(metrics.KeydownVisibleTextHistogram.Count, 0);
+            assert.strictEqual(metrics.SpaceVisibleTextHistogram.Count, 0);
+            assert.strictEqual(metrics.EnterVisibleTextHistogram.Count, 0);
+            assert.strictEqual(metrics.ToolbarCommandVisibleStyleHistogram.Count, 0);
+            assert.strictEqual(metrics.SelectionChangeToolbarStateHistogram.Count, 0);
 
             console.log('OK');
             """;
@@ -174,7 +85,7 @@ public sealed class DocumentEditorRuntimePhase20PerformanceJavaScriptTests
     }
 
     [Fact]
-    public async Task Phase20_PerKeyTypingLatency_IsRecordedAsIndividualSamples()
+    public async Task Phase18_InputDomApplyRecordsSeparateKeySpaceAndEnterHistograms()
     {
         var scriptPath = GetWysiwygScriptPath();
         if (!IsNodeAvailable()) return;
@@ -203,14 +114,86 @@ public sealed class DocumentEditorRuntimePhase20PerformanceJavaScriptTests
             vm.createContext(sandbox);
             vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
 
-            const harness = sandbox.window.tmDocumentEditorEngine.__testHooks.createPerformanceMetricsHarness();
-            const latency = harness.recordTypingLatency('letters', [4, 7, 12, 9]);
+            const engine = sandbox.window.tmDocumentEditorEngine;
+            const hooks = engine.__testHooks;
+            const types = engine.operations.types;
+            const inst = {
+                id: 'phase18-histograms',
+                options: {},
+                performanceStats: hooks.createStrictPerformanceStats(),
+                diagnostics: { timeline: [], lastErrors: [], watchdogFailures: [], debugWarnings: [] },
+                jsOwnedInputCount: 0
+            };
 
-            assert.strictEqual(latency.Name, 'typing-letters');
-            assert.strictEqual(latency.Count, 4);
-            assert.strictEqual(latency.LastMs, 9);
-            assert.strictEqual(latency.MaxMs, 12);
-            assert.strictEqual(latency.AverageMs, 8);
+            hooks.recordInputDomApply(inst, types.InsertText, { type: types.InsertText, target: { blockId: 'b1', offset: 0 }, text: 'a' });
+            hooks.recordInputDomApply(inst, types.InsertText, { type: types.InsertText, target: { blockId: 'b1', offset: 1 }, text: ' ' });
+            hooks.recordInputDomApply(inst, types.SplitParagraph, { type: types.SplitParagraph, target: { blockId: 'b1', offset: 2 }, newBlockId: 'b2' });
+
+            const stats = inst.performanceStats;
+            assert.strictEqual(stats.partialRenderCount, 3);
+            assert.strictEqual(stats.textNodePatchCount, 2);
+            assert.strictEqual(stats.blockPatchCount, 1);
+            assert.deepStrictEqual(Array.from(stats.lastPartialRenderScopeIds), ['b1', 'b2']);
+            assert.strictEqual(hooks.createLatencyHistogramSummary(stats.latencyHistograms.KeydownVisibleText, 150).Count, 1);
+            assert.strictEqual(hooks.createLatencyHistogramSummary(stats.latencyHistograms.SpaceVisibleText, 150).Count, 1);
+            assert.strictEqual(hooks.createLatencyHistogramSummary(stats.latencyHistograms.EnterVisibleText, 220).Count, 1);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase18_BoundaryMetricsSeparateTypingCallbacksAndFormattingStateEvents()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON,
+                Date,
+                Math
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            sandbox.window.performance = { now: () => Date.now() };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const inst = {
+                id: 'phase18-boundary',
+                options: { TypingBatchMs: 500 },
+                dotNetRef: null,
+                pendingTypingBoundaryPatches: [{ transactionType: 'typing' }],
+                performanceStats: hooks.createStrictPerformanceStats(),
+                diagnostics: { timeline: [], lastErrors: [], watchdogFailures: [], debugWarnings: [] },
+                boundaryFailures: []
+            };
+
+            hooks.invokeBoundaryMethod(inst, 'HandleJsBoundaryPatchGenerated', {}, 'boundary');
+            hooks.invokeBoundaryMethod(inst, 'HandleFormattingStateChanged', {}, 'formatting');
+
+            assert.strictEqual(inst.performanceStats.blazorInteropCallCount, 2);
+            assert.strictEqual(inst.performanceStats.blazorCallbackDuringTypingCount, 2);
+            assert.strictEqual(inst.performanceStats.formattingStateEventCount, 1);
+            assert.strictEqual(inst.performanceStats.formattingStateNotifyCount, 1);
 
             console.log('OK');
             """;
@@ -264,7 +247,7 @@ public sealed class DocumentEditorRuntimePhase20PerformanceJavaScriptTests
 
     private static async Task<(int ExitCode, string StandardOutput, string StandardError)> RunNodeAsync(string scriptPath, string nodeScript)
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"tm-doc-runtime-phase20-{Guid.NewGuid():N}.js");
+        var tempFile = Path.Combine(Path.GetTempPath(), $"tm-doc-runtime-phase18-{Guid.NewGuid():N}.js");
         await File.WriteAllTextAsync(tempFile, nodeScript);
         try
         {

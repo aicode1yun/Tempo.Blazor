@@ -70,13 +70,17 @@ public class DocumentSelectionTests
         var pos = new DocumentPosition
         {
             BlockId = "block-1",
+            InlineId = "inline-2",
             InlineIndex = 2,
-            TextOffset = 7
+            TextOffset = 7,
+            BlockOffset = 42
         };
 
         pos.BlockId.Should().Be("block-1");
+        pos.InlineId.Should().Be("inline-2");
         pos.InlineIndex.Should().Be(2);
         pos.TextOffset.Should().Be(7);
+        pos.BlockOffset.Should().Be(42);
     }
 
     [Fact]
@@ -97,5 +101,44 @@ public class DocumentSelectionTests
         var selection = new DocumentSelection { Anchor = anchor, Focus = focus };
 
         selection.IsForward.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DocumentSelection_CarriesStableSelectionTokenAndBoundaryDiagnostics()
+    {
+        var tokenData = new
+        {
+            Anchor = new { BlockId = "b1", InlineId = "i1", LogicalOffset = 2 },
+            Focus = new { BlockId = "b1", InlineId = "i3", LogicalOffset = 9 }
+        };
+        var selection = new DocumentSelection
+        {
+            Anchor = new DocumentPosition
+            {
+                BlockId = "b1",
+                InlineId = "i1",
+                InlineIndex = 0,
+                TextOffset = 2,
+                BlockOffset = 2
+            },
+            Focus = new DocumentPosition
+            {
+                BlockId = "b1",
+                InlineId = "i3",
+                InlineIndex = 2,
+                TextOffset = 1,
+                BlockOffset = 9
+            },
+            SelectionToken = "stable-selection-token",
+            StableSelectionToken = "stable-selection-token",
+            SelectionTokenData = tokenData
+        };
+
+        selection.IsCollapsed.Should().BeFalse();
+        selection.Start.BlockOffset.Should().Be(2);
+        selection.End.BlockOffset.Should().Be(9);
+        selection.SelectionToken.Should().Be("stable-selection-token");
+        selection.StableSelectionToken.Should().Be(selection.SelectionToken);
+        selection.SelectionTokenData.Should().BeSameAs(tokenData);
     }
 }

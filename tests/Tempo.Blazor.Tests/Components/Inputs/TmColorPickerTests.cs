@@ -57,6 +57,26 @@ public class TmColorPickerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TmColorPicker_TriggerKeyboard_TogglesDropdownAndExposesLowercaseExpandedState()
+    {
+        var cut = RenderComponent<TmColorPicker>();
+        var trigger = cut.Find(".tm-color-picker-trigger");
+
+        trigger.GetAttribute("aria-expanded").Should().Be("false");
+
+        trigger.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        cut.FindAll(".tm-color-picker-dropdown").Should().HaveCount(1);
+        trigger = cut.Find(".tm-color-picker-trigger");
+        trigger.GetAttribute("aria-expanded").Should().Be("true");
+
+        trigger.KeyDown(new KeyboardEventArgs { Key = " " });
+
+        cut.FindAll(".tm-color-picker-dropdown").Should().BeEmpty();
+        cut.Find(".tm-color-picker-trigger").GetAttribute("aria-expanded").Should().Be("false");
+    }
+
+    [Fact]
     public void TmColorPicker_Open_Adds_Open_Class()
     {
         var cut = RenderComponent<TmColorPicker>();

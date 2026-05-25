@@ -65,4 +65,7 @@ public sealed class WysiwygMiniToolbarRequest : WysiwygFloatingUiPosition
 
     /// <summary>Selection snapshot to restore before a mini toolbar command runs.</summary>
     public WysiwygSelectionSnapshot? Selection { get; set; }
+
+    /// <summary>Optional runtime reason for a visibility change.</summary>
+    public string? Reason { get; set; }
 }
