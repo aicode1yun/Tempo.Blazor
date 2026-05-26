@@ -11856,6 +11856,15 @@ window.tmDocumentEditorEngine = (function () {
         var region = regionNode && regionNode.getAttribute('data-render-region') || 'Body';
         var headerFooterId = regionNode && regionNode.getAttribute('data-hf-id') || null;
         var logicalOffset = Math.max(0, Math.min(_blockText(block).length, domBoundaryLogicalOffset(blockElement, node, offset)));
+        if (blockElement.getAttribute('data-wysiwyg-projected-layout') === 'true') {
+            var projectedSegment = element && element.closest && element.closest('.tm-wysiwyg-layout-segment--projected[data-model-start][data-model-end]');
+            if (projectedSegment && blockElement.contains(projectedSegment)) {
+                var segmentStart = Math.max(0, Number(projectedSegment.getAttribute('data-model-start') || 0) || 0);
+                var segmentEnd = Math.max(segmentStart, Number(projectedSegment.getAttribute('data-model-end') || segmentStart) || segmentStart);
+                var segmentOffset = domBoundaryLogicalOffset(projectedSegment, node, offset);
+                logicalOffset = Math.max(0, Math.min(_blockText(block).length, Math.min(segmentEnd, segmentStart + segmentOffset)));
+            }
+        }
         return { ok: true, position: normalizeLogicalPosition(model, { region: region, blockId: blockId, offset: logicalOffset, affinity: 'after', headerFooterId: headerFooterId }) };
     }
 
@@ -12617,6 +12626,18 @@ window.tmDocumentEditorEngine = (function () {
             deferredRevisionNotifyCount: 0,
             revisionNotifyCount: 0,
             markerStoreDeferredRefreshCount: 0,
+            markerRenderCount: 0,
+            markerRenderSkippedCount: 0,
+            clipboardNormalizationCount: 0,
+            lastClipboardNormalizationMs: 0,
+            liveTextFastPatchCount: 0,
+            liveTextFastPatchSkippedCount: 0,
+            liveTextFastPatchLastReason: '',
+            textExclusionFullPassCount: 0,
+            textExclusionScopedPassCount: 0,
+            textExclusionIdlePassCount: 0,
+            textExclusionLastReason: '',
+            typingTimelineCompactCount: 0,
             toolbarStateLayoutAuditCount: 0,
             toolbarStateLayoutThrashCount: 0,
             lastToolbarStateLayoutAudit: null,
@@ -12866,6 +12887,25 @@ window.tmDocumentEditorEngine = (function () {
         diagnostics.timeline.push(entry);
         if (diagnostics.timeline.length > 300) diagnostics.timeline.splice(0, diagnostics.timeline.length - 300);
         return entry;
+    }
+
+    function normalizedOperationTimelineDetail(inst, operation, transactionType) {
+        var op = operation || {};
+        var type = op.type || op.Type || '';
+        if (isTypingLikeTransactionType(transactionType) && isTypingHotPath(inst)) {
+            var stats = ensureStrictPerformanceStats(inst);
+            stats.typingTimelineCompactCount = Number(stats.typingTimelineCompactCount || 0) + 1;
+            return {
+                compact: true,
+                operationType: type,
+                textLength: _asText(op.text || op.Text).length,
+                blockId: _asText(op.target && (op.target.blockId || op.target.BlockId) || op.range && (op.range.blockId || op.range.BlockId) || '')
+            };
+        }
+        return {
+            operationType: type,
+            operation: op.toJSON ? op.toJSON() : _clone(op)
+        };
     }
 
     function recordDiagnosticError(inst, code, error, detail) {
@@ -13146,6 +13186,75 @@ window.tmDocumentEditorEngine = (function () {
         };
     }
 
+    function textBlockHasOnlyPlainTextRuns(block) {
+        if (!_isEditableTextBlock(block)) return false;
+        return _asArray(block.content && block.content.runs).every(function (run) {
+            return !!run
+                && (run.kind === 'text' || !run.kind)
+                && !isDrawingRunSource(run)
+                && _asArray(run.marks || run.Marks).length === 0
+                && readCommentIdsFromRun(run).length === 0
+                && readRevisionIdsFromRun(run).length === 0
+                && !_asText(run.fieldType || run.FieldType)
+                && !_asText(run.key || run.Key);
+        });
+    }
+
+    function liveTextNodeCanUseFastPatch(node) {
+        if (!node || node.getAttribute && node.getAttribute('data-wysiwyg-projected-layout') === 'true') return false;
+        if (node.querySelector && node.querySelector([
+            '.tm-wysiwyg-layout-segment--projected',
+            '.tm-wysiwyg-marker',
+            '.tm-document-inline--comment-anchor',
+            '.tm-document-inline--revision',
+            '.tm-wysiwyg-revision',
+            '.tm-wysiwyg-inline-drawing',
+            '.tm-wysiwyg-drawing-anchor',
+            '[data-inline-id]',
+            '[data-node-id]',
+            '[data-inline-break]',
+            '[data-caret-placeholder]'
+        ].join(','))) {
+            return false;
+        }
+        return true;
+    }
+
+    function tryFastPatchPlainLiveParagraphCopies(inst, blockId, block, selection) {
+        var stats = ensureStrictPerformanceStats(inst);
+        var text = _blockText(block);
+        if (!textBlockHasOnlyPlainTextRuns(block) || text.indexOf('\n') >= 0) {
+            stats.liveTextFastPatchSkippedCount = Number(stats.liveTextFastPatchSkippedCount || 0) + 1;
+            stats.liveTextFastPatchLastReason = 'non-plain-text';
+            return { ok: false, restoredNode: null, updatedCount: 0, fastTextPatch: false };
+        }
+        var activeNode = currentDomBlockElement(inst, blockId);
+        var context = liveBlockContextFromElement(activeNode) || liveBlockContextFromElement(findLiveTextBlockElementForContext(inst, blockId, null, selection));
+        var nodes = findLiveTextBlockElements(inst, blockId, selection);
+        if (!nodes.length) {
+            stats.liveTextFastPatchSkippedCount = Number(stats.liveTextFastPatchSkippedCount || 0) + 1;
+            stats.liveTextFastPatchLastReason = 'no-live-node';
+            return { ok: false, restoredNode: null, updatedCount: 0, fastTextPatch: false };
+        }
+        if (!nodes.every(liveTextNodeCanUseFastPatch)) {
+            stats.liveTextFastPatchSkippedCount = Number(stats.liveTextFastPatchSkippedCount || 0) + 1;
+            stats.liveTextFastPatchLastReason = 'decorated-dom';
+            return { ok: false, restoredNode: null, updatedCount: 0, fastTextPatch: false };
+        }
+
+        nodes.forEach(function (node) {
+            setLiveParagraphText(node, text);
+        });
+        stats.liveTextFastPatchCount = Number(stats.liveTextFastPatchCount || 0) + nodes.length;
+        stats.liveTextFastPatchLastReason = 'plain-text';
+        return {
+            ok: true,
+            restoredNode: findLiveTextBlockElementForContext(inst, blockId, context, selection),
+            updatedCount: nodes.length,
+            fastTextPatch: true
+        };
+    }
+
     function applyLiveTypingDomPatch(inst, operation, committed) {
         if (!inst || !inst.root || !operation) return false;
         var op = attachOperationMethods(operation);
@@ -13155,21 +13264,26 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         var patchedBlockId = '';
+        var fastTextPatch = false;
         if (type === OPERATION_TYPES.InsertText) {
             var insertTarget = _normalizeTarget(op.target || op.Target);
             patchedBlockId = insertTarget.blockId;
             var insertBlock = _findBlock(inst.model, insertTarget.blockId);
             if (!insertBlock) return false;
-            var insertPatch = replaceLiveParagraphCopies(inst, insertTarget.blockId, insertBlock, inst.selection);
+            var insertPatch = tryFastPatchPlainLiveParagraphCopies(inst, insertTarget.blockId, insertBlock, inst.selection);
+            if (!insertPatch.ok) insertPatch = replaceLiveParagraphCopies(inst, insertTarget.blockId, insertBlock, inst.selection);
             if (!insertPatch.ok) return false;
+            fastTextPatch = insertPatch.fastTextPatch === true;
             var restoredNode = insertPatch.restoredNode;
         } else if (type === OPERATION_TYPES.DeleteRange) {
             var range = _normalizeRange(op.range || op.Range);
             patchedBlockId = range.blockId;
             var deleteBlock = _findBlock(inst.model, range.blockId);
             if (!deleteBlock) return false;
-            var deletePatch = replaceLiveParagraphCopies(inst, range.blockId, deleteBlock, inst.selection);
+            var deletePatch = tryFastPatchPlainLiveParagraphCopies(inst, range.blockId, deleteBlock, inst.selection);
+            if (!deletePatch.ok) deletePatch = replaceLiveParagraphCopies(inst, range.blockId, deleteBlock, inst.selection);
             if (!deletePatch.ok) return false;
+            fastTextPatch = deletePatch.fastTextPatch === true;
             restoredNode = deletePatch.restoredNode;
         } else if (type === OPERATION_TYPES.ApplyMark || type === OPERATION_TYPES.RemoveMark) {
             var markRange = _normalizeRange(op.range || op.Range);
@@ -13189,19 +13303,21 @@ window.tmDocumentEditorEngine = (function () {
             restoredNode = paragraphPatch.restoredNode;
         } else if (type === OPERATION_TYPES.SplitParagraph) {
             var splitTarget = _normalizeTarget(op.target || op.Target);
-            patchedBlockId = splitTarget.blockId;
             var originalBlock = _findBlock(inst.model, splitTarget.blockId);
             var newBlockId = op.newBlockId || op.NewBlockId || committed && committed.insertedBlockId || inst.selection && inst.selection.blockId;
+            patchedBlockId = newBlockId || splitTarget.blockId;
             var newBlock = _findBlock(inst.model, newBlockId);
             var originalNode = findLiveTextBlockElement(inst, splitTarget.blockId);
             if (!originalBlock || !newBlock || !originalNode) return false;
             replaceLiveParagraphHtml(inst, originalNode, originalBlock);
+            var inserted = null;
             if (!findLiveTextBlockElement(inst, newBlock.id)) {
                 var refreshedOriginal = findLiveTextBlockElement(inst, splitTarget.blockId);
                 (refreshedOriginal || originalNode).insertAdjacentHTML('afterend', renderLiveParagraphHtml(inst, newBlock));
-                var inserted = findLiveTextBlockElement(inst, newBlock.id);
+                inserted = findLiveTextBlockElement(inst, newBlock.id);
                 if (inserted && _blockText(newBlock).length === 0) setLiveParagraphText(inserted, '');
             }
+            restoredNode = inserted || findLiveTextBlockElement(inst, newBlock.id);
         } else if (type === OPERATION_TYPES.MergeParagraph) {
             var mergeTarget = _normalizeTarget(op.target || op.Target);
             patchedBlockId = inst.selection && inst.selection.blockId || mergeTarget.blockId;
@@ -13220,8 +13336,18 @@ window.tmDocumentEditorEngine = (function () {
         });
         inst.root.setAttribute('data-live-typing-patch', String(Date.now()));
         inst.root.setAttribute('data-logical-selection', JSON.stringify(_sortObject(inst.selection || {})));
-        syncWysiwygObjectLayerPositions(inst.root);
-        applyWysiwygTextExclusionLayout(inst);
+        if (fastTextPatch) {
+            scheduleWysiwygTextExclusionLayout(inst, 'idle-after-fast-live-typing', typingHotPathWindowMs(inst));
+        } else {
+            syncWysiwygObjectLayerPositions(inst.root);
+            applyWysiwygTextExclusionLayout(inst, {
+                blockIds: operationAffectedBlockIds(op),
+                maxPasses: 1,
+                skipFinalPass: true,
+                reason: 'live-typing'
+            });
+            scheduleWysiwygTextExclusionLayout(inst, 'idle-after-live-typing', typingHotPathWindowMs(inst));
+        }
         if (patchedBlockId) {
             restoredNode = findLiveTextBlockElementForContext(inst, patchedBlockId, liveBlockContextFromElement(restoredNode), inst.selection) || restoredNode;
         }
@@ -16682,11 +16808,15 @@ window.tmDocumentEditorEngine = (function () {
 
     function handleEditorPaste(inst, event) {
         if (!inst || !event || !targetIsEditableDocumentSurface(inst, event.target)) return { handled: false };
+        var normalizationStart = strictPerformanceNow();
         var clipboard = event.clipboardData || window.clipboardData || null;
         var text = clipboard && typeof clipboard.getData === 'function'
             ? clipboard.getData('text/plain') || clipboard.getData('text') || ''
             : '';
         text = normalizePasteText(text);
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.clipboardNormalizationCount = Number(stats.clipboardNormalizationCount || 0) + 1;
+        stats.lastClipboardNormalizationMs = Math.max(0, strictPerformanceNow() - normalizationStart);
         if (!text) return { handled: false };
         if (typeof event.preventDefault === 'function') event.preventDefault();
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
@@ -17367,6 +17497,7 @@ window.tmDocumentEditorEngine = (function () {
             pendingRevisionNotify: false,
             pendingDeferredBoundaryPatches: [],
             pendingDeferredBoundaryTimer: null,
+            pendingTextExclusionLayoutTimer: null,
             performanceStats: createStrictPerformanceStats(),
             diagnostics: createDiagnosticsState()
         };
@@ -18084,10 +18215,10 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         operation = attachOperationMethods(operation);
-        recordTimeline(lookup.inst, 'input-event', { command: commandName, source: body.source || body.Source || 'command' });
-        recordTimeline(lookup.inst, 'normalized-operation', { operationType: operation.type || operation.Type || '', operation: operation.toJSON ? operation.toJSON() : _clone(operation) });
         var operationSelection = operation.selection || operation.Selection || null;
         var transactionType = body.transactionType || body.TransactionType || (operation.type === OPERATION_TYPES.InsertText ? TRANSACTION_TYPES.Typing : TRANSACTION_TYPES.Default);
+        recordTimeline(lookup.inst, 'input-event', { command: commandName, source: body.source || body.Source || 'command' });
+        recordTimeline(lookup.inst, 'normalized-operation', normalizedOperationTimelineDetail(lookup.inst, operation, transactionType));
         var transaction = createTransaction(lookup.inst.model, {
             instanceId: lookup.inst.id,
             commandName: commandName || operation.type,
@@ -18636,6 +18767,8 @@ window.tmDocumentEditorEngine = (function () {
     function getDebugSnapshot(instanceId) {
         var lookup = _get(instanceId, 'getDebugSnapshot');
         if (lookup.error) return lookup.error;
+        if (_asArray(lookup.inst.pendingTypingBoundaryPatches).length) flushTypingBoundaryPatchDispatch(lookup.inst);
+        if (_asArray(lookup.inst.pendingDeferredBoundaryPatches).length) flushDeferredBoundaryPatchDispatch(lookup.inst);
         var validation = validateModel(lookup.inst.model);
         var mapperDump = createModelLayoutDomMapper(lookup.inst.root, lookup.inst.model, lookup.inst.layout).debugDump();
         var diagnostics = ensureDiagnostics(lookup.inst);
@@ -19207,6 +19340,18 @@ window.tmDocumentEditorEngine = (function () {
             DeferredRevisionNotifyCount: stats.deferredRevisionNotifyCount || 0,
             RevisionNotifyCount: stats.revisionNotifyCount || 0,
             MarkerStoreDeferredRefreshCount: stats.markerStoreDeferredRefreshCount || 0,
+            MarkerRenderCount: stats.markerRenderCount || 0,
+            MarkerRenderSkippedCount: stats.markerRenderSkippedCount || 0,
+            ClipboardNormalizationCount: stats.clipboardNormalizationCount || 0,
+            LastClipboardNormalizationMs: stats.lastClipboardNormalizationMs || 0,
+            LiveTextFastPatchCount: stats.liveTextFastPatchCount || 0,
+            LiveTextFastPatchSkippedCount: stats.liveTextFastPatchSkippedCount || 0,
+            LiveTextFastPatchLastReason: stats.liveTextFastPatchLastReason || '',
+            TextExclusionFullPassCount: stats.textExclusionFullPassCount || 0,
+            TextExclusionScopedPassCount: stats.textExclusionScopedPassCount || 0,
+            TextExclusionIdlePassCount: stats.textExclusionIdlePassCount || 0,
+            TextExclusionLastReason: stats.textExclusionLastReason || '',
+            TypingTimelineCompactCount: stats.typingTimelineCompactCount || 0,
             LastPartialRenderScopeIds: _clone(stats.lastPartialRenderScopeIds || []),
             PartialRenderScopeSamples: _clone(stats.partialRenderScopeSamples || []),
             ToolbarStateLayoutAuditCount: stats.toolbarStateLayoutAuditCount || 0,
@@ -19278,16 +19423,60 @@ window.tmDocumentEditorEngine = (function () {
         return { ok: true, instanceId: instanceId, isProtected: isProtected === true };
     }
 
+    function normalizeSearchMarkersForRender(blockIds, offsets, lengths) {
+        var list = _asArray(blockIds);
+        var offsetList = _asArray(offsets);
+        var lengthList = _asArray(lengths);
+        return list.map(function (source, index) {
+            var objectSource = source && typeof source === 'object' ? source : null;
+            var blockId = objectSource
+                ? _asText(source.blockId || source.BlockId || source.startBlockId || source.StartBlockId || '')
+                : _asText(source || '');
+            var offset = objectSource
+                ? Number(source.offset ?? source.Offset ?? source.start ?? source.Start ?? source.startOffset ?? source.StartOffset ?? 0) || 0
+                : Number(offsetList[index] || 0) || 0;
+            var length = objectSource
+                ? Number(source.length ?? source.Length ?? source.textLength ?? source.TextLength ?? 0) || 0
+                : Number(lengthList[index] || 0) || 0;
+            var id = objectSource
+                ? _asText(source.id || source.Id || source.markerId || source.MarkerId || ('search-' + index))
+                : ('search-' + index);
+            var start = Math.max(0, offset);
+            var end = Math.max(start, start + Math.max(0, length));
+            if (!blockId || end <= start) return null;
+            return {
+                id: id,
+                targetId: id,
+                type: 'search',
+                blockId: blockId,
+                active: objectSource ? source.active === true || source.Active === true : false,
+                range: {
+                    startBlockId: blockId,
+                    endBlockId: blockId,
+                    startOffset: start,
+                    endOffset: end
+                }
+            };
+        }).filter(Boolean);
+    }
+
+    function recordSearchMarkerRenderMetrics(inst) {
+        if (!inst || !inst.root) return;
+        var stats = ensureStrictPerformanceStats(inst);
+        var total = _asArray(inst.searchMarkers).length;
+        var rendered = inst.root.querySelectorAll
+            ? inst.root.querySelectorAll('[data-marker-kind="search"]').length
+            : 0;
+        stats.markerRenderCount = Number(stats.markerRenderCount || 0) + rendered;
+        stats.markerRenderSkippedCount = Number(stats.markerRenderSkippedCount || 0) + Math.max(0, total - rendered);
+    }
+
     function setSearchMarkers(instanceId, blockIds, offsets, lengths) {
         var lookup = _get(instanceId, 'setSearchMarkers');
         if (lookup.error) return lookup.error;
-        lookup.inst.searchMarkers = _asArray(blockIds).map(function (blockId, index) {
-            return {
-                blockId: blockId,
-                offset: Number(_asArray(offsets)[index] || 0) || 0,
-                length: Number(_asArray(lengths)[index] || 0) || 0
-            };
-        });
+        lookup.inst.searchMarkers = normalizeSearchMarkersForRender(blockIds, offsets, lengths);
+        render(lookup.inst);
+        recordSearchMarkerRenderMetrics(lookup.inst);
         return { ok: true, instanceId: instanceId, count: lookup.inst.searchMarkers.length };
     }
 
@@ -19295,6 +19484,7 @@ window.tmDocumentEditorEngine = (function () {
         var lookup = _get(instanceId, 'clearSearchMarkers');
         if (lookup.error) return lookup.error;
         lookup.inst.searchMarkers = [];
+        render(lookup.inst);
         return { ok: true, instanceId: instanceId };
     }
 
@@ -19920,6 +20110,10 @@ window.tmDocumentEditorEngine = (function () {
 
     function domTextPointAtBlockOffset(block, offset) {
         if (!block) return null;
+        if (block.getAttribute && block.getAttribute('data-wysiwyg-projected-layout') === 'true') {
+            var projectedPoint = projectedDomTextPointAtBlockOffset(block, offset);
+            if (projectedPoint) return projectedPoint;
+        }
         var target = Math.max(0, Number(offset || 0));
         var currentOffset = 0;
         var last = null;
@@ -19968,6 +20162,56 @@ window.tmDocumentEditorEngine = (function () {
             return { node: parent, offset: Math.max(0, index + 1) };
         }
         return { node: block, offset: 0 };
+    }
+
+    function firstTextPointInElement(element, preferredOffset) {
+        if (!element) return null;
+        if (element.nodeType === 3) {
+            var textLength = element.nodeValue ? element.nodeValue.length : 0;
+            return { node: element, offset: Math.max(0, Math.min(textLength, Number(preferredOffset || 0))) };
+        }
+        var walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                return node && node.nodeValue !== null ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }
+        });
+        var node = walker.nextNode();
+        if (!node) return null;
+        var length = node.nodeValue ? node.nodeValue.length : 0;
+        return { node: node, offset: Math.max(0, Math.min(length, Number(preferredOffset || 0))) };
+    }
+
+    function projectedDomTextPointAtBlockOffset(block, offset) {
+        if (!block || typeof block.querySelectorAll !== 'function') return null;
+        var target = Math.max(0, Number(offset || 0));
+        var segments = Array.from(block.querySelectorAll('.tm-wysiwyg-layout-segment--projected[data-model-start][data-model-end]'))
+            .map(function (segment, index) {
+                var start = Math.max(0, Number(segment.getAttribute('data-model-start') || 0) || 0);
+                var end = Math.max(start, Number(segment.getAttribute('data-model-end') || start) || start);
+                return { element: segment, start: start, end: end, index: index };
+            })
+            .filter(function (segment) { return segment.end >= segment.start; })
+            .sort(function (a, b) {
+                return a.start - b.start || a.end - b.end || a.index - b.index;
+            });
+        if (!segments.length) return null;
+
+        var containing = segments.find(function (segment) {
+            return target >= segment.start && target <= segment.end && segment.end > segment.start;
+        });
+        if (containing) {
+            return firstTextPointInElement(containing.element, target - containing.start);
+        }
+
+        var before = null;
+        var after = null;
+        segments.forEach(function (segment) {
+            if (segment.end <= target && (!before || segment.end >= before.end)) before = segment;
+            if (segment.start >= target && (!after || segment.start < after.start)) after = segment;
+        });
+        if (before) return firstTextPointInElement(before.element, before.end - before.start);
+        if (after) return firstTextPointInElement(after.element, 0);
+        return null;
     }
 
     function renderDrawingFigureStyle(object) {
@@ -20159,6 +20403,13 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function searchMarkersForBlock(inst, blockId) {
+        return _asArray(inst && inst.searchMarkers).filter(function (marker) {
+            var range = marker && marker.range || {};
+            return range.startBlockId === blockId || range.endBlockId === blockId || marker.blockId === blockId;
+        });
+    }
+
     function isSafeInlineCssColor(value) {
         var text = _asText(value).trim();
         if (!text) return false;
@@ -20295,7 +20546,25 @@ window.tmDocumentEditorEngine = (function () {
             'tm-wysiwyg-revision--' + typeClass
         ];
         if (active) classes.push('tm-wysiwyg-revision--selected', 'tm-wysiwyg-marker--revision-active');
-        return '<span class="' + classes.join(' ') + '" data-testid="document-revision-marker" data-revision-id="' + _escape(id) + '" data-marker-id="revision:' + _escape(id) + '" data-revision-type="' + _escape(markerType) + '" aria-current="' + (active ? 'true' : 'false') + '">' + (innerHtml !== undefined ? innerHtml : _escape(text)) + '</span>';
+        var contentHtml = innerHtml !== undefined ? innerHtml : _escape(text);
+        var legacyTestId = typeClass === 'delete'
+            ? 'document-wysiwyg-revision-delete'
+            : typeClass === 'format'
+                ? 'document-wysiwyg-revision-format'
+                : 'document-wysiwyg-revision-insert';
+        return '<span class="' + classes.join(' ') + '" data-testid="document-revision-marker" data-revision-id="' + _escape(id) + '" data-marker-id="revision:' + _escape(id) + '" data-revision-type="' + _escape(markerType) + '" aria-current="' + (active ? 'true' : 'false') + '"><span data-testid="' + legacyTestId + '" data-revision-id="' + _escape(id) + '">' + contentHtml + '</span></span>';
+    }
+
+    function renderSearchSpanHtml(inst, marker, text, innerHtml) {
+        var id = _asText(marker && (marker.id || marker.Id || marker.targetId || marker.TargetId) || 'search');
+        var active = marker && (marker.active === true || marker.Active === true);
+        var classes = [
+            'tm-wysiwyg-marker',
+            'tm-wysiwyg-marker--search',
+            'tm-wysiwyg-search-match'
+        ];
+        if (active) classes.push('tm-wysiwyg-marker--search-active', 'tm-wysiwyg-search-match--active');
+        return '<span class="' + classes.join(' ') + '" data-testid="document-search-marker" data-marker-id="search:' + _escape(id) + '" data-search-marker-id="' + _escape(id) + '" data-marker-kind="search" aria-current="' + (active ? 'true' : 'false') + '">' + (innerHtml !== undefined ? innerHtml : _escape(text)) + '</span>';
     }
 
     function inlineDrawingIsSelected(inst, block, run, object) {
@@ -20740,7 +21009,8 @@ window.tmDocumentEditorEngine = (function () {
         var options = renderOptions || {};
         var commentMarkers = commentMarkersForBlock(inst, block && block.id || '');
         var revisionMarkers = revisionMarkersForBlock(inst, block && block.id || '');
-        var markers = commentMarkers.concat(revisionMarkers);
+        var searchMarkers = searchMarkersForBlock(inst, block && block.id || '');
+        var markers = commentMarkers.concat(revisionMarkers).concat(searchMarkers);
         var cursor = 0;
         var html = [];
         _asArray(block && block.content && block.content.runs).forEach(function (run, runIndex) {
@@ -20781,6 +21051,7 @@ window.tmDocumentEditorEngine = (function () {
                 var absoluteEnd = runStart + localEnd;
                 var commentId = inlineCommentIds[0] || '';
                 var commentMarker = null;
+                var searchMarker = null;
                 if (!commentId) {
                     commentMarker = commentMarkers.find(function (candidate) {
                         var range = candidate.range || {};
@@ -20799,12 +21070,17 @@ window.tmDocumentEditorEngine = (function () {
                 } else {
                     revisionMarker = revisionMarkers.find(function (candidate) { return candidate.targetId === revisionId; }) || null;
                 }
+                searchMarker = searchMarkers.find(function (candidate) {
+                    var range = candidate.range || {};
+                    return Number(range.startOffset || 0) < absoluteEnd && Number(range.endOffset || 0) > absoluteStart;
+                }) || null;
                 var chunkHtml = renderFormattedInlineHtml(run, chunk);
                 if (commentId) {
                     var comment = commentById(inst && inst.model, commentId);
                     chunkHtml = renderCommentSpanHtml(inst, commentId, chunk, commentMarker && commentMarker.status || readCommentStatus(comment), chunkHtml);
                 }
                 if (revisionId) chunkHtml = renderRevisionSpanHtml(inst, revisionId, chunk, revisionMarker, chunkHtml);
+                if (searchMarker) chunkHtml = renderSearchSpanHtml(inst, searchMarker, chunk, chunkHtml);
                 html.push(chunkHtml);
             }
             if (text.length === 0 && inlineCommentIds[0]) {
@@ -20944,19 +21220,39 @@ window.tmDocumentEditorEngine = (function () {
         node.style.setProperty('--tm-layout-object-height', Math.max(1, Number(rect.height || 0) || 1) + 'px');
     }
 
-    function applyWysiwygTextExclusionLayout(inst) {
+    function normalizeScopedBlockIdSet(value) {
+        var ids = _asArray(value).map(_asText).filter(Boolean);
+        if (!ids.length) return null;
+        var set = new Set();
+        ids.forEach(function (id) { set.add(id); });
+        return set;
+    }
+
+    function applyWysiwygTextExclusionLayout(inst, options) {
         if (!inst || !inst.root || !inst.model || typeof inst.root.querySelectorAll !== 'function') return false;
+        var opts = options || {};
+        var scopedBlockIds = normalizeScopedBlockIdSet(opts.blockIds || opts.BlockIds);
+        var scoped = !!(scopedBlockIds && scopedBlockIds.size);
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.textExclusionLastReason = _asText(opts.reason || opts.Reason || (scoped ? 'scoped' : 'full'));
+        if (scoped) stats.textExclusionScopedPassCount = Number(stats.textExclusionScopedPassCount || 0) + 1;
+        else stats.textExclusionFullPassCount = Number(stats.textExclusionFullPassCount || 0) + 1;
         var changed = false;
-        var maxPasses = 5;
+        var maxPasses = scoped
+            ? Math.max(1, Number(opts.maxPasses || opts.MaxPasses || 1) || 1)
+            : Math.max(1, Number(opts.maxPasses || opts.MaxPasses || 5) || 5);
         for (var pass = 0; pass < maxPasses; pass++) {
             syncWysiwygObjectLayerPositions(inst.root);
             var passChanged = false;
             Array.from(inst.root.querySelectorAll('.tm-wysiwyg-page__body--layout')).forEach(function (body) {
-                passChanged = applyWysiwygBodyTextExclusionLayout(inst, body) || passChanged;
+                passChanged = applyWysiwygBodyTextExclusionLayout(inst, body, { blockIds: scopedBlockIds }) || passChanged;
             });
             changed = passChanged || changed;
             if (!passChanged) break;
             syncWysiwygObjectLayerPositions(inst.root);
+        }
+        if (opts.skipFinalPass === true || opts.SkipFinalPass === true || scoped) {
+            return changed;
         }
         var finalChanged = false;
         Array.from(inst.root.querySelectorAll('.tm-wysiwyg-page__body--layout')).forEach(function (body) {
@@ -20969,8 +21265,33 @@ window.tmDocumentEditorEngine = (function () {
         return changed;
     }
 
-    function applyWysiwygBodyTextExclusionLayout(inst, body) {
+    function scheduleWysiwygTextExclusionLayout(inst, reason, delayMs) {
+        if (!inst || !inst.root || inst.disposed) return;
+        if (inst.pendingTextExclusionLayoutTimer) {
+            clearTimeout(inst.pendingTextExclusionLayoutTimer);
+            inst.pendingTextExclusionLayoutTimer = null;
+        }
+        var delay = Math.max(40, Number(delayMs || 160) || 160);
+        inst.pendingTextExclusionLayoutTimer = setTimeout(function () {
+            inst.pendingTextExclusionLayoutTimer = null;
+            if (!inst || inst.disposed || !inst.root) return;
+            var stats = ensureStrictPerformanceStats(inst);
+            stats.textExclusionIdlePassCount = Number(stats.textExclusionIdlePassCount || 0) + 1;
+            var selectionBeforeLayout = inst.selection ? createSelectionSnapshot(inst.selection) : null;
+            syncWysiwygObjectLayerPositions(inst.root);
+            applyWysiwygTextExclusionLayout(inst, { reason: reason || 'idle-text-exclusion' });
+            if (inst.pendingDomSelectionRestore || selectionBeforeLayout) {
+                restoreDomSelectionFromSnapshot(inst, inst.pendingDomSelectionRestore || selectionBeforeLayout);
+                inst.pendingDomSelectionRestore = null;
+            }
+        }, delay);
+        if (inst.timers && inst.timers.indexOf(inst.pendingTextExclusionLayoutTimer) < 0) inst.timers.push(inst.pendingTextExclusionLayoutTimer);
+    }
+
+    function applyWysiwygBodyTextExclusionLayout(inst, body, options) {
         if (!body || typeof body.getBoundingClientRect !== 'function') return false;
+        var opts = options || {};
+        var scopedBlockIds = opts.blockIds || null;
         var textLayer = body.querySelector('.tm-wysiwyg-page__layer--body-text');
         if (!textLayer) return false;
         var bodyRect = body.getBoundingClientRect();
@@ -20980,6 +21301,7 @@ window.tmDocumentEditorEngine = (function () {
         var changed = false;
         Array.from(textLayer.querySelectorAll(':scope > .tm-wysiwyg-block[data-block-id]')).forEach(function (paragraph) {
             var blockId = paragraph.getAttribute('data-block-id') || '';
+            if (scopedBlockIds && !scopedBlockIds.has(blockId)) return;
             var block = _findBlock(inst.model, blockId);
             if (!block || block.type !== 'paragraph') {
                 changed = restoreWysiwygProjectedParagraph(paragraph) || changed;
@@ -21434,7 +21756,7 @@ window.tmDocumentEditorEngine = (function () {
         var empty = !blocks.length || blocks.every(function (block) { return !_blockText(block).trim(); });
         var classes = ['tm-wysiwyg-page__' + cssName];
         if (empty) classes.push('tm-wysiwyg-page__' + cssName + '--empty');
-        var html = ['<div class="' + classes.join(' ') + '" data-render-region="' + regionName + '" data-testid="' + (isHeader ? 'document-page-header' : 'document-page-footer') + '" data-hf-id="' + _escape(region && region.id || '') + '" data-placeholder="' + _escape(placeholder) + '" contenteditable="' + (readOnly ? 'false' : 'true') + '" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(label) + '" tabindex="0">'];
+        var html = ['<div class="' + classes.join(' ') + '" data-render-region="' + regionName + '" data-testid="' + (isHeader ? 'document-page-header' : 'document-page-footer') + '" data-hf-id="' + _escape(region && region.id || '') + '" data-placeholder="' + _escape(placeholder) + '" contenteditable="' + (readOnly ? 'false' : 'true') + '" spellcheck="false" autocorrect="off" autocapitalize="off" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(label) + '" tabindex="0">'];
         blocks.forEach(function (block) {
             html.push(renderEngineBlockHtml(inst, block, inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.', page.pageNumber, totalPages));
         });
@@ -21548,7 +21870,7 @@ window.tmDocumentEditorEngine = (function () {
                     html.push('<div class="tm-wysiwyg-page__virtual-placeholder" data-testid="document-wysiwyg-virtual-page" data-block-count="' + page.blockIds.length + '"></div>');
                 } else {
                     html.push(renderHeaderFooterHtml(inst, page, 'header', readOnly, pagePlan.pages.length));
-                    html.push('<div class="tm-wysiwyg-page__body tm-wysiwyg-page__body--layout" data-render-region="Body" contenteditable="' + (readOnly ? 'false' : 'true') + '" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(currentBodyLabel) + '" tabindex="0">');
+                    html.push('<div class="tm-wysiwyg-page__body tm-wysiwyg-page__body--layout" data-render-region="Body" contenteditable="' + (readOnly ? 'false' : 'true') + '" spellcheck="false" autocorrect="off" autocapitalize="off" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(currentBodyLabel) + '" tabindex="0">');
                     html.push(renderWysiwygBodyLayersHtml(inst, page.blocks, imageAltMissing, page.pageNumber, pagePlan.pages.length));
                     html.push('</div>');
                     html.push(renderHeaderFooterHtml(inst, page, 'footer', readOnly, pagePlan.pages.length));
@@ -26280,12 +26602,18 @@ window.tmDocumentWysiwygCommand = (function () {
                 LastModelCommit: metrics.lastModelCommit || metrics.LastModelCommit || null,
                 ToolbarStateLayoutThrashCount: metrics.toolbarStateLayoutThrashCount || metrics.ToolbarStateLayoutThrashCount || 0,
                 FormattingCommandPartialRenderCount: metrics.formattingCommandPartialRenderCount || metrics.FormattingCommandPartialRenderCount || 0,
+                LiveTextFastPatchCount: metrics.liveTextFastPatchCount || metrics.LiveTextFastPatchCount || 0,
+                LiveTextFastPatchSkippedCount: metrics.liveTextFastPatchSkippedCount || metrics.LiveTextFastPatchSkippedCount || 0,
                 LightweightBoundaryPatchCount: metrics.lightweightBoundaryPatchCount || metrics.LightweightBoundaryPatchCount || 0,
                 BoundarySnapshotExportCount: metrics.boundarySnapshotExportCount || metrics.BoundarySnapshotExportCount || 0,
                 DeferredBoundaryPatchDispatchCount: metrics.deferredBoundaryPatchDispatchCount || metrics.DeferredBoundaryPatchDispatchCount || 0,
                 DeferredRevisionNotifyCount: metrics.deferredRevisionNotifyCount || metrics.DeferredRevisionNotifyCount || 0,
                 RevisionNotifyCount: metrics.revisionNotifyCount || metrics.RevisionNotifyCount || 0,
-                MarkerStoreDeferredRefreshCount: metrics.markerStoreDeferredRefreshCount || metrics.MarkerStoreDeferredRefreshCount || 0
+                MarkerStoreDeferredRefreshCount: metrics.markerStoreDeferredRefreshCount || metrics.MarkerStoreDeferredRefreshCount || 0,
+                MarkerRenderCount: metrics.markerRenderCount || metrics.MarkerRenderCount || 0,
+                MarkerRenderSkippedCount: metrics.markerRenderSkippedCount || metrics.MarkerRenderSkippedCount || 0,
+                ClipboardNormalizationCount: metrics.clipboardNormalizationCount || metrics.ClipboardNormalizationCount || 0,
+                LastClipboardNormalizationMs: metrics.lastClipboardNormalizationMs || metrics.LastClipboardNormalizationMs || 0
             };
         },
         getUndoStack: function (instanceId) {

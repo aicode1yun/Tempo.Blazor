@@ -43,6 +43,70 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
     }
 
     [TestMethod]
+    public async Task Phase20_TypingInProjectedWrappedParagraph_KeepsCaretAfterPeriodAndUsesScopedReflow()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        await WaitForWysiwygBodyAsync(page);
+        var instanceId = await GetInstanceIdAsync(page);
+
+        await page.WaitForSelectorAsync(
+            "[data-testid='document-wysiwyg-host'] [data-block-id='contract-center-wrap-text'].tm-wysiwyg-block--projected-layout",
+            new() { State = WaitForSelectorState.Attached, Timeout = 10000 });
+
+        var probe = await PlaceCaretAtEndOfProjectedBlockAsync(page, instanceId, "contract-center-wrap-text");
+        probe.Projected.Should().BeTrue("the regression happens in the DOM projected for image text wrapping");
+        probe.BeforeText.Should().EndWith(".");
+
+        const string typed = " phase20-projected-caret";
+        await ClearDebugMetricsAsync(page, instanceId);
+        await page.Keyboard.InsertTextAsync(typed);
+        var immediateMetrics = await GetDebugMetricsAsync(page, instanceId);
+        immediateMetrics.FullRenderCount.Should().Be(0, "projected wrap typing should stay JS-owned and avoid a full render");
+        immediateMetrics.TextExclusionScopedPassCount.Should().BeGreaterThan(0);
+        immediateMetrics.TextExclusionFullPassCount.Should().Be(0, "the synchronous live typing path should not run the expensive full text-exclusion pass");
+
+        var expected = probe.BeforeText + typed;
+        var current = await WaitForBlockTextAsync(page, instanceId, "contract-center-wrap-text", expected);
+        current.Should().Be(expected, "typing at a DOM caret after the final period must not insert before that period");
+
+        var metrics = await WaitForMetricAsync(page, instanceId, metric =>
+            metric.InputOperationCount > 0 && metric.TextExclusionScopedPassCount > 0);
+        metrics.FullRenderCount.Should().Be(0, "projected wrap typing should stay JS-owned and avoid a full render");
+        metrics.TextExclusionScopedPassCount.Should().BeGreaterThan(0);
+    }
+
+    [TestMethod]
+    public async Task Phase20_PlainParagraphTyping_UsesFastTextPatchAndDefersTextExclusionReflow()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        await WaitForWysiwygBodyAsync(page);
+        var instanceId = await GetInstanceIdAsync(page);
+
+        await LoadPlainParagraphDocumentAsync(page, instanceId);
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] [data-block-id='phase20-plain-p']"))
+            .ToContainTextAsync("Plain phase20 paragraph", new() { Timeout = 10000 });
+
+        var spellcheckDisabled = await page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__body[contenteditable='true']")
+            .First
+            .GetAttributeAsync("spellcheck");
+        spellcheckDisabled.Should().Be("false", "native spellcheck should not redraw every random typing token in the hot path");
+
+        await PlaceCaretAtEndOfBodyAsync(page);
+        await ClearDebugMetricsAsync(page, instanceId);
+
+        const string typed = " phase20-fast-text-patch";
+        await page.Keyboard.TypeAsync(typed, new() { Delay = 0 });
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] [data-block-id='phase20-plain-p']"))
+            .ToContainTextAsync(typed.TrimStart(), new() { Timeout = 10000 });
+
+        var metrics = await WaitForMetricAsync(page, instanceId, metric => metric.InputOperationCount >= typed.Length);
+        metrics.FullRenderCount.Should().Be(0, "plain typing should stay fully JS-owned");
+        metrics.LiveTextFastPatchCount.Should().BeGreaterThanOrEqualTo(typed.Length);
+        metrics.TextExclusionScopedPassCount.Should().Be(0, "plain text typing should not synchronously recalculate image text wrapping");
+        metrics.MaxInputLatencyMs.Should().BeLessThan(250);
+    }
+
+    [TestMethod]
     public async Task Phase20_ClipboardNormalizationMetric_IsRecordedDuringRichPaste()
     {
         var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
@@ -226,6 +290,95 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
             """);
     }
 
+    private static Task<ProjectedCaretProbe> PlaceCaretAtEndOfProjectedBlockAsync(IPage page, string instanceId, string blockId)
+    {
+        return page.EvaluateAsync<ProjectedCaretProbe>(
+            """
+            ({ instanceId, blockId }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const block = host?.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+                if (!block) throw new Error(`Block ${blockId} was not found.`);
+                const snapshot = JSON.parse(window.tmDocumentEditorRuntime.getDocument(instanceId));
+                const doc = snapshot.Document || snapshot.document || {};
+                const beforeText = readBlockText(doc, blockId);
+                const segments = Array.from(block.querySelectorAll('.tm-wysiwyg-layout-segment--projected[data-model-start][data-model-end]'))
+                    .map(segment => ({
+                        element: segment,
+                        start: Number(segment.getAttribute('data-model-start') || 0),
+                        end: Number(segment.getAttribute('data-model-end') || 0)
+                    }))
+                    .filter(segment => segment.end <= beforeText.length)
+                    .sort((left, right) => left.end - right.end || left.start - right.start);
+                const segment = segments.at(-1);
+                if (!segment) throw new Error('Projected text segment was not found.');
+                const walker = document.createTreeWalker(segment.element, NodeFilter.SHOW_TEXT);
+                let textNode = null;
+                while (walker.nextNode()) {
+                    if ((walker.currentNode.textContent || '').length > 0) textNode = walker.currentNode;
+                }
+                if (!textNode) throw new Error('Projected text node was not found.');
+                block.closest('[contenteditable="true"]')?.focus({ preventScroll: true });
+                const range = document.createRange();
+                range.setStart(textNode, textNode.textContent.length);
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+                return {
+                    blockId,
+                    beforeText,
+                    projected: block.getAttribute('data-wysiwyg-projected-layout') === 'true',
+                    segmentStart: segment.start,
+                    segmentEnd: segment.end
+                };
+
+                function readBlockText(documentModel, id) {
+                    const blocks = documentModel.Blocks || documentModel.blocks || [];
+                    const block = blocks.find(item => (item.Id || item.id) === id);
+                    const content = block?.Content || block?.content || {};
+                    const runs = content.Inlines || content.inlines || content.Runs || content.runs || [];
+                    return runs.map(run => run.Text ?? run.text ?? '').join('');
+                }
+            }
+            """,
+            new { instanceId, blockId });
+    }
+
+    private static async Task<string> WaitForBlockTextAsync(IPage page, string instanceId, string blockId, string expected)
+    {
+        string current = string.Empty;
+        for (var i = 0; i < 40; i++)
+        {
+            current = await ReadBlockTextAsync(page, instanceId, blockId);
+            if (current == expected)
+            {
+                return current;
+            }
+
+            await page.WaitForTimeoutAsync(125);
+        }
+
+        return current;
+    }
+
+    private static Task<string> ReadBlockTextAsync(IPage page, string instanceId, string blockId)
+    {
+        return page.EvaluateAsync<string>(
+            """
+            ({ instanceId, blockId }) => {
+                const snapshot = JSON.parse(window.tmDocumentEditorRuntime.getDocument(instanceId));
+                const doc = snapshot.Document || snapshot.document || {};
+                const blocks = doc.Blocks || doc.blocks || [];
+                const block = blocks.find(item => (item.Id || item.id) === blockId);
+                const content = block?.Content || block?.content || {};
+                const runs = content.Inlines || content.inlines || content.Runs || content.runs || [];
+                return runs.map(run => run.Text ?? run.text ?? '').join('');
+            }
+            """,
+            new { instanceId, blockId });
+    }
+
     private static Task SelectFirstVisibleTextAsync(IPage page)
     {
         return page.EvaluateAsync(
@@ -329,6 +482,31 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
                     }
                 }];
                 doc.blocks = doc.Blocks;
+                window.tmDocumentEditorRuntime.loadDocument(instanceId, snapshot, true);
+            }
+            """,
+            instanceId);
+    }
+
+    private static Task LoadPlainParagraphDocumentAsync(IPage page, string instanceId)
+    {
+        return page.EvaluateAsync(
+            """
+            (instanceId) => {
+                const snapshot = JSON.parse(window.tmDocumentEditorRuntime.getDocument(instanceId));
+                const doc = snapshot.Document || snapshot.document;
+                const blocks = [{
+                    Id: 'phase20-plain-p',
+                    Type: 0,
+                    Order: 0,
+                    Content: { Inlines: [{ Id: 'phase20-plain-inline', Text: 'Plain phase20 paragraph.' }] }
+                }];
+                doc.Blocks = blocks;
+                doc.blocks = blocks;
+                doc.Comments = [];
+                doc.comments = [];
+                doc.Revisions = [];
+                doc.revisions = [];
                 window.tmDocumentEditorRuntime.loadDocument(instanceId, snapshot, true);
             }
             """,
@@ -520,9 +698,17 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
 
         public int MarkerRenderSkippedCount { get; set; }
 
+        public int TextExclusionFullPassCount { get; set; }
+
+        public int TextExclusionScopedPassCount { get; set; }
+
         public int ClipboardNormalizationCount { get; set; }
 
         public double LastClipboardNormalizationMs { get; set; }
+
+        public int LiveTextFastPatchCount { get; set; }
+
+        public int LiveTextFastPatchSkippedCount { get; set; }
 
         public bool VirtualizationEnabled { get; set; }
 
@@ -533,6 +719,24 @@ public sealed class DocumentEditorPhase20PerformanceE2ETests : DocumentEditorE2E
         public int FirstPage { get; set; }
 
         public int LastPage { get; set; }
+    }
+
+    private sealed class ProjectedCaretProbe
+    {
+        [JsonPropertyName("blockId")]
+        public string BlockId { get; set; } = string.Empty;
+
+        [JsonPropertyName("beforeText")]
+        public string BeforeText { get; set; } = string.Empty;
+
+        [JsonPropertyName("projected")]
+        public bool Projected { get; set; }
+
+        [JsonPropertyName("segmentStart")]
+        public int SegmentStart { get; set; }
+
+        [JsonPropertyName("segmentEnd")]
+        public int SegmentEnd { get; set; }
     }
 
     private sealed class OverflowResult
