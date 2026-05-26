@@ -8,7 +8,6 @@ namespace Tempo.Blazor.Demo.Services;
 public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
 {
     private const string DemoImageUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAC0CAYAAADl5PURAAACsUlEQVR42u3ZzQ2CQBCAUYuwFLuxDjuwBDqgAK9UZfwB9ECC04JGdJd5hzeZ80C+y252+9MMkNHGEQABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEBAAB0CEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAgAIDOD6nGSAjAQQEEEAAAQQQQAABBBBAAAEEEKDiAA4xADISQEAAAQQQQAABBBBAAAEEEEAAAQQQQAB/pWk74MsEUABBAAVQAEEABVAAQQAFUABBAAUQYBUBfMQCkJAAAgIIIIAAAggggAACCCCAAAIIUHEA+xgAGQkgIIAAAliJ8zgDhRNAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBHIE8D5Oc438XFC+0jsigIAACiAggAIICKAAAgIogIAACiAggAIICKAAAgIogIAACiAggAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKICAAAogIIACCAjgGwG8xViT7fGwiLXdCag4gEIHpAig2AECKHSAAIodkDiAPh6Q9hEEQAABPg7gEAtAQgIICCCAAAIIIIAAAggggAACCCCAAAIIIIAAAgjgMpq2g2KIiQAKIAKIAAogAogACiACiAAKIAJIgQG8xgDISAABAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQIC/BrCPBSAhAQQEEEAAAQQQQAABBBBAAAEEEKDiAF5iAGQkgIAAAgggQBIvAt6vRwtbqO0AAAAASUVORK5CYII=";
-    private const string ContractUrlImageUrl = "/document-editor-evidence.svg";
     private const string ContractAssetId = DemoDocumentImageUrlResolver.ContractAssetId;
     private static readonly DateTimeOffset CanonicalDemoTimestamp = new(2026, 5, 22, 6, 0, 0, TimeSpan.Zero);
     private readonly HttpClient? _http;
@@ -476,11 +475,11 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         contract.Blocks.Add(CreateImage(
             "contract-left-wrap-image",
             31,
-            DocumentImageSource.Url,
-            ContractUrlImageUrl,
+            DocumentImageSource.Asset,
             null,
-            "URL evidence preview",
-            "Evidence preview loaded from a URL",
+            ContractAssetId,
+            "Asset evidence preview",
+            "Evidence preview loaded from the demo image provider",
             148,
             84,
             DocumentImageAlignment.Start,
@@ -495,9 +494,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         contract.Blocks.Add(CreateImage(
             "contract-right-wrap-image",
             41,
-            DocumentImageSource.Url,
-            ContractUrlImageUrl,
+            DocumentImageSource.Asset,
             null,
+            ContractAssetId,
             "Right aligned appendix preview",
             "Right wrapped exhibit preview",
             148,
@@ -548,9 +547,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         contract.Blocks.Add(CreateImage(
             "contract-missing-alt-image",
             70,
-            DocumentImageSource.Url,
-            ContractUrlImageUrl,
+            DocumentImageSource.Asset,
             null,
+            ContractAssetId,
             null,
             "Accessibility sample: missing alt text",
             156,
@@ -561,6 +560,8 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         contract.Blocks.Add(CreateContractTable());
         contract.Comments.Add(CreateCanonicalComment());
         AddCanonicalDeletionRevision(contract);
+        DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(contract);
+        DocumentImagePersistence.Sanitize(contract);
     }
 
     private static DocumentEditorDocument CreateExhibitsDocument(string documentId)
@@ -583,41 +584,37 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             Order = 20,
             Content = new ParagraphBlockContent
             {
-                Inlines = [new TextRun { Text = "This demo document keeps image blocks in the editor JSON model." }]
+                Inlines = [new TextRun { Text = "This demo document keeps image drawing runs in the editor JSON model." }]
             }
         });
-        document.Blocks.Add(new DocumentBlock
-        {
-            Type = DocumentBlockType.Image,
-            Order = 30,
-            Content = new ImageBlockContent
-            {
-                Source = DocumentImageSource.Url,
-                Url = ContractUrlImageUrl,
-                AltText = "URL exhibit",
-                Caption = "Image inserted from a URL",
-                Size = new DocumentImageSize { Width = 220, Height = 124 },
-                NaturalSize = new DocumentImageSize { Width = 220, Height = 124 },
-                Alignment = DocumentImageAlignment.Start,
-                Layout = CreateLeftWrappedImageLayout(220, 124)
-            }
-        });
-        document.Blocks.Add(new DocumentBlock
-        {
-            Type = DocumentBlockType.Image,
-            Order = 40,
-            Content = new ImageBlockContent
-            {
-                Source = DocumentImageSource.Asset,
-                AssetId = DemoDocumentImageUrlResolver.ExhibitAssetId,
-                AltText = "Provider exhibit",
-                Caption = "Image resolved through the demo image provider",
-                Size = new DocumentImageSize { Width = 240, Height = 135 },
-                NaturalSize = new DocumentImageSize { Width = 240, Height = 135 },
-                Alignment = DocumentImageAlignment.Center,
-                Layout = CreateTopBottomImageLayout(240, 135)
-            }
-        });
+        document.Blocks.Add(CreateImage(
+            "exhibits-url-image",
+            30,
+            DocumentImageSource.Asset,
+            null,
+            DemoDocumentImageUrlResolver.ExhibitAssetId,
+            "Provider exhibit",
+            "Image inserted from the demo provider",
+            220,
+            124,
+            DocumentImageAlignment.Start,
+            CreateLeftWrappedImageLayout(220, 124),
+            sectionId: null));
+        document.Blocks.Add(CreateImage(
+            "exhibits-provider-image",
+            40,
+            DocumentImageSource.Asset,
+            null,
+            DemoDocumentImageUrlResolver.ExhibitAssetId,
+            "Provider exhibit",
+            "Image resolved through the demo image provider",
+            240,
+            135,
+            DocumentImageAlignment.Center,
+            CreateTopBottomImageLayout(240, 135),
+            sectionId: null));
+        DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(document);
+        DocumentImagePersistence.Sanitize(document);
         return document;
     }
 
@@ -763,25 +760,76 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         double width,
         double height,
         DocumentImageAlignment alignment,
-        DocumentObjectLayout layout) =>
-        new()
+        DocumentObjectLayout layout,
+        string? sectionId = "contract-section-main")
+    {
+        var drawing = CreateImageDrawingRun(id, source, url, assetId, altText, caption, width, height, layout);
+        return new DocumentBlock
         {
             Id = id,
-            SectionId = "contract-section-main",
-            Type = DocumentBlockType.Image,
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
             Order = order,
-            Content = new ImageBlockContent
+            ParagraphProperties = new DocumentParagraphProperties
             {
-                Source = source,
-                Url = source == DocumentImageSource.Url ? url : null,
-                AssetId = source == DocumentImageSource.Asset ? assetId : null,
-                AltText = altText,
-                Caption = caption,
-                Size = new DocumentImageSize { Width = width, Height = height },
-                NaturalSize = new DocumentImageSize { Width = width, Height = height },
-                Alignment = alignment,
-                Layout = layout
+                Alignment = ToTextAlignment(alignment),
+                LineSpacing = 1.25,
+                SpacingAfter = 9
+            },
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [drawing]
             }
+        };
+    }
+
+    private static DocumentDrawingRun CreateImageDrawingRun(
+        string objectId,
+        DocumentImageSource source,
+        string? url,
+        string? assetId,
+        string? altText,
+        string caption,
+        double width,
+        double height,
+        DocumentObjectLayout layout)
+    {
+        layout.Anchor ??= new DocumentObjectAnchor();
+        layout.Position ??= new DocumentObjectPosition();
+        layout.Wrap ??= new DocumentObjectWrap();
+        layout.Transform ??= new DocumentObjectTransform();
+        layout.Stacking ??= new DocumentObjectStacking();
+        layout.Anchor.BlockId = string.IsNullOrWhiteSpace(layout.Anchor.BlockId) ? objectId : layout.Anchor.BlockId;
+        layout.Anchor.InlineIndex ??= 0;
+        layout.Anchor.Offset ??= 0;
+        layout.Transform.Width ??= width;
+        layout.Transform.Height ??= height;
+        layout.Transform.NaturalWidth ??= width;
+        layout.Transform.NaturalHeight ??= height;
+
+        var drawing = new DocumentDrawingRun
+        {
+            Id = $"{objectId}-drawing",
+            ObjectId = objectId,
+            Source = source,
+            Url = source == DocumentImageSource.Url ? url : null,
+            AssetId = source == DocumentImageSource.Asset ? assetId : null,
+            AltText = altText,
+            Caption = caption,
+            Size = new DocumentImageSize { Width = width, Height = height },
+            NaturalSize = new DocumentImageSize { Width = width, Height = height },
+            Layout = layout
+        };
+        DocumentImagePersistence.Sanitize(drawing);
+        return drawing;
+    }
+
+    private static DocumentTextAlignment ToTextAlignment(DocumentImageAlignment alignment)
+        => alignment switch
+        {
+            DocumentImageAlignment.Center => DocumentTextAlignment.Center,
+            DocumentImageAlignment.End => DocumentTextAlignment.Right,
+            _ => DocumentTextAlignment.Left
         };
 
     private static DocumentBlock CreateContractTable() =>

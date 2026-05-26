@@ -610,8 +610,10 @@ public partial class TmDocumentEditor
         _commandRegistry.RefreshAllAsync(BuildCommandContext());
 
     private bool HasActiveImage(DocumentEditorCommandContext context) =>
-        !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ActiveImageBlockId)
-        || !string.IsNullOrWhiteSpace(_selection.ActiveImageBlockId);
+        !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ObjectSelection?.ObjectId)
+        || !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ActiveObjectId)
+        || !string.IsNullOrWhiteSpace(_selection.ObjectSelection?.ObjectId)
+        || !string.IsNullOrWhiteSpace(_selection.ActiveObjectId);
 
     private void RegisterTableRuntimeCommand(string name, string key, string icon, bool affectsData = true)
     {

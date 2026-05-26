@@ -6,6 +6,15 @@ public class DocumentEditorSelectionState
     /// <summary>Currently active block id.</summary>
     public string? ActiveBlockId { get; set; }
 
+    /// <summary>Current selection mode. Text keeps a caret/range; Object targets a drawing or block object.</summary>
+    public string SelectionMode { get; set; } = "Text";
+
+    /// <summary>Text caret or range snapshot preserved independently from object selection.</summary>
+    public WysiwygTextSelectionSnapshot? TextSelection { get; set; }
+
+    /// <summary>Object selection snapshot when <see cref="SelectionMode"/> is Object.</summary>
+    public WysiwygObjectSelectionSnapshot? ObjectSelection { get; set; }
+
     /// <summary>Focused inline range prepared for future rich selection handling.</summary>
     public DocumentEditorInlineRange? FocusedInlineRange { get; set; }
 
@@ -52,6 +61,9 @@ public class DocumentEditorSelectionState
     public void Clear()
     {
         ActiveBlockId = null;
+        SelectionMode = "Text";
+        TextSelection = null;
+        ObjectSelection = null;
         FocusedInlineRange = null;
         ActiveTableCellId = null;
         ActiveTableId = null;

@@ -225,9 +225,79 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
         await page.ReloadAsync(new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
         await WaitForDocumentEditorReadyAsync(page);
 
-        await Assertions.Expect(page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']")).ToBeVisibleAsync();
+        await Assertions.Expect(RenderedImageObjectLocator(page, imageId)).ToBeVisibleAsync();
         await AssertNoLegacySidecarAsync(page);
     }
+
+    [TestMethod]
+    public async Task Phase19_SaveReloadPersistsInlineAndFloatingDrawingRuns()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        var inlineId = $"phase19-inline-{Guid.NewGuid():N}";
+        var floatingId = $"phase19-floating-{Guid.NewGuid():N}";
+        var drawingCountBefore = await ReadDocumentEditorDrawingRunCountAsync(page);
+        var topLevelImageCountBefore = await ReadDocumentEditorTopLevelImageBlockCountAsync(page);
+
+        await InsertDataImageBlockAsync(page, inlineId, "Phase 19 inline image", 140, 90);
+        await InsertFloatingImageBlockAsync(page, floatingId, "Phase 19 floating image", 180, 116);
+
+        await SaveDocumentAsync(page);
+        await page.ReloadAsync(new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
+        await WaitForDocumentEditorReadyAsync(page);
+
+        var inlineFigure = RenderedImageObjectLocator(page, inlineId);
+        var floatingFigure = RenderedImageObjectLocator(page, floatingId);
+        await Assertions.Expect(inlineFigure).ToBeVisibleAsync();
+        await Assertions.Expect(floatingFigure).ToBeVisibleAsync();
+
+        (await ReadDocumentEditorDrawingRunCountAsync(page)).Should().BeGreaterThanOrEqualTo(drawingCountBefore + 2);
+        (await ReadDocumentEditorTopLevelImageBlockCountAsync(page)).Should().Be(topLevelImageCountBefore);
+
+        await Assertions.Expect(inlineFigure.Locator("img")).ToHaveAttributeAsync("alt", "Phase 19 inline image");
+        await Assertions.Expect(inlineFigure.Locator("figcaption")).ToContainTextAsync("Runtime image");
+        await Assertions.Expect(inlineFigure).ToHaveAttributeAsync("data-wrap-mode", new Regex("^(Inline|0)$"));
+        var inlineSrc = await inlineFigure.Locator("img").GetAttributeAsync("src") ?? string.Empty;
+        inlineSrc.Should().Contain("favicon.png");
+        inlineSrc.Contains("blob:", StringComparison.OrdinalIgnoreCase).Should().BeFalse();
+
+        await Assertions.Expect(floatingFigure.Locator("img")).ToHaveAttributeAsync("alt", "Phase 19 floating image");
+        await Assertions.Expect(floatingFigure.Locator("figcaption")).ToContainTextAsync("Runtime image");
+        await Assertions.Expect(floatingFigure).Not.ToHaveAttributeAsync("data-wrap-mode", new Regex("^(Inline|0)$"));
+        await Assertions.Expect(floatingFigure).ToHaveAttributeAsync("data-horizontal-offset", "42");
+        await Assertions.Expect(floatingFigure).ToHaveAttributeAsync("data-vertical-offset", "28");
+        var floatingSrc = await floatingFigure.Locator("img").GetAttributeAsync("src") ?? string.Empty;
+        floatingSrc.Should().Contain("favicon.png");
+        floatingSrc.Contains("blob:", StringComparison.OrdinalIgnoreCase).Should().BeFalse();
+
+        await AssertNoLegacySidecarAsync(page);
+    }
+
+    [TestMethod]
+    public async Task Phase20_DefaultDemoUsesDrawingRunsWithoutTopLevelImageBlocks()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+
+        (await ReadDocumentEditorTopLevelImageBlockCountAsync(page)).Should().Be(0);
+        var drawings = await ReadDocumentEditorDrawingRunsAsync(page);
+        drawings.Select(drawing => drawing.ObjectId).Should().Contain(
+            [
+                "contract-left-wrap-image",
+                "contract-right-wrap-image",
+                "contract-top-bottom-image",
+                "contract-inline-image",
+                "contract-missing-alt-image"
+            ]);
+
+        await Assertions.Expect(RenderedImageObjectLocator(page, "contract-left-wrap-image")).ToBeVisibleAsync();
+        await Assertions.Expect(RenderedImageObjectLocator(page, "contract-inline-image")).ToBeVisibleAsync();
+        await AssertNoLegacySidecarAsync(page);
+    }
+
+    private static ILocator RenderedImageObjectLocator(IPage page, string imageId)
+        => page.Locator(
+            $"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}'], " +
+            $"[data-testid='document-wysiwyg-host'] [data-testid='document-wysiwyg-object-layer-item'][data-object-id='{imageId}'], " +
+            $"[data-testid='document-wysiwyg-host'] [data-testid='document-wysiwyg-inline-drawing'][data-object-id='{imageId}']").First;
 
     private static Task InsertDataImageBlockAsync(IPage page, string imageId, string altText, double width, double height)
     {
@@ -268,12 +338,100 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
                     Content: {
                         $type: 'image',
                         Source: 0,
-                        AssetId: `asset-${imageId}`,
                         Url: '/favicon.png',
                         AltText: altText,
                         Size: { Width: width, Height: height, LockAspectRatio: true },
                         Alignment: 1,
                         Caption: 'Runtime image'
+                    }
+                }, true);
+            }
+            """,
+            new { imageId, altText, width, height });
+    }
+
+    private static Task InsertFloatingImageBlockAsync(IPage page, string imageId, string altText, double width, double height)
+    {
+        return page.EvaluateAsync(
+            """
+            ({ imageId, altText, width, height }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id');
+                const body = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body[contenteditable]') || [])
+                    .find(element => {
+                        const rect = element.getBoundingClientRect();
+                        const style = getComputedStyle(element);
+                        return rect.width > 0
+                            && rect.height > 0
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && !element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual');
+                    });
+                const anchor = Array.from(body?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(element => {
+                        const rect = element.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0;
+                    });
+                body?.focus();
+                if (anchor) {
+                    const range = document.createRange();
+                    range.selectNodeContents(anchor);
+                    range.collapse(false);
+                    const selection = window.getSelection();
+                    selection?.removeAllRanges();
+                    selection?.addRange(range);
+                }
+
+                window.tmDocumentEditorEngine.insertImageNode(instanceId, {
+                    Id: imageId,
+                    Type: 5,
+                    Order: 25,
+                    Content: {
+                        $type: 'image',
+                        Source: 0,
+                        Url: '/favicon.png',
+                        AltText: altText,
+                        Size: { Width: width, Height: height, LockAspectRatio: false },
+                        NaturalSize: { Width: width, Height: height, LockAspectRatio: false },
+                        Alignment: 0,
+                        Caption: 'Runtime image',
+                        Layout: {
+                            Kind: 1,
+                            Anchor: {
+                                BlockId: imageId,
+                                InlineIndex: -1,
+                                Offset: 0,
+                                Region: 0,
+                                MoveWithText: true,
+                                FixedOnPage: false,
+                                LockAnchor: false
+                            },
+                            Position: {
+                                HorizontalRelativeTo: 1,
+                                VerticalRelativeTo: 3,
+                                X: 42,
+                                Y: 28,
+                                HorizontalAlignment: 0,
+                                VerticalAlignment: 0
+                            },
+                            Wrap: {
+                                Mode: 2,
+                                DistanceLeft: 6,
+                                DistanceRight: 18,
+                                DistanceTop: 4,
+                                DistanceBottom: 10
+                            },
+                            Transform: {
+                                Width: width,
+                                Height: height,
+                                NaturalWidth: width,
+                                NaturalHeight: height,
+                                LockAspectRatio: false,
+                                Rotation: 0,
+                                Crop: { Left: 0, Top: 0, Right: 0, Bottom: 0 }
+                            },
+                            Stacking: { ZIndex: 0, AllowOverlap: false }
+                        }
                     }
                 }, true);
             }

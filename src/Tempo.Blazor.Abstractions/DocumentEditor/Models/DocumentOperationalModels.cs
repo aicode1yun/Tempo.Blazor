@@ -232,6 +232,18 @@ public class DocumentOperation
     /// <summary>Block payload for insert block operations.</summary>
     public DocumentBlock? Block { get; set; }
 
+    /// <summary>Previous object layout for drawing-object move operations.</summary>
+    public DocumentObjectLayout? OldLayout { get; set; }
+
+    /// <summary>New object layout for drawing-object move operations.</summary>
+    public DocumentObjectLayout? NewLayout { get; set; }
+
+    /// <summary>Previous object anchor for drawing-object move operations.</summary>
+    public DocumentObjectAnchor? OldAnchor { get; set; }
+
+    /// <summary>New object anchor for drawing-object move operations.</summary>
+    public DocumentObjectAnchor? NewAnchor { get; set; }
+
     /// <summary>Revision payload for tracked-change operations.</summary>
     public DocumentRevision? Revision { get; set; }
 
@@ -278,6 +290,9 @@ public enum DocumentOperationType
     /// <summary>Update a whole block payload without degrading object content to text.</summary>
     UpdateBlock,
 
+    /// <summary>Move a drawing object to a new anchor and layout position.</summary>
+    MoveDrawingObject,
+
     /// <summary>Create a tracked revision and apply its pending document markup.</summary>
     CreateRevision,
 
@@ -302,6 +317,9 @@ public class DocumentOperationTarget
 
     /// <summary>Stable inline id.</summary>
     public string? InlineId { get; set; }
+
+    /// <summary>Stable drawing object id.</summary>
+    public string? ObjectId { get; set; }
 
     /// <summary>Stable table cell id when the operation targets nested table content.</summary>
     public string? TableCellId { get; set; }

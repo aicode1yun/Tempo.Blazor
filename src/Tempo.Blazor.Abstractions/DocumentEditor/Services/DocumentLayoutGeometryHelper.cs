@@ -325,6 +325,7 @@ public static class DocumentLayoutGeometryHelper
             BlockId = objectBox.BlockId,
             PageIndex = objectBox.PageIndex,
             WrapMode = mode,
+            WrapSide = objectBox.Layout.Wrap.Side,
             Rect = clipped,
             Polygon = polygon,
             BlocksText = true,
@@ -362,13 +363,14 @@ public static class DocumentLayoutGeometryHelper
 
         foreach (var exclusion in exclusions.Where(exclusion => exclusion.BlocksText && Intersects(lineRect, exclusion.Rect)))
         {
-            var blockedIntervals = exclusion.Polygon.Count >= MinimumWrapContourPointCount
+            var geometricBlockedIntervals = exclusion.Polygon.Count >= MinimumWrapContourPointCount
                 ? GetPolygonBlockedIntervals(exclusion.Polygon, y, lineHeight, lineBounds, minimumIntervalWidth)
                 : [new DocumentLayoutInterval
                     {
                         X = Math.Max(exclusion.Rect.X, lineBounds.X),
                         Width = Math.Min(exclusion.Rect.Right, lineBounds.Right) - Math.Max(exclusion.Rect.X, lineBounds.X)
                     }];
+            var blockedIntervals = ApplyWrapSide(geometricBlockedIntervals, exclusion.WrapSide, lineBounds);
 
             foreach (var blocked in blockedIntervals)
             {
@@ -391,6 +393,30 @@ public static class DocumentLayoutGeometryHelper
             .Where(interval => interval.Width >= minimumIntervalWidth - Epsilon)
             .OrderBy(interval => interval.X)
             .ToList();
+    }
+
+    private static IReadOnlyList<DocumentLayoutInterval> ApplyWrapSide(
+        IReadOnlyList<DocumentLayoutInterval> blockedIntervals,
+        DocumentObjectWrapSide side,
+        DocumentLayoutRect lineBounds)
+    {
+        if (side == DocumentObjectWrapSide.BothSides || blockedIntervals.Count == 0)
+        {
+            return blockedIntervals;
+        }
+
+        return blockedIntervals.Select(blocked =>
+        {
+            var leftSpace = Math.Max(0, blocked.X - lineBounds.X);
+            var rightSpace = Math.Max(0, lineBounds.Right - blocked.End);
+            var resolvedSide = side == DocumentObjectWrapSide.Largest
+                ? leftSpace >= rightSpace ? DocumentObjectWrapSide.Left : DocumentObjectWrapSide.Right
+                : side;
+
+            return resolvedSide == DocumentObjectWrapSide.Left
+                ? new DocumentLayoutInterval { X = blocked.X, Width = lineBounds.Right - blocked.X }
+                : new DocumentLayoutInterval { X = lineBounds.X, Width = blocked.End - lineBounds.X };
+        }).ToList();
     }
 
     private static IReadOnlyList<DocumentLayoutInterval> GetPolygonBlockedIntervals(

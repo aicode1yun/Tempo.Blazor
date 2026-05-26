@@ -615,6 +615,109 @@ public sealed class DocumentOperationEngineTests
         InlinesOf(document, "a").OfType<TextRun>().Should().NotContain(run => run.Marks.Any(mark => mark.Type == InlineMarkType.Bold));
     }
 
+    [Fact]
+    public void OperationApplier_MoveDrawingObjectAppliesNewAnchorAndRestoresOldLayout()
+    {
+        var drawing = new DocumentDrawingRun
+        {
+            Id = "drawing-inline-1",
+            ObjectId = "drawing-object-1",
+            Url = "/drawing.png",
+            Layout = new DocumentObjectLayout
+            {
+                Kind = DocumentObjectLayoutKind.Anchored,
+                Anchor = new DocumentObjectAnchor
+                {
+                    BlockId = "source",
+                    InlineIndex = 0,
+                    Offset = 0,
+                    Region = DocumentRenditionAnchorScope.Body
+                },
+                Position = new DocumentObjectPosition
+                {
+                    HorizontalRelativeTo = DocumentRelativePosition.Column,
+                    VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                    X = 10,
+                    Y = 12
+                },
+                Wrap = new DocumentObjectWrap { Mode = DocumentWrapMode.Square },
+                Transform = new DocumentObjectTransform { Width = 96, Height = 64 }
+            }
+        };
+        var document = DocumentEditorDocument.Empty("doc-1");
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Id = "source",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [drawing, new TextRun { Text = " source" }]
+                }
+            },
+            new DocumentBlock
+            {
+                Id = "target",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Text = "target text" }]
+                }
+            }
+        ];
+        var move = new DocumentOperation
+        {
+            Type = DocumentOperationType.MoveDrawingObject,
+            Target = new DocumentOperationTarget { BlockId = "source", ObjectId = "drawing-object-1" },
+            NewLayout = new DocumentObjectLayout
+            {
+                Kind = DocumentObjectLayoutKind.Anchored,
+                Anchor = new DocumentObjectAnchor
+                {
+                    BlockId = "target",
+                    InlineIndex = 0,
+                    Offset = 5,
+                    Region = DocumentRenditionAnchorScope.Body
+                },
+                Position = new DocumentObjectPosition
+                {
+                    HorizontalRelativeTo = DocumentRelativePosition.Column,
+                    VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                    X = 22,
+                    Y = 4
+                },
+                Wrap = new DocumentObjectWrap { Mode = DocumentWrapMode.Square },
+                Transform = new DocumentObjectTransform { Width = 96, Height = 64 }
+            }
+        };
+
+        var result = new DocumentOperationApplier().Apply(document, Batch("doc-1", move));
+
+        result.IsValid.Should().BeTrue();
+        drawing.Layout.Anchor.BlockId.Should().Be("target");
+        drawing.Layout.Anchor.Offset.Should().Be(5);
+        drawing.Layout.Position.X.Should().Be(22);
+        move.OldLayout.Should().NotBeNull();
+        move.OldLayout!.Anchor.BlockId.Should().Be("source");
+        move.OldAnchor.Should().NotBeNull();
+        move.NewAnchor.Should().NotBeNull();
+
+        var undo = new DocumentOperation
+        {
+            Type = DocumentOperationType.MoveDrawingObject,
+            Target = new DocumentOperationTarget { BlockId = "source", ObjectId = "drawing-object-1" },
+            NewLayout = move.OldLayout,
+            NewAnchor = move.OldAnchor
+        };
+        var undoResult = new DocumentOperationApplier().Apply(document, Batch("doc-1", undo));
+
+        undoResult.IsValid.Should().BeTrue();
+        drawing.Layout.Anchor.BlockId.Should().Be("source");
+        drawing.Layout.Anchor.Offset.Should().Be(0);
+        drawing.Layout.Position.X.Should().Be(10);
+    }
+
     private static DocumentOperationBatch Batch(string documentId, params DocumentOperation[] operations)
     {
         return new DocumentOperationBatch

@@ -50,6 +50,12 @@
             Table properties
         </button>
         <button type="button"
+                class="@GetDocumentButtonClass(InMemoryDocumentEditorProvider.OnlyOfficeParity20260524DocumentId)"
+                data-testid="document-editor-image-parity-scenario"
+                @onclick="@(() => SelectDocument(InMemoryDocumentEditorProvider.OnlyOfficeParity20260524DocumentId))">
+            Image parity
+        </button>
+        <button type="button"
                 class="@GetDocumentButtonClass("contract-demo")"
                 data-testid="document-editor-review-scenario"
                 @onclick="@(() => SelectDocument("contract-demo"))">
@@ -88,6 +94,18 @@
            download>
             Export ODT
         </a>
+        <a class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+           data-testid="document-export-docx-image-parity"
+           href="@ExportImageParityDocxUrl"
+           download>
+            Export DOCX image parity
+        </a>
+        <button type="button"
+                class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+                data-testid="document-import-docx-image-parity-fixture"
+                @onclick="ImportImageParityFixtureAsync">
+            Import DOCX image parity fixture
+        </button>
         <label class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
                data-testid="document-import-odt-label">
             Import ODT
@@ -290,6 +308,8 @@
 
     private string ExportOdtUrl => $"https://localhost:5100/api/document-editor/{Uri.EscapeDataString(_documentId)}/export/odt";
 
+    private string ExportImageParityDocxUrl => "https://localhost:5100/api/document-editor/image-parity/export-docx";
+
     private int ReadQueryInt(string key, int fallback, int min, int max)
     {
         var query = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query;
@@ -359,6 +379,28 @@
     private Task ImportOdtAsync(InputFileChangeEventArgs args)
     {
         return ImportAsync(args.File, "api/document-editor/import/odt");
+    }
+
+    private async Task ImportImageParityFixtureAsync()
+    {
+        try
+        {
+            var http = HttpClientFactory.CreateClient("DemoApi");
+            using var response = await http.PostAsync("api/document-editor/image-parity/import-onlyoffice-fixture", content: null);
+            response.EnsureSuccessStatusCode();
+
+            var imported = await response.Content.ReadFromJsonAsync<DocumentFormatImportProviderResult>();
+            if (!string.IsNullOrWhiteSpace(imported?.Document?.DocumentId))
+            {
+                _documentId = imported.Document.DocumentId;
+            }
+
+            _formatMessage = "DOCX image parity fixture imported";
+        }
+        catch
+        {
+            _formatMessage = "DOCX image parity fixture import failed";
+        }
     }
 
     private async Task ImportAsync(IBrowserFile file, string endpoint)

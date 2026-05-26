@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.IO.Compression;
+using System.Xml.Linq;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -11,6 +13,10 @@ namespace Tempo.Blazor.Demo.Api.Tests;
 
 public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 {
+    private static readonly XNamespace A = "http://schemas.openxmlformats.org/drawingml/2006/main";
+    private static readonly XNamespace W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    private static readonly XNamespace Wp = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing";
+
     private readonly HttpClient _client;
 
     public DocumentEditorFormatEndpointTests(WebApplicationFactory<Program> factory)
@@ -48,12 +54,11 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
         load!.Found.Should().BeTrue();
         load.Document.Should().NotBeNull();
         load.Document!.Metadata.Title.Should().Be("Evidence exhibit");
-        load.Document.Blocks
-            .Select(block => block.Content)
-            .OfType<ImageBlockContent>()
+        load.Document.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        DocumentImagePersistence.EnumerateDrawingRuns(load.Document)
             .Should()
-            .Contain(image => image.Source == DocumentImageSource.Url)
-            .And.Contain(image => image.Source == DocumentImageSource.Asset && image.AssetId == "exhibit-provider-asset");
+            .OnlyContain(drawing => drawing.Source == DocumentImageSource.Asset)
+            .And.Contain(drawing => drawing.AssetId == "exhibit-provider-asset");
 
         contractLoad.Should().NotBeNull();
         contractLoad!.Found.Should().BeTrue();
@@ -65,14 +70,13 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
             revision.Id == "contract-revision-scope"
             && revision.Action == DocumentRevisionAction.Pending
             && revision.Type == DocumentRevisionType.Insertion);
-        contract.Blocks
-            .Select(block => block.Content)
-            .OfType<ImageBlockContent>()
+        contract.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        DocumentImagePersistence.EnumerateDrawingRuns(contract)
             .Should()
-            .Contain(image =>
-                image.Source == DocumentImageSource.Asset
-                && image.AssetId == "contract-evidence-asset"
-                && image.Size.Width >= 200);
+            .Contain(drawing =>
+                drawing.Source == DocumentImageSource.Asset
+                && drawing.AssetId == "contract-evidence-asset"
+                && drawing.Size.Width >= 200);
         contract.Blocks
             .Select(block => block.Content)
             .OfType<ParagraphBlockContent>()
@@ -94,6 +98,38 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
     }
 
     [Fact]
+    public async Task DemoSeeds_UseDrawingRunsWithoutTopLevelImageBlocks()
+    {
+        foreach (var documentId in new[] { "contract-demo", "exhibits-demo", "onlyoffice-parity-2026-05-24" })
+        {
+            var load = await _client.GetFromJsonAsync<DocumentEditorLoadResult>($"/api/document-editor/documents/{documentId}");
+            load.Should().NotBeNull();
+            load!.Found.Should().BeTrue();
+            load.Document.Should().NotBeNull();
+            load.Document!.Blocks.Should().NotContain(block => block.Content is ImageBlockContent, $"{documentId} should use drawing runs");
+            DocumentImagePersistence.EnumerateDrawingRuns(load.Document).Should().NotBeEmpty($"{documentId} should include image drawing runs");
+        }
+
+        var onlyOffice = await _client.GetFromJsonAsync<DocumentEditorLoadResult>("/api/document-editor/documents/onlyoffice-parity-2026-05-24");
+        var drawings = DocumentImagePersistence.EnumerateDrawingRuns(onlyOffice!.Document!).ToArray();
+        var modes = drawings.Select(drawing => drawing.Layout.Wrap.Mode).ToArray();
+        modes.Should().Contain(DocumentWrapMode.Inline);
+        modes.Should().Contain(DocumentWrapMode.Square);
+        modes.Should().Contain(DocumentWrapMode.TopBottom);
+        modes.Should().Contain(DocumentWrapMode.Tight);
+        modes.Should().Contain(DocumentWrapMode.Through);
+        modes.Should().Contain(DocumentWrapMode.BehindText);
+        modes.Should().Contain(DocumentWrapMode.InFrontOfText);
+        drawings
+            .Should()
+            .Contain(drawing => drawing.Layout.Anchor.Region == DocumentRenditionAnchorScope.Header)
+            .And.Contain(drawing => drawing.Layout.Anchor.Region == DocumentRenditionAnchorScope.Footer)
+            .And.Contain(drawing => drawing.Layout.Anchor.CellId == "recovery-table-image-cell");
+        drawings.Should().Contain(drawing => drawing.Layout.Transform.Crop.Left > 0);
+        drawings.Should().Contain(drawing => Math.Abs(drawing.Layout.Transform.Rotation) > 0.01);
+    }
+
+    [Fact]
     public async Task ExportDocx_ReturnsDocxPackage()
     {
         var response = await _client.GetAsync("/api/document-editor/contract-demo/export/docx");
@@ -102,6 +138,75 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         var bytes = await response.Content.ReadAsByteArrayAsync();
         bytes.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task Phase38_ExportDocx_ImageParityDemoContainsNativeDrawingMl()
+    {
+        var response = await _client.GetAsync("/api/document-editor/image-parity/export-docx");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
+        var documentXml = ReadPackageXml(archive, "word/document.xml");
+        var headerXml = ReadPackageXml(archive, archive.Entries.Single(entry => entry.FullName.StartsWith("word/header", StringComparison.OrdinalIgnoreCase)).FullName);
+        var footerXml = ReadPackageXml(archive, archive.Entries.Single(entry => entry.FullName.StartsWith("word/footer", StringComparison.OrdinalIgnoreCase)).FullName);
+
+        documentXml.Descendants(Wp + "inline").Should().NotBeEmpty();
+        documentXml.Descendants(Wp + "anchor").Should().NotBeEmpty();
+        headerXml.Descendants(W + "drawing").Should().NotBeEmpty();
+        footerXml.Descendants(W + "drawing").Should().NotBeEmpty();
+        documentXml.Descendants(W + "tc").Descendants(W + "drawing").Should().NotBeEmpty();
+        documentXml.Descendants(Wp + "wrapTight").Should().NotBeEmpty();
+        documentXml.Descendants(Wp + "wrapThrough").Should().NotBeEmpty();
+        documentXml.Descendants(A + "srcRect").Should().NotBeEmpty();
+        documentXml.Descendants(A + "xfrm")
+            .Should()
+            .Contain(element => element.Attribute("rot") != null);
+        documentXml.Descendants(W + "t").Select(text => text.Value).Should().NotContain("[Image]");
+        archive.Entries.Should().Contain(entry => entry.FullName.Contains("media/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Phase38_ImportDocx_ImageParityFixturePreservesDrawingRegions()
+    {
+        var response = await _client.PostAsync("/api/document-editor/image-parity/import-onlyoffice-fixture", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var imported = await response.Content.ReadFromJsonAsync<DocumentFormatImportProviderResult>();
+
+        imported.Should().NotBeNull();
+        imported!.Success.Should().BeTrue();
+        imported.Document.Should().NotBeNull();
+        imported.Document!.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        var drawings = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).ToArray();
+        drawings.Should().Contain(drawing => drawing.Layout.Anchor.Region == DocumentRenditionAnchorScope.Body);
+        drawings.Should().Contain(drawing => drawing.Layout.Anchor.Region == DocumentRenditionAnchorScope.Header);
+        drawings.Should().Contain(drawing => drawing.Layout.Anchor.Region == DocumentRenditionAnchorScope.Footer);
+        drawings.Should().Contain(drawing => drawing.Layout.Anchor.Region == DocumentRenditionAnchorScope.TableCell);
+        drawings.Should().Contain(drawing => drawing.Source == DocumentImageSource.Asset);
+    }
+
+    [Fact]
+    public async Task Phase38_ProviderStyleExportDocx_ReturnsCompatibilityWarningsForUi()
+    {
+        var document = CreateUnresolvedExternalImageDocument();
+
+        var response = await _client.PostAsJsonAsync("/api/document-editor/formats/export", new DocumentFormatExportProviderRequest
+        {
+            DocumentId = document.DocumentId,
+            Format = DocumentFormatProviderKind.Docx,
+            Document = document,
+            FileName = "provider-export-warning"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var exported = await response.Content.ReadFromJsonAsync<DocumentFormatExportProviderResult>();
+
+        exported.Should().NotBeNull();
+        exported!.Warnings.Should().Contain(warning =>
+            warning.Code == "docx.imageExternalUrlUnsupported"
+            && warning.Severity == DocumentFormatProviderWarningSeverity.Dropped);
     }
 
     [Fact]
@@ -276,6 +381,30 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
         var imported = await response.Content.ReadFromJsonAsync<DocumentFormatImportResult>();
         imported.Should().NotBeNull();
         imported!.Document.Blocks.Should().Contain(block => block.Content is HeadingBlockContent);
+    }
+
+    [Fact]
+    public async Task FormatExportImport_RoundtripsDrawingRunsWithoutLegacyImageBlocks()
+    {
+        var document = CreateDrawingRunDocument("Drawing export");
+
+        var docxExport = await new DocumentDocxExporter().ExportAsync(document);
+        var docxImport = await new DocumentDocxImporter().ImportAsync(new MemoryStream(docxExport.Content));
+        var docxDrawings = DocumentImagePersistence.EnumerateDrawingRuns(docxImport.Document).ToArray();
+
+        var odtExport = await new DocumentOdtExporter().ExportAsync(document);
+        var odtImport = await new DocumentOdtImporter().ImportAsync(new MemoryStream(odtExport.Content));
+        var odtDrawings = DocumentImagePersistence.EnumerateDrawingRuns(odtImport.Document).ToArray();
+
+        docxDrawings.Should().ContainSingle();
+        docxDrawings[0].AltText.Should().Be("Exported drawing");
+        docxDrawings[0].Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        docxImport.Document.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+
+        odtDrawings.Should().ContainSingle();
+        odtDrawings[0].AltText.Should().Be("Exported drawing");
+        odtDrawings[0].Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        odtImport.Document.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
     }
 
     [Fact]
@@ -457,5 +586,81 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
             }
         });
         return document;
+    }
+
+    private static DocumentEditorDocument CreateDrawingRunDocument(string title)
+    {
+        var document = CreateImportDocument(title);
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "drawing-paragraph",
+            Type = DocumentBlockType.Paragraph,
+            Order = 2,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun { Text = "Before image " },
+                    new DocumentDrawingRun
+                    {
+                        ObjectId = "export-drawing",
+                        Source = DocumentImageSource.Url,
+                        Url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+                        AltText = "Exported drawing",
+                        Caption = "Exported drawing caption",
+                        Size = new DocumentImageSize { Width = 120, Height = 80 },
+                        NaturalSize = new DocumentImageSize { Width = 120, Height = 80 },
+                        Layout = new DocumentObjectLayout
+                        {
+                            Kind = DocumentObjectLayoutKind.Anchored,
+                            Anchor = new DocumentObjectAnchor { BlockId = "drawing-paragraph", Offset = 13 },
+                            Wrap = new DocumentObjectWrap { Mode = DocumentWrapMode.Square, DistanceLeft = 6, DistanceRight = 6 },
+                            Transform = new DocumentObjectTransform { Width = 120, Height = 80, NaturalWidth = 120, NaturalHeight = 80 }
+                        }
+                    }
+                ]
+            }
+        });
+
+        return document;
+    }
+
+    private static DocumentEditorDocument CreateUnresolvedExternalImageDocument()
+    {
+        var document = CreateImportDocument("External image warning");
+        document.DocumentId = "external-image-warning";
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "external-image-paragraph",
+            Type = DocumentBlockType.Paragraph,
+            Order = 2,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun { Text = "External image " },
+                    new DocumentDrawingRun
+                    {
+                        ObjectId = "external-image",
+                        Source = DocumentImageSource.Url,
+                        Url = "https://example.test/image.png",
+                        AltText = "External unresolved image",
+                        Size = new DocumentImageSize { Width = 64, Height = 64 },
+                        NaturalSize = new DocumentImageSize { Width = 64, Height = 64 },
+                        Layout = DocumentObjectLayout.Inline()
+                    }
+                ]
+            }
+        });
+
+        return document;
+    }
+
+    private static XDocument ReadPackageXml(ZipArchive archive, string path)
+    {
+        var entry = archive.GetEntry(path);
+        entry.Should().NotBeNull($"DOCX package should contain {path}");
+        using var stream = entry!.Open();
+        return XDocument.Load(stream);
     }
 }

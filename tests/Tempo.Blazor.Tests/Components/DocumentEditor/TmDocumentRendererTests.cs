@@ -56,22 +56,26 @@ public class TmDocumentRendererTests : LocalizationTestBase
     }
 
     [Fact]
-    public void BlockRenderer_RendersImageUrlBlockWithAltAndCaption()
+    public void BlockRenderer_RendersDrawingRunUrlImageWithAltAndCaption()
     {
-        var cut = RenderBlock(ImageUrl(SafePngDataUrl, "Chart preview", "Evidence image"));
+        var cut = RenderBlock(Paragraph(
+            new TextRun { Text = "Before " },
+            DrawingUrl("drawing-url", SafePngDataUrl, "Chart preview", "Evidence image"),
+            new TextRun { Text = " after." }));
 
-        var image = cut.Find("img.tm-document-image__media");
+        var drawing = cut.Find("[data-testid='document-drawing-object'][data-object-id='drawing-url']");
+        var image = drawing.QuerySelector("img.tm-document-image__media");
         image.GetAttribute("src").Should().Be(SafePngDataUrl);
         image.GetAttribute("alt").Should().Be("Chart preview");
-        cut.Find("figcaption").TextContent.Should().Contain("Evidence image");
+        drawing.TextContent.Should().Contain("Evidence image");
     }
 
     [Fact]
-    public void BlockRenderer_RendersProviderImageBlock()
+    public void BlockRenderer_RendersProviderDrawingRun()
     {
         var resolver = new StaticImageResolver(SafePngDataUrl);
 
-        var cut = RenderBlock(ImageAsset("asset-1", "Provider image", "Uploaded image"), resolver);
+        var cut = RenderBlock(Paragraph(DrawingAsset("drawing-asset", "asset-1", "Provider image", "Uploaded image")), resolver);
 
         cut.WaitForAssertion(() =>
             cut.Find("img.tm-document-image__media").GetAttribute("src").Should().Be(SafePngDataUrl));
@@ -79,17 +83,17 @@ public class TmDocumentRendererTests : LocalizationTestBase
     }
 
     [Fact]
-    public void BlockRenderer_ShowsImageLoadingStateWhileProviderResolves()
+    public void BlockRenderer_ShowsDrawingRunLoadingStateWhileProviderResolves()
     {
-        var cut = RenderBlock(ImageAsset("asset-1", "Provider image", null), new DelayedImageResolver());
+        var cut = RenderBlock(Paragraph(DrawingAsset("drawing-loading", "asset-1", "Provider image", null)), new DelayedImageResolver());
 
         cut.Find(".tm-document-image__loading").TextContent.Should().Contain("Loading image");
     }
 
     [Fact]
-    public void BlockRenderer_RendersBrokenImageStateForUnsafeUrl()
+    public void BlockRenderer_RendersBrokenDrawingStateForUnsafeUrl()
     {
-        var cut = RenderBlock(ImageUrl("javascript:alert(1)", "Unsafe", null));
+        var cut = RenderBlock(Paragraph(DrawingUrl("drawing-unsafe", "javascript:alert(1)", "Unsafe", null)));
 
         cut.FindAll("img").Should().BeEmpty();
         cut.Find(".tm-document-image__broken").TextContent.Should().Contain("Image could not be loaded");
@@ -260,27 +264,33 @@ public class TmDocumentRendererTests : LocalizationTestBase
         }
     };
 
-    private static DocumentBlock ImageUrl(string url, string alt, string? caption) => new()
+    private static DocumentDrawingRun DrawingUrl(string objectId, string url, string alt, string? caption) => new()
     {
-        Type = DocumentBlockType.Image,
-        Content = new ImageBlockContent
-        {
-            Source = DocumentImageSource.Url,
-            Url = url,
-            AltText = alt,
-            Caption = caption
-        }
+        Id = $"{objectId}-run",
+        ObjectId = objectId,
+        Source = DocumentImageSource.Url,
+        Url = url,
+        AltText = alt,
+        Caption = caption,
+        Size = new DocumentImageSize { Width = 120, Height = 80 },
+        Layout = DocumentObjectLayout.Inline()
     };
 
-    private static DocumentBlock ImageAsset(string assetId, string alt, string? caption) => new()
+    private static DocumentDrawingRun DrawingAsset(string objectId, string assetId, string alt, string? caption) => new()
     {
-        Type = DocumentBlockType.Image,
-        Content = new ImageBlockContent
+        Id = $"{objectId}-run",
+        ObjectId = objectId,
+        Source = DocumentImageSource.Asset,
+        AssetId = assetId,
+        AltText = alt,
+        Caption = caption,
+        Size = new DocumentImageSize { Width = 120, Height = 80 },
+        Layout = new DocumentObjectLayout
         {
-            Source = DocumentImageSource.Asset,
-            AssetId = assetId,
-            AltText = alt,
-            Caption = caption
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Wrap = new DocumentObjectWrap { Mode = DocumentWrapMode.Square },
+            Position = new DocumentObjectPosition { X = 12, Y = 8 },
+            Transform = new DocumentObjectTransform { Width = 120, Height = 80 }
         }
     };
 

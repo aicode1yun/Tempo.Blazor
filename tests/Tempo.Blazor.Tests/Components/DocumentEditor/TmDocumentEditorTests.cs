@@ -939,6 +939,98 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task WysiwygSelectionChanged_ImageInspectorReadsActiveDrawingObject()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var paragraph = seeded.Blocks.First(block => block.Content is ParagraphBlockContent);
+        paragraph.Content = new ParagraphBlockContent
+        {
+            Inlines =
+            [
+                new TextRun { Id = "drawing-text-before", Text = "Before " },
+                new DocumentDrawingRun
+                {
+                    Id = "drawing-run-1",
+                    ObjectId = "drawing-1",
+                    Url = "https://example.test/drawing.png",
+                    AltText = "Selected drawing object",
+                    Size = new DocumentImageSize { Width = 144, Height = 96, LockAspectRatio = true },
+                    Layout = new DocumentObjectLayout
+                    {
+                        Kind = DocumentObjectLayoutKind.Anchored,
+                        Anchor = new DocumentObjectAnchor
+                        {
+                            BlockId = paragraph.Id,
+                            Offset = 7,
+                            InlineIndex = 1
+                        },
+                        Wrap = new DocumentObjectWrap
+                        {
+                            Mode = DocumentWrapMode.Square
+                        },
+                        Transform = new DocumentObjectTransform
+                        {
+                            Width = 144,
+                            Height = 96,
+                            LockAspectRatio = true
+                        }
+                    }
+                },
+                new TextRun { Id = "drawing-text-after", Text = " after" }
+            ]
+        };
+        await provider.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = "doc-1",
+            Document = seeded,
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        });
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() =>
+            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
+        {
+            Region = "Body",
+            SelectionMode = "Object",
+            AnchorBlockId = paragraph.Id,
+            FocusBlockId = paragraph.Id,
+            ActiveImageBlockId = paragraph.Id,
+            ActiveObjectId = "drawing-1",
+            HitTargetKind = "image",
+            IsCollapsed = false,
+            ObjectSelection = new WysiwygObjectSelectionSnapshot
+            {
+                Region = "Body",
+                Kind = "image",
+                ObjectId = "drawing-1",
+                BlockId = paragraph.Id,
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = "drawing-run-1",
+                AnchorInlineIndex = 1,
+                InlineIndex = 1,
+                AnchorOffset = 7,
+                RunId = "drawing-run-1"
+            }
+        }));
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-image-properties-panel']")
+                .GetAttribute("data-active-object-id").Should().Be("drawing-1"));
+        cut.Find("[data-testid='document-image-properties-panel']")
+            .GetAttribute("data-active-anchor-block-id").Should().Be(paragraph.Id);
+        cut.Find("[data-testid='document-image-inspector-alt']")
+            .GetAttribute("value").Should().Be("Selected drawing object");
+        cut.Find("[data-testid='document-image-inspector-width']")
+            .GetAttribute("value").Should().Be("144");
+    }
+
+    [Fact]
     public async Task WysiwygFormattingStateChanged_UpdatesToolbarFromCanonicalEventAndIgnoresStaleVersions()
     {
         var provider = new InMemoryDocumentEditorProvider();

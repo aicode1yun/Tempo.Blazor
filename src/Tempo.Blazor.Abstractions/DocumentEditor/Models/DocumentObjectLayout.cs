@@ -169,6 +169,15 @@ public class DocumentObjectAnchor
     /// <summary>Document region that owns this anchor.</summary>
     public DocumentRenditionAnchorScope Region { get; set; } = DocumentRenditionAnchorScope.Body;
 
+    /// <summary>Optional table id when the anchor points inside a table cell.</summary>
+    public string? TableId { get; set; }
+
+    /// <summary>Optional table cell id when the anchor points inside a table cell.</summary>
+    public string? CellId { get; set; }
+
+    /// <summary>Optional header/footer id when the anchor points inside page header or footer content.</summary>
+    public string? HeaderFooterId { get; set; }
+
     /// <summary>Zero-based page index computed by the current layout pass for diagnostics.</summary>
     [JsonIgnore]
     public int? PageIndex { get; set; }
@@ -211,6 +220,9 @@ public class DocumentObjectWrap
     /// <summary>Text wrapping mode.</summary>
     public DocumentWrapMode Mode { get; set; } = DocumentWrapMode.Inline;
 
+    /// <summary>Side of the object where surrounding text is allowed to flow.</summary>
+    public DocumentObjectWrapSide Side { get; set; } = DocumentObjectWrapSide.BothSides;
+
     /// <summary>Distance from object to surrounding text on the left side.</summary>
     public double DistanceLeft { get; set; }
 
@@ -235,6 +247,22 @@ public class DocumentObjectWrapPoint
 
     /// <summary>Y coordinate relative to the object bounds.</summary>
     public double Y { get; set; }
+}
+
+/// <summary>Text wrapping side for positioned document objects.</summary>
+public enum DocumentObjectWrapSide
+{
+    /// <summary>Allow text on both sides of the object.</summary>
+    BothSides,
+
+    /// <summary>Allow text only on the left side of the object.</summary>
+    Left,
+
+    /// <summary>Allow text only on the right side of the object.</summary>
+    Right,
+
+    /// <summary>Allow text on the side with the most available space.</summary>
+    Largest
 }
 
 /// <summary>A normalized point in an object wrap contour.</summary>
@@ -265,22 +293,74 @@ public class DocumentObjectTransform
 
     /// <summary>Crop rectangle expressed as distances from object edges.</summary>
     public DocumentObjectCrop Crop { get; set; } = new();
+
+    /// <summary>Optional horizontal and vertical flip flags for the transformed object.</summary>
+    public DocumentObjectFlip? Flip { get; set; }
 }
 
-/// <summary>Crop rectangle for a document object.</summary>
+/// <summary>Crop rectangle for a document object, expressed as normalized percentages from each object edge.</summary>
 public class DocumentObjectCrop
 {
-    /// <summary>Crop distance from the left edge.</summary>
+    /// <summary>Crop percentage from the left edge.</summary>
     public double Left { get; set; }
 
-    /// <summary>Crop distance from the top edge.</summary>
+    /// <summary>Crop percentage from the top edge.</summary>
     public double Top { get; set; }
 
-    /// <summary>Crop distance from the right edge.</summary>
+    /// <summary>Crop percentage from the right edge.</summary>
     public double Right { get; set; }
 
-    /// <summary>Crop distance from the bottom edge.</summary>
+    /// <summary>Crop percentage from the bottom edge.</summary>
     public double Bottom { get; set; }
+}
+
+/// <summary>Horizontal and vertical flip flags for a document object transform.</summary>
+public class DocumentObjectFlip
+{
+    /// <summary>Whether the object is mirrored horizontally.</summary>
+    public bool Horizontal { get; set; }
+
+    /// <summary>Whether the object is mirrored vertically.</summary>
+    public bool Vertical { get; set; }
+}
+
+/// <summary>Effect extent around a DrawingML object expressed in EMUs.</summary>
+public class DocumentObjectEffectExtent
+{
+    /// <summary>Left effect extent in EMUs.</summary>
+    public long Left { get; set; }
+
+    /// <summary>Top effect extent in EMUs.</summary>
+    public long Top { get; set; }
+
+    /// <summary>Right effect extent in EMUs.</summary>
+    public long Right { get; set; }
+
+    /// <summary>Bottom effect extent in EMUs.</summary>
+    public long Bottom { get; set; }
+}
+
+/// <summary>Absolute DrawingML point expressed in EMUs.</summary>
+public class DocumentObjectPoint
+{
+    /// <summary>X coordinate in EMUs.</summary>
+    public long X { get; set; }
+
+    /// <summary>Y coordinate in EMUs.</summary>
+    public long Y { get; set; }
+}
+
+/// <summary>Relative DrawingML size metadata from wp14:sizeRelH or wp14:sizeRelV.</summary>
+public class DocumentObjectRelativeSize
+{
+    /// <summary>WordprocessingML relative reference, for example page, margin, or paragraph.</summary>
+    public string? RelativeFrom { get; set; }
+
+    /// <summary>Normalized percentage value when it can be parsed from the source XML.</summary>
+    public double? Percent { get; set; }
+
+    /// <summary>Raw percentage value from the source XML, preserved for exact DOCX roundtrips.</summary>
+    public string? RawValue { get; set; }
 }
 
 /// <summary>Stacking behavior for positioned document objects.</summary>

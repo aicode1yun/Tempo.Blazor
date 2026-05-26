@@ -64,6 +64,7 @@ public sealed class DocumentEditorStrictEnginePhase19E2ETests : DocumentEditorE2
         var blocks = GetArray(document, "Blocks").ToArray();
         blocks.Should().Contain(block => GetString(block, "Id") == "contract-normal-overview", "demo must contain normal readable text");
         blocks.Should().Contain(block => GetString(block, "Id") == "contract-pricing-table" && IsEnum(GetRequired(block, "Type"), "Table", 4), "demo must contain a table");
+        blocks.Where(IsImageBlock).Should().BeEmpty("demo images must use drawing runs instead of top-level image blocks");
 
         var intro = FindBlock(blocks, "contract-intro");
         IsEnum(GetRequired(GetRequired(intro, "ParagraphProperties"), "Alignment"), "Justify", 3)
@@ -101,24 +102,28 @@ public sealed class DocumentEditorStrictEnginePhase19E2ETests : DocumentEditorE2
         bool requiresAlt)
     {
         var image = FindBlock(blocks, blockId);
-        IsEnum(GetRequired(image, "Type"), "Image", 5).Should().BeTrue($"{blockId} must be an image block");
+        IsEnum(GetRequired(image, "Type"), "Paragraph", 0).Should().BeTrue($"{blockId} must be a drawing-run paragraph");
 
         var content = GetRequired(image, "Content");
-        var caption = GetString(content, "Caption");
+        var drawing = GetArray(content, "Inlines")
+            .FirstOrDefault(inline => string.Equals(GetString(inline, "ObjectId"), blockId, StringComparison.Ordinal));
+        drawing.ValueKind.Should().NotBe(JsonValueKind.Undefined, $"{blockId} must expose a drawing run");
+
+        var caption = GetString(drawing, "Caption");
         caption.Should().NotBeNullOrWhiteSpace($"{blockId} must expose a caption for UI/UX coverage");
 
         if (requiresAlt)
         {
-            GetString(content, "AltText").Should().NotBeNullOrWhiteSpace($"{blockId} must have alt text");
+            GetString(drawing, "AltText").Should().NotBeNullOrWhiteSpace($"{blockId} must have alt text");
         }
         else
         {
-            GetString(content, "AltText").Should().BeNullOrWhiteSpace($"{blockId} intentionally drives the missing-alt warning");
+            GetString(drawing, "AltText").Should().BeNullOrWhiteSpace($"{blockId} intentionally drives the missing-alt warning");
         }
 
-        var source = GetRequired(content, "Source");
-        var assetId = GetString(content, "AssetId");
-        var url = GetString(content, "Url");
+        var source = GetRequired(drawing, "Source");
+        var assetId = GetString(drawing, "AssetId");
+        var url = GetString(drawing, "Url");
         if (assetId is not null)
         {
             assetId.Should().Be(stableAssetId);
@@ -130,7 +135,7 @@ public sealed class DocumentEditorStrictEnginePhase19E2ETests : DocumentEditorE2
             IsEnum(source, "Url", 0).Should().BeTrue($"{blockId} must use the stable demo URL asset");
         }
 
-        var layout = GetRequired(content, "Layout");
+        var layout = GetRequired(drawing, "Layout");
         var wrap = GetRequired(layout, "Wrap");
         IsEnum(GetRequired(wrap, "Mode"), wrapName, wrapValue).Should().BeTrue($"{blockId} must use {wrapName} wrapping");
 
@@ -164,6 +169,16 @@ public sealed class DocumentEditorStrictEnginePhase19E2ETests : DocumentEditorE2
 
     private static JsonElement FindBlock(IEnumerable<JsonElement> blocks, string id)
         => blocks.FirstOrDefault(block => GetString(block, "Id") == id);
+
+    private static bool IsImageBlock(JsonElement block)
+    {
+        if (!TryGetProperty(block, "Type", out var type))
+        {
+            return false;
+        }
+
+        return IsEnum(type, "Image", 5);
+    }
 
     private static IEnumerable<JsonElement> GetArray(JsonElement element, string propertyName)
     {

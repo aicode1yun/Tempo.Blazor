@@ -1,5 +1,8 @@
 using FluentAssertions;
 using Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Model;
+using DocumentDrawingKind = Tempo.Blazor.DocumentEditor.Models.DocumentDrawingKind;
+using DocumentImageSource = Tempo.Blazor.DocumentEditor.Models.DocumentImageSource;
+using DocumentObjectLayoutKind = Tempo.Blazor.DocumentEditor.Models.DocumentObjectLayoutKind;
 
 namespace Tempo.Blazor.Tests.Components.DocumentEditor.Wysiwyg.Model;
 
@@ -130,15 +133,25 @@ public class DocumentModelTests
     }
 
     [Fact]
-    public void DocumentModel_CanAddImageBlockToBody()
+    public void DocumentModel_CanAddDrawingInlineToParagraphBody()
     {
         var model = new DocumentModel();
-        var image = new ImageBlock { Src = "image.png", Alt = "Test" };
+        var paragraph = new ParagraphBlock();
+        var drawing = new DrawingInline
+        {
+            ObjectId = "drawing-object-1",
+            Source = DocumentImageSource.Url,
+            Url = "/image.png",
+            AltText = "Test"
+        };
 
-        model.Body.Add(image);
+        paragraph.Inlines.Add(drawing);
+        model.Body.Add(paragraph);
 
         model.Body.Should().ContainSingle()
-            .Which.Should().BeOfType<ImageBlock>();
+            .Which.Should().BeOfType<ParagraphBlock>()
+            .Which.Inlines.Should().ContainSingle()
+            .Which.Should().BeSameAs(drawing);
     }
 
     [Fact]
@@ -413,19 +426,34 @@ public class DocumentModelTests
     }
 
     [Fact]
-    public void ImageBlock_HasTypeImage()
+    public void DrawingInline_IsInlineNodeWithStableObjectId()
     {
-        var block = new ImageBlock();
+        var inline = new DrawingInline();
 
-        block.Type.Should().Be("image");
+        inline.Should().BeAssignableTo<Inline>();
+        inline.ObjectId.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
-    public void ImageBlock_HasDefaultInlineLayout()
+    public void DrawingInline_HasDefaultImagePayloadAndInlineLayout()
     {
-        var block = new ImageBlock();
+        var inline = new DrawingInline();
 
-        block.Layout.Should().Be(ImageLayout.Inline);
+        inline.Kind.Should().Be(DocumentDrawingKind.Image);
+        inline.Source.Should().Be(DocumentImageSource.Url);
+        inline.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Inline);
+        inline.Layout.IsInline.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DrawingInline_HasStableObjectIdAndDefaultInlineLayout()
+    {
+        var inline = new DrawingInline();
+
+        inline.ObjectId.Should().NotBeNullOrWhiteSpace();
+        inline.Kind.Should().Be(DocumentDrawingKind.Image);
+        inline.Source.Should().Be(DocumentImageSource.Url);
+        inline.Layout.IsInline.Should().BeTrue();
     }
 
     [Fact]

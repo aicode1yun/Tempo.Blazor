@@ -39,6 +39,9 @@ public sealed class DocumentFormatCompatibilityWarning
 
     /// <summary>Optional source path inside the package.</summary>
     public string? SourcePath { get; set; }
+
+    /// <summary>Optional editor drawing object id related to the warning.</summary>
+    public string? ObjectId { get; set; }
 }
 
 /// <summary>Options used when importing an external package.</summary>
@@ -52,6 +55,15 @@ public sealed class DocumentFormatImportOptions
 
     /// <summary>Optional callback that persists extracted image bytes and returns an asset id.</summary>
     public Func<DocumentFormatImageImportRequest, CancellationToken, Task<DocumentFormatImageImportResult>>? ImageImporter { get; set; }
+
+    /// <summary>Maximum embedded image part size accepted during import, in bytes.</summary>
+    public long MaxImagePartBytes { get; set; } = 25L * 1024 * 1024;
+
+    /// <summary>Maximum raw DrawingML XML size preserved for unsupported drawing fallback metadata, in characters.</summary>
+    public int MaxRawDrawingXmlChars { get; set; } = 128 * 1024;
+
+    /// <summary>Whether the importer may download externally linked images. Defaults to false for untrusted packages.</summary>
+    public bool AllowExternalImageDownload { get; set; }
 }
 
 /// <summary>Options used when exporting an external package.</summary>
@@ -62,6 +74,15 @@ public sealed class DocumentFormatExportOptions
 
     /// <summary>Optional callback that resolves asset-backed image bytes.</summary>
     public Func<DocumentFormatImageExportRequest, CancellationToken, Task<DocumentFormatImageExportResult?>>? ImageResolver { get; set; }
+
+    /// <summary>Whether unsupported or unavailable images may be exported as transparent placeholders.</summary>
+    public bool AllowImagePlaceholders { get; set; }
+
+    /// <summary>Maximum image payload size accepted during export, in bytes.</summary>
+    public long MaxImagePartBytes { get; set; } = 25L * 1024 * 1024;
+
+    /// <summary>Whether the exporter may download external image URLs. Defaults to false for untrusted content.</summary>
+    public bool AllowExternalImageDownload { get; set; }
 }
 
 /// <summary>Result returned from an external package importer.</summary>
@@ -187,6 +208,9 @@ public sealed class DocumentFormatImageExportResult
 
     /// <summary>Image bytes.</summary>
     public byte[] Content { get; set; } = [];
+
+    /// <summary>Optional original file name used to infer image type when content type is not available.</summary>
+    public string? FileName { get; set; }
 }
 
 /// <summary>External package importer.</summary>

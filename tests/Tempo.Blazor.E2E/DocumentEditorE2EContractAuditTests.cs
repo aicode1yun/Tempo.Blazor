@@ -11,6 +11,8 @@ public sealed class DocumentEditorE2EContractAuditTests
     private static readonly DocumentEditorE2EContract[] Contracts =
     [
         new("DocumentEditorE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.DiagnosticRuntime | E2EContractKind.ProviderBoundary | E2EContractKind.LayoutVisual | E2EContractKind.LegacyMixed, "Legacy mixed suite retained for breadth; it includes diagnostic runtime probes, while strict/OnlyOffice suites provide the canonical UX contracts.", "DocumentEditorOnlyOfficeParityE2ETests.cs"),
+        new("DocumentEditorImageDocxPhase39E2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.ProviderBoundary | E2EContractKind.LayoutVisual, "DOCX import/edit/export DrawingML workflow coverage through real upload/download UI boundaries."),
+        new("DocumentEditorImageOnlyOfficeParityE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "ONLYOFFICE-level image wrapping, focus, insertion, drag and resize behavior."),
         new("DocumentEditorOnlyOfficeParityE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "Canonical ONLYOFFICE-level workflow coverage for formatting, selection, revisions, undo, side panels and ribbon modes."),
         new("DocumentEditorPhase10ClipboardPipelineE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.ProviderBoundary, "Clipboard paste/import boundaries through user-visible entry points."),
         new("DocumentEditorPhase11ImageUxE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "Image insertion and inspector UX."),
@@ -63,6 +65,7 @@ public sealed class DocumentEditorE2EContractAuditTests
         new("DocumentEditorStrictEnginePhase16E2ETests.cs", E2EContractKind.DiagnosticRuntime | E2EContractKind.LayoutVisual, "Strict visual matrix diagnostics."),
         new("DocumentEditorStrictEnginePhase17E2ETests.cs", E2EContractKind.DiagnosticRuntime | E2EContractKind.ProviderBoundary, "Strict autosave/watchdog diagnostics."),
         new("DocumentEditorStrictEnginePhase18E2ETests.cs", E2EContractKind.DiagnosticRuntime, "Strict test-harness diagnostics."),
+        new("DocumentEditorStrictEnginePhase18ImageRegionScopeE2ETests.cs", E2EContractKind.DiagnosticRuntime | E2EContractKind.LayoutVisual, "Strict image-region diagnostics for header, footer and table-cell drawing scope."),
         new("DocumentEditorStrictEnginePhase19E2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.DiagnosticRuntime, "Strict demo reset and readable reload diagnostics."),
         new("DocumentEditorStrictEnginePhase20E2ETests.cs", E2EContractKind.DiagnosticRuntime, "Strict performance diagnostics."),
         new("DocumentEditorStrictEnginePhase22E2ETests.cs", E2EContractKind.DiagnosticRuntime, "Strict demo-doc diagnostics."),

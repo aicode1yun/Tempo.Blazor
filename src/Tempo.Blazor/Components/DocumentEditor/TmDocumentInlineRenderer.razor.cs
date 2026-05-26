@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using System.Globalization;
+using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 
 namespace Tempo.Blazor.Components.DocumentEditor;
@@ -6,13 +8,29 @@ namespace Tempo.Blazor.Components.DocumentEditor;
 /// <summary>Renders a single inline content run from the document editor model.</summary>
 public partial class TmDocumentInlineRenderer : ComponentBase
 {
+    private string? _resolvedDrawingImageUrl;
+    private string? _resolvedDrawingAssetId;
+    private bool _isResolvingImage;
+
     /// <summary>Inline content to render.</summary>
     [Parameter] public InlineContent? Inline { get; set; }
+
+    /// <summary>Document id used by provider-backed image resolution.</summary>
+    [Parameter] public string DocumentId { get; set; } = string.Empty;
+
+    /// <summary>Optional resolver for provider-managed image assets.</summary>
+    [Parameter] public IDocumentImageUrlResolver? ImageUrlResolver { get; set; }
 
     /// <summary>Raised when a comment anchor inline is selected.</summary>
     [Parameter] public EventCallback<string> OnCommentSelected { get; set; }
 
     private string? SafeHref => GetSafeHref();
+
+    private string? DrawingImageUrl => GetDrawingImageUrl();
+
+    private string? SafeDrawingLinkUrl => Inline is DocumentDrawingRun drawing && DocumentLinkUtility.IsSafeHref(drawing.LinkUrl)
+        ? DocumentLinkUtility.NormalizeHref(drawing.LinkUrl!)
+        : null;
 
     private string? LinkTitle => Inline?.Marks.FirstOrDefault(mark => mark.Type == InlineMarkType.Link)?.Link?.Title;
 
@@ -43,6 +61,50 @@ public partial class TmDocumentInlineRenderer : ComponentBase
         DocumentNoteReferenceRun note => GetNoteReferenceTitle(note),
         _ => LinkTitle
     };
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Inline is not DocumentDrawingRun drawing
+            || drawing.Source == DocumentImageSource.Url)
+        {
+            _resolvedDrawingAssetId = null;
+            _resolvedDrawingImageUrl = null;
+            _isResolvingImage = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(drawing.AssetId) || ImageUrlResolver is null)
+        {
+            _resolvedDrawingAssetId = drawing.AssetId;
+            _resolvedDrawingImageUrl = null;
+            _isResolvingImage = false;
+            return;
+        }
+
+        if (string.Equals(_resolvedDrawingAssetId, drawing.AssetId, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(_resolvedDrawingImageUrl))
+        {
+            return;
+        }
+
+        _resolvedDrawingAssetId = drawing.AssetId;
+        _resolvedDrawingImageUrl = null;
+        _isResolvingImage = true;
+
+        try
+        {
+            _resolvedDrawingImageUrl = await ImageUrlResolver.ResolveUrlAsync(DocumentId, drawing.AssetId);
+        }
+        catch
+        {
+            _resolvedDrawingImageUrl = null;
+        }
+        finally
+        {
+            _isResolvingImage = false;
+        }
+    }
 
     private static string GetNoteReferenceTestId(DocumentNoteReferenceRun note) =>
         note.NoteType == DocumentNoteType.Endnote
@@ -136,6 +198,130 @@ public partial class TmDocumentInlineRenderer : ComponentBase
             _ => string.Empty
         };
     }
+
+    private string? GetDrawingImageUrl()
+    {
+        if (Inline is not DocumentDrawingRun drawing || drawing.Kind != DocumentDrawingKind.Image)
+        {
+            return null;
+        }
+
+        if (drawing.Source == DocumentImageSource.Url)
+        {
+            return TmDocumentBlockRenderer.IsSafeImageUrl(drawing.Url) ? drawing.Url : null;
+        }
+
+        if (TmDocumentBlockRenderer.IsSafeImageUrl(_resolvedDrawingImageUrl))
+        {
+            return _resolvedDrawingImageUrl;
+        }
+
+        return TmDocumentBlockRenderer.IsSafeImageUrl(drawing.Url) ? drawing.Url : null;
+    }
+
+    private static string GetDrawingClass(DocumentDrawingRun drawing)
+    {
+        var classes = new List<string>
+        {
+            "tm-document-inline",
+            "tm-document-drawing",
+            "tm-document-image"
+        };
+
+        var alignment = drawing.Layout.Position.HorizontalAlignment switch
+        {
+            DocumentImageHorizontalPosition.Left => "start",
+            DocumentImageHorizontalPosition.Right => "end",
+            _ => "center"
+        };
+        classes.Add($"tm-document-image--{alignment}");
+
+        if (drawing.Layout.IsInline)
+        {
+            classes.Add("tm-document-drawing--inline");
+        }
+        else
+        {
+            classes.Add("tm-document-drawing--anchored");
+            classes.Add("tm-document-image--floating");
+            classes.Add($"tm-document-image--wrap-{ToCssToken(drawing.Layout.Wrap.Mode)}");
+            classes.Add($"tm-document-image--relative-{ToCssToken(drawing.Layout.Position.HorizontalRelativeTo)}");
+            classes.Add($"tm-document-image--vrelative-{ToCssToken(drawing.Layout.Position.VerticalRelativeTo)}");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private static string GetDrawingWrapMode(DocumentDrawingRun drawing)
+        => drawing.Layout.Wrap.Mode.ToString();
+
+    private static string GetDrawingAriaLabel(DocumentDrawingRun drawing)
+    {
+        if (drawing.IsDecorative)
+        {
+            return string.Empty;
+        }
+
+        return string.IsNullOrWhiteSpace(drawing.AltText)
+            ? drawing.Caption ?? string.Empty
+            : drawing.AltText!;
+    }
+
+    private static string GetDrawingAltText(DocumentDrawingRun drawing)
+        => drawing.IsDecorative ? string.Empty : drawing.AltText ?? string.Empty;
+
+    private static string? GetDrawingFigureStyle(DocumentDrawingRun drawing)
+    {
+        if (drawing.Layout.IsInline)
+        {
+            return null;
+        }
+
+        var styles = new List<string>
+        {
+            FormattableString.Invariant($"left: {drawing.Layout.Position.X:0.##}px"),
+            FormattableString.Invariant($"top: {drawing.Layout.Position.Y:0.##}px")
+        };
+
+        if (drawing.Layout.Stacking.ZIndex != 0)
+        {
+            styles.Add(FormattableString.Invariant($"z-index: {drawing.Layout.Stacking.ZIndex}"));
+        }
+
+        return string.Join("; ", styles);
+    }
+
+    private static string? GetDrawingImageStyle(DocumentDrawingRun drawing)
+    {
+        var styles = new List<string>();
+        var width = drawing.Layout.Transform.Width ?? drawing.Size.Width;
+        var height = drawing.Layout.Transform.Height ?? drawing.Size.Height;
+        if (width is > 0)
+        {
+            styles.Add(FormattableString.Invariant($"width: {width.Value:0.##}px"));
+        }
+
+        if (height is > 0)
+        {
+            styles.Add(FormattableString.Invariant($"height: {height.Value:0.##}px"));
+        }
+
+        return styles.Count == 0 ? null : string.Join("; ", styles);
+    }
+
+    private static string ToCssToken(DocumentWrapMode value)
+    {
+        return value switch
+        {
+            DocumentWrapMode.TopBottom => "top-bottom",
+            DocumentWrapMode.BehindText => "behind-text",
+            DocumentWrapMode.InFrontOfText => "in-front-of-text",
+            _ => value.ToString().ToLowerInvariant()
+        };
+    }
+
+    private static string ToCssToken(DocumentRelativePosition value)
+        => value.ToString().ToLowerInvariant();
 
     private static string ResolveFieldDisplayText(DocumentFieldRun field)
     {

@@ -65,7 +65,7 @@ public sealed class DocumentHtmlExporter
             var block = orderedBlocks[index];
             if (block.Content is ListBlockContent list)
             {
-                AppendList(html, orderedBlocks, ref index, list);
+                AppendList(html, orderedBlocks, ref index, list, options);
                 continue;
             }
 
@@ -79,18 +79,18 @@ public sealed class DocumentHtmlExporter
         {
             case ParagraphBlockContent paragraph:
                 html.Append("<p>");
-                AppendInlines(html, paragraph.Inlines);
+                AppendInlines(html, paragraph.Inlines, options);
                 html.Append("</p>");
                 break;
             case HeadingBlockContent heading:
                 var level = Math.Clamp(heading.Level, 1, 6);
                 html.Append("<h").Append(level).Append('>');
-                AppendInlines(html, heading.Inlines);
+                AppendInlines(html, heading.Inlines, options);
                 html.Append("</h").Append(level).Append('>');
                 break;
             case QuoteBlockContent quote:
                 html.Append("<blockquote>");
-                AppendInlines(html, quote.Inlines);
+                AppendInlines(html, quote.Inlines, options);
                 html.Append("</blockquote>");
                 break;
             case TableBlockContent table:
@@ -108,27 +108,27 @@ public sealed class DocumentHtmlExporter
         }
     }
 
-    private static void AppendList(StringBuilder html, IReadOnlyList<DocumentBlock> blocks, ref int index, ListBlockContent firstItem)
+    private static void AppendList(StringBuilder html, IReadOnlyList<DocumentBlock> blocks, ref int index, ListBlockContent firstItem, DocumentHtmlExportOptions options)
     {
         var ordered = firstItem.Ordered;
         html.Append(ordered ? "<ol>" : "<ul>");
-        AppendListItem(html, firstItem);
+        AppendListItem(html, firstItem, options);
 
         while (index + 1 < blocks.Count
             && blocks[index + 1].Content is ListBlockContent item
             && item.Ordered == ordered)
         {
             index++;
-            AppendListItem(html, item);
+            AppendListItem(html, item, options);
         }
 
         html.Append(ordered ? "</ol>" : "</ul>");
     }
 
-    private static void AppendListItem(StringBuilder html, ListBlockContent item)
+    private static void AppendListItem(StringBuilder html, ListBlockContent item, DocumentHtmlExportOptions options)
     {
         html.Append("<li>");
-        AppendInlines(html, item.Inlines);
+        AppendInlines(html, item.Inlines, options);
         html.Append("</li>");
     }
 
@@ -205,7 +205,7 @@ public sealed class DocumentHtmlExporter
         return options.ImageUrlResolver?.Invoke(image);
     }
 
-    private static void AppendInlines(StringBuilder html, IEnumerable<InlineContent> inlines)
+    private static void AppendInlines(StringBuilder html, IEnumerable<InlineContent> inlines, DocumentHtmlExportOptions options)
     {
         foreach (var inline in inlines)
         {
@@ -214,12 +214,35 @@ public sealed class DocumentHtmlExporter
                 TextRun text => Html(text.Text),
                 TokenRun token => RenderToken(token),
                 DocumentNoteReferenceRun note => "<sup data-note-id=\"" + HtmlAttr(note.NoteId) + "\">" + Html(note.DisplayMarker ?? note.NoteId) + "</sup>",
+                DocumentDrawingRun drawing => RenderDrawing(drawing, options),
                 _ => string.Empty
             };
 
             html.Append(ApplyMarks(content, inline.Marks));
         }
     }
+
+    private static string RenderDrawing(DocumentDrawingRun drawing, DocumentHtmlExportOptions options)
+    {
+        var html = new StringBuilder();
+        AppendImage(html, ToImageBlockContent(drawing), options);
+        return html.ToString();
+    }
+
+    private static ImageBlockContent ToImageBlockContent(DocumentDrawingRun drawing)
+        => new()
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size ?? new DocumentImageSize(),
+            NaturalSize = drawing.NaturalSize ?? new DocumentImageSize(),
+            Layout = drawing.Layout ?? DocumentObjectLayout.Inline(),
+            LinkUrl = drawing.LinkUrl
+        };
 
     private static string RenderToken(TokenRun token)
     {

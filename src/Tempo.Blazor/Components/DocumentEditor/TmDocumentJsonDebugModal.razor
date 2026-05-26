@@ -39,6 +39,15 @@
                          data-testid="document-runtime-debug-content">@RuntimeDebugJson</pre>
                 </section>
             }
+            @if (!string.IsNullOrWhiteSpace(DocxDrawingMetadataJson))
+            {
+                <section class="tm-document-json-debug-modal__section"
+                         data-testid="document-docx-drawing-debug">
+                    <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugDocxDrawingMetadata"]</h3>
+                    <pre class="tm-document-json-debug-modal__json"
+                         data-testid="document-docx-drawing-debug-content">@DocxDrawingMetadataJson</pre>
+                </section>
+            }
             @if (!string.IsNullOrWhiteSpace(RecoveryDetailJson))
             {
                 <section class="tm-document-json-debug-modal__section"
@@ -61,6 +70,9 @@
 
     /// <summary>Optional JSON with the current runtime debug state.</summary>
     [Parameter] public string? RuntimeDebugJson { get; set; }
+
+    /// <summary>Optional JSON with imported/exportable DOCX DrawingML metadata.</summary>
+    [Parameter] public string? DocxDrawingMetadataJson { get; set; }
 
     /// <summary>Optional JSON with the latest runtime recovery detail.</summary>
     [Parameter] public string? RecoveryDetailJson { get; set; }

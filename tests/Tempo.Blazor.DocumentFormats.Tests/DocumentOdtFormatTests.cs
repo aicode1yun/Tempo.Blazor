@@ -48,7 +48,7 @@ public class DocumentOdtFormatTests
         result.Document.Blocks.Any(block => block.Content is HeadingBlockContent).Should().BeTrue();
         result.Document.Blocks.Any(block => block.Content is ListBlockContent { Ordered: true }).Should().BeTrue();
         result.Document.Blocks.Any(block => block.Content is TableBlockContent).Should().BeTrue();
-        result.Document.Blocks.Any(block => block.Content is ImageBlockContent).Should().BeTrue();
+        DocumentImagePersistence.EnumerateDrawingRuns(result.Document).Should().NotBeEmpty();
         var table = result.Document.Blocks.Select(block => block.Content).OfType<TableBlockContent>().Single();
         table.Rows[0].Cells[0].ColumnSpan.Should().Be(2);
     }
@@ -217,15 +217,14 @@ public class DocumentOdtFormatTests
         var exported = await new DocumentOdtExporter().ExportAsync(CreateFloatingImageDocument());
         var imported = await new DocumentOdtImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = imported.Document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
-        image.FloatingLayout.Should().NotBeNull();
-        image.FloatingLayout!.Inline.Should().BeFalse();
-        image.FloatingLayout.WrapMode.Should().Be(DocumentWrapMode.TopBottom);
-        image.FloatingLayout.HorizontalRelativeTo.Should().Be(DocumentRelativePosition.Margin);
-        image.FloatingLayout.VerticalRelativeTo.Should().Be(DocumentRelativePosition.Paragraph);
-        image.FloatingLayout.X.Should().Be(36);
-        image.FloatingLayout.Y.Should().Be(48);
-        image.FloatingLayout.LockAnchor.Should().BeTrue();
+        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        image.Layout.IsInline.Should().BeFalse();
+        image.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.TopBottom);
+        image.Layout.Position.HorizontalRelativeTo.Should().Be(DocumentRelativePosition.Margin);
+        image.Layout.Position.VerticalRelativeTo.Should().Be(DocumentRelativePosition.Paragraph);
+        image.Layout.Position.X.Should().BeApproximately(36, 0.1);
+        image.Layout.Position.Y.Should().BeApproximately(48, 0.1);
+        image.Layout.Anchor.LockAnchor.Should().BeTrue();
         image.Size.Width.Should().Be(160);
         image.Size.Height.Should().Be(90);
     }

@@ -25,9 +25,15 @@ internal static class DocumentModelText
             TextRun text => text.Text,
             TokenRun token => string.IsNullOrWhiteSpace(token.DisplayName) ? token.Key : token.DisplayName,
             DocumentNoteReferenceRun note => note.DisplayMarker ?? note.NoteId,
+            DocumentDrawingRun drawing => GetDrawingText(drawing),
             _ => string.Empty
         }));
     }
+
+    private static string GetDrawingText(DocumentDrawingRun drawing)
+        => string.IsNullOrWhiteSpace(drawing.Caption)
+            ? string.IsNullOrWhiteSpace(drawing.AltText) ? "[Image]" : $"[Image] {drawing.AltText}"
+            : $"[Image] {drawing.Caption}";
 
     public static List<InlineContent> TextInlines(string? text, params InlineMarkType[] marks)
     {

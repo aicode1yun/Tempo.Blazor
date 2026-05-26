@@ -7,7 +7,10 @@
         <p class="tm-document-block tm-document-block--paragraph">
             @foreach (var inline in paragraph.Inlines)
             {
-                <TmDocumentInlineRenderer Inline="@inline" OnCommentSelected="@OnCommentSelected" />
+                <TmDocumentInlineRenderer Inline="@inline"
+                                          DocumentId="@DocumentId"
+                                          ImageUrlResolver="@ImageUrlResolver"
+                                          OnCommentSelected="@OnCommentSelected" />
             }
         </p>
         break;
@@ -23,7 +26,10 @@
                 <li>
                     @foreach (var inline in list.Inlines)
                     {
-                        <TmDocumentInlineRenderer Inline="@inline" OnCommentSelected="@OnCommentSelected" />
+                        <TmDocumentInlineRenderer Inline="@inline"
+                                                  DocumentId="@DocumentId"
+                                                  ImageUrlResolver="@ImageUrlResolver"
+                                                  OnCommentSelected="@OnCommentSelected" />
                     }
                 </li>
             </ol>
@@ -34,7 +40,10 @@
                 <li>
                     @foreach (var inline in list.Inlines)
                     {
-                        <TmDocumentInlineRenderer Inline="@inline" OnCommentSelected="@OnCommentSelected" />
+                        <TmDocumentInlineRenderer Inline="@inline"
+                                                  DocumentId="@DocumentId"
+                                                  ImageUrlResolver="@ImageUrlResolver"
+                                                  OnCommentSelected="@OnCommentSelected" />
                     }
                 </li>
             </ul>
@@ -45,7 +54,10 @@
         <blockquote class="tm-document-block tm-document-block--quote">
             @foreach (var inline in quote.Inlines)
             {
-                <TmDocumentInlineRenderer Inline="@inline" OnCommentSelected="@OnCommentSelected" />
+                <TmDocumentInlineRenderer Inline="@inline"
+                                          DocumentId="@DocumentId"
+                                          ImageUrlResolver="@ImageUrlResolver"
+                                          OnCommentSelected="@OnCommentSelected" />
             }
         </blockquote>
         break;

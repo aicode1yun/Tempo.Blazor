@@ -162,9 +162,15 @@ public sealed class DemoDocumentPdfExportProvider : IDocumentPdfExportProvider
             TextRun text => text.Text,
             TokenRun token => string.IsNullOrWhiteSpace(token.FallbackText) ? token.DisplayName : token.FallbackText,
             DocumentNoteReferenceRun note => note.DisplayMarker ?? note.NoteId,
+            DocumentDrawingRun drawing => GetDrawingText(drawing),
             _ => string.Empty
         }));
     }
+
+    private static string GetDrawingText(DocumentDrawingRun drawing)
+        => string.IsNullOrWhiteSpace(drawing.Caption)
+            ? string.IsNullOrWhiteSpace(drawing.AltText) ? "[Image]" : $"[Image] {drawing.AltText}"
+            : $"[Image] {drawing.Caption}";
 
     private static string EnsurePdfFileName(string? requestedName, string documentId)
     {

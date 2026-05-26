@@ -387,7 +387,13 @@ public enum DocumentRenditionAnchorScope
     Endnote,
 
     /// <summary>Floating or anchored object content.</summary>
-    FloatingObject
+    FloatingObject,
+
+    /// <summary>Table cell content.</summary>
+    TableCell,
+
+    /// <summary>Comment body content.</summary>
+    Comment
 }
 
 /// <summary>Rendition hash metadata.</summary>

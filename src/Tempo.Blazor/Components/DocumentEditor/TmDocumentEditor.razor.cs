@@ -393,18 +393,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         ? _templatePreviewDocument ?? _document
         : _document;
 
-    private DocumentBlock? ActiveImageBlock =>
-        string.IsNullOrWhiteSpace(ActiveImageInspectorBlockId)
-            ? null
-            : DisplayedDocument?.Blocks.FirstOrDefault(block =>
-                string.Equals(block.Id, ActiveImageInspectorBlockId, StringComparison.Ordinal)
-                && block.Content is ImageBlockContent);
+    private DocumentDrawingRun? ActiveImageDrawingRun => FindDrawingRunByObjectId(DisplayedDocument, ActiveImageInspectorObjectId);
 
-    private ImageBlockContent? ActiveImageContent => ActiveImageBlock?.Content as ImageBlockContent;
+    private ImageBlockContent? ActiveImageContent => CreateImageBlockContentFromDrawingRun(ActiveImageDrawingRun);
+
+    private string? ActiveImageInspectorObjectId =>
+        !string.IsNullOrWhiteSpace(_selection.ObjectSelection?.ObjectId)
+            ? _selection.ObjectSelection.ObjectId
+            : !string.IsNullOrWhiteSpace(_selection.ActiveObjectId)
+                ? _selection.ActiveObjectId
+                : null;
 
     private string? ActiveImageInspectorBlockId =>
-        !string.IsNullOrWhiteSpace(_selection.ActiveImageBlockId)
-            ? _selection.ActiveImageBlockId
+        !string.IsNullOrWhiteSpace(_selection.ObjectSelection?.AnchorBlockId)
+            ? _selection.ObjectSelection.AnchorBlockId
             : _activeImageInspectorBlockId;
 
     private DocumentBlock? ActiveTableBlock =>
@@ -1451,60 +1453,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(snapshot);
         new DocumentEditorPostFixer().Fix(snapshot);
+        DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(snapshot);
         RemoveTransientDisplayData(snapshot);
         return snapshot;
     }
 
     private static void RemoveTransientDisplayData(DocumentEditorDocument document)
     {
-        foreach (var block in EnumerateProviderBoundaryBlocks(document.Blocks))
-        {
-            RemoveTransientDisplayData(block);
-        }
-
-        foreach (var headerFooter in document.HeadersFooters)
-        {
-            foreach (var block in EnumerateProviderBoundaryBlocks(headerFooter.Blocks))
-            {
-                RemoveTransientDisplayData(block);
-            }
-        }
-
-        foreach (var note in document.Notes)
-        {
-            foreach (var block in EnumerateProviderBoundaryBlocks(note.Blocks))
-            {
-                RemoveTransientDisplayData(block);
-            }
-        }
-    }
-
-    private static void RemoveTransientDisplayData(DocumentBlock block)
-    {
-        if (block.Content is ImageBlockContent { Source: DocumentImageSource.Asset } image
-            && !string.IsNullOrWhiteSpace(image.AssetId))
-        {
-            image.Url = null;
-        }
-    }
-
-    private static IEnumerable<DocumentBlock> EnumerateProviderBoundaryBlocks(IEnumerable<DocumentBlock> blocks)
-    {
-        foreach (var block in blocks)
-        {
-            yield return block;
-            if (block.Content is not TableBlockContent table)
-            {
-                continue;
-            }
-
-            foreach (var nested in table.Rows
-                         .SelectMany(row => row.Cells)
-                         .SelectMany(cell => EnumerateProviderBoundaryBlocks(cell.Blocks)))
-            {
-                yield return nested;
-            }
-        }
+        DocumentImagePersistence.Sanitize(document);
     }
 
     private Task DownloadFormatExportAsync(DocumentFormatExportProviderResult result)
@@ -1586,6 +1542,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         ExecuteImageRuntimeCommandAsync("setImageAltText", new
         {
             AltText = altText,
+            ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
 
@@ -1593,27 +1550,48 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         ExecuteImageRuntimeCommandAsync("setImageDecorative", new
         {
             IsDecorative = isDecorative,
+            ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
 
     private Task ToggleActiveImageCaptionFromPanelAsync() =>
-        ExecuteImageRuntimeCommandAsync("toggleImageCaption", new { BlockId = ActiveImageInspectorBlockId });
+        ExecuteImageRuntimeCommandAsync("toggleImageCaption", new
+        {
+            ObjectId = ActiveImageInspectorObjectId,
+            BlockId = ActiveImageInspectorBlockId
+        });
 
     private Task SetActiveImageCaptionFromPanelAsync(string caption) =>
         ExecuteImageRuntimeCommandAsync("setImageCaption", new
         {
             Caption = caption,
+            ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
 
     private Task SetActiveImageUrlFromPanelAsync(string? imageUrl) =>
-        ExecuteImageRuntimeCommandAsync("setImageUrl", new { Url = imageUrl, BlockId = ActiveImageInspectorBlockId });
+        ExecuteImageRuntimeCommandAsync("setImageUrl", new
+        {
+            Url = imageUrl,
+            ObjectId = ActiveImageInspectorObjectId,
+            BlockId = ActiveImageInspectorBlockId
+        });
 
     private Task SetActiveImageWrapModeFromPanelAsync(DocumentWrapMode wrapMode) =>
-        ExecuteImageRuntimeCommandAsync("setImageWrapMode", new { WrapMode = wrapMode.ToString(), BlockId = ActiveImageInspectorBlockId });
+        ExecuteImageRuntimeCommandAsync("setImageWrapMode", new
+        {
+            WrapMode = wrapMode.ToString(),
+            ObjectId = ActiveImageInspectorObjectId,
+            BlockId = ActiveImageInspectorBlockId
+        });
 
     private Task SetActiveImageAlignmentFromPanelAsync(DocumentImageAlignment alignment) =>
-        ExecuteImageRuntimeCommandAsync("setImagePosition", new { HorizontalPosition = ToHorizontalPosition(alignment).ToString(), BlockId = ActiveImageInspectorBlockId });
+        ExecuteImageRuntimeCommandAsync("setImagePosition", new
+        {
+            HorizontalPosition = ToHorizontalPosition(alignment).ToString(),
+            ObjectId = ActiveImageInspectorObjectId,
+            BlockId = ActiveImageInspectorBlockId
+        });
 
     private Task SetActiveImageSizeFromPanelAsync(DocumentImageSize size) =>
         ExecuteImageRuntimeCommandAsync("setImageSize", new
@@ -1621,6 +1599,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             Width = size.Width,
             Height = size.Height,
             LockAspectRatio = size.LockAspectRatio,
+            ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
 
@@ -1633,6 +1612,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             VerticalRelativeTo = position.VerticalRelativeTo.ToString(),
             HorizontalPosition = position.HorizontalAlignment?.ToString(),
             VerticalAlignment = position.VerticalAlignment.ToString(),
+            ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
 
@@ -1640,14 +1620,25 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         ExecuteImageRuntimeCommandAsync("setImageAnchorMode", new
         {
             LockAnchor = lockAnchor,
+            ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
 
     private Task BringActiveImageForwardFromPanelAsync() =>
-        ExecuteImageRuntimeCommandAsync("setImageZOrder", new { Direction = "Forward", BlockId = ActiveImageInspectorBlockId });
+        ExecuteImageRuntimeCommandAsync("setImageZOrder", new
+        {
+            Direction = "Forward",
+            ObjectId = ActiveImageInspectorObjectId,
+            BlockId = ActiveImageInspectorBlockId
+        });
 
     private Task SendActiveImageBackwardFromPanelAsync() =>
-        ExecuteImageRuntimeCommandAsync("setImageZOrder", new { Direction = "Backward", BlockId = ActiveImageInspectorBlockId });
+        ExecuteImageRuntimeCommandAsync("setImageZOrder", new
+        {
+            Direction = "Backward",
+            ObjectId = ActiveImageInspectorObjectId,
+            BlockId = ActiveImageInspectorBlockId
+        });
 
     private Task SetActiveTablePropertiesFromPanelAsync(TableLayoutContent layout) =>
         _wysiwygHost is null
@@ -2253,7 +2244,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             }
             else if (IsImageInsertPatch(patch))
             {
-                _activeImageInspectorBlockId = patch.Block!.Id;
+                _activeImageInspectorBlockId = GetImageInsertAnchorBlockId(patch);
                 OpenSidePanel(DocumentSidePanelTab.Properties);
                 await InvokeAsync(StateHasChanged);
             }
@@ -2349,14 +2340,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(snapshot.ActiveImageBlockId)
-            && (string.Equals(snapshot.Region, "Image", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(snapshot.HitTargetKind, "image", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(snapshot.HitTargetKind, "object", StringComparison.OrdinalIgnoreCase)))
+        if (string.IsNullOrWhiteSpace(snapshot.ActiveObjectId)
+            && !string.IsNullOrWhiteSpace(snapshot.ObjectSelection?.ObjectId))
         {
-            snapshot.ActiveImageBlockId = !string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
-                ? snapshot.AnchorBlockId
-                : snapshot.FocusBlockId;
+            snapshot.ActiveObjectId = snapshot.ObjectSelection.ObjectId;
+        }
+
+        if (string.IsNullOrWhiteSpace(snapshot.SelectionMode))
+        {
+            snapshot.SelectionMode = !string.IsNullOrWhiteSpace(snapshot.ObjectSelection?.ObjectId) ? "Object" : "Text";
         }
 
         _activeWysiwygRegion = string.IsNullOrWhiteSpace(snapshot.Region) ? "Body" : snapshot.Region;
@@ -2408,6 +2400,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _selection = new DocumentEditorSelectionState
         {
             ActiveBlockId = snapshot.AnchorBlockId,
+            SelectionMode = string.IsNullOrWhiteSpace(snapshot.SelectionMode) ? "Text" : snapshot.SelectionMode,
+            TextSelection = snapshot.TextSelection,
+            ObjectSelection = snapshot.ObjectSelection,
             FocusedInlineRange = range,
             ActiveTableCellId = snapshot.ActiveTableCellId,
             ActiveTableId = snapshot.ActiveTableId,
@@ -2417,7 +2412,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             LayoutLineId = snapshot.LayoutLineId,
             LayoutSegmentId = snapshot.LayoutSegmentId,
             VisualLineIndex = snapshot.VisualLineIndex,
-            ActiveObjectId = snapshot.ActiveObjectId,
+            ActiveObjectId = !string.IsNullOrWhiteSpace(snapshot.ObjectSelection?.ObjectId) ? snapshot.ObjectSelection.ObjectId : snapshot.ActiveObjectId,
             HitTargetKind = snapshot.HitTargetKind,
             Region = _activeWysiwygRegion,
             HeaderFooterId = snapshot.HeaderFooterId,
@@ -2447,7 +2442,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         if (!string.IsNullOrWhiteSpace(context.ActiveImageId))
         {
-            _activeImageInspectorBlockId = context.ActiveImageId;
+            _activeImageInspectorBlockId = context.Selection.ObjectSelection?.AnchorBlockId ?? context.Selection.AnchorBlockId;
             OpenSidePanel(DocumentSidePanelTab.Properties, preserveManualChoice: false);
             return;
         }
@@ -2488,16 +2483,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private IReadOnlyDictionary<string, object?> GetActiveObjectPropertiesSnapshot(WysiwygSelectionSnapshot snapshot)
     {
-        if (!string.IsNullOrWhiteSpace(snapshot.ActiveImageBlockId)
-            && DisplayedDocument?.Blocks.FirstOrDefault(block => string.Equals(block.Id, snapshot.ActiveImageBlockId, StringComparison.Ordinal))?.Content is ImageBlockContent image)
+        var activeObjectId = !string.IsNullOrWhiteSpace(snapshot.ObjectSelection?.ObjectId)
+            ? snapshot.ObjectSelection.ObjectId
+            : snapshot.ActiveObjectId;
+        var drawing = FindDrawingRunByObjectId(DisplayedDocument, activeObjectId);
+        if (drawing is not null)
         {
             return new Dictionary<string, object?>
             {
                 ["kind"] = "image",
-                ["altText"] = image.AltText,
-                ["wrapMode"] = image.Layout.Wrap.Mode.ToString(),
-                ["width"] = image.Size.Width,
-                ["height"] = image.Size.Height
+                ["objectId"] = drawing.ObjectId,
+                ["altText"] = drawing.AltText,
+                ["wrapMode"] = drawing.Layout.Wrap.Mode.ToString(),
+                ["width"] = drawing.Layout.Transform.Width,
+                ["height"] = drawing.Layout.Transform.Height
             };
         }
 
@@ -2512,6 +2511,73 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         return new Dictionary<string, object?>();
+    }
+
+    private static ImageBlockContent? CreateImageBlockContentFromDrawingRun(DocumentDrawingRun? drawing)
+    {
+        if (drawing is null)
+        {
+            return null;
+        }
+
+        return new ImageBlockContent
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size,
+            NaturalSize = drawing.NaturalSize,
+            Layout = drawing.Layout,
+            LinkUrl = drawing.LinkUrl
+        };
+    }
+
+    private static DocumentDrawingRun? FindDrawingRunByObjectId(DocumentEditorDocument? document, string? objectId)
+    {
+        if (document is null || string.IsNullOrWhiteSpace(objectId))
+        {
+            return null;
+        }
+
+        foreach (var block in EnumerateDocumentBlocksForObjectSelection(document))
+        {
+            var inlines = GetEditableInlines(block.Content);
+            var drawing = inlines?.OfType<DocumentDrawingRun>()
+                .FirstOrDefault(run => string.Equals(run.ObjectId, objectId, StringComparison.Ordinal));
+            if (drawing is not null)
+            {
+                return drawing;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateDocumentBlocksForObjectSelection(DocumentEditorDocument document)
+    {
+        foreach (var block in document.Blocks)
+        {
+            yield return block;
+
+            if (block.Content is TableBlockContent table)
+            {
+                foreach (var nestedBlock in table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks))
+                {
+                    yield return nestedBlock;
+                }
+            }
+        }
+
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            foreach (var block in headerFooter.Blocks)
+            {
+                yield return block;
+            }
+        }
     }
 
     private static string GetCollapsedSelectionRenderKey(WysiwygSelectionSnapshot snapshot)
@@ -2539,6 +2605,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         _selection.ActiveBlockId = snapshot.AnchorBlockId;
+        _selection.SelectionMode = string.IsNullOrWhiteSpace(snapshot.SelectionMode) ? "Text" : snapshot.SelectionMode;
+        _selection.TextSelection = snapshot.TextSelection;
+        _selection.ObjectSelection = snapshot.ObjectSelection;
         _selection.ActiveTableCellId = snapshot.ActiveTableCellId;
         _selection.ActiveTableId = snapshot.ActiveTableId;
         _selection.ActiveImageBlockId = snapshot.ActiveImageBlockId;
@@ -2547,7 +2616,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _selection.LayoutLineId = snapshot.LayoutLineId;
         _selection.LayoutSegmentId = snapshot.LayoutSegmentId;
         _selection.VisualLineIndex = snapshot.VisualLineIndex;
-        _selection.ActiveObjectId = snapshot.ActiveObjectId;
+        _selection.ActiveObjectId = !string.IsNullOrWhiteSpace(snapshot.ObjectSelection?.ObjectId) ? snapshot.ObjectSelection.ObjectId : snapshot.ActiveObjectId;
         _selection.HitTargetKind = snapshot.HitTargetKind;
         _selection.Region = _activeWysiwygRegion;
         _selection.HeaderFooterId = snapshot.HeaderFooterId;
@@ -3916,11 +3985,124 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         {
             canonicalDocument = _document,
             runtimeDebug,
+            docxDrawingMetadata = BuildDocxDrawingMetadataDebug(),
             runtimeRecovery = _lastRuntimeRecoveryDetail
         }, new JsonSerializerOptions(DocumentEditorJson.Options)
         {
             WriteIndented = true
         });
+    }
+
+    private string? GetDocxDrawingMetadataDebugJson()
+    {
+        var metadata = BuildDocxDrawingMetadataDebug();
+        if (metadata.Count == 0)
+        {
+            return null;
+        }
+
+        return JsonSerializer.Serialize(metadata, new JsonSerializerOptions(DocumentEditorJson.Options)
+        {
+            WriteIndented = true
+        });
+    }
+
+    private List<object> BuildDocxDrawingMetadataDebug()
+    {
+        if (_document is null)
+        {
+            return [];
+        }
+
+        var drawings = new List<object>();
+        foreach (var drawing in DocumentImagePersistence.EnumerateDrawingRuns(_document))
+        {
+            var docx = drawing.Docx;
+            drawings.Add(new
+            {
+                HasDocxMetadata = docx is not null,
+                drawing.ObjectId,
+                RunId = drawing.Id,
+                drawing.AltText,
+                drawing.Caption,
+                Anchor = new
+                {
+                    drawing.Layout.Anchor.BlockId,
+                    drawing.Layout.Anchor.Region,
+                    drawing.Layout.Anchor.TableId,
+                    drawing.Layout.Anchor.CellId,
+                    drawing.Layout.Anchor.HeaderFooterId,
+                    drawing.Layout.Anchor.InlineIndex,
+                    drawing.Layout.Anchor.Offset,
+                    drawing.Layout.Anchor.MoveWithText,
+                    drawing.Layout.Anchor.FixedOnPage,
+                    drawing.Layout.Anchor.LockAnchor
+                },
+                Wrap = new
+                {
+                    drawing.Layout.Wrap.Mode,
+                    drawing.Layout.Wrap.Side,
+                    drawing.Layout.Wrap.DistanceLeft,
+                    drawing.Layout.Wrap.DistanceRight,
+                    drawing.Layout.Wrap.DistanceTop,
+                    drawing.Layout.Wrap.DistanceBottom
+                },
+                Transform = new
+                {
+                    drawing.Layout.Transform.Width,
+                    drawing.Layout.Transform.Height,
+                    drawing.Layout.Transform.NaturalWidth,
+                    drawing.Layout.Transform.NaturalHeight,
+                    drawing.Layout.Transform.Rotation,
+                    drawing.Layout.Transform.LockAspectRatio,
+                    Crop = new
+                    {
+                        drawing.Layout.Transform.Crop.Left,
+                        drawing.Layout.Transform.Crop.Top,
+                        drawing.Layout.Transform.Crop.Right,
+                        drawing.Layout.Transform.Crop.Bottom
+                    },
+                    Flip = drawing.Layout.Transform.Flip
+                },
+                DocPr = new
+                {
+                    docx?.DocPrId,
+                    docx?.DocPrName,
+                    docx?.DocPrTitle,
+                    docx?.DocPrDescription
+                },
+                Picture = new
+                {
+                    docx?.PictureNonVisualId,
+                    docx?.PictureName,
+                    docx?.PictureDescription
+                },
+                Image = new
+                {
+                    docx?.RelationshipId,
+                    docx?.BlipLinkRelationshipId,
+                    docx?.ImageReferenceMode,
+                    docx?.BlipCompressionState,
+                    docx?.BlipFillMode,
+                    docx?.PresetGeometry
+                },
+                Media = docx?.Media,
+                EffectExtent = docx?.EffectExtent,
+                AnchorXml = new
+                {
+                    docx?.LayoutInCell,
+                    docx?.Hidden,
+                    docx?.UsesSimplePosition,
+                    docx?.SimplePosition,
+                    docx?.AnchorId,
+                    docx?.EditId,
+                    docx?.RelativeWidth,
+                    docx?.RelativeHeight
+                }
+            });
+        }
+
+        return drawings;
     }
 
     private string? GetRuntimeRecoveryDetailJson()
@@ -4216,6 +4398,27 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 IsLocalDraft = true
             });
             knownIds.Add(image.AssetId);
+        }
+
+        foreach (var drawing in DocumentImagePersistence.EnumerateDrawingRuns(document))
+        {
+            if (drawing.Source != DocumentImageSource.Clipboard || string.IsNullOrWhiteSpace(drawing.AssetId) || knownIds.Contains(drawing.AssetId))
+            {
+                continue;
+            }
+
+            assets.Add(new DocumentImageAsset
+            {
+                Id = drawing.AssetId,
+                DocumentId = document.DocumentId,
+                Source = DocumentImageSource.Clipboard,
+                Url = drawing.Url,
+                ContentType = GetContentTypeFromDataUrl(drawing.Url),
+                FileName = drawing.AltText,
+                AltText = drawing.AltText,
+                IsLocalDraft = true
+            });
+            knownIds.Add(drawing.AssetId);
         }
 
         return assets;
@@ -6569,11 +6772,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     }
 
     private static bool IsImageInsertPatch(WysiwygPatch patch) =>
-        string.Equals(patch.Type, "InsertBlock", StringComparison.Ordinal)
-        && patch.Block is not null
-        && (patch.Block.Content is ImageBlockContent
-            || patch.Block.Type == DocumentBlockType.Image
-            || string.Equals(patch.BlockType, "Image", StringComparison.OrdinalIgnoreCase));
+        string.Equals(patch.Type, "InsertInline", StringComparison.Ordinal)
+        && patch.Inline is DocumentDrawingRun;
+
+    private static string? GetImageInsertAnchorBlockId(WysiwygPatch patch) =>
+        patch.AfterSelection?.ObjectSelection?.AnchorBlockId
+        ?? patch.AfterSelection?.AnchorBlockId
+        ?? patch.Selection?.ObjectSelection?.AnchorBlockId
+        ?? patch.Selection?.AnchorBlockId;
 
     private static bool IsTrackedStructuralPatch(WysiwygPatch patch)
     {
@@ -7955,6 +8161,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 && operation.Target.Order is not null;
         }
 
+        if (operation.Type is DocumentOperationType.MoveDrawingObject)
+        {
+            return operation.NewLayout is not null
+                && (!string.IsNullOrWhiteSpace(operation.Target.ObjectId)
+                    || !string.IsNullOrWhiteSpace(operation.Target.InlineId)
+                    || (!string.IsNullOrWhiteSpace(operation.Target.BlockId) && operation.Target.InlineIndex is not null));
+        }
+
         if (operation.Type is DocumentOperationType.SetBlockAttribute)
         {
             return string.Equals(operation.AttributeName, "headingLevel", StringComparison.OrdinalIgnoreCase)
@@ -8684,11 +8898,19 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             WysiwygFormattingState formattingState,
             IReadOnlyDictionary<string, object?> objectProperties)
         {
+            var textSelection = snapshot.TextSelection;
             return new DocumentEditorSelectionContext
             {
                 Selection = snapshot,
                 ActiveRegion = string.IsNullOrWhiteSpace(snapshot.Region) ? "Body" : snapshot.Region,
-                ActiveTextRange = string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
+                ActiveTextRange = textSelection is not null && !string.IsNullOrWhiteSpace(textSelection.AnchorBlockId)
+                    ? new DocumentEditorInlineRange
+                    {
+                        BlockId = textSelection.AnchorBlockId,
+                        StartOffset = textSelection.AnchorOffset,
+                        EndOffset = textSelection.IsCollapsed ? textSelection.AnchorOffset : textSelection.FocusOffset
+                    }
+                    : string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
                     ? null
                     : new DocumentEditorInlineRange
                     {
@@ -8696,7 +8918,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                         StartOffset = snapshot.AnchorOffset,
                         EndOffset = snapshot.IsCollapsed ? snapshot.AnchorOffset : snapshot.FocusOffset
                     },
-                ActiveImageId = snapshot.ActiveImageBlockId,
+                ActiveImageId = !string.IsNullOrWhiteSpace(snapshot.ObjectSelection?.ObjectId)
+                    ? snapshot.ObjectSelection.ObjectId
+                    : !string.IsNullOrWhiteSpace(snapshot.ActiveObjectId)
+                        ? snapshot.ActiveObjectId
+                        : null,
                 ActiveTableId = snapshot.ActiveTableId,
                 ActiveTableCellId = snapshot.ActiveTableCellId,
                 ActiveCommentId = snapshot.ActiveCommentId,

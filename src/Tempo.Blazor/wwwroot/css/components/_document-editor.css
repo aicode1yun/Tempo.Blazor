@@ -472,6 +472,23 @@
     margin: var(--tm-space-2) 0;
 }
 
+.tm-document-drawing {
+    display: inline-flex;
+    max-width: 100%;
+    margin: 0 var(--tm-space-1);
+    vertical-align: middle;
+}
+
+.tm-document-drawing--anchored {
+    margin-block: var(--tm-space-2);
+}
+
+.tm-document-drawing__link {
+    display: inline-flex;
+    flex-direction: column;
+    max-width: 100%;
+}
+
 .tm-document-image--start { align-items: flex-start; }
 .tm-document-image--center { align-items: center; }
 .tm-document-image--end { align-items: flex-end; }
@@ -483,7 +500,8 @@
     border: 1px solid var(--tm-color-border);
 }
 
-.tm-document-image figcaption {
+.tm-document-image figcaption,
+.tm-document-image__caption {
     color: var(--tm-color-text-muted);
     font-size: var(--tm-font-size-sm);
     text-align: center;
@@ -2774,7 +2792,7 @@
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tm-color-primary) 18%, transparent);
     white-space: nowrap;
     cursor: default;
-    user-select: all;
+    user-select: none;
 }
 
 .tm-wysiwyg-field:focus {
@@ -2892,7 +2910,10 @@
 }
 
 .tm-wysiwyg-page__layer--body-text {
+    position: relative;
+    inset: auto;
     z-index: var(--tm-document-z-text, 10);
+    min-width: 0;
     pointer-events: auto;
 }
 
@@ -2917,12 +2938,44 @@
 }
 
 .tm-wysiwyg-page__layer--object > .tm-wysiwyg-layout-object,
-.tm-wysiwyg-page__layer--in-front-of-text > .tm-wysiwyg-layout-object {
+.tm-wysiwyg-page__layer--object > .tm-wysiwyg-object-layer-item,
+.tm-wysiwyg-page__layer--in-front-of-text > .tm-wysiwyg-layout-object,
+.tm-wysiwyg-page__layer--in-front-of-text > .tm-wysiwyg-object-layer-item {
     pointer-events: auto;
 }
 
-.tm-wysiwyg-page__layer--selection > .tm-wysiwyg-behind-object-handle {
+.tm-wysiwyg-page__layer--selection > .tm-wysiwyg-behind-object-handle,
+.tm-wysiwyg-page__layer--selection > .tm-wysiwyg-object-selection-overlay,
+.tm-wysiwyg-page__layer--guides > .tm-wysiwyg-object-guides-overlay {
     pointer-events: auto;
+}
+
+.tm-wysiwyg-object-track--predrag {
+    cursor: grabbing;
+}
+
+.tm-wysiwyg-object-track--active {
+    cursor: grabbing;
+    opacity: .92;
+    will-change: transform, width, height;
+}
+
+.tm-wysiwyg-object-drag-guide {
+    position: absolute;
+    z-index: calc(var(--tm-document-z-object-overlay, 50) + 1);
+    pointer-events: none;
+    color: color-mix(in srgb, var(--tm-color-primary) 72%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--tm-color-surface) 78%, transparent);
+}
+
+.tm-wysiwyg-object-drag-guide--vertical {
+    width: 0;
+    border-inline-start: 1px dashed currentColor;
+}
+
+.tm-wysiwyg-object-drag-guide--horizontal {
+    height: 0;
+    border-block-start: 1px dashed currentColor;
 }
 
 .tm-wysiwyg-behind-object-handle {
@@ -3175,7 +3228,8 @@
     font-size: inherit;
 }
 
-.tm-wysiwyg-page__body > p.tm-wysiwyg-block {
+.tm-wysiwyg-page__body > p.tm-wysiwyg-block,
+.tm-wysiwyg-page__layer--body-text > p.tm-wysiwyg-block {
     white-space: break-spaces;
 }
 
@@ -3379,6 +3433,69 @@
     text-align: center;
 }
 
+.tm-wysiwyg-inline-drawing {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    inline-size: var(--tm-wysiwyg-inline-drawing-width);
+    block-size: var(--tm-wysiwyg-inline-drawing-height);
+    max-inline-size: 100%;
+    margin: 0;
+    line-height: 0;
+    vertical-align: baseline;
+    outline: 2px solid transparent;
+    outline-offset: var(--tm-space-1);
+    cursor: default;
+    user-select: all;
+}
+
+.tm-wysiwyg-inline-drawing img,
+.tm-wysiwyg-inline-drawing__placeholder {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+}
+
+.tm-wysiwyg-inline-drawing img {
+    object-fit: contain;
+    border: 1px solid var(--tm-color-border);
+}
+
+.tm-wysiwyg-inline-drawing__placeholder {
+    display: grid;
+    place-items: center;
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+    line-height: 1.2;
+    text-align: center;
+    background: var(--tm-color-surface-subtle);
+    border: 1px dashed var(--tm-color-border);
+}
+
+.tm-wysiwyg-drawing-anchor {
+    box-sizing: border-box;
+    margin: 0;
+    border: 0;
+    outline: 0;
+    user-select: none;
+    pointer-events: none;
+}
+
+.tm-wysiwyg-drawing-anchor--inline {
+    display: inline-block;
+    inline-size: var(--tm-wysiwyg-drawing-anchor-width);
+    block-size: var(--tm-wysiwyg-drawing-anchor-height);
+    vertical-align: baseline;
+}
+
+.tm-wysiwyg-drawing-anchor--anchored {
+    display: inline-block;
+    inline-size: 0;
+    block-size: 0;
+    overflow: hidden;
+    vertical-align: baseline;
+}
+
 .tm-wysiwyg-image--floating {
     position: relative;
     width: max-content;
@@ -3386,21 +3503,13 @@
     outline: 1px dashed transparent;
 }
 
-.tm-wysiwyg-image--floating:focus-within,
-.tm-wysiwyg-image:focus-visible,
 .tm-wysiwyg-image--floating:hover,
-.tm-wysiwyg-image--selected {
+.tm-wysiwyg-image--selected,
+.tm-wysiwyg-object--selected {
     outline-color: var(--tm-color-primary);
     outline-style: solid;
     outline-width: 2px;
     box-shadow: 0 0 0 3px var(--tm-color-primary-subtle);
-}
-
-.tm-wysiwyg-image:focus-visible,
-.tm-wysiwyg-layout-object:focus-visible {
-    outline: 2px solid var(--tm-color-primary);
-    outline-offset: 3px;
-    box-shadow: 0 0 0 4px var(--tm-color-primary-subtle);
 }
 
 .tm-wysiwyg-image__a11y-status {
@@ -3551,6 +3660,41 @@
     transform-origin: center center;
 }
 
+.tm-wysiwyg-object-layer-item {
+    display: block;
+    overflow: visible;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    user-select: none;
+}
+
+.tm-wysiwyg-object-layer-item img {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: fill;
+    border: 1px solid var(--tm-color-border);
+}
+
+.tm-wysiwyg-object-layer-item figcaption {
+    display: block;
+    margin-block-start: var(--tm-space-1);
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+    line-height: 1.25;
+    text-align: center;
+}
+
+.tm-wysiwyg-object-selection-overlay,
+.tm-wysiwyg-object-guides-overlay {
+    position: absolute;
+    box-sizing: border-box;
+    width: var(--tm-layout-object-width);
+    height: var(--tm-layout-object-height);
+    pointer-events: none;
+}
+
 .tm-wysiwyg-layout-object img {
     width: var(--tm-layout-object-width);
     height: var(--tm-layout-object-height);
@@ -3568,7 +3712,9 @@
 
 .tm-wysiwyg-layout-object:hover .tm-wysiwyg-selection-box,
 .tm-wysiwyg-layout-object.tm-wysiwyg-image--selected .tm-wysiwyg-selection-box,
-.tm-wysiwyg-image--selected .tm-wysiwyg-selection-box {
+.tm-wysiwyg-image--selected .tm-wysiwyg-selection-box,
+.tm-wysiwyg-object--selected .tm-wysiwyg-selection-box,
+.tm-wysiwyg-object-selection-overlay.tm-wysiwyg-object--selected .tm-wysiwyg-selection-box {
     opacity: 1;
 }
 
@@ -3592,7 +3738,13 @@
 .tm-wysiwyg-layout-object.tm-wysiwyg-image--selected .tm-wysiwyg-object-resize-handle,
 .tm-wysiwyg-layout-object.tm-wysiwyg-image--selected .tm-wysiwyg-object-rotation-handle,
 .tm-wysiwyg-image:hover .tm-wysiwyg-object-resize-handle,
-.tm-wysiwyg-image--selected .tm-wysiwyg-object-resize-handle {
+.tm-wysiwyg-image--selected .tm-wysiwyg-object-resize-handle,
+.tm-wysiwyg-object--selected .tm-wysiwyg-object-resize-handle,
+.tm-wysiwyg-object--selected .tm-wysiwyg-object-rotation-handle,
+.tm-wysiwyg-object-selection-overlay:hover .tm-wysiwyg-object-resize-handle,
+.tm-wysiwyg-object-selection-overlay:hover .tm-wysiwyg-object-rotation-handle,
+.tm-wysiwyg-object-selection-overlay.tm-wysiwyg-object--selected .tm-wysiwyg-object-resize-handle,
+.tm-wysiwyg-object-selection-overlay.tm-wysiwyg-object--selected .tm-wysiwyg-object-rotation-handle {
     opacity: 1;
     pointer-events: auto;
 }
@@ -3677,6 +3829,8 @@
 .tm-wysiwyg-layout-object.tm-wysiwyg-image--selected .tm-wysiwyg-layout-bubble,
 .tm-wysiwyg-image:hover .tm-wysiwyg-layout-bubble,
 .tm-wysiwyg-image--selected .tm-wysiwyg-layout-bubble,
+.tm-wysiwyg-object--selected .tm-wysiwyg-layout-bubble,
+.tm-wysiwyg-object-guides-overlay.tm-wysiwyg-object--selected .tm-wysiwyg-layout-bubble,
 .tm-wysiwyg-layout-bubble--keyboard-open {
     display: inline-flex;
     opacity: 1;

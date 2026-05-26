@@ -94,7 +94,8 @@ public abstract class PlaywrightTestBase
         {
             ViewportSize = new ViewportSize { Width = 1280, Height = 720 },
             Locale = "en-US",
-            IgnoreHTTPSErrors = true
+            IgnoreHTTPSErrors = true,
+            AcceptDownloads = true
         });
         _contextsToDispose.Add(context);
         return context;

@@ -137,6 +137,7 @@ window.tmDocumentEditorEngine = (function () {
             .registerElement('text', { isInline: true })
             .registerElement('field', { isInline: true, isObject: true, isSelectable: true })
             .registerElement('token', { isInline: true, isObject: true, isSelectable: true })
+            .registerElement('drawing', { isInline: true, isObject: true, isSelectable: true })
             .registerElement('image', { isBlock: true, isObject: true, isSelectable: true });
 
         ['paragraph', 'table', 'image'].forEach(function (child) {
@@ -145,7 +146,7 @@ window.tmDocumentEditorEngine = (function () {
             schema.allowChild('footer', child);
             schema.allowChild('tableCell', child);
         });
-        ['text', 'field', 'token'].forEach(function (child) {
+        ['text', 'field', 'token', 'drawing'].forEach(function (child) {
             schema.allowChild('paragraph', child);
         });
         schema
@@ -153,7 +154,7 @@ window.tmDocumentEditorEngine = (function () {
             .allowChild('table', 'tableRow')
             .allowChild('tableRow', 'tableCell');
 
-        ['paragraph', 'text', 'field', 'token', 'image', 'table', 'tableCell'].forEach(function (type) {
+        ['paragraph', 'text', 'field', 'token', 'drawing', 'image', 'table', 'tableCell'].forEach(function (type) {
             ['style', 'marks', 'revisionId', 'commentIds', 'layout', 'metadata'].forEach(function (attribute) {
                 schema.allowAttribute(type, attribute);
             });
@@ -162,8 +163,64 @@ window.tmDocumentEditorEngine = (function () {
         return schema;
     }
 
+    function normalizeDrawingKindName(value) {
+        if (value === undefined || value === null || value === '') return 'Image';
+        if (typeof value === 'number') return value === 0 ? 'Image' : String(value);
+        var raw = String(value).replace(/\s+/g, '').replace(/-/g, '').toLowerCase();
+        if (raw === '0' || raw === 'image' || raw === 'picture') return 'Image';
+        return _asText(value) || 'Image';
+    }
+
+    function exportDrawingKind(value) {
+        var raw = String(value || '').replace(/\s+/g, '').replace(/-/g, '').toLowerCase();
+        return value === 0 || raw === '0' || raw === 'image' || raw === 'picture' ? 0 : 0;
+    }
+
+    function isDrawingRunSource(source) {
+        var raw = source || {};
+        var discriminator = String(raw.$type || _read(raw, 'Type', 'type', '') || '').toLowerCase();
+        var internalKind = String(raw.kind || raw.Kind || '').toLowerCase();
+        return discriminator.indexOf('drawing') >= 0
+            || internalKind === 'drawing'
+            || (_hasOwn(raw, 'ObjectId') || _hasOwn(raw, 'objectId'));
+    }
+
+    function normalizeDrawingRun(source, path) {
+        var raw = source || {};
+        var id = _asText(_read(raw, 'Id', 'id', '')) || _stableId('drawing', path);
+        var objectId = _asText(_read(raw, 'ObjectId', 'objectId', '')) || _stableId('object', id || path);
+        var marks = normalizeMarks(_read(raw, 'Marks', 'marks', []));
+        var revisionId = _read(raw, 'RevisionId', 'revisionId', null) || readRevisionIdFromMarks(marks);
+        return _sortObject({
+            id: id,
+            kind: 'drawing',
+            drawingKind: normalizeDrawingKindName(_read(raw, 'Kind', 'drawingKind', _read(raw, 'DrawingKind', 'drawingKind', 'Image'))),
+            type: 'image',
+            objectId: objectId,
+            source: _read(raw, 'Source', 'source', 0),
+            url: _read(raw, 'Url', 'url', null),
+            assetId: _read(raw, 'AssetId', 'assetId', null),
+            altText: _asText(_read(raw, 'AltText', 'altText', '')),
+            isDecorative: _read(raw, 'IsDecorative', 'isDecorative', false) === true,
+            caption: _asText(_read(raw, 'Caption', 'caption', '')),
+            size: _sortObject(_read(raw, 'Size', 'size', {}) || {}),
+            naturalSize: _sortObject(_read(raw, 'NaturalSize', 'naturalSize', {}) || {}),
+            layout: _sortObject(_read(raw, 'Layout', 'layout', _read(raw, 'FloatingLayout', 'floatingLayout', {})) || {}),
+            style: _sortObject(_read(raw, 'Style', 'style', {}) || {}),
+            linkUrl: _read(raw, 'LinkUrl', 'linkUrl', null),
+            metadata: _sortObject(_read(raw, 'Metadata', 'metadata', {}) || {}),
+            marks: marks,
+            revisionId: revisionId || null,
+            commentIds: _asArray(_read(raw, 'CommentIds', 'commentIds', []))
+        });
+    }
+
     function importInlineRun(source, path) {
         var raw = source || {};
+        if (isDrawingRunSource(raw)) {
+            return normalizeDrawingRun(raw, path);
+        }
+
         var type = String(_read(raw, 'Type', 'type', raw.$type || '')).toLowerCase();
         var kind = 'text';
         if (type.indexOf('field') >= 0 || _hasOwn(raw, 'FieldType') || _hasOwn(raw, 'fieldType')) kind = 'field';
@@ -353,40 +410,91 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function createBlockIndexContext(context, overrides) {
+        var source = Object.assign({}, context || {}, overrides || {});
+        return _sortObject({
+            region: _asText(source.region || source.Region || 'Body') || 'Body',
+            headerFooterId: source.headerFooterId || source.HeaderFooterId || null,
+            tableId: source.tableId || source.TableId || null,
+            cellId: source.cellId || source.CellId || null,
+            pageIndex: source.pageIndex ?? source.PageIndex ?? null
+        });
+    }
+
     function buildIndexes(model) {
         var indexes = {
             blocks: {},
             inlines: {},
             objects: {},
+            drawingObjectsById: {},
+            drawingRunsByBlockId: {},
             revisions: {},
             comments: {}
         };
 
-        function visitBlock(block) {
+        function visitBlock(block, context) {
             if (!block || !block.id) return;
+            var blockContext = createBlockIndexContext(context);
             indexes.blocks[block.id] = block;
             if (block.type === 'paragraph') {
-                _asArray(block.content && block.content.runs).forEach(function (run) {
+                _asArray(block.content && block.content.runs).forEach(function (run, index) {
                     if (!run || !run.id) return;
                     indexes.inlines[run.id] = run;
                     if (run.kind === 'field' || run.kind === 'token') indexes.objects[run.id] = run;
+                    if (run.kind === 'drawing') {
+                        var object = normalizeImageObject(run, Object.assign({ blockId: block.id, inlineIndex: index }, blockContext));
+                        var objectId = object.objectId || run.objectId || run.id;
+                        var objectRegion = (blockContext.region && blockContext.region !== 'Body' && (!object.anchorRegion || object.anchorRegion === 'Body'))
+                            ? blockContext.region
+                            : (object.anchorRegion || blockContext.region || 'Body');
+                        var headerFooterId = object.anchorHeaderFooterId || blockContext.headerFooterId || null;
+                        var tableId = object.anchorTableId || blockContext.tableId || null;
+                        var cellId = object.anchorCellId || blockContext.cellId || null;
+                        indexes.objects[objectId] = run;
+                        if (!indexes.drawingRunsByBlockId[block.id]) indexes.drawingRunsByBlockId[block.id] = [];
+                        indexes.drawingRunsByBlockId[block.id].push(run);
+                        indexes.drawingObjectsById[objectId] = {
+                            objectId: objectId,
+                            blockId: block.id,
+                            inlineId: run.id,
+                            inlineIndex: index,
+                            run: run,
+                            layout: object,
+                            region: objectRegion,
+                            headerFooterId: headerFooterId,
+                            tableId: tableId,
+                            cellId: cellId
+                        };
+                    }
                 });
-            }
-            if (block.type === 'image') {
-                indexes.objects[(block.content && block.content.objectId) || block.id] = block.content || block;
             }
             if (block.type === 'table') {
                 _asArray(block.content && block.content.rows).forEach(function (row) {
                     _asArray(row.cells).forEach(function (cell) {
-                        _asArray(cell.blocks).forEach(visitBlock);
+                        var cellContext = createBlockIndexContext(blockContext, {
+                            region: 'TableCell',
+                            tableId: block.id,
+                            cellId: cell && cell.id || null
+                        });
+                        _asArray(cell.blocks).forEach(function (childBlock) {
+                            visitBlock(childBlock, cellContext);
+                        });
                     });
                 });
             }
         }
 
-        _asArray(model.body && model.body.blocks).forEach(visitBlock);
-        _asArray(model.headers).forEach(function (region) { _asArray(region.blocks).forEach(visitBlock); });
-        _asArray(model.footers).forEach(function (region) { _asArray(region.blocks).forEach(visitBlock); });
+        _asArray(model.body && model.body.blocks).forEach(function (block) { visitBlock(block, { region: 'Body' }); });
+        _asArray(model.headers).forEach(function (region) {
+            _asArray(region.blocks).forEach(function (block) {
+                visitBlock(block, { region: 'Header', headerFooterId: region && region.id || null });
+            });
+        });
+        _asArray(model.footers).forEach(function (region) {
+            _asArray(region.blocks).forEach(function (block) {
+                visitBlock(block, { region: 'Footer', headerFooterId: region && region.id || null });
+            });
+        });
         _asArray(model.revisions).forEach(function (revision) {
             if (revision && (revision.id || revision.Id)) indexes.revisions[revision.id || revision.Id] = revision;
         });
@@ -439,6 +547,21 @@ window.tmDocumentEditorEngine = (function () {
             result.Key = run.key || run.text || '';
             result.DisplayName = run.displayName || run.text || run.key || '';
             result.FallbackText = run.fallbackText || run.text || null;
+        } else if (run.kind === 'drawing') {
+            result.$type = 'drawing';
+            result.ObjectId = run.objectId || run.id;
+            result.Kind = exportDrawingKind(run.drawingKind || run.DrawingKind || 'Image');
+            result.Source = run.source ?? run.Source ?? 0;
+            result.Url = run.url ?? run.Url ?? null;
+            result.AssetId = run.assetId ?? run.AssetId ?? null;
+            result.AltText = run.altText ?? run.AltText ?? null;
+            result.IsDecorative = run.isDecorative === true || run.IsDecorative === true;
+            result.Caption = run.caption ?? run.Caption ?? null;
+            result.Size = _clone(run.size || run.Size || {});
+            result.NaturalSize = _clone(run.naturalSize || run.NaturalSize || {});
+            result.Layout = _clone(run.layout || run.Layout || {});
+            result.LinkUrl = run.linkUrl ?? run.LinkUrl ?? null;
+            result.Metadata = _clone(run.metadata || run.Metadata || {});
         } else {
             result.$type = 'text';
             result.Text = _asText(run.text);
@@ -731,6 +854,7 @@ window.tmDocumentEditorEngine = (function () {
     function validateModel(model) {
         var errors = [];
         var seen = new Set();
+        var seenObjectIds = new Set();
         var references = {
             revisions: [],
             comments: [],
@@ -744,6 +868,14 @@ window.tmDocumentEditorEngine = (function () {
             if (seen.has(id)) errors.push({ code: 'duplicate-id', path: path, id: id });
             seen.add(id);
         }
+        function requireObjectId(id, path) {
+            if (!id) {
+                errors.push({ code: 'missing-id', path: path });
+                return;
+            }
+            if (seenObjectIds.has(id)) errors.push({ code: 'duplicate-object-id', path: path, id: id });
+            seenObjectIds.add(id);
+        }
 
         function visitBlock(block, path) {
             if (!block) return;
@@ -751,6 +883,13 @@ window.tmDocumentEditorEngine = (function () {
             if (block.type === 'paragraph') {
                 _asArray(block.content && block.content.runs).forEach(function (run, index) {
                     requireId(run.id, path + '.runs[' + index + ']');
+                    if (run.kind === 'drawing') {
+                        requireObjectId(run.objectId, path + '.runs[' + index + '].objectId');
+                        var runLayout = run.layout || run.Layout || {};
+                        var runAnchor = runLayout.anchor || runLayout.Anchor || {};
+                        var runAnchorBlockId = runAnchor.blockId || runAnchor.BlockId || runLayout.anchorBlockId || runLayout.AnchorBlockId;
+                        if (runAnchorBlockId) references.objectAnchors.push({ id: runAnchorBlockId, path: path + '.runs[' + index + '].layout.anchor.blockId' });
+                    }
                     if (run.revisionId) references.revisions.push({ id: run.revisionId, path: path + '.runs[' + index + '].revisionId' });
                     _asArray(run.commentIds).forEach(function (commentId, commentIndex) {
                         references.comments.push({ id: commentId, path: path + '.runs[' + index + '].commentIds[' + commentIndex + ']' });
@@ -758,7 +897,7 @@ window.tmDocumentEditorEngine = (function () {
                 });
             }
             if (block.type === 'image') {
-                requireId(block.content && block.content.objectId, path + '.object');
+                requireObjectId(block.content && block.content.objectId, path + '.object');
                 var anchor = block.content && block.content.layout && (block.content.layout.Anchor || block.content.layout.anchor);
                 var anchorBlockId = anchor && (anchor.BlockId || anchor.blockId);
                 if (anchorBlockId) references.objectAnchors.push({ id: anchorBlockId, path: path + '.content.layout.anchor.blockId' });
@@ -805,6 +944,7 @@ window.tmDocumentEditorEngine = (function () {
                 blocks: Object.keys(model.indexes.blocks).length,
                 inlines: Object.keys(model.indexes.inlines).length,
                 objects: Object.keys(model.indexes.objects).length,
+                drawingObjects: Object.keys(model.indexes.drawingObjectsById || {}).length,
                 revisions: Object.keys(model.indexes.revisions).length,
                 comments: Object.keys(model.indexes.comments).length
             }
@@ -821,6 +961,7 @@ window.tmDocumentEditorEngine = (function () {
         SetParagraphAttribute: 'SetParagraphAttribute',
         InsertImage: 'InsertImage',
         UpdateImageLayout: 'UpdateImageLayout',
+        MoveDrawingObject: 'MoveDrawingObject',
         UpdateImageMetadata: 'UpdateImageMetadata',
         InsertTable: 'InsertTable',
         UpdateTableCell: 'UpdateTableCell',
@@ -908,6 +1049,26 @@ window.tmDocumentEditorEngine = (function () {
                     attributeName: op.attributeName,
                     value: op.previousValue
                 }, { source: 'undo', baseVersion: op.baseVersion, batchId: op.batchId });
+            case OPERATION_TYPES.MoveDrawingObject:
+                return createOperation(OPERATION_TYPES.MoveDrawingObject, {
+                    target: op.target,
+                    oldLayout: _clone(op.newLayout || op.NewLayout || op.layout || op.Layout || null),
+                    newLayout: _clone(op.oldLayout || op.OldLayout || null),
+                    oldAnchor: _clone(op.newAnchor || op.NewAnchor || null),
+                    newAnchor: _clone(op.oldAnchor || op.OldAnchor || null),
+                    layout: _clone(op.oldLayout || op.OldLayout || null),
+                    affectedParagraphIds: _asArray(op.affectedParagraphIds || op.AffectedParagraphIds)
+                }, { source: 'undo', baseVersion: op.baseVersion, batchId: op.batchId });
+            case OPERATION_TYPES.UpdateImageLayout:
+                var currentLayout = _clone(op.layout || op.Layout || op.newLayout || op.NewLayout || null);
+                var previousLayout = _clone(op.oldLayout || op.OldLayout || op.previousLayout || op.PreviousLayout || currentLayout);
+                return createOperation(OPERATION_TYPES.UpdateImageLayout, {
+                    target: op.target,
+                    oldLayout: currentLayout,
+                    newLayout: previousLayout,
+                    layout: previousLayout,
+                    affectedParagraphIds: _asArray(op.affectedParagraphIds || op.AffectedParagraphIds)
+                }, { source: 'undo', baseVersion: op.baseVersion, batchId: op.batchId });
             case OPERATION_TYPES.SetSelection:
                 return createOperation(OPERATION_TYPES.SetSelection, { selection: op.previousSelection || null }, { source: 'undo', baseVersion: op.baseVersion, batchId: op.batchId });
             case OPERATION_TYPES.RestoreSnapshot:
@@ -932,6 +1093,8 @@ window.tmDocumentEditorEngine = (function () {
             OPERATION_TYPES.ApplyMark,
             OPERATION_TYPES.RemoveMark,
             OPERATION_TYPES.SetParagraphAttribute,
+            OPERATION_TYPES.MoveDrawingObject,
+            OPERATION_TYPES.UpdateImageLayout,
             OPERATION_TYPES.SetSelection,
             OPERATION_TYPES.RestoreSnapshot
         ].indexOf(type) >= 0;
@@ -980,9 +1143,16 @@ window.tmDocumentEditorEngine = (function () {
         var target = value || {};
         return {
             blockId: _asText(target.blockId || target.BlockId),
+            objectId: _asText(target.objectId || target.ObjectId || target.activeObjectId || target.ActiveObjectId),
             offset: Number(target.offset ?? target.Offset ?? 0),
             region: target.region || target.Region || null,
-            headerFooterId: target.headerFooterId || target.HeaderFooterId || null
+            headerFooterId: target.headerFooterId || target.HeaderFooterId || null,
+            tableId: target.tableId || target.TableId || target.activeTableId || target.ActiveTableId || null,
+            cellId: target.cellId || target.CellId || target.activeTableCellId || target.ActiveTableCellId || null,
+            affinity: target.affinity === 'before' || target.Affinity === 'before' ? 'before' : 'after',
+            virtualCaret: target.virtualCaret === true || target.VirtualCaret === true,
+            layoutIntervalId: target.layoutIntervalId || target.LayoutIntervalId || null,
+            visualHintLineId: target.visualHintLineId || target.VisualHintLineId || null
         };
     }
 
@@ -995,7 +1165,9 @@ window.tmDocumentEditorEngine = (function () {
             start: Math.min(start, end),
             end: Math.max(start, end),
             region: range.region || range.Region || null,
-            headerFooterId: range.headerFooterId || range.HeaderFooterId || null
+            headerFooterId: range.headerFooterId || range.HeaderFooterId || null,
+            tableId: range.tableId || range.TableId || range.activeTableId || range.ActiveTableId || null,
+            cellId: range.cellId || range.CellId || range.activeTableCellId || range.ActiveTableCellId || null
         };
     }
 
@@ -1196,13 +1368,61 @@ window.tmDocumentEditorEngine = (function () {
         return _unique(leftIds.filter(function (commentId) { return rightIds.indexOf(commentId) >= 0; })).sort();
     }
 
+    function styleHasValues(style) {
+        return !!(style && typeof style === 'object' && Object.keys(style).length > 0);
+    }
+
+    function resolveTypingStyleAtInsertion(block, offset, affinity) {
+        if (!block || block.type !== 'paragraph') return {};
+        var target = Math.max(0, Math.min(_blockText(block).length, Number(offset || 0) || 0));
+        var direction = affinity === 'before' ? 'before' : 'after';
+        var previous = null;
+        var next = null;
+        var cursor = 0;
+        _asArray(block.content && block.content.runs).some(function (run) {
+            if (!run || run.kind === 'drawing' || isDrawingRunSource(run)) return false;
+            var runText = resolveInlineRunDisplayText(run);
+            var length = _asText(runText).length;
+            if (length <= 0) return false;
+            var start = cursor;
+            var end = cursor + length;
+            cursor = end;
+            if (target > start && target < end) {
+                previous = run;
+                next = null;
+                return true;
+            }
+            if (target === start) {
+                if (!next) next = run;
+                return direction === 'before' && !!previous;
+            }
+            if (target === end) {
+                previous = run;
+                return direction === 'after';
+            }
+            if (end < target || end === target) previous = run;
+            if (start > target && !next) next = run;
+            return false;
+        });
+
+        var candidate = direction === 'before'
+            ? (previous || next)
+            : (previous || next);
+        if (candidate && styleHasValues(candidate.style)) return _clone(candidate.style);
+        if (styleHasValues(block.content && block.content.style)) return _clone(block.content.style);
+        if (styleHasValues(block.style)) return _clone(block.style);
+        return {};
+    }
+
     function _insertTextRun(block, offset, text, attributes) {
         if (!block.content) block.content = { type: 'paragraph', runs: [] };
         var attrs = attributes || {};
+        var targetOffset = Math.max(0, Number(offset || 0) || 0);
+        var affinity = attrs.affinity === 'before' || attrs.Affinity === 'before' ? 'before' : 'after';
         var hasExplicitCommentIds = _hasOwn(attrs, 'commentIds') || _hasOwn(attrs, 'CommentIds');
         var inheritedCommentIds = hasExplicitCommentIds
             ? _unique(_asArray(attrs.commentIds || attrs.CommentIds).map(_asText).filter(Boolean)).sort()
-            : commentIdsAtInsertionOffset(block, offset);
+            : commentIdsAtInsertionOffset(block, targetOffset);
         function createInsertedRun(index) {
             return _sortObject(Object.assign({
                 id: attrs.id || _stableId('inline', block.id + '-insert-' + Date.now() + (index === undefined ? '' : '-' + index)),
@@ -1216,12 +1436,28 @@ window.tmDocumentEditorEngine = (function () {
         var cursor = 0;
         var inserted = false;
         _asArray(block.content.runs).forEach(function (run, index) {
+            if (run && (run.kind === 'drawing' || isDrawingRunSource(run))) {
+                var drawing = normalizeDrawingRun(run, run.id || run.objectId || ((block.id || 'block') + '-drawing-' + index));
+                if (!inserted && targetOffset === cursor) {
+                    if (affinity === 'before') {
+                        result.push(createInsertedRun(index));
+                        result.push(drawing);
+                    } else {
+                        result.push(drawing);
+                        result.push(createInsertedRun(index));
+                    }
+                    inserted = true;
+                    return;
+                }
+                result.push(drawing);
+                return;
+            }
             var runText = _asText(run.text);
             var runStart = cursor;
             var runEnd = cursor + runText.length;
             cursor = runEnd;
-            if (!inserted && offset >= runStart && offset <= runEnd) {
-                var local = Math.max(0, Math.min(runText.length, offset - runStart));
+            if (!inserted && targetOffset >= runStart && targetOffset <= runEnd) {
+                var local = Math.max(0, Math.min(runText.length, targetOffset - runStart));
                 if (local > 0) {
                     var before = _clone(run);
                     before.id = run.id + '-before';
@@ -1244,6 +1480,241 @@ window.tmDocumentEditorEngine = (function () {
             result.push(createInsertedRun());
         }
         block.content.runs = mergeAdjacentTextRuns(result);
+    }
+
+    function splitInlineListForDrawingInsert(block, offset, options) {
+        if (!block.content) block.content = { type: 'paragraph', runs: [] };
+        if (!Array.isArray(block.content.runs) || block.content.runs.length === 0) {
+            block.content.runs = _plainRuns('', (block.id || 'block') + '-empty');
+        }
+        var opts = options || {};
+        var textLength = _blockText(block).length;
+        var targetOffset = Math.max(0, Math.min(textLength, Number(offset || 0) || 0));
+        var affinity = opts.affinity === 'before' ? 'before' : 'after';
+        var before = [];
+        var after = [];
+        var cursor = 0;
+        var inserted = false;
+
+        function pushRun(collection, run, index) {
+            if (run && (run.kind === 'drawing' || isDrawingRunSource(run))) {
+                collection.push(normalizeDrawingRun(run, run.id || run.objectId || ((block.id || 'block') + '-drawing-' + index)));
+            } else {
+                collection.push(normalizeTextRunForMerge(run || {}));
+            }
+        }
+
+        _asArray(block.content.runs).forEach(function (run, index) {
+            var isDrawing = run && (run.kind === 'drawing' || isDrawingRunSource(run));
+            if (isDrawing) {
+                if (!inserted && cursor === targetOffset && affinity === 'before') {
+                    after.push(normalizeDrawingRun(run, run.id || run.objectId || ((block.id || 'block') + '-drawing-' + index)));
+                    return;
+                }
+                pushRun(inserted || cursor <= targetOffset ? before : after, run, index);
+                return;
+            }
+
+            var runText = _asText(run && run.text);
+            var runStart = cursor;
+            var runEnd = cursor + runText.length;
+            cursor = runEnd;
+            if (!inserted && targetOffset >= runStart && targetOffset <= runEnd) {
+                var local = Math.max(0, Math.min(runText.length, targetOffset - runStart));
+                if (local > 0) {
+                    var beforeRun = _clone(run);
+                    beforeRun.id = _asText(run && run.id || _stableId('inline', block.id + '-run-' + index)) + '-drawing-before';
+                    beforeRun.text = runText.slice(0, local);
+                    before.push(normalizeTextRunForMerge(beforeRun));
+                }
+                if (local < runText.length) {
+                    var afterRun = _clone(run);
+                    afterRun.id = _asText(run && run.id || _stableId('inline', block.id + '-run-' + index)) + '-drawing-after';
+                    afterRun.text = runText.slice(local);
+                    after.push(normalizeTextRunForMerge(afterRun));
+                }
+                inserted = true;
+                return;
+            }
+            pushRun(inserted ? after : before, run, index);
+        });
+
+        if (!inserted) {
+            before = mergeAdjacentTextRuns(before).filter(function (run) { return !(run.kind === 'text' && _asText(run.text).length === 0); });
+            after = mergeAdjacentTextRuns(after).filter(function (run) { return !(run.kind === 'text' && _asText(run.text).length === 0); });
+        } else {
+            before = before.length > 0 ? mergeAdjacentTextRuns(before) : [];
+            after = after.length > 0 ? mergeAdjacentTextRuns(after) : [];
+        }
+
+        return _sortObject({
+            before: before,
+            after: after,
+            inlineIndex: before.length,
+            offset: targetOffset,
+            textLength: textLength
+        });
+    }
+
+    function readImageInsertDimension(image, layout, key, fallback) {
+        var transform = layout && (layout.Transform || layout.transform) || {};
+        var size = image && (image.Size || image.size) || {};
+        var naturalSize = image && (image.NaturalSize || image.naturalSize) || {};
+        var layoutWidth = layout ? (layout.Width ?? layout.width) : undefined;
+        var layoutHeight = layout ? (layout.Height ?? layout.height) : undefined;
+        var imageWidth = image ? (image.Width ?? image.width) : undefined;
+        var imageHeight = image ? (image.Height ?? image.height) : undefined;
+        var value = key === 'Width'
+            ? (transform.Width ?? transform.width ?? layoutWidth ?? size.Width ?? size.width ?? imageWidth ?? naturalSize.Width ?? naturalSize.width)
+            : (transform.Height ?? transform.height ?? layoutHeight ?? size.Height ?? size.height ?? imageHeight ?? naturalSize.Height ?? naturalSize.height);
+        return Math.max(1, Number(value ?? fallback) || fallback);
+    }
+
+    function createInlineDrawingLayoutForInsert(image, blockId, offset, inlineIndex, context) {
+        var regionContext = context || {};
+        var sourceLayout = _clone(_read(image || {}, 'Layout', 'layout', _read(image || {}, 'FloatingLayout', 'floatingLayout', {})) || {});
+        var layout = sourceLayout && typeof sourceLayout === 'object' ? sourceLayout : {};
+        var wrap = _clone(layout.Wrap || layout.wrap || {});
+        var transform = _clone(layout.Transform || layout.transform || {});
+        var anchor = _clone(layout.Anchor || layout.anchor || {});
+        var position = _clone(layout.Position || layout.position || {});
+        var stacking = _clone(layout.Stacking || layout.stacking || {});
+        var wrapMode = wrap.Mode ?? wrap.mode ?? layout.WrapMode ?? layout.wrapMode ?? 0;
+        var width = readImageInsertDimension(image, layout, 'Width', 120);
+        var height = readImageInsertDimension(image, layout, 'Height', 80);
+
+        anchor.BlockId = blockId;
+        anchor.blockId = blockId;
+        anchor.Offset = Number(offset || 0) || 0;
+        anchor.offset = anchor.Offset;
+        anchor.InlineIndex = Number(inlineIndex ?? -1);
+        anchor.inlineIndex = anchor.InlineIndex;
+        anchor.Region = anchorRegionToValue(regionContext.region || regionContext.Region || anchor.Region || anchor.region || 'Body');
+        anchor.region = anchor.Region;
+        anchor.TableId = regionContext.tableId || regionContext.TableId || anchor.TableId || anchor.tableId || null;
+        anchor.tableId = anchor.TableId;
+        anchor.CellId = regionContext.cellId || regionContext.CellId || anchor.CellId || anchor.cellId || null;
+        anchor.cellId = anchor.CellId;
+        anchor.HeaderFooterId = regionContext.headerFooterId || regionContext.HeaderFooterId || anchor.HeaderFooterId || anchor.headerFooterId || null;
+        anchor.headerFooterId = anchor.HeaderFooterId;
+        anchor.MoveWithText = (anchor.MoveWithText ?? anchor.moveWithText ?? true) !== false;
+        anchor.moveWithText = anchor.MoveWithText;
+        anchor.FixedOnPage = (anchor.FixedOnPage ?? anchor.fixedOnPage ?? false) === true;
+        anchor.fixedOnPage = anchor.FixedOnPage;
+        anchor.LockAnchor = (anchor.LockAnchor ?? anchor.lockAnchor ?? false) === true;
+        anchor.lockAnchor = anchor.LockAnchor;
+
+        wrap.Mode = wrapModeToValue(wrapMode);
+        wrap.mode = wrap.Mode;
+        wrap.DistanceLeft = Number(wrap.DistanceLeft ?? wrap.distanceLeft ?? 0) || 0;
+        wrap.distanceLeft = wrap.DistanceLeft;
+        wrap.DistanceRight = Number(wrap.DistanceRight ?? wrap.distanceRight ?? 0) || 0;
+        wrap.distanceRight = wrap.DistanceRight;
+        wrap.DistanceTop = Number(wrap.DistanceTop ?? wrap.distanceTop ?? 0) || 0;
+        wrap.distanceTop = wrap.DistanceTop;
+        wrap.DistanceBottom = Number(wrap.DistanceBottom ?? wrap.distanceBottom ?? 0) || 0;
+        wrap.distanceBottom = wrap.DistanceBottom;
+
+        transform.Width = width;
+        transform.width = width;
+        transform.Height = height;
+        transform.height = height;
+        transform.LockAspectRatio = (transform.LockAspectRatio ?? transform.lockAspectRatio ?? true) !== false;
+        transform.lockAspectRatio = transform.LockAspectRatio;
+
+        return syncImageLayoutCase({
+            Kind: layout.Kind ?? layout.kind ?? (wrap.Mode === 0 ? 0 : (anchor.FixedOnPage ? 2 : 1)),
+            Anchor: anchor,
+            Position: position,
+            Wrap: wrap,
+            Transform: transform,
+            Stacking: stacking
+        });
+    }
+
+    function firstDrawingRunFromSourceBlock(sourceBlock) {
+        var content = _read(sourceBlock || {}, 'Content', 'content', null);
+        var inlines = _asArray(_read(content || {}, 'Inlines', 'inlines', _read(content || {}, 'Runs', 'runs', [])));
+        for (var i = 0; i < inlines.length; i++) {
+            if (isDrawingRunSource(inlines[i])) return inlines[i];
+        }
+        return null;
+    }
+
+    function normalizeImageInsertPayload(op) {
+        var sourceBlock = _read(op || {}, 'Block', 'block', null);
+        if (sourceBlock && (sourceBlock.Block || sourceBlock.block)) sourceBlock = sourceBlock.Block || sourceBlock.block;
+        var image = _read(op || {}, 'Image', 'image', null);
+        if (!image && sourceBlock) image = firstDrawingRunFromSourceBlock(sourceBlock) || _read(sourceBlock, 'Content', 'content', sourceBlock);
+        image = image || {};
+        var objectId = _asText(
+            _read(op || {}, 'ObjectId', 'objectId',
+                _read(op || {}, 'BlockId', 'blockId',
+                    _read(image, 'ObjectId', 'objectId',
+                        _read(image, 'Id', 'id', _read(sourceBlock || {}, 'Id', 'id', ''))))));
+        if (!objectId) objectId = _stableId('image-object', Date.now());
+        var metadata = _clone(_read(image, 'Metadata', 'metadata', _read(op || {}, 'Metadata', 'metadata', {})) || {});
+        ['FileName', 'ContentType', 'SizeBytes', 'Provider', 'ProviderId', 'UploadId'].forEach(function (key) {
+            var lower = key.charAt(0).toLowerCase() + key.slice(1);
+            var opValue = op ? (op[key] ?? op[lower]) : undefined;
+            var value = image[key] ?? image[lower] ?? opValue;
+            if (value !== undefined && value !== null && value !== '') metadata[key] = String(value);
+        });
+        return _sortObject({
+            sourceBlock: sourceBlock || null,
+            image: image,
+            objectId: objectId,
+            metadata: metadata
+        });
+    }
+
+    function createDrawingRunFromImageInsert(block, split, op, context) {
+        var payload = normalizeImageInsertPayload(op);
+        var image = payload.image || {};
+        var objectId = payload.objectId;
+        var inlineId = _asText(_read(op || {}, 'InlineId', 'inlineId', _read(op || {}, 'RunId', 'runId', _read(image, 'InlineId', 'inlineId', ''))))
+            || _stableId('drawing', objectId);
+        var layout = createInlineDrawingLayoutForInsert(image, block.id, split.offset, split.inlineIndex, context);
+        return normalizeDrawingRun({
+            $type: 'drawing',
+            Id: inlineId,
+            ObjectId: objectId,
+            Kind: _read(image, 'Kind', 'kind', _read(image, 'DrawingKind', 'drawingKind', 0)),
+            Source: _read(image, 'Source', 'source', 0),
+            Url: _read(image, 'Url', 'url', null),
+            AssetId: _read(image, 'AssetId', 'assetId', null),
+            AltText: _read(image, 'AltText', 'altText', ''),
+            IsDecorative: _read(image, 'IsDecorative', 'isDecorative', false) === true,
+            Caption: _read(image, 'Caption', 'caption', ''),
+            Size: _read(image, 'Size', 'size', {}),
+            NaturalSize: _read(image, 'NaturalSize', 'naturalSize', {}),
+            Layout: layout,
+            Style: _read(image, 'Style', 'style', {}),
+            LinkUrl: _read(image, 'LinkUrl', 'linkUrl', null),
+            Metadata: payload.metadata
+        }, inlineId);
+    }
+
+    function insertDrawingRunAtTextOffset(block, offset, drawingRun, options) {
+        if (!block.content) block.content = { type: 'paragraph', runs: [] };
+        var split = splitInlineListForDrawingInsert(block, offset, options);
+        var normalizedDrawing = normalizeDrawingRun(drawingRun, drawingRun && (drawingRun.id || drawingRun.objectId) || ((block.id || 'block') + '-drawing'));
+        block.content.runs = mergeAdjacentTextRuns(split.before.concat([normalizedDrawing], split.after));
+        if (!block.content.runs.length) block.content.runs = _plainRuns('', (block.id || 'block') + '-empty');
+        var inlineIndex = block.content.runs.findIndex(function (run) {
+            return run && run.kind === 'drawing' && (run.objectId === normalizedDrawing.objectId || run.id === normalizedDrawing.id);
+        });
+        if (inlineIndex < 0) inlineIndex = split.inlineIndex;
+        var run = block.content.runs[inlineIndex] || normalizedDrawing;
+        return _sortObject({
+            ok: true,
+            blockId: block.id || '',
+            objectId: run.objectId || normalizedDrawing.objectId || '',
+            runId: run.id || normalizedDrawing.id || '',
+            inlineIndex: inlineIndex,
+            offset: split.offset,
+            split: split
+        });
     }
 
     function _deleteTextRange(block, start, end) {
@@ -1441,6 +1912,11 @@ window.tmDocumentEditorEngine = (function () {
         var result = [];
         _asArray(runs).forEach(function (run) {
             if (!run) return;
+            if (run.kind === 'drawing' || isDrawingRunSource(run)) {
+                result.push(normalizeDrawingRun(run, run.id || run.objectId || result.length));
+                return;
+            }
+
             var normalized = normalizeTextRunForMerge(run);
             var text = _asText(normalized.text);
             if (text.length === 0 && result.length > 0) return;
@@ -1470,13 +1946,19 @@ window.tmDocumentEditorEngine = (function () {
             OPERATION_TYPES.SetParagraphAttribute,
             OPERATION_TYPES.InsertImage,
             OPERATION_TYPES.UpdateImageLayout,
+            OPERATION_TYPES.MoveDrawingObject,
             OPERATION_TYPES.UpdateImageMetadata
         ];
         if (targetTypes.indexOf(op.type) >= 0) {
             var target = _normalizeTarget(op.target || op.Target);
             var block = _findBlock(model, target.blockId);
+            var targetDrawing = (op.type === OPERATION_TYPES.UpdateImageLayout
+                || op.type === OPERATION_TYPES.MoveDrawingObject
+                || op.type === OPERATION_TYPES.UpdateImageMetadata) && target.objectId
+                ? findDrawingRunByObjectId(model, target.objectId)
+                : null;
             if (!block) {
-                errors.push({ code: 'missing-target-block', path: 'operation.target.blockId', blockId: target.blockId });
+                if (!targetDrawing) errors.push({ code: 'missing-target-block', path: 'operation.target.blockId', blockId: target.blockId });
             } else if (block.type === 'paragraph' && (target.offset < 0 || target.offset > _blockText(block).length)) {
                 errors.push({ code: 'offset-out-of-range', path: 'operation.target.offset', offset: target.offset, length: _blockText(block).length });
             }
@@ -1492,11 +1974,14 @@ window.tmDocumentEditorEngine = (function () {
             }
         }
 
-        if (op.type === OPERATION_TYPES.UpdateImageLayout) {
+        if (op.type === OPERATION_TYPES.UpdateImageLayout || op.type === OPERATION_TYPES.MoveDrawingObject || op.type === OPERATION_TYPES.UpdateImageMetadata) {
             var imageTarget = _normalizeTarget(op.target || op.Target);
-            var imageBlock = _findBlock(model, imageTarget.blockId);
-            if (imageBlock && imageBlock.type !== 'image') errors.push({ code: 'target-not-image', path: 'operation.target.blockId', blockId: imageTarget.blockId });
-            var anchor = op.layout && (op.layout.Anchor || op.layout.anchor);
+            var drawingTarget = imageTarget.objectId ? findDrawingRunByObjectId(model, imageTarget.objectId) : null;
+            if (!drawingTarget) errors.push({ code: 'target-not-drawing-object', path: 'operation.target.objectId', blockId: imageTarget.blockId, objectId: imageTarget.objectId || '' });
+            var layout = op.type === OPERATION_TYPES.MoveDrawingObject
+                ? (op.newLayout || op.NewLayout || op.layout || op.Layout)
+                : (op.newLayout || op.NewLayout || op.layout || op.Layout);
+            var anchor = layout && (layout.Anchor || layout.anchor);
             var anchorBlockId = anchor && (anchor.BlockId || anchor.blockId);
             if (anchorBlockId && !_findBlock(model, anchorBlockId)) {
                 errors.push({ code: 'dangling-image-anchor', path: 'operation.layout.anchor.blockId', blockId: anchorBlockId });
@@ -1592,6 +2077,9 @@ window.tmDocumentEditorEngine = (function () {
             case OPERATION_TYPES.UpdateImageLayout:
                 result = applyUpdateImageLayout(model, op, differ);
                 break;
+            case OPERATION_TYPES.MoveDrawingObject:
+                result = applyMoveDrawingObject(model, op, differ);
+                break;
             case OPERATION_TYPES.UpdateImageMetadata:
                 result = applyUpdateImageMetadata(model, op, differ);
                 break;
@@ -1630,14 +2118,19 @@ window.tmDocumentEditorEngine = (function () {
         var text = _blockText(block);
         var inserted = _asText(op.text ?? op.Text);
         var marks = normalizeMarks(op.marks || op.Marks || []);
-        var style = op.style || op.Style || {};
+        var explicitStyle = op.style || op.Style || {};
+        var style = styleHasValues(explicitStyle)
+            ? _clone(explicitStyle)
+            : resolveTypingStyleAtInsertion(block, target.offset, target.affinity);
         var revisionId = op.revisionId || op.RevisionId || null;
         var revisionPayload = op.revision || op.Revision || null;
         if (revisionId && revisionPayload && !revisionById(model, revisionId)) {
             if (!Array.isArray(model.revisions)) model.revisions = [];
             model.revisions.push(_sortObject(revisionPayload));
         }
-        _insertTextRun(block, target.offset, inserted, { marks: marks, style: style, revisionId: revisionId });
+        var attrs = { marks: marks, style: style, revisionId: revisionId, affinity: target.affinity };
+        if (target.virtualCaret) attrs.commentIds = [];
+        _insertTextRun(block, target.offset, inserted, attrs);
         var range = { blockId: block.id, start: target.offset, end: target.offset + inserted.length };
         differ.record({ insertedRange: range, invalidatedLayoutScopes: [block.id] });
         return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.end, target) };
@@ -1772,39 +2265,221 @@ window.tmDocumentEditorEngine = (function () {
     function applyInsertImage(model, op, differ) {
         var target = _normalizeTarget(op.target || op.Target);
         var container = _findBlockContainer(model, target.blockId);
-        var block = importBlock({
-            Id: op.blockId || op.BlockId || _stableId('image-block', Date.now()),
-            Type: 'Image',
-            Content: Object.assign({ Type: 'Image' }, op.image || op.Image || {})
-        }, 'insert-image');
-        container.blocks.splice(container.index + 1, 0, block);
-        differ.record({ objectChange: { blockId: block.id, type: 'insert-image' }, invalidatedLayoutScopes: [container.block.id, block.id], invalidatedOverlayScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: [container.block.id, block.id], nextSelection: { region: 'Body', blockId: block.id, offset: 0, isCollapsed: true }, insertedBlockId: block.id };
+        if (!container || !container.block) {
+            return { ok: false, errors: [{ code: 'missing-target-block', path: 'operation.target.blockId', blockId: target.blockId }] };
+        }
+
+        var block = container.block;
+        if (!_isEditableTextBlock(block)) {
+            block = importBlock({
+                Id: op.paragraphId || op.ParagraphId || _stableId('image-paragraph', (container.block.id || 'block') + '-' + Date.now()),
+                Type: 'Paragraph',
+                Content: { Inlines: [{ Id: _stableId('inline', 'insert-image-empty'), Text: '' }] }
+            }, 'insert-image-paragraph');
+            container.blocks.splice(container.index + 1, 0, block);
+            container = { blocks: container.blocks, index: container.index + 1, block: block };
+            target = Object.assign({}, target, { blockId: block.id, offset: 0 });
+        }
+
+        var offset = Math.max(0, Math.min(_blockText(block).length, Number(target.offset || 0) || 0));
+        var regionInfo = operationRegionInfo(model, op, block.id, target);
+        var split = splitInlineListForDrawingInsert(block, offset, { affinity: target.affinity || target.Affinity || 'after' });
+        var drawing = createDrawingRunFromImageInsert(block, split, op, regionInfo);
+        var insert = insertDrawingRunAtTextOffset(block, offset, drawing, { affinity: target.affinity || target.Affinity || 'after' });
+        buildIndexes(model);
+
+        var restoreSelection = createSelectionSnapshot({
+            region: regionInfo.region || target.region || 'Body',
+            blockId: block.id,
+            offset: insert.offset,
+            affinity: 'after',
+            inlineIndex: insert.inlineIndex + 1,
+            anchorInlineIndex: insert.inlineIndex + 1,
+            isCollapsed: true,
+            headerFooterId: regionInfo.headerFooterId || target.headerFooterId || null,
+            tableId: regionInfo.tableId || target.tableId || null,
+            cellId: regionInfo.cellId || target.cellId || null,
+            activeTableId: regionInfo.tableId || target.tableId || null,
+            activeTableCellId: regionInfo.cellId || target.cellId || null
+        });
+        var nextSelection = createObjectSelectionSnapshot(model, {
+            region: regionInfo.region || target.region || 'Body',
+            blockId: block.id,
+            objectId: insert.objectId,
+            anchorBlockId: block.id,
+            anchorOffset: insert.offset,
+            anchorInlineIndex: insert.inlineIndex,
+            inlineIndex: insert.inlineIndex,
+            runId: insert.runId,
+            headerFooterId: regionInfo.headerFooterId || target.headerFooterId || null,
+            tableId: regionInfo.tableId || target.tableId || null,
+            cellId: regionInfo.cellId || target.cellId || null,
+            textSelection: restoreSelection
+        }, restoreSelection);
+        var affected = _unique([block.id].concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds)));
+        differ.record({
+            objectChange: { blockId: block.id, objectId: insert.objectId, inlineIndex: insert.inlineIndex, type: 'insert-drawing-run' },
+            invalidatedLayoutScopes: affected,
+            invalidatedOverlayScopes: [block.id, insert.objectId]
+        });
+        return {
+            ok: true,
+            invalidatedLayoutScopes: affected,
+            nextSelection: nextSelection,
+            insertedBlockId: null,
+            insertedObjectId: insert.objectId,
+            insertedRunId: insert.runId,
+            insertedInlineIndex: insert.inlineIndex
+        };
     }
 
     function applyUpdateImageLayout(model, op, differ) {
         var target = _normalizeTarget(op.target || op.Target);
-        var block = _findBlock(model, target.blockId);
-        block.content.layout = syncImageLayoutCase(_clone(op.layout || op.Layout || {}));
-        var transform = block.content.layout.Transform || block.content.layout.transform || {};
-        var currentSize = block.content.size || {};
-        block.content.size = _sortObject({
-            width: transform.Width ?? transform.width ?? currentSize.width ?? null,
-            height: transform.Height ?? transform.height ?? currentSize.height ?? null,
-            lockAspectRatio: (transform.LockAspectRatio ?? transform.lockAspectRatio ?? currentSize.lockAspectRatio ?? true) !== false
-        });
-        var affected = _unique([block.id].concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds)));
-        differ.record({ objectChange: { blockId: block.id, type: 'layout' }, invalidatedLayoutScopes: affected, invalidatedOverlayScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: affected, nextSelection: imageSelectionForBlock(block) };
+        var objectId = target.objectId || _asText(op.objectId || op.ObjectId || '');
+        var drawing = objectId ? findDrawingRunByObjectId(model, objectId) : null;
+        if (drawing) {
+            var drawingBlock = _findBlock(model, drawing.blockId);
+            var runs = drawingBlock && drawingBlock.content && drawingBlock.content.runs;
+            var runIndex = Array.isArray(runs)
+                ? runs.findIndex(function (run) {
+                    return run && (run.objectId === objectId || run.ObjectId === objectId || run.id === drawing.inlineId || run.Id === drawing.inlineId);
+                })
+                : -1;
+            if (runIndex < 0) return { ok: false, errors: [{ code: 'drawing-run-not-found', objectId: objectId, blockId: drawing.blockId }] };
+
+            var drawingLayout = syncImageLayoutCase(_clone(op.newLayout || op.NewLayout || op.layout || op.Layout || {}));
+            runs[runIndex].layout = drawingLayout;
+            var drawingTransform = drawingLayout.Transform || drawingLayout.transform || {};
+            var drawingSize = runs[runIndex].size || runs[runIndex].Size || {};
+            runs[runIndex].size = _sortObject({
+                width: drawingTransform.Width ?? drawingTransform.width ?? drawingSize.width ?? drawingSize.Width ?? null,
+                height: drawingTransform.Height ?? drawingTransform.height ?? drawingSize.height ?? drawingSize.Height ?? null,
+                lockAspectRatio: (drawingTransform.LockAspectRatio ?? drawingTransform.lockAspectRatio ?? drawingSize.lockAspectRatio ?? drawingSize.LockAspectRatio ?? true) !== false
+            });
+            buildIndexes(model);
+            var drawingAnchor = drawingLayout.Anchor || drawingLayout.anchor || {};
+            var updatedObject = normalizeImageObject(runs[runIndex], { blockId: drawing.blockId, inlineIndex: runIndex });
+            var affectedDrawing = _unique([drawing.blockId, drawingAnchor.BlockId || drawingAnchor.blockId]
+                .concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds))
+                .filter(Boolean));
+            differ.record({
+                objectChange: { blockId: drawing.blockId, objectId: objectId, inlineIndex: runIndex, type: 'layout' },
+                invalidatedLayoutScopes: affectedDrawing,
+                invalidatedOverlayScopes: [drawing.blockId, objectId]
+            });
+            return {
+                ok: true,
+                invalidatedLayoutScopes: affectedDrawing,
+                nextSelection: createObjectSelectionSnapshot(model, {
+                    region: target.region || 'Body',
+                    blockId: drawing.blockId,
+                    objectId: objectId,
+                    anchorBlockId: drawingAnchor.BlockId || drawingAnchor.blockId || drawing.blockId,
+                    anchorInlineIndex: runIndex,
+                    headerFooterId: updatedObject.anchorHeaderFooterId || target.headerFooterId || null,
+                    tableId: updatedObject.anchorTableId || target.tableId || null,
+                    cellId: updatedObject.anchorCellId || target.cellId || null
+                })
+            };
+        }
+
+        return { ok: false, errors: [{ code: 'drawing-layout-target-not-found', blockId: target.blockId, objectId: objectId }] };
+    }
+
+    function applyMoveDrawingObject(model, op, differ) {
+        var target = _normalizeTarget(op.target || op.Target);
+        var objectId = target.objectId || _asText(op.objectId || op.ObjectId || '');
+        var drawing = objectId ? findDrawingRunByObjectId(model, objectId) : null;
+        var currentLayout = drawing
+            ? imageObjectToLayout(normalizeImageObject(drawing.run || {}, { blockId: drawing.blockId, inlineIndex: drawing.inlineIndex, region: drawing.region || drawing.object && drawing.object.anchorRegion || null, headerFooterId: drawing.headerFooterId || drawing.object && drawing.object.anchorHeaderFooterId || null, tableId: drawing.tableId || drawing.object && drawing.object.anchorTableId || null, cellId: drawing.cellId || drawing.object && drawing.object.anchorCellId || null }))
+            : null;
+        if (!currentLayout) {
+            return { ok: false, errors: [{ code: 'drawing-layout-target-not-found', blockId: target.blockId, objectId: objectId }] };
+        }
+        var nextLayout = syncImageLayoutCase(_clone(op.newLayout || op.NewLayout || op.layout || op.Layout || currentLayout || {}));
+        var newAnchor = _clone(op.newAnchor || op.NewAnchor || null);
+        if (newAnchor) {
+            nextLayout.Anchor = Object.assign({}, nextLayout.Anchor || nextLayout.anchor || {}, newAnchor);
+            nextLayout.anchor = Object.assign({}, nextLayout.anchor || nextLayout.Anchor || {}, newAnchor);
+            nextLayout = syncImageLayoutCase(nextLayout);
+        }
+
+        var oldLayout = syncImageLayoutCase(_clone(op.oldLayout || op.OldLayout || currentLayout || {}));
+        op.oldLayout = oldLayout;
+        op.OldLayout = oldLayout;
+        op.newLayout = nextLayout;
+        op.NewLayout = nextLayout;
+        op.layout = nextLayout;
+        op.Layout = nextLayout;
+        op.oldAnchor = _clone(op.oldAnchor || op.OldAnchor || oldLayout.Anchor || oldLayout.anchor || {});
+        op.OldAnchor = _clone(op.oldAnchor);
+        op.newAnchor = _clone(op.newAnchor || op.NewAnchor || nextLayout.Anchor || nextLayout.anchor || {});
+        op.NewAnchor = _clone(op.newAnchor);
+
+        var oldAnchor = oldLayout.Anchor || oldLayout.anchor || {};
+        var nextAnchor = nextLayout.Anchor || nextLayout.anchor || {};
+        var affected = _unique([
+            target.blockId,
+            drawing && drawing.blockId,
+            oldAnchor.BlockId || oldAnchor.blockId,
+            nextAnchor.BlockId || nextAnchor.blockId
+        ].concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds)).filter(Boolean));
+        op.affectedParagraphIds = affected;
+        op.AffectedParagraphIds = affected;
+
+        return applyUpdateImageLayout(model, Object.assign({}, op, {
+            type: OPERATION_TYPES.UpdateImageLayout,
+            layout: nextLayout,
+            Layout: nextLayout,
+            affectedParagraphIds: affected,
+            AffectedParagraphIds: affected
+        }), differ);
     }
 
     function applyUpdateImageMetadata(model, op, differ) {
         var target = _normalizeTarget(op.target || op.Target);
-        var block = _findBlock(model, target.blockId);
         var metadata = op.metadata || op.Metadata || {};
-        Object.assign(block.content, _sortObject(metadata));
-        differ.record({ objectChange: { blockId: block.id, type: 'metadata' }, invalidatedLayoutScopes: [block.id], invalidatedOverlayScopes: [block.id] });
-        return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: imageSelectionForBlock(block) };
+        var objectId = target.objectId || _asText(op.objectId || op.ObjectId || '');
+        var drawing = objectId ? findDrawingRunByObjectId(model, objectId) : null;
+        if (drawing) {
+            var drawingBlock = _findBlock(model, drawing.blockId);
+            var runs = drawingBlock && drawingBlock.content && drawingBlock.content.runs;
+            var runIndex = Array.isArray(runs)
+                ? runs.findIndex(function (run) {
+                    return run && (run.objectId === objectId || run.ObjectId === objectId || run.id === drawing.inlineId || run.Id === drawing.inlineId);
+                })
+                : -1;
+            if (runIndex < 0) return { ok: false, errors: [{ code: 'drawing-run-not-found', objectId: objectId, blockId: drawing.blockId }] };
+
+            Object.assign(runs[runIndex], _sortObject(metadata));
+            buildIndexes(model);
+            var object = normalizeImageObject(runs[runIndex], { blockId: drawing.blockId, inlineIndex: runIndex });
+            var affectedDrawing = _unique([drawing.blockId, object.anchorBlockId]
+                .concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds))
+                .filter(Boolean));
+            differ.record({
+                objectChange: { blockId: drawing.blockId, objectId: objectId, inlineIndex: runIndex, type: 'metadata' },
+                invalidatedLayoutScopes: affectedDrawing,
+                invalidatedOverlayScopes: [drawing.blockId, objectId]
+            });
+            return {
+                ok: true,
+                invalidatedLayoutScopes: affectedDrawing,
+                nextSelection: createObjectSelectionSnapshot(model, {
+                    region: target.region || object.anchorRegion || 'Body',
+                    blockId: drawing.blockId,
+                    objectId: objectId,
+                    anchorBlockId: object.anchorBlockId || drawing.blockId,
+                    anchorOffset: object.anchorOffset,
+                    anchorInlineIndex: runIndex,
+                    headerFooterId: object.anchorHeaderFooterId || target.headerFooterId || null,
+                    tableId: object.anchorTableId || target.tableId || null,
+                    cellId: object.anchorCellId || target.cellId || null
+                })
+            };
+        }
+
+        return { ok: false, errors: [{ code: 'drawing-metadata-target-not-found', blockId: target.blockId, objectId: objectId }] };
     }
 
     function applyInsertTable(model, op, differ) {
@@ -3898,6 +4573,8 @@ window.tmDocumentEditorEngine = (function () {
             offset: Number(value.offset ?? value.Offset ?? 0),
             affinity: value.affinity || value.Affinity || 'after',
             visualHintLineId: value.visualHintLineId || value.VisualHintLineId || null,
+            layoutIntervalId: value.layoutIntervalId || value.LayoutIntervalId || null,
+            virtualCaret: value.virtualCaret === true || value.VirtualCaret === true,
             limitId: value.limitId || value.LimitId || null,
             objectId: value.objectId || value.ObjectId || null,
             cellId: value.cellId || value.CellId || null,
@@ -3917,6 +4594,125 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function normalizeSelectionModeValue(value) {
+        var raw = _asText(value || '').trim().toLowerCase();
+        if (raw === 'object' || raw === 'image') return 'Object';
+        return 'Text';
+    }
+
+    function normalizeTextSelectionPayload(input, fallbackRange, fallbackRegion) {
+        var value = input || {};
+        var range = value.range || value.Range || fallbackRange || null;
+        if (!range) {
+            if (value.anchor || value.Anchor || value.focus || value.Focus) {
+                var anchor = createLogicalPosition(value.anchor || value.Anchor || value.position || value.Position || value);
+                var focus = createLogicalPosition(value.focus || value.Focus || value.anchor || value.Anchor || value.position || value.Position || value);
+                range = createLogicalRange(anchor, focus, value.direction || value.Direction || (anchor.offset <= focus.offset ? 'forward' : 'backward'));
+            } else if (value.anchorBlockId || value.AnchorBlockId || value.focusBlockId || value.FocusBlockId) {
+                var anchorPosition = createLogicalPosition({
+                    region: value.region || value.Region || fallbackRegion || 'Body',
+                    blockId: value.anchorBlockId || value.AnchorBlockId || value.focusBlockId || value.FocusBlockId || '',
+                    inlineId: value.anchorInlineId || value.AnchorInlineId || value.anchorNodeId || value.AnchorNodeId || null,
+                    offset: value.anchorOffset ?? value.AnchorOffset ?? value.anchorBlockOffset ?? value.AnchorBlockOffset ?? 0,
+                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
+                    tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
+                });
+                var focusPosition = createLogicalPosition({
+                    region: value.region || value.Region || fallbackRegion || 'Body',
+                    blockId: value.focusBlockId || value.FocusBlockId || value.anchorBlockId || value.AnchorBlockId || '',
+                    inlineId: value.focusInlineId || value.FocusInlineId || value.focusNodeId || value.FocusNodeId || null,
+                    offset: value.focusOffset ?? value.FocusOffset ?? value.focusBlockOffset ?? value.FocusBlockOffset ?? value.anchorOffset ?? value.AnchorOffset ?? 0,
+                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
+                    tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
+                });
+                range = createLogicalRange(anchorPosition, focusPosition, value.direction || value.Direction || (anchorPosition.offset <= focusPosition.offset ? 'forward' : 'backward'));
+            } else {
+                var position = createLogicalPosition(value.position || value.Position || value);
+                range = createLogicalRange(position, position, 'none');
+            }
+        }
+
+        var anchorPos = createLogicalPosition(range.anchor || range.Anchor || range.start || range.Start || range);
+        var focusPos = createLogicalPosition(range.focus || range.Focus || range.end || range.End || anchorPos);
+        var region = _asText(value.region || value.Region || anchorPos.region || focusPos.region || fallbackRegion || 'Body');
+        var direction = range.direction || range.Direction || value.direction || value.Direction || 'none';
+        var isCollapsed = range.isCollapsed !== false && value.isCollapsed !== false && value.IsCollapsed !== false;
+        return _sortObject({
+            mode: 'Text',
+            selectionMode: 'Text',
+            region: region,
+            range: createLogicalRange(anchorPos, focusPos, direction),
+            anchor: anchorPos,
+            focus: focusPos,
+            blockId: focusPos.blockId,
+            inlineId: focusPos.inlineId,
+            offset: focusPos.offset,
+            affinity: focusPos.affinity,
+            visualHintLineId: focusPos.visualHintLineId,
+            layoutIntervalId: focusPos.layoutIntervalId,
+            virtualCaret: focusPos.virtualCaret === true,
+            anchorBlockId: anchorPos.blockId,
+            anchorInlineId: anchorPos.inlineId,
+            anchorOffset: anchorPos.offset,
+            focusBlockId: focusPos.blockId,
+            focusInlineId: focusPos.inlineId,
+            focusOffset: focusPos.offset,
+            headerFooterId: value.headerFooterId || value.HeaderFooterId || focusPos.headerFooterId || anchorPos.headerFooterId || null,
+            isCollapsed: isCollapsed,
+            direction: direction,
+            cellId: value.cellId || value.CellId || focusPos.cellId || null,
+            tableId: value.tableId || value.TableId || focusPos.tableId || anchorPos.tableId || null
+        });
+    }
+
+    function normalizeObjectSelectionPayload(input, range, textSelection) {
+        var value = input || {};
+        var source = value.objectSelection || value.ObjectSelection || value;
+        var anchor = createLogicalPosition(range && (range.anchor || range.Anchor) || {});
+        var focus = createLogicalPosition(range && (range.focus || range.Focus) || anchor);
+        var objectId = _asText(source.objectId || source.ObjectId || value.activeObjectId || value.ActiveObjectId || value.objectId || value.ObjectId || focus.objectId || anchor.objectId || '');
+        if (!objectId) return null;
+        var anchorBlockId = _asText(source.anchorBlockId || source.AnchorBlockId || source.blockId || source.BlockId || value.activeImageBlockId || value.ActiveImageBlockId || focus.blockId || anchor.blockId || '');
+        var anchorOffset = Number(source.anchorOffset ?? source.AnchorOffset ?? source.offset ?? source.Offset ?? anchor.offset ?? focus.offset ?? 0) || 0;
+        var region = _asText(source.region || source.Region || value.region || value.Region || anchor.region || focus.region || 'Body');
+        var preservedTextSelection = normalizeTextSelectionPayload(
+            source.textSelection || source.TextSelection || textSelection || null,
+            null,
+            region);
+        return _sortObject({
+            mode: 'Object',
+            selectionMode: 'Object',
+            region: region,
+            kind: source.kind || source.Kind || value.kind || value.Kind || value.hitTargetKind || value.HitTargetKind || 'image',
+            objectId: objectId,
+            blockId: _asText(source.blockId || source.BlockId || anchorBlockId),
+            anchorBlockId: anchorBlockId,
+            anchorInlineId: source.anchorInlineId || source.AnchorInlineId || source.inlineId || source.InlineId || null,
+            anchorInlineIndex: Number(source.anchorInlineIndex ?? source.AnchorInlineIndex ?? source.inlineIndex ?? source.InlineIndex ?? -1),
+            anchorOffset: anchorOffset,
+            inlineIndex: Number(source.inlineIndex ?? source.InlineIndex ?? source.anchorInlineIndex ?? source.AnchorInlineIndex ?? -1),
+            runId: source.runId || source.RunId || source.inlineId || source.InlineId || null,
+            headerFooterId: source.headerFooterId || source.HeaderFooterId || value.headerFooterId || value.HeaderFooterId || focus.headerFooterId || anchor.headerFooterId || null,
+            tableId: source.tableId || source.TableId || value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || focus.tableId || anchor.tableId || null,
+            cellId: source.cellId || source.CellId || value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || focus.cellId || anchor.cellId || null,
+            textSelection: preservedTextSelection
+        });
+    }
+
+    function isObjectSelectionSnapshot(selection) {
+        var value = selection || {};
+        var explicitMode = value.selectionMode || value.SelectionMode || value.mode || value.Mode || '';
+        var mode = normalizeSelectionModeValue(explicitMode);
+        if (_asText(explicitMode) && mode === 'Text') return false;
+        return mode === 'Object'
+            || value.isObjectSelection === true
+            || value.IsObjectSelection === true
+            || !!(value.objectSelection || value.ObjectSelection)
+            || !!(value.activeObjectId || value.ActiveObjectId || value.objectId || value.ObjectId);
+    }
+
     function createSelectionSnapshot(input) {
         var value = input || {};
         var range = value.range || value.Range || null;
@@ -3931,14 +4727,18 @@ window.tmDocumentEditorEngine = (function () {
                     blockId: value.anchorBlockId || value.AnchorBlockId || value.focusBlockId || value.FocusBlockId || '',
                     inlineId: value.anchorInlineId || value.AnchorInlineId || value.anchorNodeId || value.AnchorNodeId || null,
                     offset: value.anchorOffset ?? value.AnchorOffset ?? value.anchorBlockOffset ?? value.AnchorBlockOffset ?? 0,
-                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null
+                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
+                    tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
                 });
                 var focusPosition = createLogicalPosition({
                     region: value.region || value.Region || 'Body',
                     blockId: value.focusBlockId || value.FocusBlockId || value.anchorBlockId || value.AnchorBlockId || '',
                     inlineId: value.focusInlineId || value.FocusInlineId || value.focusNodeId || value.FocusNodeId || null,
                     offset: value.focusOffset ?? value.FocusOffset ?? value.focusBlockOffset ?? value.FocusBlockOffset ?? value.anchorOffset ?? value.AnchorOffset ?? 0,
-                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null
+                    headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
+                    tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
                 });
                 range = createLogicalRange(anchorPosition, focusPosition, value.direction || value.Direction || (anchorPosition.offset <= focusPosition.offset ? 'forward' : 'backward'));
             } else {
@@ -3946,42 +4746,535 @@ window.tmDocumentEditorEngine = (function () {
                 range = createLogicalRange(position, position, 'none');
             }
         }
+        var anchorPos = createLogicalPosition(range.anchor);
+        var focusPos = createLogicalPosition(range.focus);
+        var explicitMode = value.selectionMode || value.SelectionMode || value.mode || value.Mode || '';
+        var normalizedMode = normalizeSelectionModeValue(explicitMode);
+        var hasExplicitMode = !!_asText(explicitMode);
+        var hasObjectInput = !!(value.objectSelection || value.ObjectSelection);
+        var hasObjectId = !!(value.activeObjectId || value.ActiveObjectId || value.objectId || value.ObjectId || focusPos.objectId || anchorPos.objectId);
+        var isObjectSelection = hasExplicitMode
+            ? normalizedMode === 'Object'
+            : (value.isObjectSelection === true || value.IsObjectSelection === true || hasObjectInput || (hasObjectId && focusPos.blockId === anchorPos.blockId));
+        var mode = isObjectSelection ? 'Object' : 'Text';
+        var region = _asText(value.region || value.Region || range.anchor.region || 'Body');
+        var fallbackTextRange = isObjectSelection
+            ? createLogicalRange(
+                { region: region, blockId: anchorPos.blockId || focusPos.blockId, offset: anchorPos.offset ?? focusPos.offset ?? 0, headerFooterId: anchorPos.headerFooterId || focusPos.headerFooterId || null, tableId: anchorPos.tableId || focusPos.tableId || null, cellId: anchorPos.cellId || focusPos.cellId || null },
+                { region: region, blockId: anchorPos.blockId || focusPos.blockId, offset: anchorPos.offset ?? focusPos.offset ?? 0, headerFooterId: anchorPos.headerFooterId || focusPos.headerFooterId || null, tableId: anchorPos.tableId || focusPos.tableId || null, cellId: anchorPos.cellId || focusPos.cellId || null },
+                'none')
+            : range;
+        var textSelection = isObjectSelection
+            ? normalizeTextSelectionPayload(value.textSelection || value.TextSelection || value.previousTextSelection || value.PreviousTextSelection || null, fallbackTextRange, region)
+            : normalizeTextSelectionPayload(value, range, region);
+        var objectSelection = isObjectSelection
+            ? normalizeObjectSelectionPayload(value, range, textSelection)
+            : null;
+        var activeObjectId = value.activeObjectId || value.ActiveObjectId || value.objectId || value.ObjectId || focusPos.objectId || anchorPos.objectId || objectSelection && objectSelection.objectId || null;
+        var activeImageBlockId = value.activeImageBlockId || value.ActiveImageBlockId || objectSelection && (objectSelection.anchorBlockId || objectSelection.blockId) || (isObjectSelection ? focusPos.blockId : null);
         return _sortObject({
-            region: _asText(value.region || value.Region || range.anchor.region || 'Body'),
+            region: region,
             range: range,
-            anchor: createLogicalPosition(range.anchor),
-            focus: createLogicalPosition(range.focus),
-            anchorOffset: createLogicalPosition(range.anchor).offset,
-            focusOffset: createLogicalPosition(range.focus).offset,
-            AnchorOffset: createLogicalPosition(range.anchor).offset,
-            FocusOffset: createLogicalPosition(range.focus).offset,
-            AnchorBlockOffset: createLogicalPosition(range.anchor).offset,
-            FocusBlockOffset: createLogicalPosition(range.focus).offset,
-            AnchorBlockId: createLogicalPosition(range.anchor).blockId,
-            FocusBlockId: createLogicalPosition(range.focus).blockId,
-            blockId: createLogicalPosition(range.focus).blockId,
-            inlineId: createLogicalPosition(range.focus).inlineId,
-            offset: createLogicalPosition(range.focus).offset,
-            affinity: createLogicalPosition(range.focus).affinity,
-            visualHintLineId: createLogicalPosition(range.focus).visualHintLineId,
-            limitId: createLogicalPosition(range.focus).limitId,
-            headerFooterId: value.headerFooterId || value.HeaderFooterId || createLogicalPosition(range.focus).headerFooterId || createLogicalPosition(range.anchor).headerFooterId || null,
-            isCollapsed: range.isCollapsed !== false,
+            anchor: anchorPos,
+            focus: focusPos,
+            mode: mode,
+            selectionMode: mode,
+            SelectionMode: mode,
+            textSelection: textSelection,
+            TextSelection: textSelection,
+            objectSelection: objectSelection,
+            ObjectSelection: objectSelection,
+            anchorOffset: anchorPos.offset,
+            focusOffset: focusPos.offset,
+            AnchorOffset: anchorPos.offset,
+            FocusOffset: focusPos.offset,
+            AnchorBlockOffset: anchorPos.offset,
+            FocusBlockOffset: focusPos.offset,
+            AnchorBlockId: anchorPos.blockId,
+            FocusBlockId: focusPos.blockId,
+            blockId: focusPos.blockId,
+            inlineId: focusPos.inlineId,
+            offset: focusPos.offset,
+            affinity: focusPos.affinity,
+            visualHintLineId: focusPos.visualHintLineId,
+            layoutIntervalId: focusPos.layoutIntervalId,
+            virtualCaret: focusPos.virtualCaret === true,
+            limitId: focusPos.limitId,
+            headerFooterId: value.headerFooterId || value.HeaderFooterId || focusPos.headerFooterId || anchorPos.headerFooterId || null,
+            isCollapsed: isObjectSelection ? false : range.isCollapsed !== false,
             direction: range.direction || 'none'
             ,
-            objectId: createLogicalPosition(range.focus).objectId,
-            cellId: value.cellId || value.CellId || createLogicalPosition(range.focus).cellId || null,
-            tableId: value.tableId || value.TableId || createLogicalPosition(range.focus).tableId || null,
-            isCellSelection: value.isCellSelection === true || value.IsCellSelection === true || !!(value.cellId || value.CellId || createLogicalPosition(range.focus).cellId),
-            isObjectSelection: value.isObjectSelection === true || value.IsObjectSelection === true || !!createLogicalPosition(range.focus).objectId && createLogicalPosition(range.focus).blockId === createLogicalPosition(range.anchor).blockId && range.isCollapsed !== false,
-            activeImageBlockId: value.activeImageBlockId || value.ActiveImageBlockId || ((value.isObjectSelection === true || value.IsObjectSelection === true || !!createLogicalPosition(range.focus).objectId) ? createLogicalPosition(range.focus).blockId : null),
-            activeObjectId: value.activeObjectId || value.ActiveObjectId || value.objectId || value.ObjectId || createLogicalPosition(range.focus).objectId || null,
-            activeTableCellId: value.activeTableCellId || value.ActiveTableCellId || value.cellId || value.CellId || createLogicalPosition(range.focus).cellId || null,
-            activeTableId: value.activeTableId || value.ActiveTableId || value.tableId || value.TableId || createLogicalPosition(range.focus).tableId || createLogicalPosition(range.anchor).tableId || null,
+            objectId: activeObjectId,
+            cellId: value.cellId || value.CellId || focusPos.cellId || null,
+            tableId: value.tableId || value.TableId || focusPos.tableId || null,
+            isCellSelection: value.isCellSelection === true || value.IsCellSelection === true || !!(value.cellId || value.CellId || focusPos.cellId),
+            isObjectSelection: isObjectSelection,
+            activeImageBlockId: activeImageBlockId || null,
+            activeObjectId: activeObjectId || null,
+            activeTableCellId: value.activeTableCellId || value.ActiveTableCellId || value.cellId || value.CellId || focusPos.cellId || null,
+            activeTableId: value.activeTableId || value.ActiveTableId || value.tableId || value.TableId || focusPos.tableId || anchorPos.tableId || null,
             activeCommentId: value.activeCommentId || value.ActiveCommentId || null,
             activeRevisionId: value.activeRevisionId || value.ActiveRevisionId || null,
-            hitTargetKind: value.hitTargetKind || value.HitTargetKind || (value.activeImageBlockId || value.ActiveImageBlockId || value.objectId || value.ObjectId || createLogicalPosition(range.focus).objectId ? 'image' : null)
+            hitTargetKind: value.hitTargetKind || value.HitTargetKind || (isObjectSelection ? 'image' : null)
         });
+    }
+
+    function createObjectSelectionSnapshot(model, input, previousTextSelection) {
+        var body = typeof input === 'string' ? { objectId: input } : (input || {});
+        var objectId = _asText(body.objectId || body.ObjectId || body.activeObjectId || body.ActiveObjectId || '');
+        var hasExplicitRegion = !!_asText(body.region || body.Region || '');
+        var region = _asText(body.region || body.Region || 'Body');
+        var headerFooterId = body.headerFooterId || body.HeaderFooterId || null;
+        var tableId = body.tableId || body.TableId || body.activeTableId || body.ActiveTableId || null;
+        var cellId = body.cellId || body.CellId || body.activeTableCellId || body.ActiveTableCellId || null;
+        var found = objectId ? findDrawingRunByObjectId(model, objectId) : null;
+        var blockId = '';
+        var anchorOffset = 0;
+        var anchorInlineIndex = -1;
+        var runId = null;
+        var kind = 'image';
+
+        if (found && found.object) {
+            blockId = found.object.anchorBlockId || found.blockId || '';
+            anchorOffset = Number(found.object.anchorOffset ?? 0) || 0;
+            anchorInlineIndex = Number(found.object.anchorInlineIndex ?? found.inlineIndex ?? -1);
+            runId = found.run && found.run.id || found.inlineId || null;
+            kind = found.object.kind || 'image';
+            region = hasExplicitRegion && region !== 'Body'
+                ? region
+                : _asText(found.object.anchorRegion || found.object.region || found.region || region || 'Body');
+            headerFooterId = headerFooterId || found.object.anchorHeaderFooterId || found.object.headerFooterId || found.headerFooterId || null;
+            tableId = tableId || found.object.anchorTableId || found.object.tableId || found.tableId || null;
+            cellId = cellId || found.object.anchorCellId || found.object.cellId || found.cellId || null;
+        }
+
+        blockId = _asText(body.anchorBlockId || body.AnchorBlockId || blockId || body.blockId || body.BlockId);
+        anchorOffset = Number(body.anchorOffset ?? body.AnchorOffset ?? body.offset ?? body.Offset ?? anchorOffset) || 0;
+        anchorInlineIndex = Number(body.anchorInlineIndex ?? body.AnchorInlineIndex ?? body.inlineIndex ?? body.InlineIndex ?? anchorInlineIndex);
+        runId = body.runId || body.RunId || body.inlineId || body.InlineId || runId;
+        var textSelection = previousTextSelection || body.textSelection || body.TextSelection || body.previousTextSelection || body.PreviousTextSelection || null;
+        var fallbackText = normalizeTextSelectionPayload({ region: region, blockId: blockId, offset: anchorOffset, headerFooterId: headerFooterId, tableId: tableId, cellId: cellId }, null, region);
+        var preservedTextSelection = textSelection
+            ? normalizeTextSelectionPayload(Object.assign({}, textSelection, {
+                region: textSelection.region || textSelection.Region || region,
+                headerFooterId: textSelection.headerFooterId || textSelection.HeaderFooterId || headerFooterId,
+                tableId: textSelection.tableId || textSelection.TableId || textSelection.activeTableId || textSelection.ActiveTableId || tableId,
+                cellId: textSelection.cellId || textSelection.CellId || textSelection.activeTableCellId || textSelection.ActiveTableCellId || cellId
+            }), null, region)
+            : fallbackText;
+        var objectRange = createLogicalRange(
+            { region: region, blockId: blockId, objectId: objectId, offset: anchorOffset, affinity: 'before', headerFooterId: headerFooterId, tableId: tableId, cellId: cellId },
+            { region: region, blockId: blockId, objectId: objectId, offset: anchorOffset, affinity: 'after', headerFooterId: headerFooterId, tableId: tableId, cellId: cellId },
+            'none');
+        objectRange.isCollapsed = false;
+        return createSelectionSnapshot({
+            region: region,
+            range: objectRange,
+            blockId: blockId,
+            objectId: objectId,
+            activeObjectId: objectId,
+            activeImageBlockId: blockId,
+            headerFooterId: headerFooterId,
+            tableId: tableId,
+            cellId: cellId,
+            activeTableId: tableId,
+            activeTableCellId: cellId,
+            hitTargetKind: kind,
+            selectionMode: 'Object',
+            isObjectSelection: true,
+            isCollapsed: false,
+            textSelection: preservedTextSelection,
+            objectSelection: {
+                region: region,
+                kind: kind,
+                objectId: objectId,
+                blockId: blockId,
+                anchorBlockId: blockId,
+                anchorOffset: anchorOffset,
+                anchorInlineIndex: anchorInlineIndex,
+                inlineIndex: anchorInlineIndex,
+                runId: runId,
+                headerFooterId: headerFooterId,
+                tableId: tableId,
+                cellId: cellId,
+                textSelection: preservedTextSelection
+            }
+        });
+    }
+
+    function restoreTextSelectionFromObjectSelection(selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        var objectSelection = snapshot.objectSelection || {};
+        var textSelection = objectSelection.textSelection || snapshot.textSelection || null;
+        var anchorBlockId = objectSelection.anchorBlockId || objectSelection.blockId || snapshot.blockId;
+        var restored = anchorBlockId
+            ? normalizeTextSelectionPayload({
+                region: objectSelection.region || snapshot.region || 'Body',
+                blockId: anchorBlockId,
+                offset: objectSelection.anchorOffset ?? snapshot.offset ?? 0,
+                headerFooterId: objectSelection.headerFooterId || snapshot.headerFooterId || null,
+                tableId: objectSelection.tableId || snapshot.activeTableId || snapshot.tableId || null,
+                cellId: objectSelection.cellId || snapshot.activeTableCellId || snapshot.cellId || null
+            }, null, snapshot.region || 'Body')
+            : textSelection
+                ? normalizeTextSelectionPayload(textSelection, null, snapshot.region || 'Body')
+                : normalizeTextSelectionPayload(firstModelSelection(null), null, snapshot.region || 'Body');
+        return createSelectionSnapshot(Object.assign({}, restored, {
+            mode: 'Text',
+            selectionMode: 'Text',
+            isObjectSelection: false,
+            objectId: null,
+            activeObjectId: null,
+            activeImageBlockId: null,
+            objectSelection: null,
+            hitTargetKind: 'text'
+        }));
+    }
+
+    function objectAccessibilityIdFragment(value) {
+        var text = _asText(value || 'document-object').trim();
+        return (text || 'document-object').replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'document-object';
+    }
+
+    function activeObjectStatusId(inst) {
+        return 'tm-wysiwyg-active-object-status-' + objectAccessibilityIdFragment(inst && inst.id || 'default');
+    }
+
+    function appendAriaDescribedByToken(current, token, enabled) {
+        var id = _asText(token);
+        var parts = _asArray(_asText(current).split(/\s+/)).filter(Boolean).filter(function (part) { return part !== id; });
+        if (enabled && id) parts.push(id);
+        return parts.join(' ');
+    }
+
+    function renderObjectSelectionDescriptionAttribute(inst, selected) {
+        return selected === true ? ' aria-describedby="' + _escape(activeObjectStatusId(inst)) + '"' : '';
+    }
+
+    function getImageObjectAccessibleLabel(object, fallback) {
+        var source = object || {};
+        return _asText(source.altText || source.AltText || source.caption || source.Caption || fallback || 'Image') || 'Image';
+    }
+
+    function objectResizeHandleDirectionLabel(handleName) {
+        switch (_asText(handleName).toLowerCase()) {
+            case 'nw': return 'north west';
+            case 'n': return 'north';
+            case 'ne': return 'north east';
+            case 'e': return 'east';
+            case 'se': return 'south east';
+            case 's': return 'south';
+            case 'sw': return 'south west';
+            case 'w': return 'west';
+            default: return _asText(handleName) || 'corner';
+        }
+    }
+
+    function objectResizeHandleAriaLabel(inst, handleName) {
+        var opts = inst && inst.options || {};
+        var base = opts.ImageResizeHandleLabel || opts.imageResizeHandleLabel || 'Resize image';
+        return _asText(base || 'Resize image') + ' ' + objectResizeHandleDirectionLabel(handleName);
+    }
+
+    function renderObjectResizeHandleHtml(inst, handleName, selected) {
+        var attrs = [
+            'class="tm-wysiwyg-object-resize-handle tm-wysiwyg-object-resize-handle--' + _escape(handleName) + '"',
+            'data-resize-handle="' + _escape(handleName) + '"',
+            'data-testid="document-wysiwyg-object-resize-handle-' + _escape(handleName) + '"'
+        ];
+        if (selected === true) {
+            attrs.push('role="button"');
+            attrs.push('tabindex="-1"');
+            attrs.push('aria-label="' + _escape(objectResizeHandleAriaLabel(inst, handleName)) + '"');
+        } else {
+            attrs.push('aria-hidden="true"');
+        }
+        return '<span ' + attrs.join(' ') + '></span>';
+    }
+
+    function renderObjectRotationHandleHtml(selected) {
+        var attrs = [
+            'class="tm-wysiwyg-object-rotation-handle"',
+            'data-testid="document-wysiwyg-object-rotation-handle"'
+        ];
+        if (selected === true) {
+            attrs.push('role="button"');
+            attrs.push('tabindex="-1"');
+            attrs.push('aria-label="Rotate image"');
+        } else {
+            attrs.push('aria-hidden="true"');
+        }
+        return '<span ' + attrs.join(' ') + '></span>';
+    }
+
+    function collectObjectNavigationTargets(instOrModel) {
+        var model = instOrModel && instOrModel.model ? instOrModel.model : instOrModel;
+        var targets = [];
+        var seen = {};
+        var order = 0;
+
+        function addTarget(block, source, inlineIndex, context, sourceKind) {
+            if (!block || !source) return;
+            var ctx = createBlockIndexContext(context || {});
+            var object = normalizeImageObject(source, Object.assign({ blockId: block.id || '', inlineIndex: inlineIndex }, ctx));
+            var objectId = _asText(object.objectId || source.objectId || source.ObjectId || source.id || source.Id || block.id || '');
+            if (!objectId) return;
+            var key = objectId + '|' + _asText(block.id || '') + '|' + String(inlineIndex ?? -1);
+            if (seen[key]) return;
+            seen[key] = true;
+            var objectRegion = (ctx.region && ctx.region !== 'Body' && (!object.anchorRegion || object.anchorRegion === 'Body'))
+                ? ctx.region
+                : (object.anchorRegion || ctx.region || 'Body');
+            var headerFooterId = object.anchorHeaderFooterId || ctx.headerFooterId || null;
+            var tableId = object.anchorTableId || ctx.tableId || null;
+            var cellId = object.anchorCellId || ctx.cellId || null;
+            targets.push(_sortObject({
+                order: order++,
+                objectId: objectId,
+                blockId: _asText(object.anchorBlockId || block.id || ''),
+                runId: source.id || source.Id || null,
+                anchorBlockId: _asText(object.anchorBlockId || block.id || ''),
+                anchorOffset: Number(object.anchorOffset ?? 0) || 0,
+                anchorInlineIndex: Number(object.anchorInlineIndex ?? inlineIndex ?? -1),
+                inlineIndex: Number(inlineIndex ?? object.anchorInlineIndex ?? -1),
+                region: objectRegion,
+                headerFooterId: headerFooterId,
+                tableId: tableId,
+                cellId: cellId,
+                label: getImageObjectAccessibleLabel(object, sourceKind === 'image-block' ? 'Image' : ''),
+                sourceKind: sourceKind || 'drawing-run',
+                run: sourceKind === 'drawing-run' ? source : null,
+                block: block,
+                object: object
+            }));
+        }
+
+        function scanBlocks(blocks, context) {
+            _asArray(blocks).forEach(function (block) {
+                if (!block) return;
+                if (block.type === 'image') {
+                    addTarget(block, block, -1, context, 'image-block');
+                    return;
+                }
+                if (block.type === 'paragraph') {
+                    _asArray(block.content && block.content.runs).forEach(function (run, index) {
+                        if (run && (run.kind === 'drawing' || isDrawingRunSource(run))) {
+                            addTarget(block, run, index, context, 'drawing-run');
+                        }
+                    });
+                }
+                if (block.type === 'table') {
+                    _asArray(block.content && block.content.rows).forEach(function (row) {
+                        _asArray(row.cells).forEach(function (cell) {
+                            scanBlocks(cell && cell.blocks, createBlockIndexContext(context, {
+                                region: 'TableCell',
+                                tableId: block.id,
+                                cellId: cell && cell.id || null
+                            }));
+                        });
+                    });
+                }
+            });
+        }
+
+        scanBlocks(model && model.body && model.body.blocks, { region: 'Body' });
+        _asArray(model && model.headers).forEach(function (region) {
+            scanBlocks(region && region.blocks, { region: 'Header', headerFooterId: region && region.id || null });
+        });
+        _asArray(model && model.footers).forEach(function (region) {
+            scanBlocks(region && region.blocks, { region: 'Footer', headerFooterId: region && region.id || null });
+        });
+        return targets.sort(function (a, b) { return a.order - b.order; });
+    }
+
+    function findObjectNavigationTarget(inst, objectId) {
+        var id = _asText(objectId);
+        if (!id) return null;
+        return collectObjectNavigationTargets(inst).find(function (target) { return target.objectId === id; }) || null;
+    }
+
+    function selectedObjectIdFromSelection(selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        return _asText(snapshot.activeObjectId || snapshot.objectId || snapshot.objectSelection && snapshot.objectSelection.objectId || '');
+    }
+
+    function activeObjectAccessibilityStatus(inst) {
+        var objectId = selectedObjectIdFromSelection(inst && inst.selection);
+        var target = objectId ? findObjectNavigationTarget(inst, objectId) : null;
+        if (!target) return '';
+        var object = target.object || {};
+        var mode = normalizeWrapModeName(object.wrapMode || 'Inline');
+        var width = Math.round(Math.max(0, Number(object.width || 0) || 0));
+        var height = Math.round(Math.max(0, Number(object.height || 0) || 0));
+        var size = width > 0 && height > 0 ? ', ' + width + ' by ' + height + ' pixels' : '';
+        return 'Selected image: ' + (target.label || 'Image') + '. Wrap mode ' + mode + size + '.';
+    }
+
+    function updateActiveObjectStatusDom(inst) {
+        if (!inst || !inst.root) return '';
+        var text = isObjectSelectionSnapshot(inst.selection || {}) ? activeObjectAccessibilityStatus(inst) : '';
+        inst.root.setAttribute('data-active-object-status', text);
+        var status = inst.root.querySelector && inst.root.querySelector('[data-testid="document-wysiwyg-object-status"]');
+        if (status) status.textContent = text;
+        return text;
+    }
+
+    function updateObjectResizeHandlesAccessibility(inst, element, selected) {
+        if (!element || !element.querySelectorAll) return;
+        Array.from(element.querySelectorAll('.tm-wysiwyg-object-resize-handle[data-resize-handle]')).forEach(function (handle) {
+            var handleName = handle.getAttribute('data-resize-handle') || '';
+            if (selected) {
+                handle.setAttribute('role', 'button');
+                handle.setAttribute('tabindex', '-1');
+                handle.setAttribute('aria-label', objectResizeHandleAriaLabel(inst, handleName));
+                handle.removeAttribute('aria-hidden');
+            } else {
+                handle.removeAttribute('role');
+                handle.removeAttribute('tabindex');
+                handle.removeAttribute('aria-label');
+                handle.setAttribute('aria-hidden', 'true');
+            }
+        });
+        Array.from(element.querySelectorAll('.tm-wysiwyg-object-rotation-handle')).forEach(function (handle) {
+            if (selected) {
+                handle.setAttribute('role', 'button');
+                handle.setAttribute('tabindex', '-1');
+                handle.setAttribute('aria-label', 'Rotate image');
+                handle.removeAttribute('aria-hidden');
+            } else {
+                handle.removeAttribute('role');
+                handle.removeAttribute('tabindex');
+                handle.removeAttribute('aria-label');
+                handle.setAttribute('aria-hidden', 'true');
+            }
+        });
+    }
+
+    function applyObjectSelectionAccessibilityToElement(inst, element, selected) {
+        if (!element || typeof element.setAttribute !== 'function') return;
+        var describedBy = appendAriaDescribedByToken(element.getAttribute && element.getAttribute('aria-describedby') || '', activeObjectStatusId(inst), selected === true);
+        if (describedBy) element.setAttribute('aria-describedby', describedBy);
+        else element.removeAttribute && element.removeAttribute('aria-describedby');
+        updateObjectResizeHandlesAccessibility(inst, element, selected === true);
+    }
+
+    function createObjectFocusPolicy(selected) {
+        return _sortObject({
+            focusPolicy: 'selection-only',
+            isTabStop: false,
+            selected: selected === true,
+            selectedClass: 'tm-wysiwyg-object--selected'
+        });
+    }
+
+    function renderObjectFocusPolicyAttributes(selected) {
+        var policy = createObjectFocusPolicy(selected === true);
+        var attributes = ' data-object-focus-policy="' + _escape(policy.focusPolicy) + '" aria-selected="' + (policy.selected ? 'true' : 'false') + '"';
+        if (policy.selected) attributes += ' data-object-selected="true"';
+        return attributes;
+    }
+
+    function applyObjectFocusPolicyToElement(element, selected, inst) {
+        if (!element) return createObjectFocusPolicy(selected === true);
+        var policy = createObjectFocusPolicy(selected === true);
+        var objectLayerItem = element.classList && typeof element.classList.contains === 'function'
+            && element.classList.contains('tm-wysiwyg-object-layer-item');
+        if (typeof element.removeAttribute === 'function') element.removeAttribute('tabindex');
+        if (typeof element.setAttribute === 'function') {
+            element.setAttribute('data-object-focus-policy', policy.focusPolicy);
+            element.setAttribute('aria-selected', policy.selected ? 'true' : 'false');
+            if (policy.selected) {
+                element.setAttribute('data-object-selected', 'true');
+            } else if (typeof element.removeAttribute === 'function') {
+                element.removeAttribute('data-object-selected');
+            }
+        }
+        if (element.classList && typeof element.classList.toggle === 'function') {
+            if (objectLayerItem) {
+                element.classList.toggle('tm-wysiwyg-object-layer-item--selected', policy.selected);
+                element.classList.remove('tm-wysiwyg-object--selected');
+                element.classList.remove('tm-wysiwyg-image--selected');
+            } else {
+                element.classList.toggle('tm-wysiwyg-object--selected', policy.selected);
+                element.classList.toggle('tm-wysiwyg-image--selected', policy.selected);
+            }
+        }
+        applyObjectSelectionAccessibilityToElement(inst, element, policy.selected);
+        return policy;
+    }
+
+    function focusEditableSurfaceForObjectSelection(inst, selection) {
+        if (!inst || !inst.root || !selection || !isObjectSelectionSnapshot(selection)) return false;
+        inst.suppressTextSelectionChangeUntil = Math.max(
+            Number(inst.suppressTextSelectionChangeUntil || 0) || 0,
+            Date.now() + 500);
+        if (typeof inst.root.focus === 'function') {
+            inst.root.focus({ preventScroll: true });
+            var active = typeof document !== 'undefined' ? document.activeElement : null;
+            if (active === inst.root || inst.root.contains && inst.root.contains(active)) return true;
+        }
+        var snapshot = createSelectionSnapshot(selection);
+        var objectSelection = snapshot.objectSelection || {};
+        var blockId = objectSelection.anchorBlockId || objectSelection.blockId || snapshot.blockId || '';
+        var block = blockId
+            ? inst.root.querySelector('[data-block-id="' + cssEscape(blockId) + '"], [data-render-block-id="' + cssEscape(blockId) + '"]')
+            : null;
+        var editable = block && block.closest && block.closest('[contenteditable="true"]');
+        if (!editable && snapshot.region === 'Header') {
+            editable = inst.root.querySelector('.tm-wysiwyg-page__header[contenteditable="true"]');
+        }
+        if (!editable && snapshot.region === 'Footer') {
+            editable = inst.root.querySelector('.tm-wysiwyg-page__footer[contenteditable="true"]');
+        }
+        if (!editable) {
+            editable = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable="true"]');
+        }
+        if (!editable || typeof editable.focus !== 'function') return false;
+        editable.focus({ preventScroll: true });
+        return true;
+    }
+
+    function refocusEditableSurfaceForObjectSelection(inst, objectId) {
+        if (!inst || !objectId) return;
+        [0, 60].forEach(function (delay) {
+            setTimeout(function () {
+                if (selectedObjectIdFromSelection(inst.selection) === objectId) {
+                    focusEditableSurfaceForObjectSelection(inst, inst.selection);
+                }
+            }, delay);
+        });
+    }
+
+    function applyArrowFocusPolicy(selection, key) {
+        var normalizedKey = String(key || '').toLowerCase();
+        var snapshot = createSelectionSnapshot(selection || {});
+        if (normalizedKey !== 'arrowup' && normalizedKey !== 'arrowdown') {
+            return { changed: false, restoredFromObject: false, selection: snapshot };
+        }
+        if (isObjectSelectionSnapshot(snapshot)) {
+            return {
+                changed: true,
+                restoredFromObject: true,
+                selection: restoreTextSelectionFromObjectSelection(snapshot)
+            };
+        }
+        if (snapshot.activeImageBlockId || snapshot.activeObjectId || snapshot.objectId || snapshot.objectSelection) {
+            var textSelection = snapshot.textSelection || snapshot;
+            return {
+                changed: true,
+                restoredFromObject: false,
+                selection: createSelectionSnapshot(Object.assign({}, textSelection, {
+                    mode: 'Text',
+                    selectionMode: 'Text',
+                    isObjectSelection: false,
+                    objectId: null,
+                    activeObjectId: null,
+                    activeImageBlockId: null,
+                    objectSelection: null
+                }))
+            };
+        }
+        return { changed: false, restoredFromObject: false, selection: snapshot };
     }
 
     function stableJsonString(value) {
@@ -4013,6 +5306,22 @@ window.tmDocumentEditorEngine = (function () {
             };
             if (type === 'paragraph') {
                 item.text = _blockText(block);
+                item.drawings = _asArray(block.content && block.content.runs || block.Content && block.Content.Inlines)
+                    .filter(function (run) { return run && String(run.kind || run.Kind || run.$type || '').toLowerCase() === 'drawing'; })
+                    .map(function (run, index) {
+                        var layout = run.layout || run.Layout || {};
+                        var anchor = layout.anchor || layout.Anchor || {};
+                        var transform = layout.transform || layout.Transform || {};
+                        return {
+                            id: run.id || run.Id || '',
+                            objectId: run.objectId || run.ObjectId || run.id || run.Id || '',
+                            inlineIndex: index,
+                            anchorBlockId: anchor.blockId || anchor.BlockId || '',
+                            anchorOffset: Number(anchor.offset ?? anchor.Offset ?? 0) || 0,
+                            width: Number(transform.width ?? transform.Width ?? 0) || 0,
+                            height: Number(transform.height ?? transform.Height ?? 0) || 0
+                        };
+                    });
             } else if (type === 'table') {
                 item.rows = _asArray(block.content && block.content.rows || block.Content && block.Content.Rows).map(function (row) {
                     return _asArray(row.cells || row.Cells).map(function (cell) {
@@ -4125,6 +5434,9 @@ window.tmDocumentEditorEngine = (function () {
             },
             isCollapsed: snapshot.isCollapsed !== false,
             direction: snapshot.direction || 'none',
+            selectionMode: snapshot.selectionMode || snapshot.mode || 'Text',
+            textSelection: snapshot.textSelection || null,
+            objectSelection: snapshot.objectSelection || null,
             tableId: snapshot.activeTableId || snapshot.tableId || anchor.tableId || focus.tableId || null,
             cellId: snapshot.activeTableCellId || snapshot.cellId || anchor.cellId || focus.cellId || null,
             activeObjectId: snapshot.activeObjectId || snapshot.objectId || anchor.objectId || focus.objectId || null
@@ -4235,9 +5547,13 @@ window.tmDocumentEditorEngine = (function () {
             },
             direction: data.direction || data.Direction || 'forward',
             isCollapsed: data.isCollapsed ?? data.IsCollapsed ?? anchorOffset === focusOffset,
+            selectionMode: data.selectionMode || data.SelectionMode || data.mode || data.Mode || 'Text',
+            textSelection: data.textSelection || data.TextSelection || null,
+            objectSelection: data.objectSelection || data.ObjectSelection || null,
             activeTableCellId: data.cellId || data.CellId || null,
             activeTableId: data.tableId || data.TableId || null,
-            activeObjectId: data.activeObjectId || data.ActiveObjectId || null
+            activeImageBlockId: data.activeImageBlockId || data.ActiveImageBlockId || data.objectSelection && (data.objectSelection.anchorBlockId || data.objectSelection.blockId) || data.ObjectSelection && (data.ObjectSelection.AnchorBlockId || data.ObjectSelection.BlockId) || null,
+            activeObjectId: data.activeObjectId || data.ActiveObjectId || data.objectSelection && data.objectSelection.objectId || data.ObjectSelection && data.ObjectSelection.ObjectId || null
         });
         return _sortObject({
             ok: true,
@@ -4278,6 +5594,252 @@ window.tmDocumentEditorEngine = (function () {
             cursor += length;
         }
         return null;
+    }
+
+    function resolveTextOffsetToInlineIndex(block, offset, affinity) {
+        if (!block || block.type !== 'paragraph') return null;
+        var runs = _asArray(block.content && block.content.runs);
+        var textLength = _blockText(block).length;
+        var target = Math.max(0, Math.min(textLength, Number(offset || 0) || 0));
+        var direction = affinity === 'before' ? 'before' : 'after';
+        var cursor = 0;
+        var lastTextPosition = null;
+        var skippedDrawingObjectIds = [];
+        for (var i = 0; i < runs.length; i++) {
+            var run = runs[i] || {};
+            var runText = run.kind === 'drawing' ? '' : resolveInlineRunDisplayText(run);
+            var length = _asText(runText).length;
+            if (length === 0) {
+                if (run.kind === 'drawing' && cursor <= target) {
+                    skippedDrawingObjectIds.push(run.objectId || run.id || '');
+                }
+                continue;
+            }
+
+            var start = cursor;
+            var end = cursor + length;
+            if (target < end || (target === end && direction === 'before') || i === runs.length - 1) {
+                return _sortObject({
+                    blockId: block.id || '',
+                    inlineIndex: i,
+                    runId: run.id || null,
+                    localOffset: Math.max(0, Math.min(length, target - start)),
+                    textOffset: target,
+                    runStart: start,
+                    runEnd: end,
+                    affinity: direction,
+                    skippedDrawingObjectIds: skippedDrawingObjectIds.filter(Boolean)
+                });
+            }
+
+            lastTextPosition = {
+                blockId: block.id || '',
+                inlineIndex: i,
+                runId: run.id || null,
+                localOffset: length,
+                textOffset: target,
+                runStart: start,
+                runEnd: end,
+                affinity: direction,
+                skippedDrawingObjectIds: skippedDrawingObjectIds.filter(Boolean)
+            };
+            cursor = end;
+        }
+
+        if (lastTextPosition) return _sortObject(lastTextPosition);
+        return runs.length
+            ? _sortObject({
+                blockId: block.id || '',
+                inlineIndex: 0,
+                runId: runs[0].id || null,
+                localOffset: 0,
+                textOffset: 0,
+                runStart: 0,
+                runEnd: 0,
+                affinity: direction,
+                skippedDrawingObjectIds: skippedDrawingObjectIds.filter(Boolean)
+            })
+            : null;
+    }
+
+    function ensureDrawingIndexes(model) {
+        if (!model) return { drawingObjectsById: {}, drawingRunsByBlockId: {} };
+        if (!model.indexes || !model.indexes.drawingObjectsById || !model.indexes.drawingRunsByBlockId) {
+            buildIndexes(model);
+        }
+        return model.indexes || { drawingObjectsById: {}, drawingRunsByBlockId: {} };
+    }
+
+    function rebuildDrawingIndexes(model) {
+        if (!model) return { drawingObjectsById: {}, drawingRunsByBlockId: {} };
+        buildIndexes(model);
+        return model.indexes || { drawingObjectsById: {}, drawingRunsByBlockId: {} };
+    }
+
+    function createDrawingObjectSnapshot(entry) {
+        if (!entry) return null;
+        var run = entry.run || {};
+        var layout = normalizeImageObject(run, {
+            blockId: entry.blockId,
+            inlineIndex: entry.inlineIndex,
+            region: entry.region || 'Body',
+            headerFooterId: entry.headerFooterId || null,
+            tableId: entry.tableId || null,
+            cellId: entry.cellId || null
+        });
+        return _sortObject({
+            objectId: layout.objectId || entry.objectId || run.objectId || run.id || '',
+            runId: entry.inlineId || run.id || null,
+            blockId: entry.blockId || layout.blockId || '',
+            region: layout.anchorRegion || entry.region || 'Body',
+            headerFooterId: layout.anchorHeaderFooterId || entry.headerFooterId || null,
+            tableId: layout.anchorTableId || entry.tableId || null,
+            cellId: layout.anchorCellId || entry.cellId || null,
+            inlineIndex: Number(entry.inlineIndex ?? layout.anchorInlineIndex ?? -1),
+            drawingKind: normalizeDrawingKindName(run.drawingKind || run.DrawingKind || 'Image'),
+            source: run.source ?? run.Source ?? 0,
+            url: run.url ?? run.Url ?? null,
+            assetId: run.assetId ?? run.AssetId ?? null,
+            altText: run.altText || run.AltText || '',
+            caption: run.caption || run.Caption || '',
+            layoutKind: layout.layoutKind,
+            isInline: layout.isInline === true,
+            isAnchored: layout.isAnchored === true,
+            anchorBlockId: layout.anchorBlockId || entry.blockId || '',
+            anchorOffset: Number(layout.anchorOffset || 0) || 0,
+            anchorInlineIndex: Number(layout.anchorInlineIndex ?? entry.inlineIndex ?? -1),
+            anchorRegion: layout.anchorRegion || entry.region || 'Body',
+            anchorHeaderFooterId: layout.anchorHeaderFooterId || entry.headerFooterId || '',
+            anchorTableId: layout.anchorTableId || entry.tableId || '',
+            anchorCellId: layout.anchorCellId || entry.cellId || '',
+            wrapMode: layout.wrapMode,
+            width: layout.width,
+            height: layout.height,
+            zIndex: layout.zIndex,
+            layout: layout
+        });
+    }
+
+    function findDrawingRunByObjectId(model, objectId) {
+        var id = _asText(objectId);
+        if (!id) return null;
+        var indexes = ensureDrawingIndexes(model);
+        var entry = indexes.drawingObjectsById && indexes.drawingObjectsById[id];
+        if (!entry) return null;
+        return _sortObject({
+            objectId: id,
+            blockId: entry.blockId || '',
+            inlineId: entry.inlineId || null,
+            inlineIndex: Number(entry.inlineIndex ?? -1),
+            region: entry.region || null,
+            headerFooterId: entry.headerFooterId || null,
+            tableId: entry.tableId || null,
+            cellId: entry.cellId || null,
+            run: _clone(entry.run || null),
+            object: createDrawingObjectSnapshot(entry)
+        });
+    }
+
+    function removeDrawingRunByObjectId(model, objectId) {
+        var id = _asText(objectId);
+        if (!id) return { ok: false, error: { code: 'missing-object-id' } };
+        var indexes = rebuildDrawingIndexes(model);
+        var entry = indexes.drawingObjectsById && indexes.drawingObjectsById[id];
+        if (!entry) return { ok: false, error: { code: 'drawing-object-not-found', objectId: id } };
+        var container = _findBlockContainer(model, entry.blockId || '');
+        var block = container && container.block || null;
+        var runs = block && block.content && block.content.runs;
+        if (!Array.isArray(runs)) return { ok: false, error: { code: 'drawing-object-block-not-found', objectId: id, blockId: entry.blockId || '' } };
+        var index = runs.findIndex(function (run) {
+            return run && (run.objectId === id || run.ObjectId === id || run.id === entry.inlineId);
+        });
+        if (index < 0) return { ok: false, error: { code: 'drawing-run-not-found', objectId: id, blockId: block.id || '' } };
+        var removed = runs.splice(index, 1)[0] || null;
+        if (runs.length === 0) {
+            block.content.runs = _plainRuns('', block.id + '-empty');
+        }
+        buildIndexes(model);
+        return _sortObject({
+            ok: true,
+            deletedObjectId: id,
+            deletedKind: 'drawing',
+            blockId: block.id || '',
+            inlineIndex: index,
+            run: _clone(removed || null),
+            affectedScopeIds: [block.id || 'document']
+        });
+    }
+
+    function deleteObjectSelection(model, selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        if (!isObjectSelectionSnapshot(snapshot)) {
+            return _sortObject({ ok: false, error: { code: 'selection-is-not-object' }, selection: snapshot });
+        }
+
+        var objectId = _asText(snapshot.activeObjectId || snapshot.objectId || snapshot.objectSelection && snapshot.objectSelection.objectId || '');
+        var restoredSelection = restoreTextSelectionFromObjectSelection(snapshot);
+        var drawingResult = removeDrawingRunByObjectId(model, objectId);
+        if (drawingResult.ok) {
+            return _sortObject(Object.assign({}, drawingResult, {
+                selection: restoredSelection,
+                model: model
+            }));
+        }
+
+        var blockId = _asText(snapshot.blockId || snapshot.objectSelection && snapshot.objectSelection.blockId || '');
+
+        return _sortObject({
+            ok: false,
+            error: drawingResult.error || { code: 'object-selection-target-not-found', objectId: objectId, blockId: blockId },
+            selection: restoredSelection
+        });
+    }
+
+    function getDrawingObjectLayoutSnapshot(model, objectId) {
+        var found = findDrawingRunByObjectId(model, objectId);
+        return found ? found.object.layout : null;
+    }
+
+    function getDrawingRuntimeDiagnostics(model) {
+        var indexes = ensureDrawingIndexes(model);
+        var objectsById = {};
+        Object.keys(indexes.drawingObjectsById || {}).sort().forEach(function (objectId) {
+            objectsById[objectId] = createDrawingObjectSnapshot(indexes.drawingObjectsById[objectId]);
+        });
+        var runsByBlockId = {};
+        Object.keys(indexes.drawingRunsByBlockId || {}).sort().forEach(function (blockId) {
+            runsByBlockId[blockId] = _asArray(indexes.drawingRunsByBlockId[blockId]).map(function (run, index) {
+                return _sortObject({
+                    objectId: run.objectId || run.id || '',
+                    runId: run.id || null,
+                    kind: run.kind || '',
+                    inlineIndex: Number((indexes.drawingObjectsById[run.objectId || run.id] || {}).inlineIndex ?? index)
+                });
+            });
+        });
+        return _sortObject({
+            drawingObjectIds: Object.keys(objectsById).sort(),
+            drawingObjectsById: objectsById,
+            drawingRunsByBlockId: runsByBlockId
+        });
+    }
+
+    function countTopLevelImageBlocksForDiagnostics(model) {
+        return _asArray(model && model.body && model.body.blocks)
+            .filter(function (block) { return block && block.type === 'image'; })
+            .length;
+    }
+
+    function getImageRuntimeSourceDiagnostics(inst) {
+        var selection = createSelectionSnapshot(inst && inst.selection || {});
+        return _sortObject({
+            sourceOfTruth: 'drawing-object-id',
+            activeObjectId: selectedObjectIdFromSelection(selection) || null,
+            compatibilityActiveImageBlockId: selection.activeImageBlockId || null,
+            topLevelImageBlockCount: countTopLevelImageBlocksForDiagnostics(inst && inst.model),
+            drawingObjectCount: getDrawingRuntimeDiagnostics(inst && inst.model).drawingObjectIds.length,
+            imageBlockIsSourceOfTruth: false
+        });
     }
 
     function _findLimitForBlock(model, blockId) {
@@ -4368,6 +5930,8 @@ window.tmDocumentEditorEngine = (function () {
         }
         if (fallback && fallback.region && (!info.region || info.region === 'Body')) info.region = fallback.region;
         if (fallback && fallback.headerFooterId && !info.headerFooterId) info.headerFooterId = fallback.headerFooterId;
+        if (fallback && fallback.tableId && !info.tableId) info.tableId = fallback.tableId;
+        if (fallback && fallback.cellId && !info.cellId) info.cellId = fallback.cellId;
         return info;
     }
 
@@ -4416,7 +5980,21 @@ window.tmDocumentEditorEngine = (function () {
     function normalizeSelectionSnapshot(model, selection) {
         var snapshot = createSelectionSnapshot(selection || {});
         var range = normalizeLogicalRange(model, snapshot.range || snapshot);
-        return createSelectionSnapshot({ region: range.anchor.region, range: range });
+        return createSelectionSnapshot(Object.assign({}, snapshot, {
+            region: range.anchor.region,
+            range: range,
+            anchor: range.anchor,
+            focus: range.focus,
+            selectionMode: snapshot.selectionMode || snapshot.mode,
+            mode: snapshot.mode || snapshot.selectionMode,
+            textSelection: snapshot.textSelection || null,
+            objectSelection: snapshot.objectSelection || null,
+            isObjectSelection: snapshot.isObjectSelection === true,
+            activeImageBlockId: snapshot.activeImageBlockId || null,
+            activeObjectId: snapshot.activeObjectId || null,
+            objectId: snapshot.objectId || null,
+            hitTargetKind: snapshot.hitTargetKind || null
+        }));
     }
 
     function createSelectionPostFixer(schema) {
@@ -4424,6 +6002,12 @@ window.tmDocumentEditorEngine = (function () {
             schema: schema || createDefaultSchemaRegistry(),
             fix: function (model, selection) {
                 var snapshot = normalizeSelectionSnapshot(model, selection);
+                if (isObjectSelectionSnapshot(snapshot)) {
+                    var objectId = snapshot.activeObjectId || snapshot.objectId || snapshot.objectSelection && snapshot.objectSelection.objectId || '';
+                    if (objectId && findDrawingRunByObjectId(model, objectId)) {
+                        return _sortObject(createObjectSelectionSnapshot(model, { objectId: objectId, region: snapshot.region || 'Body' }, snapshot.textSelection || null));
+                    }
+                }
                 var focusBlock = _findBlock(model, snapshot.focus.blockId);
                 if (focusBlock && focusBlock.type === 'image') {
                     snapshot.focus.objectId = focusBlock.content && focusBlock.content.objectId || focusBlock.id;
@@ -4680,17 +6264,31 @@ window.tmDocumentEditorEngine = (function () {
         var cursor = 0;
         var result = [];
         runs.forEach(function (run, index) {
-            var text = _asText(run.text || run.Text || run.fallbackText || run.FallbackText || '');
+            var rawKind = String(run.kind || run.Kind || run.type || run.Type || 'text').toLowerCase();
+            var kind = rawKind.indexOf('drawing') >= 0
+                ? 'drawing'
+                : rawKind.indexOf('field') >= 0
+                    ? 'field'
+                    : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
+            var text = kind === 'drawing'
+                ? ''
+                : _asText(run.text || run.Text || run.fallbackText || run.FallbackText || '');
+            var object = kind === 'drawing'
+                ? normalizeImageObject(run, {
+                    blockId: source.id || source.Id || source.blockId || source.BlockId || '',
+                    inlineIndex: index
+                })
+                : null;
             var item = {
                 id: run.id || run.Id || ('run-' + index),
-                kind: String(run.kind || run.Kind || run.type || run.Type || 'text').toLowerCase().indexOf('field') >= 0
-                    ? 'field'
-                    : (String(run.kind || run.Kind || run.type || run.Type || 'text').toLowerCase().indexOf('token') >= 0 ? 'token' : 'text'),
+                kind: kind,
                 text: text,
                 start: cursor,
                 end: cursor + text.length,
                 style: mergeTextStyle(baseStyle, run),
-                marks: _asArray(run.marks || run.Marks)
+                marks: _asArray(run.marks || run.Marks),
+                object: object,
+                objectId: object && object.objectId || run.objectId || run.ObjectId || null
             };
             result.push(item);
             cursor += text.length;
@@ -4708,13 +6306,46 @@ window.tmDocumentEditorEngine = (function () {
 
     function tokensForParagraph(paragraph) {
         var runs = flattenParagraphRuns(paragraph);
-        var text = runs.map(function (run) { return run.text; }).join('');
-        var tokens = tokenizeText(text);
-        tokens.forEach(function (token) {
-            var run = runForOffset(runs, token.start);
-            token.runId = run && run.id || null;
-            token.style = _clone(run && run.style || {});
-            token.marks = _clone(run && run.marks || []);
+        var text = runs.map(function (run) { return run.kind === 'drawing' ? '' : run.text; }).join('');
+        var tokens = [];
+        runs.forEach(function (run, runIndex) {
+            if (run.kind === 'drawing') {
+                var object = run.object || normalizeImageObject(run, {
+                    blockId: paragraph && (paragraph.id || paragraph.Id || paragraph.blockId || paragraph.BlockId) || '',
+                    inlineIndex: runIndex
+                });
+                if (object && object.isInline !== true) return;
+                tokens.push(_sortObject({
+                    type: 'inlineObject',
+                    kind: 'drawing',
+                    text: '',
+                    start: run.start,
+                    end: run.end,
+                    length: 0,
+                    breakBefore: true,
+                    breakAfter: true,
+                    hardBreak: false,
+                    unbreakable: true,
+                    runId: run.id || null,
+                    objectId: object && object.objectId || run.objectId || null,
+                    object: object,
+                    width: Math.max(1, Number(object && object.width || 1) || 1),
+                    height: Math.max(1, Number(object && object.height || 1) || 1),
+                    style: _clone(run.style || {}),
+                    marks: _clone(run.marks || [])
+                }));
+                return;
+            }
+
+            tokenizeText(run.text).forEach(function (token) {
+                tokens.push(_sortObject(Object.assign({}, token, {
+                    start: token.start + run.start,
+                    end: token.end + run.start,
+                    runId: run.id || null,
+                    style: _clone(run.style || {}),
+                    marks: _clone(run.marks || [])
+                })));
+            });
         });
         return { text: text, runs: runs, tokens: tokens };
     }
@@ -4785,6 +6416,42 @@ window.tmDocumentEditorEngine = (function () {
                 }
             }
 
+            function addCaretStopsForInlineObject(segment) {
+                var objectRect = segment.objectRect || segment.rect || {};
+                var y = Number(segment.rect && segment.rect.y || objectRect.y || current.y) || 0;
+                var height = Math.max(1, Number(segment.rect && segment.rect.height || objectRect.height || current.lineHeight || 1) || 1);
+                caretStops.push({
+                    blockId: paragraph && (paragraph.id || paragraph.Id) || 'paragraph',
+                    offset: Number(segment.start || 0) || 0,
+                    affinity: 'before',
+                    objectBoundary: true,
+                    objectId: segment.objectId || null,
+                    runId: segment.runId || null,
+                    rect: {
+                        x: Number(objectRect.x || segment.rect && segment.rect.x || 0) || 0,
+                        y: y,
+                        width: 1,
+                        height: height
+                    },
+                    lineId: current.id
+                });
+                caretStops.push({
+                    blockId: paragraph && (paragraph.id || paragraph.Id) || 'paragraph',
+                    offset: Number(segment.end ?? segment.start ?? 0) || 0,
+                    affinity: 'after',
+                    objectBoundary: true,
+                    objectId: segment.objectId || null,
+                    runId: segment.runId || null,
+                    rect: {
+                        x: Number(objectRect.x || segment.rect && segment.rect.x || 0) + Number(objectRect.width || segment.rect && segment.rect.width || 0),
+                        y: y,
+                        width: 1,
+                        height: height
+                    },
+                    lineId: current.id
+                });
+            }
+
             function pushSegment(token, tokenText, start, end, width, style, splitFromLongToken) {
                 var height = service.measureText(tokenText || ' ', style).height;
                 current.lineHeight = Math.max(current.lineHeight, height);
@@ -4811,6 +6478,40 @@ window.tmDocumentEditorEngine = (function () {
                 addCaretStopsForSegment(segment);
             }
 
+            function pushInlineObjectSegment(token) {
+                var object = token.object || {};
+                var width = Math.max(1, Number(token.width || object.width || 1) || 1);
+                var height = Math.max(1, Number(token.height || object.height || 1) || 1);
+                current.lineHeight = Math.max(current.lineHeight, height);
+                var rect = {
+                    x: current.interval.x + current.width,
+                    y: current.y,
+                    width: width,
+                    height: current.lineHeight
+                };
+                var segment = {
+                    id: 'segment-' + nextSegmentId++,
+                    type: 'inlineObject',
+                    kind: 'drawing',
+                    text: '',
+                    start: Number(token.start || 0) || 0,
+                    end: Number(token.end ?? token.start ?? 0) || 0,
+                    runId: token.runId || null,
+                    objectId: token.objectId || object.objectId || null,
+                    object: _clone(object),
+                    objectRect: { x: rect.x, y: rect.y, width: width, height: height },
+                    rect: rect,
+                    splitFromLongToken: false,
+                    inlineObject: true
+                };
+                current.segments.push(segment);
+                current.width += width;
+                current.start = current.start === null ? segment.start : Math.min(current.start, segment.start);
+                current.end = Math.max(current.end, segment.end);
+                segments.push(segment);
+                addCaretStopsForInlineObject(segment);
+            }
+
             function finishCurrent(hardBreak) {
                 var line = materializeLineDraft(current, lines.length, hardBreak === true);
                 lines.push(line);
@@ -4830,6 +6531,17 @@ window.tmDocumentEditorEngine = (function () {
                 }
                 if (current.invalid) {
                     return buildLineBreakerFallback(paragraph, service, normalizedOptions, 'invalid-available-interval');
+                }
+                if (token.type === 'inlineObject') {
+                    var objectWidth = Math.max(1, Number(token.width || token.object && token.object.width || 1) || 1);
+                    if (current.segments.length > 0 && current.width + objectWidth > current.interval.width) {
+                        finishCurrent(false);
+                    }
+                    if (current.invalid) {
+                        return buildLineBreakerFallback(paragraph, service, normalizedOptions, 'invalid-available-interval');
+                    }
+                    pushInlineObjectSegment(token);
+                    continue;
                 }
                 var tokenText = token.type === 'tab' ? '    ' : token.text;
                 var tokenStyle = token.style || {};
@@ -4918,9 +6630,14 @@ window.tmDocumentEditorEngine = (function () {
                 width: Math.max(0, draft.width),
                 height: height
             },
-            availableIntervals: [{ x: draft.interval.x, y: draft.y, width: draft.interval.width, height: height, start: start, end: draft.end }],
+            availableIntervals: [{ x: draft.interval.x, y: draft.y, width: draft.interval.width, height: height, start: start, end: draft.end, collapsedOffset: start === draft.end ? start : null, empty: start === draft.end }],
             segments: draft.segments.map(function (segment) {
                 segment.rect.height = height;
+                if (segment.type === 'inlineObject' && segment.objectRect) {
+                    var objectHeight = Math.max(1, Number(segment.objectRect.height || segment.rect.height || height) || height);
+                    segment.objectRect.y = segment.rect.y + Math.max(0, height - objectHeight);
+                    segment.objectRect.height = objectHeight;
+                }
                 return segment;
             }),
             justify: { enabled: false, extraSpacePerGap: 0, gapCount: 0 }
@@ -4995,7 +6712,7 @@ window.tmDocumentEditorEngine = (function () {
             end: paragraphData.text.length,
             hardBreak: false,
             rect: { x: options.x, y: safeY, width: Math.min(safeWidth, Math.max(safeWidth, measurement.width)), height: measurement.height },
-            availableIntervals: [{ x: options.x, y: safeY, width: safeWidth, height: measurement.height, start: 0, end: paragraphData.text.length }],
+            availableIntervals: [{ x: options.x, y: safeY, width: safeWidth, height: measurement.height, start: 0, end: paragraphData.text.length, collapsedOffset: paragraphData.text.length === 0 ? 0 : null, empty: paragraphData.text.length === 0 }],
             segments: [],
             justify: { enabled: false, extraSpacePerGap: 0, gapCount: 0 }
         };
@@ -5038,6 +6755,9 @@ window.tmDocumentEditorEngine = (function () {
             kind: kind || LAYOUT_SCOPE_KINDS.ActiveParagraph,
             blockId: opts.blockId || opts.BlockId || null,
             region: opts.region || opts.Region || 'Body',
+            headerFooterId: opts.headerFooterId || opts.HeaderFooterId || null,
+            tableId: opts.tableId || opts.TableId || opts.activeTableId || opts.ActiveTableId || null,
+            cellId: opts.cellId || opts.CellId || opts.activeTableCellId || opts.ActiveTableCellId || null,
             pageIndex: Number(opts.pageIndex ?? opts.PageIndex ?? 0),
             affectedScopeIds: _asArray(opts.affectedScopeIds || opts.AffectedScopeIds || (opts.blockId || opts.BlockId ? [opts.blockId || opts.BlockId] : [])),
             reason: opts.reason || opts.Reason || ''
@@ -5049,20 +6769,24 @@ window.tmDocumentEditorEngine = (function () {
         var type = op.type || op.Type || '';
         if (type === OPERATION_TYPES.InsertText || type === OPERATION_TYPES.SetParagraphAttribute) {
             var target = _normalizeTarget(op.target || op.Target);
-            return createLayoutScope(LAYOUT_SCOPE_KINDS.ActiveParagraph, { blockId: target.blockId, affectedScopeIds: [target.blockId], reason: type });
+            return createLayoutScope(LAYOUT_SCOPE_KINDS.ActiveParagraph, Object.assign({}, target, { affectedScopeIds: [target.blockId], reason: type }));
         }
         if (type === OPERATION_TYPES.DeleteRange || type === OPERATION_TYPES.ApplyMark || type === OPERATION_TYPES.RemoveMark) {
             var range = _normalizeRange(op.range || op.Range);
-            return createLayoutScope(LAYOUT_SCOPE_KINDS.ActiveParagraph, { blockId: range.blockId, affectedScopeIds: [range.blockId], reason: type });
+            return createLayoutScope(LAYOUT_SCOPE_KINDS.ActiveParagraph, Object.assign({}, range, { affectedScopeIds: [range.blockId], reason: type }));
         }
         if (type === OPERATION_TYPES.SplitParagraph || type === OPERATION_TYPES.MergeParagraph) {
             var paragraphTarget = _normalizeTarget(op.target || op.Target);
-            return createLayoutScope(LAYOUT_SCOPE_KINDS.WholeBlock, { blockId: paragraphTarget.blockId, affectedScopeIds: [paragraphTarget.blockId, op.newBlockId || op.NewBlockId].filter(Boolean), reason: type });
+            return createLayoutScope(LAYOUT_SCOPE_KINDS.WholeBlock, Object.assign({}, paragraphTarget, { affectedScopeIds: [paragraphTarget.blockId, op.newBlockId || op.NewBlockId].filter(Boolean), reason: type }));
         }
-        if (type === OPERATION_TYPES.UpdateImageLayout || type === OPERATION_TYPES.InsertImage || type === OPERATION_TYPES.UpdateImageMetadata) {
+        if (type === OPERATION_TYPES.UpdateImageLayout || type === OPERATION_TYPES.MoveDrawingObject || type === OPERATION_TYPES.InsertImage || type === OPERATION_TYPES.UpdateImageMetadata) {
             var objectTarget = _normalizeTarget(op.target || op.Target);
             return createLayoutScope(LAYOUT_SCOPE_KINDS.PageRegion, {
                 blockId: objectTarget.blockId,
+                region: objectTarget.region || 'Body',
+                headerFooterId: objectTarget.headerFooterId || null,
+                tableId: objectTarget.tableId || null,
+                cellId: objectTarget.cellId || null,
                 affectedScopeIds: _unique([objectTarget.blockId].concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds))),
                 reason: type
             });
@@ -5181,6 +6905,7 @@ window.tmDocumentEditorEngine = (function () {
         var next = _clone(segment || {});
         next.pageIndex = pageIndex;
         next.rect = shiftRectY(next.rect, deltaY);
+        if (next.objectRect) next.objectRect = shiftRectY(next.objectRect, deltaY);
         return next;
     }
 
@@ -5250,18 +6975,97 @@ window.tmDocumentEditorEngine = (function () {
         return value && WRAP_MODE_NAMES[value.value] || 'Inline';
     }
 
+    function normalizeRelativePositionName(value) {
+        if (value === undefined || value === null || value === '') return 'Column';
+        if (typeof value === 'number') {
+            if (value === 0) return 'Page';
+            if (value === 1) return 'Margin';
+            if (value === 2) return 'Column';
+            if (value === 3) return 'Paragraph';
+            if (value === 4) return 'Character';
+            if (value === 5) return 'Line';
+            return 'Column';
+        }
+
+        var raw = String(value).replace(/\s+/g, '').replace(/-/g, '').toLowerCase();
+        if (raw === '0' || raw === 'page') return 'Page';
+        if (raw === '1' || raw === 'margin' || raw === 'margins') return 'Margin';
+        if (raw === '2' || raw === 'column') return 'Column';
+        if (raw === '3' || raw === 'paragraph') return 'Paragraph';
+        if (raw === '4' || raw === 'character' || raw === 'char') return 'Character';
+        if (raw === '5' || raw === 'line') return 'Line';
+        return _asText(value) || 'Column';
+    }
+
+    function relativePositionToValue(value) {
+        var normalized = normalizeRelativePositionName(value);
+        if (normalized === 'Page') return 0;
+        if (normalized === 'Margin') return 1;
+        if (normalized === 'Column') return 2;
+        if (normalized === 'Paragraph') return 3;
+        if (normalized === 'Character') return 4;
+        if (normalized === 'Line') return 5;
+        return 2;
+    }
+
+    function verticalAlignmentToValue(value) {
+        if (value === 0 || value === 1 || value === 2 || value === 3) return value;
+        var raw = String(value || '').replace(/[\s_-]+/g, '').toLowerCase();
+        if (raw === 'top' || raw === 'start') return 1;
+        if (raw === 'middle' || raw === 'center' || raw === 'centre') return 2;
+        if (raw === 'bottom' || raw === 'end') return 3;
+        return 0;
+    }
+
     function normalizePositionSpec(value, fallbackAlign) {
         var source = value || {};
         return _sortObject({
-            relativeTo: _asText(source.relativeTo || source.RelativeTo || 'Column'),
+            relativeTo: normalizeRelativePositionName(source.relativeTo ?? source.RelativeTo ?? 'Column'),
             align: _asText(source.align || source.Align || fallbackAlign || 'Left'),
             offset: Number(source.offset ?? source.Offset ?? 0) || 0
         });
     }
 
+    function normalizeLayoutKindName(value) {
+        if (value === undefined || value === null || value === '') return 'Inline';
+        if (typeof value === 'number') {
+            if (value === 1) return 'Anchored';
+            if (value === 2) return 'Fixed';
+            return 'Inline';
+        }
+
+        var raw = String(value).replace(/\s+/g, '').replace(/-/g, '').toLowerCase();
+        if (raw === '1' || raw === 'anchored' || raw === 'floating') return 'Anchored';
+        if (raw === '2' || raw === 'fixed' || raw === 'fixedonpage') return 'Fixed';
+        return 'Inline';
+    }
+
+    function normalizeAnchorRegionName(value) {
+        if (value === 1) return 'Header';
+        if (value === 2) return 'Footer';
+        if (value === 6) return 'TableCell';
+        var raw = _asText(value || '').trim().toLowerCase();
+        if (raw === '1' || raw === 'header' || raw === 'headers') return 'Header';
+        if (raw === '2' || raw === 'footer' || raw === 'footers') return 'Footer';
+        if (raw === '6' || raw === 'tablecell' || raw === 'table-cell' || raw === 'cell') return 'TableCell';
+        return 'Body';
+    }
+
+    function anchorRegionToValue(value) {
+        var normalized = normalizeAnchorRegionName(value);
+        if (normalized === 'Header') return 1;
+        if (normalized === 'Footer') return 2;
+        if (normalized === 'TableCell') return 6;
+        return 0;
+    }
+
     function normalizeImageObject(block, options) {
         var opts = options || {};
-        var content = block && (block.content || block.Content) || {};
+        var blockType = String(block && (block.type || block.Type || '') || '').toLowerCase();
+        var isDrawing = block && (block.kind === 'drawing' || block.Kind === 'drawing' || isDrawingRunSource(block));
+        var content = isDrawing
+            ? (block || {})
+            : (block && (block.content || block.Content) || {});
         var layout = content.layout || content.Layout || {};
         var anchor = layout.anchor || layout.Anchor || {};
         var wrap = layout.wrap || layout.Wrap || {};
@@ -5293,24 +7097,45 @@ window.tmDocumentEditorEngine = (function () {
             ?? content.height ?? content.Height
             ?? contentSize.height ?? contentSize.Height
             ?? opts.height ?? opts.Height ?? 80) || 80);
-        var distanceLeft = Number(wrap.distanceLeft ?? wrap.DistanceLeft ?? 0) || 0;
-        var distanceRight = Number(wrap.distanceRight ?? wrap.DistanceRight ?? 0) || 0;
-        var distanceTop = Number(wrap.distanceTop ?? wrap.DistanceTop ?? 0) || 0;
-        var distanceBottom = Number(wrap.distanceBottom ?? wrap.DistanceBottom ?? 0) || 0;
-        var wrapMargin = Math.max(
-            0,
-            Number(layout.wrapMargin ?? layout.WrapMargin ?? wrap.margin ?? wrap.Margin ?? 0) || 0,
-            distanceLeft,
-            distanceRight,
-            distanceTop,
-            distanceBottom);
+        var wrapMargin = Math.max(0, Number(layout.wrapMargin ?? layout.WrapMargin ?? wrap.margin ?? wrap.Margin ?? 0) || 0);
+        var rawDistanceLeft = wrap.distanceLeft ?? wrap.DistanceLeft;
+        var rawDistanceRight = wrap.distanceRight ?? wrap.DistanceRight;
+        var rawDistanceTop = wrap.distanceTop ?? wrap.DistanceTop;
+        var rawDistanceBottom = wrap.distanceBottom ?? wrap.DistanceBottom;
+        var distanceLeft = rawDistanceLeft === undefined || rawDistanceLeft === null ? wrapMargin : (Number(rawDistanceLeft) || 0);
+        var distanceRight = rawDistanceRight === undefined || rawDistanceRight === null ? wrapMargin : (Number(rawDistanceRight) || 0);
+        var distanceTop = rawDistanceTop === undefined || rawDistanceTop === null ? wrapMargin : (Number(rawDistanceTop) || 0);
+        var distanceBottom = rawDistanceBottom === undefined || rawDistanceBottom === null ? wrapMargin : (Number(rawDistanceBottom) || 0);
+        var blockId = _asText(
+            opts.blockId || opts.BlockId
+            || content.blockId || content.BlockId
+            || (!isDrawing && block && (block.id || block.Id))
+            || '');
+        var layoutKind = normalizeLayoutKindName(layout.kind ?? layout.Kind);
+        if (layoutKind === 'Inline' && wrapMode !== 'Inline') layoutKind = 'Anchored';
+        var anchorBlockId = _asText(
+            layout.anchorBlockId || layout.AnchorBlockId
+            || anchor.blockId || anchor.BlockId
+            || opts.anchorBlockId || opts.AnchorBlockId
+            || (isDrawing ? blockId : ''));
+        var anchorOffset = Number(layout.anchorOffset ?? layout.AnchorOffset ?? anchor.offset ?? anchor.Offset ?? opts.anchorOffset ?? opts.AnchorOffset ?? 0) || 0;
         return _sortObject({
-            blockId: block && (block.id || block.Id) || '',
+            blockId: blockId,
             objectId: _asText(content.objectId || content.ObjectId || content.id || content.Id || block && (block.id || block.Id) || ''),
-            anchorBlockId: _asText(layout.anchorBlockId || layout.AnchorBlockId || anchor.blockId || anchor.BlockId || opts.anchorBlockId || opts.AnchorBlockId || ''),
-            anchorOffset: Number(layout.anchorOffset ?? layout.AnchorOffset ?? anchor.offset ?? anchor.Offset ?? opts.anchorOffset ?? opts.AnchorOffset ?? 0) || 0,
+            anchorBlockId: anchorBlockId,
+            anchorOffset: anchorOffset,
+            anchorInlineIndex: Number(anchor.inlineIndex ?? anchor.InlineIndex ?? opts.inlineIndex ?? opts.InlineIndex ?? -1),
+            anchorTableId: _asText(anchor.tableId || anchor.TableId || layout.tableId || layout.TableId || opts.tableId || opts.TableId || ''),
+            anchorCellId: _asText(anchor.cellId || anchor.CellId || layout.cellId || layout.CellId || opts.cellId || opts.CellId || ''),
+            anchorHeaderFooterId: _asText(anchor.headerFooterId || anchor.HeaderFooterId || layout.headerFooterId || layout.HeaderFooterId || opts.headerFooterId || opts.HeaderFooterId || ''),
+            layoutKind: layoutKind,
+            isInline: layoutKind === 'Inline' || wrapMode === 'Inline',
+            isAnchored: layoutKind === 'Anchored' && wrapMode !== 'Inline',
+            lockAspectRatio: (transform.lockAspectRatio ?? transform.LockAspectRatio ?? contentSize.lockAspectRatio ?? contentSize.LockAspectRatio ?? true) !== false,
             moveWithText: (layout.moveWithText ?? layout.MoveWithText ?? anchor.moveWithText ?? anchor.MoveWithText ?? true) !== false,
             fixedOnPage: (layout.fixedOnPage ?? layout.FixedOnPage ?? anchor.fixedOnPage ?? anchor.FixedOnPage ?? false) === true,
+            lockAnchor: (layout.lockAnchor ?? layout.LockAnchor ?? anchor.lockAnchor ?? anchor.LockAnchor ?? false) === true,
+            anchorRegion: normalizeAnchorRegionName(layout.anchorRegion || layout.AnchorRegion || anchor.region || anchor.Region || opts.region || opts.Region || 'Body'),
             horizontalPosition: normalizePositionSpec(Object.assign({}, horizontal, {
                 align: horizontalAlign || horizontal.align || horizontal.Align || null,
                 relativeTo: position.horizontalRelativeTo || position.HorizontalRelativeTo || horizontal.relativeTo || horizontal.RelativeTo || 'Page',
@@ -5327,6 +7152,7 @@ window.tmDocumentEditorEngine = (function () {
             distanceRight: distanceRight,
             distanceTop: distanceTop,
             distanceBottom: distanceBottom,
+            wrapContourPoints: normalizeWrapContourPointsForGeometry(wrap.wrapContourPoints ?? wrap.WrapContourPoints ?? layout.wrapContourPoints ?? layout.WrapContourPoints),
             allowOverlap: (layout.allowOverlap ?? layout.AllowOverlap ?? stacking.allowOverlap ?? stacking.AllowOverlap ?? false) === true,
             zIndex: Number(layout.zIndex ?? layout.ZIndex ?? stacking.zIndex ?? stacking.ZIndex ?? 0) || 0,
             width: width,
@@ -5340,19 +7166,55 @@ window.tmDocumentEditorEngine = (function () {
 
     function imageObjectToLayout(object) {
         var source = object || {};
-        return _sortObject({
-            AnchorBlockId: source.anchorBlockId || '',
-            AnchorOffset: Number(source.anchorOffset || 0) || 0,
-            MoveWithText: source.moveWithText !== false,
-            FixedOnPage: source.fixedOnPage === true,
-            HorizontalPosition: _clone(source.horizontalPosition || {}),
-            VerticalPosition: _clone(source.verticalPosition || {}),
-            WrapMode: source.wrapMode || 'Inline',
-            WrapMargin: Number(source.wrapMargin || 0) || 0,
-            AllowOverlap: source.allowOverlap === true,
-            ZIndex: Number(source.zIndex || 0) || 0,
-            Width: Math.max(1, Number(source.width || 120) || 120),
-            Height: Math.max(1, Number(source.height || 80) || 80)
+        var horizontal = source.horizontalPosition || {};
+        var vertical = source.verticalPosition || {};
+        var mode = normalizeWrapModeName(source.wrapMode || 'Inline');
+        var kind = mode === 'Inline'
+            ? 0
+            : (source.fixedOnPage === true || source.layoutKind === 'Fixed' ? 2 : 1);
+        return syncImageLayoutCase({
+            Kind: kind,
+            Anchor: {
+                BlockId: source.anchorBlockId || '',
+                Offset: Number(source.anchorOffset || 0) || 0,
+                InlineIndex: Number(source.anchorInlineIndex ?? -1),
+                Region: anchorRegionToValue(source.anchorRegion || source.region || 'Body'),
+                TableId: source.anchorTableId || source.tableId || null,
+                CellId: source.anchorCellId || source.cellId || null,
+                HeaderFooterId: source.anchorHeaderFooterId || source.headerFooterId || null,
+                MoveWithText: source.moveWithText !== false && source.fixedOnPage !== true,
+                FixedOnPage: source.fixedOnPage === true,
+                LockAnchor: source.lockAnchor === true
+            },
+            Position: {
+                HorizontalRelativeTo: relativePositionToValue(horizontal.relativeTo || horizontal.RelativeTo || 'Column'),
+                VerticalRelativeTo: relativePositionToValue(vertical.relativeTo || vertical.RelativeTo || 'Paragraph'),
+                HorizontalAlignment: horizontalPositionToValue(horizontal.align || horizontal.Align || 'Left'),
+                VerticalAlignment: verticalAlignmentToValue(vertical.align || vertical.Align || 'Top'),
+                X: Number(horizontal.offset ?? horizontal.Offset ?? 0) || 0,
+                Y: Number(vertical.offset ?? vertical.Offset ?? 0) || 0
+            },
+            Wrap: {
+                Mode: wrapModeToValue(mode),
+                DistanceLeft: Number(source.distanceLeft ?? source.DistanceLeft ?? 0) || 0,
+                DistanceRight: Number(source.distanceRight ?? source.DistanceRight ?? 0) || 0,
+                DistanceTop: Number(source.distanceTop ?? source.DistanceTop ?? 0) || 0,
+                DistanceBottom: Number(source.distanceBottom ?? source.DistanceBottom ?? 0) || 0,
+                WrapContourPoints: _asArray(source.wrapContourPoints || source.WrapContourPoints).length
+                    ? normalizeWrapContourPointsForGeometry(source.wrapContourPoints || source.WrapContourPoints).map(function (point) {
+                        return { X: point.x, Y: point.y };
+                    })
+                    : []
+            },
+            Transform: {
+                Width: Math.max(1, Number(source.width || 120) || 120),
+                Height: Math.max(1, Number(source.height || 80) || 80),
+                LockAspectRatio: source.lockAspectRatio !== false
+            },
+            Stacking: {
+                AllowOverlap: source.allowOverlap === true,
+                ZIndex: Number(source.zIndex || 0) || 0
+            }
         });
     }
 
@@ -5361,76 +7223,556 @@ window.tmDocumentEditorEngine = (function () {
         return mode === 'Square' || mode === 'Tight' || mode === 'Through' || mode === 'TopBottom';
     }
 
+    function rectFromGeometry(value) {
+        var rect = value || {};
+        return {
+            x: Number(rect.x ?? rect.X ?? rect.left ?? rect.Left ?? 0) || 0,
+            y: Number(rect.y ?? rect.Y ?? rect.top ?? rect.Top ?? 0) || 0,
+            width: Math.max(0, Number(rect.width ?? rect.Width ?? 0) || 0),
+            height: Math.max(0, Number(rect.height ?? rect.Height ?? 0) || 0)
+        };
+    }
+
+    function rectRightGeometry(rect) {
+        return Number(rect && rect.x || 0) + Number(rect && rect.width || 0);
+    }
+
+    function rectBottomGeometry(rect) {
+        return Number(rect && rect.y || 0) + Number(rect && rect.height || 0);
+    }
+
+    function rectIntersectsGeometry(a, b) {
+        return Number(a.x || 0) < rectRightGeometry(b)
+            && rectRightGeometry(a) > Number(b.x || 0)
+            && Number(a.y || 0) < rectBottomGeometry(b)
+            && rectBottomGeometry(a) > Number(b.y || 0);
+    }
+
+    function intersectGeometryRect(a, b) {
+        var left = Math.max(Number(a && a.x || 0), Number(b && b.x || 0));
+        var top = Math.max(Number(a && a.y || 0), Number(b && b.y || 0));
+        var right = Math.min(rectRightGeometry(a), rectRightGeometry(b));
+        var bottom = Math.min(rectBottomGeometry(a), rectBottomGeometry(b));
+        if (right <= left || bottom <= top) return null;
+        return { x: left, y: top, width: right - left, height: bottom - top };
+    }
+
+    function geometryBoundsOfPoints(points) {
+        var list = _asArray(points);
+        if (!list.length) return { x: 0, y: 0, width: 0, height: 0 };
+        var left = Math.min.apply(null, list.map(function (point) { return Number(point.x ?? point.X ?? 0) || 0; }));
+        var top = Math.min.apply(null, list.map(function (point) { return Number(point.y ?? point.Y ?? 0) || 0; }));
+        var right = Math.max.apply(null, list.map(function (point) { return Number(point.x ?? point.X ?? 0) || 0; }));
+        var bottom = Math.max.apply(null, list.map(function (point) { return Number(point.y ?? point.Y ?? 0) || 0; }));
+        return { x: left, y: top, width: right - left, height: bottom - top };
+    }
+
+    function normalizeWrapContourPointsForGeometry(points) {
+        var normalized = _asArray(points).filter(Boolean).map(function (point) {
+            return {
+                x: Math.max(0, Math.min(1, Number(point.x ?? point.X ?? 0) || 0)),
+                y: Math.max(0, Math.min(1, Number(point.y ?? point.Y ?? 0) || 0))
+            };
+        });
+        if (normalized.length >= 3) return normalized;
+        return [
+            { x: 0, y: 0 },
+            { x: 1, y: 0 },
+            { x: 1, y: 1 },
+            { x: 0, y: 1 }
+        ];
+    }
+
+    function readObjectDistance(object, lowerName, upperName) {
+        if (object && object[lowerName] !== undefined && object[lowerName] !== null) return Number(object[lowerName]) || 0;
+        if (object && object[upperName] !== undefined && object[upperName] !== null) return Number(object[upperName]) || 0;
+        return Math.max(0, Number(object && (object.wrapMargin ?? object.WrapMargin) || 0) || 0);
+    }
+
+    function createObjectFootprintRect(object, rect) {
+        var captionHeight = object && object.caption ? Math.max(16, Math.min(48, object.caption.length * 0.6)) : 0;
+        return {
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height + captionHeight
+        };
+    }
+
+    function createObjectWrapRect(object, rect) {
+        var footprint = createObjectFootprintRect(object, rect);
+        var left = readObjectDistance(object, 'distanceLeft', 'DistanceLeft');
+        var right = readObjectDistance(object, 'distanceRight', 'DistanceRight');
+        var top = readObjectDistance(object, 'distanceTop', 'DistanceTop');
+        var bottom = readObjectDistance(object, 'distanceBottom', 'DistanceBottom');
+        return {
+            x: footprint.x - left,
+            y: footprint.y - top,
+            width: footprint.width + left + right,
+            height: footprint.height + top + bottom
+        };
+    }
+
+    function projectWrapContourPointsForGeometry(object, wrapRect, bodyFrame) {
+        var source = rectFromGeometry(wrapRect);
+        var body = bodyFrame ? rectFromGeometry(bodyFrame) : null;
+        return normalizeWrapContourPointsForGeometry(object && (object.wrapContourPoints || object.WrapContourPoints)).map(function (point) {
+            var x = source.x + source.width * point.x;
+            var y = source.y + source.height * point.y;
+            if (!body) return { x: x, y: y };
+            return {
+                x: Math.max(body.x, Math.min(rectRightGeometry(body), x)),
+                y: Math.max(body.y, Math.min(rectBottomGeometry(body), y))
+            };
+        });
+    }
+
     function createTextExclusion(objectLayout, bodyFrame) {
         var object = objectLayout || {};
         var mode = normalizeWrapModeName(object.wrapMode);
         if (!wrapModeCreatesTextExclusion(mode)) return null;
-        var margin = Math.max(0, Number(object.wrapMargin || 0) || 0);
-        var rect = object.rect || {
+        var body = bodyFrame ? rectFromGeometry(bodyFrame) : null;
+        var rect = rectFromGeometry(object.rect || {
             x: Number(bodyFrame && bodyFrame.x || 0) + Number(object.horizontalPosition && object.horizontalPosition.offset || 0),
             y: Number(bodyFrame && bodyFrame.y || 0) + Number(object.verticalPosition && object.verticalPosition.offset || 0),
             width: Number(object.width || 1) || 1,
             height: Number(object.height || 1) || 1
-        };
-        var captionHeight = object.caption ? Math.max(16, Math.min(48, object.caption.length * 0.6)) : 0;
-        var footprint = {
-            x: rect.x - margin,
-            y: rect.y - margin,
-            width: rect.width + margin * 2,
-            height: rect.height + captionHeight + margin * 2
-        };
+        });
+        var wrapRect = createObjectWrapRect(object, rect);
+        var polygon = [];
         var kind = mode === 'TopBottom'
             ? 'fullWidth'
             : (mode === 'Tight' ? 'contour' : (mode === 'Through' ? 'editableContour' : 'rectangular'));
-        if (mode === 'TopBottom' && bodyFrame) {
-            footprint.x = bodyFrame.x;
-            footprint.width = bodyFrame.width;
+        var candidate = wrapRect;
+        if (mode === 'TopBottom' && body) {
+            candidate = {
+                x: body.x,
+                y: wrapRect.y,
+                width: body.width,
+                height: wrapRect.height
+            };
+        } else if (mode === 'Tight' || mode === 'Through') {
+            polygon = projectWrapContourPointsForGeometry(object, wrapRect, body);
+            candidate = geometryBoundsOfPoints(polygon);
+        }
+        var exclusionRect = body ? intersectGeometryRect(candidate, body) : candidate;
+        if (!exclusionRect || exclusionRect.width <= 0 || exclusionRect.height <= 0) {
+            return null;
         }
         return _sortObject({
             objectId: object.objectId || object.blockId || '',
             blockId: object.blockId || '',
+            region: object.region || object.anchorRegion || 'Body',
+            headerFooterId: object.headerFooterId || object.anchorHeaderFooterId || null,
+            tableId: object.tableId || object.anchorTableId || null,
+            cellId: object.cellId || object.anchorCellId || null,
             wrapMode: mode,
             kind: kind,
-            rect: footprint,
+            rect: exclusionRect,
             sourceRect: _clone(rect),
-            captionIncluded: captionHeight > 0,
+            wrapRect: wrapRect,
+            polygon: polygon,
+            captionIncluded: !!object.caption,
             allowOverlap: object.allowOverlap === true,
             zIndex: Number(object.zIndex || 0) || 0
         });
     }
 
+    function collectAnchoredDrawingRuns(block, context) {
+        if (!block || block.type !== 'paragraph') return [];
+        var regionContext = context || {};
+        return _asArray(block.content && block.content.runs).map(function (run, inlineIndex) {
+            if (!run || !(run.kind === 'drawing' || isDrawingRunSource(run))) return null;
+            var object = normalizeImageObject(run, Object.assign({ blockId: block.id || '', inlineIndex: inlineIndex }, regionContext));
+            if (!object || object.isInline === true) return null;
+            if (!object.anchorBlockId || (object.lockAnchor !== true && object.anchorBlockId !== block.id)) {
+                object.anchorBlockId = block.id || object.anchorBlockId || '';
+            }
+            if (regionContext.region && (object.anchorRegion === 'Body' || !object.anchorRegion) && regionContext.region !== 'Body') {
+                object.anchorRegion = regionContext.region;
+            } else {
+                object.anchorRegion = object.anchorRegion || regionContext.region || 'Body';
+            }
+            object.anchorHeaderFooterId = object.anchorHeaderFooterId || regionContext.headerFooterId || '';
+            object.anchorTableId = object.anchorTableId || regionContext.tableId || '';
+            object.anchorCellId = object.anchorCellId || regionContext.cellId || '';
+            object.anchorInlineIndex = object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : inlineIndex;
+            return _sortObject({ blockId: block.id || '', inlineIndex: inlineIndex, run: run, object: object });
+        }).filter(Boolean);
+    }
+
+    function drawingLayerForWrapMode(wrapMode) {
+        var mode = normalizeWrapModeName(wrapMode);
+        if (mode === 'BehindText') return 'behind-text';
+        if (mode === 'InFrontOfText') return 'in-front-of-text';
+        return 'object';
+    }
+
+    function findLayoutBlockById(layoutBlocks, blockId) {
+        var id = _asText(blockId);
+        if (!id) return null;
+        return _asArray(layoutBlocks).find(function (block) { return block && block.blockId === id; }) || null;
+    }
+
+    function findReferenceLineForOffset(layoutBlock, offset) {
+        if (!layoutBlock) return null;
+        var target = Math.max(0, Number(offset || 0) || 0);
+        return _asArray(layoutBlock.lines).find(function (line) {
+            var start = Number(line && line.start || 0) || 0;
+            var end = Number(line && line.end || 0) || 0;
+            return target >= start && target <= end;
+        }) || _asArray(layoutBlock.lines)[0] || null;
+    }
+
+    function resolveAnchoredDrawingReference(object, layoutBlocks, fragments, fallback) {
+        var source = object || {};
+        var fallbackInfo = fallback || {};
+        var anchorBlockId = _asText(source.anchorBlockId || source.blockId || fallbackInfo.blockId || '');
+        var candidates = _asArray(fragments).concat(_asArray(layoutBlocks));
+        var layoutBlock = findLayoutBlockById(candidates, anchorBlockId)
+            || findLayoutBlockById(candidates, fallbackInfo.blockId)
+            || null;
+        var pageIndex = Number(fallbackInfo.pageIndex || 0) || 0;
+        var bodyFrame = fallbackInfo.bodyFrame || { x: 0, y: 0, width: 640, height: 900 };
+        var rect = {
+            x: bodyFrame.x,
+            y: Number(fallbackInfo.y ?? bodyFrame.y ?? 0) || 0,
+            width: bodyFrame.width,
+            height: 18
+        };
+        var line = null;
+        var usedFallback = true;
+        if (layoutBlock) {
+            pageIndex = Number(layoutBlock.pageIndex ?? pageIndex) || 0;
+            line = findReferenceLineForOffset(layoutBlock, source.anchorOffset);
+            rect = _clone(line && line.rect || layoutBlock.rect || rect);
+            usedFallback = false;
+        }
+        if (source.fixedOnPage === true) {
+            rect = {
+                x: bodyFrame.x,
+                y: bodyFrame.y,
+                width: bodyFrame.width,
+                height: Math.max(1, Number(bodyFrame.height || rect.height || 18) || 18)
+            };
+        }
+
+        return _sortObject({
+            blockId: anchorBlockId || fallbackInfo.blockId || '',
+            lineId: line && line.id || null,
+            pageIndex: pageIndex,
+            region: source.anchorRegion || 'Body',
+            headerFooterId: source.anchorHeaderFooterId || fallbackInfo.headerFooterId || null,
+            tableId: source.anchorTableId || fallbackInfo.tableId || null,
+            cellId: source.anchorCellId || fallbackInfo.cellId || null,
+            rect: rect,
+            usedFallback: usedFallback,
+            fallbackReason: usedFallback ? 'paragraph-start' : ''
+        });
+    }
+
+    function resolvePositionReferenceRect(relativeTo, pageRect, bodyFrame, paragraphRect, characterRect, lineRect) {
+        var key = normalizeRelativePositionName(relativeTo);
+        if (key === 'Page') return pageRect || bodyFrame;
+        if (key === 'Margin' || key === 'Column') return bodyFrame || pageRect;
+        if (key === 'Paragraph') return paragraphRect || bodyFrame || pageRect;
+        if (key === 'Character') return characterRect || paragraphRect || bodyFrame || pageRect;
+        if (key === 'Line') return lineRect || paragraphRect || bodyFrame || pageRect;
+        return bodyFrame || pageRect;
+    }
+
+    function resolveAlignedHorizontal(position, reference, width) {
+        var align = String(position && position.align || 'Left').toLowerCase();
+        var offset = Number(position && position.offset || 0) || 0;
+        var frame = reference || { x: 0, width: 0 };
+        if (align === 'center' || align === 'middle') return Number(frame.x || 0) + ((Number(frame.width || 0) - width) / 2) + offset;
+        if (align === 'right' || align === 'end') return Number(frame.x || 0) + Number(frame.width || 0) - width + offset;
+        return Number(frame.x || 0) + offset;
+    }
+
+    function resolveAlignedVertical(position, reference, height) {
+        var align = String(position && position.align || 'Top').toLowerCase();
+        var offset = Number(position && position.offset || 0) || 0;
+        var frame = reference || { y: 0, height: 0 };
+        if (align === 'middle' || align === 'center') return Number(frame.y || 0) + ((Number(frame.height || 0) - height) / 2) + offset;
+        if (align === 'bottom' || align === 'end') return Number(frame.y || 0) + Number(frame.height || 0) - height + offset;
+        return Number(frame.y || 0) + offset;
+    }
+
+    function resolveAnchoredDrawingRect(object, reference, page) {
+        var source = object || {};
+        var pageRect = page && page.rect || { x: 0, y: 0, width: 640, height: 900 };
+        var bodyFrame = page && page.bodyFrame || pageRect;
+        var anchorRect = reference && reference.rect || bodyFrame;
+        var width = Math.max(1, Number(source.width || 1) || 1);
+        var height = Math.max(1, Number(source.height || 1) || 1);
+        var paragraphRect = source.fixedOnPage === true ? bodyFrame : anchorRect;
+        var lineRect = source.fixedOnPage === true ? bodyFrame : anchorRect;
+        var characterRect = source.fixedOnPage === true ? bodyFrame : {
+            x: Number(anchorRect.x || 0),
+            y: Number(anchorRect.y || 0),
+            width: 0,
+            height: Math.max(1, Number(anchorRect.height || 18) || 18)
+        };
+        var horizontalReference = resolvePositionReferenceRect(source.horizontalPosition && source.horizontalPosition.relativeTo, pageRect, bodyFrame, paragraphRect, characterRect, lineRect);
+        var verticalReference = resolvePositionReferenceRect(source.verticalPosition && source.verticalPosition.relativeTo, pageRect, bodyFrame, paragraphRect, characterRect, lineRect);
+        return _sortObject({
+            x: resolveAlignedHorizontal(source.horizontalPosition, horizontalReference, width),
+            y: resolveAlignedVertical(source.verticalPosition, verticalReference, height),
+            width: width,
+            height: height
+        });
+    }
+
+    function createAnchoredDrawingLayoutObject(block, entry, reference, page) {
+        var object = _clone(entry && entry.object || {});
+        var rect = resolveAnchoredDrawingRect(object, reference, page);
+        var inlineIndex = object.anchorInlineIndex;
+        if (inlineIndex === undefined || inlineIndex === null) inlineIndex = entry && entry.inlineIndex;
+        var objectPageIndex = reference && reference.pageIndex;
+        if (objectPageIndex === undefined || objectPageIndex === null) objectPageIndex = page && page.pageIndex;
+        object.blockId = block && block.id || object.blockId || '';
+        object.anchorBlockId = reference && reference.blockId || object.anchorBlockId || object.blockId || '';
+        object.anchorInlineIndex = Number(inlineIndex ?? -1);
+        object.anchorOffset = Number(object.anchorOffset || 0) || 0;
+        object.inlineObject = false;
+        object.createsTextExclusion = wrapModeCreatesTextExclusion(object.wrapMode);
+        object.isInline = false;
+        object.isAnchored = object.layoutKind !== 'Fixed';
+        object.pageIndex = Number(objectPageIndex ?? 0) || 0;
+        object.region = reference && reference.region || object.anchorRegion || 'Body';
+        object.headerFooterId = reference && reference.headerFooterId || object.anchorHeaderFooterId || object.headerFooterId || null;
+        object.tableId = reference && reference.tableId || object.anchorTableId || object.tableId || null;
+        object.cellId = reference && reference.cellId || object.anchorCellId || object.cellId || null;
+        object.layer = drawingLayerForWrapMode(object.wrapMode);
+        object.rect = rect;
+        object.referenceRect = reference && reference.rect ? _clone(reference.rect) : null;
+        object.anchorFallback = reference && reference.usedFallback === true;
+        object.anchorFallbackReason = reference && reference.fallbackReason || '';
+        return _sortObject(object);
+    }
+
+    function objectOverlapCollisionRect(object) {
+        return createObjectFootprintRect(object || {}, rectFromGeometry(object && object.rect || {}));
+    }
+
+    function resolveObjectOverlapGeometry(existingObjects, object, bodyFrame) {
+        if (!object || object.allowOverlap === true) return object;
+        var body = rectFromGeometry(bodyFrame || { x: 0, y: 0, width: 640, height: 900 });
+        var layer = drawingLayerForWrapMode(object.wrapMode);
+        var guard = 0;
+        while (guard++ < 64) {
+            var collisionRect = objectOverlapCollisionRect(object);
+            var overlap = _asArray(existingObjects)
+                .filter(function (existing) {
+                    if (!existing || existing.allowOverlap === true || existing.inlineObject === true || !existing.rect) return false;
+                    return drawingLayerForWrapMode(existing.wrapMode) === layer
+                        && rectIntersectsGeometry(objectOverlapCollisionRect(existing), collisionRect);
+                })
+                .sort(function (left, right) {
+                    return rectBottomGeometry(objectOverlapCollisionRect(left)) - rectBottomGeometry(objectOverlapCollisionRect(right));
+                })
+                .pop();
+            if (!overlap) break;
+            var overlapRect = objectOverlapCollisionRect(overlap);
+            var nextY = rectBottomGeometry(overlapRect) + 8;
+            if (nextY + collisionRect.height > rectBottomGeometry(body)) {
+                nextY = Math.max(body.y, rectBottomGeometry(body) - collisionRect.height);
+                if (nextY <= collisionRect.y + 0.01) break;
+            }
+            var delta = nextY - Number(object.rect.y || 0);
+            if (Math.abs(delta) < 0.01) break;
+            object.rect.y += delta;
+        }
+        return object;
+    }
+
+    function intervalEndGeometry(interval) {
+        return Number(interval && interval.x || 0) + Number(interval && interval.width || 0);
+    }
+
+    function subtractGeometryInterval(intervals, blockedLeft, blockedRight, minWidth, atY, lineHeight) {
+        var result = [];
+        _asArray(intervals).forEach(function (interval) {
+            var intervalLeft = Number(interval.x || 0);
+            var intervalRight = intervalEndGeometry(interval);
+            if (blockedRight <= intervalLeft || blockedLeft >= intervalRight) {
+                result.push(interval);
+                return;
+            }
+            if (blockedLeft > intervalLeft && blockedLeft - intervalLeft >= minWidth) {
+                result.push({ x: intervalLeft, y: atY, width: blockedLeft - intervalLeft, height: lineHeight });
+            }
+            if (blockedRight < intervalRight && intervalRight - blockedRight >= minWidth) {
+                result.push({ x: blockedRight, y: atY, width: intervalRight - blockedRight, height: lineHeight });
+            }
+        });
+        return result;
+    }
+
+    function polygonIntervalsAtYGeometry(polygon, y) {
+        var points = _asArray(polygon);
+        var xs = [];
+        for (var i = 0; i < points.length; i++) {
+            var a = points[i] || {};
+            var b = points[(i + 1) % points.length] || {};
+            var ay = Number(a.y ?? a.Y ?? 0) || 0;
+            var by = Number(b.y ?? b.Y ?? 0) || 0;
+            if (Math.abs(ay - by) < 0.0001) continue;
+            var minY = Math.min(ay, by);
+            var maxY = Math.max(ay, by);
+            if (y < minY || y >= maxY) continue;
+            var ax = Number(a.x ?? a.X ?? 0) || 0;
+            var bx = Number(b.x ?? b.X ?? 0) || 0;
+            xs.push(ax + ((y - ay) * (bx - ax) / (by - ay)));
+        }
+        xs.sort(function (left, right) { return left - right; });
+        var intervals = [];
+        for (var index = 0; index + 1 < xs.length; index += 2) {
+            if (xs[index + 1] > xs[index] + 0.0001) {
+                intervals.push({ x: xs[index], width: xs[index + 1] - xs[index] });
+            }
+        }
+        return intervals;
+    }
+
+    function mergeGeometryIntervals(intervals, minWidth) {
+        var sorted = _asArray(intervals)
+            .filter(function (interval) { return Number(interval.width || 0) >= minWidth - 0.0001; })
+            .sort(function (a, b) { return Number(a.x || 0) - Number(b.x || 0); });
+        var result = [];
+        sorted.forEach(function (interval) {
+            var last = result[result.length - 1];
+            if (last && Number(interval.x || 0) <= intervalEndGeometry(last) + 0.0001) {
+                last.width = Math.max(intervalEndGeometry(last), intervalEndGeometry(interval)) - Number(last.x || 0);
+            } else {
+                result.push({ x: Number(interval.x || 0), width: Number(interval.width || 0) });
+            }
+        });
+        return result;
+    }
+
+    function polygonBlockedIntervalsForGeometry(polygon, atY, lineHeight, body, minWidth) {
+        var top = atY;
+        var bottom = atY + lineHeight;
+        var samples = [top + 0.0001, top + lineHeight / 2, bottom - 0.0001]
+            .map(function (sample) { return Math.max(top, Math.min(bottom, sample)); });
+        _asArray(polygon).forEach(function (point) {
+            var y = Number(point && (point.y ?? point.Y) || 0) || 0;
+            if (y > top + 0.0001 && y < bottom - 0.0001) samples.push(y);
+        });
+        samples = _unique(samples.map(function (sample) { return Math.round(sample * 10000) / 10000; }));
+        var intervals = [];
+        samples.forEach(function (sampleY) {
+            polygonIntervalsAtYGeometry(polygon, sampleY).forEach(function (interval) {
+                var left = Math.max(body.x, Number(interval.x || 0));
+                var right = Math.min(rectRightGeometry(body), intervalEndGeometry(interval));
+                if (right - left >= minWidth - 0.0001) intervals.push({ x: left, width: right - left });
+            });
+        });
+        return mergeGeometryIntervals(intervals, minWidth);
+    }
+
+    function blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth) {
+        var polygon = _asArray(exclusion && (exclusion.polygon || exclusion.Polygon));
+        if (polygon.length >= 3) {
+            return polygonBlockedIntervalsForGeometry(polygon, atY, lineHeight, body, minWidth);
+        }
+
+        var rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
+        var left = Math.max(rect.x, body.x);
+        var right = Math.min(rectRightGeometry(rect), rectRightGeometry(body));
+        return right - left >= minWidth - 0.0001
+            ? [{ x: left, width: right - left }]
+            : [];
+    }
+
+    function availableIntervalsCacheNumber(value) {
+        var number = Number(value || 0) || 0;
+        return Math.round(number * 1000) / 1000;
+    }
+
+    function createAvailableIntervalsCacheKey(lineY, lineHeight, body, exclusions, minWidth) {
+        var signature = _asArray(exclusions).map(function (exclusion) {
+            var rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
+            var polygon = _asArray(exclusion && (exclusion.polygon || exclusion.Polygon))
+                .map(function (point) {
+                    return [
+                        availableIntervalsCacheNumber(point && (point.x ?? point.X)),
+                        availableIntervalsCacheNumber(point && (point.y ?? point.Y))
+                    ];
+                });
+            return {
+                allowOverlap: exclusion && (exclusion.allowOverlap === true || exclusion.AllowOverlap === true),
+                rect: [
+                    availableIntervalsCacheNumber(rect.x),
+                    availableIntervalsCacheNumber(rect.y),
+                    availableIntervalsCacheNumber(rect.width),
+                    availableIntervalsCacheNumber(rect.height)
+                ],
+                polygon: polygon
+            };
+        });
+        return JSON.stringify({
+            y: availableIntervalsCacheNumber(lineY),
+            height: availableIntervalsCacheNumber(lineHeight),
+            minWidth: availableIntervalsCacheNumber(minWidth),
+            body: [
+                availableIntervalsCacheNumber(body.x),
+                availableIntervalsCacheNumber(body.y),
+                availableIntervalsCacheNumber(body.width),
+                availableIntervalsCacheNumber(body.height)
+            ],
+            exclusions: signature
+        });
+    }
+
+    function ensureAvailableIntervalsCache(exclusions) {
+        if (!Array.isArray(exclusions)) return null;
+        var cache = exclusions.__tmAvailableIntervalsCache;
+        if (cache && typeof cache.get === 'function' && typeof cache.set === 'function') return cache;
+        cache = new Map();
+        try {
+            Object.defineProperty(exclusions, '__tmAvailableIntervalsCache', {
+                value: cache,
+                configurable: true,
+                enumerable: false,
+                writable: true
+            });
+            return cache;
+        } catch {
+            return null;
+        }
+    }
+
     function getAvailableIntervals(y, height, bodyFrame, exclusions, minReadableWidth) {
         var lineY = Number(y || 0);
         var lineHeight = Math.max(1, Number(height || 1) || 1);
-        var body = bodyFrame || { x: 0, y: 0, width: 640, height: 900 };
+        var body = rectFromGeometry(bodyFrame || { x: 0, y: 0, width: 640, height: 900 });
         var minWidth = Math.max(1, Number(minReadableWidth || 48) || 48);
         var movedToY = lineY;
+        var cache = ensureAvailableIntervalsCache(exclusions);
+        var cacheKey = cache ? createAvailableIntervalsCacheKey(lineY, lineHeight, body, exclusions, minWidth) : '';
+        if (cache && cache.has(cacheKey)) return _clone(cache.get(cacheKey));
 
         function compute(atY) {
             var intervals = [{ x: body.x, y: atY, width: body.width, height: lineHeight }];
             var blockingBottom = atY;
             _asArray(exclusions).forEach(function (exclusion) {
-                var rect = exclusion && exclusion.rect || {};
-                var overlapsY = atY < Number(rect.y || 0) + Number(rect.height || 0) && atY + lineHeight > Number(rect.y || 0);
-                if (!overlapsY || exclusion.allowOverlap === true) return;
-                blockingBottom = Math.max(blockingBottom, Number(rect.y || 0) + Number(rect.height || 0));
-                if (exclusion.kind === 'fullWidth') {
-                    intervals = [];
-                    return;
-                }
-                var leftEdge = Number(rect.x || 0);
-                var rightEdge = leftEdge + Number(rect.width || 0);
-                var next = [];
-                intervals.forEach(function (interval) {
-                    var intervalRight = interval.x + interval.width;
-                    if (rightEdge <= interval.x || leftEdge >= intervalRight) {
-                        next.push(interval);
-                        return;
-                    }
-                    if (leftEdge > interval.x) next.push({ x: interval.x, y: atY, width: leftEdge - interval.x, height: lineHeight });
-                    if (rightEdge < intervalRight) next.push({ x: rightEdge, y: atY, width: intervalRight - rightEdge, height: lineHeight });
+                var rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
+                var lineRect = { x: body.x, y: atY, width: body.width, height: lineHeight };
+                var overlapsY = rectIntersectsGeometry(lineRect, rect);
+                if (!overlapsY || exclusion.allowOverlap === true || exclusion.AllowOverlap === true) return;
+                blockingBottom = Math.max(blockingBottom, rectBottomGeometry(rect));
+                blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth).forEach(function (blocked) {
+                    intervals = subtractGeometryInterval(
+                        intervals,
+                        Math.max(body.x, Number(blocked.x || 0)),
+                        Math.min(rectRightGeometry(body), intervalEndGeometry(blocked)),
+                        minWidth,
+                        atY,
+                        lineHeight);
                 });
-                intervals = next;
             });
             intervals = intervals
                 .filter(function (interval) { return interval.width >= minWidth; })
@@ -5443,11 +7785,16 @@ window.tmDocumentEditorEngine = (function () {
             movedToY = Math.max(lineY + lineHeight, result.blockingBottom);
             result = compute(movedToY);
         }
-        return _sortObject({
+        var available = _sortObject({
             intervals: result.intervals,
             movedToY: movedToY,
             moved: movedToY > lineY
         });
+        if (cache) {
+            if (cache.size > 256) cache.clear();
+            cache.set(cacheKey, _clone(available));
+        }
+        return available;
     }
 
     function hitTestLayerPriority(layerName, wrapMode) {
@@ -5459,8 +7806,10 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function affectedParagraphsAroundObject(model, blockId) {
-        var blocks = _asArray(model && model.body && model.body.blocks);
+        var container = _findBlockContainer(model, blockId);
+        var blocks = _asArray(container && container.blocks || model && model.body && model.body.blocks);
         var index = blocks.findIndex(function (block) { return block.id === blockId; });
+        if (index < 0) return [];
         return blocks.slice(Math.max(0, index + 1), index + 4).filter(function (block) { return block && block.type === 'paragraph'; }).map(function (block) { return block.id; });
     }
 
@@ -5668,6 +8017,10 @@ window.tmDocumentEditorEngine = (function () {
                     lineId: line && line.id || null,
                     runId: run && run.id || segment.runId || null,
                     kind: run && run.kind || 'text',
+                    objectId: segment.objectId || run && run.objectId || null,
+                    inlineObject: segment.inlineObject === true || segment.type === 'inlineObject',
+                    objectRect: segment.objectRect ? _clone(segment.objectRect) : null,
+                    object: segment.object ? _clone(segment.object) : run && run.object ? _clone(run.object) : null,
                     style: normalizeLayoutSegmentStyle(run && run.style || segment.style || {}),
                     decorations: decorationsFromMarks(run && run.marks || []),
                     mapping: { blockId: block.id, runId: run && run.id || null, start: segment.start, end: segment.end }
@@ -5680,6 +8033,11 @@ window.tmDocumentEditorEngine = (function () {
             });
             lines.forEach(function (line) {
                 line.segments = segmentsByLine.get(line.id) || [];
+                line.inlineObjects = line.segments.filter(function (segment) {
+                    return segment.inlineObject === true || segment.kind === 'drawing';
+                }).map(function (segment) {
+                    return createInlineObjectLayoutFromSegment(block, segment, line);
+                });
             });
             var caretStops = _asArray(lineLayout.caretStops).map(function (stop) {
                 var inline = _inlineAtOffset(block, stop.offset);
@@ -5687,11 +8045,15 @@ window.tmDocumentEditorEngine = (function () {
                     blockId: block.id,
                     inlineId: inline && inline.run ? inline.run.id : null,
                     lineId: lineByOriginalId[stop.lineId] || stop.lineId,
-                    affinity: Number(stop.offset || 0) === 0 ? 'before' : 'after'
+                    affinity: stop.affinity || (Number(stop.offset || 0) === 0 ? 'before' : 'after')
                 }));
             });
             var baselines = lines.map(function (line) {
                 return _sortObject({ blockId: block.id, lineId: line.id, y: line.baseline, offset: line.baselineOffset });
+            });
+            var inlineObjects = [];
+            lines.forEach(function (line) {
+                inlineObjects = inlineObjects.concat(_asArray(line.inlineObjects));
             });
             var rect = paragraphRectFromLines(opts, lines);
             return _sortObject({
@@ -5704,6 +8066,7 @@ window.tmDocumentEditorEngine = (function () {
                 rect: rect,
                 lines: lines,
                 segments: segments,
+                inlineObjects: inlineObjects,
                 caretStops: caretStops,
                 baselines: baselines,
                 fallback: lineLayout.fallback === true,
@@ -5713,6 +8076,221 @@ window.tmDocumentEditorEngine = (function () {
                     invalidatedScopes: [block.id]
                 }
             });
+        }
+
+        function decorateScopedLayoutMetadata(layout, context) {
+            var scoped = layout || {};
+            var ctx = createBlockIndexContext(context);
+            var pageIndex = Number(ctx.pageIndex ?? ctx.PageIndex ?? scoped.pageIndex ?? 0) || 0;
+            scoped.region = ctx.region;
+            scoped.headerFooterId = ctx.headerFooterId || null;
+            scoped.tableId = ctx.tableId || null;
+            scoped.cellId = ctx.cellId || null;
+            scoped.pageIndex = pageIndex;
+            function apply(item) {
+                if (!item) return;
+                item.region = ctx.region;
+                item.headerFooterId = ctx.headerFooterId || null;
+                item.tableId = ctx.tableId || null;
+                item.cellId = ctx.cellId || null;
+                item.pageIndex = pageIndex;
+            }
+            _asArray(scoped.lines).forEach(function (line) {
+                apply(line);
+                _asArray(line.availableIntervals).forEach(apply);
+                _asArray(line.segments).forEach(apply);
+                _asArray(line.inlineObjects).forEach(apply);
+            });
+            _asArray(scoped.segments).forEach(apply);
+            _asArray(scoped.inlineObjects).forEach(apply);
+            _asArray(scoped.caretStops).forEach(apply);
+            _asArray(scoped.baselines).forEach(apply);
+            _asArray(scoped.objects).forEach(apply);
+            _asArray(scoped.exclusions).forEach(apply);
+            return scoped;
+        }
+
+        function createAnchoredDrawingLayoutScope() {
+            return { objects: [], exclusions: [], anchoredIds: new Set() };
+        }
+
+        function addAnchoredDrawingRunsToLayoutScope(block, targetScope, frame, context, fallbackY, laidOutBlocks) {
+            var scope = targetScope || createAnchoredDrawingLayoutScope();
+            var ctx = createBlockIndexContext(context);
+            var scopeFrame = rectFromGeometry(frame || { x: 0, y: 0, width: 640, height: 900 });
+            scopeFrame.height = Math.max(1, Number(scopeFrame.height || 0) || 900);
+            collectAnchoredDrawingRuns(block, ctx).forEach(function (entry) {
+                var objectId = entry.object && entry.object.objectId || entry.run && (entry.run.objectId || entry.run.id) || '';
+                if (!objectId || scope.anchoredIds.has(objectId)) return;
+                var reference = resolveAnchoredDrawingReference(entry.object, laidOutBlocks || [], [], {
+                    blockId: block && block.id || '',
+                    pageIndex: Number(ctx.pageIndex ?? 0) || 0,
+                    bodyFrame: scopeFrame,
+                    y: fallbackY,
+                    region: ctx.region,
+                    headerFooterId: ctx.headerFooterId || null,
+                    tableId: ctx.tableId || null,
+                    cellId: ctx.cellId || null
+                });
+                reference = Object.assign({}, reference, {
+                    region: ctx.region || reference.region || 'Body',
+                    headerFooterId: ctx.headerFooterId || reference.headerFooterId || null,
+                    tableId: ctx.tableId || reference.tableId || null,
+                    cellId: ctx.cellId || reference.cellId || null
+                });
+                var placed = createAnchoredDrawingLayoutObject(block, entry, reference, {
+                    pageIndex: Number(ctx.pageIndex ?? reference.pageIndex ?? 0) || 0,
+                    rect: scopeFrame,
+                    bodyFrame: scopeFrame
+                });
+                placed.region = ctx.region || placed.region || 'Body';
+                placed.headerFooterId = ctx.headerFooterId || placed.headerFooterId || null;
+                placed.tableId = ctx.tableId || placed.tableId || null;
+                placed.cellId = ctx.cellId || placed.cellId || null;
+                placed.anchorRegion = placed.anchorRegion || placed.region;
+                placed.anchorHeaderFooterId = placed.anchorHeaderFooterId || placed.headerFooterId || '';
+                placed.anchorTableId = placed.anchorTableId || placed.tableId || '';
+                placed.anchorCellId = placed.anchorCellId || placed.cellId || '';
+                resolveObjectOverlapGeometry(scope.objects, placed, scopeFrame);
+                scope.objects.push(_sortObject(placed));
+                scope.anchoredIds.add(objectId);
+                var exclusion = createTextExclusion(placed, scopeFrame);
+                if (exclusion) scope.exclusions.push(exclusion);
+            });
+            return scope;
+        }
+
+        function layoutParagraphInScopedFrame(block, frame, y, layoutOptions, metrics, exclusions, context) {
+            var ctx = createBlockIndexContext(context);
+            var scopeFrame = rectFromGeometry(frame || { x: 0, y: y, width: 640, height: 900 });
+            scopeFrame.height = Math.max(1, Number(scopeFrame.height || 0) || 900);
+            var layoutMetrics = metrics || {};
+            var minReadableWidth = Math.max(1, Number(layoutMetrics.minReadableWidth ?? ((layoutOptions && layoutOptions.minReadableWidth) ?? 48)) || 48);
+            var lineGap = Number(layoutMetrics.lineGap ?? ((layoutOptions && layoutOptions.lineGap) ?? 0)) || 0;
+            var pageIndexValue = Number(ctx.pageIndex ?? ((context && context.pageIndex) ?? 0)) || 0;
+            var initial = layoutParagraph(block, Object.assign({}, layoutOptions || {}, {
+                page: scopeFrame,
+                x: scopeFrame.x,
+                y: y,
+                width: scopeFrame.width,
+                lineGap: lineGap,
+                minReadableWidth: minReadableWidth
+            }));
+            var scoped = {
+                ok: initial.ok !== false,
+                id: 'layout-' + block.id + '-scope-' + (ctx.cellId || ctx.headerFooterId || ctx.region || 'body') + '-' + pageIndexValue,
+                layoutVersion: ++layoutVersion,
+                blockId: block.id,
+                type: 'paragraph',
+                pageIndex: pageIndexValue,
+                rect: { x: scopeFrame.x, y: y, width: scopeFrame.width, height: 0 },
+                lines: [],
+                segments: [],
+                inlineObjects: [],
+                caretStops: [],
+                baselines: [],
+                scope: createLayoutScope(LAYOUT_SCOPE_KINDS.PageRegion, Object.assign({}, ctx, { blockId: block.id, pageIndex: pageIndexValue, affectedScopeIds: [block.id], reason: 'layoutParagraphRegion' })),
+                fallback: initial.fallback === true,
+                debug: Object.assign({}, initial.debug || {}, {
+                    source: 'paragraph-layout-scoped-region',
+                    invalidatedScopes: [block.id]
+                })
+            };
+            var cursorY = y;
+            _asArray(initial.lines).forEach(function (line) {
+                var lineHeight = Math.max(1, Number(line.rect && line.rect.height || 18) || 18);
+                var available = getAvailableIntervals(cursorY, lineHeight, scopeFrame, exclusions || [], minReadableWidth);
+                if (available.movedToY > cursorY + 0.01) cursorY = available.movedToY;
+                var interval = _asArray(available.intervals)[0] || { x: scopeFrame.x, y: cursorY, width: scopeFrame.width, height: lineHeight };
+                var deltaY = cursorY - Number(line.rect && line.rect.y || cursorY);
+                var shiftedLine = shiftLayoutLine(line, deltaY, pageIndexValue);
+                var deltaX = Number(interval.x || scopeFrame.x) - Number(shiftedLine.rect.x || scopeFrame.x);
+                shiftedLine.rect.x += deltaX;
+                shiftedLine.rect.width = Math.min(shiftedLine.rect.width, Number(interval.width || shiftedLine.rect.width));
+                shiftedLine.availableIntervals = _asArray(available.intervals).map(function (candidate, candidateIndex) {
+                    var lineStart = Number(line.start ?? shiftedLine.start ?? 0) || 0;
+                    var lineEnd = Math.max(lineStart, Number(line.end ?? shiftedLine.end ?? lineStart) || lineStart);
+                    var ownsText = candidateIndex === 0;
+                    var start = ownsText ? lineStart : lineEnd;
+                    var end = ownsText ? lineEnd : lineEnd;
+                    return _sortObject({
+                        x: Number(candidate.x ?? scopeFrame.x) || scopeFrame.x,
+                        y: cursorY,
+                        width: Math.max(0, Number(candidate.width ?? scopeFrame.width) || 0),
+                        height: lineHeight,
+                        blockId: block.id,
+                        lineId: shiftedLine.id,
+                        pageIndex: pageIndexValue,
+                        region: ctx.region,
+                        headerFooterId: ctx.headerFooterId || null,
+                        tableId: ctx.tableId || null,
+                        cellId: ctx.cellId || null,
+                        start: start,
+                        end: end,
+                        collapsedOffset: start === end ? start : lineEnd,
+                        empty: start === end || ownsText !== true,
+                        affinity: inferCaretIntervalAffinity(candidate, exclusions || [], 'after'),
+                        virtualCaret: (start === end || ownsText !== true) && _asArray(exclusions).length > 0
+                    });
+                });
+                if (!shiftedLine.availableIntervals.length) {
+                    shiftedLine.availableIntervals = [_sortObject({
+                        x: scopeFrame.x,
+                        y: cursorY,
+                        width: scopeFrame.width,
+                        height: lineHeight,
+                        blockId: block.id,
+                        lineId: shiftedLine.id,
+                        pageIndex: pageIndexValue,
+                        region: ctx.region,
+                        headerFooterId: ctx.headerFooterId || null,
+                        tableId: ctx.tableId || null,
+                        cellId: ctx.cellId || null,
+                        start: Number(line.start ?? shiftedLine.start ?? 0) || 0,
+                        end: Math.max(Number(line.start ?? shiftedLine.start ?? 0) || 0, Number(line.end ?? shiftedLine.end ?? 0) || 0),
+                        collapsedOffset: Number(line.start ?? shiftedLine.start ?? 0) || 0,
+                        empty: true,
+                        affinity: 'after',
+                        virtualCaret: false
+                    })];
+                }
+                var segmentIds = new Set(_asArray(line.segments).map(function (segment) { return segment.id; }));
+                var shiftedSegments = _asArray(initial.segments).filter(function (segment) {
+                    return segment.lineId === line.id || segmentIds.has(segment.id);
+                }).map(function (segment) {
+                    var shifted = shiftLayoutSegment(segment, deltaY, pageIndexValue);
+                    shifted.rect.x += deltaX;
+                    return shifted;
+                });
+                var shiftedStops = _asArray(initial.caretStops).filter(function (stop) {
+                    return stop.lineId === line.id;
+                }).map(function (stop) {
+                    var shifted = shiftCaretStop(stop, deltaY, pageIndexValue);
+                    shifted.rect.x += deltaX;
+                    return shifted;
+                });
+                var shiftedInlineObjects = shiftedSegments.filter(function (segment) {
+                    return segment.inlineObject === true || segment.kind === 'drawing';
+                }).map(function (segment) {
+                    return createInlineObjectLayoutFromSegment(block, segment, shiftedLine);
+                });
+                shiftedLine.segments = shiftedSegments;
+                shiftedLine.inlineObjects = shiftedInlineObjects;
+                decorateScopedLayoutMetadata({ lines: [shiftedLine], segments: shiftedSegments, inlineObjects: shiftedInlineObjects, caretStops: shiftedStops }, Object.assign({}, ctx, { pageIndex: pageIndexValue }));
+                scoped.lines.push(shiftedLine);
+                scoped.segments = scoped.segments.concat(shiftedSegments);
+                scoped.inlineObjects = scoped.inlineObjects.concat(shiftedInlineObjects);
+                scoped.caretStops = scoped.caretStops.concat(shiftedStops);
+                scoped.baselines.push(_sortObject({ blockId: block.id, lineId: shiftedLine.id, y: shiftedLine.baseline, offset: shiftedLine.baselineOffset, pageIndex: pageIndexValue, region: ctx.region, headerFooterId: ctx.headerFooterId || null, tableId: ctx.tableId || null, cellId: ctx.cellId || null }));
+                scoped.rect.y = Math.min(scoped.rect.y, shiftedLine.rect.y);
+                scoped.rect.height = Math.max(scoped.rect.height, shiftedLine.rect.y + shiftedLine.rect.height - scoped.rect.y);
+                cursorY = shiftedLine.rect.y + shiftedLine.rect.height + lineGap;
+            });
+            if (!scoped.lines.length) {
+                scoped = Object.assign(scoped, decorateScopedLayoutMetadata(initial, Object.assign({}, ctx, { pageIndex: pageIndexValue })));
+            }
+            scoped.rect.height = Math.max(1, scoped.rect.height || paragraphRectFromLines({ x: scopeFrame.x, y: y, width: scopeFrame.width }, scoped.lines).height);
+            return _sortObject(decorateScopedLayoutMetadata(scoped, Object.assign({}, ctx, { pageIndex: pageIndexValue })));
         }
 
         function layoutTableBlock(block, options) {
@@ -5745,7 +8323,10 @@ window.tmDocumentEditorEngine = (function () {
             var tableLines = [];
             var tableSegments = [];
             var tableCarets = [];
+            var tableObjects = [];
+            var tableExclusions = [];
             var rowY = y;
+            var tablePageIndex = Number(opts.pageIndex ?? opts.PageIndex ?? ((opts.page && opts.page.pageIndex) ?? 0)) || 0;
             rows.forEach(function (row, rowIndex) {
                 var columnIndex = 0;
                 var rowCells = [];
@@ -5764,14 +8345,32 @@ window.tmDocumentEditorEngine = (function () {
                     };
                     var blockLayouts = [];
                     var contentY = contentFrame.y;
+                    var cellScope = createAnchoredDrawingLayoutScope();
+                    var cellContext = {
+                        region: 'TableCell',
+                        tableId: block.id,
+                        cellId: cell.id,
+                        headerFooterId: opts.headerFooterId || opts.HeaderFooterId || null,
+                        pageIndex: tablePageIndex
+                    };
+                    var scopedFrame = {
+                        x: contentFrame.x,
+                        y: contentFrame.y,
+                        width: contentFrame.width,
+                        height: Math.max(Number(cell.height || cell.Height || 0) || 0, Number(opts.page && opts.page.height || 0) || 900)
+                    };
                     _asArray(cell.blocks).forEach(function (childBlock) {
+                        if (childBlock && childBlock.type === 'paragraph') {
+                            addAnchoredDrawingRunsToLayoutScope(childBlock, cellScope, scopedFrame, cellContext, contentY, blockLayouts);
+                        }
                         var childLayout = childBlock && childBlock.type === 'paragraph'
-                            ? layoutParagraph(childBlock, Object.assign({}, opts, {
+                            ? layoutParagraphInScopedFrame(childBlock, scopedFrame, contentY, Object.assign({}, opts, {
                                 x: contentFrame.x,
                                 y: contentY,
                                 width: contentFrame.width,
-                                lineGap: 0
-                            }))
+                                lineGap: 0,
+                                pageIndex: tablePageIndex
+                            }), { lineGap: 0, minReadableWidth: opts.minReadableWidth || 48 }, cellScope.exclusions, cellContext)
                             : layoutObjectBlock(childBlock, {
                                 page: opts.page,
                                 x: contentFrame.x,
@@ -5782,19 +8381,27 @@ window.tmDocumentEditorEngine = (function () {
                         childLayout.cellId = cell.id;
                         childLayout.rowIndex = rowIndex;
                         childLayout.columnIndex = columnIndex;
+                        childLayout.region = 'TableCell';
+                        childLayout.headerFooterId = cellContext.headerFooterId || null;
                         _asArray(childLayout.lines).forEach(function (line) {
                             line.tableId = block.id;
                             line.cellId = cell.id;
+                            line.region = 'TableCell';
+                            line.headerFooterId = cellContext.headerFooterId || null;
                             tableLines.push(line);
                         });
                         _asArray(childLayout.segments).forEach(function (segment) {
                             segment.tableId = block.id;
                             segment.cellId = cell.id;
+                            segment.region = 'TableCell';
+                            segment.headerFooterId = cellContext.headerFooterId || null;
                             tableSegments.push(segment);
                         });
                         _asArray(childLayout.caretStops).forEach(function (stop) {
                             stop.tableId = block.id;
                             stop.cellId = cell.id;
+                            stop.region = 'TableCell';
+                            stop.headerFooterId = cellContext.headerFooterId || null;
                             tableCarets.push(stop);
                         });
                         blockLayouts.push(childLayout);
@@ -5814,8 +8421,12 @@ window.tmDocumentEditorEngine = (function () {
                         rect: { x: cellX, y: rowY, width: cellWidth, height: cellHeight },
                         contentFrame: { x: contentFrame.x, y: contentFrame.y, width: contentFrame.width, height: Math.max(1, cellHeight - padding * 2) },
                         style: _clone(cell.style || {}),
+                        objects: cellScope.objects.slice(),
+                        exclusions: cellScope.exclusions.slice(),
                         blockLayouts: blockLayouts
                     };
+                    tableObjects = tableObjects.concat(cellScope.objects);
+                    tableExclusions = tableExclusions.concat(cellScope.exclusions);
                     rowCells.push(cellLayout);
                     cells.push(cellLayout);
                     columnIndex += colSpan;
@@ -5834,7 +8445,7 @@ window.tmDocumentEditorEngine = (function () {
                 layoutVersion: ++layoutVersion,
                 blockId: block.id,
                 type: 'table',
-                pageIndex: opts.page && Number(opts.page.pageIndex || 0) || 0,
+                pageIndex: tablePageIndex,
                 rect: rect,
                 rows: rowLayouts,
                 columns: columnWidths.map(function (width, index) { return { index: index, x: x + columnWidths.slice(0, index).reduce(function (sum, value) { return sum + value; }, 0), width: width }; }),
@@ -5842,6 +8453,8 @@ window.tmDocumentEditorEngine = (function () {
                 lines: tableLines,
                 segments: tableSegments,
                 caretStops: tableCarets,
+                objects: tableObjects,
+                exclusions: tableExclusions,
                 scope: createLayoutScope(LAYOUT_SCOPE_KINDS.PageRegion, { blockId: block.id, affectedScopeIds: [block.id], reason: 'layoutTable' }),
                 fallback: false,
                 debug: { source: 'table-layout-tree', invalidatedScopes: [block.id], textInsideCells: true }
@@ -5873,11 +8486,47 @@ window.tmDocumentEditorEngine = (function () {
                 if (page.blockIds.indexOf(layout.blockId) < 0) page.blockIds.push(layout.blockId);
                 blocks.push(layout);
                 caretStops = caretStops.concat(_asArray(layout.caretStops));
+                _asArray(layout.inlineObjects).forEach(function (object) {
+                    var clone = _clone(object);
+                    clone.pageIndex = layout.pageIndex || 0;
+                    clone.layer = 'text';
+                    objects.push(clone);
+                });
+                _asArray(layout.objects).forEach(function (object) {
+                    var clone = _clone(object);
+                    clone.pageIndex = clone.pageIndex ?? layout.pageIndex ?? 0;
+                    objects.push(clone);
+                });
+            };
+            var anchoredDrawingObjectIds = new Set();
+            var addAnchoredDrawingRunsForBlock = function (block, fragments, fallbackY) {
+                collectAnchoredDrawingRuns(block, { region: 'Body', pageIndex: pageIndex }).forEach(function (entry) {
+                    var objectId = entry.object && entry.object.objectId || entry.run && (entry.run.objectId || entry.run.id) || '';
+                    if (!objectId || anchoredDrawingObjectIds.has(objectId)) return;
+                    var fallbackPage = currentPage();
+                    var reference = resolveAnchoredDrawingReference(entry.object, blocks, fragments || [], {
+                        blockId: block && block.id || '',
+                        pageIndex: fallbackPage.pageIndex,
+                        bodyFrame: fallbackPage.bodyFrame,
+                        y: fallbackY
+                    });
+                    var page = ensurePage(reference.pageIndex || fallbackPage.pageIndex || 0);
+                    var placed = createAnchoredDrawingLayoutObject(block, entry, reference, page);
+                    resolveObjectOverlapGeometry(objects.filter(function (item) {
+                        return Number(item && item.pageIndex || 0) === Number(placed.pageIndex || 0);
+                    }), placed, page.bodyFrame);
+                    objects.push(_clone(placed));
+                    anchoredDrawingObjectIds.add(objectId);
+                    if (page.blockIds.indexOf(block.id) < 0) page.blockIds.push(block.id);
+                    var exclusion = createTextExclusion(placed, page.bodyFrame);
+                    if (exclusion) page.exclusions.push(exclusion);
+                });
             };
             var blockGap = Number(opts.blockGap ?? opts.BlockGap ?? pageMetrics.blockGap) || 0;
 
             _asArray(model && model.body && model.body.blocks).forEach(function (block) {
                 if (block.type === 'paragraph') {
+                    addAnchoredDrawingRunsForBlock(block, [], currentY);
                     var fragments = layoutParagraphAcrossPages(block, currentPage(), currentY, opts, pageMetrics);
                     fragments.forEach(addBlockToPage);
                     if (fragments.length) {
@@ -5895,6 +8544,7 @@ window.tmDocumentEditorEngine = (function () {
                 if (block.type === 'table') {
                     var tableLayout = layoutTableBlock(block, {
                         page: currentPage().bodyFrame,
+                        pageIndex: pageIndex,
                         x: currentPage().bodyFrame.x,
                         y: currentY,
                         width: currentPage().bodyFrame.width,
@@ -5904,6 +8554,7 @@ window.tmDocumentEditorEngine = (function () {
                         moveToNextPage();
                         tableLayout = layoutTableBlock(block, {
                             page: currentPage().bodyFrame,
+                            pageIndex: pageIndex,
                             x: currentPage().bodyFrame.x,
                             y: currentY,
                             width: currentPage().bodyFrame.width,
@@ -5940,13 +8591,17 @@ window.tmDocumentEditorEngine = (function () {
                     layout.wrapMode = anchoredObject.wrapMode;
                     layout.wrapMargin = anchoredObject.wrapMargin;
                     layout.zIndex = anchoredObject.zIndex;
+                    anchoredObject.rect = _clone(layout.rect);
+                    anchoredObject.pageIndex = pageIndex;
+                    resolveObjectOverlapGeometry(objects.filter(function (item) {
+                        return Number(item && item.pageIndex || 0) === Number(pageIndex || 0);
+                    }), anchoredObject, currentPage().bodyFrame);
+                    layout.rect = _clone(anchoredObject.rect);
                     _asArray(layout.caretStops).forEach(function (stop) {
                         stop.rect.x = Number(stop.offset || 0) === 0 ? layout.rect.x : layout.rect.x + layout.rect.width;
                         stop.rect.y = layout.rect.y;
                         stop.rect.height = layout.rect.height;
                     });
-                    anchoredObject.rect = _clone(layout.rect);
-                    anchoredObject.pageIndex = pageIndex;
                     objects.push(_clone(anchoredObject));
                 }
                 _asArray(layout.caretStops).forEach(function (stop) { stop.pageIndex = pageIndex; });
@@ -5960,6 +8615,9 @@ window.tmDocumentEditorEngine = (function () {
 
             renderHeaderFooterLayouts(model, pages.length).forEach(function (regionLayout) {
                 headerFooterRegions.push(regionLayout);
+                _asArray(regionLayout && regionLayout.objects).forEach(function (object) {
+                    objects.push(_clone(object));
+                });
             });
 
             return _sortObject({
@@ -5975,6 +8633,7 @@ window.tmDocumentEditorEngine = (function () {
                 blocks: blocks,
                 objects: objects,
                 caretStops: caretStops,
+                lineIntervals: collectLayoutLineIntervals({ blocks: blocks }),
                 headerFooterRegions: headerFooterRegions,
                 staleFollowingBlockIds: [],
                 debug: {
@@ -6012,6 +8671,7 @@ window.tmDocumentEditorEngine = (function () {
                             rect: { x: fragmentPage.bodyFrame.x, y: cursorY, width: fragmentPage.bodyFrame.width, height: 0 },
                             lines: [],
                             segments: [],
+                            inlineObjects: [],
                             caretStops: [],
                             baselines: [],
                             scope: createLayoutScope(LAYOUT_SCOPE_KINDS.PageRegion, { blockId: block.id, pageIndex: fragmentPage.pageIndex, affectedScopeIds: [block.id], reason: 'layoutParagraphPage' }),
@@ -6050,7 +8710,46 @@ window.tmDocumentEditorEngine = (function () {
                     var deltaX = Number(interval.x || activePage.bodyFrame.x) - Number(shiftedLine.rect.x || activePage.bodyFrame.x);
                     shiftedLine.rect.x += deltaX;
                     shiftedLine.rect.width = Math.min(shiftedLine.rect.width, Number(interval.width || shiftedLine.rect.width));
-                    shiftedLine.availableIntervals = [_sortObject({ x: interval.x, y: cursorY, width: interval.width, height: lineHeight, blockId: block.id, lineId: shiftedLine.id, pageIndex: activePage.pageIndex })];
+                    shiftedLine.availableIntervals = _asArray(available.intervals).map(function (candidate, candidateIndex) {
+                        var lineStart = Number(line.start ?? shiftedLine.start ?? 0) || 0;
+                        var lineEnd = Math.max(lineStart, Number(line.end ?? shiftedLine.end ?? lineStart) || lineStart);
+                        var ownsText = candidateIndex === 0;
+                        var start = ownsText ? lineStart : lineEnd;
+                        var end = ownsText ? lineEnd : lineEnd;
+                        var empty = start === end || ownsText !== true;
+                        return _sortObject({
+                            x: Number(candidate.x ?? activePage.bodyFrame.x) || activePage.bodyFrame.x,
+                            y: cursorY,
+                            width: Math.max(0, Number(candidate.width ?? activePage.bodyFrame.width) || 0),
+                            height: lineHeight,
+                            blockId: block.id,
+                            lineId: shiftedLine.id,
+                            pageIndex: activePage.pageIndex,
+                            start: start,
+                            end: end,
+                            collapsedOffset: start === end ? start : lineEnd,
+                            empty: empty,
+                            affinity: inferCaretIntervalAffinity(candidate, activePage.exclusions, ownsText ? 'after' : 'after'),
+                            virtualCaret: empty && _asArray(activePage.exclusions).length > 0
+                        });
+                    });
+                    if (!shiftedLine.availableIntervals.length) {
+                        shiftedLine.availableIntervals = [_sortObject({
+                            x: activePage.bodyFrame.x,
+                            y: cursorY,
+                            width: activePage.bodyFrame.width,
+                            height: lineHeight,
+                            blockId: block.id,
+                            lineId: shiftedLine.id,
+                            pageIndex: activePage.pageIndex,
+                            start: Number(line.start ?? shiftedLine.start ?? 0) || 0,
+                            end: Math.max(Number(line.start ?? shiftedLine.start ?? 0) || 0, Number(line.end ?? shiftedLine.end ?? 0) || 0),
+                            collapsedOffset: Number(line.start ?? shiftedLine.start ?? 0) || 0,
+                            empty: true,
+                            affinity: 'after',
+                            virtualCaret: false
+                        })];
+                    }
                     var segmentIds = new Set(_asArray(line.segments).map(function (segment) { return segment.id; }));
                     var shiftedSegments = _asArray(initial.segments).filter(function (segment) {
                         return segment.lineId === line.id || segmentIds.has(segment.id);
@@ -6066,9 +8765,16 @@ window.tmDocumentEditorEngine = (function () {
                         shifted.rect.x += deltaX;
                         return shifted;
                     });
+                    var shiftedInlineObjects = shiftedSegments.filter(function (segment) {
+                        return segment.inlineObject === true || segment.kind === 'drawing';
+                    }).map(function (segment) {
+                        return createInlineObjectLayoutFromSegment(block, segment, shiftedLine);
+                    });
                     shiftedLine.segments = shiftedSegments;
+                    shiftedLine.inlineObjects = shiftedInlineObjects;
                     fragment.lines.push(shiftedLine);
                     fragment.segments = fragment.segments.concat(shiftedSegments);
+                    fragment.inlineObjects = fragment.inlineObjects.concat(shiftedInlineObjects);
                     fragment.caretStops = fragment.caretStops.concat(shiftedStops);
                     fragment.baselines.push(_sortObject({ blockId: block.id, lineId: shiftedLine.id, y: shiftedLine.baseline, offset: shiftedLine.baselineOffset, pageIndex: activePage.pageIndex }));
                     fragment.rect.y = Math.min(fragment.rect.y, shiftedLine.rect.y);
@@ -6100,10 +8806,19 @@ window.tmDocumentEditorEngine = (function () {
                 var yInRegion = frame.y;
                 var regionBlocks = [];
                 var regionCaretStops = [];
+                var regionScope = createAnchoredDrawingLayoutScope();
+                var regionContext = {
+                    region: regionName,
+                    headerFooterId: region && region.id || null,
+                    pageIndex: pageItem.pageIndex
+                };
                 _asArray(region && region.blocks).forEach(function (block) {
                     var resolvedBlock = cloneBlockWithResolvedFields(block, pageItem.pageNumber, totalPages);
+                    if (resolvedBlock.type === 'paragraph') {
+                        addAnchoredDrawingRunsToLayoutScope(resolvedBlock, regionScope, frame, regionContext, yInRegion, regionBlocks);
+                    }
                     var layout = resolvedBlock.type === 'paragraph'
-                        ? layoutParagraph(resolvedBlock, Object.assign({}, opts, { page: frame, x: frame.x, y: yInRegion, width: frame.width }))
+                        ? layoutParagraphInScopedFrame(resolvedBlock, frame, yInRegion, Object.assign({}, opts, { page: frame, x: frame.x, y: yInRegion, width: frame.width, pageIndex: pageItem.pageIndex }), pageMetrics, regionScope.exclusions, regionContext)
                         : layoutObjectBlock(resolvedBlock, { page: frame, x: frame.x, y: yInRegion, width: frame.width }, ++layoutVersion);
                     layout.region = regionName;
                     layout.headerFooterId = region.id;
@@ -6125,7 +8840,9 @@ window.tmDocumentEditorEngine = (function () {
                     totalPages: totalPages,
                     frame: frame,
                     blocks: regionBlocks,
-                    caretStops: regionCaretStops
+                    caretStops: regionCaretStops,
+                    objects: regionScope.objects,
+                    exclusions: regionScope.exclusions
                 });
             }
         }
@@ -6249,6 +8966,29 @@ window.tmDocumentEditorEngine = (function () {
             return Math.max(value, line.rect.y + line.rect.height);
         }, top);
         return { x: options.x, y: top, width: options.width, height: Math.max(1, bottom - top) };
+    }
+
+    function createInlineObjectLayoutFromSegment(block, segment, line) {
+        var object = segment.object || {};
+        var rect = segment.objectRect || segment.rect || {};
+        var wrapMode = normalizeWrapModeName(object.wrapMode || 'Inline');
+        return _sortObject({
+            blockId: block && block.id || segment.blockId || '',
+            runId: segment.runId || null,
+            objectId: segment.objectId || object.objectId || '',
+            lineId: line && line.id || segment.lineId || null,
+            inlineObject: true,
+            kind: 'drawing',
+            wrapMode: wrapMode,
+            createsTextExclusion: false,
+            rect: {
+                x: Number(rect.x || 0) || 0,
+                y: Number(rect.y || 0) || 0,
+                width: Math.max(1, Number(rect.width || object.width || 1) || 1),
+                height: Math.max(1, Number(rect.height || object.height || 1) || 1)
+            },
+            object: _clone(object)
+        });
     }
 
     function layoutObjectBlock(block, options, version) {
@@ -6508,6 +9248,14 @@ window.tmDocumentEditorEngine = (function () {
             _asArray(clone.segments).forEach(function (segment) {
                 segment.rect = shiftRectY(segment.rect, dy);
                 segment.rect.x = Number(segment.rect.x || 0) + dx;
+                if (segment.objectRect) {
+                    segment.objectRect = shiftRectY(segment.objectRect, dy);
+                    segment.objectRect.x = Number(segment.objectRect.x || 0) + dx;
+                }
+            });
+            _asArray(clone.inlineObjects).forEach(function (object) {
+                object.rect = shiftRectY(object.rect, dy);
+                object.rect.x = Number(object.rect.x || 0) + dx;
             });
             _asArray(clone.caretStops).forEach(function (stop) {
                 stop.rect = shiftRectY(stop.rect, dy);
@@ -6585,18 +9333,17 @@ window.tmDocumentEditorEngine = (function () {
         function renderObjectScope(snapshot, blockLayout) {
             var modelBlock = _findBlock(snapshot && snapshot.model, blockLayout.blockId);
             var node = document.createElement('figure');
-            node.className = 'tm-render-object tm-render-image-widget';
+            var selected = snapshot && snapshot.selection && (snapshot.selection.objectId === (blockLayout.objectId || blockLayout.blockId) || snapshot.selection.blockId === blockLayout.blockId && snapshot.selection.isObjectSelection === true);
+            node.className = 'tm-render-object tm-render-image-widget' + (selected ? ' tm-wysiwyg-image--selected tm-wysiwyg-object--selected' : '');
             node.setAttribute('data-render-block-id', blockLayout.blockId);
             node.setAttribute('data-render-object-id', blockLayout.objectId || blockLayout.blockId);
             node.setAttribute('data-model-id', blockLayout.blockId);
             node.setAttribute('data-wrap-mode', blockLayout.wrapMode || blockLayout.object && blockLayout.object.wrapMode || '');
             node.setAttribute('data-anchor-block-id', blockLayout.object && blockLayout.object.anchorBlockId || '');
-            var selected = snapshot && snapshot.selection && (snapshot.selection.objectId === (blockLayout.objectId || blockLayout.blockId) || snapshot.selection.blockId === blockLayout.blockId && snapshot.selection.isObjectSelection === true);
             var objectLabel = modelBlock && modelBlock.content && (modelBlock.content.altText || modelBlock.content.caption) || 'Image';
-            node.setAttribute('aria-selected', selected ? 'true' : 'false');
             node.setAttribute('role', 'figure');
-            node.setAttribute('tabindex', '0');
             node.setAttribute('aria-label', objectLabel);
+            applyObjectFocusPolicyToElement(node, selected);
             if (modelBlock && modelBlock.content && !modelBlock.content.altText) {
                 node.setAttribute('aria-describedby', 'tm-render-image-alt-warning-' + blockLayout.blockId);
             }
@@ -7017,6 +9764,30 @@ window.tmDocumentEditorEngine = (function () {
         function planDeletion(selection, inputType) {
             plannedDeletionCount++;
             var snapshot = createSelectionSnapshot(selection || currentSelection);
+            if (isObjectSelectionSnapshot(snapshot)) {
+                var nextModel = _clone(model);
+                var objectDeletion = deleteObjectSelection(nextModel, snapshot);
+                if (objectDeletion.ok) {
+                    return _sortObject({
+                        operations: [createOperation(OPERATION_TYPES.RestoreSnapshot, {
+                            snapshot: nextModel,
+                            selection: objectDeletion.selection,
+                            affectedScopeIds: objectDeletion.affectedScopeIds || ['document']
+                        }, { source: 'input' }).toJSON()],
+                        objectAction: 'deleteObject',
+                        deletedObjectId: objectDeletion.deletedObjectId || snapshot.activeObjectId || '',
+                        revisionBoundaryPolicy: '',
+                        normalizedToPreviousRun: false
+                    });
+                }
+                return _sortObject({
+                    operations: [],
+                    objectAction: 'deleteObjectFailed',
+                    error: objectDeletion.error || null,
+                    revisionBoundaryPolicy: '',
+                    normalizedToPreviousRun: false
+                });
+            }
             var block = _findBlock(model, snapshot.blockId);
             if (block && block.type === 'image') {
                 return _sortObject({
@@ -7334,13 +10105,13 @@ window.tmDocumentEditorEngine = (function () {
     function selectionToRange(selection) {
         var snapshot = createSelectionSnapshot(selection || {});
         if (snapshot.isCollapsed !== false) {
-            return { blockId: snapshot.blockId, start: Number(snapshot.offset || 0), end: Number(snapshot.offset || 0) };
+            return { blockId: snapshot.blockId, start: Number(snapshot.offset || 0), end: Number(snapshot.offset || 0), region: snapshot.region || 'Body', headerFooterId: snapshot.headerFooterId || null, tableId: snapshot.activeTableId || snapshot.tableId || null, cellId: snapshot.activeTableCellId || snapshot.cellId || null };
         }
         var anchor = snapshot.anchor || {};
         var focus = snapshot.focus || {};
         var start = Math.min(Number(anchor.offset || 0), Number(focus.offset || 0));
         var end = Math.max(Number(anchor.offset || 0), Number(focus.offset || 0));
-        return { blockId: focus.blockId || anchor.blockId || snapshot.blockId, start: start, end: end };
+        return { blockId: focus.blockId || anchor.blockId || snapshot.blockId, start: start, end: end, region: snapshot.region || focus.region || anchor.region || 'Body', headerFooterId: snapshot.headerFooterId || focus.headerFooterId || anchor.headerFooterId || null, tableId: snapshot.activeTableId || snapshot.tableId || focus.tableId || anchor.tableId || null, cellId: snapshot.activeTableCellId || snapshot.cellId || focus.cellId || anchor.cellId || null };
     }
 
     function firstModelSelection(model) {
@@ -7621,10 +10392,70 @@ window.tmDocumentEditorEngine = (function () {
         return a.x < b.x + b.width - t && a.x + a.width > b.x + t && a.y < b.y + b.height - t && a.y + a.height > b.y + t;
     }
 
+    function createDomCaretIntervalsAroundObjects(line, objects, frame) {
+        var lineRect = hitRectFromAny(line && line.rect);
+        var textStart = Math.max(0, finiteNumber(line && line.start, 0));
+        var textEnd = Math.max(textStart, finiteNumber(line && line.end, textStart));
+        var frameRect = hitRectFromAny(frame || lineRect);
+        var blockers = [];
+        var intervalTop = lineRect.y;
+        var intervalBottom = lineRect.y + lineRect.height;
+        _asArray(objects).forEach(function (object) {
+            var mode = normalizeWrapModeName(object && object.wrapMode);
+            if (!wrapModeCreatesTextExclusion(mode)) return;
+            var rect = hitRectFromAny(object.rect);
+            if (lineRect.y + lineRect.height <= rect.y || lineRect.y >= rect.y + rect.height) return;
+            var margin = Math.max(0, finiteNumber(object.wrapMargin, 0));
+            intervalTop = Math.min(intervalTop, rect.y - margin);
+            intervalBottom = Math.max(intervalBottom, rect.y + rect.height + margin);
+            if (mode === 'TopBottom') {
+                blockers.push({ x: frameRect.x, width: frameRect.width });
+                return;
+            }
+            var left = Math.max(frameRect.x, rect.x - margin);
+            var right = Math.min(frameRect.x + frameRect.width, rect.x + rect.width + margin);
+            if (right > left) blockers.push({ x: left, width: right - left });
+        });
+        if (!blockers.length) return _asArray(line && line.availableIntervals);
+        blockers.sort(function (a, b) { return a.x - b.x || a.width - b.width; });
+        var segments = [];
+        var cursor = frameRect.x;
+        blockers.forEach(function (blocker) {
+            var blockerLeft = Math.max(frameRect.x, blocker.x);
+            var blockerRight = Math.min(frameRect.x + frameRect.width, blocker.x + blocker.width);
+            if (blockerLeft > cursor + 1) segments.push({ x: cursor, width: blockerLeft - cursor });
+            cursor = Math.max(cursor, blockerRight);
+        });
+        if (cursor < frameRect.x + frameRect.width - 1) {
+            segments.push({ x: cursor, width: frameRect.x + frameRect.width - cursor });
+        }
+        return segments.map(function (segment, index) {
+            var ownsText = index === 0;
+            var start = ownsText ? textStart : textEnd;
+            var end = ownsText ? textEnd : textEnd;
+            var empty = start === end || ownsText !== true;
+            return _sortObject({
+                x: segment.x,
+                y: intervalTop,
+                width: Math.max(0, segment.width),
+                height: Math.max(1, intervalBottom - intervalTop),
+                blockId: line.blockId || '',
+                lineId: line.id || line.lineId || '',
+                start: start,
+                end: end,
+                collapsedOffset: start === end ? start : textEnd,
+                empty: empty,
+                affinity: inferCaretIntervalAffinity(segment, blockers, ownsText ? 'after' : 'after'),
+                virtualCaret: empty
+            });
+        }).filter(function (interval) { return interval.width > 1; });
+    }
+
     function buildLayoutSnapshot(root, model) {
         var blocks = _asArray(model && model.body && model.body.blocks);
         var layoutBlocks = [];
         var caretStops = [];
+        var layoutObjects = [];
         var y = 20;
         blocks.forEach(function (block, blockIndex) {
             var text = _blockText(block);
@@ -7641,14 +10472,76 @@ window.tmDocumentEditorEngine = (function () {
                 start: 0,
                 end: text.length,
                 rect: { x: x, y: top, width: width, height: Math.max(18, Math.min(height, 24)) },
-                availableIntervals: [{ x: x, width: width, start: 0, end: text.length }]
+                availableIntervals: [{ x: x, y: top, width: width, height: Math.max(18, Math.min(height, 24)), blockId: block.id, lineId: block.id + '-line-0', start: 0, end: text.length, collapsedOffset: text.length === 0 ? 0 : null, empty: text.length === 0 }]
             };
+            var segments = [{ id: 'segment-' + block.id + '-0', blockId: block.id, start: 0, end: text.length, rect: line.rect }];
+            var inlineObjects = [];
             if (block.type === 'image') {
                 line.objectId = block.content && block.content.objectId || block.id;
                 line.rect.height = height;
                 caretStops.push({ blockId: block.id, offset: 0, affinity: 'before', rect: { x: x, y: top, width: 1, height: height }, objectBoundary: true });
                 caretStops.push({ blockId: block.id, offset: 1, affinity: 'after', rect: { x: x + width, y: top, width: 1, height: height }, objectBoundary: true });
             } else {
+                var inlineCursor = 0;
+                var blockObjects = [];
+                _asArray(block.content && block.content.runs).forEach(function (run, runIndex) {
+                    if (run && (run.kind === 'drawing' || isDrawingRunSource(run))) {
+                        var object = normalizeImageObject(run, { blockId: block.id, inlineIndex: runIndex });
+                        var objectId = object.objectId || run.objectId || run.id || '';
+                        var anchorNode = dom && dom.querySelector ? dom.querySelector('[data-object-anchor-id="' + cssEscape(objectId) + '"]') : null;
+                        var objectSelector = '[data-testid="document-wysiwyg-object-layer-item"][data-object-id="' + cssEscape(objectId) + '"], [data-object-id="' + cssEscape(objectId) + '"]';
+                        var node = root && root.querySelector ? root.querySelector(objectSelector) : null;
+                        if (!node && dom && dom.querySelector) node = dom.querySelector('[data-object-id="' + cssEscape(objectId) + '"]');
+                        var objectDomRect = node && node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+                        var anchorDomRect = anchorNode && anchorNode.getBoundingClientRect ? anchorNode.getBoundingClientRect() : null;
+                        var objectRect = objectDomRect && objectDomRect.width > 0
+                            ? { x: objectDomRect.x, y: objectDomRect.y, width: objectDomRect.width, height: objectDomRect.height }
+                            : anchorDomRect && anchorDomRect.width > 0
+                                ? { x: anchorDomRect.x, y: anchorDomRect.y, width: Math.max(anchorDomRect.width, object.width), height: Math.max(anchorDomRect.height, object.height) }
+                                : { x: x + inlineCursor * 7, y: top, width: object.width, height: object.height };
+                        if (object.isInline !== true) {
+                            var anchored = _sortObject({
+                                blockId: block.id,
+                                anchorBlockId: object.anchorBlockId || block.id,
+                                anchorOffset: Number(object.anchorOffset ?? inlineCursor) || 0,
+                                objectId: objectId,
+                                wrapMode: object.wrapMode,
+                                wrapMargin: Math.max(0, Number(object.wrapMargin || 0) || 0),
+                                layer: drawingLayerForWrapMode(object.wrapMode),
+                                zIndex: Number(object.zIndex || 0) || 0,
+                                rect: objectRect,
+                                visualRects: [objectRect],
+                                selectable: true
+                            });
+                            blockObjects.push(anchored);
+                            layoutObjects.push(anchored);
+                            return;
+                        }
+                        var objectSegment = {
+                            id: 'segment-' + block.id + '-object-' + runIndex,
+                            blockId: block.id,
+                            runId: run.id || null,
+                            kind: 'drawing',
+                            type: 'inlineObject',
+                            inlineObject: true,
+                            objectId: objectId,
+                            start: inlineCursor,
+                            end: inlineCursor,
+                            rect: { x: objectRect.x, y: objectRect.y, width: objectRect.width, height: Math.max(line.rect.height, objectRect.height) },
+                            objectRect: objectRect
+                        };
+                        segments.push(objectSegment);
+                        inlineObjects.push(createInlineObjectLayoutFromSegment(block, objectSegment, line));
+                        caretStops.push({ blockId: block.id, inlineId: run.id || null, offset: inlineCursor, affinity: 'before', rect: { x: objectRect.x, y: objectRect.y, width: 1, height: objectRect.height }, lineId: line.id, objectBoundary: true, objectId: objectId });
+                        caretStops.push({ blockId: block.id, inlineId: run.id || null, offset: inlineCursor, affinity: 'after', rect: { x: objectRect.x + objectRect.width, y: objectRect.y, width: 1, height: objectRect.height }, lineId: line.id, objectBoundary: true, objectId: objectId });
+                        line.rect.height = Math.max(line.rect.height, objectRect.height);
+                        return;
+                    }
+                    inlineCursor += _asText(resolveInlineRunDisplayText(run)).length;
+                });
+                if (blockObjects.length) {
+                    line.availableIntervals = createDomCaretIntervalsAroundObjects(line, blockObjects, { x: x, y: top, width: width, height: line.rect.height });
+                }
                 for (var i = 0; i <= text.length; i++) {
                     caretStops.push({
                         blockId: block.id,
@@ -7660,18 +10553,20 @@ window.tmDocumentEditorEngine = (function () {
                     });
                 }
             }
+            line.inlineObjects = inlineObjects;
             layoutBlocks.push({
                 id: 'layout-' + block.id,
                 blockId: block.id,
                 type: block.type,
                 rect: { x: x, y: top, width: width, height: height },
                 lines: [line],
-                segments: [{ id: 'segment-' + block.id + '-0', blockId: block.id, start: 0, end: text.length, rect: line.rect }],
+                segments: segments,
+                inlineObjects: inlineObjects,
                 objectId: block.type === 'image' ? (block.content && block.content.objectId || block.id) : null
             });
             y += height + 12;
         });
-        return _sortObject({ blocks: layoutBlocks, caretStops: caretStops, debug: { source: root ? 'dom-or-synthetic' : 'synthetic' } });
+        return _sortObject({ blocks: layoutBlocks, objects: layoutObjects, caretStops: caretStops, lineIntervals: collectLayoutLineIntervals({ blocks: layoutBlocks }), debug: { source: root ? 'dom-or-synthetic' : 'synthetic' } });
     }
 
     function createModelLayoutDomMapper(root, model, layout) {
@@ -7831,6 +10726,221 @@ window.tmDocumentEditorEngine = (function () {
         return stop ? _clone(stop.rect) : null;
     }
 
+    function finiteNumber(value, fallback) {
+        var number = Number(value);
+        return typeof number === 'number' && number === number && number !== Infinity && number !== -Infinity
+            ? number
+            : fallback;
+    }
+
+    function hitRectFromAny(rect) {
+        var source = rect || {};
+        return {
+            x: finiteNumber(source.x ?? source.X ?? source.left ?? source.Left, 0),
+            y: finiteNumber(source.y ?? source.Y ?? source.top ?? source.Top, 0),
+            width: Math.max(0, finiteNumber(source.width ?? source.Width, 0)),
+            height: Math.max(0, finiteNumber(source.height ?? source.Height, 0))
+        };
+    }
+
+    function hitRectContains(rect, x, y) {
+        var r = hitRectFromAny(rect);
+        return x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
+    }
+
+    function inferCaretIntervalAffinity(interval, blockers, fallback) {
+        var rect = hitRectFromAny(interval || {});
+        var left = rect.x;
+        var right = rect.x + rect.width;
+        var beforeObject = false;
+        var afterObject = false;
+        _asArray(blockers).forEach(function (blocker) {
+            var blockerRect = blocker && (blocker.rect || blocker.Rect)
+                ? hitRectFromAny(blocker.rect || blocker.Rect)
+                : hitRectFromAny(blocker || {});
+            var blockerLeft = blockerRect.x;
+            var blockerRight = blockerRect.x + blockerRect.width;
+            if (right <= blockerLeft + 0.5) beforeObject = true;
+            if (left >= blockerRight - 0.5) afterObject = true;
+        });
+        if (beforeObject && !afterObject) return 'before';
+        if (afterObject && !beforeObject) return 'after';
+        return fallback === 'before' ? 'before' : 'after';
+    }
+
+    function normalizeCaretInterval(line, interval, index) {
+        var sourceLine = line || {};
+        var sourceInterval = interval || {};
+        var lineRect = hitRectFromAny(sourceLine.rect || sourceLine.Rect);
+        var intervalRect = hitRectFromAny({
+            x: sourceInterval.x ?? sourceInterval.X ?? lineRect.x,
+            y: sourceInterval.y ?? sourceInterval.Y ?? lineRect.y,
+            width: sourceInterval.width ?? sourceInterval.Width ?? lineRect.width,
+            height: sourceInterval.height ?? sourceInterval.Height ?? lineRect.height
+        });
+        var lineStart = Math.max(0, finiteNumber(sourceLine.start ?? sourceLine.Start ?? sourceLine.StartOffset ?? sourceLine.startOffset, 0));
+        var lineEnd = Math.max(lineStart, finiteNumber(sourceLine.end ?? sourceLine.End ?? sourceLine.EndOffset ?? sourceLine.endOffset, lineStart));
+        var hasExplicitStart = sourceInterval.start !== undefined
+            || sourceInterval.Start !== undefined
+            || sourceInterval.StartOffset !== undefined
+            || sourceInterval.startOffset !== undefined;
+        var hasExplicitEnd = sourceInterval.end !== undefined
+            || sourceInterval.End !== undefined
+            || sourceInterval.EndOffset !== undefined
+            || sourceInterval.endOffset !== undefined;
+        var start = Math.max(0, finiteNumber(sourceInterval.start ?? sourceInterval.Start ?? sourceInterval.StartOffset ?? sourceInterval.startOffset, index === 0 ? lineStart : lineEnd));
+        var end = Math.max(start, finiteNumber(sourceInterval.end ?? sourceInterval.End ?? sourceInterval.EndOffset ?? sourceInterval.endOffset, hasExplicitStart && !hasExplicitEnd ? start : (index === 0 ? lineEnd : start)));
+        var hasCollapsed = sourceInterval.collapsedOffset !== undefined
+            || sourceInterval.CollapsedOffset !== undefined
+            || sourceInterval.caretOffset !== undefined
+            || sourceInterval.CaretOffset !== undefined;
+        var collapsedOffset = hasCollapsed
+            ? Math.max(0, finiteNumber(sourceInterval.collapsedOffset ?? sourceInterval.CollapsedOffset ?? sourceInterval.caretOffset ?? sourceInterval.CaretOffset, start))
+            : (start === end ? start : null);
+        var lineId = _asText(sourceInterval.lineId || sourceInterval.LineId || sourceLine.lineId || sourceLine.LineId || sourceLine.id || sourceLine.Id || '');
+        var affinity = sourceInterval.affinity === 'before' || sourceInterval.Affinity === 'before' ? 'before' : 'after';
+        var virtualCaret = sourceInterval.virtualCaret === true || sourceInterval.VirtualCaret === true;
+        return _sortObject({
+            id: _asText(sourceInterval.id || sourceInterval.Id || (lineId ? lineId + '-interval-' + index : 'interval-' + index)),
+            blockId: _asText(sourceInterval.blockId || sourceInterval.BlockId || sourceLine.blockId || sourceLine.BlockId || ''),
+            lineId: lineId,
+            pageIndex: finiteNumber(sourceInterval.pageIndex ?? sourceInterval.PageIndex ?? sourceLine.pageIndex ?? sourceLine.PageIndex, 0),
+            region: sourceInterval.region || sourceInterval.Region || sourceLine.region || sourceLine.Region || 'Body',
+            headerFooterId: sourceInterval.headerFooterId || sourceInterval.HeaderFooterId || sourceLine.headerFooterId || sourceLine.HeaderFooterId || null,
+            tableId: sourceInterval.tableId || sourceInterval.TableId || sourceLine.tableId || sourceLine.TableId || null,
+            cellId: sourceInterval.cellId || sourceInterval.CellId || sourceLine.cellId || sourceLine.CellId || null,
+            x: intervalRect.x,
+            y: intervalRect.y,
+            width: intervalRect.width,
+            height: intervalRect.height,
+            rect: intervalRect,
+            start: start,
+            end: end,
+            collapsedOffset: collapsedOffset,
+            empty: sourceInterval.empty === true || sourceInterval.Empty === true || start === end,
+            affinity: affinity,
+            virtualCaret: virtualCaret,
+            objectId: sourceInterval.objectId || sourceInterval.ObjectId || null
+        });
+    }
+
+    function collectLayoutLineIntervals(layout) {
+        var result = [];
+        function pushLayoutBlockLines(block, context) {
+            var lineContext = context || {};
+            _asArray(block && block.lines).forEach(function (line) {
+                var enrichedLine = Object.assign({}, lineContext, line || {}, {
+                    blockId: line && line.blockId || block && block.blockId || lineContext.blockId || ''
+                });
+                var intervals = _asArray(line && line.availableIntervals);
+                if (!intervals.length) {
+                    result.push(normalizeCaretInterval(enrichedLine, null, 0));
+                    return;
+                }
+                intervals.forEach(function (interval, index) {
+                    result.push(normalizeCaretInterval(enrichedLine, Object.assign({}, lineContext, interval || {}), index));
+                });
+            });
+        }
+        _asArray(layout && (layout.lineIntervals || layout.LineIntervals)).forEach(function (interval, index) {
+            result.push(normalizeCaretInterval({
+                id: interval.lineId || interval.LineId || interval.id || interval.Id || '',
+                blockId: interval.blockId || interval.BlockId || '',
+                start: interval.start ?? interval.Start ?? interval.StartOffset ?? interval.startOffset,
+                end: interval.end ?? interval.End ?? interval.EndOffset ?? interval.endOffset,
+                rect: interval.rect || interval.Rect || interval
+            }, interval, index));
+        });
+        _asArray(layout && layout.blocks).forEach(function (block) {
+            pushLayoutBlockLines(block, {});
+            if (block && block.type === 'table') {
+                _asArray(block.cells).forEach(function (cell) {
+                    _asArray(cell && cell.blockLayouts).forEach(function (cellBlock) {
+                        pushLayoutBlockLines(cellBlock, {
+                            region: 'TableCell',
+                            headerFooterId: cell && cell.headerFooterId || null,
+                            tableId: block.blockId || null,
+                            cellId: cell && cell.cellId || null
+                        });
+                    });
+                });
+            }
+        });
+        _asArray(layout && layout.headerFooterRegions).forEach(function (regionLayout) {
+            _asArray(regionLayout && regionLayout.blocks).forEach(function (block) {
+                pushLayoutBlockLines(block, {
+                    region: regionLayout && regionLayout.region || 'Body',
+                    headerFooterId: regionLayout && regionLayout.headerFooterId || null
+                });
+            });
+        });
+        return result;
+    }
+
+    function caretOffsetFromInterval(interval, x) {
+        var start = Math.max(0, finiteNumber(interval && interval.start, 0));
+        var end = Math.max(start, finiteNumber(interval && interval.end, start));
+        if (end <= start) {
+            return Math.max(0, finiteNumber(interval && interval.collapsedOffset, start));
+        }
+        var width = Math.max(1, finiteNumber(interval && interval.width, 1));
+        var ratio = Math.max(0, Math.min(1, (Number(x || 0) - finiteNumber(interval && interval.x, 0)) / width));
+        return Math.max(start, Math.min(end, Math.round(start + ratio * (end - start))));
+    }
+
+    function findCaretIntervalHit(layout, x, y) {
+        var hit = null;
+        collectLayoutLineIntervals(layout).some(function (interval) {
+            if (!hitRectContains(interval.rect || interval, x, y)) return false;
+            hit = interval;
+            return true;
+        });
+        return hit;
+    }
+
+    function objectHitPriority(item) {
+        if (item && (item.LayerPriority !== undefined || item.layerPriority !== undefined)) {
+            return finiteNumber(item.LayerPriority ?? item.layerPriority, 0);
+        }
+        return hitTestLayerPriority(item && (item.Layer || item.layer), item && (item.WrapMode || item.wrapMode));
+    }
+
+    function collectLayoutObjectHits(layout, x, y) {
+        var candidates = [];
+        function pushObject(item) {
+            if (!item || item.Selectable === false || item.selectable === false) return;
+            var layer = _asText(item.Layer || item.layer || drawingLayerForWrapMode(item.WrapMode || item.wrapMode));
+            if (layer.toLowerCase() === 'behind-text' || layer.toLowerCase() === 'behindtext') return;
+            var visualRects = _asArray(item.VisualRects || item.visualRects);
+            if (!visualRects.length && (item.Rect || item.rect)) visualRects = [item.Rect || item.rect];
+            var rect = visualRects.find(function (candidate) { return hitRectContains(candidate, x, y); });
+            if (!rect) return;
+            candidates.push(Object.assign({}, item, {
+                blockId: item.blockId || item.BlockId || item.anchorBlockId || item.AnchorBlockId || '',
+                objectId: item.objectId || item.ObjectId || item.id || item.Id || '',
+                layer: layer,
+                priority: objectHitPriority(item),
+                zIndex: finiteNumber(item.ZIndex ?? item.zIndex, 0),
+                hitRect: hitRectFromAny(rect)
+            }));
+        }
+        _asArray(layout && layout.objects).forEach(pushObject);
+        _asArray(layout && layout.blocks).forEach(function (block) {
+            if (block && block.type === 'image') {
+                pushObject(Object.assign({}, block, {
+                    blockId: block.blockId || block.id || '',
+                    objectId: block.objectId || block.ObjectId || block.blockId || block.id || '',
+                    rect: block.rect || block.Rect,
+                    Rect: block.Rect || block.rect
+                }));
+            }
+        });
+        return candidates.sort(function (a, b) {
+            return (finiteNumber(b.priority, 0) - finiteNumber(a.priority, 0))
+                || (finiteNumber(b.zIndex, 0) - finiteNumber(a.zIndex, 0));
+        });
+    }
+
     function compareDomCaretToLayout(root, model, layout, position) {
         var mapped = logicalToDomRange(root, model, position);
         if (!mapped.ok) return { ok: false, error: mapped.error };
@@ -7852,13 +10962,12 @@ window.tmDocumentEditorEngine = (function () {
     function pointerHitTest(model, layout, x, y) {
         var px = Number(x || 0);
         var py = Number(y || 0);
-        var objectHit = null;
-        var textLineHit = null;
+        var objectHit = collectLayoutObjectHits(layout, px, py)[0] || null;
+        var textIntervalHit = findCaretIntervalHit(layout, px, py);
         var tableCellHit = null;
         _asArray(layout && layout.blocks).forEach(function (block) {
             var rect = block.rect || {};
             var insideBlock = px >= rect.x && px <= rect.x + rect.width && py >= rect.y && py <= rect.y + rect.height;
-            if (insideBlock && block.type === 'image') objectHit = block;
             if (insideBlock && block.type === 'table') {
                 _asArray(block.cells).forEach(function (cell) {
                     var cr = cell.rect || {};
@@ -7867,61 +10976,68 @@ window.tmDocumentEditorEngine = (function () {
                     }
                 });
             }
-            _asArray(block.lines).forEach(function (line) {
-                var lr = line.rect || {};
-                var insideLineY = py >= lr.y && py <= lr.y + lr.height;
-                var intervals = _asArray(line.availableIntervals);
-                var insideAvailableInterval = _asArray(line.availableIntervals).some(function (interval) {
-                    return py >= Number(interval.y ?? lr.y) && py <= Number(interval.y ?? lr.y) + Number(interval.height ?? lr.height)
-                        && px >= Number(interval.x ?? lr.x) && px <= Number(interval.x ?? lr.x) + Number(interval.width ?? lr.width);
-                });
-                var insideLineRect = px >= lr.x && px <= lr.x + lr.width;
-                var beforeOrAfterLine = intervals.length
-                    ? (px < Math.min.apply(null, intervals.map(function (interval) { return Number(interval.x ?? lr.x); }))
-                        || px > Math.max.apply(null, intervals.map(function (interval) { return Number(interval.x ?? lr.x) + Number(interval.width ?? lr.width); })))
-                    : (px < lr.x || px > lr.x + lr.width);
-                if (insideLineY && (insideAvailableInterval || insideLineRect || beforeOrAfterLine)) {
-                    textLineHit = line;
-                }
-            });
         });
+        if (objectHit) {
+            var objectBlockId = objectHit.anchorBlockId || objectHit.AnchorBlockId || objectHit.blockId || objectHit.BlockId || '';
+            var objectModelBlock = _findBlock(model, objectBlockId) || _findBlock(model, objectHit.blockId || objectHit.BlockId);
+            var objectId = objectHit.objectId || objectHit.ObjectId || objectModelBlock && objectModelBlock.content && objectModelBlock.content.objectId || objectBlockId;
+            return {
+                type: 'object',
+                position: normalizeLogicalPosition(model, {
+                    region: objectHit.region || objectHit.Region || 'Body',
+                    blockId: objectBlockId,
+                    objectId: objectId,
+                    offset: Math.max(0, finiteNumber(objectHit.anchorOffset ?? objectHit.AnchorOffset, 0)),
+                    affinity: 'before',
+                    headerFooterId: objectHit.headerFooterId || objectHit.HeaderFooterId || null,
+                    tableId: objectHit.tableId || objectHit.TableId || null,
+                    cellId: objectHit.cellId || objectHit.CellId || null
+                }),
+                objectId: objectId
+            };
+        }
         if (tableCellHit) {
             var firstLayout = _asArray(tableCellHit.cell.blockLayouts)[0] || null;
             var hitBlockId = firstLayout && firstLayout.blockId || '';
             var hitBlock = _findBlock(model, hitBlockId);
-            var offset = Math.min(_blockText(hitBlock).length, Math.max(0, textLineHit && textLineHit.cellId === tableCellHit.cell.cellId ? textLineHit.start : 0));
+            var offset = Math.min(_blockText(hitBlock).length, Math.max(0, textIntervalHit && textIntervalHit.cellId === tableCellHit.cell.cellId ? caretOffsetFromInterval(textIntervalHit, px) : 0));
             return {
                 type: 'tableCell',
                 tableId: tableCellHit.table.blockId,
                 cellId: tableCellHit.cell.cellId,
                 position: normalizeLogicalPosition(model, {
-                    region: 'Body',
+                    region: tableCellHit.cell.region || 'TableCell',
                     blockId: hitBlockId,
                     offset: offset,
                     affinity: 'after',
+                    headerFooterId: tableCellHit.cell.headerFooterId || null,
                     cellId: tableCellHit.cell.cellId,
                     tableId: tableCellHit.table.blockId
                 })
             };
         }
-        if (objectHit && (!textLineHit || hitTestLayerPriority(objectHit.layer, objectHit.wrapMode) >= 10)) {
-            var hitImageBlock = _findBlock(model, objectHit.blockId);
-            return { type: 'object', position: normalizeLogicalPosition(model, { region: 'Body', blockId: objectHit.blockId, objectId: hitImageBlock && hitImageBlock.content && hitImageBlock.content.objectId || objectHit.blockId, offset: 0, affinity: 'before' }), objectId: objectHit.objectId };
-        }
-        if (textLineHit) {
-            var lineRect = textLineHit.rect;
-            var offset;
-            if (px <= lineRect.x) offset = textLineHit.start;
-            else if (px >= lineRect.x + lineRect.width) offset = textLineHit.end;
-            else {
-                var ratio = Math.max(0, Math.min(1, (px - lineRect.x) / Math.max(1, lineRect.width)));
-                offset = Math.round(textLineHit.start + ratio * Math.max(0, textLineHit.end - textLineHit.start));
-            }
-            return { type: 'text', position: normalizeLogicalPosition(model, { region: 'Body', blockId: textLineHit.blockId, offset: offset, affinity: 'after', visualHintLineId: textLineHit.id }), lineId: textLineHit.id };
-        }
-        if (objectHit) {
-            var imageBlock = _findBlock(model, objectHit.blockId);
-            return { type: 'object', position: normalizeLogicalPosition(model, { region: 'Body', blockId: objectHit.blockId, objectId: imageBlock && imageBlock.content && imageBlock.content.objectId || objectHit.blockId, offset: 0, affinity: 'before' }), objectId: objectHit.objectId };
+        if (textIntervalHit) {
+            var offset = caretOffsetFromInterval(textIntervalHit, px);
+            var affinity = textIntervalHit.affinity === 'before' ? 'before' : 'after';
+            return {
+                type: 'text',
+                position: normalizeLogicalPosition(model, {
+                    region: textIntervalHit.region || 'Body',
+                    blockId: textIntervalHit.blockId,
+                    offset: offset,
+                    affinity: affinity,
+                    visualHintLineId: textIntervalHit.lineId,
+                    layoutIntervalId: textIntervalHit.id,
+                    virtualCaret: textIntervalHit.virtualCaret === true,
+                    headerFooterId: textIntervalHit.headerFooterId || null,
+                    tableId: textIntervalHit.tableId || null,
+                    cellId: textIntervalHit.cellId || null
+                }),
+                lineId: textIntervalHit.lineId,
+                intervalId: textIntervalHit.id,
+                virtualCaret: textIntervalHit.virtualCaret === true,
+                affinity: affinity
+            };
         }
         return { type: 'none', position: null };
     }
@@ -8242,6 +11358,24 @@ window.tmDocumentEditorEngine = (function () {
             renderPassMaxMs: 0,
             renderPassLastMs: 0,
             renderLastReason: '',
+            renderSwapCount: 0,
+            fullRenderSwapCount: 0,
+            bodyRenderSwapCount: 0,
+            headerRenderSwapCount: 0,
+            footerRenderSwapCount: 0,
+            lastRenderSwap: null,
+            objectTrackFrameCount: 0,
+            objectTrackActiveFrameCount: 0,
+            objectTrackDragFrameCount: 0,
+            objectTrackResizeFrameCount: 0,
+            objectTrackCommitCount: 0,
+            objectTrackDragCommitCount: 0,
+            objectTrackResizeCommitCount: 0,
+            lastObjectTrackFrame: null,
+            lastObjectTrackCommit: null,
+            modelCommitCount: 0,
+            lastModelCommit: null,
+            activeRegion: 'Body',
             virtualizationEnabled: false,
             totalPages: 0,
             renderedPages: 0,
@@ -8271,6 +11405,130 @@ window.tmDocumentEditorEngine = (function () {
     function ensureStrictPerformanceStats(inst) {
         if (!inst.performanceStats) inst.performanceStats = createStrictPerformanceStats();
         return inst.performanceStats;
+    }
+
+    function normalizePerformanceRegion(value) {
+        var raw = _asText(value || '').trim().toLowerCase();
+        if (raw === 'header' || raw === 'headers') return 'Header';
+        if (raw === 'footer' || raw === 'footers') return 'Footer';
+        if (raw === 'tablecell' || raw === 'table-cell' || raw === 'cell') return 'TableCell';
+        if (raw === 'image' || raw === 'object') return 'Image';
+        if (raw === 'document') return 'Document';
+        return 'Body';
+    }
+
+    function activeRegionForSelection(selection) {
+        var snapshot = selection || {};
+        return normalizePerformanceRegion(snapshot.region || snapshot.Region || snapshot.activeRegion || snapshot.ActiveRegion || 'Body');
+    }
+
+    function activeRegionForInstance(inst) {
+        if (!inst) return 'Body';
+        return normalizePerformanceRegion(inst.selection && (inst.selection.region || inst.selection.Region) || inst.activeFocusRegion || 'Body');
+    }
+
+    function updateActiveRegionMetric(inst, region) {
+        if (!inst) return 'Body';
+        var normalized = normalizePerformanceRegion(region || activeRegionForInstance(inst));
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.activeRegion = normalized;
+        if (inst.root && inst.root.setAttribute) inst.root.setAttribute('data-active-region', normalized);
+        return normalized;
+    }
+
+    function recordRenderSwap(inst, region, reason, scopeIds, detail) {
+        if (!inst) return null;
+        var stats = ensureStrictPerformanceStats(inst);
+        var normalizedRegion = normalizePerformanceRegion(region || activeRegionForInstance(inst));
+        var scopes = _unique(_asArray(scopeIds).map(_asText).filter(Boolean));
+        var count = Math.max(1, Number(detail && (detail.count ?? detail.Count) || 1) || 1);
+        stats.renderSwapCount = Number(stats.renderSwapCount || 0) + count;
+        if (normalizedRegion === 'Body') stats.bodyRenderSwapCount = Number(stats.bodyRenderSwapCount || 0) + count;
+        if (normalizedRegion === 'Header') stats.headerRenderSwapCount = Number(stats.headerRenderSwapCount || 0) + count;
+        if (normalizedRegion === 'Footer') stats.footerRenderSwapCount = Number(stats.footerRenderSwapCount || 0) + count;
+        stats.lastRenderSwap = _sortObject({
+            region: normalizedRegion,
+            reason: reason || '',
+            scopeIds: scopes,
+            count: count,
+            detail: _clone(detail || {}),
+            at: Date.now()
+        });
+        recordTimeline(inst, 'render-swap', stats.lastRenderSwap);
+        return stats.lastRenderSwap;
+    }
+
+    function recordFullRenderSwap(inst, reason, scopeIds, pagePlan) {
+        if (!inst) return null;
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.fullRenderSwapCount = Number(stats.fullRenderSwapCount || 0) + 1;
+        var pages = _asArray(pagePlan && pagePlan.pages).filter(function (page) { return page && page.isVirtual !== true; });
+        recordRenderSwap(inst, 'Document', reason || 'full-render', scopeIds, { count: 1, renderedPages: pages.length });
+        var bodyPages = pages.filter(function (page) { return _asArray(page.blocks).length > 0; }).length;
+        var headerPages = pages.filter(function (page) { return _asArray(page.headerBlockIds).length > 0; }).length;
+        var footerPages = pages.filter(function (page) { return _asArray(page.footerBlockIds).length > 0; }).length;
+        if (bodyPages > 0) recordRenderSwap(inst, 'Body', reason || 'full-render-body', scopeIds, { count: bodyPages });
+        if (headerPages > 0) recordRenderSwap(inst, 'Header', reason || 'full-render-header', scopeIds, { count: headerPages });
+        if (footerPages > 0) recordRenderSwap(inst, 'Footer', reason || 'full-render-footer', scopeIds, { count: footerPages });
+        return stats.lastRenderSwap;
+    }
+
+    function recordObjectTrackFrame(inst, track, preview) {
+        if (!inst || !track) return null;
+        var stats = ensureStrictPerformanceStats(inst);
+        var mode = track.mode === 'resize' ? 'resize' : 'drag';
+        stats.objectTrackFrameCount = Number(stats.objectTrackFrameCount || 0) + 1;
+        if (track.active === true) stats.objectTrackActiveFrameCount = Number(stats.objectTrackActiveFrameCount || 0) + 1;
+        if (mode === 'resize') stats.objectTrackResizeFrameCount = Number(stats.objectTrackResizeFrameCount || 0) + 1;
+        else stats.objectTrackDragFrameCount = Number(stats.objectTrackDragFrameCount || 0) + 1;
+        stats.lastObjectTrackFrame = _sortObject({
+            mode: mode,
+            objectId: track.objectId || '',
+            blockId: track.blockId || '',
+            active: track.active === true,
+            stage: track.stage || '',
+            dx: Number(track.currentDelta && track.currentDelta.x || 0) || 0,
+            dy: Number(track.currentDelta && track.currentDelta.y || 0) || 0,
+            appliedDx: Number(preview && preview.appliedDx || track.appliedDelta && track.appliedDelta.x || 0) || 0,
+            appliedDy: Number(preview && preview.appliedDy || track.appliedDelta && track.appliedDelta.y || 0) || 0,
+            width: preview && preview.width === undefined ? null : Number(preview && preview.width || 0) || 0,
+            height: preview && preview.height === undefined ? null : Number(preview && preview.height || 0) || 0,
+            at: Date.now()
+        });
+        return stats.lastObjectTrackFrame;
+    }
+
+    function recordObjectTrackCommit(inst, track, reason) {
+        if (!inst || !track) return null;
+        var stats = ensureStrictPerformanceStats(inst);
+        var mode = track.mode === 'resize' ? 'resize' : 'drag';
+        stats.objectTrackCommitCount = Number(stats.objectTrackCommitCount || 0) + 1;
+        if (mode === 'resize') stats.objectTrackResizeCommitCount = Number(stats.objectTrackResizeCommitCount || 0) + 1;
+        else stats.objectTrackDragCommitCount = Number(stats.objectTrackDragCommitCount || 0) + 1;
+        stats.lastObjectTrackCommit = _sortObject({
+            mode: mode,
+            objectId: track.objectId || '',
+            blockId: track.blockId || '',
+            reason: reason || '',
+            frameCount: Number(stats.objectTrackFrameCount || 0) || 0,
+            activeFrameCount: Number(stats.objectTrackActiveFrameCount || 0) || 0,
+            at: Date.now()
+        });
+        recordTimeline(inst, 'object-track-commit', stats.lastObjectTrackCommit);
+        return stats.lastObjectTrackCommit;
+    }
+
+    function recordModelCommit(inst, reason) {
+        if (!inst) return null;
+        var stats = ensureStrictPerformanceStats(inst);
+        stats.modelCommitCount = Number(stats.modelCommitCount || 0) + 1;
+        stats.lastModelCommit = _sortObject({
+            reason: reason || '',
+            modelVersion: inst.diagnostics && inst.diagnostics.modelVersion || 0,
+            activeRegion: activeRegionForInstance(inst),
+            at: Date.now()
+        });
+        return stats.lastModelCommit;
     }
 
     function typingHotPathWindowMs(inst) {
@@ -8415,6 +11673,7 @@ window.tmDocumentEditorEngine = (function () {
     function markModelChanged(inst, reason) {
         var diagnostics = ensureDiagnostics(inst);
         diagnostics.modelVersion++;
+        recordModelCommit(inst, reason || 'model-changed');
         if (reason) recordTimeline(inst, 'model-version', { reason: reason, modelVersion: diagnostics.modelVersion });
         return diagnostics.modelVersion;
     }
@@ -8423,6 +11682,7 @@ window.tmDocumentEditorEngine = (function () {
         var started = strictPerformanceNow();
         var diagnostics = ensureDiagnostics(inst);
         diagnostics.selectionVersion++;
+        updateActiveRegionMetric(inst, activeRegionForSelection(inst && inst.selection || {}));
         rememberSelectionToken(inst, inst.selection || null, reason || 'selection-changed');
         if (reason) recordTimeline(inst, 'selection-restore', { reason: reason, selectionVersion: diagnostics.selectionVersion, selection: inst.selection || null });
         var elapsed = Math.max(0, strictPerformanceNow() - started);
@@ -8645,7 +11905,13 @@ window.tmDocumentEditorEngine = (function () {
         var nodes = findLiveTextBlockElements(inst, blockId, selection);
         if (!nodes.length) return { ok: false, restoredNode: null, updatedCount: 0 };
         nodes.forEach(function (node) {
+            var nodeContext = liveBlockContextFromElement(node) || context || {};
             replaceLiveParagraphHtml(inst, node, block);
+            recordRenderSwap(inst, nodeContext.region || selection && selection.region || 'Body', 'live-paragraph-patch', [blockId], {
+                blockId: blockId,
+                pageIndex: nodeContext.pageIndex,
+                headerFooterId: nodeContext.headerFooterId || null
+            });
         });
         return {
             ok: true,
@@ -9003,7 +12269,7 @@ window.tmDocumentEditorEngine = (function () {
     function getFocusRegionFromElement(root, element) {
         var node = isElementNode(element) ? element : element && element.parentElement;
         if (!node || root && !root.contains(node)) return 'Body';
-        if (node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget')) return 'Image';
+        if (node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], .tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id]')) return 'Image';
         if (node.closest && node.closest('td[data-cell-id], [data-table-cell-id], [data-cell-id]')) return 'TableCell';
         var explicit = node.closest && node.closest('[data-render-region]');
         if (explicit) return explicit.getAttribute('data-render-region') || 'Body';
@@ -9037,7 +12303,7 @@ window.tmDocumentEditorEngine = (function () {
         details.activeCommentId = comment && comment.getAttribute('data-comment-id') || '';
         var revision = node.closest && node.closest('.tm-wysiwyg-revision[data-revision-id], .tm-document-inline--revision[data-revision-id], [data-testid="document-revision-marker"][data-revision-id]');
         details.activeRevisionId = revision && revision.getAttribute('data-revision-id') || '';
-        var image = node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget');
+        var image = node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], .tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id]');
         details.activeImageBlockId = image && (image.getAttribute('data-block-id') || image.getAttribute('data-render-block-id') || image.getAttribute('data-model-id')) || '';
         details.activeObjectId = image && (image.getAttribute('data-render-object-id') || image.getAttribute('data-object-id') || details.activeImageBlockId) || '';
         var textBlock = !details.activeImageBlockId && node.closest && node.closest('.tm-wysiwyg-block[data-block-id]');
@@ -9071,8 +12337,15 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst) return null;
         var normalizedRegion = region || 'Body';
         var details = getFocusTargetDetails(inst.root, element, normalizedRegion);
+        if (reason === 'focusin'
+            && !details.activeImageBlockId
+            && isObjectSelectionSnapshot(inst.selection || {})
+            && Date.now() < Number(inst.suppressTextSelectionChangeUntil || 0)) {
+            return inst.selection;
+        }
         var previousRegion = inst.activeFocusRegion || inst.selection && inst.selection.region || 'Body';
         inst.activeFocusRegion = normalizedRegion;
+        updateActiveRegionMetric(inst, normalizedRegion);
         inst.focusOwner = details.hitTargetKind;
         if (inst.root) {
             inst.root.setAttribute('data-active-region', normalizedRegion);
@@ -9094,14 +12367,13 @@ window.tmDocumentEditorEngine = (function () {
             hitTargetKind: details.hitTargetKind || normalizedRegion.toLowerCase()
         });
         if (details.activeImageBlockId) {
-            nextSelection.blockId = details.activeImageBlockId;
-            nextSelection.objectId = details.activeObjectId || details.activeImageBlockId;
-            nextSelection.isObjectSelection = true;
-            nextSelection.isCollapsed = false;
-            nextSelection.range = createLogicalRange(
-                { region: normalizedRegion, blockId: details.activeImageBlockId, objectId: nextSelection.objectId, offset: 0, affinity: 'before' },
-                { region: normalizedRegion, blockId: details.activeImageBlockId, objectId: nextSelection.objectId, offset: 1, affinity: 'after' },
-                'none');
+            inst.suppressTextSelectionChangeUntil = Date.now() + 300;
+            nextSelection = createObjectSelectionSnapshot(inst.model, {
+                region: normalizedRegion,
+                blockId: details.activeImageBlockId,
+                objectId: details.activeObjectId || details.activeImageBlockId,
+                hitTargetKind: 'image'
+            }, current.selectionMode === 'Text' ? current.textSelection || current : current.textSelection || null);
         } else if (details.textBlockId) {
             nextSelection.blockId = details.textBlockId;
             nextSelection.objectId = null;
@@ -9117,25 +12389,13 @@ window.tmDocumentEditorEngine = (function () {
         inst.selection = createSelectionSnapshot(nextSelection);
         markSelectionChanged(inst, reason || 'focus-region');
         updateActiveImageSelectionDom(inst);
+        if (details.activeImageBlockId) {
+            focusEditableSurfaceForObjectSelection(inst, inst.selection);
+        }
         if (previousRegion !== normalizedRegion) {
             scheduleAccessibilityAnnouncement(inst, getRegionLabel(inst, normalizedRegion) + ' selected', 'polite');
         }
-        invokeBoundaryMethod(inst, 'HandleSelectionChanged', {
-            Region: inst.selection.region,
-            AnchorBlockId: inst.selection.blockId || currentBlockId,
-            FocusBlockId: inst.selection.blockId || currentBlockId,
-            AnchorOffset: inst.selection.offset || currentOffset || 0,
-            FocusOffset: inst.selection.offset || currentOffset || 0,
-            IsCollapsed: inst.selection.isCollapsed !== false,
-            HeaderFooterId: inst.selection.headerFooterId || null,
-            ActiveTableCellId: inst.selection.activeTableCellId || null,
-            ActiveTableId: inst.selection.activeTableId || inst.selection.tableId || null,
-            ActiveImageBlockId: inst.selection.activeImageBlockId || null,
-            ActiveCommentId: inst.selection.activeCommentId || null,
-            ActiveRevisionId: inst.selection.activeRevisionId || null,
-            ActiveObjectId: inst.selection.activeObjectId || null,
-            HitTargetKind: inst.selection.hitTargetKind || null
-        }, 'selection-changed-failed');
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
         return inst.selection;
     }
 
@@ -9251,6 +12511,7 @@ window.tmDocumentEditorEngine = (function () {
         inst.lastKeyboardSelection = null;
         inst.lastKeyboardSelectionExpiresAt = 0;
         inst.lastKeyboardInputAt = 0;
+        inst.virtualCaretSelection = null;
     }
 
     function rememberKeyboardSelection(inst, selection, source) {
@@ -9258,7 +12519,7 @@ window.tmDocumentEditorEngine = (function () {
         var snapshot = createSelectionSnapshot(selection);
         if (!snapshot || snapshot.isCollapsed === false || snapshot.isObjectSelection || !snapshot.blockId) return;
         inst.lastKeyboardSelection = snapshot;
-        inst.lastKeyboardSelectionExpiresAt = Date.now() + 900;
+        inst.lastKeyboardSelectionExpiresAt = Date.now() + (snapshot.virtualCaret === true ? 30000 : 900);
         inst.lastKeyboardInputAt = Date.now();
         inst.lastKeyboardSelectionSource = source || 'keyboard';
     }
@@ -9274,6 +12535,7 @@ window.tmDocumentEditorEngine = (function () {
         if (fixed.blockId !== snapshot.blockId || fixed.isCollapsed === false) return fixed;
         var domOffset = Number(fixed.offset || 0);
         var rememberedOffset = Number(snapshot.offset || 0);
+        if (snapshot.virtualCaret === true && domOffset === rememberedOffset) return snapshot;
         if (domOffset === rememberedOffset) return fixed;
         var justTyped = Date.now() - Number(inst.lastKeyboardInputAt || 0) <= 350;
         if (rememberedOffset > 0 && domOffset === 0) return snapshot;
@@ -9298,7 +12560,18 @@ window.tmDocumentEditorEngine = (function () {
             ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
-            target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
+            target: {
+                blockId: selection.blockId,
+                offset: offset,
+                region: selection.region,
+                headerFooterId: selection.headerFooterId || null,
+                tableId: selection.activeTableId || selection.tableId || null,
+                cellId: selection.activeTableCellId || selection.cellId || null,
+                affinity: selection.affinity || 'after',
+                virtualCaret: selection.virtualCaret === true,
+                layoutIntervalId: selection.layoutIntervalId || null,
+                visualHintLineId: selection.visualHintLineId || null
+            },
             text: text,
             marks: marks,
             revisionId: revisionPayload && revisionPayload.id || null,
@@ -9307,7 +12580,10 @@ window.tmDocumentEditorEngine = (function () {
             transactionType: TRANSACTION_TYPES.Typing,
             beforeSelection: selection
         });
-        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-insertText');
+        if (result && result.ok !== false) {
+            inst.virtualCaretSelection = null;
+            rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-insertText');
+        }
         markKeyboardInputHandled(inst, inputType || 'insertText', text);
         return result;
     }
@@ -9321,7 +12597,7 @@ window.tmDocumentEditorEngine = (function () {
             ? createStructureRevisionPayload({ blockId: selection.blockId, start: offset, end: offset }, 'SplitBlock', resolveRevisionUserId(inst.options || {}), 'keydown')
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
-            target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
+            target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null, tableId: selection.activeTableId || selection.tableId || null, cellId: selection.activeTableCellId || selection.cellId || null },
             newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
             revisionId: structureRevision && structureRevision.id || null,
             revision: structureRevision || null,
@@ -9334,8 +12610,45 @@ window.tmDocumentEditorEngine = (function () {
         return result;
     }
 
+    function applyObjectSelectionDelete(inst, selection, inputType) {
+        var snapshot = createSelectionSnapshot(selection || inst && inst.selection || {});
+        if (!isObjectSelectionSnapshot(snapshot)) return null;
+        var nextModel = _clone(inst.model);
+        var objectDeletion = deleteObjectSelection(nextModel, snapshot);
+        if (!objectDeletion.ok) return objectDeletion;
+        var result = applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
+            snapshot: nextModel,
+            selection: objectDeletion.selection,
+            affectedScopeIds: objectDeletion.affectedScopeIds || ['document'],
+            source: 'object-selection-delete',
+            transactionType: 'delete',
+            beforeSelection: snapshot
+        });
+        if (result && result.ok !== false) {
+            rememberKeyboardSelection(inst, objectDeletion.selection, 'keydown-' + (inputType || 'deleteObject'));
+            markKeyboardInputHandled(inst, inputType || 'deleteObject', '');
+        }
+        return result;
+    }
+
+    function restoreObjectSelectionToText(inst, source) {
+        if (!inst || !isObjectSelectionSnapshot(inst.selection || {})) return null;
+        var restored = restoreTextSelectionFromObjectSelection(inst.selection || {});
+        inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, restored);
+        inst.pendingDomSelectionRestore = _clone(inst.selection);
+        inst.keyboardImageToolbarOpenForObjectId = '';
+        markSelectionChanged(inst, source || 'object-selection-escape');
+        updateActiveImageSelectionDom(inst);
+        updateActiveObjectStatusDom(inst);
+        render(inst);
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
+        return { ok: true, selection: inst.selection };
+    }
+
     function applyKeyboardDelete(inst, inputType) {
         clearLiveTypingRevision(inst);
+        var objectDeleteResult = applyObjectSelectionDelete(inst, inst.selection, inputType);
+        if (objectDeleteResult) return objectDeleteResult;
         var selection = readFixedDomSelection(inst, 'keydown-dom');
         var block = _findBlock(inst.model, selection.blockId);
         var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
@@ -9347,7 +12660,7 @@ window.tmDocumentEditorEngine = (function () {
                     ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: rangeStart, end: rangeEnd }, resolveRevisionUserId(inst.options || {}), 'keydown')
                     : null;
                 var rangeResult = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
-                    range: { blockId: selection.blockId, start: rangeStart, end: rangeEnd, region: selection.region, headerFooterId: selection.headerFooterId || null },
+                    range: { blockId: selection.blockId, start: rangeStart, end: rangeEnd, region: selection.region, headerFooterId: selection.headerFooterId || null, tableId: selection.activeTableId || selection.tableId || null, cellId: selection.activeTableCellId || selection.cellId || null },
                     revisionId: selectionRevision && selectionRevision.id || null,
                     revision: selectionRevision || null,
                     source: 'keydown',
@@ -9363,7 +12676,7 @@ window.tmDocumentEditorEngine = (function () {
         var textValue = _blockText(block);
         if (backward && offset === 0) {
             var mergeResult = applyCommand(inst.id, OPERATION_TYPES.MergeParagraph, {
-                target: { blockId: selection.blockId, offset: 0, region: selection.region, headerFooterId: selection.headerFooterId || null },
+                target: { blockId: selection.blockId, offset: 0, region: selection.region, headerFooterId: selection.headerFooterId || null, tableId: selection.activeTableId || selection.tableId || null, cellId: selection.activeTableCellId || selection.cellId || null },
                 source: 'keydown',
                 transactionType: 'delete',
                 beforeSelection: selection
@@ -9379,7 +12692,7 @@ window.tmDocumentEditorEngine = (function () {
             ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: start, end: end }, resolveRevisionUserId(inst.options || {}), 'keydown')
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
-            range: { blockId: selection.blockId, start: start, end: end, region: selection.region, headerFooterId: selection.headerFooterId || null },
+            range: { blockId: selection.blockId, start: start, end: end, region: selection.region, headerFooterId: selection.headerFooterId || null, tableId: selection.activeTableId || selection.tableId || null, cellId: selection.activeTableCellId || selection.cellId || null },
             revisionId: deletionRevision && deletionRevision.id || null,
             revision: deletionRevision || null,
             source: 'keydown',
@@ -9389,6 +12702,124 @@ window.tmDocumentEditorEngine = (function () {
         if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
         markKeyboardInputHandled(inst, inputType, '');
         return result;
+    }
+
+    function selectObjectNavigationTarget(inst, target, source) {
+        if (!inst || !target) return { ok: false, error: { code: 'object-navigation-target-not-found' } };
+        var previousSelection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        var selection = createObjectSelectionSnapshot(inst.model, {
+            region: target.region || 'Body',
+            objectId: target.objectId,
+            blockId: target.blockId,
+            anchorBlockId: target.anchorBlockId || target.blockId,
+            anchorOffset: target.anchorOffset || 0,
+            anchorInlineIndex: target.anchorInlineIndex ?? target.inlineIndex ?? -1,
+            runId: target.runId || null,
+            headerFooterId: target.headerFooterId || null,
+            tableId: target.tableId || null,
+            cellId: target.cellId || null,
+            textSelection: previousSelection.isObjectSelection ? previousSelection.textSelection || null : previousSelection
+        }, previousSelection.isObjectSelection ? previousSelection.textSelection || null : previousSelection);
+        inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, selection);
+        inst.keyboardImageToolbarOpenForObjectId = '';
+        markSelectionChanged(inst, source || 'object-keyboard-navigation');
+        updateActiveImageSelectionDom(inst);
+        var status = updateActiveObjectStatusDom(inst);
+        focusEditableSurfaceForObjectSelection(inst, inst.selection);
+        refocusEditableSurfaceForObjectSelection(inst, target.objectId);
+        scheduleFormattingStatePublish(inst, source || 'object-keyboard-navigation', { immediate: true });
+        if (status) scheduleAccessibilityAnnouncement(inst, status, 'polite');
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
+        return { ok: true, selection: inst.selection, objectId: target.objectId, label: target.label || '' };
+    }
+
+    function selectAdjacentObjectForKeyboard(inst, backwards) {
+        var targets = collectObjectNavigationTargets(inst);
+        if (!targets.length) return { ok: false, error: { code: 'no-objects' } };
+        var snapshot = createSelectionSnapshot(inst && inst.selection || {});
+        var activeObjectId = selectedObjectIdFromSelection(snapshot);
+        var index = activeObjectId
+            ? targets.findIndex(function (target) { return target.objectId === activeObjectId; })
+            : -1;
+        if (index < 0 && snapshot.blockId) {
+            var blockIndex = targets.findIndex(function (target) {
+                if (target.blockId !== snapshot.blockId && target.anchorBlockId !== snapshot.blockId) return false;
+                return Number(target.anchorOffset || 0) >= Number(snapshot.offset || 0);
+            });
+            if (blockIndex >= 0) index = blockIndex - 1;
+        }
+        var delta = backwards ? -1 : 1;
+        var nextIndex = (index + delta + targets.length) % targets.length;
+        return selectObjectNavigationTarget(inst, targets[nextIndex], backwards ? 'object-keyboard-previous' : 'object-keyboard-next');
+    }
+
+    function updateImageToolbarOpenDom(inst, focusFirst) {
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return false;
+        var objectId = _asText(inst.keyboardImageToolbarOpenForObjectId || '');
+        var opened = false;
+        Array.from(inst.root.querySelectorAll('[data-testid="document-wysiwyg-object-layout-bubble"]')).forEach(function (bubble) {
+            var owner = bubble.closest && bubble.closest('[data-object-id], [data-render-object-id], [data-block-id]');
+            var ownerId = owner && (owner.getAttribute('data-object-id') || owner.getAttribute('data-render-object-id') || owner.getAttribute('data-block-id')) || '';
+            var active = !!objectId && ownerId === objectId;
+            bubble.classList.toggle('tm-wysiwyg-layout-bubble--keyboard-open', active);
+            bubble.setAttribute('aria-expanded', active ? 'true' : 'false');
+            if (active) opened = true;
+        });
+        if (opened && focusFirst) {
+            var first = inst.root.querySelector('[data-testid="document-wysiwyg-object-layout-bubble"].tm-wysiwyg-layout-bubble--keyboard-open button');
+            if (first && typeof first.focus === 'function') first.focus({ preventScroll: true });
+        }
+        return opened;
+    }
+
+    function openImageToolbarForSelectedObject(inst, source) {
+        var snapshot = createSelectionSnapshot(inst && inst.selection || {});
+        if (!isObjectSelectionSnapshot(snapshot)) {
+            return { ok: false, error: { code: 'selection-is-not-object' } };
+        }
+        var objectId = selectedObjectIdFromSelection(snapshot);
+        if (!objectId) return { ok: false, error: { code: 'active-object-not-found' } };
+        inst.keyboardImageToolbarOpenForObjectId = objectId;
+        updateActiveImageSelectionDom(inst);
+        updateActiveObjectStatusDom(inst);
+        updateImageToolbarOpenDom(inst, true);
+        scheduleAccessibilityAnnouncement(inst, 'Image toolbar opened', 'polite');
+        recordTimeline(inst, 'keyboard-command', { command: 'focusImageOptions', source: source || 'keyboard', objectId: objectId });
+        return { ok: true, objectId: objectId, toolbarOpen: true };
+    }
+
+    function handleImageToolbarKeyboard(inst, event, key) {
+        var target = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+        var bubble = target && target.closest && target.closest('[data-testid="document-wysiwyg-object-layout-bubble"]');
+        if (!bubble || !inst || !isObjectSelectionSnapshot(inst.selection || {})) return null;
+        var buttons = Array.from(bubble.querySelectorAll('button:not([disabled])'));
+        var current = target && target.closest && target.closest('button');
+        var index = Math.max(0, buttons.indexOf(current));
+        var prevent = function () {
+            if (typeof event.preventDefault === 'function') event.preventDefault();
+            if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        };
+        if (key === 'arrowright' || key === 'arrowdown') {
+            prevent();
+            if (buttons.length) buttons[(index + 1) % buttons.length].focus({ preventScroll: true });
+            return { handled: true, command: 'imageToolbarNext' };
+        }
+        if (key === 'arrowleft' || key === 'arrowup') {
+            prevent();
+            if (buttons.length) buttons[(index - 1 + buttons.length) % buttons.length].focus({ preventScroll: true });
+            return { handled: true, command: 'imageToolbarPrevious' };
+        }
+        if (key === 'home' || key === 'end') {
+            prevent();
+            if (buttons.length) buttons[key === 'home' ? 0 : buttons.length - 1].focus({ preventScroll: true });
+            return { handled: true, command: key === 'home' ? 'imageToolbarFirst' : 'imageToolbarLast' };
+        }
+        if ((key === 'enter' || key === ' ' || key === 'spacebar') && current) {
+            prevent();
+            if (typeof current.click === 'function') current.click();
+            return { handled: true, command: 'imageToolbarActivate' };
+        }
+        return null;
     }
 
     function handleEditorKeyDown(inst, event) {
@@ -9403,6 +12834,29 @@ window.tmDocumentEditorEngine = (function () {
             if (typeof event.stopPropagation === 'function') event.stopPropagation();
         };
 
+        var imageToolbarKeyboardResult = handleImageToolbarKeyboard(inst, event, key);
+        if (imageToolbarKeyboardResult && imageToolbarKeyboardResult.handled) return imageToolbarKeyboardResult;
+
+        if (event.altKey && ((shift && !ctrl) || (ctrl && !shift)) && (key === 'o' || key === 'p')) {
+            prevent();
+            return {
+                handled: true,
+                command: key === 'p' ? 'previousObject' : 'nextObject',
+                result: selectAdjacentObjectForKeyboard(inst, key === 'p')
+            };
+        }
+
+        if (isObjectSelectionSnapshot(inst.selection || {})) {
+            if (key === 'delete' || key === 'backspace') {
+                prevent();
+                return { handled: true, command: 'deleteObject', result: applyObjectSelectionDelete(inst, inst.selection, 'deleteObject') };
+            }
+            if (key === 'enter' || (key === 'f10' && !shift && !ctrl && !event.altKey)) {
+                prevent();
+                return { handled: true, command: 'focusImageOptions', result: openImageToolbarForSelectedObject(inst, 'keyboard') };
+            }
+        }
+
         if (key === 'tab' && !ctrl && !event.altKey) {
             prevent();
             var nextRegion = focusNextRegion(inst, shift);
@@ -9411,6 +12865,8 @@ window.tmDocumentEditorEngine = (function () {
 
         if (key === 'escape') {
             prevent();
+            var objectRestore = restoreObjectSelectionToText(inst, 'escape');
+            if (objectRestore) return { handled: true, command: 'escape', result: objectRestore };
             return Object.assign({ handled: true, command: 'escape' }, closeFloatingUiForKeyboard(inst));
         }
 
@@ -9418,6 +12874,20 @@ window.tmDocumentEditorEngine = (function () {
             prevent();
             requestKeyboardContextMenu(inst, event);
             return { handled: true, command: 'contextMenu' };
+        }
+
+        if (!ctrl && !event.altKey && (key === 'arrowup' || key === 'arrowdown')) {
+            var arrowPolicy = applyArrowFocusPolicy(inst.selection || {}, rawKey);
+            if (arrowPolicy && arrowPolicy.changed) {
+                if (arrowPolicy.restoredFromObject) {
+                    prevent();
+                    return { handled: true, command: key, result: restoreObjectSelectionToText(inst, 'object-selection-arrow') };
+                }
+                inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, arrowPolicy.selection);
+                markSelectionChanged(inst, 'arrow-focus-policy');
+                updateActiveImageSelectionDom(inst);
+                invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
+            }
         }
 
         if (!ctrl && !event.altKey && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'home', 'end', 'pageup', 'pagedown'].indexOf(key) >= 0) {
@@ -9481,7 +12951,1225 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !inst.root || !target) return false;
         var element = target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement;
         if (!element || !inst.root.contains(element)) return false;
+        if (element.closest && element.closest('figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], .tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id]')) return false;
         return !!(element.closest && element.closest('.tm-wysiwyg-page__body[contenteditable], .tm-wysiwyg-page__header[contenteditable], .tm-wysiwyg-page__footer[contenteditable], .tm-wysiwyg-block[data-block-id]'));
+    }
+
+    function nativeCaretRangeFromPoint(x, y) {
+        if (typeof document === 'undefined') return null;
+        if (typeof document.caretRangeFromPoint === 'function') {
+            return document.caretRangeFromPoint(x, y);
+        }
+        if (typeof document.caretPositionFromPoint === 'function') {
+            var position = document.caretPositionFromPoint(x, y);
+            if (!position || !position.offsetNode || typeof document.createRange !== 'function') return null;
+            var range = document.createRange();
+            range.setStart(position.offsetNode, position.offset);
+            range.collapse(true);
+            return range;
+        }
+        return null;
+    }
+
+    function nativePointTargetsEditableText(inst, x, y) {
+        var range = nativeCaretRangeFromPoint(x, y);
+        if (!range || !range.startContainer || !inst || !inst.root) return false;
+        var node = range.startContainer;
+        var element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+        if (!element || !inst.root.contains(element)) return false;
+        if (element.closest && element.closest('figure, .tm-wysiwyg-inline-drawing, .tm-wysiwyg-object-layer-item, .tm-wysiwyg-object-selection-overlay, .tm-wysiwyg-object-guides-overlay, .tm-wysiwyg-drawing-anchor, .tm-document-editor__ribbon, [role="toolbar"]')) return false;
+        return node.nodeType === 3 && !!element.closest('[data-block-id], [data-render-block-id]');
+    }
+
+    function applyLayoutPointerTextSelection(inst, event) {
+        if (!inst || !inst.root || !event || event.defaultPrevented) return false;
+        if (event.button !== undefined && event.button !== 0) return false;
+        if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return false;
+        var x = Number(event.clientX || 0) || 0;
+        var y = Number(event.clientY || 0) || 0;
+        if (nativePointTargetsEditableText(inst, x, y)) return false;
+        var layout = inst.layout || buildLayoutSnapshot(inst.root, inst.model);
+        var hit = pointerHitTest(inst.model, layout, x, y);
+        if (!hit || hit.type !== 'text' || !hit.position || !hit.position.blockId) return false;
+        var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, createSelectionSnapshot(Object.assign({}, hit.position, {
+            selectionMode: 'Text',
+            isCollapsed: true,
+            activeImageBlockId: null,
+            activeObjectId: null,
+            objectId: null,
+            objectSelection: null
+        })));
+        inst.selection = snapshot;
+        inst.virtualCaretSelection = snapshot.virtualCaret === true ? snapshot : null;
+        rememberKeyboardSelection(inst, snapshot, 'layout-pointer-text-hit');
+        restoreDomSelectionFromSnapshot(inst, snapshot);
+        markSelectionChanged(inst, 'layout-pointer-text-hit');
+        updateActiveImageSelectionDom(inst);
+        scheduleFormattingStatePublish(inst, 'layout-pointer-text-hit', { immediate: true });
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot, inst), 'selection-changed-failed');
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        return true;
+    }
+
+    function getObjectPointerTarget(inst, target, event) {
+        if (!inst || !inst.root || !target) return null;
+        var element = target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement;
+        if (!element || !inst.root.contains(element)) return null;
+        var handle = element.closest && element.closest('[data-resize-handle]');
+        var objectSelector = '.tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], figure.tm-wysiwyg-image[data-object-id], .tm-render-image-widget[data-render-object-id], .tm-wysiwyg-inline-drawing[data-object-id]';
+        var objectElement = (handle && handle.closest && handle.closest(objectSelector))
+            || (element.closest && element.closest(objectSelector));
+        if (!objectElement || !inst.root.contains(objectElement)) return null;
+        var inferredHandleName = handle ? _asText(handle.getAttribute('data-resize-handle') || '') : '';
+        if (!inferredHandleName && event && objectElement.classList && objectElement.classList.contains('tm-wysiwyg-object-selection-overlay')) {
+            var rect = objectElement.getBoundingClientRect();
+            var x = Number(event.clientX || 0);
+            var y = Number(event.clientY || 0);
+            var edge = 16;
+            if (Math.abs(x - rect.right) <= edge && Math.abs(y - rect.bottom) <= edge) inferredHandleName = 'se';
+            else if (Math.abs(x - rect.right) <= edge && Math.abs(y - rect.top) <= edge) inferredHandleName = 'ne';
+            else if (Math.abs(x - rect.left) <= edge && Math.abs(y - rect.bottom) <= edge) inferredHandleName = 'sw';
+            else if (Math.abs(x - rect.left) <= edge && Math.abs(y - rect.top) <= edge) inferredHandleName = 'nw';
+            else if (Math.abs(x - rect.right) <= edge) inferredHandleName = 'e';
+            else if (Math.abs(x - rect.left) <= edge) inferredHandleName = 'w';
+            else if (Math.abs(y - rect.bottom) <= edge) inferredHandleName = 's';
+            else if (Math.abs(y - rect.top) <= edge) inferredHandleName = 'n';
+        }
+        var objectId = _asText(
+            objectElement.getAttribute('data-object-id')
+            || objectElement.getAttribute('data-render-object-id')
+            || objectElement.getAttribute('data-block-id')
+            || '');
+        if (!objectId) return null;
+        return {
+            objectId: objectId,
+            blockId: _asText(objectElement.getAttribute('data-block-id') || objectElement.getAttribute('data-render-block-id') || ''),
+            element: objectElement,
+            handleName: inferredHandleName,
+            isResize: !!inferredHandleName
+        };
+    }
+
+    function resolveImageObjectPointerModelTarget(inst, pointerTarget) {
+        if (!inst || !pointerTarget) return null;
+        var objectId = pointerTarget.objectId;
+        var drawing = objectId ? findDrawingRunByObjectId(inst.model, objectId) : null;
+        if (drawing) {
+            return {
+                kind: 'drawing',
+                objectId: objectId,
+                blockId: drawing.blockId,
+                object: normalizeImageObject(drawing.run || {}, { blockId: drawing.blockId, inlineIndex: drawing.inlineIndex })
+            };
+        }
+
+        return null;
+    }
+
+    function findNearestBodyParagraphBlockIdFromPoint(root, x, y) {
+        if (!root || !root.querySelectorAll) return '';
+        var blocks = Array.from(root.querySelectorAll('.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id]'))
+            .filter(function (block) {
+                return !block.classList.contains('tm-wysiwyg-object-anchor-block')
+                    && !block.hasAttribute('data-object-anchor-id')
+                    && block.getBoundingClientRect().height > 0;
+            });
+        var best = null;
+        blocks.forEach(function (block) {
+            var rect = block.getBoundingClientRect();
+            var insideX = x >= rect.left && x <= rect.right;
+            var insideY = y >= rect.top && y <= rect.bottom;
+            var dx = insideX ? 0 : Math.min(Math.abs(x - rect.left), Math.abs(x - rect.right));
+            var dy = insideY ? 0 : Math.min(Math.abs(y - rect.top), Math.abs(y - rect.bottom));
+            var score = (insideX && insideY ? -100000 : 0) + Math.sqrt(dx * dx + dy * dy);
+            if (!best || score < best.score) {
+                best = { blockId: block.getAttribute('data-block-id') || '', score: score };
+            }
+        });
+        return best && best.blockId || '';
+    }
+
+    function normalizeDropRegionName(value, tableCellId) {
+        var raw = _asText(value || '').trim().toLowerCase();
+        if (tableCellId || raw === 'tablecell' || raw === 'table-cell') return 'TableCell';
+        if (raw === 'header' || raw === 'headers') return 'Header';
+        if (raw === 'footer' || raw === 'footers') return 'Footer';
+        return 'Body';
+    }
+
+    function anchorRegionForNearestTextPosition(position) {
+        var region = normalizeDropRegionName(position && position.region, position && position.cellId);
+        if (region === 'Header' || region === 'Footer' || region === 'TableCell') return region;
+        return 'Body';
+    }
+
+    function imageAnchorScopeKey(value) {
+        var source = value || {};
+        var region = normalizeAnchorRegionName(source.anchorRegion || source.region || source.Region || 'Body');
+        return _sortObject({
+            region: region,
+            headerFooterId: _asText(source.anchorHeaderFooterId || source.headerFooterId || source.HeaderFooterId || ''),
+            tableId: _asText(source.anchorTableId || source.tableId || source.TableId || ''),
+            cellId: _asText(source.anchorCellId || source.cellId || source.CellId || '')
+        });
+    }
+
+    function imageDropScopeKey(position) {
+        var source = position || {};
+        var region = anchorRegionForNearestTextPosition(source);
+        return _sortObject({
+            region: region,
+            headerFooterId: _asText(source.headerFooterId || source.HeaderFooterId || ''),
+            tableId: _asText(source.tableId || source.TableId || ''),
+            cellId: _asText(source.cellId || source.CellId || '')
+        });
+    }
+
+    function canDropImageInNearestTextScope(object, position, options) {
+        var opts = options || {};
+        if (opts.allowCrossRegionDrop === true || opts.AllowCrossRegionDrop === true) return true;
+        var source = imageAnchorScopeKey(object);
+        var target = imageDropScopeKey(position);
+        if (source.region !== target.region) return false;
+        if ((source.region === 'Header' || source.region === 'Footer') && source.headerFooterId && target.headerFooterId && source.headerFooterId !== target.headerFooterId) return false;
+        if (source.region === 'TableCell') {
+            if (source.tableId && target.tableId && source.tableId !== target.tableId) return false;
+            if (source.cellId && target.cellId && source.cellId !== target.cellId) return false;
+            if (source.cellId && !target.cellId) return false;
+        }
+        return true;
+    }
+
+    function pageIndexFromPoint(root, x, y) {
+        if (!root || !root.querySelectorAll) return null;
+        var best = null;
+        Array.from(root.querySelectorAll('.tm-wysiwyg-page[data-page-index]')).forEach(function (page) {
+            if (!page || typeof page.getBoundingClientRect !== 'function') return;
+            var rect = rectFromGeometry(page.getBoundingClientRect());
+            var insideX = x >= rect.x && x <= rect.x + rect.width;
+            var insideY = y >= rect.y && y <= rect.y + rect.height;
+            var dx = insideX ? 0 : Math.min(Math.abs(x - rect.x), Math.abs(x - (rect.x + rect.width)));
+            var dy = insideY ? 0 : Math.min(Math.abs(y - rect.y), Math.abs(y - (rect.y + rect.height)));
+            var score = (insideX && insideY ? -100000 : 0) + Math.sqrt(dx * dx + dy * dy);
+            if (!best || score < best.score) {
+                best = {
+                    pageIndex: Number(page.getAttribute('data-page-index') || 0) || 0,
+                    score: score
+                };
+            }
+        });
+        return best ? best.pageIndex : null;
+    }
+
+    function readTextPositionDomContext(root, blockElement) {
+        var regionNode = blockElement && blockElement.closest && blockElement.closest('[data-render-region]');
+        var cell = blockElement && blockElement.closest && blockElement.closest('td[data-cell-id], [data-table-cell-id], [data-cell-id]');
+        var table = cell && cell.closest && cell.closest('table[data-block-id], .tm-wysiwyg-table[data-block-id], .tm-wysiwyg-block[data-block-id]');
+        var page = blockElement && blockElement.closest && blockElement.closest('.tm-wysiwyg-page[data-page-index]');
+        var region = normalizeDropRegionName(regionNode && regionNode.getAttribute('data-render-region'), cell && (cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id')));
+        return {
+            region: region,
+            anchorRegion: anchorRegionForNearestTextPosition({ region: region, cellId: cell && (cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id')) || null }),
+            headerFooterId: regionNode && regionNode.getAttribute('data-hf-id') || '',
+            tableId: table && table.getAttribute('data-block-id') || '',
+            cellId: cell && (cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id')) || '',
+            pageIndex: page ? Number(page.getAttribute('data-page-index') || 0) || 0 : null
+        };
+    }
+
+    function blockTextLineRectsFromDom(blockElement, block) {
+        if (!blockElement || typeof blockElement.getBoundingClientRect !== 'function') return [];
+        var textLength = _blockText(block).length;
+        var rects = [];
+        var ownerDocument = blockElement.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        if (ownerDocument && typeof ownerDocument.createRange === 'function') {
+            try {
+                var range = ownerDocument.createRange();
+                range.selectNodeContents(blockElement);
+                rects = Array.from(range.getClientRects())
+                    .map(rectFromGeometry)
+                    .filter(function (rect) { return rect.width > 0.5 && rect.height > 0.5; });
+                range.detach && range.detach();
+            } catch (_) {
+                rects = [];
+            }
+        }
+        if (!rects.length) {
+            var fallback = rectFromGeometry(blockElement.getBoundingClientRect());
+            if (fallback.width > 0.5 && fallback.height > 0.5) rects = [fallback];
+        }
+        if (!rects.length) return [];
+        var perLine = Math.max(1, Math.ceil(Math.max(1, textLength) / rects.length));
+        return rects.map(function (rect, index) {
+            var start = textLength === 0 ? 0 : Math.min(textLength, index * perLine);
+            var end = index === rects.length - 1 ? textLength : Math.min(textLength, (index + 1) * perLine);
+            return {
+                rect: rect,
+                start: start,
+                end: Math.max(start, end),
+                empty: textLength === 0
+            };
+        });
+    }
+
+    function collectNearestTextPositionLineBoxes(inst, x, y, options) {
+        var opts = options || {};
+        if (_asArray(opts.lineBoxes || opts.LineBoxes).length) {
+            return _asArray(opts.lineBoxes || opts.LineBoxes).map(function (line, index) {
+                return normalizeNearestTextPositionLineBox(inst && inst.model, line, index);
+            }).filter(Boolean);
+        }
+        if (_asArray(inst && (inst.__testLineBoxes || inst.__TestLineBoxes)).length) {
+            return _asArray(inst.__testLineBoxes || inst.__TestLineBoxes).map(function (line, index) {
+                return normalizeNearestTextPositionLineBox(inst && inst.model, line, index);
+            }).filter(Boolean);
+        }
+
+        var root = inst && inst.root;
+        if (!root || !root.querySelectorAll) return [];
+        var result = [];
+        Array.from(root.querySelectorAll('.tm-wysiwyg-block[data-block-id]')).forEach(function (blockElement) {
+            if (!blockElement || blockElement.classList && blockElement.classList.contains('tm-wysiwyg-object-anchor-block')) return;
+            if (blockElement.hasAttribute && blockElement.hasAttribute('data-object-anchor-id')) return;
+            if (blockElement.closest && blockElement.closest('.tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides, figure, [role="toolbar"], .tm-document-editor__ribbon')) return;
+            var blockId = blockElement.getAttribute('data-block-id') || '';
+            var block = _findBlock(inst.model, blockId);
+            if (!_isEditableTextBlock(block)) return;
+            var blockRect = rectFromGeometry(blockElement.getBoundingClientRect());
+            if (blockRect.width <= 0.5 || blockRect.height <= 0.5) return;
+            var context = readTextPositionDomContext(root, blockElement);
+            blockTextLineRectsFromDom(blockElement, block).forEach(function (line, index) {
+                result.push(normalizeNearestTextPositionLineBox(inst.model, Object.assign({}, context, {
+                    blockId: blockId,
+                    lineId: blockId + '-drop-line-' + index,
+                    rect: line.rect,
+                    referenceRect: blockRect,
+                    blockRect: blockRect,
+                    start: line.start,
+                    end: line.end,
+                    empty: line.empty
+                }), result.length));
+            });
+        });
+        return result.filter(Boolean);
+    }
+
+    function normalizeNearestTextPositionLineBox(model, source, index) {
+        var line = source || {};
+        var blockId = _asText(line.blockId || line.BlockId || '');
+        var block = _findBlock(model, blockId);
+        if (!_isEditableTextBlock(block)) return null;
+        var textLength = _blockText(block).length;
+        var rect = rectFromGeometry(line.rect || line.Rect || line);
+        var referenceRect = rectFromGeometry(line.referenceRect || line.ReferenceRect || line.blockRect || line.BlockRect || rect);
+        if (rect.width <= 0 && rect.height <= 0) return null;
+        var start = Math.max(0, Math.min(textLength, Number(line.start ?? line.Start ?? line.startOffset ?? line.StartOffset ?? 0) || 0));
+        var end = Math.max(start, Math.min(textLength, Number(line.end ?? line.End ?? line.endOffset ?? line.EndOffset ?? textLength) || textLength));
+        var cellId = _asText(line.cellId || line.CellId || '');
+        var region = normalizeDropRegionName(line.region || line.Region || 'Body', cellId);
+        var pageIndex = line.pageIndex ?? line.PageIndex;
+        return _sortObject({
+            id: _asText(line.id || line.Id || line.lineId || line.LineId || ('drop-line-' + index)),
+            blockId: blockId,
+            lineId: _asText(line.lineId || line.LineId || line.id || line.Id || ('drop-line-' + index)),
+            pageIndex: pageIndex === null || pageIndex === undefined ? 0 : Number(pageIndex) || 0,
+            region: region,
+            anchorRegion: anchorRegionForNearestTextPosition({ region: region, cellId: cellId }),
+            headerFooterId: _asText(line.headerFooterId || line.HeaderFooterId || ''),
+            tableId: _asText(line.tableId || line.TableId || ''),
+            cellId: cellId,
+            rect: rect,
+            referenceRect: referenceRect,
+            start: start,
+            end: end,
+            empty: line.empty === true || line.Empty === true || textLength === 0 || start === end
+        });
+    }
+
+    function scoreNearestTextPositionLineBox(line, x, y, pointPageIndex) {
+        var rect = line && line.rect || {};
+        var left = Number(rect.x || 0);
+        var top = Number(rect.y || 0);
+        var right = left + Number(rect.width || 0);
+        var bottom = top + Number(rect.height || 0);
+        var insideX = x >= left && x <= right;
+        var insideY = y >= top && y <= bottom;
+        var dx = insideX ? 0 : Math.min(Math.abs(x - left), Math.abs(x - right));
+        var dy = insideY ? 0 : Math.min(Math.abs(y - top), Math.abs(y - bottom));
+        var pagePenalty = pointPageIndex === null || pointPageIndex === undefined || Number(line.pageIndex || 0) === Number(pointPageIndex)
+            ? 0
+            : 100000;
+        return pagePenalty + (insideX && insideY ? -10000 : 0) + Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function nearestOffsetWithinLine(line, x) {
+        var start = Math.max(0, Number(line && line.start || 0) || 0);
+        var end = Math.max(start, Number(line && line.end || start) || start);
+        if (end <= start || line && line.empty === true) return start;
+        var rect = line.rect || {};
+        var width = Math.max(1, Number(rect.width || 0) || 1);
+        var ratio = Math.max(0, Math.min(1, (Number(x || 0) - Number(rect.x || 0)) / width));
+        return Math.max(start, Math.min(end, Math.round(start + ratio * (end - start))));
+    }
+
+    function findNearestTextPositionForPoint(inst, x, y, options) {
+        var px = Number(x || 0) || 0;
+        var py = Number(y || 0) || 0;
+        var opts = options || {};
+        var pointPageIndex = opts.pageIndex ?? opts.PageIndex;
+        if (pointPageIndex === undefined || pointPageIndex === null) pointPageIndex = pageIndexFromPoint(inst && inst.root, px, py);
+        var lines = collectNearestTextPositionLineBoxes(inst, px, py, opts);
+        var best = null;
+        lines.forEach(function (line) {
+            var score = scoreNearestTextPositionLineBox(line, px, py, pointPageIndex);
+            if (!best || score < best.score) best = { line: line, score: score };
+        });
+        if (!best) return null;
+        var line = best.line;
+        var offset = nearestOffsetWithinLine(line, px);
+        var block = _findBlock(inst && inst.model, line.blockId);
+        var inline = resolveTextOffsetToInlineIndex(block, offset, 'after') || {};
+        return _sortObject({
+            ok: true,
+            blockId: line.blockId,
+            inlineIndex: Number(inline.inlineIndex ?? -1),
+            runId: inline.runId || null,
+            textOffset: offset,
+            offset: offset,
+            region: line.region,
+            anchorRegion: line.anchorRegion,
+            pageIndex: Number(line.pageIndex || 0) || 0,
+            headerFooterId: line.headerFooterId || null,
+            tableId: line.tableId || null,
+            cellId: line.cellId || null,
+            referenceRect: _clone(line.referenceRect || line.rect),
+            lineRect: _clone(line.rect),
+            score: best.score
+        });
+    }
+
+    function shouldReanchorImageObject(object, options) {
+        var opts = options || {};
+        if (opts.explicitDrag === true || opts.ExplicitDrag === true) return true;
+        return !(object && (object.lockAnchor === true || object.LockAnchor === true));
+    }
+
+    var IMAGE_MOVE_TRACK_THRESHOLD = 3;
+    var IMAGE_RESIZE_MIN_WIDTH = 32;
+    var IMAGE_RESIZE_MIN_HEIGHT = 24;
+
+    function getObjectPointerPreviewNodes(inst, objectId) {
+        if (!inst || !inst.root || !objectId) return [];
+        var escaped = cssEscape(objectId);
+        return Array.from(inst.root.querySelectorAll(
+            '.tm-wysiwyg-object-layer-item[data-object-id="' + escaped + '"],'
+            + '.tm-wysiwyg-object-selection-overlay[data-object-id="' + escaped + '"],'
+            + '.tm-wysiwyg-object-guides-overlay[data-object-id="' + escaped + '"]'));
+    }
+
+    function captureObjectPointerPreviewNodeState(node) {
+        var style = node && node.style || {};
+        return {
+            node: node,
+            transform: style.transform || '',
+            width: style.width || '',
+            height: style.height || '',
+            minHeight: style.minHeight || '',
+            trackState: node && node.getAttribute && node.getAttribute('data-track-state') || '',
+            trackDx: node && node.getAttribute && node.getAttribute('data-track-dx') || '',
+            trackDy: node && node.getAttribute && node.getAttribute('data-track-dy') || ''
+        };
+    }
+
+    function restoreObjectPointerPreviewNodeState(state) {
+        var node = state && state.node;
+        if (!node || !node.style) return;
+        node.style.transform = state.transform || '';
+        node.style.width = state.width || '';
+        node.style.height = state.height || '';
+        node.style.minHeight = state.minHeight || '';
+        if (node.classList) {
+            node.classList.remove('tm-wysiwyg-object-track--predrag');
+            node.classList.remove('tm-wysiwyg-object-track--active');
+        }
+        if (node.setAttribute && state.trackState) node.setAttribute('data-track-state', state.trackState);
+        else if (node.removeAttribute) node.removeAttribute('data-track-state');
+        if (node.setAttribute && state.trackDx) node.setAttribute('data-track-dx', state.trackDx);
+        else if (node.removeAttribute) node.removeAttribute('data-track-dx');
+        if (node.setAttribute && state.trackDy) node.setAttribute('data-track-dy', state.trackDy);
+        else if (node.removeAttribute) node.removeAttribute('data-track-dy');
+    }
+
+    function readImageMoveTrackOriginalRect(session) {
+        var node = session && _asArray(session.nodes)[0];
+        if (node && typeof node.getBoundingClientRect === 'function') {
+            return rectFromGeometry(node.getBoundingClientRect());
+        }
+
+        var object = session && session.object || {};
+        return {
+            x: Number(object.horizontalPosition && object.horizontalPosition.offset || 0) || 0,
+            y: Number(object.verticalPosition && object.verticalPosition.offset || 0) || 0,
+            width: Math.max(1, Number(object.width || 120) || 120),
+            height: Math.max(1, Number(object.height || 80) || 80)
+        };
+    }
+
+    function serializeImageMoveTrack(track) {
+        if (!track) return null;
+        return _sortObject({
+            objectId: track.objectId || '',
+            blockId: track.blockId || '',
+            mode: track.mode || 'drag',
+            stage: track.stage || 'predrag',
+            active: track.active === true,
+            cancelled: track.cancelled === true,
+            committed: track.committed === true,
+            handleName: track.handleName || '',
+            handleIndex: Number(track.handleIndex ?? -1),
+            threshold: Number(track.threshold || 0) || 0,
+            originalRect: _clone(track.originalRect || null),
+            originalLayout: _clone(track.originalLayout || null),
+            originalTransform: _clone(track.originalTransform || null),
+            fixedPoint: _clone(track.fixedPoint || null),
+            aspectRatio: Number(track.aspectRatio || 0) || 0,
+            lockAspectRatio: track.lockAspectRatio !== false,
+            resizeBounds: _clone(track.resizeBounds || null),
+            pointerStart: _clone(track.pointerStart || null),
+            currentDelta: _clone(track.currentDelta || { x: 0, y: 0 }),
+            appliedDelta: _clone(track.appliedDelta || { x: 0, y: 0 }),
+            previewWidth: track.previewWidth === undefined ? null : Number(track.previewWidth || 0),
+            previewHeight: track.previewHeight === undefined ? null : Number(track.previewHeight || 0),
+            previewPreserveAspectRatio: track.previewPreserveAspectRatio === true,
+            resizeBadgeText: track.resizeBadgeText || '',
+            guides: _clone(track.guides || [])
+        });
+    }
+
+    function buildImageMoveTrackSnapContext(inst, track) {
+        if (!inst || !inst.root || !track || (track.mode !== 'drag' && track.mode !== 'resize')) return null;
+        var node = _asArray(track.nodes)[0];
+        var body = node && node.closest && node.closest('.tm-wysiwyg-page__body--layout, .tm-wysiwyg-page__body')
+            || inst.root.querySelector && inst.root.querySelector('.tm-wysiwyg-page__body--layout, .tm-wysiwyg-page__body')
+            || inst.root;
+        if (!body || typeof body.getBoundingClientRect !== 'function') return null;
+        var bodyRect = rectFromGeometry(body.getBoundingClientRect());
+        var otherObjects = [];
+        if (body.querySelectorAll) {
+            Array.from(body.querySelectorAll('.tm-wysiwyg-object-layer-item[data-object-id]')).forEach(function (item) {
+                if (!item || item.getAttribute('data-object-id') === track.objectId) return;
+                if (typeof item.getBoundingClientRect !== 'function') return;
+                otherObjects.push({ Rect: rectFromGeometry(item.getBoundingClientRect()) });
+            });
+        }
+
+        var lines = [];
+        if (body.querySelectorAll) {
+            Array.from(body.querySelectorAll('.tm-wysiwyg-block[data-block-id]')).forEach(function (block) {
+                if (!block || typeof block.getBoundingClientRect !== 'function') return;
+                var rect = rectFromGeometry(block.getBoundingClientRect());
+                if (rect.width > 0 && rect.height > 0) lines.push({ Rect: rect });
+            });
+        }
+
+        return {
+            bodyRect: { X: bodyRect.x, Y: bodyRect.y, Width: bodyRect.width, Height: bodyRect.height },
+            objectSize: { Width: track.originalRect.width, Height: track.originalRect.height },
+            otherObjects: otherObjects,
+            lines: lines
+        };
+    }
+
+    function normalizeImageResizeHandleName(value) {
+        var raw = _asText(value || 'se').trim().toLowerCase();
+        return ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].indexOf(raw) >= 0 ? raw : 'se';
+    }
+
+    function imageResizeHandleIndex(value) {
+        return ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].indexOf(normalizeImageResizeHandleName(value));
+    }
+
+    function computeImageResizeFixedPoint(rect, handleName) {
+        var handle = normalizeImageResizeHandleName(handleName);
+        var left = Number(rect && rect.x || 0) || 0;
+        var top = Number(rect && rect.y || 0) || 0;
+        var width = Math.max(1, Number(rect && rect.width || 1) || 1);
+        var height = Math.max(1, Number(rect && rect.height || 1) || 1);
+        var right = left + width;
+        var bottom = top + height;
+        var centerX = left + width / 2;
+        var centerY = top + height / 2;
+        return _sortObject({
+            x: handle.indexOf('w') >= 0 ? right : (handle.indexOf('e') >= 0 ? left : centerX),
+            y: handle.indexOf('n') >= 0 ? bottom : (handle.indexOf('s') >= 0 ? top : centerY)
+        });
+    }
+
+    function createImageResizeBounds(inst, track, options) {
+        var opts = options || {};
+        var snap = opts.snapContext || track && track.snapContext || null;
+        var bodyRect = snap && (snap.bodyRect || snap.BodyRect) || null;
+        var bodyWidth = bodyRect ? (bodyRect.Width ?? bodyRect.width) : 0;
+        var bodyHeight = bodyRect ? (bodyRect.Height ?? bodyRect.height) : 0;
+        var width = Number(opts.maxWidth ?? opts.MaxWidth ?? bodyWidth ?? 0) || 0;
+        var height = Number(opts.maxHeight ?? opts.MaxHeight ?? bodyHeight ?? 0) || 0;
+        return _sortObject({
+            minWidth: Math.max(1, Number(opts.minWidth ?? opts.MinWidth ?? IMAGE_RESIZE_MIN_WIDTH) || IMAGE_RESIZE_MIN_WIDTH),
+            minHeight: Math.max(1, Number(opts.minHeight ?? opts.MinHeight ?? IMAGE_RESIZE_MIN_HEIGHT) || IMAGE_RESIZE_MIN_HEIGHT),
+            maxWidth: width > 0 ? width : null,
+            maxHeight: height > 0 ? height : null
+        });
+    }
+
+    function clampImageResizeSize(width, height, ratio, preserveAspect, bounds) {
+        var minWidth = Math.max(1, Number(bounds && bounds.minWidth || IMAGE_RESIZE_MIN_WIDTH) || IMAGE_RESIZE_MIN_WIDTH);
+        var minHeight = Math.max(1, Number(bounds && bounds.minHeight || IMAGE_RESIZE_MIN_HEIGHT) || IMAGE_RESIZE_MIN_HEIGHT);
+        var maxWidth = Number(bounds && bounds.maxWidth || 0) || 0;
+        var maxHeight = Number(bounds && bounds.maxHeight || 0) || 0;
+        var nextWidth = Math.max(minWidth, Number(width || 0) || minWidth);
+        var nextHeight = Math.max(minHeight, Number(height || 0) || minHeight);
+        if (maxWidth > 0) nextWidth = Math.min(maxWidth, nextWidth);
+        if (maxHeight > 0) nextHeight = Math.min(maxHeight, nextHeight);
+        if (preserveAspect) {
+            ratio = Math.max(0.01, Number(ratio || 1) || 1);
+            if (nextWidth / ratio < minHeight) nextWidth = minHeight * ratio;
+            if (nextHeight * ratio < minWidth) nextHeight = minWidth / ratio;
+            if (maxWidth > 0 && nextWidth > maxWidth) nextWidth = maxWidth;
+            nextHeight = nextWidth / ratio;
+            if (maxHeight > 0 && nextHeight > maxHeight) {
+                nextHeight = maxHeight;
+                nextWidth = nextHeight * ratio;
+            }
+            nextWidth = Math.max(minWidth, nextWidth);
+            nextHeight = Math.max(minHeight, nextHeight);
+        }
+        return {
+            width: Math.round(nextWidth * 100) / 100,
+            height: Math.round(nextHeight * 100) / 100
+        };
+    }
+
+    function computeImageResizePreview(track, dx, dy, event) {
+        var rawDx = Number(dx || 0) || 0;
+        var rawDy = Number(dy || 0) || 0;
+        var handle = normalizeImageResizeHandleName(track && track.handleName || 'se');
+        var originalRect = track && track.originalRect || {};
+        var originalObject = track && track.originalObject || {};
+        var originalWidth = Math.max(1, Number(originalObject.width || originalRect.width || 1) || 1);
+        var originalHeight = Math.max(1, Number(originalObject.height || originalRect.height || 1) || 1);
+        var originalLeft = Number(originalRect.x || 0) || 0;
+        var originalTop = Number(originalRect.y || 0) || 0;
+        var originalRight = originalLeft + originalWidth;
+        var originalBottom = originalTop + originalHeight;
+        var originalCenterX = originalLeft + originalWidth / 2;
+        var originalCenterY = originalTop + originalHeight / 2;
+        var west = handle.indexOf('w') >= 0;
+        var east = handle.indexOf('e') >= 0;
+        var north = handle.indexOf('n') >= 0;
+        var south = handle.indexOf('s') >= 0;
+        var horizontalDelta = west ? -rawDx : (east ? rawDx : 0);
+        var verticalDelta = north ? -rawDy : (south ? rawDy : 0);
+        var nextWidth = originalWidth + horizontalDelta;
+        var nextHeight = originalHeight + verticalDelta;
+        var ratio = Math.max(0.01, originalWidth / Math.max(1, originalHeight));
+        var corner = (west || east) && (north || south);
+        var shiftKey = event && (event.shiftKey === true || event.ShiftKey === true);
+        var preserveAspect = shiftKey || (corner && (track && track.lockAspectRatio !== false));
+        if (preserveAspect) {
+            if (Math.abs(horizontalDelta) >= Math.abs(verticalDelta)) {
+                nextHeight = nextWidth / ratio;
+            } else {
+                nextWidth = nextHeight * ratio;
+            }
+        } else {
+            if (!west && !east) nextWidth = originalWidth;
+            if (!north && !south) nextHeight = originalHeight;
+        }
+
+        var clamped = clampImageResizeSize(nextWidth, nextHeight, ratio, preserveAspect, track && track.resizeBounds || null);
+        nextWidth = clamped.width;
+        nextHeight = clamped.height;
+        var nextLeft = west
+            ? originalRight - nextWidth
+            : (east ? originalLeft : originalCenterX - nextWidth / 2);
+        var nextTop = north
+            ? originalBottom - nextHeight
+            : (south ? originalTop : originalCenterY - nextHeight / 2);
+        return _sortObject({
+            dx: rawDx,
+            dy: rawDy,
+            appliedDx: Math.round((nextLeft - originalLeft) * 100) / 100,
+            appliedDy: Math.round((nextTop - originalTop) * 100) / 100,
+            width: nextWidth,
+            height: nextHeight,
+            preserveAspectRatio: preserveAspect,
+            fixedPoint: _clone(track && track.fixedPoint || computeImageResizeFixedPoint(originalRect, handle)),
+            guides: []
+        });
+    }
+
+    function createImageMoveTrack(inst, session, event, options) {
+        var opts = options || {};
+        var originalRect = readImageMoveTrackOriginalRect(session);
+        var mode = session && session.mode || 'drag';
+        var handleName = normalizeImageResizeHandleName(session && session.handleName || 'se');
+        var originalLayout = imageObjectToLayout(session && session.object || {});
+        var originalTransform = _clone(originalLayout.Transform || originalLayout.transform || {});
+        var track = {
+            objectId: session && session.objectId || '',
+            blockId: session && session.blockId || '',
+            mode: mode,
+            handleName: handleName,
+            handleIndex: mode === 'resize' ? imageResizeHandleIndex(handleName) : -1,
+            nodes: _asArray(session && session.nodes),
+            nodeStates: _asArray(session && session.nodes).map(captureObjectPointerPreviewNodeState),
+            originalRect: originalRect,
+            originalLayout: originalLayout,
+            originalTransform: originalTransform,
+            originalObject: _clone(session && session.object || {}),
+            fixedPoint: mode === 'resize' ? computeImageResizeFixedPoint(originalRect, handleName) : null,
+            aspectRatio: Math.max(0.01, Number(originalRect.width || 1) / Math.max(1, Number(originalRect.height || 1))),
+            lockAspectRatio: (session && session.object && session.object.lockAspectRatio) !== false,
+            pointerStart: {
+                x: Number(event && event.clientX || 0) || 0,
+                y: Number(event && event.clientY || 0) || 0
+            },
+            currentDelta: { x: 0, y: 0 },
+            appliedDelta: { x: 0, y: 0 },
+            threshold: Number(opts.threshold ?? IMAGE_MOVE_TRACK_THRESHOLD) || IMAGE_MOVE_TRACK_THRESHOLD,
+            active: false,
+            cancelled: false,
+            committed: false,
+            stage: 'predrag',
+            guides: [],
+            snapContext: opts.snapContext || null,
+            guideNodes: []
+        };
+        track.snapContext = track.snapContext || buildImageMoveTrackSnapContext(inst, track);
+        track.resizeBounds = mode === 'resize' ? createImageResizeBounds(inst, track, opts) : null;
+        _asArray(track.nodes).forEach(function (node) {
+            if (node.classList) node.classList.add('tm-wysiwyg-object-track--predrag');
+            if (node.setAttribute) node.setAttribute('data-track-state', 'predrag');
+        });
+        if (inst) inst.imageMoveTrack = track;
+        if (inst && mode === 'resize') inst.imageResizeTrack = track;
+        return track;
+    }
+
+    function computeImageMoveTrackPreview(track, dx, dy, event) {
+        var rawDx = Number(dx || 0) || 0;
+        var rawDy = Number(dy || 0) || 0;
+        var preview = {
+            dx: rawDx,
+            dy: rawDy,
+            appliedDx: rawDx,
+            appliedDy: rawDy,
+            width: track && track.originalRect && track.originalRect.width || 0,
+            height: track && track.originalRect && track.originalRect.height || 0,
+            guides: []
+        };
+        if (!track) return preview;
+        if (track.mode === 'resize') {
+            return computeImageResizePreview(track, rawDx, rawDy, event || {});
+        }
+
+        var sourceRect = track.originalRect || { x: 0, y: 0 };
+        var snap = track.snapContext
+            ? computeImageMoveSnap({ x: sourceRect.x + rawDx, y: sourceRect.y + rawDy }, track.snapContext)
+            : { x: sourceRect.x + rawDx, y: sourceRect.y + rawDy, guides: [] };
+        preview.appliedDx = Number(snap.x || 0) - Number(sourceRect.x || 0);
+        preview.appliedDy = Number(snap.y || 0) - Number(sourceRect.y || 0);
+        preview.guides = _asArray(snap.guides);
+        return preview;
+    }
+
+    function removeImageMoveTrackGuides(track) {
+        _asArray(track && track.guideNodes).forEach(function (node) {
+            if (node && node.parentNode) node.parentNode.removeChild(node);
+        });
+        if (track) track.guideNodes = [];
+    }
+
+    function renderImageMoveTrackGuides(inst, track, preview) {
+        removeImageMoveTrackGuides(track);
+        if (!inst || !inst.root || !track || !preview || !_asArray(preview.guides).length) return;
+        var node = _asArray(track.nodes)[0];
+        var body = node && node.closest && node.closest('.tm-wysiwyg-page__body--layout, .tm-wysiwyg-page__body')
+            || inst.root.querySelector && inst.root.querySelector('.tm-wysiwyg-page__body--layout, .tm-wysiwyg-page__body')
+            || null;
+        if (!body || !body.querySelector) return;
+        var layer = body.querySelector('.tm-wysiwyg-page__layer--guides');
+        if (!layer || !layer.ownerDocument || typeof layer.getBoundingClientRect !== 'function') return;
+        var layerRect = rectFromGeometry(layer.getBoundingClientRect());
+        var bodyRect = rectFromGeometry(body.getBoundingClientRect());
+        var created = [];
+        _asArray(preview.guides).forEach(function (guide) {
+            var line = layer.ownerDocument.createElement('span');
+            line.className = 'tm-wysiwyg-object-drag-guide';
+            line.setAttribute('data-testid', 'document-wysiwyg-object-drag-guide');
+            line.setAttribute('data-object-id', track.objectId || '');
+            line.setAttribute('data-guide-kind', guide.Kind || guide.kind || '');
+            if (guide.X !== undefined || guide.x !== undefined) {
+                var x = Number(guide.X ?? guide.x ?? 0) || 0;
+                line.classList.add('tm-wysiwyg-object-drag-guide--vertical');
+                line.style.left = (x - layerRect.x) + 'px';
+                line.style.top = (bodyRect.y - layerRect.y) + 'px';
+                line.style.height = bodyRect.height + 'px';
+            } else if (guide.Y !== undefined || guide.y !== undefined) {
+                var y = Number(guide.Y ?? guide.y ?? 0) || 0;
+                line.classList.add('tm-wysiwyg-object-drag-guide--horizontal');
+                line.style.left = (bodyRect.x - layerRect.x) + 'px';
+                line.style.top = (y - layerRect.y) + 'px';
+                line.style.width = bodyRect.width + 'px';
+            }
+            layer.appendChild(line);
+            created.push(line);
+        });
+        track.guideNodes = created;
+    }
+
+    function setObjectPointerPreviewSize(nodes, width, height) {
+        _asArray(nodes).forEach(function (node) {
+            node.style.setProperty('--tm-layout-object-width', width + 'px');
+            node.style.setProperty('--tm-layout-object-height', height + 'px');
+            node.style.width = width + 'px';
+            node.style.height = height + 'px';
+            if (node.classList && node.classList.contains('tm-wysiwyg-object-layer-item')) {
+                node.style.minHeight = height + 'px';
+            }
+        });
+    }
+
+    function removeImageResizeSizeBadge(track) {
+        var node = track && track.resizeBadgeNode;
+        if (node && node.parentNode) {
+            node.parentNode.removeChild(node);
+        }
+        if (track) {
+            track.resizeBadgeNode = null;
+            track.resizeBadgeText = '';
+        }
+    }
+
+    function renderImageResizeSizeBadge(inst, track, preview) {
+        if (!inst || !inst.root || !track || track.mode !== 'resize' || !preview) return;
+        var ownerDocument = inst.root.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        if (!ownerDocument || !ownerDocument.createElement) return;
+        var badge = track.resizeBadgeNode;
+        if (!badge) {
+            badge = ownerDocument.createElement('span');
+            badge.className = 'tm-wysiwyg-image-resize-size-badge';
+            badge.setAttribute('data-testid', 'document-wysiwyg-image-resize-size-badge');
+            badge.setAttribute('data-object-id', track.objectId || '');
+            (ownerDocument.body || inst.root).appendChild(badge);
+            track.resizeBadgeNode = badge;
+        }
+        var text = Math.round(Number(preview.width || 0)) + ' x ' + Math.round(Number(preview.height || 0));
+        track.resizeBadgeText = text;
+        badge.textContent = text;
+        var node = _asArray(track.nodes)[0];
+        var rect = node && typeof node.getBoundingClientRect === 'function'
+            ? rectFromGeometry(node.getBoundingClientRect())
+            : track.originalRect || { x: 0, y: 0, width: 0, height: 0 };
+        badge.style.position = 'fixed';
+        badge.style.left = Math.max(8, Number(rect.x || 0) + Number(preview.appliedDx || 0)) + 'px';
+        badge.style.top = Math.max(8, Number(rect.y || 0) + Number(preview.appliedDy || 0) - 28) + 'px';
+    }
+
+    function cleanupImageMoveTrack(inst, track, reason, restorePreview) {
+        if (!track) return;
+        removeImageMoveTrackGuides(track);
+        removeImageResizeSizeBadge(track);
+        if (restorePreview !== false) {
+            _asArray(track.nodeStates).forEach(restoreObjectPointerPreviewNodeState);
+        } else {
+            _asArray(track.nodes).forEach(function (node) {
+                if (node && node.classList) {
+                    node.classList.remove('tm-wysiwyg-object-track--predrag');
+                    node.classList.remove('tm-wysiwyg-object-track--active');
+                }
+                if (node && node.removeAttribute) {
+                    node.removeAttribute('data-track-state');
+                    node.removeAttribute('data-track-dx');
+                    node.removeAttribute('data-track-dy');
+                }
+            });
+        }
+        track.stage = reason || 'cleanup';
+        if (inst && inst.imageMoveTrack === track) inst.imageMoveTrack = null;
+        if (inst && inst.imageResizeTrack === track) inst.imageResizeTrack = null;
+    }
+
+    function cancelImageMoveTrack(inst, track, reason) {
+        if (!track) return serializeImageMoveTrack(null);
+        track.cancelled = true;
+        track.stage = reason || 'cancel';
+        cleanupImageMoveTrack(inst, track, track.stage, true);
+        return serializeImageMoveTrack(track);
+    }
+
+    function renderImageMoveTrackPreview(inst, track, preview) {
+        if (!track || !preview) return;
+        if (track.mode === 'resize') {
+            setObjectPointerPreviewSize(track.nodes, preview.width, preview.height);
+            renderImageResizeSizeBadge(inst, track, preview);
+        }
+        _asArray(track.nodes).forEach(function (node) {
+            if (!node || !node.style) return;
+            node.style.transform = 'translate(' + preview.appliedDx + 'px, ' + preview.appliedDy + 'px)';
+            if (node.classList) {
+                node.classList.remove('tm-wysiwyg-object-track--predrag');
+                node.classList.add('tm-wysiwyg-object-track--active');
+            }
+            if (node.setAttribute) {
+                node.setAttribute('data-track-state', 'active');
+                node.setAttribute('data-track-dx', String(preview.appliedDx));
+                node.setAttribute('data-track-dy', String(preview.appliedDy));
+            }
+        });
+        renderImageMoveTrackGuides(inst, track, preview);
+    }
+
+    function updateImageMoveTrack(inst, track, event) {
+        if (!track || track.cancelled || track.committed) return serializeImageMoveTrack(track);
+        var dx = Number(event && event.clientX || 0) - Number(track.pointerStart && track.pointerStart.x || 0);
+        var dy = Number(event && event.clientY || 0) - Number(track.pointerStart && track.pointerStart.y || 0);
+        track.currentDelta = { x: dx, y: dy };
+        if (!track.active && Math.sqrt(dx * dx + dy * dy) < track.threshold) {
+            track.stage = 'predrag';
+            recordObjectTrackFrame(inst, track, null);
+            return serializeImageMoveTrack(track);
+        }
+
+        track.active = true;
+        track.stage = 'dragging';
+        var preview = computeImageMoveTrackPreview(track, dx, dy, event || {});
+        track.appliedDelta = { x: preview.appliedDx, y: preview.appliedDy };
+        track.previewWidth = preview.width;
+        track.previewHeight = preview.height;
+        track.previewPreserveAspectRatio = preview.preserveAspectRatio === true;
+        track.fixedPoint = preview.fixedPoint || track.fixedPoint;
+        if (track.mode === 'resize') {
+            track.resizeBadgeText = Math.round(Number(preview.width || 0)) + ' x ' + Math.round(Number(preview.height || 0));
+        }
+        track.guides = preview.guides;
+        recordObjectTrackFrame(inst, track, preview);
+        renderImageMoveTrackPreview(inst, track, preview);
+        return serializeImageMoveTrack(track);
+    }
+
+    function computeObjectPointerCommitState(inst, session, event) {
+        if (!inst || !session || !event) return null;
+        var rawDx = Number(event.clientX || 0) - session.startX;
+        var rawDy = Number(event.clientY || 0) - session.startY;
+        var track = session.track || null;
+        var appliedDelta = track && track.active
+            ? (track.appliedDelta || { x: rawDx, y: rawDy })
+            : { x: rawDx, y: rawDy };
+        var dx = Number(appliedDelta.x || 0) || 0;
+        var dy = Number(appliedDelta.y || 0) || 0;
+        var next = _clone(session.object || {});
+        if (session.mode === 'resize') {
+            var handle = normalizeImageResizeHandleName(session.handleName || 'se');
+            var west = handle.indexOf('w') >= 0;
+            var east = handle.indexOf('e') >= 0;
+            var north = handle.indexOf('n') >= 0;
+            var south = handle.indexOf('s') >= 0;
+            var fallbackWidth = Number(session.object.width || 1) + (west ? -rawDx : (east ? rawDx : 0));
+            var fallbackHeight = Number(session.object.height || 1) + (north ? -rawDy : (south ? rawDy : 0));
+            next.width = Math.max(IMAGE_RESIZE_MIN_WIDTH, Number(track && track.previewWidth || 0) || fallbackWidth);
+            next.height = Math.max(IMAGE_RESIZE_MIN_HEIGHT, Number(track && track.previewHeight || 0) || fallbackHeight);
+            next.lockAspectRatio = (session.object && session.object.lockAspectRatio) !== false;
+            next.horizontalPosition = Object.assign({}, next.horizontalPosition || {}, {
+                offset: Number(session.object.horizontalPosition && session.object.horizontalPosition.offset || 0) + dx
+            });
+            next.verticalPosition = Object.assign({}, next.verticalPosition || {}, {
+                offset: Number(session.object.verticalPosition && session.object.verticalPosition.offset || 0) + dy
+            });
+        } else {
+            var originalLeft = track && track.originalRect ? Number(track.originalRect.x || 0) : Number(session.object.horizontalPosition && session.object.horizontalPosition.offset || 0);
+            var originalTop = track && track.originalRect ? Number(track.originalRect.y || 0) : Number(session.object.verticalPosition && session.object.verticalPosition.offset || 0);
+            var finalLeft = originalLeft + dx;
+            var finalTop = originalTop + dy;
+            next.horizontalPosition = Object.assign({}, next.horizontalPosition || {}, {
+                offset: Number(session.object.horizontalPosition && session.object.horizontalPosition.offset || 0) + dx
+            });
+            next.verticalPosition = Object.assign({}, next.verticalPosition || {}, {
+                offset: Number(session.object.verticalPosition && session.object.verticalPosition.offset || 0) + dy
+            });
+            var nearest = findNearestTextPositionForPoint(inst, Number(event.clientX || 0), Number(event.clientY || 0));
+            if (nearest && nearest.blockId && shouldReanchorImageObject(session.object, { explicitDrag: true })) {
+                if (!canDropImageInNearestTextScope(session.object, nearest, inst && inst.options || {})) {
+                    return {
+                        dx: 0,
+                        dy: 0,
+                        rawDx: rawDx,
+                        rawDy: rawDy,
+                        next: _clone(session.object || {}),
+                        affected: _unique([session.blockId, session.object && session.object.anchorBlockId].filter(Boolean)),
+                        dropPosition: nearest,
+                        dropRejected: true,
+                        dropRejectedReason: 'cross-region-drop'
+                    };
+                }
+                var referenceRect = nearest.referenceRect || nearest.lineRect || { x: finalLeft, y: finalTop };
+                next.anchorBlockId = nearest.blockId;
+                next.anchorOffset = Number(nearest.offset ?? nearest.textOffset ?? 0) || 0;
+                next.anchorInlineIndex = Number(nearest.inlineIndex ?? -1);
+                next.anchorRegion = nearest.anchorRegion || anchorRegionForNearestTextPosition(nearest);
+                next.anchorTableId = nearest.tableId || '';
+                next.anchorCellId = nearest.cellId || '';
+                next.anchorHeaderFooterId = nearest.headerFooterId || '';
+                next.horizontalPosition = Object.assign({}, next.horizontalPosition || {}, {
+                    align: 'Left',
+                    relativeTo: 'Column',
+                    offset: finalLeft - Number(referenceRect.x || 0)
+                });
+                next.verticalPosition = Object.assign({}, next.verticalPosition || {}, {
+                    align: 'Top',
+                    relativeTo: 'Paragraph',
+                    offset: finalTop - Number(referenceRect.y || 0)
+                });
+                next.dropPosition = nearest;
+            }
+        }
+
+        var affected = _unique([session.blockId, session.object.anchorBlockId, next.anchorBlockId].filter(Boolean));
+        return {
+            dx: dx,
+            dy: dy,
+            rawDx: rawDx,
+            rawDy: rawDy,
+            next: next,
+            affected: affected,
+            dropPosition: next.dropPosition || null
+        };
+    }
+
+    function commitObjectPointerInteraction(inst, session, event) {
+        if (!inst || !session || !event) return { ok: false };
+        var commit = computeObjectPointerCommitState(inst, session, event);
+        if (!commit) return { ok: false };
+        if (commit.dropRejected === true) {
+            if (session.track) {
+                session.track.cancelled = true;
+                session.track.stage = 'cancel';
+            }
+            inst.lastObjectPointerInteraction = _sortObject(Object.assign({}, inst.lastObjectPointerInteraction || {}, {
+                stage: 'cancel',
+                mode: session.mode,
+                objectId: session.objectId,
+                blockId: session.blockId,
+                dx: 0,
+                dy: 0,
+                rawDx: commit.rawDx,
+                rawDy: commit.rawDy,
+                dropRejected: true,
+                dropRejectedReason: commit.dropRejectedReason || 'cross-region-drop',
+                dropPosition: _clone(commit.dropPosition || null),
+                track: serializeImageMoveTrack(session.track || null)
+            }));
+            cleanupImageMoveTrack(inst, session.track, 'cancel', true);
+            return { ok: true, cancelled: true, dropRejected: true, reason: commit.dropRejectedReason || 'cross-region-drop' };
+        }
+        if (session.track) {
+            session.track.committed = true;
+            session.track.stage = 'commit';
+            recordObjectTrackCommit(inst, session.track, 'pointerup');
+        }
+        inst.lastObjectPointerInteraction = _sortObject(Object.assign({}, inst.lastObjectPointerInteraction || {}, {
+            stage: 'commit',
+            mode: session.mode,
+            objectId: session.objectId,
+            blockId: session.blockId,
+            dx: commit.dx,
+            dy: commit.dy,
+            rawDx: commit.rawDx,
+            rawDy: commit.rawDy,
+            nextAnchorBlockId: commit.next.anchorBlockId || '',
+            nextAnchorOffset: Number(commit.next.anchorOffset || 0) || 0,
+            nextAnchorRegion: commit.next.anchorRegion || '',
+            nextAnchorCellId: commit.next.anchorCellId || '',
+            nextWidth: commit.next.width || null,
+            nextHeight: commit.next.height || null,
+            dropPosition: _clone(commit.dropPosition || null),
+            track: serializeImageMoveTrack(session.track || null)
+        }));
+        var oldLayout = imageObjectToLayout(session.object);
+        var newLayout = imageObjectToLayout(commit.next);
+        var commandType = session.mode === 'drag' ? OPERATION_TYPES.MoveDrawingObject : OPERATION_TYPES.UpdateImageLayout;
+        var operationPayload = session.mode === 'drag'
+            ? {
+                target: {
+                    blockId: session.blockId,
+                    objectId: session.objectId,
+                    region: session.object.anchorRegion || 'Body',
+                    headerFooterId: session.object.anchorHeaderFooterId || null,
+                    tableId: session.object.anchorTableId || null,
+                    cellId: session.object.anchorCellId || null
+                },
+                oldLayout: oldLayout,
+                newLayout: newLayout,
+                oldAnchor: _clone(oldLayout.Anchor || oldLayout.anchor || {}),
+                newAnchor: _clone(newLayout.Anchor || newLayout.anchor || {}),
+                layout: newLayout,
+                affectedParagraphIds: commit.affected,
+                source: 'object-pointer-' + session.mode,
+                transactionType: TRANSACTION_TYPES.Default,
+                beforeSelection: session.beforeSelection || inst.selection
+            }
+            : {
+                target: {
+                    blockId: session.blockId,
+                    objectId: session.objectId,
+                    region: session.object.anchorRegion || 'Body',
+                    headerFooterId: session.object.anchorHeaderFooterId || null,
+                    tableId: session.object.anchorTableId || null,
+                    cellId: session.object.anchorCellId || null
+                },
+                oldLayout: oldLayout,
+                newLayout: newLayout,
+                layout: newLayout,
+                affectedParagraphIds: commit.affected,
+                source: 'object-pointer-' + session.mode,
+                transactionType: TRANSACTION_TYPES.Default,
+                beforeSelection: session.beforeSelection || inst.selection
+            };
+        var result = applyCommand(inst.id, commandType, operationPayload);
+        inst.lastObjectPointerInteraction = _sortObject(Object.assign({}, inst.lastObjectPointerInteraction || {}, {
+            resultOk: result && result.ok !== false,
+            resultError: result && result.errors && result.errors[0] && result.errors[0].code || result && result.error && result.error.code || ''
+        }));
+        cleanupImageMoveTrack(inst, session.track, 'commit', result && result.ok !== false ? false : true);
+        return result;
+    }
+
+    function beginObjectPointerInteraction(inst, event) {
+        if (!inst || !event || event.defaultPrevented) return false;
+        if (event.button !== undefined && event.button !== 0) return false;
+        var pointerTarget = getObjectPointerTarget(inst, event.target, event);
+        if (!pointerTarget) return false;
+        var modelTarget = resolveImageObjectPointerModelTarget(inst, pointerTarget);
+        if (!modelTarget || !modelTarget.object) return false;
+
+        var selection = createObjectSelectionSnapshot(inst.model, {
+            region: modelTarget.object.anchorRegion || 'Body',
+            blockId: modelTarget.blockId,
+            objectId: modelTarget.objectId,
+            anchorBlockId: modelTarget.object.anchorBlockId || modelTarget.blockId,
+            anchorOffset: modelTarget.object.anchorOffset || 0,
+            anchorInlineIndex: modelTarget.object.anchorInlineIndex ?? -1
+        }, inst.selection || null);
+        inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, selection);
+        markSelectionChanged(inst, 'object-pointerdown');
+        updateActiveImageSelectionDom(inst);
+        focusEditableSurfaceForObjectSelection(inst, inst.selection);
+        scheduleFormattingStatePublish(inst, 'object-pointerdown', { immediate: true });
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
+
+        var ownerDocument = inst.root.ownerDocument || document;
+        var session = {
+            mode: pointerTarget.isResize ? 'resize' : 'drag',
+            handleName: pointerTarget.handleName || 'se',
+            objectId: modelTarget.objectId,
+            blockId: modelTarget.blockId,
+            object: _clone(modelTarget.object),
+            beforeSelection: _clone(inst.selection),
+            startX: Number(event.clientX || 0),
+            startY: Number(event.clientY || 0),
+            pointerId: event.pointerId,
+            moved: false,
+            nodes: getObjectPointerPreviewNodes(inst, modelTarget.objectId)
+        };
+        session.track = createImageMoveTrack(inst, session, event);
+        inst.lastObjectPointerInteraction = _sortObject({
+            stage: 'predrag',
+            mode: session.mode,
+            handleName: session.handleName,
+            objectId: session.objectId,
+            blockId: session.blockId,
+            startX: session.startX,
+            startY: session.startY,
+            targetBlockId: pointerTarget.blockId || '',
+            targetClassName: pointerTarget.element && String(pointerTarget.element.className || '') || '',
+            track: serializeImageMoveTrack(session.track)
+        });
+        var removeListeners = function () {
+            ownerDocument.removeEventListener('pointermove', onPointerMove, true);
+            ownerDocument.removeEventListener('pointerup', onPointerUp, true);
+            ownerDocument.removeEventListener('pointercancel', onPointerCancel, true);
+            ownerDocument.removeEventListener('mousemove', onPointerMove, true);
+            ownerDocument.removeEventListener('mouseup', onPointerUp, true);
+            ownerDocument.removeEventListener('keydown', onKeyDown, true);
+        };
+        var onPointerMove = function (moveEvent) {
+            if (session.finished) return;
+            if (session.pointerId !== undefined && moveEvent.pointerId !== undefined && moveEvent.pointerId !== session.pointerId) return;
+            var trackState = updateImageMoveTrack(inst, session.track, moveEvent);
+            var dx = trackState && trackState.currentDelta && trackState.currentDelta.x || 0;
+            var dy = trackState && trackState.currentDelta && trackState.currentDelta.y || 0;
+            if (!trackState || trackState.active !== true) {
+                inst.lastObjectPointerInteraction = _sortObject(Object.assign({}, inst.lastObjectPointerInteraction || {}, {
+                    stage: 'predrag',
+                    dx: dx,
+                    dy: dy,
+                    track: trackState
+                }));
+                return;
+            }
+            session.moved = true;
+            inst.lastObjectPointerInteraction = _sortObject(Object.assign({}, inst.lastObjectPointerInteraction || {}, {
+                stage: 'move',
+                dx: dx,
+                dy: dy,
+                appliedDx: trackState.appliedDelta && trackState.appliedDelta.x || 0,
+                appliedDy: trackState.appliedDelta && trackState.appliedDelta.y || 0,
+                guideCount: _asArray(trackState.guides).length,
+                track: trackState
+            }));
+            if (typeof moveEvent.preventDefault === 'function') moveEvent.preventDefault();
+        };
+        var onPointerUp = function (upEvent) {
+            if (session.finished) return;
+            if (session.pointerId !== undefined && upEvent.pointerId !== undefined && upEvent.pointerId !== session.pointerId) return;
+            session.finished = true;
+            removeListeners();
+            if (session.track && session.track.active) {
+                commitObjectPointerInteraction(inst, session, upEvent);
+            } else {
+                cleanupImageMoveTrack(inst, session.track, 'click', true);
+            }
+            if (typeof upEvent.preventDefault === 'function') upEvent.preventDefault();
+        };
+        var onPointerCancel = function () {
+            if (session.finished) return;
+            session.finished = true;
+            removeListeners();
+            cancelImageMoveTrack(inst, session.track, 'pointercancel');
+        };
+        var onKeyDown = function (keyEvent) {
+            if (session.finished) return;
+            if (!keyEvent || keyEvent.key !== 'Escape') return;
+            session.finished = true;
+            removeListeners();
+            var trackState = cancelImageMoveTrack(inst, session.track, 'escape');
+            inst.lastObjectPointerInteraction = _sortObject(Object.assign({}, inst.lastObjectPointerInteraction || {}, {
+                stage: 'cancel',
+                cancelReason: 'escape',
+                track: trackState
+            }));
+            if (typeof keyEvent.preventDefault === 'function') keyEvent.preventDefault();
+            if (typeof keyEvent.stopPropagation === 'function') keyEvent.stopPropagation();
+        };
+        ownerDocument.addEventListener('pointermove', onPointerMove, true);
+        ownerDocument.addEventListener('pointerup', onPointerUp, true);
+        ownerDocument.addEventListener('pointercancel', onPointerCancel, true);
+        ownerDocument.addEventListener('mousemove', onPointerMove, true);
+        ownerDocument.addEventListener('mouseup', onPointerUp, true);
+        ownerDocument.addEventListener('keydown', onKeyDown, true);
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        return true;
     }
 
     function readDomSelectionSnapshot(inst) {
@@ -9578,7 +14266,7 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !inst.root || !element) return false;
         var shell = inst.root.closest && inst.root.closest('.tm-document-editor');
         if (!shell || !shell.contains(element)) return false;
-        var toolbarTarget = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__ribbon, .tm-document-editor__floating-root');
+        var toolbarTarget = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__ribbon, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
         if (!toolbarTarget) return false;
         var selection = window.getSelection && window.getSelection();
         if (!selectionTargetsTextSurface(inst, selection)) return true;
@@ -9720,6 +14408,22 @@ window.tmDocumentEditorEngine = (function () {
                 .replace(/-/g, '');
         }
         var compact = String(raw || '').replace(/[\s_.:-]+/g, '').toLowerCase();
+        var wrapMode = button.getAttribute('data-wrap-mode') || '';
+        if (compact === 'setimagewrapmode' || wrapMode) {
+            return { command: 'setImageWrapMode', payload: { WrapMode: wrapMode || 'Square' } };
+        }
+        if (compact === 'setimageanchormode') {
+            return {
+                command: 'setImageAnchorMode',
+                payload: {
+                    MoveWithText: button.getAttribute('data-move-with-text') !== 'false',
+                    FixedOnPage: button.getAttribute('data-fixed-on-page') === 'true'
+                }
+            };
+        }
+        if (compact === 'focusimageoptions') {
+            return { command: 'focusImageOptions', payload: {} };
+        }
         switch (compact) {
             case 'bold':
                 return { command: 'toggleBold', payload: {} };
@@ -9760,7 +14464,7 @@ window.tmDocumentEditorEngine = (function () {
                 recordTimeline(inst, 'toolbar-native-button-skip', { reason: 'outside-shell' });
                 return false;
             }
-            var toolbar = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root');
+            var toolbar = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
             if (!toolbar) {
                 recordTimeline(inst, 'toolbar-native-button-skip', {
                     reason: 'outside-toolbar',
@@ -9911,7 +14615,7 @@ window.tmDocumentEditorEngine = (function () {
         var target = event && event.target;
         var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
         if (!element || !element.closest) return false;
-        var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root');
+        var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
         if (!toolbar) return false;
         var inst = resolveToolbarInstanceFromElement(element);
         if (!inst || !inst.root) return false;
@@ -9971,7 +14675,7 @@ window.tmDocumentEditorEngine = (function () {
                 var target = event && event.target;
                 var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
                 if (!element || !element.closest) return;
-                var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root');
+                var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
                 if (!toolbar) return;
                 var resolved = resolveToolbarButtonCommand(element);
                 if (!resolved) return;
@@ -10009,8 +14713,46 @@ window.tmDocumentEditorEngine = (function () {
             : createSelectionSnapshot(selection || {});
         var anchor = createLogicalPosition(snapshot.anchor || {});
         var focus = createLogicalPosition(snapshot.focus || anchor);
+        var mode = snapshot.selectionMode || snapshot.mode || (snapshot.isObjectSelection ? 'Object' : 'Text');
+        var textSelection = snapshot.textSelection || null;
+        var objectSelection = snapshot.objectSelection || null;
+        function boundaryTextSelection(value) {
+            if (!value) return null;
+            var text = normalizeTextSelectionPayload(value, null, snapshot.region || 'Body');
+            return {
+                Region: text.region || 'Body',
+                AnchorBlockId: text.anchorBlockId || text.anchor && text.anchor.blockId || null,
+                AnchorInlineId: text.anchorInlineId || text.anchor && text.anchor.inlineId || null,
+                AnchorOffset: Math.max(0, Math.round(Number(text.anchorOffset || 0) || 0)),
+                FocusBlockId: text.focusBlockId || text.focus && text.focus.blockId || null,
+                FocusInlineId: text.focusInlineId || text.focus && text.focus.inlineId || null,
+                FocusOffset: Math.max(0, Math.round(Number(text.focusOffset || 0) || 0)),
+                IsCollapsed: text.isCollapsed !== false,
+                Direction: text.direction || 'none',
+                HeaderFooterId: text.headerFooterId || null
+            };
+        }
+        function boundaryObjectSelection(value) {
+            if (!value) return null;
+            return {
+                Region: value.region || snapshot.region || 'Body',
+                Kind: value.kind || 'image',
+                ObjectId: value.objectId || null,
+                BlockId: value.blockId || value.anchorBlockId || null,
+                AnchorBlockId: value.anchorBlockId || value.blockId || null,
+                AnchorInlineId: value.anchorInlineId || null,
+                AnchorInlineIndex: Number(value.anchorInlineIndex ?? value.inlineIndex ?? -1),
+                AnchorOffset: Math.max(0, Math.round(Number(value.anchorOffset || 0) || 0)),
+                InlineIndex: Number(value.inlineIndex ?? value.anchorInlineIndex ?? -1),
+                RunId: value.runId || null,
+                TextSelection: boundaryTextSelection(value.textSelection || textSelection)
+            };
+        }
         return {
             Region: snapshot.region || anchor.region || focus.region || 'Body',
+            SelectionMode: mode,
+            TextSelection: boundaryTextSelection(textSelection),
+            ObjectSelection: boundaryObjectSelection(objectSelection),
             HeaderFooterId: snapshot.headerFooterId || anchor.headerFooterId || focus.headerFooterId || null,
             AnchorNodeId: anchor.inlineId || null,
             FocusNodeId: focus.inlineId || null,
@@ -10052,7 +14794,7 @@ window.tmDocumentEditorEngine = (function () {
             ? range.commonAncestorContainer
             : range.commonAncestorContainer.parentElement);
         if (!common) return false;
-        if (common.closest && common.closest('.tm-wysiwyg-image, figure, [data-object-id], .tm-wysiwyg-layout-object')) return false;
+        if (common.closest && common.closest('.tm-wysiwyg-image, figure, [data-object-id], .tm-wysiwyg-layout-object, .tm-wysiwyg-drawing-anchor')) return false;
         return !!(common.closest && common.closest('.tm-wysiwyg-page__body[contenteditable], .tm-wysiwyg-page__header[contenteditable], .tm-wysiwyg-page__footer[contenteditable], .tm-wysiwyg-table-cell, .tm-wysiwyg-block[data-block-id]'));
     }
 
@@ -10232,6 +14974,7 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !inst.root) return false;
         var selection = window.getSelection && window.getSelection();
         if (!selectionBelongsToEditor(inst, selection)) return false;
+        if (isObjectSelectionSnapshot(inst.selection || {}) && Date.now() < Number(inst.suppressTextSelectionChangeUntil || 0)) return false;
 
         var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
         if (!snapshot || snapshot.isObjectSelection || snapshot.isCollapsed !== true) return false;
@@ -10274,13 +15017,24 @@ window.tmDocumentEditorEngine = (function () {
         var node = findLiveTextBlockElement(inst, selection.blockId);
         if (!block || !node) return false;
         var previewBlock = _clone(block);
-        _insertTextRun(previewBlock, selection.offset, _asText(text), { marks: _clone(inst.pendingTypingMarks || []) });
+        var previewAttrs = {
+            marks: _clone(inst.pendingTypingMarks || []),
+            style: resolveTypingStyleAtInsertion(previewBlock, selection.offset, selection.affinity),
+            affinity: selection.affinity || 'after'
+        };
+        if (selection.virtualCaret === true) previewAttrs.commentIds = [];
+        _insertTextRun(previewBlock, selection.offset, _asText(text), previewAttrs);
         replaceLiveParagraphHtml(inst, node, previewBlock);
         var previewSelection = createSelectionSnapshot({
             region: selection.region || 'Body',
             blockId: selection.blockId,
             offset: Number(selection.offset || 0) + _asText(text).length,
-            isCollapsed: true
+            isCollapsed: true,
+            headerFooterId: selection.headerFooterId || null,
+            tableId: selection.activeTableId || selection.tableId || null,
+            cellId: selection.activeTableCellId || selection.cellId || null,
+            activeTableId: selection.activeTableId || selection.tableId || null,
+            activeTableCellId: selection.activeTableCellId || selection.cellId || null
         });
         restoreDomSelectionFromSnapshot(Object.assign({}, inst, { model: { body: { blocks: [previewBlock] }, indexes: { blocks: _sortObject({ [previewBlock.id]: previewBlock }) } } }), previewSelection);
         recordTimeline(inst, 'composition-preview', {
@@ -10315,7 +15069,18 @@ window.tmDocumentEditorEngine = (function () {
             ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
             : null;
         var result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
-            target: { blockId: selection.blockId, offset: selection.offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
+            target: {
+                blockId: selection.blockId,
+                offset: selection.offset,
+                region: selection.region,
+                headerFooterId: selection.headerFooterId || null,
+                tableId: selection.activeTableId || selection.tableId || null,
+                cellId: selection.activeTableCellId || selection.cellId || null,
+                affinity: selection.affinity || 'after',
+                virtualCaret: selection.virtualCaret === true,
+                layoutIntervalId: selection.layoutIntervalId || null,
+                visualHintLineId: selection.visualHintLineId || null
+            },
             text: text,
             marks: marks,
             revisionId: revisionPayload && revisionPayload.id || null,
@@ -10324,7 +15089,10 @@ window.tmDocumentEditorEngine = (function () {
             transactionType: TRANSACTION_TYPES.Typing,
             beforeSelection: selection
         });
-        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'compositionend');
+        if (result && result.ok !== false) {
+            inst.virtualCaretSelection = null;
+            rememberKeyboardSelection(inst, inst.selection || selection, 'compositionend');
+        }
         markKeyboardInputHandled(inst, 'insertCompositionText', text);
         markKeyboardInputHandled(inst, 'insertText', text);
         return { handled: true, result: result };
@@ -10372,7 +15140,18 @@ window.tmDocumentEditorEngine = (function () {
                 }
             }
             result = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
-                target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
+                target: {
+                    blockId: selection.blockId,
+                    offset: offset,
+                    region: selection.region,
+                    headerFooterId: selection.headerFooterId || null,
+                    tableId: selection.activeTableId || selection.tableId || null,
+                    cellId: selection.activeTableCellId || selection.cellId || null,
+                    affinity: selection.affinity || 'after',
+                    virtualCaret: selection.virtualCaret === true,
+                    layoutIntervalId: selection.layoutIntervalId || null,
+                    visualHintLineId: selection.visualHintLineId || null
+                },
                 text: text,
                 marks: marks,
                 revisionId: revisionPayload && revisionPayload.id || null,
@@ -10387,7 +15166,7 @@ window.tmDocumentEditorEngine = (function () {
                 ? createStructureRevisionPayload({ blockId: selection.blockId, start: offset, end: offset }, 'SplitBlock', resolveRevisionUserId(inst.options || {}), 'beforeinput')
                 : null;
             result = applyCommand(inst.id, OPERATION_TYPES.SplitParagraph, {
-                target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null },
+                target: { blockId: selection.blockId, offset: offset, region: selection.region, headerFooterId: selection.headerFooterId || null, tableId: selection.activeTableId || selection.tableId || null, cellId: selection.activeTableCellId || selection.cellId || null },
                 newBlockId: _stableId('block', selection.blockId + '-enter-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
                 revisionId: structureRevision && structureRevision.id || null,
                 revision: structureRevision || null,
@@ -10410,7 +15189,7 @@ window.tmDocumentEditorEngine = (function () {
                 ? createDeletionRevisionPayload(inst.model, { blockId: selection.blockId, start: start, end: end }, resolveRevisionUserId(inst.options || {}), 'beforeinput')
                 : null;
             result = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
-                range: { blockId: selection.blockId, start: start, end: end, region: selection.region, headerFooterId: selection.headerFooterId || null },
+                range: { blockId: selection.blockId, start: start, end: end, region: selection.region, headerFooterId: selection.headerFooterId || null, tableId: selection.activeTableId || selection.tableId || null, cellId: selection.activeTableCellId || selection.cellId || null },
                 revisionId: deletionRevision && deletionRevision.id || null,
                 revision: deletionRevision || null,
                 source: 'beforeinput',
@@ -10419,7 +15198,12 @@ window.tmDocumentEditorEngine = (function () {
             });
         }
 
-        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'beforeinput-' + inputType);
+        if (result && result.ok !== false) {
+            if (inputType === 'insertText' || inputType === 'insertFromPaste' || inputType === 'insertLineBreak') {
+                inst.virtualCaretSelection = null;
+            }
+            rememberKeyboardSelection(inst, inst.selection || selection, 'beforeinput-' + inputType);
+        }
         return { handled: true, normalized: normalized, result: result };
     }
 
@@ -10444,7 +15228,7 @@ window.tmDocumentEditorEngine = (function () {
                 ? createDeletionRevisionPayload(inst.model, range, userId, 'paste')
                 : null;
             operations.push(createOperation(OPERATION_TYPES.DeleteRange, {
-                range: Object.assign({}, range, { region: selection.region, headerFooterId: selection.headerFooterId || null }),
+                range: Object.assign({}, range, { region: selection.region, headerFooterId: selection.headerFooterId || null, tableId: selection.activeTableId || selection.tableId || null, cellId: selection.activeTableCellId || selection.cellId || null }),
                 revisionId: deletionRevision && deletionRevision.id || null,
                 revision: deletionRevision || null
             }, { source: 'paste' }));
@@ -10455,7 +15239,18 @@ window.tmDocumentEditorEngine = (function () {
             ? createInsertionRevisionPayload({ blockId: range.blockId, start: range.start, end: range.start + firstLine.length }, firstLine, userId, 'paste')
             : null;
         operations.push(createOperation(OPERATION_TYPES.InsertText, {
-            target: { blockId: range.blockId, offset: range.start, region: selection.region, headerFooterId: selection.headerFooterId || null },
+            target: {
+                blockId: range.blockId,
+                offset: range.start,
+                region: selection.region,
+                headerFooterId: selection.headerFooterId || null,
+                tableId: selection.activeTableId || selection.tableId || null,
+                cellId: selection.activeTableCellId || selection.cellId || null,
+                affinity: selection.affinity || 'after',
+                virtualCaret: selection.virtualCaret === true,
+                layoutIntervalId: selection.layoutIntervalId || null,
+                visualHintLineId: selection.visualHintLineId || null
+            },
             text: firstLine,
             marks: _clone(inst.pendingTypingMarks || []),
             revisionId: revisionPayload && revisionPayload.id || null,
@@ -10471,7 +15266,10 @@ window.tmDocumentEditorEngine = (function () {
         } else {
             result = applyOperationBatchToInstance(inst, operations, TRANSACTION_TYPES.Default, 'Paste', true);
         }
-        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'paste');
+        if (result && result.ok !== false) {
+            inst.virtualCaretSelection = null;
+            rememberKeyboardSelection(inst, inst.selection || selection, 'paste');
+        }
         markKeyboardInputHandled(inst, 'insertFromPaste', firstLine);
         return { handled: true, result: result };
     }
@@ -10484,12 +15282,19 @@ window.tmDocumentEditorEngine = (function () {
             setActiveFocusRegion(inst, getFocusRegionFromElement(root, event.target), event.target, 'focusin');
         };
         var onPointerDown = function (event) {
-            setActiveFocusRegion(inst, getFocusRegionFromElement(root, event.target), event.target, 'pointerdown');
+            var region = getFocusRegionFromElement(root, event.target);
+            setActiveFocusRegion(inst, region, event.target, 'pointerdown');
+            if (region === 'Image') {
+                if (beginObjectPointerInteraction(inst, event)) return;
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                return;
+            }
             if (targetIsEditableDocumentSurface(inst, event && event.target)) {
                 clearKeyboardSelectionMemory(inst);
                 clearLiveTypingRevision(inst);
                 inst.preserveMiniToolbarUntil = 0;
                 hideMiniToolbar(inst, 'editable-pointerdown');
+                if (applyLayoutPointerTextSelection(inst, event)) return;
             }
         };
         var onPointerUp = function () {
@@ -10507,6 +15312,23 @@ window.tmDocumentEditorEngine = (function () {
             selectRevisionAnchor(inst, revision.getAttribute('data-revision-id'), false, true);
         };
         var onKeyDown = function (event) {
+            handleEditorKeyDown(inst, event);
+        };
+        var onDocumentKeyDown = function (event) {
+            if (!event) return;
+            var key = String(event.key || '').toLowerCase();
+            var ctrl = event.ctrlKey === true || event.metaKey === true;
+            var objectNavigationShortcut = event.altKey === true
+                && ((event.shiftKey === true && !ctrl) || (ctrl && event.shiftKey !== true))
+                && (key === 'o' || key === 'p');
+            if (!objectNavigationShortcut) return;
+            var element = event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+            var active = typeof document !== 'undefined' ? document.activeElement : null;
+            var editor = root.closest && root.closest('.tm-document-editor');
+            var belongsToEditor = root.contains(element)
+                || root.contains(active)
+                || !!(editor && (editor.contains(element) || editor.contains(active)));
+            if (!belongsToEditor) return;
             handleEditorKeyDown(inst, event);
         };
         var onBeforeInput = function (event) {
@@ -10580,6 +15402,7 @@ window.tmDocumentEditorEngine = (function () {
         var documentTarget = typeof document !== 'undefined' ? document : null;
         var windowTarget = typeof window !== 'undefined' ? window : null;
         if (documentTarget && typeof documentTarget.addEventListener === 'function') {
+            documentTarget.addEventListener('keydown', onDocumentKeyDown, true);
             documentTarget.addEventListener('selectionchange', onSelectionChange);
             documentTarget.addEventListener('pointerdown', onDocumentPointerDown, true);
             documentTarget.addEventListener('mousedown', onDocumentMouseDown, true);
@@ -10622,6 +15445,7 @@ window.tmDocumentEditorEngine = (function () {
             ['compositionend', onCompositionEnd, true],
             ['keydown', onKeyDown, false]);
         inst.documentEventHandlers = [
+            ['keydown', onDocumentKeyDown, true],
             ['selectionchange', onSelectionChange, false],
             ['pointerdown', onDocumentPointerDown, true],
             ['mousedown', onDocumentMouseDown, true],
@@ -11049,6 +15873,8 @@ window.tmDocumentEditorEngine = (function () {
             focusOwner: 'body',
             floatingUiOpen: false,
             objectPreviewTransaction: null,
+            imageMoveTrack: null,
+            imageResizeTrack: null,
             eventHandlers: [],
             timers: [],
             observers: [],
@@ -11073,7 +15899,8 @@ window.tmDocumentEditorEngine = (function () {
         rootElement.setAttribute('data-engine-mode', 'google-docs');
         rootElement.setAttribute('data-active-region', 'Body');
         rootElement.setAttribute('data-focus-owner', 'body');
-        rootElement.setAttribute('aria-keyshortcuts', 'Control+B Control+I Control+U Control+Z Control+Y Control+S Shift+F10');
+        rootElement.setAttribute('aria-keyshortcuts', 'Control+B Control+I Control+U Control+Z Control+Y Control+S Shift+F10 Alt+Shift+O Alt+Shift+P Control+Alt+O Control+Alt+P F10 Delete Escape');
+        rootElement.setAttribute('tabindex', '-1');
         rootElement.classList.add('tm-document-editor-engine-host');
         installGlobalToolbarButtonBridge();
         installAccessibilityAndKeyboardHandlers(inst);
@@ -11108,6 +15935,10 @@ window.tmDocumentEditorEngine = (function () {
         }
         inst.pendingDeferredBoundaryPatches = [];
         if (inst.accessibilityAnnouncementTimer) cleanup.clearedTimers++;
+        cleanup.imageMoveTrackCleared = !!inst.imageMoveTrack;
+        cleanup.imageResizeTrackCleared = !!inst.imageResizeTrack;
+        cleanupImageMoveTrack(inst, inst.imageMoveTrack, 'dispose', true);
+        if (inst.imageResizeTrack) cleanupImageMoveTrack(inst, inst.imageResizeTrack, 'dispose', true);
         removeAccessibilityAndKeyboardHandlers(inst);
         _asArray(inst.timers).forEach(function (timerId) {
             if (timerId) {
@@ -11131,6 +15962,7 @@ window.tmDocumentEditorEngine = (function () {
             inst.root.removeAttribute('data-active-region');
             inst.root.removeAttribute('data-focus-owner');
             inst.root.removeAttribute('aria-keyshortcuts');
+            inst.root.removeAttribute('tabindex');
             inst.root.innerHTML = '';
         }
         var stats = ensureStrictPerformanceStats(inst);
@@ -11188,7 +16020,10 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function wrapModeToValue(value) {
-        var mode = normalizeWrapModeName(value);
+        var source = value && typeof value === 'object'
+            ? (value.Mode ?? value.mode ?? value.Value ?? value.value)
+            : value;
+        var mode = normalizeWrapModeName(source);
         return mode === 'Square' ? 1
             : mode === 'Tight' ? 2
                 : mode === 'Through' ? 3
@@ -11196,6 +16031,56 @@ window.tmDocumentEditorEngine = (function () {
                         : mode === 'BehindText' ? 5
                             : mode === 'InFrontOfText' ? 6
                                 : 0;
+    }
+
+    function applyImageWrapModeToLayout(layout, value, options) {
+        var opts = options || {};
+        var mode = normalizeWrapModeName(value);
+        var next = syncImageLayoutCase(_clone(layout || {}));
+        var anchor = next.Anchor || next.anchor || {};
+        var wrap = next.Wrap || next.wrap || {};
+        var stacking = next.Stacking || next.stacking || {};
+        var explicitFixed = opts.fixedOnPage !== undefined || opts.FixedOnPage !== undefined;
+        var fixedOnPage = explicitFixed
+            ? (opts.fixedOnPage ?? opts.FixedOnPage) === true
+            : (mode === 'InFrontOfText' && anchor.FixedOnPage === true);
+
+        if (mode === 'Inline') {
+            fixedOnPage = false;
+            anchor.MoveWithText = true;
+            stacking.AllowOverlap = false;
+        } else if (mode === 'BehindText') {
+            fixedOnPage = false;
+            anchor.MoveWithText = true;
+            stacking.AllowOverlap = true;
+            if (Number(stacking.ZIndex || 0) >= 0) stacking.ZIndex = -1;
+        } else if (mode === 'InFrontOfText') {
+            anchor.MoveWithText = fixedOnPage !== true;
+            stacking.AllowOverlap = true;
+            if (Number(stacking.ZIndex || 0) <= 0) stacking.ZIndex = 1;
+        } else {
+            fixedOnPage = false;
+            anchor.MoveWithText = true;
+            stacking.AllowOverlap = false;
+            if (Number(stacking.ZIndex || 0) < 0) stacking.ZIndex = 0;
+        }
+
+        anchor.FixedOnPage = fixedOnPage === true;
+        anchor.fixedOnPage = anchor.FixedOnPage;
+        anchor.moveWithText = anchor.MoveWithText;
+        wrap.Mode = wrapModeToValue(mode);
+        wrap.mode = wrap.Mode;
+        stacking.allowOverlap = stacking.AllowOverlap;
+        stacking.zIndex = stacking.ZIndex;
+        next.Kind = mode === 'Inline' ? 0 : (anchor.FixedOnPage ? 2 : 1);
+        next.kind = next.Kind;
+        next.Anchor = anchor;
+        next.anchor = anchor;
+        next.Wrap = wrap;
+        next.wrap = wrap;
+        next.Stacking = stacking;
+        next.stacking = stacking;
+        return syncImageLayoutCase(next);
     }
 
     function normalizeHorizontalPositionName(value) {
@@ -11221,8 +16106,9 @@ window.tmDocumentEditorEngine = (function () {
         var transform = source.Transform || source.transform || {};
         var stacking = source.Stacking || source.stacking || {};
         var mode = wrap.Mode ?? wrap.mode ?? 0;
-        wrap.Mode = mode;
-        wrap.mode = mode;
+        var modeName = normalizeWrapModeName(mode);
+        wrap.Mode = wrapModeToValue(modeName);
+        wrap.mode = wrap.Mode;
         wrap.DistanceLeft = Number(wrap.DistanceLeft ?? wrap.distanceLeft ?? 0) || 0;
         wrap.distanceLeft = wrap.DistanceLeft;
         wrap.DistanceRight = Number(wrap.DistanceRight ?? wrap.distanceRight ?? 0) || 0;
@@ -11241,12 +16127,30 @@ window.tmDocumentEditorEngine = (function () {
         position.x = position.X;
         position.Y = Number(position.Y ?? position.y ?? 0) || 0;
         position.y = position.Y;
-        anchor.MoveWithText = (anchor.MoveWithText ?? anchor.moveWithText ?? false) === true;
+        var fixedInput = anchor.FixedOnPage ?? anchor.fixedOnPage ?? false;
+        anchor.FixedOnPage = fixedInput === true || fixedInput === 'true';
+        var moveInput = anchor.MoveWithText ?? anchor.moveWithText;
+        anchor.MoveWithText = anchor.FixedOnPage
+            ? false
+            : (moveInput === undefined || moveInput === null ? true : moveInput !== false && moveInput !== 'false');
         anchor.moveWithText = anchor.MoveWithText;
-        anchor.FixedOnPage = (anchor.FixedOnPage ?? anchor.fixedOnPage ?? false) === true;
         anchor.fixedOnPage = anchor.FixedOnPage;
         anchor.LockAnchor = (anchor.LockAnchor ?? anchor.lockAnchor ?? false) === true;
         anchor.lockAnchor = anchor.LockAnchor;
+        anchor.BlockId = anchor.BlockId ?? anchor.blockId ?? '';
+        anchor.blockId = anchor.BlockId;
+        anchor.Offset = Number(anchor.Offset ?? anchor.offset ?? 0) || 0;
+        anchor.offset = anchor.Offset;
+        anchor.InlineIndex = Number(anchor.InlineIndex ?? anchor.inlineIndex ?? -1);
+        anchor.inlineIndex = anchor.InlineIndex;
+        anchor.Region = anchorRegionToValue(anchor.Region ?? anchor.region ?? 'Body');
+        anchor.region = anchor.Region;
+        anchor.TableId = anchor.TableId ?? anchor.tableId ?? null;
+        anchor.tableId = anchor.TableId;
+        anchor.CellId = anchor.CellId ?? anchor.cellId ?? null;
+        anchor.cellId = anchor.CellId;
+        anchor.HeaderFooterId = anchor.HeaderFooterId ?? anchor.headerFooterId ?? null;
+        anchor.headerFooterId = anchor.HeaderFooterId;
         transform.Width = Number(transform.Width ?? transform.width ?? 120) || 120;
         transform.width = transform.Width;
         transform.Height = Number(transform.Height ?? transform.height ?? 80) || 80;
@@ -11257,7 +16161,19 @@ window.tmDocumentEditorEngine = (function () {
         stacking.zIndex = stacking.ZIndex;
         stacking.AllowOverlap = (stacking.AllowOverlap ?? stacking.allowOverlap ?? false) === true;
         stacking.allowOverlap = stacking.AllowOverlap;
-        source.Kind = source.Kind ?? source.kind ?? 0;
+        var kindName = normalizeLayoutKindName(source.Kind ?? source.kind ?? 0);
+        if (kindName === 'Fixed' && modeName !== 'Inline') {
+            anchor.FixedOnPage = true;
+            anchor.fixedOnPage = true;
+            anchor.MoveWithText = false;
+            anchor.moveWithText = false;
+        } else if (modeName === 'Inline') {
+            anchor.FixedOnPage = false;
+            anchor.fixedOnPage = false;
+            anchor.MoveWithText = true;
+            anchor.moveWithText = true;
+        }
+        source.Kind = modeName === 'Inline' ? 0 : (anchor.FixedOnPage ? 2 : 1);
         source.kind = source.Kind;
         source.Anchor = anchor;
         source.anchor = anchor;
@@ -11272,68 +16188,100 @@ window.tmDocumentEditorEngine = (function () {
         return _sortObject(source);
     }
 
-    function cloneImageLayoutForUpdate(block) {
-        var content = block && block.content || {};
-        var source = _clone(content.layout || {});
-        var object = normalizeImageObject(block);
-        var sourceWrapMode = (source.Wrap && source.Wrap.Mode) ?? (source.wrap && source.wrap.mode) ?? object.wrapMode;
-        var wrapMode = normalizeWrapModeName(sourceWrapMode);
-        var position = _clone(source.Position || source.position || {});
-        var wrap = _clone(source.Wrap || source.wrap || {});
-        var anchor = _clone(source.Anchor || source.anchor || {});
-        var transform = _clone(source.Transform || source.transform || {});
-        var stacking = _clone(source.Stacking || source.stacking || {});
-        position.HorizontalAlignment = position.HorizontalAlignment ?? position.horizontalAlignment ?? horizontalPositionToValue(object.horizontalPosition && object.horizontalPosition.align);
-        position.X = position.X ?? position.x ?? (object.horizontalPosition && object.horizontalPosition.offset) ?? 0;
-        position.Y = position.Y ?? position.y ?? (object.verticalPosition && object.verticalPosition.offset) ?? 0;
-        position.HorizontalRelativeTo = position.HorizontalRelativeTo ?? position.horizontalRelativeTo ?? 0;
-        position.VerticalRelativeTo = position.VerticalRelativeTo ?? position.verticalRelativeTo ?? 3;
-        wrap.Mode = wrapModeToValue(wrapMode);
-        wrap.DistanceLeft = Number(wrap.DistanceLeft ?? wrap.distanceLeft ?? object.distanceLeft ?? 0) || 0;
-        wrap.DistanceRight = Number(wrap.DistanceRight ?? wrap.distanceRight ?? object.distanceRight ?? 0) || 0;
-        wrap.DistanceTop = Number(wrap.DistanceTop ?? wrap.distanceTop ?? object.distanceTop ?? 0) || 0;
-        wrap.DistanceBottom = Number(wrap.DistanceBottom ?? wrap.distanceBottom ?? object.distanceBottom ?? 0) || 0;
-        transform.Width = Number(transform.Width ?? transform.width ?? object.width ?? (content.size && content.size.width) ?? 120) || 120;
-        transform.Height = Number(transform.Height ?? transform.height ?? object.height ?? (content.size && content.size.height) ?? 80) || 80;
-        anchor.MoveWithText = (anchor.MoveWithText ?? anchor.moveWithText ?? wrapMode !== 'Inline') !== false;
-        anchor.FixedOnPage = (anchor.FixedOnPage ?? anchor.fixedOnPage ?? false) === true;
-        anchor.LockAnchor = (anchor.LockAnchor ?? anchor.lockAnchor ?? false) === true;
-        stacking.ZIndex = Number(stacking.ZIndex ?? stacking.zIndex ?? object.zIndex ?? 0) || 0;
-        stacking.AllowOverlap = (stacking.AllowOverlap ?? stacking.allowOverlap ?? (wrapMode === 'BehindText' || wrapMode === 'InFrontOfText')) === true;
-        return syncImageLayoutCase({
-            Kind: wrapMode === 'Inline' ? 0 : (anchor.FixedOnPage ? 2 : 1),
-            Anchor: _sortObject(anchor),
-            Position: _sortObject(position),
-            Wrap: _sortObject(wrap),
-            Transform: _sortObject(transform),
-            Stacking: _sortObject(stacking)
-        });
-    }
-
-    function activeImageBlock(inst, payload) {
+    function activeImageTarget(inst, payload) {
         var body = payload || {};
-        var blockId = body.blockId || body.BlockId || inst.selection && (inst.selection.activeImageBlockId || inst.selection.blockId) || '';
-        var objectId = body.objectId || body.ObjectId || inst.selection && (inst.selection.activeObjectId || inst.selection.objectId) || '';
-        var block = blockId ? _findBlock(inst.model, blockId) : null;
-        if (block && block.type === 'image') return block;
-        return findImageBlockByAsset(inst.model, body.assetId || body.AssetId || '', blockId, objectId);
+        var selection = inst && inst.selection || {};
+        var objectSelection = selection.objectSelection || selection.ObjectSelection || {};
+        var objectId = _asText(
+            body.objectId || body.ObjectId
+            || objectSelection.objectId || objectSelection.ObjectId
+            || selection.activeObjectId || selection.ActiveObjectId
+            || selection.objectId || selection.ObjectId
+            || '');
+        if (objectId) {
+            var drawing = findDrawingRunByObjectId(inst.model, objectId);
+            if (drawing) {
+                return _sortObject({
+                    kind: 'drawing',
+                    blockId: drawing.blockId,
+                    objectId: objectId,
+                    inlineIndex: drawing.inlineIndex,
+                    inlineId: drawing.inlineId,
+                    region: drawing.region || drawing.object && drawing.object.anchorRegion || null,
+                    headerFooterId: drawing.headerFooterId || drawing.object && drawing.object.anchorHeaderFooterId || null,
+                    tableId: drawing.tableId || drawing.object && drawing.object.anchorTableId || null,
+                    cellId: drawing.cellId || drawing.object && drawing.object.anchorCellId || null,
+                    run: drawing.run,
+                    object: drawing.object
+                });
+            }
+        }
+
+        var assetDrawing = findDrawingRunByAsset(inst.model, body.assetId || body.AssetId || '', objectId);
+        if (assetDrawing) {
+            return _sortObject({
+                kind: 'drawing',
+                blockId: assetDrawing.blockId,
+                objectId: assetDrawing.objectId,
+                inlineIndex: assetDrawing.inlineIndex,
+                inlineId: assetDrawing.inlineId,
+                region: assetDrawing.object && assetDrawing.object.anchorRegion || null,
+                headerFooterId: assetDrawing.object && assetDrawing.object.anchorHeaderFooterId || null,
+                tableId: assetDrawing.object && assetDrawing.object.anchorTableId || null,
+                cellId: assetDrawing.object && assetDrawing.object.anchorCellId || null,
+                run: assetDrawing.run,
+                object: assetDrawing.object
+            });
+        }
+
+        return null;
     }
 
-    function imageSelectionForBlock(block, region) {
-        var objectId = block && block.content && block.content.objectId || block && block.id || '';
-        return createSelectionSnapshot({
-            region: region || 'Image',
-            blockId: block && block.id || '',
-            objectId: objectId,
-            activeImageBlockId: block && block.id || '',
-            activeObjectId: objectId,
-            isObjectSelection: true,
-            isCollapsed: false,
-            range: createLogicalRange(
-                { region: region || 'Image', blockId: block && block.id || '', objectId: objectId, offset: 0, affinity: 'before' },
-                { region: region || 'Image', blockId: block && block.id || '', objectId: objectId, offset: 1, affinity: 'after' },
-                'none')
+    function cloneImageLayoutForTarget(target) {
+        if (!target) return null;
+        if (target.kind === 'drawing') {
+            var object = normalizeImageObject(target.run || {}, {
+                blockId: target.blockId,
+                inlineIndex: target.inlineIndex,
+                region: target.object && (target.object.anchorRegion || target.object.region) || target.region || 'Body',
+                headerFooterId: target.object && (target.object.anchorHeaderFooterId || target.object.headerFooterId) || target.headerFooterId || null,
+                tableId: target.object && (target.object.anchorTableId || target.object.tableId) || target.tableId || null,
+                cellId: target.object && (target.object.anchorCellId || target.object.cellId) || target.cellId || null
+            });
+            return imageObjectToLayout(object);
+        }
+
+        return null;
+    }
+
+    function imageTargetOperationTarget(target) {
+        return _sortObject({
+            blockId: target && target.blockId || '',
+            objectId: target && target.objectId || '',
+            offset: 0,
+            region: target && target.object && (target.object.anchorRegion || target.object.region) || target && target.region || null,
+            headerFooterId: target && target.object && (target.object.anchorHeaderFooterId || target.object.headerFooterId) || target && target.headerFooterId || null,
+            tableId: target && target.object && (target.object.anchorTableId || target.object.tableId) || target && target.tableId || null,
+            cellId: target && target.object && (target.object.anchorCellId || target.object.cellId) || target && target.cellId || null
         });
+    }
+
+    function affectedParagraphsForImageTarget(model, target, layout) {
+        var anchor = layout && (layout.Anchor || layout.anchor) || {};
+        return _unique([
+            target && target.blockId,
+            anchor.BlockId || anchor.blockId,
+            target && target.object && target.object.anchorBlockId
+        ].filter(Boolean).concat(affectedParagraphsAroundObject(model, target && target.blockId || '')));
+    }
+
+    function imageTargetCaption(target) {
+        if (!target) return '';
+        if (target.kind === 'drawing') {
+            return _asText(target.run && (target.run.caption ?? target.run.Caption) || '');
+        }
+
+        return '';
     }
 
     function applyRuntimeImageCommand(inst, commandName, payload) {
@@ -11344,23 +16292,40 @@ window.tmDocumentEditorEngine = (function () {
             'setimageanchormode', 'setimagezorder', 'setimagewrapdistance', 'deleteimage', 'focusimageoptions'
         ];
         if (imageCommands.indexOf(compact) < 0) return null;
-        if (compact === 'focusimageoptions') return { ok: true, instanceId: inst.id, command: commandName, noop: true };
+        if (compact === 'focusimageoptions') {
+            var focusResult = openImageToolbarForSelectedObject(inst, 'image-command');
+            return Object.assign({ instanceId: inst.id, command: commandName }, focusResult);
+        }
         var body = payload || {};
-        var block = activeImageBlock(inst, body);
-        if (!block || block.type !== 'image') {
+        var target = activeImageTarget(inst, body);
+        if (!target) {
             return { ok: false, instanceId: inst.id, command: commandName, error: { code: 'active-image-not-found' } };
         }
 
         if (compact === 'deleteimage') {
             var nextModel = _clone(inst.model);
-            var container = _findBlockContainer(nextModel, block.id);
-            if (!container) return { ok: false, instanceId: inst.id, command: commandName, error: { code: 'active-image-container-not-found' } };
-            container.blocks.splice(container.index, 1);
+            var deletionSelection = createObjectSelectionSnapshot(nextModel, {
+                region: body.region || body.Region || target.object && target.object.anchorRegion || 'Body',
+                objectId: target.objectId,
+                blockId: target.blockId,
+                anchorBlockId: target.object && target.object.anchorBlockId || target.blockId,
+                anchorOffset: target.object && target.object.anchorOffset || 0,
+                anchorInlineIndex: target.inlineIndex ?? (target.object && target.object.anchorInlineIndex) ?? -1,
+                runId: target.inlineId || null,
+                headerFooterId: target.object && target.object.anchorHeaderFooterId || target.headerFooterId || null,
+                tableId: target.object && target.object.anchorTableId || target.tableId || null,
+                cellId: target.object && target.object.anchorCellId || target.cellId || null,
+                textSelection: inst.selection && (inst.selection.textSelection || inst.selection.TextSelection)
+            });
+            var deleteResult = deleteObjectSelection(nextModel, deletionSelection);
+            if (!deleteResult.ok) {
+                return { ok: false, instanceId: inst.id, command: commandName, error: deleteResult.error || { code: 'active-image-delete-failed' } };
+            }
             buildIndexes(nextModel);
             return applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
                 snapshot: nextModel,
-                selection: firstModelSelection(nextModel),
-                affectedScopeIds: ['document'],
+                selection: deleteResult.selection || firstModelSelection(nextModel),
+                affectedScopeIds: deleteResult.affectedScopeIds || ['document'],
                 source: 'image-command',
                 transactionType: TRANSACTION_TYPES.Default,
                 beforeSelection: inst.selection
@@ -11370,30 +16335,31 @@ window.tmDocumentEditorEngine = (function () {
         if (compact === 'setimagewrapmode' || compact === 'setimageposition' || compact === 'setimagesize'
             || compact === 'setimageobjectposition' || compact === 'setimageanchormode' || compact === 'setimagezorder'
             || compact === 'setimagewrapdistance') {
-            var layout = cloneImageLayoutForUpdate(block);
+            var oldLayout = cloneImageLayoutForTarget(target);
+            if (!oldLayout) {
+                return { ok: false, instanceId: inst.id, command: commandName, error: { code: 'active-image-layout-not-found' } };
+            }
+            var layout = _clone(oldLayout);
             if (compact === 'setimagewrapmode') {
                 var mode = normalizeWrapModeName(body.wrapMode ?? body.WrapMode ?? body.mode ?? body.Mode);
-                layout.Wrap.Mode = wrapModeToValue(mode);
-                layout.Kind = mode === 'Inline' ? 0 : (layout.Anchor.FixedOnPage ? 2 : 1);
-                layout.Anchor.MoveWithText = mode !== 'Inline' && layout.Anchor.FixedOnPage !== true;
-                if (mode === 'BehindText' || mode === 'InFrontOfText') layout.Stacking.AllowOverlap = true;
+                layout = applyImageWrapModeToLayout(layout, mode, {
+                    fixedOnPage: body.fixedOnPage ?? body.FixedOnPage
+                });
             } else if (compact === 'setimageposition') {
                 layout.Position.HorizontalAlignment = horizontalPositionToValue(body.horizontalPosition ?? body.HorizontalPosition ?? body.alignment ?? body.Alignment);
                 if (normalizeWrapModeName(layout.Wrap.Mode) === 'Inline') {
-                    layout.Wrap.Mode = wrapModeToValue('Square');
-                    layout.Kind = 1;
-                    layout.Anchor.MoveWithText = true;
+                    layout = applyImageWrapModeToLayout(layout, 'Square');
                 }
             } else if (compact === 'setimagesize') {
                 if (body.width ?? body.Width) layout.Transform.Width = Math.max(1, Number(body.width ?? body.Width) || layout.Transform.Width || 1);
                 if (body.height ?? body.Height) layout.Transform.Height = Math.max(1, Number(body.height ?? body.Height) || layout.Transform.Height || 1);
                 if (body.lockAspectRatio !== undefined || body.LockAspectRatio !== undefined) layout.Transform.LockAspectRatio = (body.lockAspectRatio ?? body.LockAspectRatio) !== false;
             } else if (compact === 'setimageobjectposition') {
-                if (body.x ?? body.X) layout.Position.X = Number(body.x ?? body.X) || 0;
-                if (body.y ?? body.Y) layout.Position.Y = Number(body.y ?? body.Y) || 0;
-                if (body.horizontalRelativeTo ?? body.HorizontalRelativeTo) layout.Position.HorizontalRelativeTo = body.horizontalRelativeTo ?? body.HorizontalRelativeTo;
-                if (body.verticalRelativeTo ?? body.VerticalRelativeTo) layout.Position.VerticalRelativeTo = body.verticalRelativeTo ?? body.VerticalRelativeTo;
-                if (body.horizontalAlignment ?? body.HorizontalAlignment) layout.Position.HorizontalAlignment = horizontalPositionToValue(body.horizontalAlignment ?? body.HorizontalAlignment);
+                if (body.x !== undefined || body.X !== undefined) layout.Position.X = Number(body.x ?? body.X) || 0;
+                if (body.y !== undefined || body.Y !== undefined) layout.Position.Y = Number(body.y ?? body.Y) || 0;
+                if (body.horizontalRelativeTo !== undefined || body.HorizontalRelativeTo !== undefined) layout.Position.HorizontalRelativeTo = body.horizontalRelativeTo ?? body.HorizontalRelativeTo;
+                if (body.verticalRelativeTo !== undefined || body.VerticalRelativeTo !== undefined) layout.Position.VerticalRelativeTo = body.verticalRelativeTo ?? body.VerticalRelativeTo;
+                if (body.horizontalAlignment !== undefined || body.HorizontalAlignment !== undefined) layout.Position.HorizontalAlignment = horizontalPositionToValue(body.horizontalAlignment ?? body.HorizontalAlignment);
             } else if (compact === 'setimageanchormode') {
                 if (body.lockAnchor !== undefined || body.LockAnchor !== undefined) layout.Anchor.LockAnchor = (body.lockAnchor ?? body.LockAnchor) === true;
                 if (body.moveWithText !== undefined || body.MoveWithText !== undefined) layout.Anchor.MoveWithText = (body.moveWithText ?? body.MoveWithText) !== false;
@@ -11411,25 +16377,32 @@ window.tmDocumentEditorEngine = (function () {
                 else if (distanceName.indexOf('top') >= 0) layout.Wrap.DistanceTop = value;
                 else if (distanceName.indexOf('bottom') >= 0) layout.Wrap.DistanceBottom = value;
             }
-            return applyCommand(inst.id, OPERATION_TYPES.UpdateImageLayout, {
-                target: { blockId: block.id, offset: 0 },
+            layout = syncImageLayoutCase(layout);
+            var result = applyCommand(inst.id, OPERATION_TYPES.UpdateImageLayout, {
+                target: imageTargetOperationTarget(target),
+                oldLayout: oldLayout,
+                newLayout: layout,
                 layout: layout,
-                affectedParagraphIds: affectedParagraphsAroundObject(inst.model, block.id),
+                affectedParagraphIds: affectedParagraphsForImageTarget(inst.model, target, layout),
                 source: 'image-command',
                 transactionType: TRANSACTION_TYPES.Default,
                 beforeSelection: inst.selection
             });
+            if (result && result.ok !== false) {
+                scheduleFormattingStatePublish(inst, 'image-layout-command', { immediate: true });
+            }
+            return result;
         }
 
         var metadata = {};
         if (compact === 'setimagealttext') metadata.altText = _asText(body.altText ?? body.AltText ?? '');
         else if (compact === 'setimagedecorative') metadata.isDecorative = (body.isDecorative ?? body.IsDecorative) === true;
-        else if (compact === 'toggleimagecaption') metadata.caption = _asText(block.content && block.content.caption || '').trim() ? '' : _asText(body.caption ?? body.Caption ?? 'Caption');
+        else if (compact === 'toggleimagecaption') metadata.caption = imageTargetCaption(target).trim() ? '' : _asText(body.caption ?? body.Caption ?? 'Caption');
         else if (compact === 'setimagecaption') metadata.caption = _asText(body.caption ?? body.Caption ?? '');
         else if (compact === 'setimageurl') metadata.url = body.url ?? body.Url ?? '';
         else if (compact === 'setimagelink') metadata.linkUrl = body.url ?? body.Url ?? body.linkUrl ?? body.LinkUrl ?? '';
         return applyCommand(inst.id, OPERATION_TYPES.UpdateImageMetadata, {
-            target: { blockId: block.id, offset: 0 },
+            target: imageTargetOperationTarget(target),
             metadata: metadata,
             source: 'image-command',
             transactionType: TRANSACTION_TYPES.Default,
@@ -11487,6 +16460,81 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function selectionTargetForInsertImageCommand(model, body, currentSelection) {
+        var explicitSelection = _read(body || {}, 'Selection', 'selection', null);
+        var snapshot = createSelectionSnapshot(explicitSelection || currentSelection || firstModelSelection(model));
+        if (snapshot.isObjectSelection === true || snapshot.selectionMode === 'Object') {
+            snapshot = restoreTextSelectionFromObjectSelection(snapshot);
+        }
+        var block = snapshot.blockId ? _findBlock(model, snapshot.blockId) : null;
+        if (!block) {
+            block = _firstTextBlock(model);
+            snapshot = createSelectionSnapshot(block ? { region: 'Body', blockId: block.id, offset: 0 } : firstModelSelection(model));
+        }
+        var offset = _isEditableTextBlock(block)
+            ? Math.max(0, Math.min(_blockText(block).length, Number(snapshot.offset || 0) || 0))
+            : 0;
+        return _sortObject({
+            blockId: block && block.id || snapshot.blockId || '',
+            offset: offset,
+            region: snapshot.region || _read(body || {}, 'Region', 'region', 'Body'),
+            headerFooterId: snapshot.headerFooterId || _read(body || {}, 'HeaderFooterId', 'headerFooterId', null),
+            tableId: snapshot.activeTableId || snapshot.tableId || _read(body || {}, 'TableId', 'tableId', null),
+            cellId: snapshot.activeTableCellId || snapshot.cellId || _read(body || {}, 'CellId', 'cellId', null)
+        });
+    }
+
+    function imagePayloadFromInsertImageCommand(commandName, body) {
+        var compact = compactCommandName(commandName);
+        var sourceBlock = _read(body || {}, 'Block', 'block', null);
+        if (sourceBlock && (sourceBlock.Block || sourceBlock.block)) sourceBlock = sourceBlock.Block || sourceBlock.block;
+        var image = _read(body || {}, 'Image', 'image', null);
+        if (!image && sourceBlock) image = firstDrawingRunFromSourceBlock(sourceBlock) || _read(sourceBlock, 'Content', 'content', sourceBlock);
+        if (!image && compact === 'insertimageurl') {
+            image = {
+                Source: _read(body || {}, 'Source', 'source', 0),
+                Url: _read(body || {}, 'Url', 'url', null),
+                AssetId: _read(body || {}, 'AssetId', 'assetId', null),
+                AltText: _read(body || {}, 'AltText', 'altText', ''),
+                Caption: _read(body || {}, 'Caption', 'caption', ''),
+                Size: _read(body || {}, 'Size', 'size', {}),
+                NaturalSize: _read(body || {}, 'NaturalSize', 'naturalSize', {}),
+                Layout: _read(body || {}, 'Layout', 'layout', {}),
+                Metadata: _read(body || {}, 'Metadata', 'metadata', {})
+            };
+        }
+        return _sortObject({
+            sourceBlock: sourceBlock || null,
+            image: image || null
+        });
+    }
+
+    function createInsertImageOperationFromCommand(model, commandName, payload, currentSelection) {
+        var compact = compactCommandName(commandName);
+        if (compact !== 'insertimageurl' && compact !== 'insertimageobject') return null;
+        var body = payload || {};
+        var imagePayload = imagePayloadFromInsertImageCommand(commandName, body);
+        if (!imagePayload.sourceBlock && !imagePayload.image) return null;
+        var target = selectionTargetForInsertImageCommand(model, body, currentSelection);
+        var image = imagePayload.image || {};
+        var sourceBlock = imagePayload.sourceBlock || null;
+        var objectId = _asText(
+            _read(body, 'ObjectId', 'objectId',
+                _read(body, 'BlockId', 'blockId',
+                    _read(image, 'ObjectId', 'objectId',
+                        _read(image, 'Id', 'id', _read(sourceBlock || {}, 'Id', 'id', ''))))));
+        var operationBody = {
+            target: target,
+            block: sourceBlock,
+            image: image,
+            selection: _read(body, 'Selection', 'selection', currentSelection || null)
+        };
+        if (objectId) operationBody.blockId = objectId;
+        return createOperation(OPERATION_TYPES.InsertImage, operationBody, {
+            source: _read(body, 'OperationSource', 'operationSource', _read(body, 'source', 'source', 'command'))
+        });
+    }
+
     function applyCommand(instanceId, command, payload) {
         var lookup = _get(instanceId, 'applyCommand');
         if (lookup.error) return lookup.error;
@@ -11523,6 +16571,9 @@ window.tmDocumentEditorEngine = (function () {
         if (!operation) {
             var runtimeImageResult = applyRuntimeImageCommand(lookup.inst, commandName, body);
             if (runtimeImageResult) return runtimeImageResult;
+        }
+        if (!operation) {
+            operation = createInsertImageOperationFromCommand(lookup.inst.model, commandName, body, lookup.inst.selection);
         }
         if (!operation && OPERATION_TYPES[commandName]) {
             operation = createOperation(commandName, body, { source: body.source || 'command' });
@@ -11839,7 +16890,7 @@ window.tmDocumentEditorEngine = (function () {
         var lookup = _get(instanceId, 'getSelectionSnapshot');
         if (lookup.error) return lookup.error;
         var domSelection = window.getSelection && window.getSelection();
-        if (selectionBelongsToEditor(lookup.inst, domSelection)) {
+        if (!isObjectSelectionSnapshot(lookup.inst.selection || {}) && selectionBelongsToEditor(lookup.inst, domSelection)) {
             var domSnapshot = createSelectionPostFixer(lookup.inst.schema).fix(lookup.inst.model, readDomSelectionSnapshot(lookup.inst));
             if (domSnapshot && domSnapshot.blockId) {
                 lookup.inst.selection = domSnapshot;
@@ -11893,14 +16944,17 @@ window.tmDocumentEditorEngine = (function () {
             if (blockLayout.type === 'paragraph') {
                 _asArray(blockLayout.lines).forEach(function (line) {
                     var lineRect = cloneRect(line.rect);
+                    var normalizedIntervals = _asArray(line.availableIntervals).map(function (interval, index) {
+                        return normalizeCaretInterval(line, interval, index);
+                    });
                     lineBoxes.push(_sortObject({
                         id: line.id || '',
                         blockId: blockLayout.blockId || '',
                         pageIndex: Number(line.pageIndex ?? blockLayout.pageIndex ?? 0) || 0,
                         rect: lineRect,
-                        availableIntervals: _asArray(line.availableIntervals).map(function (interval) { return cloneRect(interval); })
+                        availableIntervals: normalizedIntervals
                     }));
-                    _asArray(line.availableIntervals).forEach(function (interval) {
+                    normalizedIntervals.forEach(function (interval) {
                         exclusionZones.push(_sortObject({
                             id: 'line-interval-' + (line.id || lineBoxes.length),
                             kind: 'available-text-interval',
@@ -12090,6 +17144,7 @@ window.tmDocumentEditorEngine = (function () {
         var diagnostics = ensureDiagnostics(lookup.inst);
         var stats = ensureStrictPerformanceStats(lookup.inst);
         var currentSelection = rememberSelectionToken(lookup.inst, lookup.inst.selection || firstModelSelection(lookup.inst.model), 'getDebugSnapshot');
+        var activeRegion = updateActiveRegionMetric(lookup.inst, activeRegionForInstance(lookup.inst));
         return _sortObject({
             ok: true,
             instanceId: instanceId,
@@ -12105,6 +17160,8 @@ window.tmDocumentEditorEngine = (function () {
             layout: lookup.inst.layout,
             selection: lookup.inst.selection,
             activeTransaction: lookup.inst.activeTransaction && lookup.inst.activeTransaction.toJSON ? lookup.inst.activeTransaction.toJSON() : _clone(lookup.inst.activeTransaction || null),
+            activeRegion: activeRegion,
+            ActiveRegion: activeRegion,
             commandCount: lookup.inst.commands.length,
             transactionCount: lookup.inst.transactions.length,
             undoDepth: lookup.inst.undoTransactions.length,
@@ -12121,6 +17178,8 @@ window.tmDocumentEditorEngine = (function () {
             debugWarningVisible: diagnostics.debugWarnings.length > 0,
             dirtyState: lookup.inst.dirtyState,
             trackChangesState: resolveTrackChangesState(lookup.inst.options || {}),
+            imageRuntime: getImageRuntimeSourceDiagnostics(lookup.inst),
+            ImageRuntime: getImageRuntimeSourceDiagnostics(lookup.inst),
             modelEpoch: lookup.inst.modelEpoch,
             savedEpoch: lookup.inst.savedEpoch,
             boundaryPatchCount: lookup.inst.boundaryPatches.length,
@@ -12136,6 +17195,9 @@ window.tmDocumentEditorEngine = (function () {
             lastSelectionTokenReason: lookup.inst.lastSelectionTokenReason || '',
             commandSelectionTokenDiagnostic: _clone(lookup.inst.lastCommandTokenDiagnostic || null),
             CommandSelectionTokenDiagnostic: _clone(lookup.inst.lastCommandTokenDiagnostic || null),
+            lastObjectPointerInteraction: _clone(lookup.inst.lastObjectPointerInteraction || null),
+            imageMoveTrack: serializeImageMoveTrack(lookup.inst.imageMoveTrack || null),
+            imageResizeTrack: serializeImageMoveTrack(lookup.inst.imageResizeTrack || null),
             lastOperationValidation: lookup.inst.lastOperationValidation,
             lastDiffer: lookup.inst.lastDiffer,
             selectionMapper: mapperDump,
@@ -12204,52 +17266,53 @@ window.tmDocumentEditorEngine = (function () {
         return result;
     }
 
-    function findImageBlockByAsset(model, assetId, blockId, objectId) {
-        var found = null;
-        function scan(blocks) {
-            _asArray(blocks).forEach(function (block) {
-                if (found || !block) return;
-                if (block.type === 'image') {
-                    var content = block.content || {};
-                    if ((blockId && block.id === blockId)
-                        || (objectId && (content.objectId === objectId || block.id === objectId))
-                        || (assetId && (content.assetId === assetId || content.AssetId === assetId))) {
-                        found = block;
-                        return;
-                    }
-                }
-                if (block.type === 'table') {
-                    _asArray(block.content && block.content.rows).forEach(function (row) {
-                        _asArray(row.cells).forEach(function (cell) { scan(cell.blocks); });
-                    });
-                }
-            });
+    function findDrawingRunByAsset(model, assetId, objectId) {
+        var wantedAssetId = _asText(assetId || '');
+        var wantedObjectId = _asText(objectId || '');
+        ensureDrawingIndexes(model);
+        var objects = model && model.indexes && model.indexes.drawingObjectsById || {};
+        var keys = Object.keys(objects);
+        for (var i = 0; i < keys.length; i++) {
+            var entry = objects[keys[i]];
+            var run = entry && entry.run || {};
+            var runAssetId = _asText(run.assetId || run.AssetId || entry && entry.object && entry.object.assetId || '');
+            var runObjectId = _asText(run.objectId || run.ObjectId || entry && entry.objectId || '');
+            if ((wantedObjectId && runObjectId === wantedObjectId)
+                || (wantedAssetId && runAssetId === wantedAssetId)) {
+                return _sortObject({
+                    blockId: entry.blockId || '',
+                    objectId: runObjectId,
+                    inlineIndex: Number(entry.inlineIndex ?? -1),
+                    inlineId: entry.inlineId || run.id || run.Id || null,
+                    run: run,
+                    object: normalizeImageObject(run, { blockId: entry.blockId || '', inlineIndex: Number(entry.inlineIndex ?? -1) })
+                });
+            }
         }
-        scan(model && model.body && model.body.blocks);
-        _asArray(model && model.headers).forEach(function (region) { scan(region.blocks); });
-        _asArray(model && model.footers).forEach(function (region) { scan(region.blocks); });
-        return found;
+        return null;
     }
 
     function updateProviderImageUrl(instanceId, update) {
         var lookup = _get(instanceId, 'updateProviderImageUrl');
         if (lookup.error) return lookup.error;
         var body = update || {};
-        var block = findImageBlockByAsset(
+        var drawing = findDrawingRunByAsset(
             lookup.inst.model,
             body.assetId || body.AssetId || '',
-            body.blockId || body.BlockId || '',
             body.objectId || body.ObjectId || '');
-        if (!block) return { ok: false, instanceId: instanceId, error: { code: 'missing-image-asset' } };
-        if (!block.content) block.content = { type: 'image' };
-        block.content.url = body.url || body.Url || body.resolvedUrl || body.ResolvedUrl || block.content.url || null;
-        block.content.resolvedUrl = block.content.url;
-        if (body.assetId || body.AssetId) block.content.assetId = body.assetId || body.AssetId;
+        if (!drawing) return { ok: false, instanceId: instanceId, error: { code: 'missing-drawing-image-asset' } };
+        drawing.run.url = body.url || body.Url || body.resolvedUrl || body.ResolvedUrl || drawing.run.url || null;
+        drawing.run.resolvedUrl = drawing.run.url;
+        drawing.run.Url = drawing.run.url;
+        if (body.assetId || body.AssetId) {
+            drawing.run.assetId = body.assetId || body.AssetId;
+            drawing.run.AssetId = drawing.run.assetId;
+        }
         buildIndexes(lookup.inst.model);
-        lookup.inst.layout.invalidatedScopeIds = [block.id];
-        lookup.inst.lastCSharpUpdate = { type: 'providerImageUrl', blockId: block.id, at: Date.now() };
+        lookup.inst.layout.invalidatedScopeIds = [drawing.blockId];
+        lookup.inst.lastCSharpUpdate = { type: 'providerImageUrl', blockId: drawing.blockId, objectId: drawing.objectId, at: Date.now() };
         render(lookup.inst);
-        return _sortObject({ ok: true, instanceId: instanceId, blockId: block.id, url: block.content.url, dirtyState: _clone(lookup.inst.dirtyState || createInitialDirtyState()) });
+        return _sortObject({ ok: true, instanceId: instanceId, blockId: drawing.blockId, objectId: drawing.objectId, url: drawing.run.url, dirtyState: _clone(lookup.inst.dirtyState || createInitialDirtyState()) });
     }
 
     function refreshSnapshot(instanceId, snapshot, options) {
@@ -12597,10 +17660,17 @@ window.tmDocumentEditorEngine = (function () {
                 ? stats.keyToDomSamples.reduce(function (sum, value) { return sum + Number(value || 0); }, 0) / stats.keyToDomSamples.length
                 : 0,
             LastRenderReason: stats.renderLastReason || '',
+            RenderSwapCount: stats.renderSwapCount || 0,
+            FullRenderSwapCount: stats.fullRenderSwapCount || 0,
+            BodyRenderSwapCount: stats.bodyRenderSwapCount || 0,
+            HeaderRenderSwapCount: stats.headerRenderSwapCount || 0,
+            FooterRenderSwapCount: stats.footerRenderSwapCount || 0,
+            LastRenderSwap: _clone(stats.lastRenderSwap || null),
             LayoutPassCount: stats.layoutPassCount || 0,
             LastLayoutPassMs: stats.layoutPassLastMs || 0,
             MaxLayoutPassMs: stats.layoutPassMaxMs || 0,
             LastLayoutReason: stats.layoutLastReason || '',
+            ActiveRegion: stats.activeRegion || activeRegionForInstance(lookup.inst),
             TotalPages: lookup.inst.layout && Array.isArray(lookup.inst.layout.pages) ? lookup.inst.layout.pages.length : 0,
             RenderedPages: stats.renderedPages || 0,
             VirtualizedPages: stats.virtualizedPages || 0,
@@ -12618,6 +17688,17 @@ window.tmDocumentEditorEngine = (function () {
             ImageDragLatencyCount: stats.imageDragLatencyCount || 0,
             LastImageDragLatencyMs: stats.imageDragLatencyLastMs || 0,
             MaxImageDragLatencyMs: stats.imageDragLatencyMaxMs || 0,
+            ObjectTrackFrameCount: stats.objectTrackFrameCount || 0,
+            ObjectTrackActiveFrameCount: stats.objectTrackActiveFrameCount || 0,
+            ObjectTrackDragFrameCount: stats.objectTrackDragFrameCount || 0,
+            ObjectTrackResizeFrameCount: stats.objectTrackResizeFrameCount || 0,
+            ObjectTrackCommitCount: stats.objectTrackCommitCount || 0,
+            ObjectTrackDragCommitCount: stats.objectTrackDragCommitCount || 0,
+            ObjectTrackResizeCommitCount: stats.objectTrackResizeCommitCount || 0,
+            LastObjectTrackFrame: _clone(stats.lastObjectTrackFrame || null),
+            LastObjectTrackCommit: _clone(stats.lastObjectTrackCommit || null),
+            ModelCommitCount: stats.modelCommitCount || 0,
+            LastModelCommit: _clone(stats.lastModelCommit || null),
             SelectionMovementCount: stats.selectionMovementCount || 0,
             LastSelectionMovementMs: stats.selectionMovementLastMs || 0,
             MaxSelectionMovementMs: stats.selectionMovementMaxMs || 0,
@@ -12658,6 +17739,7 @@ window.tmDocumentEditorEngine = (function () {
         lookup.inst.suppressCollapsedSelectionChangeUntil = 0;
         lookup.inst.pendingFormattingStateStartedAt = 0;
         lookup.inst.lastSelectionStateChangeAt = 0;
+        updateActiveRegionMetric(lookup.inst, activeRegionForInstance(lookup.inst));
         return { ok: true, instanceId: instanceId };
     }
 
@@ -12778,13 +17860,28 @@ window.tmDocumentEditorEngine = (function () {
         var lookup = _get(instanceId, 'insertImageNode');
         if (lookup.error) return lookup.error;
         var source = block && (block.Block || block.block) ? (block.Block || block.block) : block;
-        var imageBlock = importBlock(source || { Type: 'Image', Content: { Type: 'Image', AltText: 'Image' } }, 'inserted-image-' + Date.now());
-        imageBlock.type = 'image';
-        lookup.inst.model.body.blocks.push(imageBlock);
-        buildIndexes(lookup.inst.model);
-        markModelChanged(lookup.inst, 'insertImageNode');
-        render(lookup.inst);
-        return { ok: true, instanceId: instanceId, blockId: imageBlock.id };
+        var imagePayload = imagePayloadFromInsertImageCommand('insertImageObject', { Block: source || {} });
+        if (!imagePayload.image) {
+            return { ok: false, instanceId: instanceId, error: { code: 'missing-image-payload' } };
+        }
+
+        var image = imagePayload.image;
+        var objectId = _asText(_read(image, 'ObjectId', 'objectId',
+            _read(source || {}, 'ObjectId', 'objectId',
+                _read(source || {}, 'Id', 'id', ''))));
+        var result = applyCommand(instanceId, OPERATION_TYPES.InsertImage, {
+            target: selectionTargetForInsertImageCommand(lookup.inst.model, { Selection: lookup.inst.selection }, lookup.inst.selection),
+            block: source || null,
+            image: image,
+            objectId: objectId || undefined,
+            selection: lookup.inst.selection,
+            source: 'insertImageNode'
+        });
+        if (!result || result.ok === false) return result;
+        return _sortObject(Object.assign({ instanceId: instanceId }, result, {
+            blockId: result.nextSelection && result.nextSelection.objectSelection && result.nextSelection.objectSelection.anchorBlockId || '',
+            objectId: result.insertedObjectId || result.nextSelection && result.nextSelection.activeObjectId || objectId || ''
+        }));
     }
 
     function captureCommentAnchor(instanceId) {
@@ -12831,13 +17928,40 @@ window.tmDocumentEditorEngine = (function () {
     function updateActiveImageSelectionDom(inst) {
         if (!inst || !inst.root) return;
         var active = _asText(inst.selection && (inst.selection.activeImageBlockId || (inst.selection.isObjectSelection ? inst.selection.blockId : '')) || '');
+        var activeObject = _asText(inst.selection && (inst.selection.activeObjectId || inst.selection.objectId || inst.selection.objectSelection && inst.selection.objectSelection.objectId) || '');
         var selectedFigure = null;
-        Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image[data-block-id]')).forEach(function (figure) {
-            var selected = !!active && figure.getAttribute('data-block-id') === active;
-            figure.classList.toggle('tm-wysiwyg-image--selected', selected);
-            figure.setAttribute('aria-selected', selected ? 'true' : 'false');
+        Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image[data-block-id], .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id]')).forEach(function (figure) {
+            var blockId = figure.getAttribute('data-block-id') || figure.getAttribute('data-render-block-id') || '';
+            var objectId = figure.getAttribute('data-object-id') || figure.getAttribute('data-render-object-id') || '';
+            var selected = activeObject
+                ? objectId === activeObject
+                : (!!active && blockId === active);
+            applyObjectFocusPolicyToElement(figure, selected, inst);
             if (selected) selectedFigure = figure;
         });
+        Array.from(inst.root.querySelectorAll('.tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id]')).forEach(function (overlay) {
+            var blockId = overlay.getAttribute('data-block-id') || overlay.getAttribute('data-render-block-id') || '';
+            var objectId = overlay.getAttribute('data-object-id') || overlay.getAttribute('data-render-object-id') || '';
+            var selected = activeObject
+                ? objectId === activeObject
+                : (!!active && blockId === active);
+            overlay.classList.toggle('tm-wysiwyg-object--selected', selected);
+            overlay.classList.toggle('tm-wysiwyg-image--selected', selected);
+            if (selected) overlay.setAttribute('data-object-selected', 'true');
+            else overlay.removeAttribute('data-object-selected');
+            overlay.setAttribute('aria-hidden', selected ? 'false' : 'true');
+            if (selected) {
+                overlay.setAttribute('role', 'group');
+                overlay.setAttribute('aria-label', 'Selected image controls');
+            } else {
+                overlay.removeAttribute('role');
+                overlay.removeAttribute('aria-label');
+            }
+            applyObjectSelectionAccessibilityToElement(inst, overlay, selected);
+        });
+        updateActiveObjectStatusDom(inst);
+        updateImageToolbarOpenDom(inst, false);
+        syncWysiwygObjectLayerPositions(inst.root);
         scheduleImageFloatingPanelPosition(inst, selectedFigure);
     }
 
@@ -13349,7 +18473,7 @@ window.tmDocumentEditorEngine = (function () {
         return { node: block, offset: 0 };
     }
 
-    function renderImageFigureStyle(object) {
+    function renderDrawingFigureStyle(object) {
         var width = Math.max(1, Number(object && object.width || 120) || 120);
         var mode = normalizeWrapModeName(object && object.wrapMode);
         var align = String(object && object.horizontalPosition && object.horizontalPosition.align || 'Left').toLowerCase();
@@ -13387,8 +18511,42 @@ window.tmDocumentEditorEngine = (function () {
         if (mode === 'Square' || mode === 'Tight' || mode === 'Through') {
             classes.push(align === 'right' || align === 'end' ? 'tm-wysiwyg-image--float-right' : 'tm-wysiwyg-image--float-left');
         }
-        if (selected) classes.push('tm-wysiwyg-image--selected');
+        if (selected) {
+            classes.push('tm-wysiwyg-image--selected');
+            classes.push('tm-wysiwyg-object--selected');
+        }
         return classes.join(' ');
+    }
+
+    function renderImageLayoutBubbleButton(testId, command, label, active, attributes) {
+        var extra = attributes || {};
+        var ariaLabel = extra['aria-label'] || extra.ariaLabel || label;
+        delete extra['aria-label'];
+        delete extra.ariaLabel;
+        var html = '<button type="button" class="tm-wysiwyg-layout-bubble__button' + (active ? ' tm-wysiwyg-layout-bubble__button--active' : '') + '" data-testid="' + _escape(testId) + '" data-command="' + _escape(command) + '" aria-label="' + _escape(ariaLabel) + '" aria-pressed="' + (active ? 'true' : 'false') + '"';
+        Object.keys(extra).forEach(function (key) {
+            html += ' ' + _escape(key) + '="' + _escape(extra[key]) + '"';
+        });
+        html += '>' + _escape(label) + '</button>';
+        return html;
+    }
+
+    function renderImageLayoutBubbleHtml(object) {
+        var mode = normalizeWrapModeName(object && object.wrapMode);
+        var fixedOnPage = object && object.fixedOnPage === true;
+        var moveWithText = object && object.moveWithText !== false && !fixedOnPage;
+        var buttons = [
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-inline', 'setImageWrapMode', 'Inline', mode === 'Inline', { 'data-wrap-mode': 'Inline', 'aria-label': 'Place image inline with text' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-wrap', 'setImageWrapMode', 'Wrap', mode === 'Square', { 'data-wrap-mode': 'Square', 'aria-label': 'Wrap text around image' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-tight', 'setImageWrapMode', 'Tight', mode === 'Tight', { 'data-wrap-mode': 'Tight', 'aria-label': 'Use tight image text wrapping' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-break', 'setImageWrapMode', 'Break', mode === 'TopBottom', { 'data-wrap-mode': 'TopBottom', 'aria-label': 'Place image between text lines' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-behind', 'setImageWrapMode', 'Behind', mode === 'BehindText', { 'data-wrap-mode': 'BehindText', 'aria-label': 'Place image behind text' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-front', 'setImageWrapMode', 'Front', mode === 'InFrontOfText', { 'data-wrap-mode': 'InFrontOfText', 'aria-label': 'Place image in front of text' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-move-with-text', 'setImageAnchorMode', 'Move', moveWithText, { 'data-move-with-text': 'true', 'data-fixed-on-page': 'false', 'aria-label': 'Move image with text' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-fix-position', 'setImageAnchorMode', 'Fix', fixedOnPage, { 'data-move-with-text': 'false', 'data-fixed-on-page': 'true', 'aria-label': 'Fix image position on page' }),
+            renderImageLayoutBubbleButton('document-wysiwyg-layout-bubble-more', 'focusImageOptions', 'More', false, { 'aria-label': 'Open image options' })
+        ];
+        return '<span class="tm-wysiwyg-layout-bubble" data-testid="document-wysiwyg-object-layout-bubble" role="toolbar" aria-label="Image layout options" aria-expanded="false">' + buttons.join('') + '</span>';
     }
 
     function normalizeHeaderFooterScope(scope) {
@@ -13576,13 +18734,387 @@ window.tmDocumentEditorEngine = (function () {
         return '<span class="' + classes.join(' ') + '" data-testid="document-revision-marker" data-revision-id="' + _escape(id) + '" data-marker-id="revision:' + _escape(id) + '" data-revision-type="' + _escape(markerType) + '" aria-current="' + (active ? 'true' : 'false') + '">' + (innerHtml !== undefined ? innerHtml : _escape(text)) + '</span>';
     }
 
-    function renderParagraphRunsHtml(inst, block, pageNumber, totalPages) {
+    function inlineDrawingIsSelected(inst, block, run, object) {
+        var selection = inst && inst.selection || {};
+        var objectId = _asText(object && object.objectId || run && (run.objectId || run.ObjectId) || '');
+        if (!objectId) return false;
+        var selectedObjectId = _asText(selection.activeObjectId || selection.objectId || selection.objectSelection && selection.objectSelection.objectId || '');
+        return !!selectedObjectId && selectedObjectId === objectId;
+    }
+
+    function renderDrawingObjectTestMarkerHtml(objectId) {
+        var id = _asText(objectId);
+        if (!id) return '';
+        return '<span class="tm-document-wysiwyg-host__sr-only" data-testid="document-wysiwyg-drawing-object-' + _escape(id) + '" aria-hidden="true"></span>';
+    }
+
+    function renderInlineDrawingHtml(inst, block, run, inlineIndex) {
+        var object = normalizeImageObject(run, { blockId: block && block.id || '', inlineIndex: inlineIndex });
+        var selected = inlineDrawingIsSelected(inst, block, run, object);
+        var width = Math.max(1, Number(object.width || 120) || 120);
+        var height = Math.max(1, Number(object.height || 80) || 80);
+        var objectId = _asText(object.objectId || run && (run.objectId || run.ObjectId || run.id || run.Id) || '');
+        var runId = _asText(run && (run.id || run.Id) || objectId);
+        var alt = _asText(object.altText || run && (run.altText || run.AltText) || '');
+        var caption = _asText(object.caption || run && (run.caption || run.Caption) || '');
+        var label = alt || caption || 'Image';
+        var classes = [
+            'tm-document-inline',
+            'tm-wysiwyg-inline-drawing',
+            'tm-wysiwyg-inline-drawing--image',
+            'tm-wysiwyg-image--inline'
+        ];
+        if (selected) classes.push('tm-wysiwyg-image--selected', 'tm-wysiwyg-object--selected');
+        var styles = [
+            'width:' + width + 'px',
+            'height:' + height + 'px',
+            '--tm-wysiwyg-inline-drawing-width:' + width + 'px',
+            '--tm-wysiwyg-inline-drawing-height:' + height + 'px'
+        ];
+        var attrs = [
+            'class="' + classes.join(' ') + '"',
+            'data-testid="document-wysiwyg-inline-drawing"',
+            'data-inline-id="' + _escape(runId) + '"',
+            'data-node-id="' + _escape(runId) + '"',
+            'data-object-id="' + _escape(objectId) + '"',
+            'data-render-object-id="' + _escape(objectId) + '"',
+            'data-block-id="' + _escape(block && block.id || '') + '"',
+            'data-anchor-block-id="' + _escape(object.anchorBlockId || block && block.id || '') + '"',
+            'data-anchor-offset="' + _escape(object.anchorOffset) + '"',
+            'data-anchor-inline-index="' + _escape(object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : inlineIndex) + '"',
+            'data-wrap-mode="' + _escape(object.wrapMode || 'Inline') + '"',
+            'contenteditable="false"',
+            'draggable="false"',
+            'role="img"',
+            'aria-label="' + _escape(label) + '"',
+            'style="' + _escape(styles.join(';')) + '"'
+        ];
+        attrs.push(renderObjectFocusPolicyAttributes(selected));
+        if (selected) attrs.push(renderObjectSelectionDescriptionAttribute(inst, selected));
+        var html = ['<span ' + attrs.join(' ') + '>'];
+        html.push(renderDrawingObjectTestMarkerHtml(objectId));
+        if (object.url) {
+            html.push('<img src="' + _escape(object.url) + '" alt="' + _escape(alt) + '" draggable="false" />');
+        } else {
+            html.push('<span class="tm-wysiwyg-inline-drawing__placeholder" aria-hidden="true">' + _escape(label) + '</span>');
+        }
+        html.push('<span class="tm-wysiwyg-selection-box" data-testid="document-wysiwyg-object-selection-box" aria-hidden="true"></span>');
+        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(function (handleName) {
+            html.push(renderObjectResizeHandleHtml(inst, handleName, selected));
+        });
+        html.push(renderImageLayoutBubbleHtml(object));
+        html.push('</span>');
+        return html.join('');
+    }
+
+    function renderAnchoredDrawingHtml(inst, block, run, inlineIndex) {
+        var object = normalizeImageObject(run, { blockId: block && block.id || '', inlineIndex: inlineIndex });
+        var selected = inlineDrawingIsSelected(inst, block, run, object);
+        var height = Math.max(1, Number(object.height || 80) || 80);
+        var objectId = _asText(object.objectId || run && (run.objectId || run.ObjectId || run.id || run.Id) || '');
+        var runId = _asText(run && (run.id || run.Id) || objectId);
+        var alt = _asText(object.altText || run && (run.altText || run.AltText) || '');
+        var caption = _asText(object.caption || run && (run.caption || run.Caption) || '');
+        var label = alt || caption || 'Image';
+        var classes = renderImageFigureClasses(selected, object)
+            .split(/\s+/)
+            .filter(function (item) { return item && item !== 'tm-wysiwyg-block'; });
+        classes.push('tm-wysiwyg-anchored-drawing');
+        classes.push('tm-wysiwyg-image--floating');
+        classes.push('tm-wysiwyg-drawing-run');
+        var attrs = [
+            'class="' + _unique(classes).join(' ') + '"',
+            'data-testid="document-wysiwyg-anchored-drawing"',
+            'data-inline-id="' + _escape(runId) + '"',
+            'data-node-id="' + _escape(runId) + '"',
+            'data-object-id="' + _escape(objectId) + '"',
+            'data-render-object-id="' + _escape(objectId) + '"',
+            'data-block-id="' + _escape(block && block.id || '') + '"',
+            'data-anchor-block-id="' + _escape(object.anchorBlockId || block && block.id || '') + '"',
+            'data-anchor-offset="' + _escape(object.anchorOffset) + '"',
+            'data-anchor-inline-index="' + _escape(object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : inlineIndex) + '"',
+            'data-wrap-mode="' + _escape(object.wrapMode || 'Square') + '"',
+            'data-layout-kind="' + _escape(object.layoutKind || 'Anchored') + '"',
+            'contenteditable="false"',
+            'draggable="false"',
+            'role="img"',
+            'aria-label="' + _escape(label) + '"',
+            'style="' + _escape(renderDrawingFigureStyle(object)) + '"'
+        ];
+        attrs.push(renderObjectFocusPolicyAttributes(selected));
+        if (selected) attrs.push(renderObjectSelectionDescriptionAttribute(inst, selected));
+        var html = ['<span ' + attrs.join(' ') + '>'];
+        html.push(renderDrawingObjectTestMarkerHtml(objectId));
+        if (object.url) {
+            html.push('<img src="' + _escape(object.url) + '" alt="' + _escape(alt) + '" style="width:100%;height:' + height + 'px;object-fit:contain" draggable="false" />');
+        } else {
+            html.push('<span class="tm-wysiwyg-image__placeholder" style="height:' + height + 'px" aria-hidden="true">' + _escape(label) + '</span>');
+        }
+        if (caption) html.push('<span class="tm-wysiwyg-image__caption">' + _escape(caption) + '</span>');
+        html.push('<span class="tm-wysiwyg-selection-box" data-testid="document-wysiwyg-object-selection-box" aria-hidden="true"></span>');
+        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(function (handleName) {
+            html.push(renderObjectResizeHandleHtml(inst, handleName, selected));
+        });
+        html.push(renderImageLayoutBubbleHtml(object));
+        html.push('</span>');
+        return html.join('');
+    }
+
+    function renderDrawingAnchorHtml(inst, block, run, inlineIndex) {
+        var object = normalizeImageObject(run, { blockId: block && block.id || '', inlineIndex: inlineIndex });
+        var width = Math.max(1, Number(object.width || 120) || 120);
+        var height = Math.max(1, Number(object.height || 80) || 80);
+        var objectId = _asText(object.objectId || run && (run.objectId || run.ObjectId || run.id || run.Id) || '');
+        var runId = _asText(run && (run.id || run.Id) || objectId);
+        var inline = object.isInline === true;
+        var classes = [
+            'tm-document-inline',
+            'tm-wysiwyg-drawing-anchor',
+            inline ? 'tm-wysiwyg-drawing-anchor--inline' : 'tm-wysiwyg-drawing-anchor--anchored'
+        ];
+        var styles = [
+            '--tm-wysiwyg-drawing-anchor-width:' + width + 'px',
+            '--tm-wysiwyg-drawing-anchor-height:' + height + 'px'
+        ];
+        if (inline) {
+            styles.push('width:' + width + 'px', 'height:' + height + 'px');
+        }
+        var attrs = [
+            'class="' + classes.join(' ') + '"',
+            'data-testid="document-wysiwyg-drawing-anchor"',
+            'data-inline-id="' + _escape(runId) + '"',
+            'data-node-id="' + _escape(runId) + '"',
+            'data-object-anchor-id="' + _escape(objectId) + '"',
+            'data-anchor-block-id="' + _escape(object.anchorBlockId || block && block.id || '') + '"',
+            'data-anchor-offset="' + _escape(object.anchorOffset) + '"',
+            'data-anchor-inline-index="' + _escape(object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : inlineIndex) + '"',
+            'data-wrap-mode="' + _escape(object.wrapMode || (inline ? 'Inline' : 'Square')) + '"',
+            'contenteditable="false"',
+            'aria-hidden="true"',
+            'draggable="false"',
+            'style="' + _escape(styles.join(';')) + '"'
+        ];
+        return '<span ' + attrs.join(' ') + '></span>';
+    }
+
+    function createWysiwygObjectRenderEntry(inst, block, run, inlineIndex, sourceKind) {
+        var source = run || block || {};
+        var object = normalizeImageObject(source, { blockId: block && block.id || '', inlineIndex: inlineIndex });
+        var objectId = _asText(object.objectId || source.objectId || source.ObjectId || source.id || source.Id || block && block.id || '');
+        if (!objectId) return null;
+        var runId = _asText(source.id || source.Id || objectId);
+        var selected = inlineDrawingIsSelected(inst, block, source, object);
+        return _sortObject({
+            sourceKind: sourceKind || 'drawing-run',
+            blockId: _asText(block && block.id || object.blockId || ''),
+            runId: runId,
+            inlineIndex: Number(inlineIndex ?? object.anchorInlineIndex ?? -1),
+            objectId: objectId,
+            object: object,
+            selected: selected === true
+        });
+    }
+
+    function collectWysiwygPageObjectEntries(inst, blocks) {
+        var entries = [];
+        _asArray(blocks).forEach(function (block) {
+            if (!block) return;
+            if (block.type !== 'paragraph') return;
+            _asArray(block.content && block.content.runs).forEach(function (run, runIndex) {
+                if (run && (run.kind === 'drawing' || isDrawingRunSource(run))) {
+                    var entry = createWysiwygObjectRenderEntry(inst, block, run, runIndex, 'drawing-run');
+                    if (entry) entries.push(entry);
+                }
+            });
+        });
+        return entries;
+    }
+
+    function renderWysiwygObjectLayerItemHtml(inst, entry) {
+        var object = entry && entry.object || {};
+        var width = Math.max(1, Number(object.width || 120) || 120);
+        var height = Math.max(1, Number(object.height || 80) || 80);
+        var objectId = _asText(entry && entry.objectId || object.objectId || '');
+        var blockId = _asText(entry && entry.blockId || object.blockId || object.anchorBlockId || '');
+        var alt = _asText(object.altText || '');
+        var caption = _asText(object.caption || '');
+        var label = alt || caption || 'Image';
+        var mode = normalizeWrapModeName(object.wrapMode || 'Inline');
+        var layer = drawingLayerForWrapMode(mode);
+        var zIndex = Number(object.zIndex || 0) || 0;
+        var classes = [
+            'tm-wysiwyg-layout-object',
+            'tm-wysiwyg-object-layer-item',
+            'tm-wysiwyg-object-layer-item--image',
+            'tm-wysiwyg-object-layer-item--wrap-' + mode.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            object.isInline === true ? 'tm-wysiwyg-object-layer-item--inline' : 'tm-wysiwyg-object-layer-item--anchored'
+        ];
+        if (entry && entry.selected) classes.push('tm-wysiwyg-object-layer-item--selected');
+        var styles = [
+            '--tm-layout-object-width:' + width + 'px',
+            '--tm-layout-object-height:' + height + 'px',
+            'width:' + width + 'px',
+            'min-height:' + height + 'px',
+            'height:' + height + 'px',
+            'left:0px',
+            'top:0px',
+            'z-index:' + zIndex
+        ];
+        var attrs = [
+            'class="' + classes.join(' ') + '"',
+            'data-testid="document-wysiwyg-object-layer-item"',
+            'data-object-id="' + _escape(objectId) + '"',
+            'data-render-object-id="' + _escape(objectId) + '"',
+            'data-block-id="' + _escape(blockId) + '"',
+            'data-anchor-block-id="' + _escape(object.anchorBlockId || blockId) + '"',
+            'data-anchor-offset="' + _escape(object.anchorOffset) + '"',
+            'data-anchor-inline-index="' + _escape(object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : entry && entry.inlineIndex) + '"',
+            'data-object-layer-kind="' + _escape(object.isInline === true ? 'inline' : 'anchored') + '"',
+            'data-object-layer="' + _escape(layer || 'object') + '"',
+            'data-wrap-mode="' + _escape(mode) + '"',
+            'data-horizontal-align="' + _escape(object.horizontalPosition && object.horizontalPosition.align || 'Left') + '"',
+            'data-horizontal-offset="' + _escape(object.horizontalPosition && object.horizontalPosition.offset || 0) + '"',
+            'data-vertical-offset="' + _escape(object.verticalPosition && object.verticalPosition.offset || 0) + '"',
+            'data-object-width="' + _escape(width) + '"',
+            'data-object-height="' + _escape(height) + '"',
+            'contenteditable="false"',
+            'draggable="false"',
+            'role="img"',
+            'aria-label="' + _escape(label) + '"',
+            'style="' + _escape(styles.join(';')) + '"'
+        ];
+        attrs.push(renderObjectFocusPolicyAttributes(entry && entry.selected));
+        if (entry && entry.selected) attrs.push(renderObjectSelectionDescriptionAttribute(inst, true));
+        var html = ['<figure ' + attrs.join(' ') + '>'];
+        html.push(renderDrawingObjectTestMarkerHtml(objectId));
+        if (object.url) {
+            html.push('<img src="' + _escape(object.url) + '" alt="' + _escape(alt) + '" draggable="false" />');
+        } else {
+            html.push('<span class="tm-wysiwyg-inline-drawing__placeholder" aria-hidden="true"></span>');
+        }
+        if (caption) html.push('<figcaption>' + _escape(caption) + '</figcaption>');
+        html.push('</figure>');
+        return html.join('');
+    }
+
+    function renderWysiwygObjectSelectionOverlayHtml(inst, entry) {
+        if (!entry) return '';
+        var object = entry.object || {};
+        var width = Math.max(1, Number(object.width || 120) || 120);
+        var height = Math.max(1, Number(object.height || 80) || 80);
+        var objectId = _asText(entry.objectId || object.objectId || '');
+        var blockId = _asText(entry.blockId || object.blockId || object.anchorBlockId || '');
+        var styles = [
+            '--tm-layout-object-width:' + width + 'px',
+            '--tm-layout-object-height:' + height + 'px',
+            'width:' + width + 'px',
+            'height:' + height + 'px',
+            'left:0px',
+            'top:0px',
+            'z-index:' + ((Number(object.zIndex || 0) || 0) + 1)
+        ];
+        var classes = ['tm-wysiwyg-object-selection-overlay'];
+        if (entry.selected) classes.push('tm-wysiwyg-object--selected');
+        var overlayAttrs = [
+            'class="' + classes.join(' ') + '"',
+            'data-testid="document-wysiwyg-object-selection-overlay"',
+            'data-object-id="' + _escape(objectId) + '"',
+            'data-render-object-id="' + _escape(objectId) + '"',
+            'data-block-id="' + _escape(blockId) + '"',
+            'data-object-width="' + _escape(width) + '"',
+            'data-object-height="' + _escape(height) + '"',
+            'contenteditable="false"',
+            'aria-hidden="' + (entry.selected ? 'false' : 'true') + '"',
+            'style="' + _escape(styles.join(';')) + '"'
+        ];
+        if (entry.selected) {
+            overlayAttrs.push('role="group"');
+            overlayAttrs.push('aria-label="Selected image controls"');
+            overlayAttrs.push(renderObjectSelectionDescriptionAttribute(inst, true));
+        }
+        var html = ['<span ' + overlayAttrs.join(' ') + '>'];
+        html.push('<span class="tm-wysiwyg-selection-box" data-testid="document-wysiwyg-object-selection-box" aria-hidden="true"></span>');
+        ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(function (handleName) {
+            html.push(renderObjectResizeHandleHtml(inst, handleName, entry.selected));
+        });
+        html.push(renderObjectRotationHandleHtml(entry.selected));
+        html.push('</span>');
+        return html.join('');
+    }
+
+    function renderWysiwygObjectGuidesOverlayHtml(inst, entry) {
+        if (!entry) return '';
+        var object = entry.object || {};
+        var width = Math.max(1, Number(object.width || 120) || 120);
+        var height = Math.max(1, Number(object.height || 80) || 80);
+        var styles = [
+            '--tm-layout-object-width:' + width + 'px',
+            '--tm-layout-object-height:' + height + 'px',
+            'width:' + width + 'px',
+            'height:' + height + 'px',
+            'left:0px',
+            'top:0px',
+            'z-index:' + ((Number(object.zIndex || 0) || 0) + 2)
+        ];
+        var classes = ['tm-wysiwyg-object-guides-overlay'];
+        if (entry.selected) classes.push('tm-wysiwyg-object--selected');
+        var attrs = [
+            'class="' + classes.join(' ') + '"',
+            'data-testid="document-wysiwyg-object-guides-overlay"',
+            'data-object-id="' + _escape(entry.objectId) + '"',
+            'data-render-object-id="' + _escape(entry.objectId) + '"',
+            'data-block-id="' + _escape(entry.blockId) + '"',
+            'contenteditable="false"',
+            'aria-hidden="' + (entry.selected ? 'false' : 'true') + '"',
+            'style="' + _escape(styles.join(';')) + '"'
+        ];
+        if (entry.selected) {
+            attrs.push('role="group"');
+            attrs.push('aria-label="Selected image layout controls"');
+            attrs.push(renderObjectSelectionDescriptionAttribute(inst, true));
+        }
+        return '<span ' + attrs.join(' ') + '>' + renderImageLayoutBubbleHtml(object) + '</span>';
+    }
+
+    function renderWysiwygObjectLayersHtml(inst, entries) {
+        var html = [];
+        html.push('<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--object" data-testid="document-wysiwyg-object-layer">');
+        _asArray(entries).forEach(function (entry) {
+            html.push(renderWysiwygObjectLayerItemHtml(inst, entry));
+        });
+        html.push('</div>');
+        html.push('<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--selection" data-testid="document-wysiwyg-selection-layer">');
+        _asArray(entries).forEach(function (entry) {
+            html.push(renderWysiwygObjectSelectionOverlayHtml(inst, entry));
+        });
+        html.push('</div>');
+        html.push('<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--guides" data-testid="document-wysiwyg-guides-layer">');
+        _asArray(entries).forEach(function (entry) {
+            html.push(renderWysiwygObjectGuidesOverlayHtml(inst, entry));
+        });
+        html.push('</div>');
+        return html.join('');
+    }
+
+    function renderParagraphRunsHtml(inst, block, pageNumber, totalPages, renderOptions) {
+        var options = renderOptions || {};
         var commentMarkers = commentMarkersForBlock(inst, block && block.id || '');
         var revisionMarkers = revisionMarkersForBlock(inst, block && block.id || '');
         var markers = commentMarkers.concat(revisionMarkers);
         var cursor = 0;
         var html = [];
-        _asArray(block && block.content && block.content.runs).forEach(function (run) {
+        _asArray(block && block.content && block.content.runs).forEach(function (run, runIndex) {
+            if (run && (run.kind === 'drawing' || isDrawingRunSource(run))) {
+                if (options.drawingMode === 'text-layer-anchor') {
+                    html.push(renderDrawingAnchorHtml(inst, block, run, runIndex));
+                    return;
+                }
+                var object = normalizeImageObject(run, { blockId: block && block.id || '', inlineIndex: runIndex });
+                html.push(object && object.isInline === true
+                    ? renderInlineDrawingHtml(inst, block, run, runIndex)
+                    : renderAnchoredDrawingHtml(inst, block, run, runIndex));
+                return;
+            }
             var text = resolveInlineRunDisplayText(run, pageNumber, totalPages);
             var runStart = cursor;
             var runEnd = cursor + text.length;
@@ -13641,6 +19173,107 @@ window.tmDocumentEditorEngine = (function () {
             cursor = runEnd;
         });
         return html.join('');
+    }
+
+    function renderWysiwygTextBlockHtml(inst, block, imageAltMissing, pageNumber, totalPages) {
+        if (!block) return '';
+        if (block.type === 'paragraph') {
+            var content = renderParagraphRunsHtml(inst, block, pageNumber, totalPages, { drawingMode: 'text-layer-anchor' });
+            var blockContent = block.content || {};
+            var blockStyle = block.style || {};
+            var alignment = normalizeParagraphAlignment(blockContent.alignment ?? blockContent.Alignment ?? blockStyle.alignment ?? blockStyle.Alignment ?? 'left');
+            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" data-alignment="' + _escape(alignment) + '" style="text-align:' + _escape(alignment) + '" role="paragraph">' + (content || '<br data-caret-placeholder="true">') + '</p>';
+        }
+        if (block.type === 'image') {
+            return '<p class="tm-wysiwyg-block tm-wysiwyg-legacy-image-placeholder" data-block-id="' + _escape(block.id) + '" data-legacy-image-block="true" aria-hidden="true"><br data-caret-placeholder="true"></p>';
+        }
+        return renderEngineBlockHtml(inst, block, imageAltMissing, pageNumber, totalPages);
+    }
+
+    function renderWysiwygBodyLayersHtml(inst, blocks, imageAltMissing, pageNumber, totalPages) {
+        var entries = collectWysiwygPageObjectEntries(inst, blocks);
+        var html = ['<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--body-text" data-testid="document-wysiwyg-text-layer">'];
+        if (!_asArray(blocks).length) {
+            html.push('<p class="tm-wysiwyg-block" data-block-id="empty-paragraph"><br></p>');
+        } else {
+            _asArray(blocks).forEach(function (block) {
+                html.push(renderWysiwygTextBlockHtml(inst, block, imageAltMissing, pageNumber, totalPages));
+            });
+        }
+        html.push('</div>');
+        html.push(renderWysiwygObjectLayersHtml(inst, entries));
+        return html.join('');
+    }
+
+    function syncWysiwygObjectLayerPositions(root) {
+        if (!root || typeof root.querySelectorAll !== 'function') return;
+        Array.from(root.querySelectorAll('.tm-wysiwyg-page__body--layout')).forEach(function (body) {
+            var layer = body.querySelector('.tm-wysiwyg-page__layer--object');
+            if (!layer || typeof layer.getBoundingClientRect !== 'function') return;
+            var layerRect = layer.getBoundingClientRect();
+            Array.from(layer.querySelectorAll('.tm-wysiwyg-object-layer-item[data-object-id]')).forEach(function (item) {
+                var objectId = item.getAttribute('data-object-id') || '';
+                if (!objectId) return;
+                var rect = resolveWysiwygObjectLayerRect(body, layerRect, item);
+                applyWysiwygObjectLayerRect(item, rect);
+                Array.from(body.querySelectorAll('.tm-wysiwyg-object-selection-overlay[data-object-id="' + cssEscape(objectId) + '"], .tm-wysiwyg-object-guides-overlay[data-object-id="' + cssEscape(objectId) + '"]')).forEach(function (overlay) {
+                    applyWysiwygObjectLayerRect(overlay, rect);
+                });
+            });
+        });
+    }
+
+    function resolveWysiwygObjectLayerRect(body, layerRect, item) {
+        var objectId = item.getAttribute('data-object-id') || '';
+        var width = Math.max(1, Number(item.getAttribute('data-object-width') || item.style.width || 120) || 120);
+        var height = Math.max(1, Number(item.getAttribute('data-object-height') || item.style.height || 80) || 80);
+        var anchor = objectId && body.querySelector('[data-object-anchor-id="' + cssEscape(objectId) + '"]');
+        var anchorBlockId = item.getAttribute('data-anchor-block-id') || item.getAttribute('data-block-id') || '';
+        var block = anchorBlockId
+            ? body.querySelector('.tm-wysiwyg-block[data-block-id="' + cssEscape(anchorBlockId) + '"]')
+            : null;
+        var kind = item.getAttribute('data-object-layer-kind') || 'anchored';
+        if (kind === 'inline' && anchor && typeof anchor.getBoundingClientRect === 'function') {
+            var anchorRect = anchor.getBoundingClientRect();
+            return {
+                x: anchorRect.left - layerRect.left,
+                y: anchorRect.top - layerRect.top,
+                width: Math.max(width, anchorRect.width || 0),
+                height: Math.max(height, anchorRect.height || 0)
+            };
+        }
+
+        var reference = anchor && typeof anchor.getBoundingClientRect === 'function'
+            ? anchor.getBoundingClientRect()
+            : block && typeof block.getBoundingClientRect === 'function'
+                ? block.getBoundingClientRect()
+                : layerRect;
+        var blockRect = block && typeof block.getBoundingClientRect === 'function' ? block.getBoundingClientRect() : reference;
+        var align = String(item.getAttribute('data-horizontal-align') || 'Left').toLowerCase();
+        var offsetX = Number(item.getAttribute('data-horizontal-offset') || 0) || 0;
+        var offsetY = Number(item.getAttribute('data-vertical-offset') || 0) || 0;
+        var left = (blockRect.left || reference.left || layerRect.left) - layerRect.left + offsetX;
+        if (align === 'right' || align === 'end') {
+            left = (blockRect.right || (blockRect.left + blockRect.width)) - layerRect.left - width - offsetX;
+        } else if (align === 'center' || align === 'middle') {
+            left = (blockRect.left || reference.left || layerRect.left) - layerRect.left + Math.max(0, ((blockRect.width || width) - width) / 2) + offsetX;
+        }
+        return {
+            x: Math.max(0, left),
+            y: Math.max(0, (reference.top || blockRect.top || layerRect.top) - layerRect.top + offsetY),
+            width: width,
+            height: height
+        };
+    }
+
+    function applyWysiwygObjectLayerRect(node, rect) {
+        if (!node || !node.style || !rect) return;
+        node.style.left = Math.round(Number(rect.x || 0) * 100) / 100 + 'px';
+        node.style.top = Math.round(Number(rect.y || 0) * 100) / 100 + 'px';
+        node.style.width = Math.max(1, Number(rect.width || 0) || 1) + 'px';
+        node.style.height = Math.max(1, Number(rect.height || 0) || 1) + 'px';
+        node.style.setProperty('--tm-layout-object-width', Math.max(1, Number(rect.width || 0) || 1) + 'px');
+        node.style.setProperty('--tm-layout-object-height', Math.max(1, Number(rect.height || 0) || 1) + 'px');
     }
 
     function renderHeaderFooterHtml(inst, page, type, readOnly, totalPages) {
@@ -13711,22 +19344,23 @@ window.tmDocumentEditorEngine = (function () {
             var alt = block.content.altText || '';
             var caption = block.content.caption || '';
             var warningId = 'tm-wysiwyg-image-alt-warning-' + _escape(block.id);
-            var ariaDescription = !alt ? ' aria-describedby="' + warningId + '"' : '';
             var selected = inst.selection && (inst.selection.activeImageBlockId === block.id || inst.selection.blockId === block.id && inst.selection.isObjectSelection === true);
+            var describedBy = appendAriaDescribedByToken(!alt ? warningId : '', activeObjectStatusId(inst), selected === true);
+            var ariaDescription = describedBy ? ' aria-describedby="' + _escape(describedBy) + '"' : '';
             var src = _asText(object.url || '');
             var height = Math.max(1, Number(object.height || 80) || 80);
-            var html = ['<figure class="' + renderImageFigureClasses(selected, object) + '" style="' + _escape(renderImageFigureStyle(object)) + '" data-block-id="' + _escape(block.id) + '" data-wrap-mode="' + _escape(object.wrapMode) + '" role="figure" tabindex="0" aria-label="' + _escape(alt || caption || 'Image') + '"' + ariaDescription + ' aria-selected="' + (selected ? 'true' : 'false') + '">'];
+            var html = ['<figure class="' + renderImageFigureClasses(selected, object) + '" style="' + _escape(renderDrawingFigureStyle(object)) + '" data-block-id="' + _escape(block.id) + '" data-wrap-mode="' + _escape(object.wrapMode) + '" role="figure" aria-label="' + _escape(alt || caption || 'Image') + '"' + ariaDescription + renderObjectFocusPolicyAttributes(selected) + '>'];
             if (src) {
                 html.push('<img src="' + _escape(src) + '" alt="' + _escape(alt) + '" style="width:100%;height:' + height + 'px;object-fit:contain" draggable="false" />');
             } else {
                 html.push('<div class="tm-wysiwyg-image__placeholder" style="height:' + height + 'px" aria-hidden="true">' + _escape(alt || caption || 'Image') + '</div>');
             }
             if (caption) html.push('<figcaption>' + _escape(caption) + '</figcaption>');
-            html.push('<span class="tm-wysiwyg-selection-box" data-testid="document-wysiwyg-object-selection-box"></span>');
+            html.push('<span class="tm-wysiwyg-selection-box" data-testid="document-wysiwyg-object-selection-box" aria-hidden="true"></span>');
             ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(function (handleName) {
-                html.push('<span class="tm-wysiwyg-object-resize-handle tm-wysiwyg-object-resize-handle--' + handleName + '" data-resize-handle="' + handleName + '" data-testid="document-wysiwyg-object-resize-handle-' + handleName + '"></span>');
+                html.push(renderObjectResizeHandleHtml(inst, handleName, selected));
             });
-            html.push('<span class="tm-wysiwyg-layout-bubble" data-testid="document-wysiwyg-object-layout-bubble"><button type="button" class="tm-wysiwyg-layout-bubble__button tm-wysiwyg-layout-bubble__button--active">Wrap</button><button type="button" class="tm-wysiwyg-layout-bubble__button">Inline</button><button type="button" class="tm-wysiwyg-layout-bubble__button">Alt</button></span>');
+            html.push(renderImageLayoutBubbleHtml(object));
             if (!alt) html.push('<span id="' + warningId + '" class="tm-document-wysiwyg-host__sr-only" data-testid="document-wysiwyg-image-alt-warning" role="status" aria-live="polite">' + _escape(imageAltMissing) + '</span>');
             html.push('</figure>');
             return html.join('');
@@ -13755,11 +19389,13 @@ window.tmDocumentEditorEngine = (function () {
             var bodyLabel = formatA11yLabel(inst.options.BodyLabel || inst.options.bodyLabel || 'Document body, page {0}', 1);
             var imageAltMissing = inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.';
             var readOnly = inst.options.readOnly || inst.options.ReadOnly;
+            var activeObjectStatus = isObjectSelectionSnapshot(inst.selection || {}) ? activeObjectAccessibilityStatus(inst) : '';
             applyReviewDisplayModeClass(inst.root, inst.options.reviewDisplayMode || inst.options.ReviewDisplayMode || 'AllMarkup');
             var pagePlan = buildPagePlan(inst, blocks, previousSelection);
             var html = [
                 '<div class="tm-wysiwyg-document tm-wysiwyg-document--google-docs-engine" data-testid="document-wysiwyg-engine-document" role="document" aria-label="' + _escape(pageLabel) + '">',
-                '<span class="tm-document-wysiwyg-host__sr-only" data-testid="document-wysiwyg-selection-live" role="status" aria-live="polite" aria-atomic="true"></span>'
+                '<span class="tm-document-wysiwyg-host__sr-only" data-testid="document-wysiwyg-selection-live" role="status" aria-live="polite" aria-atomic="true"></span>',
+                '<span id="' + _escape(activeObjectStatusId(inst)) + '" class="tm-document-wysiwyg-host__sr-only" data-testid="document-wysiwyg-object-status" role="status" aria-live="polite" aria-atomic="true">' + _escape(activeObjectStatus) + '</span>'
             ];
             pagePlan.pages.forEach(function (page) {
                 var currentPageLabel = formatA11yLabel(inst.options.PageLabel || inst.options.pageLabel || 'Page {0}', page.pageNumber);
@@ -13769,14 +19405,8 @@ window.tmDocumentEditorEngine = (function () {
                     html.push('<div class="tm-wysiwyg-page__virtual-placeholder" data-testid="document-wysiwyg-virtual-page" data-block-count="' + page.blockIds.length + '"></div>');
                 } else {
                     html.push(renderHeaderFooterHtml(inst, page, 'header', readOnly, pagePlan.pages.length));
-                    html.push('<div class="tm-wysiwyg-page__body" data-render-region="Body" contenteditable="' + (readOnly ? 'false' : 'true') + '" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(currentBodyLabel) + '" tabindex="0">');
-                    if (blocks.length === 0) {
-                        html.push('<p class="tm-wysiwyg-block" data-block-id="empty-paragraph"><br></p>');
-                    } else {
-                        page.blocks.forEach(function (block) {
-                            html.push(renderEngineBlockHtml(inst, block, imageAltMissing, page.pageNumber, pagePlan.pages.length));
-                        });
-                    }
+                    html.push('<div class="tm-wysiwyg-page__body tm-wysiwyg-page__body--layout" data-render-region="Body" contenteditable="' + (readOnly ? 'false' : 'true') + '" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(currentBodyLabel) + '" tabindex="0">');
+                    html.push(renderWysiwygBodyLayersHtml(inst, page.blocks, imageAltMissing, page.pageNumber, pagePlan.pages.length));
                     html.push('</div>');
                     html.push(renderHeaderFooterHtml(inst, page, 'footer', readOnly, pagePlan.pages.length));
                 }
@@ -13784,6 +19414,8 @@ window.tmDocumentEditorEngine = (function () {
             });
             html.push('</div>');
             inst.root.innerHTML = html.join('');
+            recordFullRenderSwap(inst, 'render', invalidatedScopeIds, pagePlan);
+            syncWysiwygObjectLayerPositions(inst.root);
             var layoutStart = strictPerformanceNow();
             if (diagnostics.forceLayoutFailure) {
                 diagnostics.forceLayoutFailure = false;
@@ -13843,6 +19475,9 @@ window.tmDocumentEditorEngine = (function () {
             updateActiveCommentDom(inst);
             updateActiveRevisionDom(inst);
             updateActiveImageSelectionDom(inst);
+            updateActiveObjectStatusDom(inst);
+            updateImageToolbarOpenDom(inst, false);
+            focusEditableSurfaceForObjectSelection(inst, inst.selection);
             inst.root.removeAttribute('data-debug-recovery');
         } catch (error) {
             var message = String(error && error.message || error);
@@ -14313,8 +19948,38 @@ window.tmDocumentEditorEngine = (function () {
         }
         function caretFromLine(line) {
             var rect = rectFromAny(line.Rect || line.rect);
-            if (y < rect.Y || y > rect.Y + rect.Height) return null;
             var segment = _asArray(line.Segments || line.segments)[0] || {};
+            var intervals = _asArray(line.AvailableIntervals || line.availableIntervals || line.LineIntervals || line.lineIntervals);
+            if (intervals.length) {
+                var intervalHit = null;
+                intervals.some(function (interval, index) {
+                    var normalized = normalizeCaretInterval({
+                        Id: line.Id || line.id || line.LineId || line.lineId || null,
+                        BlockId: line.BlockId || line.blockId || null,
+                        Start: line.Start ?? line.start ?? segment.StartOffset ?? segment.startOffset ?? 0,
+                        End: line.End ?? line.end ?? ((segment.StartOffset ?? segment.startOffset ?? 0) + (segment.TextLength ?? segment.textLength ?? segment.Length ?? segment.length ?? 0)),
+                        Rect: line.Rect || line.rect
+                    }, interval, index);
+                    if (!hitRectContains(normalized.rect, x, y)) return false;
+                    intervalHit = normalized;
+                    return true;
+                });
+                if (!intervalHit) return null;
+                return {
+                    Kind: 'TextCaret',
+                    LayoutLineId: intervalHit.lineId || line.Id || line.id || null,
+                    LayoutSegmentId: segment.Id || segment.id || null,
+                    LayoutIntervalId: intervalHit.id || null,
+                    VisualLineIndex: Number(line.VisualLineIndex ?? line.visualLineIndex ?? 0) || 0,
+                    Offset: caretOffsetFromInterval(intervalHit, x),
+                    BlockId: intervalHit.blockId || line.BlockId || line.blockId || null,
+                    Affinity: intervalHit.affinity || 'after',
+                    VirtualCaret: intervalHit.virtualCaret === true,
+                    ActiveImageBlockId: null,
+                    ActiveObjectId: null
+                };
+            }
+            if (y < rect.Y || y > rect.Y + rect.Height) return null;
             var length = Number(segment.TextLength ?? segment.Length ?? segment.textLength ?? segment.length ?? 0) || 0;
             var start = Number(segment.StartOffset ?? segment.BlockStartOffset ?? segment.startOffset ?? 0) || 0;
             var ratio = rect.Width > 0 ? Math.max(0, Math.min(1, (x - rect.X) / rect.Width)) : 0;
@@ -14343,11 +20008,13 @@ window.tmDocumentEditorEngine = (function () {
             return !!lineHit;
         });
         var objectHit = _asArray(source.Objects).filter(function (item) {
-            return item.Selectable !== false && pointInVisual(item) && String(item.Layer || '').toLowerCase() !== 'behind-text';
+            var layer = String(item.Layer || item.layer || '').toLowerCase();
+            var mode = normalizeWrapModeName(item.WrapMode || item.wrapMode);
+            return item.Selectable !== false && pointInVisual(item) && layer !== 'behind-text' && layer !== 'behindtext' && mode !== 'BehindText';
         }).sort(function (a, b) {
-            return (Number(b.LayerPriority || 0) - Number(a.LayerPriority || 0)) || (Number(b.ZIndex || 0) - Number(a.ZIndex || 0));
+            return (objectHitPriority(b) - objectHitPriority(a)) || (Number(b.ZIndex || b.zIndex || 0) - Number(a.ZIndex || a.zIndex || 0));
         })[0];
-        if (objectHit && (!lineHit || Number(objectHit.LayerPriority || 0) >= 20)) {
+        if (objectHit) {
             return Object.assign(base('ImageObject'), {
                 Kind: objectHit.Kind || 'ImageObject',
                 ActiveImageBlockId: objectHit.BlockId || objectHit.blockId || null,
@@ -15491,6 +21158,592 @@ window.tmDocumentEditorEngine = (function () {
         };
     }
 
+    function createFakeImageMoveTrackNodeForTest() {
+        var attributes = {};
+        var classes = new Set(['tm-wysiwyg-object-layer-item']);
+        var style = {
+            transform: '',
+            width: '',
+            height: '',
+            minHeight: '',
+            setProperty: function (name, value) {
+                this[name] = value;
+            },
+            removeProperty: function (name) {
+                delete this[name];
+            }
+        };
+        return {
+            style: style,
+            __attrs: attributes,
+            __classes: classes,
+            classList: {
+                add: function () {
+                    Array.from(arguments).forEach(function (name) { classes.add(name); });
+                },
+                remove: function () {
+                    Array.from(arguments).forEach(function (name) { classes.delete(name); });
+                },
+                contains: function (name) {
+                    return classes.has(name);
+                }
+            },
+            setAttribute: function (name, value) {
+                attributes[name] = String(value);
+            },
+            getAttribute: function (name) {
+                return attributes[name] || '';
+            },
+            removeAttribute: function (name) {
+                delete attributes[name];
+            },
+            getBoundingClientRect: function () {
+                return { x: 100, y: 120, left: 100, top: 120, right: 196, bottom: 184, width: 96, height: 64 };
+            },
+            closest: function () {
+                return null;
+            }
+        };
+    }
+
+    function createImageMoveTrackHarnessForTest(options) {
+        var opts = options || {};
+        var objectId = _asText(opts.objectId || 'phase14-object');
+        var blockId = _asText(opts.blockId || 'p1');
+        var model = importFromCSharpJson(opts.document || {
+            DocumentId: 'phase14-drag-track',
+            Blocks: [{
+                Id: blockId,
+                Type: 'Paragraph',
+                Content: {
+                    $type: 'paragraph',
+                    Inlines: [{
+                        $type: 'drawing',
+                        Id: 'phase14-run',
+                        ObjectId: objectId,
+                        Kind: 0,
+                        Source: 0,
+                        Url: '/phase14.png',
+                        AltText: 'Phase 14 object',
+                        Size: { Width: 96, Height: 64 },
+                        Layout: {
+                            Kind: 1,
+                            Wrap: { Mode: 1, DistanceLeft: 8, DistanceRight: 8 },
+                            Anchor: { BlockId: blockId, Offset: 0, InlineIndex: 0, MoveWithText: true },
+                            Position: {
+                                HorizontalRelativeTo: 2,
+                                HorizontalAlignment: 0,
+                                VerticalRelativeTo: 3,
+                                VerticalAlignment: 1,
+                                X: 100,
+                                Y: 120
+                            },
+                            Transform: { Width: 96, Height: 64 }
+                        }
+                    }]
+                }
+            }]
+        });
+        var drawing = findDrawingRunByObjectId(model, objectId);
+        if (!drawing || !drawing.object) throw new Error('phase14-test-drawing-not-found');
+        var drawingObject = normalizeImageObject(drawing.run || {}, { blockId: drawing.blockId || blockId, inlineIndex: drawing.inlineIndex ?? 0 });
+        var node = createFakeImageMoveTrackNodeForTest();
+        var inst = {
+            id: 'phase14-drag-track-test',
+            root: null,
+            model: model,
+            imageMoveTrack: null,
+            imageResizeTrack: null,
+            lastObjectPointerInteraction: null,
+            options: opts,
+            diagnostics: createDiagnosticsState(),
+            performanceStats: createStrictPerformanceStats(),
+            __testLineBoxes: opts.lineBoxes || opts.LineBoxes || null
+        };
+        var session = {
+            mode: opts.mode || 'drag',
+            handleName: opts.handleName || 'se',
+            objectId: objectId,
+            blockId: drawing.blockId || blockId,
+            object: _clone(drawingObject),
+            beforeSelection: null,
+            startX: 0,
+            startY: 0,
+            pointerId: 1,
+            moved: false,
+            nodes: [node],
+            track: null
+        };
+        var commits = [];
+
+        function state() {
+            return _sortObject({
+                track: serializeImageMoveTrack(session.track || inst.imageMoveTrack || null),
+                resizeTrack: serializeImageMoveTrack(inst.imageResizeTrack || null),
+                node: {
+                    transform: node.style.transform || '',
+                    width: node.style.width || '',
+                    height: node.style.height || '',
+                    minHeight: node.style.minHeight || '',
+                    trackState: node.getAttribute('data-track-state') || '',
+                    dx: Number(node.getAttribute('data-track-dx') || 0) || 0,
+                    dy: Number(node.getAttribute('data-track-dy') || 0) || 0,
+                    classes: Array.from(node.__classes).sort()
+                },
+                modelJson: JSON.stringify(model),
+                performance: _clone(inst.performanceStats || {}),
+                commitCount: commits.length,
+                commits: _clone(commits)
+            });
+        }
+
+        return {
+            model: model,
+            begin: function (x, y) {
+                session.startX = Number(x || 0) || 0;
+                session.startY = Number(y || 0) || 0;
+                session.track = createImageMoveTrack(inst, session, { clientX: session.startX, clientY: session.startY }, {
+                    threshold: opts.threshold ?? IMAGE_MOVE_TRACK_THRESHOLD,
+                    snapContext: opts.snapContext || null,
+                    minWidth: opts.minWidth ?? opts.MinWidth,
+                    minHeight: opts.minHeight ?? opts.MinHeight,
+                    maxWidth: opts.maxWidth ?? opts.MaxWidth,
+                    maxHeight: opts.maxHeight ?? opts.MaxHeight
+                });
+                return state();
+            },
+            move: function (x, y, eventOptions) {
+                updateImageMoveTrack(inst, session.track, Object.assign({
+                    clientX: Number(x || 0) || 0,
+                    clientY: Number(y || 0) || 0
+                }, eventOptions || {}));
+                return state();
+            },
+            escape: function () {
+                cancelImageMoveTrack(inst, session.track, 'escape');
+                return state();
+            },
+            up: function (x, y, eventOptions) {
+                if (!session.track || session.track.cancelled || session.track.committed) return state();
+                if (session.track.active) {
+                    var commit = computeObjectPointerCommitState(inst, session, Object.assign({
+                        clientX: Number(x || 0) || 0,
+                        clientY: Number(y || 0) || 0
+                    }, eventOptions || {}));
+                    if (commit && commit.dropRejected === true) {
+                        session.track.cancelled = true;
+                        commits.push({
+                            type: 'DropRejected',
+                            dx: 0,
+                            dy: 0,
+                            rawDx: commit.rawDx,
+                            rawDy: commit.rawDy,
+                            dropPosition: _clone(commit.dropPosition || null),
+                            reason: commit.dropRejectedReason || 'cross-region-drop'
+                        });
+                        cleanupImageMoveTrack(inst, session.track, 'cancel', true);
+                        return state();
+                    }
+                    var oldLayout = imageObjectToLayout(session.object);
+                    var newLayout = imageObjectToLayout(commit.next);
+                    var operationType = session.mode === 'resize' ? OPERATION_TYPES.UpdateImageLayout : OPERATION_TYPES.MoveDrawingObject;
+                    var operationBody = session.mode === 'resize'
+                        ? {
+                            target: { blockId: session.blockId, objectId: session.objectId },
+                            oldLayout: oldLayout,
+                            newLayout: newLayout,
+                            layout: newLayout,
+                            affectedParagraphIds: commit.affected,
+                            source: 'phase16-resize-track-test'
+                        }
+                        : {
+                            target: { blockId: session.blockId, objectId: session.objectId },
+                            oldLayout: oldLayout,
+                            newLayout: newLayout,
+                            oldAnchor: _clone(oldLayout.Anchor || oldLayout.anchor || {}),
+                            newAnchor: _clone(newLayout.Anchor || newLayout.anchor || {}),
+                            layout: newLayout,
+                            affectedParagraphIds: commit.affected,
+                            source: 'phase14-drag-track-test'
+                        };
+                    var operation = createOperation(operationType, operationBody, { source: operationBody.source });
+                    var result = applyOperation(model, operation);
+                    if (!result || result.ok === false) throw new Error(JSON.stringify(result && result.errors || result));
+                    session.track.committed = true;
+                    recordObjectTrackCommit(inst, session.track, 'test-up');
+                    recordModelCommit(inst, operationType);
+                    commits.push({
+                        type: operationType,
+                        dx: commit.dx,
+                        dy: commit.dy,
+                        rawDx: commit.rawDx,
+                        rawDy: commit.rawDy,
+                        dropPosition: _clone(commit.dropPosition || null),
+                        layout: newLayout,
+                        operation: operation.toJSON()
+                    });
+                    cleanupImageMoveTrack(inst, session.track, 'commit', false);
+                } else {
+                    cleanupImageMoveTrack(inst, session.track, 'click', true);
+                }
+                return state();
+            },
+            state: state
+        };
+    }
+
+    function createImageResizeTrackHarnessForTest(options) {
+        return createImageMoveTrackHarnessForTest(Object.assign({}, options || {}, { mode: 'resize' }));
+    }
+
+    function createImageWrapCommandHarnessForTest(options) {
+        var opts = options || {};
+        var objectId = _asText(opts.objectId || 'phase17-object');
+        var blockId = _asText(opts.blockId || 'phase17-p1');
+        var initialMode = normalizeWrapModeName(opts.initialWrapMode || opts.wrapMode || 'Square');
+        var initialLayout = applyImageWrapModeToLayout(syncImageLayoutCase({
+            Kind: initialMode === 'Inline' ? 0 : (opts.fixedOnPage === true ? 2 : 1),
+            Anchor: {
+                BlockId: blockId,
+                Offset: 7,
+                InlineIndex: 1,
+                Region: 'Body',
+                MoveWithText: opts.fixedOnPage !== true,
+                FixedOnPage: opts.fixedOnPage === true,
+                LockAnchor: false
+            },
+            Position: {
+                HorizontalRelativeTo: 2,
+                HorizontalAlignment: 0,
+                VerticalRelativeTo: 3,
+                VerticalAlignment: 1,
+                X: 100,
+                Y: 80
+            },
+            Wrap: {
+                Mode: wrapModeToValue(initialMode),
+                DistanceLeft: 8,
+                DistanceRight: 9,
+                DistanceTop: 6,
+                DistanceBottom: 7
+            },
+            Transform: {
+                Width: 96,
+                Height: 64,
+                LockAspectRatio: true
+            },
+            Stacking: {
+                ZIndex: opts.fixedOnPage === true ? 3 : 0,
+                AllowOverlap: initialMode === 'BehindText' || initialMode === 'InFrontOfText'
+            }
+        }), initialMode, { fixedOnPage: opts.fixedOnPage === true });
+        var model = importFromCSharpJson(opts.document || {
+            DocumentId: 'phase17-wrap-command',
+            Blocks: [{
+                Id: blockId,
+                Type: 'Paragraph',
+                Content: {
+                    $type: 'paragraph',
+                    Inlines: [{
+                        $type: 'text',
+                        Id: 'phase17-before',
+                        Text: 'Before '
+                    }, {
+                        $type: 'drawing',
+                        Id: 'phase17-run',
+                        ObjectId: objectId,
+                        Kind: 0,
+                        Source: 0,
+                        Url: '/phase17.png',
+                        AssetId: 'phase17-asset',
+                        AltText: 'Phase 17 alt text',
+                        Caption: 'Phase 17 caption',
+                        Size: { Width: 96, Height: 64, LockAspectRatio: true },
+                        NaturalSize: { Width: 192, Height: 128 },
+                        Layout: initialLayout
+                    }, {
+                        $type: 'text',
+                        Id: 'phase17-after',
+                        Text: ' after'
+                    }]
+                }
+            }]
+        });
+        var inst = {
+            id: 'phase17-wrap-command-test-' + (++_counter),
+            root: null,
+            dotNetRef: null,
+            model: model,
+            schema: createDefaultSchemaRegistry(),
+            selection: createObjectSelectionSnapshot(model, {
+                region: 'Body',
+                blockId: blockId,
+                objectId: objectId,
+                anchorBlockId: blockId,
+                anchorOffset: 7,
+                anchorInlineIndex: 1,
+                runId: 'phase17-run'
+            }),
+            layout: { invalidatedScopeIds: [] },
+            options: {},
+            commands: [],
+            transactions: [],
+            undoTransactions: [],
+            redoTransactions: [],
+            activeTransaction: null,
+            boundaryPatches: [],
+            boundaryFailures: [],
+            pendingTypingMarks: [],
+            pendingTypingBoundaryPatches: [],
+            pendingDeferredBoundaryPatches: [],
+            modelEpoch: 0,
+            savedEpoch: 0,
+            savedVersion: null,
+            dirtyState: createInitialDirtyState(),
+            timers: [],
+            pendingUndoStateTimer: null,
+            pendingUndoStateNotify: false,
+            performanceStats: createStrictPerformanceStats(),
+            diagnostics: createDiagnosticsState(),
+            markerStore: null,
+            markerStoreDirty: false
+        };
+        _instances.set(inst.id, inst);
+
+        function readDrawing() {
+            return findDrawingRunByObjectId(model, objectId);
+        }
+
+        function readState() {
+            var drawing = readDrawing();
+            var run = drawing && drawing.run || null;
+            var layout = run ? syncImageLayoutCase(_clone(run.layout || run.Layout || {})) : null;
+            var object = run ? normalizeImageObject(run, { blockId: drawing.blockId, inlineIndex: drawing.inlineIndex }) : null;
+            var bodyFrame = { x: 0, y: 0, width: 500, height: 700 };
+            var exclusion = object
+                ? createTextExclusion(Object.assign({}, object, { rect: { x: 100, y: 80, width: object.width, height: object.height } }), bodyFrame)
+                : null;
+            var stats = ensureStrictPerformanceStats(inst);
+            return _sortObject({
+                found: !!run,
+                instanceId: inst.id,
+                objectId: object && object.objectId || '',
+                blockId: drawing && drawing.blockId || '',
+                inlineIndex: drawing && drawing.inlineIndex,
+                drawingRunCount: readDrawing() ? 1 : 0,
+                wrapMode: layout ? normalizeWrapModeName(layout.Wrap.Mode) : '',
+                kind: layout ? layout.Kind : null,
+                fixedOnPage: layout ? layout.Anchor.FixedOnPage === true : false,
+                moveWithText: layout ? layout.Anchor.MoveWithText === true : false,
+                allowOverlap: layout ? layout.Stacking.AllowOverlap === true : false,
+                zIndex: layout ? Number(layout.Stacking.ZIndex || 0) || 0 : 0,
+                width: object && object.width || 0,
+                height: object && object.height || 0,
+                altText: run && _asText(run.altText || run.AltText || '') || '',
+                caption: run && _asText(run.caption || run.Caption || '') || '',
+                source: run && (run.source ?? run.Source ?? null),
+                url: run && (run.url || run.Url || '') || '',
+                assetId: run && (run.assetId || run.AssetId || '') || '',
+                hasExclusion: !!exclusion,
+                exclusionKind: exclusion && exclusion.kind || '',
+                exclusionRect: exclusion && exclusion.rect || null,
+                commandCount: inst.commands.length,
+                transactionCount: inst.transactions.length,
+                undoDepth: inst.undoTransactions.length,
+                redoDepth: inst.redoTransactions.length,
+                formattingStateEventCount: stats.formattingStateEventCount || stats.formattingStateNotifyCount || 0,
+                lastCommand: _clone(inst.commands[inst.commands.length - 1] || null),
+                lastTransaction: _clone(inst.transactions[inst.transactions.length - 1] || null),
+                layout: layout,
+                object: object
+            });
+        }
+
+        function apply(command, payload) {
+            var result = applyCommand(inst.id, command, payload || {});
+            return _sortObject({ result: _clone(result), state: readState() });
+        }
+
+        return {
+            instanceId: inst.id,
+            model: model,
+            inst: inst,
+            state: readState,
+            setWrapMode: function (mode, payload) {
+                return apply('setImageWrapMode', Object.assign({ objectId: objectId, wrapMode: mode }, payload || {}));
+            },
+            setWrapModeByBlockOnly: function (mode, payload) {
+                return apply('setImageWrapMode', Object.assign({ blockId: blockId, wrapMode: mode }, payload || {}));
+            },
+            undo: function () {
+                return apply('undo', {});
+            },
+            redo: function () {
+                return apply('redo', {});
+            },
+            destroy: function () {
+                _instances.delete(inst.id);
+                return !_instances.has(inst.id);
+            }
+        };
+    }
+
+    function createImageReanchorHarnessForTest(options) {
+        var opts = options || {};
+        var objectId = _asText(opts.objectId || 'phase15-object');
+        var sourceBlockId = _asText(opts.sourceBlockId || 'source-p');
+        var model = importFromCSharpJson(opts.document || {
+            DocumentId: 'phase15-reanchor',
+            Blocks: [{
+                Id: sourceBlockId,
+                Type: 'Paragraph',
+                Content: {
+                    $type: 'paragraph',
+                    Inlines: [{
+                        $type: 'drawing',
+                        Id: 'phase15-run',
+                        ObjectId: objectId,
+                        Kind: 0,
+                        Source: 0,
+                        Url: '/phase15.png',
+                        AltText: 'Phase 15 object',
+                        Size: { Width: 96, Height: 64 },
+                        Layout: {
+                            Kind: 1,
+                            Wrap: { Mode: 1, DistanceLeft: 8, DistanceRight: 8 },
+                            Anchor: { BlockId: sourceBlockId, Offset: 0, InlineIndex: 0, Region: 'Body', MoveWithText: true, LockAnchor: opts.lockAnchor === true },
+                            Position: { HorizontalRelativeTo: 2, HorizontalAlignment: 0, VerticalRelativeTo: 3, VerticalAlignment: 1, X: 100, Y: 120 },
+                            Transform: { Width: 96, Height: 64 }
+                        }
+                    }, {
+                        $type: 'text',
+                        Id: 'source-text',
+                        Text: 'source paragraph'
+                    }]
+                }
+            }, {
+                Id: 'target-p',
+                Type: 'Paragraph',
+                Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'target-run', Text: 'abcdefghijklmnopqrst' }] }
+            }, {
+                Id: 'table-1',
+                Type: 'Table',
+                Content: {
+                    $type: 'table',
+                    Rows: [{
+                        Id: 'row-1',
+                        Cells: [{
+                            Id: 'cell-1',
+                            Blocks: [{
+                                Id: 'cell-p',
+                                Type: 'Paragraph',
+                                Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'cell-run', Text: 'cell text' }] }
+                            }]
+                        }]
+                    }]
+                }
+            }],
+            HeadersFooters: [{
+                Id: 'hf-header',
+                Region: 'Header',
+                Type: 0,
+                Blocks: [{
+                    Id: 'header-p',
+                    Type: 'Paragraph',
+                    Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'header-run', Text: 'header text' }] }
+                }]
+            }, {
+                Id: 'hf-footer',
+                Region: 'Footer',
+                Type: 1,
+                Blocks: [{
+                    Id: 'footer-p',
+                    Type: 'Paragraph',
+                    Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'footer-run', Text: 'footer text' }] }
+                }]
+            }]
+        });
+        var drawing = findDrawingRunByObjectId(model, objectId);
+        if (!drawing || !drawing.run) throw new Error('phase15-test-drawing-not-found');
+        var inst = {
+            id: 'phase15-reanchor-test',
+            root: null,
+            model: model,
+            imageMoveTrack: null,
+            lastObjectPointerInteraction: null
+        };
+        var lineBoxes = _asArray(opts.lineBoxes || opts.LineBoxes);
+        if (!lineBoxes.length) {
+            lineBoxes = [
+                { blockId: sourceBlockId, pageIndex: 0, region: 'Body', rect: { x: 0, y: 0, width: 220, height: 20 }, referenceRect: { x: 0, y: 0, width: 220, height: 20 }, start: 0, end: 16 },
+                { blockId: 'target-p', pageIndex: 0, region: 'Body', rect: { x: 0, y: 40, width: 200, height: 20 }, referenceRect: { x: 0, y: 40, width: 200, height: 20 }, start: 0, end: 20 },
+                { blockId: 'header-p', pageIndex: 0, region: 'Header', headerFooterId: 'hf-header', rect: { x: 0, y: -40, width: 180, height: 20 }, referenceRect: { x: 0, y: -40, width: 180, height: 20 }, start: 0, end: 11 },
+                { blockId: 'footer-p', pageIndex: 0, region: 'Footer', headerFooterId: 'hf-footer', rect: { x: 0, y: 760, width: 180, height: 20 }, referenceRect: { x: 0, y: 760, width: 180, height: 20 }, start: 0, end: 11 },
+                { blockId: 'cell-p', pageIndex: 0, region: 'TableCell', tableId: 'table-1', cellId: 'cell-1', rect: { x: 300, y: 100, width: 120, height: 20 }, referenceRect: { x: 292, y: 92, width: 136, height: 36 }, start: 0, end: 9 }
+            ];
+        }
+
+        function resolve(x, y) {
+            return findNearestTextPositionForPoint(inst, Number(x || 0) || 0, Number(y || 0) || 0, {
+                lineBoxes: lineBoxes,
+                pageIndex: opts.pageIndex ?? 0
+            });
+        }
+
+        function readObject() {
+            var current = findDrawingRunByObjectId(model, objectId);
+            return normalizeImageObject(current && current.run || {}, { blockId: current && current.blockId || sourceBlockId, inlineIndex: (current && current.inlineIndex) ?? 0 });
+        }
+
+        function commitAt(x, y, commitOptions) {
+            var commitOpts = commitOptions || {};
+            var beforeObject = readObject();
+            var oldLayout = imageObjectToLayout(beforeObject);
+            var nearest = resolve(x, y);
+            var next = _clone(beforeObject);
+            if (nearest && nearest.blockId && shouldReanchorImageObject(beforeObject, { explicitDrag: commitOpts.explicitDrag !== false })) {
+                next.anchorBlockId = nearest.blockId;
+                next.anchorOffset = Number(nearest.offset ?? nearest.textOffset ?? 0) || 0;
+                next.anchorInlineIndex = Number(nearest.inlineIndex ?? -1);
+                next.anchorRegion = nearest.anchorRegion || anchorRegionForNearestTextPosition(nearest);
+                next.anchorTableId = nearest.tableId || '';
+                next.anchorCellId = nearest.cellId || '';
+                next.anchorHeaderFooterId = nearest.headerFooterId || '';
+            }
+            var newLayout = imageObjectToLayout(next);
+            var operation = createOperation(OPERATION_TYPES.MoveDrawingObject, {
+                target: { blockId: drawing.blockId || sourceBlockId, objectId: objectId },
+                oldLayout: oldLayout,
+                newLayout: newLayout,
+                oldAnchor: _clone(oldLayout.Anchor || oldLayout.anchor || {}),
+                newAnchor: _clone(newLayout.Anchor || newLayout.anchor || {}),
+                layout: newLayout,
+                affectedParagraphIds: _unique([beforeObject.anchorBlockId, next.anchorBlockId, drawing.blockId || sourceBlockId].filter(Boolean)),
+                source: 'phase15-reanchor-test'
+            }, { source: 'phase15-reanchor-test' });
+            var result = applyOperation(model, operation);
+            if (!result || result.ok === false) throw new Error(JSON.stringify(result && result.errors || result));
+            return _sortObject({
+                operation: operation.toJSON(),
+                result: result,
+                nearest: nearest,
+                object: readObject(),
+                modelJson: JSON.stringify(model)
+            });
+        }
+
+        return {
+            model: model,
+            lineBoxes: lineBoxes,
+            resolve: resolve,
+            commitAt: commitAt,
+            object: readObject,
+            shouldReanchor: function (lockAnchor, explicitDrag) {
+                return shouldReanchorImageObject({ lockAnchor: lockAnchor === true }, { explicitDrag: explicitDrag === true });
+            }
+        };
+    }
+
     installGlobalToolbarButtonBridge();
 
     return {
@@ -15598,6 +21851,11 @@ window.tmDocumentEditorEngine = (function () {
             createLogicalPosition: createLogicalPosition,
             createLogicalRange: createLogicalRange,
             createSelectionSnapshot: createSelectionSnapshot,
+            createObjectSelectionSnapshot: createObjectSelectionSnapshot,
+            restoreTextSelectionFromObjectSelection: restoreTextSelectionFromObjectSelection,
+            deleteObjectSelection: deleteObjectSelection,
+            applyArrowFocusPolicy: applyArrowFocusPolicy,
+            createObjectFocusPolicy: createObjectFocusPolicy,
             createStableSelectionToken: serializeStableSelectionToken,
             createStableSelectionTokenData: createStableSelectionTokenData,
             withStableSelectionToken: withStableSelectionToken,
@@ -15611,6 +21869,7 @@ window.tmDocumentEditorEngine = (function () {
             logicalToDomRange: logicalToDomRange,
             domRangeToLogical: domRangeToLogical,
             caretRectFromLayout: caretRectFromLayout,
+            collectLayoutLineIntervals: collectLayoutLineIntervals,
             compareDomCaretToLayout: compareDomCaretToLayout,
             pointerHitTest: pointerHitTest,
             moveSelection: moveSelection
@@ -15669,13 +21928,28 @@ window.tmDocumentEditorEngine = (function () {
             createTableController: createTableController
         },
         objects: {
+            normalizeDrawingRun: normalizeDrawingRun,
             normalizeImageObject: normalizeImageObject,
+            splitInlineListForDrawingInsert: splitInlineListForDrawingInsert,
+            insertDrawingRunAtTextOffset: insertDrawingRunAtTextOffset,
+            getDrawingRuntimeDiagnostics: getDrawingRuntimeDiagnostics,
+            getImageRuntimeSourceDiagnostics: getImageRuntimeSourceDiagnostics,
             createTextExclusion: createTextExclusion,
             getAvailableIntervals: getAvailableIntervals,
+            createObjectWrapRect: createObjectWrapRect,
+            projectWrapContourPoints: projectWrapContourPointsForGeometry,
+            imageObjectToLayout: imageObjectToLayout,
+            resolveObjectOverlap: resolveObjectOverlapGeometry,
             hitTestLayerPriority: hitTestLayerPriority,
+            findNearestTextPositionForPoint: findNearestTextPositionForPoint,
+            shouldReanchorImageObject: shouldReanchorImageObject,
             createImagePreviewController: createImagePreviewController,
             createEditorWidget: createEditorWidget,
-            createImageInspectorState: createImageInspectorState
+            createImageInspectorState: createImageInspectorState,
+            createImageMoveTrackHarness: createImageMoveTrackHarnessForTest,
+            createImageResizeTrackHarness: createImageResizeTrackHarnessForTest,
+            createImageWrapCommandHarness: createImageWrapCommandHarnessForTest,
+            createImageReanchorHarness: createImageReanchorHarnessForTest
         },
         accessibility: {
             getRegionLabel: getRegionLabel,
@@ -15683,6 +21957,9 @@ window.tmDocumentEditorEngine = (function () {
             getFocusTargetDetails: getFocusTargetDetails,
             setActiveFocusRegion: setActiveFocusRegion,
             handleEditorKeyDown: handleEditorKeyDown,
+            collectObjectNavigationTargets: collectObjectNavigationTargets,
+            selectAdjacentObjectForKeyboard: selectAdjacentObjectForKeyboard,
+            openImageToolbarForSelectedObject: openImageToolbarForSelectedObject,
             closeFloatingUiForKeyboard: closeFloatingUiForKeyboard,
             scheduleAccessibilityAnnouncement: scheduleAccessibilityAnnouncement
         },
@@ -15715,6 +21992,12 @@ window.tmDocumentEditorEngine = (function () {
             operationAffectedBlockIds: operationAffectedBlockIds,
             createDiffer: createDiffer,
             createSelectionEngine: createSelectionEngine,
+            createSelectionSnapshot: createSelectionSnapshot,
+            createObjectSelectionSnapshot: createObjectSelectionSnapshot,
+            restoreTextSelectionFromObjectSelection: restoreTextSelectionFromObjectSelection,
+            deleteObjectSelection: deleteObjectSelection,
+            applyArrowFocusPolicy: applyArrowFocusPolicy,
+            createObjectFocusPolicy: createObjectFocusPolicy,
             createDocumentFingerprint: createDocumentFingerprint,
             createSelectionDocumentFingerprint: createSelectionDocumentFingerprint,
             createStableSelectionToken: serializeStableSelectionToken,
@@ -15759,7 +22042,11 @@ window.tmDocumentEditorEngine = (function () {
             normalizeMark: normalizeMark,
             normalizeMarks: normalizeMarks,
             normalizeTextRun: normalizeTextRunForMerge,
+            normalizeDrawingRun: normalizeDrawingRun,
             mergeAdjacentTextRuns: mergeAdjacentTextRuns,
+            splitInlineListForDrawingInsert: splitInlineListForDrawingInsert,
+            insertDrawingRunAtTextOffset: insertDrawingRunAtTextOffset,
+            createInsertImageOperationFromCommand: createInsertImageOperationFromCommand,
             splitRunsForRange: function (block, start, end, mark, remove) {
                 var clone = _clone(block || {});
                 if (!clone.content) clone.content = { type: 'paragraph', runs: [] };
@@ -15768,8 +22055,25 @@ window.tmDocumentEditorEngine = (function () {
             },
             createTableController: createTableController,
             normalizeImageObject: normalizeImageObject,
+            removeDrawingRunByObjectId: removeDrawingRunByObjectId,
+            createImageMoveTrackHarness: createImageMoveTrackHarnessForTest,
+            createImageResizeTrackHarness: createImageResizeTrackHarnessForTest,
+            createImageWrapCommandHarness: createImageWrapCommandHarnessForTest,
+            createImageReanchorHarness: createImageReanchorHarnessForTest,
+            findNearestTextPositionForPoint: findNearestTextPositionForPoint,
+            shouldReanchorImageObject: shouldReanchorImageObject,
+            getBlockText: _blockText,
+            resolveTextOffsetToInlineIndex: resolveTextOffsetToInlineIndex,
+            findDrawingRunByObjectId: findDrawingRunByObjectId,
+            getDrawingObjectLayoutSnapshot: getDrawingObjectLayoutSnapshot,
+            getDrawingRuntimeDiagnostics: getDrawingRuntimeDiagnostics,
+            getImageRuntimeSourceDiagnostics: getImageRuntimeSourceDiagnostics,
             createTextExclusion: createTextExclusion,
             getAvailableIntervals: getAvailableIntervals,
+            createObjectWrapRect: createObjectWrapRect,
+            projectWrapContourPoints: projectWrapContourPointsForGeometry,
+            imageObjectToLayout: imageObjectToLayout,
+            resolveObjectOverlap: resolveObjectOverlapGeometry,
             createImagePreviewController: createImagePreviewController,
             createEditorWidget: createEditorWidget,
             collectLayoutProbe: collectLayoutProbe,
@@ -15784,6 +22088,7 @@ window.tmDocumentEditorEngine = (function () {
                     'insertBlock',
                     'insertText',
                     'moveBlock',
+                    'moveDrawingObject',
                     'rejectRevision',
                     'removeInlineMark',
                     'setBlockAttribute',
@@ -15797,6 +22102,30 @@ window.tmDocumentEditorEngine = (function () {
             createSelectionSnapshotFromRuntimeSelection: createSelectionSnapshotFromRuntimeSelectionForTest,
             createRuntimeCommandTransaction: createRuntimeCommandTransactionForTest,
             transformRuntimeCommentAnchorsForTextChange: transformRuntimeCommentAnchorsForTextChangeForTest,
+            renderEngineBlockHtmlForTest: function (input, block, selection) {
+                var inst = input && input.model
+                    ? Object.assign({ options: {} }, input)
+                    : { model: input || importFromCSharpJson({ DocumentId: 'test', Blocks: [] }), selection: selection || null, options: {} };
+                if (selection) inst.selection = selection;
+                inst.options = inst.options || {};
+                return renderEngineBlockHtml(inst, block, inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.', 1, 1);
+            },
+            renderParagraphRunsHtmlForTest: function (input, block, pageNumber, totalPages) {
+                var inst = input && input.model
+                    ? Object.assign({ options: {} }, input)
+                    : { model: input || importFromCSharpJson({ DocumentId: 'test', Blocks: [] }), selection: null, options: {} };
+                inst.options = inst.options || {};
+                return renderParagraphRunsHtml(inst, block, pageNumber || 1, totalPages || 1);
+            },
+            renderWysiwygBodyLayersHtmlForTest: function (input, blocks, selection) {
+                var inst = input && input.model
+                    ? Object.assign({ options: {} }, input)
+                    : { model: input || importFromCSharpJson({ DocumentId: 'test', Blocks: [] }), selection: selection || null, options: {} };
+                if (selection) inst.selection = selection;
+                inst.options = inst.options || {};
+                var pageBlocks = blocks || inst.model && inst.model.body && inst.model.body.blocks || [];
+                return renderWysiwygBodyLayersHtml(inst, pageBlocks, inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.', 1, 1);
+            },
             createRenderPlan: createRenderPlanForTest,
             normalizeWrapMode: testWrapMode,
             normalizeHorizontalPosition: testHorizontalPosition,
@@ -15808,6 +22137,7 @@ window.tmDocumentEditorEngine = (function () {
             getTextRunMeasureStats: getTextRunMeasureStats,
             createLayoutSnapshotForRender: createLayoutSnapshotForRenderTest,
             hitTestLayoutGeometry: hitTestLayoutGeometry,
+            collectLayoutLineIntervals: collectLayoutLineIntervals,
             applyLayoutTextEditModel: applyLayoutTextEditModel,
             normalizeMarkType: normalizeMarkTypeForTest,
             computeImageMoveSnap: computeImageMoveSnap,
@@ -15846,6 +22176,10 @@ window.tmDocumentEditorEngine = (function () {
             getFocusTargetDetails: getFocusTargetDetails,
             setActiveFocusRegion: setActiveFocusRegion,
             handleEditorKeyDown: handleEditorKeyDown,
+            collectObjectNavigationTargets: collectObjectNavigationTargets,
+            selectAdjacentObjectForKeyboard: selectAdjacentObjectForKeyboard,
+            openImageToolbarForSelectedObject: openImageToolbarForSelectedObject,
+            activeObjectAccessibilityStatus: activeObjectAccessibilityStatus,
             chooseKeyboardSelection: chooseKeyboardSelection,
             closeFloatingUiForKeyboard: closeFloatingUiForKeyboard,
             scheduleAccessibilityAnnouncement: scheduleAccessibilityAnnouncement
@@ -17712,6 +24046,9 @@ window.tmDocumentWysiwygCommand = (function () {
             var id = _resolveInstanceId(instanceId);
             var snapshot = _debugSnapshot(id) || {};
             var metrics = snapshot.performanceStats || snapshot.PerformanceStats || {};
+            var pages = snapshot.layout && Array.isArray(snapshot.layout.pages) ? snapshot.layout.pages : [];
+            var renderedPages = pages.filter(function (page) { return page && page.isVirtual !== true && page.IsVirtual !== true; }).length;
+            var virtualizedPages = pages.filter(function (page) { return page && (page.isVirtual === true || page.IsVirtual === true); }).length;
             return {
                 InstanceId: id,
                 HasInstance: snapshot.ok !== false && !snapshot.error,
@@ -17742,13 +24079,32 @@ window.tmDocumentWysiwygCommand = (function () {
                 InputOperationCount: metrics.inputOperationCount || metrics.InputOperationCount || 0,
                 MaxInputOperationMs: metrics.inputOperationMaxMs || metrics.MaxInputOperationMs || 0,
                 LastRenderReason: metrics.renderLastReason || metrics.RenderLastReason || '',
+                RenderSwapCount: metrics.renderSwapCount || metrics.RenderSwapCount || 0,
+                FullRenderSwapCount: metrics.fullRenderSwapCount || metrics.FullRenderSwapCount || 0,
+                BodyRenderSwapCount: metrics.bodyRenderSwapCount || metrics.BodyRenderSwapCount || 0,
+                HeaderRenderSwapCount: metrics.headerRenderSwapCount || metrics.HeaderRenderSwapCount || 0,
+                FooterRenderSwapCount: metrics.footerRenderSwapCount || metrics.FooterRenderSwapCount || 0,
+                LastRenderSwap: metrics.lastRenderSwap || metrics.LastRenderSwap || null,
                 LayoutPassCount: metrics.layoutPassCount || metrics.LayoutPassCount || 0,
                 LastLayoutPassMs: metrics.layoutPassLastMs || metrics.LayoutPassLastMs || 0,
                 MaxLayoutPassMs: metrics.layoutPassMaxMs || metrics.LayoutPassMaxMs || 0,
                 LastLayoutReason: metrics.layoutLastReason || metrics.LayoutLastReason || '',
-                TotalPages: snapshot.layout && Array.isArray(snapshot.layout.pages) ? snapshot.layout.pages.length : 0,
-                RenderedPages: snapshot.layout && Array.isArray(snapshot.layout.pages) ? snapshot.layout.pages.length : 0,
-                VirtualizedPages: 0,
+                ActiveRegion: metrics.activeRegion || metrics.ActiveRegion || snapshot.activeRegion || snapshot.ActiveRegion || '',
+                TotalPages: pages.length,
+                RenderedPages: renderedPages,
+                VirtualizedPages: virtualizedPages,
+                FullDocumentLayoutCount: metrics.fullDocumentLayoutCount || metrics.FullDocumentLayoutCount || 0,
+                ObjectTrackFrameCount: metrics.objectTrackFrameCount || metrics.ObjectTrackFrameCount || 0,
+                ObjectTrackActiveFrameCount: metrics.objectTrackActiveFrameCount || metrics.ObjectTrackActiveFrameCount || 0,
+                ObjectTrackDragFrameCount: metrics.objectTrackDragFrameCount || metrics.ObjectTrackDragFrameCount || 0,
+                ObjectTrackResizeFrameCount: metrics.objectTrackResizeFrameCount || metrics.ObjectTrackResizeFrameCount || 0,
+                ObjectTrackCommitCount: metrics.objectTrackCommitCount || metrics.ObjectTrackCommitCount || 0,
+                ObjectTrackDragCommitCount: metrics.objectTrackDragCommitCount || metrics.ObjectTrackDragCommitCount || 0,
+                ObjectTrackResizeCommitCount: metrics.objectTrackResizeCommitCount || metrics.ObjectTrackResizeCommitCount || 0,
+                LastObjectTrackFrame: metrics.lastObjectTrackFrame || metrics.LastObjectTrackFrame || null,
+                LastObjectTrackCommit: metrics.lastObjectTrackCommit || metrics.LastObjectTrackCommit || null,
+                ModelCommitCount: metrics.modelCommitCount || metrics.ModelCommitCount || 0,
+                LastModelCommit: metrics.lastModelCommit || metrics.LastModelCommit || null,
                 ToolbarStateLayoutThrashCount: metrics.toolbarStateLayoutThrashCount || metrics.ToolbarStateLayoutThrashCount || 0,
                 FormattingCommandPartialRenderCount: metrics.formattingCommandPartialRenderCount || metrics.FormattingCommandPartialRenderCount || 0,
                 LightweightBoundaryPatchCount: metrics.lightweightBoundaryPatchCount || metrics.LightweightBoundaryPatchCount || 0,

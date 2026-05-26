@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
@@ -49,6 +50,95 @@ public class DocumentEditorProviderTests
     }
 
     [Fact]
+    public async Task Provider_Save_SanitizesDrawingRunUrlsAndPreservesPersistentImagePayload()
+    {
+        const string dataUrl = "data:image/png;base64,iVBORw0KGgo=";
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedEmptyDocument("doc-1");
+        var loaded = await provider.LoadAsync("doc-1");
+        var assetDrawing = CreateProviderDrawing("asset-image", DocumentImageSource.Asset, null, "asset-1", DocumentWrapMode.Square);
+        assetDrawing.Url = "blob:https://app.test/asset-display";
+        loaded.Document!.Blocks.Add(new DocumentBlock
+        {
+            Id = "paragraph-1",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    assetDrawing,
+                    CreateProviderDrawing("safe-url-image", DocumentImageSource.Url, "https://cdn.example.test/image.png", null, DocumentWrapMode.Inline),
+                    CreateProviderDrawing("data-url-image", DocumentImageSource.Url, dataUrl, null, DocumentWrapMode.Inline),
+                    CreateProviderDrawing("blob-url-image", DocumentImageSource.Url, "blob:https://app.test/view-only", null, DocumentWrapMode.TopBottom)
+                ]
+            }
+        });
+
+        var saved = await provider.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = "doc-1",
+            Document = loaded.Document,
+            BaseConcurrencyToken = loaded.ConcurrencyToken
+        });
+        var reloaded = await provider.LoadAsync("doc-1");
+        var drawings = DocumentImagePersistence.EnumerateDrawingRuns(reloaded.Document).ToArray();
+
+        saved.Success.Should().BeTrue();
+        saved.JsonSnapshot.Should().Contain("\"$type\":\"drawing\"");
+        saved.JsonSnapshot.Should().NotContain("blob:");
+        drawings.Should().HaveCount(4);
+        drawings.Single(drawing => drawing.ObjectId == "asset-image").Should().Match<DocumentDrawingRun>(drawing =>
+            drawing.AssetId == "asset-1" && drawing.Url == null);
+        drawings.Single(drawing => drawing.ObjectId == "safe-url-image").Url.Should().Be("https://cdn.example.test/image.png");
+        drawings.Single(drawing => drawing.ObjectId == "data-url-image").Url.Should().Be(dataUrl);
+        drawings.Single(drawing => drawing.ObjectId == "blob-url-image").Url.Should().BeNull();
+        drawings.Single(drawing => drawing.ObjectId == "asset-image").Caption.Should().Be("asset-image caption");
+        drawings.Single(drawing => drawing.ObjectId == "asset-image").AltText.Should().Be("asset-image alt");
+        drawings.Single(drawing => drawing.ObjectId == "asset-image").Layout.Anchor.BlockId.Should().Be("paragraph-1");
+        drawings.Single(drawing => drawing.ObjectId == "asset-image").Layout.Transform.Width.Should().Be(240);
+    }
+
+    [Fact]
+    public async Task Provider_Save_ConvertsLegacyImageBlocksToDrawingRunsAtBoundary()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedEmptyDocument("doc-1");
+        var loaded = await provider.LoadAsync("doc-1");
+        loaded.Document!.Blocks.Add(new DocumentBlock
+        {
+            Id = "legacy-image",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "/favicon.png",
+                AltText = "Legacy image",
+                Caption = "Legacy caption",
+                Size = new DocumentImageSize { Width = 140, Height = 90 },
+                Layout = DocumentObjectLayout.Anchored(DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left)
+            }
+        });
+
+        var saved = await provider.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = "doc-1",
+            Document = loaded.Document,
+            BaseConcurrencyToken = loaded.ConcurrencyToken
+        });
+        var reloaded = await provider.LoadAsync("doc-1");
+
+        saved.JsonSnapshot.Should().Contain("\"$type\":\"drawing\"");
+        saved.JsonSnapshot.Should().NotContain("\"$type\":\"image\"");
+        reloaded.Document!.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        var drawing = DocumentImagePersistence.EnumerateDrawingRuns(reloaded.Document).Single();
+        drawing.ObjectId.Should().Be("legacy-image");
+        drawing.Url.Should().Be("/favicon.png");
+        drawing.AltText.Should().Be("Legacy image");
+        drawing.Caption.Should().Be("Legacy caption");
+        drawing.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+    }
+
+    [Fact]
     public async Task Provider_SavesNormalizedRawJsonAndRejectsInvalidConcurrencyToken()
     {
         var provider = new InMemoryDocumentEditorProvider();
@@ -95,6 +185,54 @@ public class DocumentEditorProviderTests
         version.Kind.Should().Be(DocumentVersionKind.Major);
         version.Snapshot.Hash.Should().HaveLength(64);
         versions.Should().ContainSingle(item => item.Id == version.Id);
+    }
+
+    [Fact]
+    public void Provider_OnlyOfficeParitySeed_UsesDrawingRunsInsteadOfTopLevelImageBlocks()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+
+        var document = provider.SeedOnlyOfficeParityDocument();
+        var drawingRuns = document.Blocks
+            .Select(block => block.Content)
+            .OfType<ParagraphBlockContent>()
+            .SelectMany(content => content.Inlines)
+            .OfType<DocumentDrawingRun>()
+            .ToArray();
+        var wrapModes = drawingRuns.Select(run => run.Layout.Wrap.Mode).ToArray();
+
+        document.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        drawingRuns.Should().Contain(run => run.ObjectId == "recovery-inline-image");
+        drawingRuns.Should().Contain(run => run.ObjectId == "recovery-left-wrap-image");
+        drawingRuns.Should().Contain(run => run.ObjectId == "recovery-top-bottom-image");
+        drawingRuns.Should().Contain(run => run.ObjectId == "onlyoffice-behind-text-image");
+        drawingRuns.Should().Contain(run => run.ObjectId == "onlyoffice-front-text-image");
+        wrapModes.Should().Contain(DocumentWrapMode.Inline);
+        wrapModes.Should().Contain(DocumentWrapMode.Square);
+        wrapModes.Should().Contain(DocumentWrapMode.TopBottom);
+        wrapModes.Should().Contain(DocumentWrapMode.BehindText);
+        wrapModes.Should().Contain(DocumentWrapMode.InFrontOfText);
+    }
+
+    [Fact]
+    public async Task DemoProvider_SeedDocuments_UseDrawingRunsInsteadOfTopLevelImageBlocks()
+    {
+        var provider = new DemoDocumentEditorProvider();
+
+        foreach (var documentId in new[] { "contract-demo", "exhibits-demo", "table-demo" })
+        {
+            var loaded = await provider.LoadAsync(documentId);
+
+            loaded.Found.Should().BeTrue(documentId);
+            loaded.Document!.Blocks.Should().NotContain(block => block.Content is ImageBlockContent, documentId);
+        }
+
+        var contract = await provider.LoadAsync("contract-demo");
+        DocumentImagePersistence.EnumerateDrawingRuns(contract.Document)
+            .Should()
+            .Contain(run => run.ObjectId == "contract-left-wrap-image")
+            .And.Contain(run => run.ObjectId == "contract-top-bottom-image")
+            .And.Contain(run => run.ObjectId == "contract-inline-image");
     }
 
     [Fact]
@@ -403,4 +541,46 @@ public class DocumentEditorProviderTests
 
         return false;
     }
+
+    private static DocumentDrawingRun CreateProviderDrawing(
+        string objectId,
+        DocumentImageSource source,
+        string? url,
+        string? assetId,
+        DocumentWrapMode wrapMode)
+        => new()
+        {
+            Id = $"{objectId}-inline",
+            ObjectId = objectId,
+            Source = source,
+            Url = url,
+            AssetId = assetId,
+            AltText = $"{objectId} alt",
+            Caption = $"{objectId} caption",
+            Size = new DocumentImageSize { Width = 240, Height = 120 },
+            NaturalSize = new DocumentImageSize { Width = 480, Height = 240 },
+            Layout = new DocumentObjectLayout
+            {
+                Kind = wrapMode == DocumentWrapMode.Inline ? DocumentObjectLayoutKind.Inline : DocumentObjectLayoutKind.Anchored,
+                Anchor = new DocumentObjectAnchor
+                {
+                    BlockId = "paragraph-1",
+                    Offset = 3,
+                    MoveWithText = true
+                },
+                Wrap = new DocumentObjectWrap
+                {
+                    Mode = wrapMode,
+                    DistanceLeft = 8,
+                    DistanceRight = 10
+                },
+                Transform = new DocumentObjectTransform
+                {
+                    Width = 240,
+                    Height = 120,
+                    NaturalWidth = 480,
+                    NaturalHeight = 240
+                }
+            }
+        };
 }

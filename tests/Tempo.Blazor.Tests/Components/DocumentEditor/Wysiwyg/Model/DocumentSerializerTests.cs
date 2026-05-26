@@ -135,99 +135,214 @@ public class DocumentSerializerTests
     }
 
     [Fact]
-    public void Serialize_ImageBlock_ToDocumentEditorDocument()
+    public void Serialize_DrawingInline_ToDrawingRunParagraphWithoutImageBlockContent()
     {
         var model = new DocumentModel();
-        var image = new ImageBlock
+        var paragraph = new ParagraphBlock { Id = "paragraph-with-drawing" };
+        paragraph.Inlines.Add(new DrawingInline
         {
-            Src = "image.png",
-            Alt = "Test image",
-            Layout = ImageLayout.Inline
-        };
-        model.Body.Add(image);
-
-        var result = _serializer.ToPersistenceModel(model);
-
-        result.Blocks[0].Type.Should().Be(DocumentBlockType.Image);
-        var content = (ImageBlockContent)result.Blocks[0].Content;
-        content.Url.Should().Be("image.png");
-        content.AltText.Should().Be("Test image");
-    }
-
-    [Fact]
-    public void Serialize_FloatingImageBlock_ToDocumentObjectLayout()
-    {
-        var model = new DocumentModel();
-        model.Body.Add(new ImageBlock
-        {
-            Src = "image.png",
-            Alt = "Floating image",
-            Layout = ImageLayout.Floating,
-            Position = new ImagePosition { X = "24", Y = "36" },
-            WrapMode = ImageWrapMode.BehindText,
-            Size = new Wyg.ImageSize { Width = "220", Height = "124" }
+            Id = "drawing-inline-1",
+            ObjectId = "runtime-image-1",
+            Source = DocumentImageSource.Url,
+            Url = "/image.png",
+            AltText = "Test image",
+            Caption = "Test caption",
+            Layout = DocumentObjectLayout.Inline()
         });
+        model.Body.Add(paragraph);
 
         var result = _serializer.ToPersistenceModel(model);
 
-        var content = result.Blocks[0].Content.Should().BeOfType<ImageBlockContent>().Subject;
-        content.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Anchored);
-        content.Layout.Position.X.Should().Be(24);
-        content.Layout.Position.Y.Should().Be(36);
-        content.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.BehindText);
-        content.Layout.Transform.Width.Should().Be(220);
-        content.Layout.Transform.Height.Should().Be(124);
+        result.Blocks.Should().ContainSingle();
+        result.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        result.Blocks[0].Type.Should().Be(DocumentBlockType.Paragraph);
+        var content = result.Blocks[0].Content.Should().BeOfType<ParagraphBlockContent>().Subject;
+        var drawing = content.Inlines.Should().ContainSingle().Subject.Should().BeOfType<DocumentDrawingRun>().Subject;
+        drawing.Id.Should().Be("drawing-inline-1");
+        drawing.ObjectId.Should().Be("runtime-image-1");
+        drawing.Url.Should().Be("/image.png");
+        drawing.AltText.Should().Be("Test image");
+        drawing.Caption.Should().Be("Test caption");
+        drawing.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Inline);
     }
 
     [Fact]
-    public void Deserialize_ImageBlockWithObjectLayout_ToFloatingWysiwygImageBlock()
+    public void Serialize_AnchoredDrawingInline_ToDrawingRunObjectLayout()
+    {
+        var model = new DocumentModel();
+        var paragraph = new ParagraphBlock { Id = "anchored-paragraph" };
+        paragraph.Inlines.Add(new DrawingInline
+        {
+            Id = "drawing-inline-floating",
+            ObjectId = "runtime-floating-image",
+            Source = DocumentImageSource.Url,
+            Url = "image.png",
+            AltText = "Floating image",
+            Size = new DocumentImageSize { Width = 220, Height = 124 },
+            Layout = new DocumentObjectLayout
+            {
+                Kind = DocumentObjectLayoutKind.Anchored,
+                Anchor = new DocumentObjectAnchor
+                {
+                    BlockId = "anchored-paragraph",
+                    InlineIndex = 0,
+                    Offset = 0,
+                    MoveWithText = true
+                },
+                Position = new DocumentObjectPosition { X = 24, Y = 36 },
+                Wrap = new DocumentObjectWrap { Mode = DocumentWrapMode.BehindText },
+                Transform = new DocumentObjectTransform { Width = 220, Height = 124 }
+            }
+        });
+        model.Body.Add(paragraph);
+
+        var result = _serializer.ToPersistenceModel(model);
+
+        result.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        var drawing = result.Blocks[0].Content.Should().BeOfType<ParagraphBlockContent>().Subject
+            .Inlines.Should().ContainSingle().Subject.Should().BeOfType<DocumentDrawingRun>().Subject;
+        drawing.Id.Should().Be("drawing-inline-floating");
+        drawing.ObjectId.Should().Be("runtime-floating-image");
+        drawing.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Anchored);
+        drawing.Layout.Anchor.BlockId.Should().Be("anchored-paragraph");
+        drawing.Layout.Position.X.Should().Be(24);
+        drawing.Layout.Position.Y.Should().Be(36);
+        drawing.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.BehindText);
+        drawing.Layout.Transform.Width.Should().Be(220);
+        drawing.Layout.Transform.Height.Should().Be(124);
+    }
+
+    [Fact]
+    public void Deserialize_ParagraphDrawingRunWithObjectLayout_ToWysiwygDrawingInline()
     {
         var persistence = new DocumentEditorDocument();
         persistence.Blocks.Add(new DocumentBlock
         {
-            Type = DocumentBlockType.Image,
-            Content = new ImageBlockContent
+            Id = "paragraph-with-drawing",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
             {
-                Source = DocumentImageSource.Url,
-                Url = "image.png",
-                AltText = "Front image",
-                Layout = new DocumentObjectLayout
-                {
-                    Kind = DocumentObjectLayoutKind.Fixed,
-                    Anchor = new DocumentObjectAnchor
+                Inlines =
+                [
+                    new Persistence.TextRun { Id = "text-1", Text = "Before " },
+                    new DocumentDrawingRun
                     {
-                        MoveWithText = false,
-                        FixedOnPage = true,
-                        LockAnchor = true
+                        Id = "drawing-inline-1",
+                        ObjectId = "drawing-object-1",
+                        Source = DocumentImageSource.Asset,
+                        AssetId = "asset-front",
+                        Url = "blob:https://app.test/display-only",
+                        AltText = "Front image",
+                        Caption = "Front caption",
+                        IsDecorative = true,
+                        LinkUrl = "https://example.test/image-link",
+                        Size = new DocumentImageSize { Width = 180, Height = 95 },
+                        NaturalSize = new DocumentImageSize { Width = 360, Height = 190 },
+                        Layout = new DocumentObjectLayout
+                        {
+                            Kind = DocumentObjectLayoutKind.Fixed,
+                            Anchor = new DocumentObjectAnchor
+                            {
+                                BlockId = "paragraph-with-drawing",
+                                InlineIndex = 1,
+                                Offset = 7,
+                                MoveWithText = false,
+                                FixedOnPage = true,
+                                LockAnchor = true
+                            },
+                            Position = new DocumentObjectPosition
+                            {
+                                X = 14,
+                                Y = 22
+                            },
+                            Wrap = new DocumentObjectWrap
+                            {
+                                Mode = DocumentWrapMode.InFrontOfText
+                            },
+                            Transform = new DocumentObjectTransform
+                            {
+                                Width = 180,
+                                Height = 95
+                            },
+                            Stacking = new DocumentObjectStacking
+                            {
+                                ZIndex = 6
+                            }
+                        }
                     },
-                    Position = new DocumentObjectPosition
-                    {
-                        X = 14,
-                        Y = 22
-                    },
-                    Wrap = new DocumentObjectWrap
-                    {
-                        Mode = DocumentWrapMode.InFrontOfText
-                    },
-                    Transform = new DocumentObjectTransform
-                    {
-                        Width = 180,
-                        Height = 95
-                    }
-                }
+                    new Persistence.TextRun { Id = "text-2", Text = " after." }
+                ]
             }
         });
 
         var result = _serializer.FromPersistenceModel(persistence);
 
-        var image = result.Body.Should().ContainSingle().Subject.Should().BeOfType<ImageBlock>().Subject;
-        image.Layout.Should().Be(ImageLayout.Floating);
-        image.Position.Should().NotBeNull();
-        image.Position!.X.Should().Be("14");
-        image.Position.Y.Should().Be("22");
-        image.WrapMode.Should().Be(ImageWrapMode.InFrontOfText);
-        image.Size.Width.Should().Be("180");
-        image.Size.Height.Should().Be("95");
+        var paragraph = result.Body.Should().ContainSingle().Subject.Should().BeOfType<ParagraphBlock>().Subject;
+        paragraph.Inlines.Should().HaveCount(3);
+        var drawing = paragraph.Inlines[1].Should().BeOfType<DrawingInline>().Subject;
+        drawing.Id.Should().Be("drawing-inline-1");
+        drawing.ObjectId.Should().Be("drawing-object-1");
+        drawing.Source.Should().Be(DocumentImageSource.Asset);
+        drawing.AssetId.Should().Be("asset-front");
+        drawing.Url.Should().Be("blob:https://app.test/display-only");
+        drawing.AltText.Should().Be("Front image");
+        drawing.Caption.Should().Be("Front caption");
+        drawing.IsDecorative.Should().BeTrue();
+        drawing.LinkUrl.Should().Be("https://example.test/image-link");
+        drawing.Size.Width.Should().Be(180);
+        drawing.NaturalSize.Width.Should().Be(360);
+        drawing.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Fixed);
+        drawing.Layout.Anchor.BlockId.Should().Be("paragraph-with-drawing");
+        drawing.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.InFrontOfText);
+        drawing.Layout.Position.X.Should().Be(14);
+        drawing.Layout.Transform.Width.Should().Be(180);
+        drawing.Layout.Stacking.ZIndex.Should().Be(6);
+    }
+
+    [Fact]
+    public void Serialize_DrawingInline_DropsDisplayOnlyBlobUrl()
+    {
+        var model = new DocumentModel();
+        var paragraph = new ParagraphBlock();
+        paragraph.Inlines.Add(new DrawingInline
+        {
+            ObjectId = "asset-drawing",
+            Source = DocumentImageSource.Asset,
+            AssetId = "asset-1",
+            Url = "blob:https://app.test/display-only",
+            AltText = "Asset drawing"
+        });
+        model.Body.Add(paragraph);
+
+        var result = _serializer.ToPersistenceModel(model);
+
+        var drawing = result.Blocks[0].Content.Should().BeOfType<ParagraphBlockContent>().Subject
+            .Inlines.Should().ContainSingle().Subject.Should().BeOfType<DocumentDrawingRun>().Subject;
+        drawing.Source.Should().Be(DocumentImageSource.Asset);
+        drawing.AssetId.Should().Be("asset-1");
+        drawing.Url.Should().BeNull();
+    }
+
+    [Fact]
+    public void Serialize_DrawingInline_DropsUnsafeUrlSource()
+    {
+        var model = new DocumentModel();
+        var paragraph = new ParagraphBlock();
+        paragraph.Inlines.Add(new DrawingInline
+        {
+            ObjectId = "unsafe-url-drawing",
+            Source = DocumentImageSource.Url,
+            Url = "blob:https://app.test/display-only",
+            AltText = "Unsafe URL drawing"
+        });
+        model.Body.Add(paragraph);
+
+        var result = _serializer.ToPersistenceModel(model);
+
+        var drawing = result.Blocks[0].Content.Should().BeOfType<ParagraphBlockContent>().Subject
+            .Inlines.Should().ContainSingle().Subject.Should().BeOfType<DocumentDrawingRun>().Subject;
+        drawing.Source.Should().Be(DocumentImageSource.Url);
+        drawing.Url.Should().BeNull();
     }
 
     [Fact]

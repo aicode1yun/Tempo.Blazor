@@ -235,7 +235,7 @@ public static class DocumentLayoutInvalidationPlanner
 
         return snapshot.Pages
             .Where(page => page.Paragraphs.Any(paragraph => ids.Contains(paragraph.BlockId))
-                || page.Objects.Any(obj => ids.Contains(obj.BlockId)))
+                || page.Objects.Any(obj => ids.Contains(obj.Id) || ids.Contains(obj.BlockId)))
             .Select(page => (int?)page.PageIndex)
             .OrderBy(index => index)
             .FirstOrDefault();
@@ -252,8 +252,8 @@ public static class DocumentLayoutInvalidationPlanner
         var pages = new SortedSet<int>();
         foreach (var page in snapshot.Pages)
         {
-            if (page.Objects.Any(obj => ids.Contains(obj.BlockId) || (!string.IsNullOrWhiteSpace(obj.AnchorBlockId) && ids.Contains(obj.AnchorBlockId!)))
-                || page.Exclusions.Any(zone => ids.Contains(zone.BlockId)))
+            if (page.Objects.Any(obj => ids.Contains(obj.Id) || ids.Contains(obj.BlockId) || (!string.IsNullOrWhiteSpace(obj.AnchorBlockId) && ids.Contains(obj.AnchorBlockId!)))
+                || page.Exclusions.Any(zone => ids.Contains(zone.ObjectId) || ids.Contains(zone.BlockId)))
             {
                 pages.Add(page.PageIndex);
             }
@@ -654,6 +654,9 @@ public class DocumentLayoutEngine
                 InlineIndex = layout.Anchor.InlineIndex,
                 Offset = layout.Anchor.Offset,
                 Region = layout.Anchor.Region,
+                TableId = layout.Anchor.TableId,
+                CellId = layout.Anchor.CellId,
+                HeaderFooterId = layout.Anchor.HeaderFooterId,
                 PageIndex = layout.Anchor.PageIndex,
                 MoveWithText = layout.Anchor.MoveWithText,
                 FixedOnPage = layout.Anchor.FixedOnPage,
@@ -671,6 +674,7 @@ public class DocumentLayoutEngine
             Wrap = new DocumentObjectWrap
             {
                 Mode = layout.Wrap.Mode,
+                Side = layout.Wrap.Side,
                 DistanceLeft = layout.Wrap.DistanceLeft,
                 DistanceRight = layout.Wrap.DistanceRight,
                 DistanceTop = layout.Wrap.DistanceTop,
@@ -693,7 +697,14 @@ public class DocumentLayoutEngine
                     Top = layout.Transform.Crop.Top,
                     Right = layout.Transform.Crop.Right,
                     Bottom = layout.Transform.Crop.Bottom
-                }
+                },
+                Flip = layout.Transform.Flip is null
+                    ? null
+                    : new DocumentObjectFlip
+                    {
+                        Horizontal = layout.Transform.Flip.Horizontal,
+                        Vertical = layout.Transform.Flip.Vertical
+                    }
             },
             Stacking = new DocumentObjectStacking
             {
@@ -951,7 +962,7 @@ public class DocumentLayoutEngine
     private static void LayoutTextBlock(LayoutState state, DocumentBlock block, IReadOnlyList<InlineContent> inlines)
     {
         var baseStyle = TextStyle.FromDocument(state.Document.Theme, state.Metrics);
-        var runs = BuildTextRuns(inlines, baseStyle);
+        var runs = BuildTextRuns(inlines, baseStyle, state.Metrics);
         var lineHeight = GetLineHeight(block, state.Document.Theme, state.Metrics, runs);
         var spacingBefore = Math.Max(0, block.ParagraphProperties.SpacingBefore);
         var spacingAfter = GetParagraphSpacingAfter(block, state.Document.Theme);
@@ -972,6 +983,20 @@ public class DocumentLayoutEngine
 
         foreach (var run in runs)
         {
+            if (run.Drawing is not null)
+            {
+                if ((run.Drawing.Layout ?? DocumentObjectLayout.Inline()).IsInline)
+                {
+                    context.PlaceInlineObject(run);
+                }
+                else
+                {
+                    context.PlaceAnchoredObject(run);
+                }
+
+                continue;
+            }
+
             for (var offset = 0; offset < run.Text.Length;)
             {
                 var ch = run.Text[offset];
@@ -1075,13 +1100,32 @@ public class DocumentLayoutEngine
             _ => null
         };
 
-    private static List<TextRunLayoutSource> BuildTextRuns(IReadOnlyList<InlineContent> inlines, TextStyle baseStyle)
+    private static List<TextRunLayoutSource> BuildTextRuns(
+        IReadOnlyList<InlineContent> inlines,
+        TextStyle baseStyle,
+        DocumentLayoutRendererMetrics metrics)
     {
         var runs = new List<TextRunLayoutSource>();
         var blockOffset = 0;
         for (var index = 0; index < inlines.Count; index++)
         {
             var inline = inlines[index];
+            if (inline is DocumentDrawingRun drawing)
+            {
+                var size = GetDrawingSize(drawing, metrics);
+                runs.Add(new TextRunLayoutSource(
+                    index,
+                    inline.Id,
+                    string.Empty,
+                    baseStyle.Apply(inline.Marks),
+                    CloneMarks(inline.Marks),
+                    blockOffset,
+                    drawing,
+                    size.Width,
+                    size.Height));
+                continue;
+            }
+
             var text = GetInlineText(inline);
             if (string.IsNullOrEmpty(text))
             {
@@ -1156,6 +1200,21 @@ public class DocumentLayoutEngine
         return (Math.Max(1, width), Math.Max(1, height));
     }
 
+    private static (double Width, double Height) GetDrawingSize(DocumentDrawingRun drawing, DocumentLayoutRendererMetrics metrics)
+    {
+        var width = drawing.Layout?.Transform.Width
+            ?? drawing.Size.Width
+            ?? drawing.NaturalSize.Width
+            ?? drawing.Layout?.Transform.NaturalWidth
+            ?? metrics.DefaultImageWidth;
+        var height = drawing.Layout?.Transform.Height
+            ?? drawing.Size.Height
+            ?? drawing.NaturalSize.Height
+            ?? drawing.Layout?.Transform.NaturalHeight
+            ?? metrics.DefaultImageHeight;
+        return (Math.Max(1, width), Math.Max(1, height));
+    }
+
     private static void ApplyImageFootprint(
         DocumentObjectLayoutBox objectBox,
         ImageBlockContent image,
@@ -1183,6 +1242,27 @@ public class DocumentLayoutEngine
 
         objectBox.WrapRect = DocumentLayoutGeometryHelper.ComputeWrapRect(objectBox.FootprintRect, objectBox.Layout.Wrap);
     }
+
+    private static void ApplyDrawingFootprint(
+        DocumentObjectLayoutBox objectBox,
+        DocumentDrawingRun drawing,
+        LayoutState state)
+        => ApplyImageFootprint(
+            objectBox,
+            new ImageBlockContent
+            {
+                Source = drawing.Source,
+                Url = drawing.Url,
+                AssetId = drawing.AssetId,
+                AltText = drawing.AltText,
+                IsDecorative = drawing.IsDecorative,
+                Caption = drawing.Caption,
+                Size = drawing.Size,
+                NaturalSize = drawing.NaturalSize,
+                Layout = drawing.Layout,
+                LinkUrl = drawing.LinkUrl
+            },
+            state);
 
     private static DocumentLayoutRect ComputeConservativeMediaFootprint(DocumentLayoutRect mediaRect, double rotationDegrees)
     {
@@ -1380,15 +1460,18 @@ public class DocumentLayoutEngine
                 Segments = line.Segments.Select(segment => new DocumentTextSegmentBox
                 {
                     Id = segment.Id,
+                    Kind = segment.Kind,
                     BlockId = segment.BlockId,
                     InlineId = segment.InlineId,
+                    ObjectId = segment.ObjectId,
                     InlineIndex = segment.InlineIndex,
                     StartOffset = segment.StartOffset,
                     BlockStartOffset = segment.BlockStartOffset,
                     Length = segment.Length,
                     Text = segment.Text,
                     Marks = CloneMarks(segment.Marks),
-                    Rect = segment.Rect.Clone()
+                    Rect = segment.Rect.Clone(),
+                    ObjectRect = segment.ObjectRect?.Clone()
                 }).ToList()
             });
         }
@@ -1554,9 +1637,119 @@ public class DocumentLayoutEngine
             }
         }
 
+        public void PlaceInlineObject(TextRunLayoutSource run)
+        {
+            if (run.Drawing is null)
+            {
+                return;
+            }
+
+            var width = Math.Max(1, run.ObjectWidth);
+            var height = Math.Max(1, run.ObjectHeight);
+            var requiredLineHeight = Math.Max(_lineHeight, height);
+
+            if (_line is not null
+                && _segments.Count > 0
+                && _state.CurrentY + requiredLineHeight > _state.CurrentPage.BodyRect.Bottom
+                && _state.CurrentY > _state.CurrentPage.BodyRect.Y)
+            {
+                FinalizeCurrentLine(force: false);
+                AdvanceLine();
+            }
+
+            if (_line is null)
+            {
+                _state.EnsureLineFits(requiredLineHeight);
+            }
+
+            EnsureWritableLine();
+            if (!FitsCurrentInterval(width))
+            {
+                if (!MoveToNextInterval(width))
+                {
+                    if (_segments.Count > 0)
+                    {
+                        FinalizeCurrentLine(force: false);
+                        AdvanceLine();
+                        _state.EnsureLineFits(requiredLineHeight);
+                        EnsureWritableLine();
+                    }
+                }
+            }
+
+            AddInlineObject(run, width, height);
+        }
+
+        public void PlaceAnchoredObject(TextRunLayoutSource run)
+        {
+            if (run.Drawing is null)
+            {
+                return;
+            }
+
+            var width = Math.Max(1, run.ObjectWidth);
+            var height = Math.Max(1, run.ObjectHeight);
+            if (_line is null)
+            {
+                _state.EnsureLineFits(Math.Max(_lineHeight, height));
+            }
+
+            EnsureWritableLine();
+            var page = _state.CurrentPage;
+            var body = page.BodyRect;
+            var lineRect = (_line?.Rect ?? GetLineBounds(page)).Clone();
+            var characterRect = new DocumentLayoutRect
+            {
+                X = _x,
+                Y = _state.CurrentY,
+                Width = 0,
+                Height = Math.Max(_lineHeight, _line?.Rect.Height ?? _lineHeight)
+            };
+            var layout = CloneObjectLayout(run.Drawing.Layout ?? DocumentObjectLayout.Anchored(DocumentWrapMode.Square));
+            NormalizeDrawingAnchor(layout, run);
+            var paragraphRect = ResolveDrawingAnchorParagraphRect(layout, lineRect, body);
+            var anchorBlockId = layout.Anchor.BlockId;
+            var objectBox = DocumentLayoutGeometryHelper.CreateObjectLayoutBox(
+                string.IsNullOrWhiteSpace(run.Drawing.ObjectId) ? Guid.NewGuid().ToString("N") : run.Drawing.ObjectId,
+                _block.Id,
+                layout,
+                page.PageRect,
+                body,
+                paragraphRect,
+                characterRect,
+                lineRect,
+                width,
+                height,
+                _state.Metrics.ClampAnchoredObjectsToBody);
+            objectBox.AnchorBlockId = anchorBlockId;
+            objectBox.PageIndex = page.PageIndex;
+            layout.Anchor.PageIndex = page.PageIndex;
+            ApplyDrawingFootprint(objectBox, run.Drawing, _state);
+            ResolveObjectOverlap(page, objectBox, body);
+            page.Objects.Add(objectBox);
+            _state.RecordObjectDebug(objectBox);
+
+            var zone = DocumentLayoutGeometryHelper.CreateExclusionZone(objectBox, body);
+            if (zone is not null)
+            {
+                page.Exclusions.Add(zone);
+                if (_segments.Count > 0)
+                {
+                    FinalizeCurrentLine(force: false);
+                    AdvanceLine();
+                }
+                else
+                {
+                    ResetCurrentLineForReflow();
+                }
+            }
+        }
+
         public void AdvanceLine()
         {
-            _state.CurrentY += _lineHeight;
+            _state.CurrentY = _paragraphBottom > _state.CurrentY
+                ? _paragraphBottom
+                : _state.CurrentY + _lineHeight;
             _line = null;
             _intervals = [];
             _intervalIndex = 0;
@@ -1797,6 +1990,7 @@ public class DocumentLayoutEngine
 
             var segment = _segments.LastOrDefault();
             if (segment is null
+                || segment.Kind != DocumentInlineLayoutSegmentKind.Text
                 || segment.InlineIndex != run.InlineIndex
                 || segment.InlineId != run.InlineId
                 || segment.StartOffset + segment.Length != sourceOffset)
@@ -1824,6 +2018,126 @@ public class DocumentLayoutEngine
             segment.Length++;
             segment.Rect.Width += width;
             _x += width;
+        }
+
+        private void AddInlineObject(TextRunLayoutSource run, double width, double height)
+        {
+            if (_line is null || run.Drawing is null)
+            {
+                return;
+            }
+
+            var requiredLineHeight = Math.Max(_lineHeight, height);
+            EnsureCurrentLineHeight(requiredLineHeight);
+
+            var objectRect = new DocumentLayoutRect
+            {
+                X = _x,
+                Y = _state.CurrentY,
+                Width = width,
+                Height = height
+            };
+            var layout = CloneObjectLayout(run.Drawing.Layout ?? DocumentObjectLayout.Inline());
+            layout.Kind = DocumentObjectLayoutKind.Inline;
+            layout.Wrap.Mode = DocumentWrapMode.Inline;
+            layout.Anchor.BlockId = _block.Id;
+            layout.Anchor.InlineIndex = run.InlineIndex;
+            layout.Anchor.Offset = run.BlockStartOffset;
+            layout.Anchor.PageIndex = _state.CurrentPage.PageIndex;
+
+            var objectBox = new DocumentObjectLayoutBox
+            {
+                Id = string.IsNullOrWhiteSpace(run.Drawing.ObjectId) ? Guid.NewGuid().ToString("N") : run.Drawing.ObjectId,
+                BlockId = _block.Id,
+                AnchorBlockId = _block.Id,
+                PageIndex = _state.CurrentPage.PageIndex,
+                ObjectRect = objectRect.Clone(),
+                Layout = layout,
+                ZIndex = layout.Stacking.ZIndex,
+                AllowOverlap = layout.Stacking.AllowOverlap
+            };
+            ApplyDrawingFootprint(objectBox, run.Drawing, _state);
+            _state.CurrentPage.Objects.Add(objectBox);
+            _state.RecordObjectDebug(objectBox);
+
+            _segments.Add(new DocumentTextSegmentBox
+            {
+                Kind = DocumentInlineLayoutSegmentKind.Object,
+                BlockId = _block.Id,
+                InlineId = run.InlineId,
+                ObjectId = objectBox.Id,
+                InlineIndex = run.InlineIndex,
+                StartOffset = 0,
+                BlockStartOffset = run.BlockStartOffset,
+                Length = 0,
+                Text = string.Empty,
+                Marks = CloneMarks(run.Marks),
+                Rect = objectRect.Clone(),
+                ObjectRect = objectRect.Clone()
+            });
+            _x += width;
+        }
+
+        private void EnsureCurrentLineHeight(double height)
+        {
+            if (_line is null || height <= _line.Rect.Height + 0.01)
+            {
+                return;
+            }
+
+            _line.Rect.Height = height;
+            _line.BaselineY = _line.Rect.Y + (height * 0.8);
+        }
+
+        private void NormalizeDrawingAnchor(DocumentObjectLayout layout, TextRunLayoutSource run)
+        {
+            if (string.IsNullOrWhiteSpace(layout.Anchor.BlockId) || !layout.Anchor.LockAnchor)
+            {
+                layout.Anchor.BlockId = _block.Id;
+            }
+
+            layout.Anchor.InlineIndex ??= run.InlineIndex;
+            layout.Anchor.Offset ??= run.BlockStartOffset;
+            if (layout.Wrap.Mode != DocumentWrapMode.Inline && layout.Kind == DocumentObjectLayoutKind.Inline)
+            {
+                layout.Kind = layout.Anchor.FixedOnPage ? DocumentObjectLayoutKind.Fixed : DocumentObjectLayoutKind.Anchored;
+            }
+        }
+
+        private DocumentLayoutRect ResolveDrawingAnchorParagraphRect(
+            DocumentObjectLayout layout,
+            DocumentLayoutRect currentLineRect,
+            DocumentLayoutRect body)
+        {
+            if (layout.Anchor.FixedOnPage)
+            {
+                return new DocumentLayoutRect
+                {
+                    X = body.X,
+                    Y = body.Y,
+                    Width = body.Width,
+                    Height = _lineHeight
+                };
+            }
+
+            var anchorBlockId = layout.Anchor.BlockId;
+            if (!string.IsNullOrWhiteSpace(anchorBlockId)
+                && !string.Equals(anchorBlockId, _block.Id, StringComparison.Ordinal)
+                && _state.TryGetParagraphRect(anchorBlockId!, out var stored))
+            {
+                return stored.Clone();
+            }
+
+            return _paragraph?.Rect.Clone() ?? currentLineRect.Clone();
+        }
+
+        private void ResetCurrentLineForReflow()
+        {
+            _line = null;
+            _intervals = [];
+            _intervalIndex = 0;
+            _activeExclusions = [];
+            _x = 0;
         }
     }
 
@@ -1857,7 +2171,10 @@ public class DocumentLayoutEngine
         string Text,
         TextStyle Style,
         IReadOnlyList<InlineMark> Marks,
-        int BlockStartOffset);
+        int BlockStartOffset,
+        DocumentDrawingRun? Drawing = null,
+        double ObjectWidth = 0,
+        double ObjectHeight = 0);
 
     private sealed record TextStyle(
         string FontFamily,

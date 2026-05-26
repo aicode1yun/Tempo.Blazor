@@ -185,6 +185,7 @@
             <TmDocumentJsonDebugModal IsOpen="@_jsonDebugModalOpen"
                                       Json="@GetDocumentJson()"
                                       RuntimeDebugJson="@_runtimeDebugJson"
+                                      DocxDrawingMetadataJson="@GetDocxDrawingMetadataDebugJson()"
                                       RecoveryDetailJson="@GetRuntimeRecoveryDetailJson()"
                                       OnCopyJson="CopyDocumentDebugJsonAsync"
                                       OnClose="CloseJsonDebugModalAsync" />
@@ -443,7 +444,8 @@
                     {
                         <section class="tm-document-image-properties-panel"
                                  data-testid="document-image-properties-panel"
-                                 data-active-object-id="@ActiveImageInspectorBlockId">
+                                 data-active-object-id="@ActiveImageInspectorObjectId"
+                                 data-active-anchor-block-id="@ActiveImageInspectorBlockId">
                             <TmDocumentImageInspector Image="activeImage"
                                                       AltTextChanged="SetActiveImageAltTextFromPanelAsync"
                                                       DecorativeChanged="SetActiveImageDecorativeFromPanelAsync"

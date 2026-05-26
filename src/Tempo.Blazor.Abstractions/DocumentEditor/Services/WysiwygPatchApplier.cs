@@ -1398,10 +1398,7 @@ public sealed class WysiwygPatchApplier
 
     private static void SanitizeBlock(DocumentBlock block)
     {
-        if (block.Content is ImageBlockContent image && image.Source == DocumentImageSource.Url && !IsSafeImageUrl(image.Url))
-        {
-            image.Url = null;
-        }
+        DocumentImagePersistence.Sanitize(block);
     }
 
     private static void SyncFloatingImageAnchor(DocumentEditorDocument document, DocumentBlock block, WysiwygSelectionSnapshot? selection)
@@ -1620,30 +1617,6 @@ public sealed class WysiwygPatchApplier
             "body" => DocumentRenditionAnchorScope.Body,
             _ => existingAnchor?.Scope ?? DocumentRenditionAnchorScope.Body
         };
-    }
-
-    private static bool IsSafeImageUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-        {
-            return false;
-        }
-
-        if (url.StartsWith("/", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (url.StartsWith("data:image/png;base64,", StringComparison.OrdinalIgnoreCase)
-            || url.StartsWith("data:image/jpeg;base64,", StringComparison.OrdinalIgnoreCase)
-            || url.StartsWith("data:image/webp;base64,", StringComparison.OrdinalIgnoreCase)
-            || url.StartsWith("data:image/gif;base64,", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
-            && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
     }
 
     private static double CalculateOrder(List<DocumentBlock> blocks, int insertIndex)
@@ -1930,8 +1903,32 @@ public sealed class WysiwygPatchApplier
                 DisplayMarker = note.DisplayMarker,
                 Marks = note.Marks.ToList()
             },
+            DocumentDrawingRun drawing => new DocumentDrawingRun
+            {
+                Id = drawing.Id,
+                ObjectId = drawing.ObjectId,
+                Kind = drawing.Kind,
+                Source = drawing.Source,
+                Url = drawing.Url,
+                AssetId = drawing.AssetId,
+                AltText = drawing.AltText,
+                IsDecorative = drawing.IsDecorative,
+                Caption = drawing.Caption,
+                Size = CloneDocumentEditorValue(drawing.Size),
+                NaturalSize = CloneDocumentEditorValue(drawing.NaturalSize),
+                Layout = CloneDocumentEditorValue(drawing.Layout),
+                LinkUrl = drawing.LinkUrl,
+                Metadata = drawing.Metadata.ToDictionary(pair => pair.Key, pair => pair.Value),
+                Marks = drawing.Marks.Select(CloneMark).ToList()
+            },
             _ => new TextRun { Text = GetInlineText(inline) }
         };
+    }
+
+    private static T CloneDocumentEditorValue<T>(T value)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
+        return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
     }
 
     private static List<InlineMark> CloneTypingMarks(IEnumerable<InlineMark> marks)

@@ -46,6 +46,9 @@ public class DocumentCommentEntry
     /// <summary>Entry text.</summary>
     public string Text { get; set; } = string.Empty;
 
+    /// <summary>Rich inline content for comment bodies, including images imported from DOCX comment parts.</summary>
+    public List<InlineContent> Inlines { get; set; } = [];
+
     /// <summary>Creation timestamp.</summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 

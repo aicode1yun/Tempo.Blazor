@@ -98,6 +98,7 @@ public sealed class DocumentMarkdownExporter
                 TextRun run => EscapeText(run.Text),
                 TokenRun token => "{{" + EscapeText(token.Key) + "}}",
                 DocumentNoteReferenceRun note => "[^" + EscapeText(note.NoteId) + "]",
+                DocumentDrawingRun drawing => RenderDrawing(drawing),
                 _ => string.Empty
             };
 
@@ -105,6 +106,13 @@ public sealed class DocumentMarkdownExporter
         }
 
         return rendered.ToString();
+    }
+
+    private static string RenderDrawing(DocumentDrawingRun drawing)
+    {
+        var alt = EscapeText(drawing.AltText ?? drawing.Caption ?? "image");
+        var source = drawing.Url ?? drawing.AssetId ?? string.Empty;
+        return "![" + alt + "](" + EscapeUrl(source) + ")";
     }
 
     private static string ApplyMarks(string text, IReadOnlyList<InlineMark> marks)

@@ -175,6 +175,156 @@ public sealed class DocumentEditorRuntimePhase22PerformanceJavaScriptTests
             assert.ok(metrics.TypingLatencyCount >= 2);
             assert.ok(metrics.ImageDragLatencyCount >= 1);
             assert.ok(metrics.InputOperationCount >= 4);
+            assert.ok(metrics.ModelCommitCount >= 4);
+            assert.strictEqual(typeof metrics.RenderSwapCount, 'number');
+            assert.strictEqual(typeof metrics.ObjectTrackFrameCount, 'number');
+            assert.strictEqual(metrics.ActiveRegion, 'Body');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase22_ObjectTrackPointerMovesDoNotMutateModelUntilPointerUpCommit()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON, Date, Math };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            sandbox.window.performance = { now: () => Date.now() };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+
+            function assertPreviewOnly(factory, frameCounterName) {
+                const harness = factory({ threshold: 0 });
+                const before = harness.state().modelJson;
+                harness.begin(0, 0);
+                let afterMoves = null;
+                for (let index = 1; index <= 20; index++) {
+                    afterMoves = harness.move(index * 4, index * 3);
+                }
+
+                assert.strictEqual(afterMoves.modelJson, before, 'pointermove must not mutate the document model');
+                assert.strictEqual(afterMoves.commitCount, 0, 'pointermove must not create commits');
+                assert.ok(afterMoves.performance.objectTrackFrameCount >= 20, 'every pointermove should be tracked as a preview frame');
+                assert.ok(afterMoves.performance[frameCounterName] >= 20, `${frameCounterName} should count preview frames`);
+                assert.strictEqual(afterMoves.performance.objectTrackCommitCount, 0);
+                assert.strictEqual(afterMoves.performance.modelCommitCount, 0);
+
+                const afterCommit = harness.up(96, 72);
+                assert.notStrictEqual(afterCommit.modelJson, before, 'pointerup should commit the final object geometry');
+                assert.strictEqual(afterCommit.commitCount, 1);
+                assert.strictEqual(afterCommit.performance.objectTrackCommitCount, 1);
+                assert.strictEqual(afterCommit.performance.modelCommitCount, 1);
+            }
+
+            assertPreviewOnly(hooks.createImageMoveTrackHarness, 'objectTrackDragFrameCount');
+            assertPreviewOnly(hooks.createImageResizeTrackHarness, 'objectTrackResizeFrameCount');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase22_DebugSnapshotAndWrapIntervalsExposePerformanceGuardrails()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON, Date, Math };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            sandbox.window.performance = { now: () => Date.now() };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            function createRoot() {
+                return {
+                    innerHTML: '',
+                    attributes: {},
+                    classList: { add() {}, toggle() {}, remove() {} },
+                    setAttribute(name, value) { this.attributes[name] = String(value); },
+                    removeAttribute(name) { delete this.attributes[name]; },
+                    contains() { return true; },
+                    addEventListener() {},
+                    removeEventListener() {},
+                    querySelector() { return null; },
+                    querySelectorAll() { return []; }
+                };
+            }
+
+            const engine = sandbox.window.tmDocumentEditorEngine;
+            const root = createRoot();
+            engine.create(root, { InstanceId: 'phase22-debug' }, null);
+            engine.loadDocument('phase22-debug', {
+                Document: {
+                    DocumentId: 'phase22-debug-doc',
+                    Blocks: [
+                        { Id: 'body-p', Type: 'Paragraph', Content: { Inlines: [{ Id: 'body-r', Text: 'Body text' }] } }
+                    ],
+                    HeadersFooters: [
+                        { Id: 'header-primary', Region: 'Header', Type: 'Header', Blocks: [
+                            { Id: 'header-p', Type: 'Paragraph', Content: { Inlines: [{ Id: 'header-r', Text: 'Header text' }] } }
+                        ] }
+                    ]
+                }
+            });
+            engine.restoreSelection('phase22-debug', {
+                region: 'Header',
+                headerFooterId: 'header-primary',
+                blockId: 'header-p',
+                offset: 6,
+                isCollapsed: true
+            });
+            engine.clearDebugMetrics('phase22-debug');
+
+            const snapshot = engine.getDebugSnapshot('phase22-debug');
+            const metrics = engine.getDebugMetrics('phase22-debug');
+            assert.strictEqual(snapshot.ActiveRegion, 'Header');
+            assert.strictEqual(snapshot.performanceStats.activeRegion, 'Header');
+            assert.strictEqual(metrics.ActiveRegion, 'Header');
+            assert.strictEqual(typeof metrics.RenderSwapCount, 'number');
+            assert.strictEqual(typeof metrics.ObjectTrackFrameCount, 'number');
+            assert.strictEqual(typeof metrics.ModelCommitCount, 'number');
+
+            const hooks = engine.__testHooks;
+            const body = { x: 40, y: 0, width: 500, height: 700 };
+            const exclusions = [{ rect: { x: 80, y: 20, width: 120, height: 48 }, allowOverlap: false }];
+            const first = hooks.getAvailableIntervals(24, 18, body, exclusions, 24);
+            assert.strictEqual(typeof exclusions.__tmAvailableIntervalsCache?.get, 'function');
+            assert.strictEqual(exclusions.__tmAvailableIntervalsCache.size, 1);
+            first.intervals[0].x = -999;
+            const second = hooks.getAvailableIntervals(24, 18, body, exclusions, 24);
+            assert.notStrictEqual(second.intervals[0].x, -999, 'cached interval results must be cloned before returning to callers');
+            assert.strictEqual(exclusions.__tmAvailableIntervalsCache.size, 1);
 
             console.log('OK');
             """;

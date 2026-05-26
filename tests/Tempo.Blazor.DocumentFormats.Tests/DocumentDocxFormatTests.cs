@@ -52,7 +52,7 @@ public class DocumentDocxFormatTests
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is HeadingBlockContent).Should().BeTrue();
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is ListBlockContent { Ordered: true }).Should().BeTrue();
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is TableBlockContent).Should().BeTrue();
-        result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is ImageBlockContent).Should().BeTrue();
+        DocumentImagePersistence.EnumerateDrawingRuns(result.Document).Should().NotBeEmpty();
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is PageBreakBlockContent).Should().BeTrue();
         result.Document.HeadersFooters.Should().NotBeEmpty();
         result.Document.Notes.Should().Contain(note => note.Type == DocumentNoteType.Footnote);
@@ -273,15 +273,14 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(CreateFloatingImageDocument());
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = imported.Document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
-        image.FloatingLayout.Should().NotBeNull();
-        image.FloatingLayout!.Inline.Should().BeFalse();
-        image.FloatingLayout.WrapMode.Should().Be(DocumentWrapMode.Square);
-        image.FloatingLayout.HorizontalRelativeTo.Should().Be(DocumentRelativePosition.Margin);
-        image.FloatingLayout.VerticalRelativeTo.Should().Be(DocumentRelativePosition.Paragraph);
-        image.FloatingLayout.X.Should().Be(36);
-        image.FloatingLayout.Y.Should().Be(48);
-        image.FloatingLayout.LockAnchor.Should().BeTrue();
+        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        image.Layout.IsInline.Should().BeFalse();
+        image.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        image.Layout.Position.HorizontalRelativeTo.Should().Be(DocumentRelativePosition.Margin);
+        image.Layout.Position.VerticalRelativeTo.Should().Be(DocumentRelativePosition.Paragraph);
+        image.Layout.Position.X.Should().BeApproximately(36, 0.1);
+        image.Layout.Position.Y.Should().BeApproximately(48, 0.1);
+        image.Layout.Anchor.LockAnchor.Should().BeTrue();
     }
 
     [Fact]
@@ -304,7 +303,7 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(CreatePhase19DocxDocument());
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = imported.Document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
+        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
         image.Size.Width.Should().Be(240);
         image.Size.Height.Should().Be(120);
         image.Caption.Should().Be("Phase 19 image caption");
@@ -506,10 +505,10 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(source);
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = imported.Document.Blocks.Select(b => b.Content).OfType<ImageBlockContent>().Single();
-        image.FloatingLayout!.HorizontalPosition.Should().Be(DocumentImageHorizontalPosition.Right);
-        image.FloatingLayout.DistanceLeft.Should().BeApproximately(8, 0.1);
-        image.FloatingLayout.DistanceRight.Should().BeApproximately(4, 0.1);
+        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        image.Layout.Position.HorizontalAlignment.Should().Be(DocumentImageHorizontalPosition.Right);
+        image.Layout.Wrap.DistanceLeft.Should().BeApproximately(8, 0.1);
+        image.Layout.Wrap.DistanceRight.Should().BeApproximately(4, 0.1);
     }
 
     [Fact]
@@ -520,8 +519,8 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(source);
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = imported.Document.Blocks.Select(b => b.Content).OfType<ImageBlockContent>().Single();
-        image.FloatingLayout!.HorizontalPosition.Should().Be(DocumentImageHorizontalPosition.Left);
+        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        image.Layout.Position.HorizontalAlignment.Should().Be(DocumentImageHorizontalPosition.Left);
     }
 
     [Fact]
@@ -530,8 +529,8 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(CreateFloatingImageDocument());
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = imported.Document.Blocks.Select(b => b.Content).OfType<ImageBlockContent>().Single();
-        image.FloatingLayout!.HorizontalPosition.Should().BeNull();
+        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        image.Layout.Position.HorizontalAlignment.Should().BeNull();
     }
 
     private static DocumentEditorDocument CreateFloatingImageDocument()
@@ -545,7 +544,7 @@ public class DocumentDocxFormatTests
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Url,
-                Url = "https://example.test/image.png",
+                Url = DocumentFormatTestData.TransparentPngDataUrl,
                 AltText = "Floating image",
                 Size = new DocumentImageSize { Width = 160, Height = 90 },
                 FloatingLayout = new DocumentFloatingLayout
@@ -578,7 +577,7 @@ public class DocumentDocxFormatTests
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Url,
-                Url = "https://example.test/image.png",
+                Url = DocumentFormatTestData.TransparentPngDataUrl,
                 AltText = "Positioned image",
                 Size = new DocumentImageSize { Width = 160, Height = 90 },
                 FloatingLayout = new DocumentFloatingLayout

@@ -8,6 +8,7 @@ namespace Tempo.Blazor.DocumentEditor.Models;
 [JsonDerivedType(typeof(TokenRun), "token")]
 [JsonDerivedType(typeof(DocumentFieldRun), "field")]
 [JsonDerivedType(typeof(DocumentNoteReferenceRun), "noteReference")]
+[JsonDerivedType(typeof(DocumentDrawingRun), "drawing")]
 public abstract class InlineContent
 {
     /// <summary>Stable inline identifier used for selection mapping and comment anchoring.</summary>
@@ -22,6 +23,59 @@ public class TextRun : InlineContent
 {
     /// <summary>Text value.</summary>
     public string Text { get; set; } = string.Empty;
+}
+
+/// <summary>Drawing object anchored in a text run, such as an inline or floating image.</summary>
+public class DocumentDrawingRun : InlineContent
+{
+    /// <summary>Stable drawing object identifier used by layout, selection, commands, and persistence.</summary>
+    public string ObjectId { get; set; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>Drawing object kind. Defaults to image.</summary>
+    public DocumentDrawingKind Kind { get; set; } = DocumentDrawingKind.Image;
+
+    /// <summary>Image source kind when <see cref="Kind"/> is <see cref="DocumentDrawingKind.Image"/>.</summary>
+    public DocumentImageSource Source { get; set; } = DocumentImageSource.Url;
+
+    /// <summary>Direct image URL when <see cref="Source"/> is <see cref="DocumentImageSource.Url"/>.</summary>
+    public string? Url { get; set; }
+
+    /// <summary>Provider asset id when <see cref="Source"/> is asset-backed.</summary>
+    public string? AssetId { get; set; }
+
+    /// <summary>Alternative text for assistive technology.</summary>
+    public string? AltText { get; set; }
+
+    /// <summary>Whether assistive technology should ignore this drawing as decorative.</summary>
+    public bool IsDecorative { get; set; }
+
+    /// <summary>Optional caption associated with the drawing.</summary>
+    public string? Caption { get; set; }
+
+    /// <summary>Source/default image size. User-controlled rendered size is stored in <see cref="Layout"/>.</summary>
+    public DocumentImageSize Size { get; set; } = new();
+
+    /// <summary>Intrinsic image size reported by the image asset once loaded.</summary>
+    public DocumentImageSize NaturalSize { get; set; } = new();
+
+    /// <summary>Canonical object layout used for inline, anchored, and fixed drawing positioning.</summary>
+    public DocumentObjectLayout Layout { get; set; } = DocumentObjectLayout.Inline();
+
+    /// <summary>Optional hyperlink URL wrapping the drawing.</summary>
+    public string? LinkUrl { get; set; }
+
+    /// <summary>Optional DOCX DrawingML metadata used for high-fidelity import, export, and preserve-only roundtrips.</summary>
+    public DocumentDocxDrawingMetadata? Docx { get; set; }
+
+    /// <summary>Supplemental drawing metadata used by importers, exporters, and editor runtime migrations.</summary>
+    public Dictionary<string, string?> Metadata { get; set; } = [];
+}
+
+/// <summary>Drawing object kinds supported by document inline content.</summary>
+public enum DocumentDrawingKind
+{
+    /// <summary>Bitmap or vector image drawing.</summary>
+    Image
 }
 
 /// <summary>Token or merge field run.</summary>

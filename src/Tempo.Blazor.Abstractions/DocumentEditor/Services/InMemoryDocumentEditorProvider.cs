@@ -402,6 +402,22 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
             "recovery-top-bottom-text",
             111,
             "Top-bottom wrapping reserves a full horizontal band before this text continues."));
+        document.Blocks.Add(CreateParagraph(
+            "recovery-empty-image-anchor",
+            112,
+            [new TextRun { Id = "recovery-empty-image-anchor-text", Text = string.Empty }],
+            spacingAfter: 9));
+        AddDrawingRunToParagraph(
+            document,
+            "recovery-empty-image-anchor",
+            CreateRecoveryDrawingRun(
+                "recovery-empty-paragraph-image",
+                "Image anchored to an empty paragraph",
+                DocumentWrapMode.Square,
+                "recovery-empty-image-anchor",
+                112,
+                63,
+                0));
         document.Blocks.Add(CreateImage(
             "recovery-missing-alt-image",
             120,
@@ -415,6 +431,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
             DocumentImageAlignment.Center,
             DocumentObjectLayout.Inline()));
         document.Blocks.Add(CreateRecoveryTable());
+        AddRecoveryHeaderFooterDrawingRuns(document);
 
         document.Comments.Add(new DocumentComment
         {
@@ -525,6 +542,28 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
             ],
             spacingAfter: 9));
 
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-image-normal-paragraph",
+            57,
+            "Image parity body text must stay editable before, beside, and after anchored drawing objects.",
+            spacingAfter: 9));
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-image-empty-paragraph",
+            58,
+            [new TextRun { Id = "onlyoffice-image-empty-run", Text = string.Empty }],
+            spacingAfter: 9));
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-image-insertion-paragraph",
+            59,
+            "Image insertion before target after target.",
+            spacingAfter: 9));
+
+        AddOnlyOfficeParityOverlayDrawingRuns(document);
+        AddOnlyOfficeParityAdvancedDrawingRuns(document);
+        PrepareOnlyOfficeParityImageAssets(document);
+
         document.Comments.Add(new DocumentComment
         {
             Id = "onlyoffice-comment-boundary",
@@ -553,6 +592,278 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
 
         StoreDocument(document, "onlyoffice-parity-2026-05-24-canonical-v1");
         return Clone(document);
+    }
+
+    private static void ConvertOnlyOfficeParityImageBlocksToDrawingRuns(DocumentEditorDocument document)
+    {
+        for (var index = 0; index < document.Blocks.Count; index++)
+        {
+            var block = document.Blocks[index];
+            if (block.Content is not ImageBlockContent image)
+            {
+                continue;
+            }
+
+            var drawing = CreateDrawingRunFromImageBlock(block, image);
+            block.Type = DocumentBlockType.Paragraph;
+            block.ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Left,
+                LineSpacing = 1.25,
+                SpacingAfter = 9
+            };
+            block.Content = new ParagraphBlockContent
+            {
+                Inlines = [drawing]
+            };
+        }
+    }
+
+    private static DocumentDrawingRun CreateDrawingRunFromImageBlock(DocumentBlock block, ImageBlockContent image)
+    {
+        var layout = Clone(image.Layout);
+        layout.Anchor.BlockId = string.IsNullOrWhiteSpace(layout.Anchor.BlockId) ? block.Id : layout.Anchor.BlockId;
+        layout.Anchor.InlineIndex ??= 0;
+        layout.Anchor.Offset ??= 0;
+        if (layout.Transform.Width is null or <= 0)
+        {
+            layout.Transform.Width = image.Size.Width;
+        }
+
+        if (layout.Transform.Height is null or <= 0)
+        {
+            layout.Transform.Height = image.Size.Height;
+        }
+
+        layout.Transform.NaturalWidth ??= image.NaturalSize.Width > 0 ? image.NaturalSize.Width : image.Size.Width;
+        layout.Transform.NaturalHeight ??= image.NaturalSize.Height > 0 ? image.NaturalSize.Height : image.Size.Height;
+
+        return new DocumentDrawingRun
+        {
+            Id = $"{block.Id}-drawing",
+            ObjectId = block.Id ?? Guid.NewGuid().ToString("N"),
+            Source = image.Source,
+            Url = image.Source == DocumentImageSource.Url ? image.Url : null,
+            AssetId = image.Source == DocumentImageSource.Asset ? image.AssetId : null,
+            AltText = image.AltText,
+            IsDecorative = image.IsDecorative,
+            Caption = image.Caption,
+            Size = Clone(image.Size),
+            NaturalSize = Clone(image.NaturalSize),
+            Layout = layout,
+            LinkUrl = image.LinkUrl
+        };
+    }
+
+    private static void AddOnlyOfficeParityOverlayDrawingRuns(DocumentEditorDocument document)
+    {
+        AddDrawingRunToParagraph(
+            document,
+            "onlyoffice-image-normal-paragraph",
+            CreateOnlyOfficeParityDrawingRun(
+                "onlyoffice-behind-text-image",
+                "Behind-text parity image",
+                DocumentWrapMode.BehindText,
+                "onlyoffice-image-normal-paragraph",
+                96,
+                54,
+                -1));
+        AddDrawingRunToParagraph(
+            document,
+            "onlyoffice-image-normal-paragraph",
+            CreateOnlyOfficeParityDrawingRun(
+                "onlyoffice-front-text-image",
+                "In-front parity image",
+                DocumentWrapMode.InFrontOfText,
+                "onlyoffice-image-normal-paragraph",
+                96,
+                54,
+                12));
+    }
+
+    private static void AddOnlyOfficeParityAdvancedDrawingRuns(DocumentEditorDocument document)
+    {
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-image-crop-paragraph",
+            60,
+            "Cropped image parity checks source rectangle export and visible object sizing.",
+            spacingAfter: 9));
+        var crop = CreateOnlyOfficeParityDrawingRun(
+            "onlyoffice-cropped-image",
+            "Cropped image parity",
+            DocumentWrapMode.Square,
+            "onlyoffice-image-crop-paragraph",
+            128,
+            72,
+            14);
+        crop.Layout.Transform.Crop = new DocumentObjectCrop
+        {
+            Left = 8,
+            Top = 5,
+            Right = 12,
+            Bottom = 6
+        };
+        AddDrawingRunToParagraph(document, "onlyoffice-image-crop-paragraph", crop);
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-image-rotation-paragraph",
+            61,
+            "Rotated image parity checks native DrawingML transform preservation.",
+            spacingAfter: 9));
+        var rotated = CreateOnlyOfficeParityDrawingRun(
+            "onlyoffice-rotated-image",
+            "Rotated image parity",
+            DocumentWrapMode.Square,
+            "onlyoffice-image-rotation-paragraph",
+            112,
+            63,
+            15);
+        rotated.Layout.Transform.Rotation = 12;
+        rotated.Layout.Position.X = 24;
+        rotated.Layout.Position.Y = 6;
+        AddDrawingRunToParagraph(document, "onlyoffice-image-rotation-paragraph", rotated);
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-image-tight-paragraph",
+            62,
+            "Tight wrapping parity keeps custom contour metadata while allowing renderers to fall back gracefully.",
+            spacingAfter: 9));
+        var tight = CreateOnlyOfficeParityDrawingRun(
+            "onlyoffice-tight-image",
+            "Tight wrap parity",
+            DocumentWrapMode.Tight,
+            "onlyoffice-image-tight-paragraph",
+            120,
+            72,
+            16);
+        tight.Layout.Wrap.Side = DocumentObjectWrapSide.Largest;
+        tight.Layout.Wrap.WrapContourPoints =
+        [
+            new() { X = 0.5, Y = 0 },
+            new() { X = 1, Y = 0.45 },
+            new() { X = 0.62, Y = 1 },
+            new() { X = 0, Y = 0.55 }
+        ];
+        AddDrawingRunToParagraph(document, "onlyoffice-image-tight-paragraph", tight);
+
+        document.Blocks.Add(CreateParagraph(
+            "onlyoffice-image-through-paragraph",
+            63,
+            "Through wrapping parity uses the same contour path but must export as wp:wrapThrough.",
+            spacingAfter: 9));
+        var through = CreateOnlyOfficeParityDrawingRun(
+            "onlyoffice-through-image",
+            "Through wrap parity",
+            DocumentWrapMode.Through,
+            "onlyoffice-image-through-paragraph",
+            120,
+            72,
+            17);
+        through.Layout.Wrap.Side = DocumentObjectWrapSide.Left;
+        through.Layout.Wrap.WrapContourPoints =
+        [
+            new() { X = 0.15, Y = 0 },
+            new() { X = 1, Y = 0.2 },
+            new() { X = 0.85, Y = 1 },
+            new() { X = 0, Y = 0.8 }
+        ];
+        AddDrawingRunToParagraph(document, "onlyoffice-image-through-paragraph", through);
+    }
+
+    private static void PrepareOnlyOfficeParityImageAssets(DocumentEditorDocument document)
+    {
+        if (document.Assets.All(asset => !string.Equals(asset.Id, RecoveryProviderAssetId, StringComparison.Ordinal)))
+        {
+            document.Assets.Add(new DocumentImageAsset
+            {
+                Id = RecoveryProviderAssetId,
+                DocumentId = document.DocumentId,
+                Source = DocumentImageSource.Asset,
+                ContentType = "image/png",
+                FileName = "onlyoffice-parity-evidence.png",
+                AltText = "ONLYOFFICE parity evidence",
+                Caption = "Provider-backed parity image",
+                ImageSize = new DocumentImageSize { Width = 240, Height = 135 }
+            });
+        }
+
+        foreach (var drawing in DocumentImagePersistence.EnumerateDrawingRuns(document))
+        {
+            drawing.Source = DocumentImageSource.Asset;
+            drawing.AssetId = RecoveryProviderAssetId;
+            drawing.Url = null;
+        }
+    }
+
+    private static DocumentDrawingRun CreateOnlyOfficeParityDrawingRun(
+        string objectId,
+        string altText,
+        DocumentWrapMode wrapMode,
+        string anchorBlockId,
+        double width,
+        double height,
+        int zIndex)
+        => new()
+        {
+            Id = $"{objectId}-drawing",
+            ObjectId = objectId,
+            Source = DocumentImageSource.Asset,
+            AssetId = RecoveryProviderAssetId,
+            AltText = altText,
+            Caption = altText,
+            Size = new DocumentImageSize { Width = width, Height = height },
+            NaturalSize = new DocumentImageSize { Width = width, Height = height },
+            Layout = new DocumentObjectLayout
+            {
+                Kind = DocumentObjectLayoutKind.Anchored,
+                Anchor = new DocumentObjectAnchor
+                {
+                    BlockId = anchorBlockId,
+                    InlineIndex = 1,
+                    Offset = 16,
+                    MoveWithText = true,
+                    FixedOnPage = false
+                },
+                Position = new DocumentObjectPosition
+                {
+                    HorizontalRelativeTo = DocumentRelativePosition.Page,
+                    VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                    HorizontalAlignment = DocumentImageHorizontalPosition.Center,
+                    X = 0,
+                    Y = 0
+                },
+                Wrap = new DocumentObjectWrap
+                {
+                    Mode = wrapMode
+                },
+                Transform = new DocumentObjectTransform
+                {
+                    Width = width,
+                    Height = height,
+                    NaturalWidth = width,
+                    NaturalHeight = height,
+                    LockAspectRatio = true
+                },
+                Stacking = new DocumentObjectStacking
+                {
+                    ZIndex = zIndex,
+                    AllowOverlap = true
+                }
+            }
+        };
+
+    private static void AddDrawingRunToParagraph(DocumentEditorDocument document, string paragraphId, DocumentDrawingRun drawing)
+    {
+        var paragraph = document.Blocks
+            .FirstOrDefault(block => string.Equals(block.Id, paragraphId, StringComparison.Ordinal))
+            ?.Content as ParagraphBlockContent;
+        if (paragraph is null)
+        {
+            return;
+        }
+
+        drawing.Layout.Anchor.InlineIndex = paragraph.Inlines.Count;
+        paragraph.Inlines.Add(drawing);
     }
 
     /// <summary>Seeds a simple court filing document.</summary>
@@ -635,11 +946,17 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
 
         var document = request.Document ?? DocumentEditorJson.Deserialize(request.JsonSnapshot ?? string.Empty);
         document.DocumentId = request.DocumentId;
-        document.Metadata.ModifiedAt = DateTimeOffset.UtcNow;
+        if (request.Document is not null)
+        {
+            document.Metadata.ModifiedAt = DateTimeOffset.UtcNow;
+        }
+
+        DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(document);
+        DocumentImagePersistence.Sanitize(document);
 
         var json = request.Document is not null
             ? DocumentEditorJson.Serialize(document)
-            : request.NormalizeJson ? DocumentEditorJson.Normalize(request.JsonSnapshot!) : request.JsonSnapshot!;
+            : request.NormalizeJson ? DocumentEditorJson.Serialize(document) : request.JsonSnapshot!;
 
         var savedDocument = request.Document is not null ? Clone(document) : DocumentEditorJson.Deserialize(json);
         var concurrencyToken = CreateConcurrencyToken();
@@ -836,6 +1153,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
     protected void StoreDocument(DocumentEditorDocument document, string? concurrencyToken = null)
     {
         var clone = Clone(document);
+        DocumentImagePersistence.Sanitize(clone);
         _documents[clone.DocumentId] = new StoredDocument(
             clone,
             DocumentEditorJson.Serialize(clone),
@@ -1024,25 +1342,170 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         double height,
         DocumentImageAlignment alignment,
         DocumentObjectLayout layout)
-        => new()
+    {
+        var drawing = CreateImageDrawingRun(id, source, url, assetId, altText, caption, width, height, layout);
+        return new DocumentBlock
         {
             Id = id,
             SectionId = RecoverySectionId,
-            Type = DocumentBlockType.Image,
+            Type = DocumentBlockType.Paragraph,
             Order = order,
-            Content = new ImageBlockContent
+            ParagraphProperties = new DocumentParagraphProperties
             {
-                Source = source,
-                Url = source == DocumentImageSource.Url ? url : null,
-                AssetId = source == DocumentImageSource.Asset ? assetId : null,
-                AltText = altText,
-                Caption = caption,
-                Size = new DocumentImageSize { Width = width, Height = height },
-                NaturalSize = new DocumentImageSize { Width = width, Height = height },
-                Alignment = alignment,
-                Layout = layout
+                Alignment = ToTextAlignment(alignment),
+                LineSpacing = 1.25,
+                SpacingAfter = 9
+            },
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [drawing]
             }
         };
+    }
+
+    private static DocumentTextAlignment ToTextAlignment(DocumentImageAlignment alignment)
+        => alignment switch
+        {
+            DocumentImageAlignment.Center => DocumentTextAlignment.Center,
+            DocumentImageAlignment.End => DocumentTextAlignment.Right,
+            _ => DocumentTextAlignment.Left
+        };
+
+    private static DocumentDrawingRun CreateImageDrawingRun(
+        string objectId,
+        DocumentImageSource source,
+        string? url,
+        string? assetId,
+        string? altText,
+        string caption,
+        double width,
+        double height,
+        DocumentObjectLayout layout)
+    {
+        NormalizeDrawingLayout(layout, objectId, 0);
+        if (layout.Transform.Width is null or <= 0)
+        {
+            layout.Transform.Width = width;
+        }
+
+        if (layout.Transform.Height is null or <= 0)
+        {
+            layout.Transform.Height = height;
+        }
+
+        layout.Transform.NaturalWidth ??= width;
+        layout.Transform.NaturalHeight ??= height;
+
+        var drawing = new DocumentDrawingRun
+        {
+            Id = $"{objectId}-drawing",
+            ObjectId = objectId,
+            Source = source,
+            Url = source == DocumentImageSource.Url ? url : null,
+            AssetId = source == DocumentImageSource.Asset ? assetId : null,
+            AltText = altText,
+            Caption = caption,
+            Size = new DocumentImageSize { Width = width, Height = height },
+            NaturalSize = new DocumentImageSize { Width = width, Height = height },
+            Layout = layout
+        };
+        DocumentImagePersistence.Sanitize(drawing);
+        return drawing;
+    }
+
+    private static void NormalizeDrawingLayout(DocumentObjectLayout layout, string blockId, int inlineIndex)
+    {
+        layout.Anchor ??= new DocumentObjectAnchor();
+        layout.Position ??= new DocumentObjectPosition();
+        layout.Wrap ??= new DocumentObjectWrap();
+        layout.Transform ??= new DocumentObjectTransform();
+        layout.Stacking ??= new DocumentObjectStacking();
+        layout.Anchor.BlockId = string.IsNullOrWhiteSpace(layout.Anchor.BlockId) ? blockId : layout.Anchor.BlockId;
+        layout.Anchor.InlineIndex ??= inlineIndex;
+        layout.Anchor.Offset ??= 0;
+    }
+
+    private static void AddRecoveryHeaderFooterDrawingRuns(DocumentEditorDocument document)
+    {
+        AddDrawingRunToHeaderFooter(
+            document,
+            "recovery-header-primary",
+            "recovery-header-primary-block",
+            CreateRegionDrawingRun(
+                "recovery-header-logo-image",
+                "Header logo evidence",
+                DocumentRenditionAnchorScope.Header,
+                "recovery-header-primary",
+                "recovery-header-primary-block",
+                52,
+                29));
+        AddDrawingRunToHeaderFooter(
+            document,
+            "recovery-footer-primary",
+            "recovery-footer-primary-block",
+            CreateRegionDrawingRun(
+                "recovery-footer-logo-image",
+                "Footer logo evidence",
+                DocumentRenditionAnchorScope.Footer,
+                "recovery-footer-primary",
+                "recovery-footer-primary-block",
+                44,
+                25));
+    }
+
+    private static DocumentDrawingRun CreateRegionDrawingRun(
+        string objectId,
+        string altText,
+        DocumentRenditionAnchorScope region,
+        string headerFooterId,
+        string blockId,
+        double width,
+        double height)
+    {
+        var drawing = CreateImageDrawingRun(
+            objectId,
+            DocumentImageSource.Url,
+            RecoveryUrlImageUrl,
+            null,
+            altText,
+            altText,
+            width,
+            height,
+            DocumentObjectLayout.Inline());
+        drawing.Layout.Anchor.Region = region;
+        drawing.Layout.Anchor.HeaderFooterId = headerFooterId;
+        drawing.Layout.Anchor.BlockId = blockId;
+        return drawing;
+    }
+
+    private static DocumentDrawingRun CreateRecoveryDrawingRun(
+        string objectId,
+        string altText,
+        DocumentWrapMode wrapMode,
+        string anchorBlockId,
+        double width,
+        double height,
+        int zIndex)
+        => CreateOnlyOfficeParityDrawingRun(objectId, altText, wrapMode, anchorBlockId, width, height, zIndex);
+
+    private static void AddDrawingRunToHeaderFooter(
+        DocumentEditorDocument document,
+        string headerFooterId,
+        string blockId,
+        DocumentDrawingRun drawing)
+    {
+        var paragraph = document.HeadersFooters
+            .FirstOrDefault(headerFooter => string.Equals(headerFooter.Id, headerFooterId, StringComparison.Ordinal))
+            ?.Blocks.FirstOrDefault(block => string.Equals(block.Id, blockId, StringComparison.Ordinal))
+            ?.Content as ParagraphBlockContent;
+        if (paragraph is null)
+        {
+            return;
+        }
+
+        drawing.Layout.Anchor.InlineIndex = paragraph.Inlines.Count;
+        paragraph.Inlines.Add(drawing);
+    }
 
     private static DocumentObjectLayout CreateRecoveryWrappedImageLayout(
         double width,
@@ -1150,7 +1613,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
                         Cells =
                         [
                             CreateRecoveryTableCell("Images"),
-                            CreateRecoveryTableCell("All image layouts render before this table")
+                            CreateRecoveryTableImageCell()
                         ]
                     },
                     new TableRowContent
@@ -1181,6 +1644,46 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
                 }
             ]
         };
+
+    private static TableCellContent CreateRecoveryTableImageCell()
+    {
+        var blockId = "recovery-table-image-cell-block";
+        var cellId = "recovery-table-image-cell";
+        var drawing = CreateImageDrawingRun(
+            "recovery-table-cell-image",
+            DocumentImageSource.Url,
+            RecoveryUrlImageUrl,
+            null,
+            "Table cell evidence image",
+            "Table cell evidence image",
+            72,
+            41,
+            DocumentObjectLayout.Inline());
+        drawing.Layout.Anchor.BlockId = blockId;
+        drawing.Layout.Anchor.TableId = "recovery-table-under-images";
+        drawing.Layout.Anchor.CellId = cellId;
+
+        return new TableCellContent
+        {
+            Id = cellId,
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = blockId,
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines =
+                        [
+                            new TextRun { Id = "recovery-table-image-cell-prefix", Text = "All image layouts render before this table " },
+                            drawing
+                        ]
+                    }
+                }
+            ]
+        };
+    }
 
     private static DocumentRevision CreateRecoveryRevision(
         string id,

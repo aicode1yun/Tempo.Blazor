@@ -51,6 +51,7 @@ public class DocumentOperationApplier
             DocumentOperationType.MoveBlock => ApplyMoveBlock(document, operation),
             DocumentOperationType.SetBlockAttribute => ApplySetAttribute(document, operation),
             DocumentOperationType.UpdateBlock => ApplyUpdateBlock(document, operation),
+            DocumentOperationType.MoveDrawingObject => ApplyMoveDrawingObject(document, operation),
             DocumentOperationType.CreateRevision => ApplyCreateRevision(document, operation),
             DocumentOperationType.AcceptRevision => ApplyReviewRevision(document, operation, DocumentRevisionAction.Accepted),
             DocumentOperationType.RejectRevision => ApplyReviewRevision(document, operation, DocumentRevisionAction.Rejected),
@@ -353,6 +354,35 @@ public class DocumentOperationApplier
 
         document.Blocks[index] = updated;
         document.Blocks = document.Blocks.OrderBy(item => item.Order).ToList();
+        return DocumentOperationValidationResult.Valid();
+    }
+
+    private static DocumentOperationValidationResult ApplyMoveDrawingObject(DocumentEditorDocument document, DocumentOperation operation)
+    {
+        if (operation.NewLayout is null)
+        {
+            return DocumentOperationValidationResult.Invalid("MoveDrawingObject requires a new layout payload.");
+        }
+
+        if (FindDrawingRun(document, operation.Target) is not { } drawing)
+        {
+            return DocumentOperationValidationResult.Invalid("MoveDrawingObject target drawing was not found.");
+        }
+
+        operation.OldLayout ??= Clone(drawing.Run.Layout);
+        operation.OldAnchor ??= Clone(drawing.Run.Layout.Anchor);
+        if (operation.NewAnchor is not null)
+        {
+            ApplyAnchor(drawing.Run.Layout.Anchor, operation.NewAnchor);
+        }
+
+        drawing.Run.Layout = Clone(operation.NewLayout);
+        if (operation.NewAnchor is not null)
+        {
+            ApplyAnchor(drawing.Run.Layout.Anchor, operation.NewAnchor);
+        }
+
+        operation.NewAnchor ??= Clone(drawing.Run.Layout.Anchor);
         return DocumentOperationValidationResult.Valid();
     }
 
@@ -777,6 +807,89 @@ public class DocumentOperationApplier
         return table.Rows
             .SelectMany(row => row.Cells)
             .FirstOrDefault(cell => string.Equals(cell.Id, cellId, StringComparison.Ordinal));
+    }
+
+    private sealed record DrawingRunTarget(DocumentBlock Block, DocumentDrawingRun Run, int InlineIndex);
+
+    private static DrawingRunTarget? FindDrawingRun(DocumentEditorDocument document, DocumentOperationTarget target)
+    {
+        foreach (var block in EnumerateBlocks(document))
+        {
+            if (GetInlineList(block.Content) is not { } inlines)
+            {
+                continue;
+            }
+
+            for (var index = 0; index < inlines.Count; index++)
+            {
+                if (inlines[index] is not DocumentDrawingRun drawing)
+                {
+                    continue;
+                }
+
+                var objectMatches = !string.IsNullOrWhiteSpace(target.ObjectId)
+                    && string.Equals(drawing.ObjectId, target.ObjectId, StringComparison.Ordinal);
+                var inlineMatches = !string.IsNullOrWhiteSpace(target.InlineId)
+                    && string.Equals(drawing.Id, target.InlineId, StringComparison.Ordinal);
+                var indexMatches = string.Equals(block.Id, target.BlockId, StringComparison.Ordinal)
+                    && target.InlineIndex == index;
+                if (objectMatches || inlineMatches || indexMatches)
+                {
+                    return new DrawingRunTarget(block, drawing, index);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateBlocks(DocumentEditorDocument document)
+    {
+        foreach (var block in EnumerateBlocks(document.Blocks))
+        {
+            yield return block;
+        }
+
+        foreach (var region in document.HeadersFooters)
+        {
+            foreach (var block in EnumerateBlocks(region.Blocks))
+            {
+                yield return block;
+            }
+        }
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateBlocks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            yield return block;
+            if (block.Content is not TableBlockContent table)
+            {
+                continue;
+            }
+
+            foreach (var cellBlock in table.Rows
+                         .SelectMany(row => row.Cells)
+                         .SelectMany(cell => EnumerateBlocks(cell.Blocks)))
+            {
+                yield return cellBlock;
+            }
+        }
+    }
+
+    private static void ApplyAnchor(DocumentObjectAnchor target, DocumentObjectAnchor source)
+    {
+        target.BlockId = source.BlockId;
+        target.InlineIndex = source.InlineIndex;
+        target.Offset = source.Offset;
+        target.Region = source.Region;
+        target.TableId = source.TableId;
+        target.CellId = source.CellId;
+        target.HeaderFooterId = source.HeaderFooterId;
+        target.MoveWithText = source.MoveWithText;
+        target.FixedOnPage = source.FixedOnPage;
+        target.LockAnchor = source.LockAnchor;
     }
 
     private static List<InlineContent>? GetInlineList(DocumentBlockContent? content)

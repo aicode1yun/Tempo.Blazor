@@ -241,9 +241,16 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             HasDocument = true,
             SelectionSnapshot = new WysiwygSelectionSnapshot
             {
-                AnchorBlockId = "img-1",
-                ActiveImageBlockId = "img-1",
-                Region = "Image"
+                AnchorBlockId = "contract-inline-image",
+                ActiveObjectId = "contract-inline-image",
+                Region = "Body",
+                SelectionMode = "Object",
+                ObjectSelection = new WysiwygObjectSelectionSnapshot
+                {
+                    Kind = "image",
+                    ObjectId = "contract-inline-image",
+                    AnchorBlockId = "contract-inline-image"
+                }
             }
         };
 

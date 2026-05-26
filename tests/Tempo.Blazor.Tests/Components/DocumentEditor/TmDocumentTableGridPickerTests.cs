@@ -151,6 +151,24 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Focus_ResetsKeyboardFocusAfterPointerHover()
+    {
+        var cut = RenderComponent<TmDocumentTableGridPicker>();
+
+        cut.Find("[data-testid='document-table-grid-cell-4-5']")
+           .TriggerEvent("onmouseover", new MouseEventArgs());
+        cut.Find("[data-testid='document-table-grid-picker']")
+           .TriggerEvent("onfocus", new FocusEventArgs());
+        cut.Find("[data-testid='document-table-grid-picker']")
+           .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowRight" });
+        cut.Find("[data-testid='document-table-grid-picker']")
+           .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowDown" });
+
+        cut.Find("[data-testid='document-table-grid-cell-2-2']")
+           .ClassList.Should().Contain("tm-document-table-grid-picker__cell--focus");
+    }
+
+    [Fact]
     public void ArrowDown_MovesKbFocusDown()
     {
         var cut = RenderComponent<TmDocumentTableGridPicker>();

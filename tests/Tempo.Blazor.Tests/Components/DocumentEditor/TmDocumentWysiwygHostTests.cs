@@ -1607,12 +1607,11 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         cut.Find("[data-testid='document-wysiwyg-insert-image-url']").Click();
 
         patches.Should().ContainSingle();
-        patches[0].Type.Should().Be("InsertBlock");
-        patches[0].BlockType.Should().Be("Image");
+        patches[0].Type.Should().Be("InsertInline");
         patches[0].Selection!.AnchorBlockId.Should().Be("b1");
-        var image = patches[0].Block!.Content as ImageBlockContent;
-        image.Should().NotBeNull();
-        image!.Source.Should().Be(DocumentImageSource.Url);
+        patches[0].Block.Should().BeNull();
+        var image = patches[0].Inline.Should().BeOfType<DocumentDrawingRun>().Subject;
+        image.Source.Should().Be(DocumentImageSource.Url);
         image.Url.Should().Be("https://example.test/image.png");
         image.AltText.Should().Be("Example image");
     }
@@ -1773,10 +1772,10 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         provider.UploadRequests.Should().ContainSingle();
         provider.UploadedBytes.Should().Equal(new byte[] { 0 });
         block.Should().NotBeNull();
-        block!.Type.Should().Be(DocumentBlockType.Image);
-        var image = block.Content as ImageBlockContent;
-        image.Should().NotBeNull();
-        image!.Source.Should().Be(DocumentImageSource.Asset);
+        block!.Type.Should().Be(DocumentBlockType.Paragraph);
+        var paragraph = block.Content.Should().BeOfType<ParagraphBlockContent>().Subject;
+        var image = paragraph.Inlines.Should().ContainSingle().Subject.Should().BeOfType<DocumentDrawingRun>().Subject;
+        image.Source.Should().Be(DocumentImageSource.Asset);
         image.AssetId.Should().Be("asset-1");
         image.Url.Should().Be("https://cdn.example.test/asset-1.png");
         image.AltText.Should().Be("Pasted");
@@ -1815,14 +1814,22 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         var doc = CreateEmptyDocument();
         doc.Blocks.Add(new DocumentBlock
         {
-            Id = "asset-image-1",
-            Type = DocumentBlockType.Image,
+            Id = "asset-image-anchor",
+            Type = DocumentBlockType.Paragraph,
             Order = 10,
-            Content = new ImageBlockContent
+            Content = new ParagraphBlockContent
             {
-                Source = DocumentImageSource.Asset,
-                AssetId = "asset-1",
-                AltText = "Provider image"
+                Inlines =
+                [
+                    new DocumentDrawingRun
+                    {
+                        Id = "asset-image-run",
+                        ObjectId = "asset-image-1",
+                        Source = DocumentImageSource.Asset,
+                        AssetId = "asset-1",
+                        AltText = "Provider image"
+                    }
+                ]
             }
         });
 
@@ -1843,10 +1850,52 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
         snapshot.Should().NotBeNull();
-        var image = snapshot!.Document.Blocks[0].Content as ImageBlockContent;
-        image.Should().NotBeNull();
-        image!.Url.Should().Be("https://cdn.example.test/asset-1.png");
-        ((ImageBlockContent)doc.Blocks[0].Content).Url.Should().BeNull();
+        var paragraph = snapshot!.Document.Blocks[0].Content.Should().BeOfType<ParagraphBlockContent>().Subject;
+        var image = paragraph.Inlines.Should().ContainSingle().Subject.Should().BeOfType<DocumentDrawingRun>().Subject;
+        image.Url.Should().Be("https://cdn.example.test/asset-1.png");
+        ((ParagraphBlockContent)doc.Blocks[0].Content).Inlines.OfType<DocumentDrawingRun>().Single().Url.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Host_LegacyImageBlock_ConvertsToDrawingRunBeforeSnapshot()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+
+        var doc = CreateEmptyDocument();
+        doc.Blocks.Add(new DocumentBlock
+        {
+            Id = "legacy-image-1",
+            Type = DocumentBlockType.Image,
+            Order = 10,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "https://example.test/legacy.png",
+                AltText = "Legacy image"
+            }
+        });
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, doc));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        var loadDocumentCall = JSInterop.Invocations
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        loadDocumentCall.Should().NotBeNull();
+        var snapshot = loadDocumentCall!.Arguments[1].Should().BeOfType<WysiwygDocumentSnapshot>().Subject;
+        snapshot.Document.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+        var paragraph = snapshot.Document.Blocks[0].Content.Should().BeOfType<ParagraphBlockContent>().Subject;
+        paragraph.Inlines.Should().ContainSingle()
+            .Subject.Should().BeOfType<DocumentDrawingRun>()
+            .Which.ObjectId.Should().Be("legacy-image-1");
+        doc.Blocks[0].Content.Should().BeOfType<ImageBlockContent>();
     }
 
     [Fact]
@@ -1874,7 +1923,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         provider.UploadRequests.Should().ContainSingle();
         JSInterop.Invocations.Any(invocation =>
             invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments.Any(argument => argument is not null && string.Equals(argument.ToString(), "insertImageBlock", StringComparison.Ordinal)))
+            && invocation.Arguments.Any(argument => argument is not null && string.Equals(argument.ToString(), "insertImageObject", StringComparison.Ordinal)))
             .Should().BeTrue();
     }
 
@@ -1882,30 +1931,76 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_ImageSelection_DoesNotRenderLargeImageInspectorOverlay()
     {
         var doc = CreateEmptyDocument();
-        doc.Blocks.Add(new DocumentBlock
-        {
-            Id = "img-1",
-            Type = DocumentBlockType.Image,
-            Content = new ImageBlockContent
-            {
-                Url = "https://example.test/image.png",
-                AltText = "Diagram"
-            }
-        });
+        doc = CreateDocumentWithDrawingImage();
 
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, doc));
+
+        await cut.Instance.HandleSelectionChanged(CreateDrawingObjectSelection());
+
+        cut.FindAll("[data-testid='document-image-inspector']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Host_ImageToolbar_RendersForDrawingObjectSelection()
+    {
+        var doc = CreateDocumentWithDrawingImage();
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, doc));
+
+        await cut.Instance.HandleSelectionChanged(CreateDrawingObjectSelection());
+
+        var toolbar = cut.Find("[data-testid='document-image-wrap-panel']");
+        toolbar.GetAttribute("data-human-testid").Should().Be("document-image-toolbar");
+        cut.Find("[data-testid='document-image-wrap-square']")
+            .ClassList.Should().Contain("tm-document-image-wrap-panel__btn--active");
+    }
+
+    [Fact]
+    public async Task Host_ImageToolbar_DoesNotRenderForTextSelectionBesideDrawingObject()
+    {
+        var doc = CreateDocumentWithDrawingImage();
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         await cut.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
         {
-            AnchorBlockId = "img-1",
-            FocusBlockId = "img-1",
-            ActiveImageBlockId = "img-1",
-            Region = "Image",
+            Region = "Body",
+            SelectionMode = "Text",
+            AnchorBlockId = "p-drawing",
+            AnchorInlineId = "text-after",
+            AnchorOffset = 0,
+            FocusBlockId = "p-drawing",
+            FocusInlineId = "text-after",
+            FocusOffset = 0,
             IsCollapsed = true
         });
 
-        cut.FindAll("[data-testid='document-image-inspector']").Should().BeEmpty();
+        cut.FindAll("[data-testid='document-image-wrap-panel']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Host_ImageToolbarCommand_UsesDrawingObjectId()
+    {
+        var doc = CreateDocumentWithDrawingImage();
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, doc));
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+        await cut.Instance.HandleSelectionChanged(CreateDrawingObjectSelection());
+
+        cut.Find("[data-testid='document-image-wrap-tight']").Click();
+
+        var invocation = JSInterop.Invocations.Last(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+            && invocation.Arguments.Count >= 3
+            && string.Equals(invocation.Arguments[1]?.ToString(), "setImageWrapMode", StringComparison.Ordinal));
+        var payloadJson = JsonSerializer.Serialize(invocation.Arguments[2], DocumentEditorJson.Options);
+        payloadJson.Should().Contain("\"ObjectId\":\"drawing-1\"");
+        payloadJson.Should().Contain("\"BlockId\":\"p-drawing\"");
     }
 
     [Fact]
@@ -3084,6 +3179,82 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     {
         return DocumentEditorDocument.Empty("wysiwyg-test-1");
     }
+
+    private static DocumentEditorDocument CreateDocumentWithDrawingImage()
+    {
+        var document = DocumentEditorDocument.Empty("wysiwyg-drawing-test");
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "p-drawing",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun { Id = "text-before", Text = "Before " },
+                    new DocumentDrawingRun
+                    {
+                        Id = "drawing-run-1",
+                        ObjectId = "drawing-1",
+                        Url = "https://example.test/drawing.png",
+                        AltText = "Object drawing",
+                        Size = new DocumentImageSize { Width = 120, Height = 80, LockAspectRatio = true },
+                        Layout = new DocumentObjectLayout
+                        {
+                            Kind = DocumentObjectLayoutKind.Anchored,
+                            Anchor = new DocumentObjectAnchor
+                            {
+                                BlockId = "p-drawing",
+                                Offset = 7,
+                                InlineIndex = 1
+                            },
+                            Wrap = new DocumentObjectWrap
+                            {
+                                Mode = DocumentWrapMode.Square,
+                                DistanceLeft = 8,
+                                DistanceRight = 8
+                            },
+                            Transform = new DocumentObjectTransform
+                            {
+                                Width = 120,
+                                Height = 80,
+                                LockAspectRatio = true
+                            }
+                        }
+                    },
+                    new TextRun { Id = "text-after", Text = " after" }
+                ]
+            }
+        });
+
+        return document;
+    }
+
+    private static WysiwygSelectionSnapshot CreateDrawingObjectSelection() =>
+        new()
+        {
+            Region = "Body",
+            SelectionMode = "Object",
+            AnchorBlockId = "p-drawing",
+            FocusBlockId = "p-drawing",
+            ActiveImageBlockId = "p-drawing",
+            ActiveObjectId = "drawing-1",
+            HitTargetKind = "image",
+            IsCollapsed = false,
+            ObjectSelection = new WysiwygObjectSelectionSnapshot
+            {
+                Region = "Body",
+                Kind = "image",
+                ObjectId = "drawing-1",
+                BlockId = "p-drawing",
+                AnchorBlockId = "p-drawing",
+                AnchorInlineId = "drawing-run-1",
+                AnchorInlineIndex = 1,
+                InlineIndex = 1,
+                AnchorOffset = 7,
+                RunId = "drawing-run-1"
+            }
+        };
 
     private static T Clone<T>(T value)
     {

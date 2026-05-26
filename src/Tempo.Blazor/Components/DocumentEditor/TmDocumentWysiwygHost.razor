@@ -30,7 +30,7 @@
      aria-describedby="@_accessibilityDescriptionId"
      aria-multiline="true"
      aria-readonly="@(ReadOnly ? "true" : "false")"
-     aria-keyshortcuts="Control+B Control+I Control+U Control+Z Control+Y Control+S Shift+F10"
+     aria-keyshortcuts="Control+B Control+I Control+U Control+Z Control+Y Control+S Shift+F10 Alt+Shift+O Alt+Shift+P Control+Alt+O Control+Alt+P F10 Delete Escape"
      tabindex="@(_jsReady && !_jsFailed ? "0" : "-1")">
     <span id="@_accessibilityDescriptionId"
           class="tm-document-wysiwyg-host__sr-only"
@@ -405,7 +405,7 @@
     {
         get
         {
-            if (!string.IsNullOrWhiteSpace(GetActiveImageSelectionBlockId()))
+            if (!string.IsNullOrWhiteSpace(GetActiveImageSelectionObjectId()))
             {
                 return "image";
             }
@@ -419,20 +419,30 @@
         }
     }
 
-    private DocumentBlock? ActiveImageBlock =>
-        string.IsNullOrWhiteSpace(GetActiveImageSelectionBlockId())
-            ? null
-            : Document?.Blocks.FirstOrDefault(block =>
-                string.Equals(block.Id, GetActiveImageSelectionBlockId(), StringComparison.Ordinal)
-                && block.Content is ImageBlockContent);
+    private DocumentDrawingRun? ActiveImageDrawingRun => FindDrawingRunByObjectId(Document, GetActiveImageSelectionObjectId());
 
-    private ImageBlockContent? ActiveImageContent => ActiveImageBlock?.Content as ImageBlockContent;
+    private ImageBlockContent? ActiveImageContent => CreateImageBlockContentFromDrawingRun(ActiveImageDrawingRun);
+
+    private string? GetActiveImageSelectionObjectId()
+    {
+        if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ObjectSelection?.ObjectId))
+        {
+            return _lastSelectionSnapshot.ObjectSelection.ObjectId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveObjectId))
+        {
+            return _lastSelectionSnapshot.ActiveObjectId;
+        }
+
+        return null;
+    }
 
     private string? GetActiveImageSelectionBlockId()
     {
-        if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveImageBlockId))
+        if (!string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ObjectSelection?.AnchorBlockId))
         {
-            return _lastSelectionSnapshot.ActiveImageBlockId;
+            return _lastSelectionSnapshot.ObjectSelection.AnchorBlockId;
         }
 
         if (string.Equals(_lastSelectionSnapshot?.Region, "Image", StringComparison.OrdinalIgnoreCase)
@@ -445,6 +455,80 @@
         }
 
         return null;
+    }
+
+    private static ImageBlockContent? CreateImageBlockContentFromDrawingRun(DocumentDrawingRun? drawing)
+    {
+        if (drawing is null)
+        {
+            return null;
+        }
+
+        return new ImageBlockContent
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size,
+            NaturalSize = drawing.NaturalSize,
+            Layout = drawing.Layout,
+            LinkUrl = drawing.LinkUrl
+        };
+    }
+
+    private static DocumentDrawingRun? FindDrawingRunByObjectId(DocumentEditorDocument? document, string? objectId)
+    {
+        if (document is null || string.IsNullOrWhiteSpace(objectId))
+        {
+            return null;
+        }
+
+        foreach (var block in EnumerateDocumentBlocksForObjectSelection(document))
+        {
+            var inlines = block.Content switch
+            {
+                ParagraphBlockContent paragraph => paragraph.Inlines,
+                HeadingBlockContent heading => heading.Inlines,
+                ListBlockContent list => list.Inlines,
+                QuoteBlockContent quote => quote.Inlines,
+                _ => null
+            };
+            var drawing = inlines?.OfType<DocumentDrawingRun>()
+                .FirstOrDefault(run => string.Equals(run.ObjectId, objectId, StringComparison.Ordinal));
+            if (drawing is not null)
+            {
+                return drawing;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateDocumentBlocksForObjectSelection(DocumentEditorDocument document)
+    {
+        foreach (var block in document.Blocks)
+        {
+            yield return block;
+
+            if (block.Content is TableBlockContent table)
+            {
+                foreach (var nestedBlock in table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks))
+                {
+                    yield return nestedBlock;
+                }
+            }
+        }
+
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            foreach (var block in headerFooter.Blocks)
+            {
+                yield return block;
+            }
+        }
     }
 
     private TableBlockContent? ActiveTableContent
@@ -922,13 +1006,54 @@
 
     private async Task<DocumentEditorDocument> PrepareDocumentForDisplayAsync(DocumentEditorDocument document)
     {
-        if (ImageProvider is null && ImageUrlResolver is null)
+        var hasLegacyImageBlocks = EnumerateImages(document).Any();
+        var shouldResolveImages = ImageProvider is not null || ImageUrlResolver is not null;
+        if (!hasLegacyImageBlocks && !shouldResolveImages)
         {
             return document;
         }
 
         var clone = CloneDocument(document);
-        var changed = false;
+        var changed = hasLegacyImageBlocks;
+        if (hasLegacyImageBlocks)
+        {
+            DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(clone);
+        }
+
+        if (!shouldResolveImages)
+        {
+            return clone;
+        }
+
+        foreach (var drawing in DocumentImagePersistence.EnumerateDrawingRuns(clone))
+        {
+            if (drawing.Source == DocumentImageSource.Url || string.IsNullOrWhiteSpace(drawing.AssetId))
+            {
+                continue;
+            }
+
+            if (IsSafeImageUrl(drawing.Url))
+            {
+                continue;
+            }
+
+            string? resolvedUrl;
+            try
+            {
+                resolvedUrl = await ResolveImageUrlAsync(clone.DocumentId, drawing.AssetId);
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(resolvedUrl) && IsSafeImageUrl(resolvedUrl))
+            {
+                drawing.Url = resolvedUrl;
+                changed = true;
+            }
+        }
+
         foreach (var image in EnumerateImages(clone))
         {
             if (image.Source == DocumentImageSource.Url || string.IsNullOrWhiteSpace(image.AssetId))
@@ -1584,31 +1709,75 @@
     }
 
     private Task SetActiveImageAltTextAsync(string altText) =>
-        ExecuteRuntimeCommandAsync("setImageAltText", new { AltText = altText });
+        ExecuteRuntimeCommandAsync("setImageAltText", new
+        {
+            AltText = altText,
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task ToggleActiveImageCaptionAsync() =>
-        ExecuteRuntimeCommandAsync("toggleImageCaption");
+        ExecuteRuntimeCommandAsync("toggleImageCaption", new
+        {
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task SetActiveImageLinkAsync(string? linkUrl) =>
-        ExecuteRuntimeCommandAsync("setImageLink", new { Url = linkUrl });
+        ExecuteRuntimeCommandAsync("setImageLink", new
+        {
+            Url = linkUrl,
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task SetActiveImageWrapModeAsync(DocumentWrapMode wrapMode) =>
-        ExecuteRuntimeCommandAsync("setImageWrapMode", new { WrapMode = wrapMode.ToString() });
+        ExecuteRuntimeCommandAsync("setImageWrapMode", new
+        {
+            WrapMode = wrapMode.ToString(),
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task SetActiveImageAlignmentAsync(DocumentImageAlignment alignment) =>
-        ExecuteRuntimeCommandAsync("setImagePosition", new { HorizontalPosition = ToHorizontalPosition(alignment).ToString() });
+        ExecuteRuntimeCommandAsync("setImagePosition", new
+        {
+            HorizontalPosition = ToHorizontalPosition(alignment).ToString(),
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task SetActiveImageHorizontalPositionAsync(DocumentImageHorizontalPosition position) =>
-        ExecuteRuntimeCommandAsync("setImagePosition", new { HorizontalPosition = position.ToString() });
+        ExecuteRuntimeCommandAsync("setImagePosition", new
+        {
+            HorizontalPosition = position.ToString(),
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task SetActiveImageWrapDistanceAsync(string distanceName, double value) =>
-        ExecuteRuntimeCommandAsync("setImageWrapDistance", new { DistanceName = distanceName, Value = value });
+        ExecuteRuntimeCommandAsync("setImageWrapDistance", new
+        {
+            DistanceName = distanceName,
+            Value = value,
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task SetActiveImageLockAnchorAsync(bool lockAnchor) =>
-        ExecuteRuntimeCommandAsync("setImageAnchorMode", new { LockAnchor = lockAnchor });
+        ExecuteRuntimeCommandAsync("setImageAnchorMode", new
+        {
+            LockAnchor = lockAnchor,
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task DeleteActiveImageAsync() =>
-        ExecuteRuntimeCommandAsync("deleteImage");
+        ExecuteRuntimeCommandAsync("deleteImage", new
+        {
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
+        });
 
     private Task FocusActiveImageOptionsAsync() =>
         ExecuteRuntimeCommandAsync("focusImageOptions");
@@ -1618,7 +1787,9 @@
         {
             Width = size.Width,
             Height = size.Height,
-            LockAspectRatio = size.LockAspectRatio
+            LockAspectRatio = size.LockAspectRatio,
+            ObjectId = GetActiveImageSelectionObjectId(),
+            BlockId = GetActiveImageSelectionBlockId()
         });
 
     private Task InsertActiveTableRowBeforeAsync() => ExecuteRuntimeCommandAsync("insertTableRowBefore");
@@ -2214,14 +2385,14 @@
             return;
         }
 
-        var block = CreateImageBlock(new ImageBlockContent
+        var drawing = CreateImageDrawingRun(new ImageBlockContent
         {
             Source = DocumentImageSource.Url,
             Url = _pendingImageUrl,
             AltText = _pendingImageAltText
         });
 
-        await InsertImageBlockFromBlazorAsync(block, _lastSelectionSnapshot);
+        await InsertImageDrawingFromBlazorAsync(drawing, _lastSelectionSnapshot);
         _imageDialogOpen = false;
         _pendingImageUrl = null;
         _pendingImageAltText = null;
@@ -2239,9 +2410,9 @@
             return;
         }
 
-        var block = CreateImageBlock(asset);
+        var drawing = CreateImageDrawingRun(asset);
         RememberImageAsset(asset);
-        await InsertImageBlockFromBlazorAsync(block, _lastSelectionSnapshot);
+        await InsertImageDrawingFromBlazorAsync(drawing, _lastSelectionSnapshot);
         _imageDialogOpen = false;
         _pendingImageUrl = null;
         _pendingImageAltText = null;
@@ -2274,21 +2445,21 @@
             return;
         }
 
-        await InsertImageBlockFromBlazorAsync(CreateImageBlock(payload), _lastSelectionSnapshot);
+        await InsertImageDrawingFromBlazorAsync(CreateImageDrawingRun(payload), _lastSelectionSnapshot);
         _imageDialogOpen = false;
         _pendingImageAltText = null;
         _imageError = null;
     }
 
-    /// <summary>Uploads an image requested by the JS engine and returns an image block for insertion.</summary>
+    /// <summary>Uploads an image requested by the JS engine and returns a drawing-run paragraph for insertion.</summary>
     [JSInvokable]
     public async Task<DocumentBlock?> HandleImageUploadRequested(WysiwygImagePayload payload)
     {
         var uploaded = await UploadImagePayloadAsync(payload);
-        return uploaded is null ? null : CreateImageBlock(uploaded);
+        return uploaded is null ? null : CreateImageDrawingBlock(uploaded);
     }
 
-    /// <summary>Returns the default provider-managed image asset for a JS image replacement request.</summary>
+    /// <summary>Returns the default provider-managed image asset as a drawing-run paragraph for a JS image replacement request.</summary>
     [JSInvokable]
     public Task<DocumentBlock?> HandleImageAssetRequested()
     {
@@ -2304,7 +2475,7 @@
         }
 
         RememberImageAsset(asset);
-        return Task.FromResult<DocumentBlock?>(CreateImageBlock(asset));
+        return Task.FromResult<DocumentBlock?>(CreateImageDrawingBlock(asset));
     }
 
     private async Task<WysiwygImagePayload?> UploadImagePayloadAsync(WysiwygImagePayload payload)
@@ -2433,7 +2604,7 @@
         }
     }
 
-    private async Task InsertImageBlockFromBlazorAsync(DocumentBlock block, WysiwygSelectionSnapshot? selection)
+    private async Task InsertImageDrawingFromBlazorAsync(DocumentDrawingRun drawing, WysiwygSelectionSnapshot? selection)
     {
         if (_jsReady && !_jsFailed && !_disposed)
         {
@@ -2442,8 +2613,8 @@
                 await JSRuntime.InvokeVoidAsync(
                     "tmDocumentEditorRuntime.executeCommand",
                     _instanceId,
-                    "insertImageBlock",
-                    new { Block = block, Selection = selection });
+                    "insertImageObject",
+                    new { Image = drawing, ObjectId = drawing.ObjectId, Selection = selection });
                 return;
             }
             catch (JSException)
@@ -2452,11 +2623,11 @@
             }
         }
 
+        ApplyDrawingSelectionAnchor(drawing, selection);
         var patch = new WysiwygPatch
         {
-            Type = "InsertBlock",
-            BlockType = "Image",
-            Block = block,
+            Type = "InsertInline",
+            Inline = drawing,
             Selection = selection,
             ProtocolVersion = 1
         };
@@ -2465,19 +2636,28 @@
 
         var imageSelection = new WysiwygSelectionSnapshot
         {
-            Region = "Image",
-            AnchorBlockId = block.Id,
-            FocusBlockId = block.Id,
-            ActiveImageBlockId = block.Id,
-            IsCollapsed = true
+            Region = selection?.Region ?? "Body",
+            SelectionMode = "Object",
+            AnchorBlockId = selection?.AnchorBlockId,
+            FocusBlockId = selection?.AnchorBlockId,
+            ActiveObjectId = drawing.ObjectId,
+            IsCollapsed = false,
+            ObjectSelection = new WysiwygObjectSelectionSnapshot
+            {
+                Region = selection?.Region ?? "Body",
+                Kind = "image",
+                ObjectId = drawing.ObjectId,
+                BlockId = selection?.AnchorBlockId,
+                AnchorBlockId = selection?.AnchorBlockId
+            }
         };
         _lastSelectionSnapshot = imageSelection;
         await DocumentSelectionChanged.InvokeAsync(imageSelection);
     }
 
-    private static DocumentBlock CreateImageBlock(WysiwygImagePayload payload)
+    private static DocumentDrawingRun CreateImageDrawingRun(WysiwygImagePayload payload)
     {
-        return CreateImageBlock(new ImageBlockContent
+        return CreateImageDrawingRun(new ImageBlockContent
         {
             Source = payload.Source,
             Url = payload.Url,
@@ -2487,9 +2667,9 @@
         });
     }
 
-    private static DocumentBlock CreateImageBlock(DocumentImageAsset asset)
+    private static DocumentDrawingRun CreateImageDrawingRun(DocumentImageAsset asset)
     {
-        return CreateImageBlock(new ImageBlockContent
+        return CreateImageDrawingRun(new ImageBlockContent
         {
             Source = asset.Source,
             Url = asset.Url,
@@ -2499,6 +2679,20 @@
             Size = asset.ImageSize
         });
     }
+
+    private static DocumentBlock CreateImageDrawingBlock(WysiwygImagePayload payload)
+        => CreateImageDrawingBlock(CreateImageDrawingRun(payload));
+
+    private static DocumentBlock CreateImageDrawingBlock(DocumentImageAsset asset)
+        => CreateImageDrawingBlock(CreateImageDrawingRun(asset));
+
+    private static DocumentBlock CreateImageDrawingBlock(DocumentDrawingRun drawing)
+        => new()
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent { Inlines = [drawing] }
+        };
 
     private void RememberImageAsset(DocumentImageAsset asset)
     {
@@ -2524,15 +2718,36 @@
         existing.ImageSize = asset.ImageSize;
     }
 
-    private static DocumentBlock CreateImageBlock(ImageBlockContent content)
+    private static DocumentDrawingRun CreateImageDrawingRun(ImageBlockContent content)
     {
         SyncImageLayoutSize(content);
-        return new DocumentBlock
+        return new DocumentDrawingRun
         {
             Id = Guid.NewGuid().ToString("N"),
-            Type = DocumentBlockType.Image,
-            Content = content
+            ObjectId = Guid.NewGuid().ToString("N"),
+            Source = content.Source,
+            Url = content.Url,
+            AssetId = content.AssetId,
+            AltText = content.AltText,
+            IsDecorative = content.IsDecorative,
+            Caption = content.Caption,
+            Size = content.Size,
+            NaturalSize = content.NaturalSize,
+            Layout = content.Layout,
+            LinkUrl = content.LinkUrl
         };
+    }
+
+    private static void ApplyDrawingSelectionAnchor(DocumentDrawingRun drawing, WysiwygSelectionSnapshot? selection)
+    {
+        drawing.Layout ??= DocumentObjectLayout.Inline();
+        drawing.Layout.Anchor ??= new DocumentObjectAnchor();
+        if (!string.IsNullOrWhiteSpace(selection?.AnchorBlockId))
+        {
+            drawing.Layout.Anchor.BlockId = selection.AnchorBlockId;
+        }
+
+        drawing.Layout.Anchor.Offset = selection?.AnchorOffset ?? 0;
     }
 
     private static void SyncImageLayoutSize(ImageBlockContent content)

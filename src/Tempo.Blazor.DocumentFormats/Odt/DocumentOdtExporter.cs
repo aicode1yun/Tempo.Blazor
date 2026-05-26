@@ -14,6 +14,7 @@ public sealed class DocumentOdtExporter : IDocumentFormatExporter
     public async Task<DocumentFormatExportResult> ExportAsync(DocumentEditorDocument document, DocumentFormatExportOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= new DocumentFormatExportOptions();
+        DocumentImagePersistence.Sanitize(document);
         using var memory = new MemoryStream();
         using (var archive = new ZipArchive(memory, ZipArchiveMode.Create, leaveOpen: true))
         {
@@ -172,28 +173,33 @@ public sealed class OdtPackageWriter
 
     private XElement WriteImageParagraph(ImageBlockContent image)
     {
+        return new XElement(Text + "p",
+            WriteImageFrame(image),
+            string.IsNullOrWhiteSpace(image.Caption) ? null : new XElement(Text + "span", image.Caption));
+    }
+
+    private XElement WriteImageFrame(ImageBlockContent image)
+    {
         var path = $"Pictures/image{++_imageIndex}.png";
         _images.Add((path, image));
         var layout = image.Layout;
         var width = image.Layout.Transform.Width ?? image.Size.Width;
         var height = image.Layout.Transform.Height ?? image.Size.Height;
-        return new XElement(Text + "p",
-            new XElement(Draw + "frame",
-                new XAttribute(Draw + "name", image.AltText ?? $"Image {_imageIndex}"),
-                new XAttribute(Text + "anchor-type", !layout.IsInline ? "page" : "as-char"),
-                !layout.IsInline ? new XAttribute(Svg + "x", FormatLength(layout.Position.X)) : null,
-                !layout.IsInline ? new XAttribute(Svg + "y", FormatLength(layout.Position.Y)) : null,
-                width is > 0 ? new XAttribute(Svg + "width", FormatLength(width.Value)) : null,
-                height is > 0 ? new XAttribute(Svg + "height", FormatLength(height.Value)) : null,
-                !layout.IsInline ? new XAttribute(Style + "wrap", ToOdtWrap(layout.Wrap.Mode)) : null,
-                !layout.IsInline ? new XAttribute(Draw + "z-index", layout.Stacking.ZIndex) : null,
-                WriteTempoLayoutAttributes(layout),
-                new XElement(Draw + "image",
-                    new XAttribute(XLink + "href", path),
-                    new XAttribute(XLink + "type", "simple"),
-                    new XAttribute(XLink + "show", "embed"),
-                    new XAttribute(XLink + "actuate", "onLoad"))),
-            string.IsNullOrWhiteSpace(image.Caption) ? null : new XElement(Text + "span", image.Caption));
+        return new XElement(Draw + "frame",
+            new XAttribute(Draw + "name", image.AltText ?? $"Image {_imageIndex}"),
+            new XAttribute(Text + "anchor-type", !layout.IsInline ? "page" : "as-char"),
+            !layout.IsInline ? new XAttribute(Svg + "x", FormatLength(layout.Position.X)) : null,
+            !layout.IsInline ? new XAttribute(Svg + "y", FormatLength(layout.Position.Y)) : null,
+            width is > 0 ? new XAttribute(Svg + "width", FormatLength(width.Value)) : null,
+            height is > 0 ? new XAttribute(Svg + "height", FormatLength(height.Value)) : null,
+            !layout.IsInline ? new XAttribute(Style + "wrap", ToOdtWrap(layout.Wrap.Mode)) : null,
+            !layout.IsInline ? new XAttribute(Draw + "z-index", layout.Stacking.ZIndex) : null,
+            WriteTempoLayoutAttributes(layout),
+            new XElement(Draw + "image",
+                new XAttribute(XLink + "href", path),
+                new XAttribute(XLink + "type", "simple"),
+                new XAttribute(XLink + "show", "embed"),
+                new XAttribute(XLink + "actuate", "onLoad")));
     }
 
     private static string FormatLength(double value)
@@ -317,8 +323,31 @@ public sealed class OdtPackageWriter
             {
                 yield return new XElement(Text + (note.NoteType == DocumentNoteType.Footnote ? "note-ref" : "note-ref"), note.DisplayMarker ?? note.NoteId);
             }
+            else if (inline is DocumentDrawingRun drawing)
+            {
+                yield return WriteImageFrame(ToImageBlockContent(drawing));
+                if (!string.IsNullOrWhiteSpace(drawing.Caption))
+                {
+                    yield return new XElement(Text + "span", drawing.Caption);
+                }
+            }
         }
     }
+
+    private static ImageBlockContent ToImageBlockContent(DocumentDrawingRun drawing)
+        => new()
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size ?? new DocumentImageSize(),
+            NaturalSize = drawing.NaturalSize ?? new DocumentImageSize(),
+            Layout = drawing.Layout ?? DocumentObjectLayout.Inline(),
+            LinkUrl = drawing.LinkUrl
+        };
 
     private static string? GetStyleName(IEnumerable<InlineMark> marks)
     {

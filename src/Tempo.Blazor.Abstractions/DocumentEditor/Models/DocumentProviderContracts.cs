@@ -406,14 +406,82 @@ public static class DocumentEditorJson
             });
         }
 
-        foreach (var block in document.Blocks)
+        NormalizeBlocks(document.Blocks);
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            headerFooter.Blocks ??= [];
+            NormalizeBlocks(headerFooter.Blocks);
+        }
+
+        foreach (var note in document.Notes)
+        {
+            note.Blocks ??= [];
+            NormalizeBlocks(note.Blocks);
+        }
+
+        DocumentImagePersistence.Sanitize(document);
+    }
+
+    private static void NormalizeBlocks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
         {
             if (string.IsNullOrWhiteSpace(block.Id))
             {
                 block.Id = Guid.NewGuid().ToString("N");
             }
 
+            block.ParagraphProperties ??= new DocumentParagraphProperties();
             block.Content ??= new ParagraphBlockContent();
+            NormalizeBlockContent(block.Content);
+        }
+    }
+
+    private static void NormalizeBlockContent(DocumentBlockContent content)
+    {
+        switch (content)
+        {
+            case ParagraphBlockContent paragraph:
+                NormalizeInlines(paragraph.Inlines);
+                break;
+            case HeadingBlockContent heading:
+                NormalizeInlines(heading.Inlines);
+                break;
+            case ListBlockContent list:
+                NormalizeInlines(list.Inlines);
+                break;
+            case QuoteBlockContent quote:
+                NormalizeInlines(quote.Inlines);
+                break;
+            case TableBlockContent table:
+                table.Rows ??= [];
+                table.Layout ??= new TableLayoutContent();
+                foreach (var row in table.Rows)
+                {
+                    row.Cells ??= [];
+                    foreach (var cell in row.Cells)
+                    {
+                        cell.Blocks ??= [];
+                        cell.Merge ??= new TableCellMerge();
+                        cell.Borders ??= new TableCellBorders();
+                        NormalizeBlocks(cell.Blocks);
+                    }
+                }
+
+                break;
+        }
+    }
+
+    private static void NormalizeInlines(List<InlineContent>? inlines)
+    {
+        if (inlines is null)
+        {
+            return;
+        }
+
+        foreach (var inline in inlines)
+        {
+            inline.Marks ??= [];
         }
     }
 }

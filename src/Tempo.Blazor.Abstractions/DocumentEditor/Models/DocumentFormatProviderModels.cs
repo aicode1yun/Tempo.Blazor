@@ -53,6 +53,9 @@ public sealed class DocumentFormatProviderWarning
 
     /// <summary>Optional source path inside the package or provider.</summary>
     public string? SourcePath { get; set; }
+
+    /// <summary>Optional editor drawing object id related to the warning.</summary>
+    public string? ObjectId { get; set; }
 }
 
 /// <summary>Request passed to a provider-backed document import operation.</summary>

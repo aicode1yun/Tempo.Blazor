@@ -159,6 +159,84 @@ public static class DocumentEditorEndpoints
             return exported.Success ? Results.Ok(exported) : Results.BadRequest(exported);
         });
 
+        group.MapGet("/image-parity/export-docx", async (
+            DemoDocumentEditorStore store,
+            DemoDocumentFormatProvider formatProvider,
+            CancellationToken cancellationToken) =>
+        {
+            var loaded = await store.LoadAsync(
+                InMemoryDocumentEditorProvider.OnlyOfficeParity20260524DocumentId,
+                new DocumentEditorLoadOptions { IncludeDocument = true },
+                cancellationToken);
+            if (!loaded.Found || loaded.Document is null)
+            {
+                return Results.NotFound();
+            }
+
+            var exported = await formatProvider.ExportAsync(new DocumentFormatExportProviderRequest
+            {
+                DocumentId = loaded.Document.DocumentId,
+                Format = DocumentFormatProviderKind.Docx,
+                Document = loaded.Document,
+                FileName = "onlyoffice-image-parity"
+            }, cancellationToken);
+
+            return exported.Success
+                ? Results.File(exported.Content, exported.ContentType, exported.FileName)
+                : Results.BadRequest(exported);
+        });
+
+        group.MapPost("/image-parity/import-onlyoffice-fixture", async (
+            DemoDocumentEditorStore store,
+            DemoDocumentFormatProvider formatProvider,
+            CancellationToken cancellationToken) =>
+        {
+            var loaded = await store.LoadAsync(
+                InMemoryDocumentEditorProvider.OnlyOfficeParity20260524DocumentId,
+                new DocumentEditorLoadOptions { IncludeDocument = true },
+                cancellationToken);
+            if (!loaded.Found || loaded.Document is null)
+            {
+                return Results.NotFound();
+            }
+
+            var exported = await formatProvider.ExportAsync(new DocumentFormatExportProviderRequest
+            {
+                DocumentId = loaded.Document.DocumentId,
+                Format = DocumentFormatProviderKind.Docx,
+                Document = loaded.Document,
+                FileName = "onlyoffice-image-parity-fixture"
+            }, cancellationToken);
+            if (!exported.Success || exported.Content.Length == 0)
+            {
+                return Results.BadRequest(exported);
+            }
+
+            var imported = await formatProvider.ImportAsync(new DocumentFormatImportProviderRequest
+            {
+                DocumentId = $"onlyoffice-parity-imported-{Guid.NewGuid():N}",
+                Format = DocumentFormatProviderKind.Docx,
+                FileName = exported.FileName,
+                ContentType = exported.ContentType,
+                Content = exported.Content
+            }, cancellationToken);
+            imported.Warnings.AddRange(exported.Warnings);
+            if (!imported.Success || imported.Document is null)
+            {
+                return Results.BadRequest(imported);
+            }
+
+            imported.Document.Metadata.Title = "Imported ONLYOFFICE image parity fixture";
+            await store.SaveAsync(new DocumentEditorSaveRequest
+            {
+                DocumentId = imported.Document.DocumentId,
+                Document = imported.Document,
+                ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+            }, cancellationToken);
+
+            return Results.Ok(imported);
+        });
+
         group.MapPost("/import/docx", async (
             IFormFile file,
             DemoDocumentEditorStore store,

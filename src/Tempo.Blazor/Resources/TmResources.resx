@@ -2814,6 +2814,7 @@
   <data name="TmDocumentEditor_DebugDocumentJsonTitle" xml:space="preserve"><value>Document JSON</value></data>
   <data name="TmDocumentEditor_DebugCanonicalDocument" xml:space="preserve"><value>Canonical document</value></data>
   <data name="TmDocumentEditor_DebugRuntimeState" xml:space="preserve"><value>Runtime state</value></data>
+  <data name="TmDocumentEditor_DebugDocxDrawingMetadata" xml:space="preserve"><value>DOCX DrawingML metadata</value></data>
   <data name="TmDocumentEditor_DebugRuntimeRecovery" xml:space="preserve"><value>Runtime recovery</value></data>
   <data name="TmDocumentEditor_DebugClipboardHtmlTitle" xml:space="preserve"><value>Clipboard HTML</value></data>
   <data name="TmDocumentEditor_DebugClipboardRawHtml" xml:space="preserve"><value>Raw HTML</value></data>

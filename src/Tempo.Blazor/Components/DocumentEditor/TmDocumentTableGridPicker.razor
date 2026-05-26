@@ -6,6 +6,7 @@
      role="grid"
      aria-label="@Loc["TmDocumentEditor_TableGridPickerLabel"]"
      tabindex="0"
+     @onfocus="OnGridFocus"
      @onkeydown="HandleKeyDown"
      @onkeydown:stopPropagation="true">
 
@@ -76,6 +77,14 @@
     {
         _hoverCol = 1;
         _hoverRow = 1;
+    }
+
+    private void OnGridFocus()
+    {
+        _hoverCol = 1;
+        _hoverRow = 1;
+        _kbCol = 1;
+        _kbRow = 1;
     }
 
     private void HandleKeyDown(KeyboardEventArgs args)

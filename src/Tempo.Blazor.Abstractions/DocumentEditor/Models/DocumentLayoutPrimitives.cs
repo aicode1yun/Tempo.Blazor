@@ -324,17 +324,33 @@ public class DocumentLineBox
     public List<DocumentTextSegmentBox> Segments { get; set; } = [];
 }
 
-/// <summary>Layout box for a text segment or inline run fragment.</summary>
+/// <summary>Kind of inline layout segment placed on a visual line.</summary>
+public enum DocumentInlineLayoutSegmentKind
+{
+    /// <summary>Text content measured and painted by the text renderer.</summary>
+    Text,
+
+    /// <summary>Inline document object that participates in text flow as a single box.</summary>
+    Object
+}
+
+/// <summary>Layout box for a text segment, inline object, or inline run fragment.</summary>
 public class DocumentTextSegmentBox
 {
     /// <summary>Stable segment id.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>Kind of inline segment represented by this box.</summary>
+    public DocumentInlineLayoutSegmentKind Kind { get; set; } = DocumentInlineLayoutSegmentKind.Text;
 
     /// <summary>Source document block id.</summary>
     public string BlockId { get; set; } = string.Empty;
 
     /// <summary>Optional source inline id.</summary>
     public string? InlineId { get; set; }
+
+    /// <summary>Optional object id when this segment represents an inline object.</summary>
+    public string? ObjectId { get; set; }
 
     /// <summary>Zero-based inline index inside the source block.</summary>
     public int InlineIndex { get; set; }
@@ -356,6 +372,9 @@ public class DocumentTextSegmentBox
 
     /// <summary>Segment visual rectangle.</summary>
     public DocumentLayoutRect Rect { get; set; } = new();
+
+    /// <summary>Object visual rectangle when this segment represents an inline object.</summary>
+    public DocumentLayoutRect? ObjectRect { get; set; }
 }
 
 /// <summary>Layout box for an inline, anchored, or fixed document object.</summary>
@@ -415,6 +434,9 @@ public class DocumentExclusionZone
 
     /// <summary>Wrap mode that produced the exclusion.</summary>
     public DocumentWrapMode WrapMode { get; set; }
+
+    /// <summary>Side where text may flow around the exclusion.</summary>
+    public DocumentObjectWrapSide WrapSide { get; set; } = DocumentObjectWrapSide.BothSides;
 
     /// <summary>Excluded rectangle in page coordinates.</summary>
     public DocumentLayoutRect Rect { get; set; } = new();

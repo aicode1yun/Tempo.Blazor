@@ -54,6 +54,249 @@ public class DocumentLayoutEngineTests
     }
 
     [Fact]
+    public void Layout_InlineDrawingRun_ParticipatesInParagraphLineAsInlineObject()
+    {
+        var document = Document("inline-drawing-layout");
+        document.Blocks.Add(ParagraphWithInlines(
+            "p1",
+            [
+                new TextRun { Id = "before", Text = "Alpha " },
+                InlineDrawing("drawing-inline", "drawing-1", width: 72, height: 36),
+                new TextRun { Id = "after", Text = " Omega" }
+            ]));
+
+        var snapshot = new DocumentLayoutEngine().Layout(document, TestPageSettings());
+        var page = snapshot.Pages[0];
+        var paragraph = page.Paragraphs.Should().ContainSingle(paragraph => paragraph.BlockId == "p1").Subject;
+        var line = paragraph.Lines.Should().ContainSingle().Subject;
+        var objectSegment = line.Segments.Should()
+            .ContainSingle(segment => segment.Kind == DocumentInlineLayoutSegmentKind.Object)
+            .Subject;
+        var image = page.Objects.Should().ContainSingle(box => box.Id == "drawing-1").Subject;
+
+        page.Exclusions.Should().BeEmpty();
+        image.BlockId.Should().Be("p1");
+        image.AnchorBlockId.Should().Be("p1");
+        image.Layout.IsInline.Should().BeTrue();
+        image.ObjectRect.Width.Should().Be(72);
+        image.ObjectRect.Height.Should().Be(36);
+        line.Rect.Height.Should().BeGreaterThanOrEqualTo(36);
+        objectSegment.InlineId.Should().Be("drawing-inline");
+        objectSegment.InlineIndex.Should().Be(1);
+        objectSegment.ObjectId.Should().Be("drawing-1");
+        objectSegment.Text.Should().BeEmpty();
+        objectSegment.Length.Should().Be(0);
+        objectSegment.Rect.Width.Should().Be(72);
+        objectSegment.Rect.Height.Should().Be(36);
+        objectSegment.ObjectRect!.Width.Should().Be(72);
+        objectSegment.ObjectRect.Height.Should().Be(36);
+        line.Segments[0].Text.Should().Be("Alpha ");
+        line.Segments[^1].Text.Should().Be(" Omega");
+        objectSegment.Rect.X.Should().BeApproximately(line.Segments[0].Rect.Right, 0.01);
+        line.Segments[^1].Rect.X.Should().BeApproximately(objectSegment.Rect.Right, 0.01);
+    }
+
+    [Fact]
+    public void Layout_InlineDrawingRun_WrapsAsSingleInlineBoxWhenItDoesNotFit()
+    {
+        var document = Document("inline-drawing-wrap");
+        document.Blocks.Add(ParagraphWithInlines(
+            "p1",
+            [
+                new TextRun { Id = "before", Text = "AlphaAlphaAlpha " },
+                InlineDrawing("drawing-inline", "drawing-1", width: 100, height: 34),
+                new TextRun { Id = "after", Text = " tail" }
+            ]));
+
+        var snapshot = new DocumentLayoutEngine().Layout(document, NarrowPageSettings());
+        var lines = Lines(snapshot.Pages[0], "p1");
+        var objectSegment = lines.SelectMany(line => line.Segments)
+            .Should()
+            .ContainSingle(segment => segment.Kind == DocumentInlineLayoutSegmentKind.Object)
+            .Subject;
+        var objectLine = lines.Single(line => line.Segments.Contains(objectSegment));
+
+        lines.Should().HaveCountGreaterThan(1);
+        objectSegment.Rect.Width.Should().Be(100);
+        objectSegment.Rect.Height.Should().Be(34);
+        objectLine.LineIndex.Should().BeGreaterThan(0);
+        objectLine.Segments[0].Should().BeSameAs(objectSegment);
+        objectLine.Rect.Height.Should().BeGreaterThanOrEqualTo(34);
+        snapshot.Pages[0].Exclusions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Layout_AnchoredSquareDrawingRun_CreatesExclusionAndTextStartsBesideObject()
+    {
+        var document = Document("anchored-square-drawing");
+        document.Blocks.Add(ParagraphWithInlines(
+            "p1",
+            [
+                AnchoredDrawing("drawing-inline", "drawing-square", LeftSquareLayout(width: 110, height: 80), width: 110, height: 80),
+                new TextRun { Id = "text", Text = LongWrapText() + " " + LongWrapText() }
+            ]));
+
+        var snapshot = new DocumentLayoutEngine().Layout(document, TestPageSettings());
+        var page = snapshot.Pages[0];
+        var drawing = page.Objects.Should().ContainSingle(box => box.Id == "drawing-square").Subject;
+        var exclusion = page.Exclusions.Should().ContainSingle(zone => zone.ObjectId == "drawing-square").Subject;
+        var firstLine = FirstLine(page, "p1");
+
+        drawing.BlockId.Should().Be("p1");
+        drawing.AnchorBlockId.Should().Be("p1");
+        drawing.Layout.Anchor.BlockId.Should().Be("p1");
+        drawing.Layout.Anchor.InlineIndex.Should().Be(0);
+        drawing.Layout.Anchor.Offset.Should().Be(0);
+        exclusion.WrapMode.Should().Be(DocumentWrapMode.Square);
+        firstLine.AvailableIntervals.Should().ContainSingle();
+        firstLine.AvailableIntervals[0].X.Should().BeGreaterThan(page.BodyRect.X);
+        firstLine.Segments.Should().OnlyContain(segment => segment.Kind == DocumentInlineLayoutSegmentKind.Text);
+        firstLine.Segments[0].Rect.X.Should().Be(firstLine.AvailableIntervals[0].X);
+    }
+
+    [Fact]
+    public void Layout_TopBottomDrawingRun_BlocksFullLineWidth()
+    {
+        var document = Document("top-bottom-drawing");
+        document.Blocks.Add(ParagraphWithInlines(
+            "p1",
+            [
+                AnchoredDrawing("drawing-inline", "drawing-top-bottom", TopBottomLayout(width: 180, height: 70), width: 180, height: 70),
+                new TextRun { Id = "text", Text = LongWrapText() }
+            ]));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var drawing = page.Objects.Should().ContainSingle(box => box.Id == "drawing-top-bottom").Subject;
+        var exclusion = page.Exclusions.Should().ContainSingle(zone => zone.ObjectId == "drawing-top-bottom").Subject;
+        var firstLine = FirstLine(page, "p1");
+
+        exclusion.WrapMode.Should().Be(DocumentWrapMode.TopBottom);
+        exclusion.Rect.X.Should().Be(page.BodyRect.X);
+        exclusion.Rect.Width.Should().Be(page.BodyRect.Width);
+        firstLine.Rect.Y.Should().BeGreaterThanOrEqualTo(drawing.WrapRect.Bottom);
+        firstLine.AvailableIntervals.Should().ContainSingle();
+        firstLine.AvailableIntervals[0].X.Should().Be(page.BodyRect.X);
+    }
+
+    [Fact]
+    public void Layout_BehindTextDrawingRun_DoesNotCreateExclusion()
+    {
+        var layout = LeftSquareLayout(width: 110, height: 80);
+        layout.Wrap.Mode = DocumentWrapMode.BehindText;
+        layout.Stacking.AllowOverlap = true;
+        var document = Document("behind-text-drawing");
+        document.Blocks.Add(ParagraphWithInlines(
+            "p1",
+            [
+                AnchoredDrawing("drawing-inline", "drawing-behind", layout, width: 110, height: 80),
+                new TextRun { Id = "text", Text = LongWrapText() }
+            ]));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+
+        page.Objects.Should().ContainSingle(box => box.Id == "drawing-behind");
+        page.Exclusions.Should().BeEmpty();
+        FirstLine(page, "p1").AvailableIntervals.Should().ContainSingle(interval => interval.X == page.BodyRect.X);
+    }
+
+    [Fact]
+    public void Layout_InFrontOfTextDrawingRun_DoesNotCreateExclusion()
+    {
+        var layout = LeftSquareLayout(width: 110, height: 80);
+        layout.Wrap.Mode = DocumentWrapMode.InFrontOfText;
+        layout.Stacking.AllowOverlap = true;
+        var document = Document("in-front-drawing");
+        document.Blocks.Add(ParagraphWithInlines(
+            "p1",
+            [
+                AnchoredDrawing("drawing-inline", "drawing-front", layout, width: 110, height: 80),
+                new TextRun { Id = "text", Text = LongWrapText() }
+            ]));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+
+        page.Objects.Should().ContainSingle(box => box.Id == "drawing-front");
+        page.Exclusions.Should().BeEmpty();
+        FirstLine(page, "p1").AvailableIntervals.Should().ContainSingle(interval => interval.X == page.BodyRect.X);
+    }
+
+    [Fact]
+    public void Layout_AnchoredDrawingRun_IsPositionedRelativeToAnchorParagraph()
+    {
+        var layout = LeftSquareLayout(width: 90, height: 60, y: 24);
+        var document = Document("anchored-drawing-relative");
+        document.Blocks.Add(Paragraph("intro", "Intro paragraph.", order: 0));
+        document.Blocks.Add(ParagraphWithInlines(
+            "anchor",
+            [
+                AnchoredDrawing("drawing-inline", "drawing-anchor", layout, width: 90, height: 60),
+                new TextRun { Id = "text", Text = "Anchor paragraph text." }
+            ],
+            order: 1));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var anchorLine = FirstLine(page, "anchor");
+        var drawing = page.Objects.Should().ContainSingle(box => box.Id == "drawing-anchor").Subject;
+
+        drawing.AnchorBlockId.Should().Be("anchor");
+        drawing.ObjectRect.Y.Should().BeApproximately(anchorLine.Rect.Y + 24, 0.01);
+    }
+
+    [Fact]
+    public void Layout_MoveWithTextDrawingRun_FollowsAnchorWhenContentAboveGrows()
+    {
+        var shortDocument = DocumentWithAnchoredDrawingAfterIntro("move-drawing-short", LongWrapText(), fixedOnPage: false);
+        var longDocument = DocumentWithAnchoredDrawingAfterIntro("move-drawing-long", LongWrapText() + " " + LongWrapText() + " " + LongWrapText(), fixedOnPage: false);
+        var engine = new DocumentLayoutEngine();
+
+        var shortDrawing = engine.Layout(shortDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.Id == "drawing-anchor");
+        var longDrawing = engine.Layout(longDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.Id == "drawing-anchor");
+
+        shortDrawing.Layout.Anchor.MoveWithText.Should().BeTrue();
+        longDrawing.ObjectRect.Y.Should().BeGreaterThan(shortDrawing.ObjectRect.Y + 10);
+    }
+
+    [Fact]
+    public void Layout_FixedOnPageDrawingRun_DoesNotFollowAnchorWhenContentAboveGrows()
+    {
+        var shortDocument = DocumentWithAnchoredDrawingAfterIntro("fixed-drawing-short", LongWrapText(), fixedOnPage: true);
+        var longDocument = DocumentWithAnchoredDrawingAfterIntro("fixed-drawing-long", LongWrapText() + " " + LongWrapText() + " " + LongWrapText(), fixedOnPage: true);
+        var engine = new DocumentLayoutEngine();
+
+        var shortDrawing = engine.Layout(shortDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.Id == "drawing-anchor");
+        var longDrawing = engine.Layout(longDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.Id == "drawing-anchor");
+
+        shortDrawing.Layout.Anchor.FixedOnPage.Should().BeTrue();
+        shortDrawing.ObjectRect.Y.Should().BeApproximately(longDrawing.ObjectRect.Y, 0.01);
+    }
+
+    [Fact]
+    public void Layout_LockedAnchorDrawingRun_PreservesExplicitAnchorBlock()
+    {
+        var layout = LeftSquareLayout(width: 90, height: 60);
+        layout.Anchor.BlockId = "locked-anchor";
+        layout.Anchor.LockAnchor = true;
+        var document = Document("locked-anchor-drawing");
+        document.Blocks.Add(Paragraph("locked-anchor", "Locked anchor paragraph.", order: 0));
+        document.Blocks.Add(ParagraphWithInlines(
+            "owner",
+            [
+                AnchoredDrawing("drawing-inline", "drawing-locked", layout, width: 90, height: 60),
+                new TextRun { Id = "text", Text = "Owner paragraph text." }
+            ],
+            order: 1));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var lockedAnchorLine = FirstLine(page, "locked-anchor");
+        var drawing = page.Objects.Should().ContainSingle(box => box.Id == "drawing-locked").Subject;
+
+        drawing.BlockId.Should().Be("owner");
+        drawing.AnchorBlockId.Should().Be("locked-anchor");
+        drawing.Layout.Anchor.LockAnchor.Should().BeTrue();
+        drawing.ObjectRect.Y.Should().BeApproximately(lockedAnchorLine.Rect.Y, 0.01);
+    }
+
+    [Fact]
     public void Layout_AnchoredSquareImage_CreatesExclusionAndTextStartsBesideImage()
     {
         var document = Document("anchored-square-layout");
@@ -965,6 +1208,97 @@ public class DocumentLayoutEngineTests
                 ]
             }
         };
+
+    private static DocumentBlock ParagraphWithInlines(
+        string id,
+        IReadOnlyList<InlineContent> inlines,
+        double order = 0,
+        DocumentParagraphProperties? props = null)
+        => new()
+        {
+            Id = id,
+            Type = DocumentBlockType.Paragraph,
+            Order = order,
+            ParagraphProperties = props ?? new DocumentParagraphProperties(),
+            Content = new ParagraphBlockContent
+            {
+                Inlines = inlines.ToList()
+            }
+        };
+
+    private static DocumentDrawingRun InlineDrawing(string inlineId, string objectId, double width, double height)
+        => new()
+        {
+            Id = inlineId,
+            ObjectId = objectId,
+            AltText = objectId,
+            Size = new DocumentImageSize { Width = width, Height = height },
+            NaturalSize = new DocumentImageSize { Width = width, Height = height },
+            Layout = new DocumentObjectLayout
+            {
+                Kind = DocumentObjectLayoutKind.Inline,
+                Transform = new DocumentObjectTransform
+                {
+                    Width = width,
+                    Height = height,
+                    NaturalWidth = width,
+                    NaturalHeight = height
+                },
+                Wrap = new DocumentObjectWrap
+                {
+                    Mode = DocumentWrapMode.Inline
+                }
+            }
+        };
+
+    private static DocumentDrawingRun AnchoredDrawing(
+        string inlineId,
+        string objectId,
+        DocumentObjectLayout layout,
+        double width,
+        double height)
+    {
+        layout.Transform.Width = width;
+        layout.Transform.Height = height;
+        layout.Transform.NaturalWidth ??= width;
+        layout.Transform.NaturalHeight ??= height;
+        if (layout.Wrap.Mode == DocumentWrapMode.Inline)
+        {
+            layout.Wrap.Mode = DocumentWrapMode.Square;
+        }
+
+        if (layout.Kind == DocumentObjectLayoutKind.Inline)
+        {
+            layout.Kind = layout.Anchor.FixedOnPage ? DocumentObjectLayoutKind.Fixed : DocumentObjectLayoutKind.Anchored;
+        }
+
+        return new DocumentDrawingRun
+        {
+            Id = inlineId,
+            ObjectId = objectId,
+            AltText = objectId,
+            Size = new DocumentImageSize { Width = width, Height = height },
+            NaturalSize = new DocumentImageSize { Width = width, Height = height },
+            Layout = layout
+        };
+    }
+
+    private static DocumentEditorDocument DocumentWithAnchoredDrawingAfterIntro(string id, string introText, bool fixedOnPage)
+    {
+        var document = Document(id);
+        document.Blocks.Add(Paragraph("intro", introText, order: 0));
+        var layout = fixedOnPage
+            ? FixedLayout("anchor", width: 90, height: 60)
+            : AnchoredToParagraphLayout("anchor", width: 90, height: 60);
+        document.Blocks.Add(ParagraphWithInlines(
+            "anchor",
+            [
+                AnchoredDrawing("drawing-inline", "drawing-anchor", layout, width: 90, height: 60),
+                new TextRun { Id = "anchor-text", Text = "Anchor paragraph text." }
+            ],
+            order: 1));
+        return document;
+    }
 
     private static DocumentBlock Image(string id, DocumentObjectLayout layout, double width, double height, double order = 0, string? caption = null)
         => new()

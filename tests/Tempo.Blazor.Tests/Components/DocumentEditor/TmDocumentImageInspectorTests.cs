@@ -9,10 +9,10 @@ namespace Tempo.Blazor.Tests.Components.DocumentEditor;
 public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
 {
     [Fact]
-    public void Inspector_RendersAltWarning_WhenAltTextIsEmpty()
+    public void Inspector_RendersAltWarning_ForActiveDrawingObject_WhenAltTextIsEmpty()
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent()));
+            .Add(p => p.Image, ActiveDrawingImage()));
 
         cut.Find("[data-testid='document-image-inspector']").Should().NotBeNull();
         cut.Find("[data-testid='document-image-inspector-alt-warning']")
@@ -20,11 +20,11 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_AltInput_RaisesAltTextChanged()
+    public void Inspector_AltInput_RaisesAltTextChanged_ForActiveDrawingObject()
     {
         string? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { AltText = "Old" })
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.AltText = "Old"))
             .Add(p => p.AltTextChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-alt']").Change("New alt");
@@ -33,11 +33,11 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_DecorativeCheckbox_RaisesDecorativeChangedAndSuppressesAltWarning()
+    public void Inspector_DecorativeCheckbox_RaisesDecorativeChangedAndSuppressesAltWarning_ForActiveDrawingObject()
     {
         bool? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { IsDecorative = true })
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.IsDecorative = true))
             .Add(p => p.DecorativeChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-decorative']")
@@ -52,11 +52,11 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_WrapButton_RaisesWrapModeChanged()
+    public void Inspector_WrapButton_RaisesWrapModeChanged_ForActiveDrawingObject()
     {
         DocumentWrapMode? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent())
+            .Add(p => p.Image, ActiveDrawingImage())
             .Add(p => p.WrapModeChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-wrap-square']").Click();
@@ -65,10 +65,10 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_WrapButtons_AreIconSegmentsWithAccessibleLabels()
+    public void Inspector_WrapButtons_AreIconSegmentsWithAccessibleLabels_ForActiveDrawingObject()
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent()));
+            .Add(p => p.Image, ActiveDrawingImage()));
 
         var square = cut.Find("[data-testid='document-image-inspector-wrap-square']");
         square.QuerySelector(".tm-icon").Should().NotBeNull();
@@ -77,10 +77,10 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_CaptionCheckboxReflectsCaption()
+    public void Inspector_CaptionCheckboxReflectsCaption_ForActiveDrawingObject()
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Caption = "Evidence caption" }));
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Evidence caption")));
 
         cut.Find("[data-testid='document-image-inspector-caption-toggle']")
             .HasAttribute("checked").Should().BeTrue();
@@ -89,11 +89,11 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_CaptionInput_RaisesCaptionChanged()
+    public void Inspector_CaptionInput_RaisesCaptionChanged_ForActiveDrawingObject()
     {
         string? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Caption = "Old caption" })
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Old caption"))
             .Add(p => p.CaptionChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-caption']").Change("New caption");
@@ -102,11 +102,11 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task Inspector_CaptionInput_DebouncesInputChanges()
+    public async Task Inspector_CaptionInput_DebouncesInputChanges_ForActiveDrawingObject()
     {
         string? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Caption = "Old caption" })
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Old caption"))
             .Add(p => p.CaptionChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-caption']").Input("Live caption");
@@ -116,11 +116,11 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_UncheckingCaption_RaisesEmptyCaption()
+    public void Inspector_UncheckingCaption_RaisesEmptyCaption_ForActiveDrawingObject()
     {
         string? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Caption = "Existing caption" })
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Existing caption"))
             .Add(p => p.CaptionChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-caption-toggle']").Change(false);
@@ -132,32 +132,31 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     [InlineData(DocumentImageHorizontalPosition.Left, "document-image-inspector-align-start")]
     [InlineData(DocumentImageHorizontalPosition.Center, "document-image-inspector-align-center")]
     [InlineData(DocumentImageHorizontalPosition.Right, "document-image-inspector-align-end")]
-    public void Inspector_UsesFloatingLayoutHorizontalPosition_ForActiveAlignment(
+    public void Inspector_UsesDrawingLayoutHorizontalPosition_ForActiveAlignment(
         DocumentImageHorizontalPosition horizontalPosition,
         string activeTestId)
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent
+            .Add(p => p.Image, ActiveDrawingImage(drawing =>
             {
-                Alignment = DocumentImageAlignment.Center,
-                FloatingLayout = new DocumentFloatingLayout
+                drawing.Layout = new DocumentObjectLayout
                 {
-                    Inline = false,
-                    WrapMode = DocumentWrapMode.Square,
-                    HorizontalPosition = horizontalPosition
-                }
-            }));
+                    Kind = DocumentObjectLayoutKind.Anchored,
+                    Wrap = new DocumentObjectWrap { Mode = DocumentWrapMode.Square },
+                    Position = new DocumentObjectPosition { HorizontalAlignment = horizontalPosition }
+                };
+            })));
 
         cut.Find($"[data-testid='{activeTestId}']").ClassList
             .Should().Contain("tm-document-image-inspector__swatch--active");
     }
 
     [Fact]
-    public void Inspector_SizeInput_RaisesSizeChanged()
+    public void Inspector_SizeInput_RaisesSizeChanged_ForActiveDrawingObject()
     {
         DocumentImageSize? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Size = new DocumentImageSize { Width = 120, Height = 80 } })
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Size = new DocumentImageSize { Width = 120, Height = 80 }))
             .Add(p => p.SizeChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-width']").Change("240");
@@ -168,11 +167,11 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task Inspector_SizeInput_DebouncesInputChanges()
+    public async Task Inspector_SizeInput_DebouncesInputChanges_ForActiveDrawingObject()
     {
         DocumentImageSize? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Size = new DocumentImageSize { Width = 120, Height = 80 } })
+            .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Size = new DocumentImageSize { Width = 120, Height = 80 }))
             .Add(p => p.SizeChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-width']").Input("260");
@@ -184,11 +183,15 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task Inspector_UrlInput_DebouncesInputChanges_ForUrlImages()
+    public async Task Inspector_UrlInput_DebouncesInputChanges_ForActiveDrawingUrlImages()
     {
         string? received = null;
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Source = DocumentImageSource.Url, Url = "https://old.example/image.png" })
+            .Add(p => p.Image, ActiveDrawingImage(drawing =>
+            {
+                drawing.Source = DocumentImageSource.Url;
+                drawing.Url = "https://old.example/image.png";
+            }))
             .Add(p => p.UrlChanged, value => received = value));
 
         cut.Find("[data-testid='document-image-inspector-link']")
@@ -200,20 +203,58 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Inspector_HidesLinkInput_ForAssetImages()
+    public void Inspector_HidesLinkInput_ForActiveDrawingAssetImages()
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Source = DocumentImageSource.Asset, AssetId = "evidence" }));
+            .Add(p => p.Image, ActiveDrawingImage(drawing =>
+            {
+                drawing.Source = DocumentImageSource.Asset;
+                drawing.AssetId = "evidence";
+            })));
 
         cut.FindAll("[data-testid='document-image-inspector-link']").Should().BeEmpty();
     }
 
     [Fact]
-    public void Inspector_HidesUrlInput_ForEmbeddedDataImages()
+    public void Inspector_HidesUrlInput_ForActiveDrawingEmbeddedDataImages()
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent { Source = DocumentImageSource.Url, Url = "data:image/png;base64,iVBORw0KGgo=" }));
+            .Add(p => p.Image, ActiveDrawingImage(drawing =>
+            {
+                drawing.Source = DocumentImageSource.Url;
+                drawing.Url = "data:image/png;base64,iVBORw0KGgo=";
+            })));
 
         cut.FindAll("[data-testid='document-image-inspector-link']").Should().BeEmpty();
+    }
+
+    private static ImageBlockContent ActiveDrawingImage(Action<DocumentDrawingRun>? configure = null)
+    {
+        var drawing = new DocumentDrawingRun
+        {
+            Id = "active-drawing-inline",
+            ObjectId = "active-drawing-object",
+            Source = DocumentImageSource.Url,
+            Url = "https://example.test/drawing.png",
+            AltText = string.Empty,
+            Size = new DocumentImageSize { Width = 120, Height = 80 },
+            NaturalSize = new DocumentImageSize { Width = 240, Height = 160 },
+            Layout = DocumentObjectLayout.Inline()
+        };
+        configure?.Invoke(drawing);
+
+        return new ImageBlockContent
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size,
+            NaturalSize = drawing.NaturalSize,
+            Layout = drawing.Layout,
+            LinkUrl = drawing.LinkUrl
+        };
     }
 }

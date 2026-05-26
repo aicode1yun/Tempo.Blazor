@@ -209,19 +209,64 @@ internal static class DocumentFormatTestData
 
     public static void AssertImageLayoutParity(DocumentEditorDocument imported)
     {
-        var expected = CreateImageLayoutParityDocument().Blocks
-            .Select(block => block.Content)
-            .OfType<ImageBlockContent>()
-            .ToDictionary(image => image.AltText!, StringComparer.Ordinal);
-        var actual = imported.Blocks
-            .Select(block => block.Content)
-            .OfType<ImageBlockContent>()
-            .ToDictionary(image => image.AltText!, StringComparer.Ordinal);
+        var expected = EnumerateImageLayouts(CreateImageLayoutParityDocument())
+            .ToDictionary(item => item.AltText, item => item.Layout, StringComparer.Ordinal);
+        var actual = EnumerateImageLayouts(imported)
+            .ToDictionary(item => item.AltText, item => item.Layout, StringComparer.Ordinal);
 
         actual.Keys.Should().Contain(expected.Keys);
-        foreach (var (altText, expectedImage) in expected)
+        foreach (var (altText, expectedLayout) in expected)
         {
-            AssertLayout(actual[altText].Layout, expectedImage.Layout);
+            AssertLayout(actual[altText], expectedLayout);
+        }
+    }
+
+    private static IEnumerable<(string AltText, DocumentObjectLayout Layout)> EnumerateImageLayouts(DocumentEditorDocument document)
+    {
+        foreach (var block in EnumerateBlocks(document.Blocks))
+        {
+            if (block.Content is ImageBlockContent image && !string.IsNullOrWhiteSpace(image.AltText))
+            {
+                yield return (image.AltText, image.Layout);
+            }
+
+            var inlines = block.Content switch
+            {
+                ParagraphBlockContent paragraph => paragraph.Inlines,
+                HeadingBlockContent heading => heading.Inlines,
+                ListBlockContent list => list.Inlines,
+                QuoteBlockContent quote => quote.Inlines,
+                _ => null
+            };
+
+            if (inlines is null)
+            {
+                continue;
+            }
+
+            foreach (var drawing in inlines.OfType<DocumentDrawingRun>().Where(drawing => !string.IsNullOrWhiteSpace(drawing.AltText)))
+            {
+                yield return (drawing.AltText!, drawing.Layout);
+            }
+        }
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateBlocks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            yield return block;
+            if (block.Content is not TableBlockContent table)
+            {
+                continue;
+            }
+
+            foreach (var nested in table.Rows
+                         .SelectMany(row => row.Cells)
+                         .SelectMany(cell => EnumerateBlocks(cell.Blocks)))
+            {
+                yield return nested;
+            }
         }
     }
 
@@ -247,9 +292,13 @@ internal static class DocumentFormatTestData
     private static void AssertLayout(DocumentObjectLayout actual, DocumentObjectLayout expected)
     {
         actual.Kind.Should().Be(expected.Kind);
-        actual.Anchor.BlockId.Should().Be(expected.Anchor.BlockId);
-        actual.Anchor.InlineIndex.Should().Be(expected.Anchor.InlineIndex);
-        actual.Anchor.Offset.Should().Be(expected.Anchor.Offset);
+        if (expected.Anchor.BlockId is not null)
+        {
+            actual.Anchor.BlockId.Should().Be(expected.Anchor.BlockId);
+        }
+
+        AssertNullableInt(actual.Anchor.InlineIndex, expected.Anchor.InlineIndex);
+        AssertNullableInt(actual.Anchor.Offset, expected.Anchor.Offset);
         actual.Anchor.Region.Should().Be(expected.Anchor.Region);
         actual.Anchor.MoveWithText.Should().Be(expected.Anchor.MoveWithText);
         actual.Anchor.FixedOnPage.Should().Be(expected.Anchor.FixedOnPage);
@@ -261,6 +310,7 @@ internal static class DocumentFormatTestData
         actual.Position.HorizontalAlignment.Should().Be(expected.Position.HorizontalAlignment);
         actual.Position.VerticalAlignment.Should().Be(expected.Position.VerticalAlignment);
         actual.Wrap.Mode.Should().Be(expected.Wrap.Mode);
+        actual.Wrap.Side.Should().Be(expected.Wrap.Side);
         actual.Wrap.DistanceLeft.Should().BeApproximately(expected.Wrap.DistanceLeft, 0.1);
         actual.Wrap.DistanceRight.Should().BeApproximately(expected.Wrap.DistanceRight, 0.1);
         actual.Wrap.DistanceTop.Should().BeApproximately(expected.Wrap.DistanceTop, 0.1);
@@ -285,6 +335,14 @@ internal static class DocumentFormatTestData
         else
         {
             actual.Should().BeNull();
+        }
+    }
+
+    private static void AssertNullableInt(int? actual, int? expected)
+    {
+        if (expected.HasValue)
+        {
+            actual.Should().Be(expected.Value);
         }
     }
 }

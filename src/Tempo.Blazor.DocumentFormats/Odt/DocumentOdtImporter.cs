@@ -123,23 +123,8 @@ public sealed class OdtPackageReader
                 return;
             }
 
-            var hasFrames = element.Descendants(Draw + "frame").Any();
-            foreach (var frame in element.Descendants(Draw + "frame"))
-            {
-                var image = await ReadImageAsync(frame, cancellationToken);
-                if (image is not null)
-                {
-                    doc.Blocks.Add(new DocumentBlock
-                    {
-                        Type = DocumentBlockType.Image,
-                        Order = _order++,
-                        Content = image
-                    });
-                }
-            }
-
             var inlines = await ReadInlinesAsync(element.Nodes(), cancellationToken);
-            if (inlines.Count > 0 || !hasFrames)
+            if (inlines.Count > 0 || !element.Descendants(Draw + "frame").Any())
             {
                 doc.Blocks.Add(new DocumentBlock
                 {
@@ -286,7 +271,11 @@ public sealed class OdtPackageReader
                 }
                 else if (element.Name == Draw + "frame")
                 {
-                    continue;
+                    var image = await ReadImageAsync(element, cancellationToken);
+                    if (image is not null)
+                    {
+                        result.Add(ToDrawingRun(image));
+                    }
                 }
                 else if (element.Name == Office + "annotation")
                 {
@@ -309,6 +298,21 @@ public sealed class OdtPackageReader
 
         return result;
     }
+
+    private static DocumentDrawingRun ToDrawingRun(ImageBlockContent image)
+        => new()
+        {
+            Source = image.Source,
+            Url = image.Url,
+            AssetId = image.AssetId,
+            AltText = image.AltText,
+            IsDecorative = image.IsDecorative,
+            Caption = image.Caption,
+            Size = image.Size,
+            NaturalSize = image.NaturalSize,
+            Layout = image.Layout,
+            LinkUrl = image.LinkUrl
+        };
 
     private async Task<ImageBlockContent?> ReadImageAsync(XElement frame, CancellationToken cancellationToken)
     {

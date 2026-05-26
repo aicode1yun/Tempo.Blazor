@@ -1212,6 +1212,633 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             }
             """);
 
+    /// <summary>Diagnostic read-only helper: captures image object, caret, model, and focus diagnostics for parity tests.</summary>
+    protected static Task<DocumentEditorImageDiagnosticsProbe> ReadDocumentEditorImageDiagnosticsAsync(
+        IPage page,
+        string? imageId = null,
+        string hostSelector = DocumentEditorHostSelector)
+        => page.EvaluateAsync<DocumentEditorImageDiagnosticsProbe>(
+            """
+            ({ hostSelector, imageId }) => {
+                const host = document.querySelector(hostSelector);
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtimeSelection = getRuntimeSelection(instanceId);
+                const documentModel = getRuntimeDocument(instanceId);
+                const selection = getSelectionProbe(host);
+                const activeImageId = readActiveImageId(host, runtimeSelection);
+                const effectiveImageId = imageId || activeImageId;
+                const modelImage = findImageObject(documentModel, effectiveImageId);
+                const domImage = findImageDomAnchor(host, effectiveImageId);
+                const targetImage = domImage.anchorBlockId ? domImage : modelImage;
+                const imageRect = getImageRect(host, effectiveImageId);
+                const imageCenterTarget = getImageCenterTarget(imageRect);
+                const caretRect = getCaretRect();
+                const lineIntervals = getLineIntervalsAroundImage(host, imageRect);
+                const topLevelImageBlockCount = countTopLevelImageBlocks(documentModel);
+                const drawingRunCount = countDrawingRuns(documentModel);
+                const activeElement = document.activeElement;
+                const hostHasFocus = !!(host && activeElement && (activeElement === host || host.contains(activeElement)));
+                const imageToolbarVisible = isVisible(document.querySelector('[data-testid="document-image-toolbar"], [data-human-testid="document-image-toolbar"], [data-testid="document-wysiwyg-image-toolbar"], .tm-document-editor__image-toolbar, .tm-wysiwyg-image-toolbar'));
+                const selectionMode = inferSelectionMode(runtimeSelection, activeImageId);
+                const engineDebug = getEngineDebug(instanceId);
+
+                return {
+                    instanceId,
+                    selectionMode,
+                    activeImageId,
+                    caretBlockId: selection.blockId,
+                    caretOffset: selection.offset,
+                    caretRect,
+                    anchorBlockId: targetImage.anchorBlockId || '',
+                    anchorOffset: targetImage.anchorOffset,
+                    topLevelImageBlockCount,
+                    drawingRunCount,
+                    imageRect,
+                    lineIntervals,
+                    hostHasFocus,
+                    imageToolbarVisible,
+                    runtimeSelectionJson: safeJson(runtimeSelection),
+                    documentModelJson: safeJson(documentModel),
+                    debug: safeJson({
+                        imageId,
+                        effectiveImageId,
+                        activeImageId,
+                        selectionMode,
+                        selection,
+                        targetImage,
+                        imageRect,
+                        imageCenterTarget,
+                        lineIntervals,
+                        topLevelImageBlockCount,
+                        drawingRunCount,
+                        activeElement: describeElement(activeElement),
+                        hostHasFocus,
+                        imageToolbarVisible,
+                        runtimeSelection,
+                        objectPointer: engineDebug?.lastObjectPointerInteraction || null,
+                        commandCount: engineDebug?.commandCount ?? null,
+                        lastTransaction: engineDebug?.lastTransaction || null,
+                        lastError: engineDebug?.lastError || null,
+                        lastOperationValidation: engineDebug?.lastOperationValidation || null
+                    })
+                };
+
+                function getRuntimeSelection(id) {
+                    try {
+                        return window.tmDocumentEditorRuntime?.getRuntimeSelection?.(id)
+                            || window.tmDocumentEditorRuntime?.getSelectionSnapshot?.(id)
+                            || window.tmDocumentEditorEngine?.getSelectionSnapshot?.(id)
+                            || window.tmDocumentEditorDebug?.getRuntimeState?.(id)?.currentSelection
+                            || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function getRuntimeDocument(id) {
+                    try {
+                        const raw = window.tmDocumentEditorRuntime?.getDocumentSnapshot?.(id)
+                            || window.tmDocumentEditorEngine?.getDocumentSnapshot?.(id)
+                            || window.tmDocumentEditorRuntime?.getDocument?.(id)
+                            || window.tmDocumentEditorEngine?.getDocument?.(id)
+                            || null;
+                        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                        return parsed?.Document || parsed?.document || parsed?.csharpDocument || parsed || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function getEngineDebug(id) {
+                    try {
+                        return window.tmDocumentEditorEngine?.getDebugSnapshot?.(id)
+                            || window.tmDocumentEditorDebug?.getRuntimeState?.(id)
+                            || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function inferSelectionMode(runtimeSelection, currentImageId) {
+                    const explicitMode = runtimeSelection?.SelectionMode
+                        || runtimeSelection?.selectionMode
+                        || runtimeSelection?.Mode
+                        || runtimeSelection?.mode
+                        || '';
+                    if (explicitMode) return String(explicitMode);
+                    const region = String(runtimeSelection?.Region ?? runtimeSelection?.region ?? '').toLowerCase();
+                    if (region === 'image' || currentImageId) return 'Object';
+                    return 'Text';
+                }
+
+                function readActiveImageId(root, runtimeSelection) {
+                    const fromSelection = runtimeSelection?.ObjectSelection?.ObjectId
+                        || runtimeSelection?.objectSelection?.objectId
+                        || runtimeSelection?.ActiveObjectId
+                        || runtimeSelection?.activeObjectId
+                        || runtimeSelection?.ActiveImageBlockId
+                        || runtimeSelection?.activeImageBlockId
+                        || runtimeSelection?.ObjectId
+                        || runtimeSelection?.objectId
+                        || '';
+                    if (fromSelection) return String(fromSelection);
+                    const selected = root?.querySelector('.tm-wysiwyg-image--selected, [aria-selected="true"][data-block-id], [data-object-selected="true"]');
+                    return selected?.getAttribute('data-object-id')
+                        || selected?.getAttribute('data-block-id')
+                        || selected?.getAttribute('data-render-block-id')
+                        || '';
+                }
+
+                function getSelectionProbe(root) {
+                    const nativeSelection = window.getSelection();
+                    const empty = { blockId: '', offset: -1 };
+                    if (!nativeSelection || nativeSelection.rangeCount === 0) return empty;
+                    const focusNode = nativeSelection.focusNode;
+                    const focusElement = elementOf(focusNode);
+                    const block = focusElement?.closest?.('[data-block-id], [data-render-block-id]');
+                    if (!block || (root && !root.contains(block))) return empty;
+                    let offset = -1;
+                    try {
+                        const pre = document.createRange();
+                        pre.selectNodeContents(block);
+                        pre.setEnd(focusNode, nativeSelection.focusOffset);
+                        offset = pre.toString().length;
+                    } catch {
+                        offset = -1;
+                    }
+                    return {
+                        blockId: block.getAttribute('data-block-id') || block.getAttribute('data-render-block-id') || '',
+                        offset
+                    };
+                }
+
+                function getCaretRect() {
+                    const nativeSelection = window.getSelection();
+                    if (!nativeSelection || nativeSelection.rangeCount === 0) return zeroRect();
+                    const range = nativeSelection.getRangeAt(0).cloneRange();
+                    range.collapse(false);
+                    const rect = range.getBoundingClientRect();
+                    if (rect && rect.height > 0) return toRect(rect);
+                    try {
+                        const marker = document.createElement('span');
+                        marker.textContent = '\u200b';
+                        range.insertNode(marker);
+                        const markerRect = toRect(marker.getBoundingClientRect());
+                        marker.remove();
+                        return markerRect;
+                    } catch {
+                        return zeroRect();
+                    }
+                }
+
+                function getImageRect(root, id) {
+                    const selectors = [];
+                    if (id) {
+                        const escaped = cssEscape(id);
+                        selectors.push(`[data-object-id="${escaped}"]`);
+                        selectors.push(`[data-block-id="${escaped}"]`);
+                        selectors.push(`[data-render-block-id="${escaped}"]`);
+                    }
+                    selectors.push('.tm-wysiwyg-image--selected');
+                    selectors.push('figure.tm-wysiwyg-image');
+                    selectors.push('.tm-render-image-widget');
+                    selectors.push('.tm-wysiwyg-inline-drawing[data-object-id]');
+                    for (const selector of selectors) {
+                        const node = root?.querySelector(selector);
+                        if (isVisible(node)) {
+                            return toRect((node.querySelector?.('img') || node).getBoundingClientRect());
+                        }
+                    }
+                    return zeroRect();
+                }
+
+                function getImageCenterTarget(imageRect) {
+                    if (!imageRect || imageRect.width <= 0 || imageRect.height <= 0) return null;
+                    const x = imageRect.x + imageRect.width / 2;
+                    const y = imageRect.y + imageRect.height / 2;
+                    const target = document.elementFromPoint(x, y);
+                    return {
+                        x,
+                        y,
+                        target: describeElement(target),
+                        objectLayerItem: describeElement(target?.closest?.('.tm-wysiwyg-object-layer-item, [data-testid="document-wysiwyg-object-layer-item"]') || null),
+                        selectionOverlay: describeElement(target?.closest?.('.tm-wysiwyg-object-selection-overlay, [data-testid="document-wysiwyg-object-selection-overlay"]') || null),
+                        textBlock: describeElement(target?.closest?.('.tm-wysiwyg-block[data-block-id]') || null)
+                    };
+                }
+
+                function getLineIntervalsAroundImage(root, imageRect) {
+                    if (!root || !imageRect || imageRect.width <= 0 || imageRect.height <= 0) return [];
+                    const body = Array.from(root.querySelectorAll('.tm-wysiwyg-page__body, [data-render-frame="body"], [contenteditable="true"]')).find(isVisible) || root;
+                    const bodyRect = toRect(body.getBoundingClientRect());
+                    const lines = collectTextLineRects(root)
+                        .filter(line => verticalOverlap(line.rect, imageRect) > 0.5)
+                        .map(line => ({
+                            blockId: line.blockId,
+                            x: line.rect.x,
+                            y: line.rect.y,
+                            width: line.rect.width,
+                            height: line.rect.height,
+                            leftAvailable: Math.max(0, imageRect.x - bodyRect.x),
+                            rightAvailable: Math.max(0, bodyRect.x + bodyRect.width - (imageRect.x + imageRect.width))
+                        }));
+                    return lines;
+                }
+
+                function collectTextLineRects(root) {
+                    const result = [];
+                    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                        acceptNode(node) {
+                            if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+                            const parent = node.parentElement;
+                            if (!parent || parent.closest('figure, [data-testid*="toolbar"], .tm-document-editor__ribbon, [role="menu"], .tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides, .tm-wysiwyg-layout-bubble')) return NodeFilter.FILTER_REJECT;
+                            return isVisible(parent) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }
+                    });
+                    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                        const range = document.createRange();
+                        range.selectNodeContents(node);
+                        const block = node.parentElement?.closest('[data-block-id], [data-render-block-id]');
+                        for (const rect of Array.from(range.getClientRects())) {
+                            if (rect.width > 0.5 && rect.height > 0.5) {
+                                result.push({
+                                    blockId: block?.getAttribute('data-block-id') || block?.getAttribute('data-render-block-id') || '',
+                                    rect: toRect(rect)
+                                });
+                            }
+                        }
+                    }
+                    return result;
+                }
+
+                function findImageObject(documentModel, id) {
+                    const empty = { anchorBlockId: '', anchorOffset: -1 };
+                    if (!documentModel || typeof documentModel !== 'object') return empty;
+                    const matches = [];
+                    walk(documentModel, (node, parent) => {
+                        const nodeId = node.ObjectId || node.objectId || node.Id || node.id || '';
+                        const isImageBlock = isTopLevelImageBlock(node);
+                        const isDrawing = isDrawingRun(node);
+                        if ((id && String(nodeId) === String(id)) || (!id && (isImageBlock || isDrawing))) {
+                            const layout = node.Layout || node.layout || node.Content?.Layout || node.content?.layout || {};
+                            const anchor = layout.Anchor || layout.anchor || {};
+                            matches.push({
+                                anchorBlockId: anchor.BlockId || anchor.blockId || layout.AnchorBlockId || layout.anchorBlockId || parent?.Id || parent?.id || '',
+                                anchorOffset: Number(anchor.Offset ?? anchor.offset ?? layout.AnchorOffset ?? layout.anchorOffset ?? -1)
+                            });
+                        }
+                    });
+                    return matches[0] || empty;
+                }
+
+                function findImageDomAnchor(root, id) {
+                    const empty = { anchorBlockId: '', anchorOffset: -1 };
+                    if (!root || !id) return empty;
+                    const escaped = cssEscape(id);
+                    const node = root.querySelector(`[data-testid="document-wysiwyg-object-layer-item"][data-object-id="${escaped}"], [data-object-id="${escaped}"]`);
+                    if (!node) return empty;
+                    return {
+                        anchorBlockId: node.getAttribute('data-anchor-block-id') || node.getAttribute('data-block-id') || '',
+                        anchorOffset: Number(node.getAttribute('data-anchor-offset') || 0)
+                    };
+                }
+
+                function countTopLevelImageBlocks(documentModel) {
+                    const blocks = documentModel?.Blocks || documentModel?.blocks || [];
+                    if (!Array.isArray(blocks)) return 0;
+                    return blocks.filter(isTopLevelImageBlock).length;
+                }
+
+                function countDrawingRuns(documentModel) {
+                    let count = 0;
+                    for (const rootBlock of collectDocumentBlocks(documentModel)) {
+                        visitBlockInlines(rootBlock, inline => {
+                            if (isDrawingRun(inline)) count++;
+                        });
+                    }
+                    return count;
+                }
+
+                function collectDocumentBlocks(document) {
+                    if (!document || typeof document !== 'object') return [];
+                    const blocks = [];
+                    appendBlocks(blocks, document.Blocks || document.blocks);
+                    appendBlocks(blocks, document.body?.blocks || document.Body?.Blocks);
+                    for (const header of [...asArray(document.Headers || document.headers), ...asArray(document.HeadersFooters || document.headersFooters)]) {
+                        appendBlocks(blocks, header.Blocks || header.blocks);
+                    }
+                    for (const footer of asArray(document.Footers || document.footers)) {
+                        appendBlocks(blocks, footer.Blocks || footer.blocks);
+                    }
+                    return blocks;
+                }
+
+                function visitBlockInlines(block, visitor) {
+                    if (!block || typeof block !== 'object') return;
+                    const content = block.Content || block.content || {};
+                    for (const inline of asArray(content.Inlines || content.inlines || content.Runs || content.runs)) {
+                        visitor(inline);
+                    }
+                    for (const row of asArray(content.Rows || content.rows)) {
+                        for (const cell of asArray(row.Cells || row.cells)) {
+                            for (const childBlock of asArray(cell.Blocks || cell.blocks)) visitBlockInlines(childBlock, visitor);
+                        }
+                    }
+                    for (const childBlock of asArray(content.Blocks || content.blocks || block.Blocks || block.blocks)) {
+                        visitBlockInlines(childBlock, visitor);
+                    }
+                }
+
+                function appendBlocks(target, blocks) {
+                    for (const block of asArray(blocks)) target.push(block);
+                }
+
+                function asArray(value) {
+                    return Array.isArray(value) ? value : [];
+                }
+
+                function isTopLevelImageBlock(node) {
+                    const type = node?.Type ?? node?.type;
+                    const contentType = node?.Content?.$type ?? node?.content?.$type;
+                    return type === 5 || String(type).toLowerCase() === 'image' || String(contentType).toLowerCase() === 'image';
+                }
+
+                function isDrawingRun(node) {
+                    if (!node || typeof node !== 'object') return false;
+                    const discriminator = node.$type || node.Kind || node.kind || node.Type || node.type || '';
+                    return String(discriminator).toLowerCase() === 'drawing'
+                        || !!(node.ObjectId || node.objectId) && !!(node.Layout || node.layout) && (
+                            !!(node.Image || node.image || node.Url || node.url || node.AssetId || node.assetId || node.DrawingKind || node.drawingKind)
+                            || node.Source !== undefined
+                            || node.source !== undefined);
+                }
+
+                function walk(value, visitor, parent = null, depth = 0) {
+                    if (!value || typeof value !== 'object' || depth > 8) return;
+                    if (!Array.isArray(value)) {
+                        visitor(value, parent);
+                    }
+                    const entries = Array.isArray(value) ? value.map((item, index) => [index, item]) : Object.entries(value);
+                    for (const [, child] of entries) {
+                        if (child && typeof child === 'object') {
+                            walk(child, visitor, Array.isArray(value) ? parent : value, depth + 1);
+                        }
+                    }
+                }
+
+                function elementOf(node) {
+                    if (!node) return null;
+                    return node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement || null;
+                }
+
+                function verticalOverlap(a, b) {
+                    return Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+                }
+
+                function isVisible(node) {
+                    if (!node) return false;
+                    const rect = node.getBoundingClientRect();
+                    const style = getComputedStyle(node);
+                    return rect.width > 0.5 && rect.height > 0.5 && style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > 0.01;
+                }
+
+                function describeElement(node) {
+                    if (!node) return '';
+                    return `${node.tagName || ''}#${node.id || ''}.${String(node.className || '').replace(/\s+/g, '.')}`;
+                }
+
+                function cssEscape(value) {
+                    return window.CSS?.escape ? window.CSS.escape(String(value)) : String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                }
+
+                function toRect(rect) {
+                    if (!rect) return zeroRect();
+                    return {
+                        x: Number(rect.x || rect.left || 0),
+                        y: Number(rect.y || rect.top || 0),
+                        width: Number(rect.width || 0),
+                        height: Number(rect.height || 0)
+                    };
+                }
+
+                function zeroRect() {
+                    return { x: 0, y: 0, width: 0, height: 0 };
+                }
+
+                function safeJson(value) {
+                    try { return JSON.stringify(value ?? null); }
+                    catch (error) { return JSON.stringify({ error: String(error) }); }
+                }
+            }
+            """,
+            new { hostSelector, imageId = imageId ?? string.Empty });
+
+    /// <summary>Diagnostic read-only helper: reads whether the current editor selection is text or object-based.</summary>
+    protected static async Task<string> ReadDocumentEditorSelectionModeAsync(IPage page, string hostSelector = DocumentEditorHostSelector)
+        => (await ReadDocumentEditorImageDiagnosticsAsync(page, hostSelector: hostSelector)).SelectionMode;
+
+    /// <summary>Diagnostic read-only helper: reads the active image object identifier if one is selected.</summary>
+    protected static async Task<string> ReadActiveDocumentEditorImageIdAsync(IPage page, string hostSelector = DocumentEditorHostSelector)
+        => (await ReadDocumentEditorImageDiagnosticsAsync(page, hostSelector: hostSelector)).ActiveImageId;
+
+    /// <summary>Diagnostic read-only helper: reads the current caret block and offset.</summary>
+    protected static async Task<DocumentEditorCaretProbe> ReadDocumentEditorCaretProbeAsync(IPage page, string hostSelector = DocumentEditorHostSelector)
+    {
+        var diagnostics = await ReadDocumentEditorImageDiagnosticsAsync(page, hostSelector: hostSelector);
+        return new DocumentEditorCaretProbe
+        {
+            BlockId = diagnostics.CaretBlockId,
+            Offset = diagnostics.CaretOffset,
+            Rect = diagnostics.CaretRect
+        };
+    }
+
+    /// <summary>Diagnostic read-only helper: reads image anchor information from the runtime model.</summary>
+    protected static async Task<DocumentEditorImageAnchorProbe> ReadDocumentEditorImageAnchorAsync(
+        IPage page,
+        string imageId,
+        string hostSelector = DocumentEditorHostSelector)
+    {
+        var diagnostics = await ReadDocumentEditorImageDiagnosticsAsync(page, imageId, hostSelector);
+        return new DocumentEditorImageAnchorProbe
+        {
+            ImageId = imageId,
+            AnchorBlockId = diagnostics.AnchorBlockId,
+            AnchorOffset = diagnostics.AnchorOffset
+        };
+    }
+
+    /// <summary>Diagnostic read-only helper: counts top-level image blocks in the runtime document.</summary>
+    protected static async Task<int> ReadDocumentEditorTopLevelImageBlockCountAsync(IPage page, string hostSelector = DocumentEditorHostSelector)
+        => (await ReadDocumentEditorImageDiagnosticsAsync(page, hostSelector: hostSelector)).TopLevelImageBlockCount;
+
+    /// <summary>Diagnostic read-only helper: counts drawing runs in the runtime document.</summary>
+    protected static async Task<int> ReadDocumentEditorDrawingRunCountAsync(IPage page, string hostSelector = DocumentEditorHostSelector)
+        => (await ReadDocumentEditorImageDiagnosticsAsync(page, hostSelector: hostSelector)).DrawingRunCount;
+
+    /// <summary>Diagnostic read-only helper: reads drawing runs from the runtime document, optionally scoped to one block.</summary>
+    protected static Task<DocumentEditorDrawingRunProbe[]> ReadDocumentEditorDrawingRunsAsync(
+        IPage page,
+        string? blockId = null,
+        string? objectId = null,
+        string hostSelector = DocumentEditorHostSelector)
+        => page.EvaluateAsync<DocumentEditorDrawingRunProbe[]>(
+            """
+            ({ hostSelector, blockId, objectId }) => {
+                const host = document.querySelector(hostSelector);
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const documentModel = getRuntimeDocument(instanceId);
+                const runs = [];
+                for (const rootBlock of collectDocumentBlocks(documentModel)) {
+                    visitBlock(rootBlock);
+                }
+                return runs
+                    .filter(run => !blockId || run.blockId === blockId || run.anchorBlockId === blockId)
+                    .filter(run => !objectId || run.objectId === objectId)
+                    .sort((a, b) => a.blockId.localeCompare(b.blockId) || a.inlineIndex - b.inlineIndex || a.objectId.localeCompare(b.objectId));
+
+                function getRuntimeDocument(id) {
+                    try {
+                        const raw = window.tmDocumentEditorRuntime?.getDocumentSnapshot?.(id)
+                            || window.tmDocumentEditorEngine?.getDocumentSnapshot?.(id)
+                            || window.tmDocumentEditorRuntime?.getDocument?.(id)
+                            || window.tmDocumentEditorEngine?.getDocument?.(id)
+                            || null;
+                        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                        return parsed?.Document || parsed?.document || parsed?.csharpDocument || parsed || null;
+                    } catch (error) {
+                        return { error: String(error) };
+                    }
+                }
+
+                function collectDocumentBlocks(document) {
+                    if (!document || typeof document !== 'object') return [];
+                    const blocks = [];
+                    appendBlocks(blocks, document.Blocks || document.blocks);
+                    appendBlocks(blocks, document.body?.blocks || document.Body?.Blocks);
+                    for (const header of [...asArray(document.Headers || document.headers), ...asArray(document.HeadersFooters || document.headersFooters)]) {
+                        appendBlocks(blocks, header.Blocks || header.blocks);
+                    }
+                    for (const footer of [...asArray(document.Footers || document.footers)]) {
+                        appendBlocks(blocks, footer.Blocks || footer.blocks);
+                    }
+                    return blocks;
+                }
+
+                function visitBlock(block) {
+                    if (!block || typeof block !== 'object') return;
+                    const currentBlockId = String(block.Id || block.id || '');
+                    const content = block.Content || block.content || {};
+                    const inlines = content.Inlines || content.inlines || content.Runs || content.runs || [];
+                    asArray(inlines).forEach((inline, index) => {
+                        if (!isDrawingRun(inline)) return;
+                        const layout = inline.Layout || inline.layout || {};
+                        const anchor = layout.Anchor || layout.anchor || {};
+                        const wrap = layout.Wrap || layout.wrap || {};
+                        const transform = layout.Transform || layout.transform || {};
+                        const crop = transform.Crop || transform.crop || {};
+                        runs.push({
+                            blockId: currentBlockId || String(anchor.BlockId || anchor.blockId || ''),
+                            objectId: String(inline.ObjectId || inline.objectId || inline.Id || inline.id || ''),
+                            runId: String(inline.Id || inline.id || ''),
+                            anchorBlockId: String(anchor.BlockId || anchor.blockId || layout.AnchorBlockId || layout.anchorBlockId || currentBlockId || ''),
+                            anchorOffset: Number(anchor.Offset ?? anchor.offset ?? layout.AnchorOffset ?? layout.anchorOffset ?? 0) || 0,
+                            inlineIndex: Number(anchor.InlineIndex ?? anchor.inlineIndex ?? index),
+                            altText: String(inline.AltText || inline.altText || ''),
+                            url: String(inline.Url || inline.url || ''),
+                            region: normalizeAnchorRegion(anchor.Region ?? anchor.region ?? ''),
+                            tableId: String(anchor.TableId ?? anchor.tableId ?? ''),
+                            cellId: String(anchor.CellId ?? anchor.cellId ?? ''),
+                            headerFooterId: String(anchor.HeaderFooterId ?? anchor.headerFooterId ?? ''),
+                            wrapMode: normalizeWrapMode(wrap.Mode ?? wrap.mode ?? ''),
+                            width: Number(transform.Width ?? transform.width ?? inline.Size?.Width ?? inline.size?.width ?? 0) || 0,
+                            height: Number(transform.Height ?? transform.height ?? inline.Size?.Height ?? inline.size?.height ?? 0) || 0,
+                            cropLeft: Number(crop.Left ?? crop.left ?? 0) || 0,
+                            cropTop: Number(crop.Top ?? crop.top ?? 0) || 0,
+                            cropRight: Number(crop.Right ?? crop.right ?? 0) || 0,
+                            cropBottom: Number(crop.Bottom ?? crop.bottom ?? 0) || 0
+                        });
+                    });
+
+                    for (const row of asArray(content.Rows || content.rows)) {
+                        for (const cell of asArray(row.Cells || row.cells)) {
+                            for (const childBlock of asArray(cell.Blocks || cell.blocks)) visitBlock(childBlock);
+                        }
+                    }
+                    for (const childBlock of asArray(content.Blocks || content.blocks || block.Blocks || block.blocks)) {
+                        visitBlock(childBlock);
+                    }
+                }
+
+                function appendBlocks(target, blocks) {
+                    for (const block of asArray(blocks)) target.push(block);
+                }
+
+                function asArray(value) {
+                    return Array.isArray(value) ? value : [];
+                }
+
+                function isDrawingRun(node) {
+                    if (!node || typeof node !== 'object') return false;
+                    const discriminator = node.$type || node.Kind || node.kind || node.Type || node.type || '';
+                    return String(discriminator).toLowerCase() === 'drawing'
+                        || (!!(node.ObjectId || node.objectId) && !!(node.Layout || node.layout) && (
+                            !!(node.Image || node.image || node.Url || node.url || node.AssetId || node.assetId || node.DrawingKind || node.drawingKind)
+                            || node.Source !== undefined
+                            || node.source !== undefined));
+                }
+
+                function normalizeWrapMode(mode) {
+                    const raw = String(mode ?? '').trim();
+                    if (raw === '0') return 'Inline';
+                    if (raw === '1') return 'Square';
+                    if (raw === '2') return 'Tight';
+                    if (raw === '3') return 'Through';
+                    if (raw === '4') return 'TopBottom';
+                    if (raw === '5') return 'BehindText';
+                    if (raw === '6') return 'InFrontOfText';
+                    return raw || 'Inline';
+                }
+
+                function normalizeAnchorRegion(region) {
+                    const raw = String(region ?? '').trim().toLowerCase();
+                    if (raw === '1' || raw === 'header') return 'Header';
+                    if (raw === '2' || raw === 'footer') return 'Footer';
+                    if (raw === '3' || raw === 'footnote') return 'Footnote';
+                    if (raw === '4' || raw === 'endnote') return 'Endnote';
+                    if (raw === '5' || raw === 'floatingobject' || raw === 'floating-object') return 'FloatingObject';
+                    if (raw === '6' || raw === 'tablecell' || raw === 'table-cell') return 'TableCell';
+                    if (raw === '7' || raw === 'comment') return 'Comment';
+                    return 'Body';
+                }
+            }
+            """,
+            new { hostSelector, blockId = blockId ?? string.Empty, objectId = objectId ?? string.Empty });
+
+    /// <summary>Diagnostic read-only helper: reads the visible rectangle of an image object.</summary>
+    protected static async Task<DocumentEditorRectProbe> ReadDocumentEditorImageRectAsync(
+        IPage page,
+        string imageId,
+        string hostSelector = DocumentEditorHostSelector)
+        => (await ReadDocumentEditorImageDiagnosticsAsync(page, imageId, hostSelector)).ImageRect;
+
+    /// <summary>Diagnostic read-only helper: reads visible text line intervals around an image object.</summary>
+    protected static async Task<DocumentEditorLineIntervalProbe[]> ReadDocumentEditorLineIntervalsAroundImageAsync(
+        IPage page,
+        string imageId,
+        string hostSelector = DocumentEditorHostSelector)
+        => (await ReadDocumentEditorImageDiagnosticsAsync(page, imageId, hostSelector)).LineIntervals;
+
+    /// <summary>Asserts that keyboard focus is still within the editable document host.</summary>
+    protected static async Task AssertDocumentEditorHostHasFocusAsync(IPage page, string hostSelector = DocumentEditorHostSelector)
+    {
+        var diagnostics = await ReadDocumentEditorImageDiagnosticsAsync(page, hostSelector: hostSelector);
+        if (!diagnostics.HostHasFocus)
+        {
+            throw new AssertFailedException($"Expected focus to remain inside the document editor host. Diagnostics: {diagnostics.Debug}");
+        }
+    }
+
     /// <summary>Types text one character at a time and captures strict frame probes after every character.</summary>
     protected async Task<IReadOnlyList<DocumentEditorFrameProbe>> TypeDocumentEditorTextByCharactersWithFrameProbesAsync(
         IPage page,
@@ -1267,10 +1894,14 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             """
             ({ hostSelector, imageIndex }) => {
                 const host = document.querySelector(hostSelector);
-                const figures = Array.from(host?.querySelectorAll('figure[data-block-id], figure.tm-wysiwyg-image, .tm-render-image-widget, [data-testid="phase18-image"]') || []);
+                const figures = Array.from(host?.querySelectorAll('figure[data-block-id], figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], [data-testid="phase18-image"]') || []);
                 const figure = figures[Math.max(0, Number(imageIndex) || 0)] || figures[0];
                 if (!figure) throw new Error('No image figure found for strict image drag/resize helper.');
-                const handle = figure.querySelector('[data-resize-handle="se"], [data-testid$="resize-handle-se"], .tm-wysiwyg-object-resize-handle--se, .tm-wysiwyg-image__resize-handle') || figure;
+                const objectId = figure.getAttribute('data-object-id') || figure.getAttribute('data-render-object-id') || '';
+                const overlay = objectId ? host?.querySelector?.(`[data-testid="document-wysiwyg-object-selection-overlay"][data-object-id="${CSS.escape(objectId)}"]`) : null;
+                const handle = overlay?.querySelector?.('[data-resize-handle="se"], [data-testid$="resize-handle-se"], .tm-wysiwyg-object-resize-handle--se')
+                    || figure.querySelector('[data-resize-handle="se"], [data-testid$="resize-handle-se"], .tm-wysiwyg-object-resize-handle--se, .tm-wysiwyg-image__resize-handle')
+                    || figure;
                 const rect = handle.getBoundingClientRect();
                 return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
             }
@@ -1481,7 +2112,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 }
 
                 function collectImageRects(root) {
-                    return Array.from(root?.querySelectorAll('figure[data-block-id], figure.tm-wysiwyg-image, .tm-render-image-widget, [data-testid="phase18-image"]') || [])
+                    return Array.from(root?.querySelectorAll('figure[data-block-id], figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], [data-testid="phase18-image"]') || [])
                         .map((figure, index) => ({
                             blockId: figure.getAttribute('data-block-id') || figure.getAttribute('data-render-block-id') || `image-${index}`,
                             rect: toRect((figure.querySelector('img') || figure).getBoundingClientRect())
@@ -3259,6 +3890,80 @@ public sealed class DocumentEditorRectProbe
     [JsonPropertyName("y")] public double Y { get; set; }
     [JsonPropertyName("width")] public double Width { get; set; }
     [JsonPropertyName("height")] public double Height { get; set; }
+}
+
+/// <summary>Image/caret diagnostics captured from the document editor runtime and visible DOM.</summary>
+public sealed class DocumentEditorImageDiagnosticsProbe
+{
+    [JsonPropertyName("instanceId")] public string InstanceId { get; set; } = string.Empty;
+    [JsonPropertyName("selectionMode")] public string SelectionMode { get; set; } = string.Empty;
+    [JsonPropertyName("activeImageId")] public string ActiveImageId { get; set; } = string.Empty;
+    [JsonPropertyName("caretBlockId")] public string CaretBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("caretOffset")] public int CaretOffset { get; set; }
+    [JsonPropertyName("caretRect")] public DocumentEditorRectProbe CaretRect { get; set; } = new();
+    [JsonPropertyName("anchorBlockId")] public string AnchorBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("anchorOffset")] public int AnchorOffset { get; set; }
+    [JsonPropertyName("topLevelImageBlockCount")] public int TopLevelImageBlockCount { get; set; }
+    [JsonPropertyName("drawingRunCount")] public int DrawingRunCount { get; set; }
+    [JsonPropertyName("imageRect")] public DocumentEditorRectProbe ImageRect { get; set; } = new();
+    [JsonPropertyName("lineIntervals")] public DocumentEditorLineIntervalProbe[] LineIntervals { get; set; } = [];
+    [JsonPropertyName("hostHasFocus")] public bool HostHasFocus { get; set; }
+    [JsonPropertyName("imageToolbarVisible")] public bool ImageToolbarVisible { get; set; }
+    [JsonPropertyName("runtimeSelectionJson")] public string RuntimeSelectionJson { get; set; } = "null";
+    [JsonPropertyName("documentModelJson")] public string DocumentModelJson { get; set; } = "null";
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Drawing run diagnostic read from the runtime document model.</summary>
+public sealed class DocumentEditorDrawingRunProbe
+{
+    [JsonPropertyName("blockId")] public string BlockId { get; set; } = string.Empty;
+    [JsonPropertyName("objectId")] public string ObjectId { get; set; } = string.Empty;
+    [JsonPropertyName("runId")] public string RunId { get; set; } = string.Empty;
+    [JsonPropertyName("anchorBlockId")] public string AnchorBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("anchorOffset")] public int AnchorOffset { get; set; }
+    [JsonPropertyName("inlineIndex")] public int InlineIndex { get; set; }
+    [JsonPropertyName("altText")] public string AltText { get; set; } = string.Empty;
+    [JsonPropertyName("url")] public string Url { get; set; } = string.Empty;
+    [JsonPropertyName("region")] public string Region { get; set; } = string.Empty;
+    [JsonPropertyName("tableId")] public string TableId { get; set; } = string.Empty;
+    [JsonPropertyName("cellId")] public string CellId { get; set; } = string.Empty;
+    [JsonPropertyName("headerFooterId")] public string HeaderFooterId { get; set; } = string.Empty;
+    [JsonPropertyName("wrapMode")] public string WrapMode { get; set; } = string.Empty;
+    [JsonPropertyName("width")] public double Width { get; set; }
+    [JsonPropertyName("height")] public double Height { get; set; }
+    [JsonPropertyName("cropLeft")] public double CropLeft { get; set; }
+    [JsonPropertyName("cropTop")] public double CropTop { get; set; }
+    [JsonPropertyName("cropRight")] public double CropRight { get; set; }
+    [JsonPropertyName("cropBottom")] public double CropBottom { get; set; }
+}
+
+/// <summary>Collapsed caret diagnostic for image parity tests.</summary>
+public sealed class DocumentEditorCaretProbe
+{
+    [JsonPropertyName("blockId")] public string BlockId { get; set; } = string.Empty;
+    [JsonPropertyName("offset")] public int Offset { get; set; }
+    [JsonPropertyName("rect")] public DocumentEditorRectProbe Rect { get; set; } = new();
+}
+
+/// <summary>Image anchor diagnostic read from the runtime document model.</summary>
+public sealed class DocumentEditorImageAnchorProbe
+{
+    [JsonPropertyName("imageId")] public string ImageId { get; set; } = string.Empty;
+    [JsonPropertyName("anchorBlockId")] public string AnchorBlockId { get; set; } = string.Empty;
+    [JsonPropertyName("anchorOffset")] public int AnchorOffset { get; set; }
+}
+
+/// <summary>Visible text interval near an image object.</summary>
+public sealed class DocumentEditorLineIntervalProbe
+{
+    [JsonPropertyName("blockId")] public string BlockId { get; set; } = string.Empty;
+    [JsonPropertyName("x")] public double X { get; set; }
+    [JsonPropertyName("y")] public double Y { get; set; }
+    [JsonPropertyName("width")] public double Width { get; set; }
+    [JsonPropertyName("height")] public double Height { get; set; }
+    [JsonPropertyName("leftAvailable")] public double LeftAvailable { get; set; }
+    [JsonPropertyName("rightAvailable")] public double RightAvailable { get; set; }
 }
 
 /// <summary>Visible geometry captured from the document editor DOM for regression recovery tests.</summary>

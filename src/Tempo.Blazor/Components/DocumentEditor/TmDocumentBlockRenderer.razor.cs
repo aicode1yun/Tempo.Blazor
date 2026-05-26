@@ -108,6 +108,8 @@ public partial class TmDocumentBlockRenderer : ComponentBase
         {
             builder.OpenComponent<TmDocumentInlineRenderer>(sequence++);
             builder.AddAttribute(sequence++, nameof(TmDocumentInlineRenderer.Inline), inline);
+            builder.AddAttribute(sequence++, nameof(TmDocumentInlineRenderer.DocumentId), DocumentId);
+            builder.AddAttribute(sequence++, nameof(TmDocumentInlineRenderer.ImageUrlResolver), ImageUrlResolver);
             builder.AddAttribute(sequence++, nameof(TmDocumentInlineRenderer.OnCommentSelected), OnCommentSelected);
             builder.CloseComponent();
         }

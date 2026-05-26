@@ -1,7 +1,53 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
 @using Tempo.Blazor.DocumentEditor.Models
 
-@if (Inline is DocumentNoteReferenceRun noteReference)
+@if (Inline is DocumentDrawingRun drawing)
+{
+    <span class="@GetDrawingClass(drawing)"
+          style="@GetDrawingFigureStyle(drawing)"
+          data-testid="document-drawing-object"
+          data-object-id="@drawing.ObjectId"
+          data-wrap-mode="@GetDrawingWrapMode(drawing)"
+          role="img"
+          aria-label="@GetDrawingAriaLabel(drawing)"
+          aria-hidden="@(drawing.IsDecorative ? "true" : null)">
+        @if (_isResolvingImage)
+        {
+            <span class="tm-document-image__loading">@Loc["TmDocumentEditor_ImageLoading"]</span>
+        }
+        else if (!string.IsNullOrWhiteSpace(DrawingImageUrl))
+        {
+            @if (!string.IsNullOrWhiteSpace(SafeDrawingLinkUrl))
+            {
+                <a class="tm-document-drawing__link"
+                   href="@SafeDrawingLinkUrl"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    <img class="tm-document-image__media"
+                         src="@DrawingImageUrl"
+                         alt="@GetDrawingAltText(drawing)"
+                         style="@GetDrawingImageStyle(drawing)" />
+                </a>
+            }
+            else
+            {
+                <img class="tm-document-image__media"
+                     src="@DrawingImageUrl"
+                     alt="@GetDrawingAltText(drawing)"
+                     style="@GetDrawingImageStyle(drawing)" />
+            }
+            @if (!string.IsNullOrWhiteSpace(drawing.Caption))
+            {
+                <span class="tm-document-image__caption">@drawing.Caption</span>
+            }
+        }
+        else
+        {
+            <span class="tm-document-image__broken">@Loc["TmDocumentEditor_ImageBroken"]</span>
+        }
+    </span>
+}
+else if (Inline is DocumentNoteReferenceRun noteReference)
 {
     <sup class="@InlineClass"
          data-note-id="@noteReference.NoteId"

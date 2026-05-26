@@ -2,11 +2,13 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using System.Globalization;
 using System.Text;
+using System.Xml.Linq;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Internal;
 using W = DocumentFormat.OpenXml.Wordprocessing;
 using A = DocumentFormat.OpenXml.Drawing;
 using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 
 namespace Tempo.Blazor.DocumentFormats.Docx;
 
@@ -39,6 +41,7 @@ public sealed class DocxPackageReader
     private readonly List<DocumentFormatPreservedPart> _preservedParts = [];
     private readonly Dictionary<string, string> _hyperlinks = new(StringComparer.Ordinal);
     private int _order;
+    private int _preservedDrawingIndex;
 
     /// <summary>Creates a DOCX package reader.</summary>
     public DocxPackageReader(WordprocessingDocument document, DocumentFormatImportOptions options)
@@ -68,17 +71,18 @@ public sealed class DocxPackageReader
             _hyperlinks[relationship.Id] = relationship.Uri.ToString();
         }
 
+        var bodyContext = new DocxPartReadContext(main, DocumentRenditionAnchorScope.Body);
         foreach (var element in main.Document.Body.Elements())
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (element is W.Paragraph paragraph)
             {
-                var blocks = await ReadParagraphAsync(paragraph, main, cancellationToken);
+                var blocks = await ReadParagraphAsync(paragraph, bodyContext, cancellationToken);
                 doc.Blocks.AddRange(blocks);
             }
             else if (element is W.Table table)
             {
-                doc.Blocks.Add(ReadTable(table));
+                doc.Blocks.Add(await ReadTableAsync(table, bodyContext, cancellationToken));
             }
             else if (element is W.SdtBlock sdtBlock)
             {
@@ -88,11 +92,11 @@ public sealed class DocxPackageReader
                     cancellationToken.ThrowIfCancellationRequested();
                     if (child is W.Paragraph sdtParagraph)
                     {
-                        doc.Blocks.AddRange(await ReadParagraphAsync(sdtParagraph, main, cancellationToken));
+                        doc.Blocks.AddRange(await ReadParagraphAsync(sdtParagraph, bodyContext, cancellationToken));
                     }
                     else if (child is W.Table sdtTable)
                     {
-                        doc.Blocks.Add(ReadTable(sdtTable));
+                        doc.Blocks.Add(await ReadTableAsync(sdtTable, bodyContext, cancellationToken));
                     }
                 }
 
@@ -112,9 +116,9 @@ public sealed class DocxPackageReader
             }
         }
 
-        doc.HeadersFooters.AddRange(ReadHeadersFooters(main));
-        doc.Notes.AddRange(ReadNotes(main));
-        doc.Comments.AddRange(ReadComments(main));
+        doc.HeadersFooters.AddRange(await ReadHeadersFootersAsync(main, cancellationToken));
+        doc.Notes.AddRange(await ReadNotesAsync(main, cancellationToken));
+        doc.Comments.AddRange(await ReadCommentsAsync(main, cancellationToken));
         doc.Revisions.AddRange(ReadRevisions(main.Document.Body));
         ReadSectionProperties(doc, main.Document.Body);
         PreserveUnsupportedParts();
@@ -198,7 +202,10 @@ public sealed class DocxPackageReader
         return "Imported DOCX";
     }
 
-    private async Task<List<DocumentBlock>> ReadParagraphAsync(W.Paragraph paragraph, MainDocumentPart mainPart, CancellationToken cancellationToken)
+    private async Task<List<DocumentBlock>> ReadParagraphAsync(
+        W.Paragraph paragraph,
+        DocxPartReadContext context,
+        CancellationToken cancellationToken)
     {
         var blocks = new List<DocumentBlock>();
         var pageBreakSeen = false;
@@ -207,37 +214,26 @@ public sealed class DocxPackageReader
             pageBreakSeen = true;
         }
 
-        foreach (var drawing in paragraph.Descendants<W.Drawing>())
-        {
-            var image = await ReadImageAsync(drawing, mainPart, cancellationToken);
-            if (image is not null)
-            {
-                blocks.Add(new DocumentBlock
-                {
-                    Type = DocumentBlockType.Image,
-                    Order = _order++,
-                    Content = image
-                });
-            }
-        }
-
-        var inlines = ReadInlines(paragraph.ChildElements);
-        if (blocks.Count == 1
-            && blocks[0].Content is ImageBlockContent imageBlock
+        var inlines = await ReadInlinesAsync(paragraph.ChildElements, context, cancellationToken: cancellationToken);
+        var drawings = inlines.OfType<DocumentDrawingRun>().ToList();
+        if (drawings.Count == 1
             && TryReadImageCaption(paragraph, inlines, out var caption))
         {
-            imageBlock.Caption = caption;
-            inlines.Clear();
+            drawings[0].Caption = caption;
+            inlines.RemoveAll(inline => inline is TextRun);
         }
 
         if (inlines.Count > 0 || blocks.Count == 0)
         {
-            blocks.Insert(0, new DocumentBlock
+            var block = new DocumentBlock
             {
+                Id = ReadElementId(paragraph, "block-id"),
                 Type = GetParagraphType(paragraph, out var headingLevel, out var ordered, out var indent),
                 Order = _order++,
                 Content = CreateTextContent(paragraph, inlines, headingLevel, ordered, indent)
-            });
+            };
+            NormalizeDrawingAnchors(block, inlines);
+            blocks.Insert(0, block);
         }
 
         if (pageBreakSeen)
@@ -253,11 +249,38 @@ public sealed class DocxPackageReader
         return blocks;
     }
 
+    private static void NormalizeDrawingAnchors(DocumentBlock block, IReadOnlyList<InlineContent> inlines)
+    {
+        var offset = 0;
+        for (var index = 0; index < inlines.Count; index++)
+        {
+            if (inlines[index] is DocumentDrawingRun drawing)
+            {
+                drawing.Layout.Anchor.BlockId ??= block.Id;
+                drawing.Layout.Anchor.InlineIndex ??= index;
+                drawing.Layout.Anchor.Offset ??= offset;
+                continue;
+            }
+
+            if (inlines[index] is TextRun text)
+            {
+                offset += text.Text.Length;
+            }
+        }
+    }
+
     private static bool TryReadImageCaption(W.Paragraph paragraph, IReadOnlyList<InlineContent> inlines, out string caption)
     {
         caption = string.Empty;
+        if (inlines.Count(inline => inline is DocumentDrawingRun) != 1)
+        {
+            return false;
+        }
+
         var textAfterDrawing = new StringBuilder();
         var seenDrawing = false;
+        var seenBreakAfterDrawing = false;
+        var textBeforeDrawing = new StringBuilder();
 
         foreach (var child in paragraph.ChildElements)
         {
@@ -267,7 +290,22 @@ public sealed class DocxPackageReader
                 continue;
             }
 
-            if (seenDrawing)
+            if (!seenDrawing)
+            {
+                foreach (var text in child.Descendants<W.Text>())
+                {
+                    textBeforeDrawing.Append(text.Text);
+                }
+
+                continue;
+            }
+
+            if (child.Descendants<W.Break>().Any())
+            {
+                seenBreakAfterDrawing = true;
+            }
+
+            if (seenBreakAfterDrawing)
             {
                 foreach (var text in child.Descendants<W.Text>())
                 {
@@ -278,6 +316,11 @@ public sealed class DocxPackageReader
 
         caption = textAfterDrawing.ToString().Trim();
         if (string.IsNullOrWhiteSpace(caption))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(textBeforeDrawing.ToString()) || !seenBreakAfterDrawing)
         {
             return false;
         }
@@ -328,7 +371,11 @@ public sealed class DocxPackageReader
         };
     }
 
-    private List<InlineContent> ReadInlines(IEnumerable<OpenXmlElement> elements, List<InlineMark>? inheritedMarks = null)
+    private async Task<List<InlineContent>> ReadInlinesAsync(
+        IEnumerable<OpenXmlElement> elements,
+        DocxPartReadContext context,
+        List<InlineMark>? inheritedMarks = null,
+        CancellationToken cancellationToken = default)
     {
         var result = new List<InlineContent>();
         var inherited = inheritedMarks ?? [];
@@ -355,50 +402,365 @@ public sealed class DocxPackageReader
             if (element is W.Run run)
             {
                 var marks = MergeMarks(currentInherited, ReadRunMarks(run.RunProperties));
-                if (run.Descendants<W.Drawing>().Any())
-                {
-                    continue;
-                }
-
-                var text = string.Concat(run.Elements<W.Text>().Select(t => t.Text));
-                if (!string.IsNullOrEmpty(text))
-                {
-                    result.Add(new TextRun { Text = text, Marks = marks });
-                }
-
-                foreach (var noteRef in run.Elements<W.FootnoteReference>())
-                {
-                    result.Add(new DocumentNoteReferenceRun { NoteId = noteRef.Id?.ToString() ?? string.Empty, NoteType = DocumentNoteType.Footnote });
-                }
-
-                foreach (var noteRef in run.Elements<W.EndnoteReference>())
-                {
-                    result.Add(new DocumentNoteReferenceRun { NoteId = noteRef.Id?.ToString() ?? string.Empty, NoteType = DocumentNoteType.Endnote });
-                }
+                await ReadRunContentAsync(run, context, marks, result, cancellationToken);
             }
             else if (element is W.Hyperlink hyperlink)
             {
-                var href = hyperlink.Id is not null && _hyperlinks.TryGetValue(hyperlink.Id!, out var link)
+                var href = hyperlink.Id is not null && TryGetHyperlink(context.OwnerPart, hyperlink.Id!, out var link)
                     ? link
                     : hyperlink.Anchor?.Value ?? string.Empty;
                 var linkMarks = MergeMarks(currentInherited, [new InlineMark { Type = InlineMarkType.Link, Link = new LinkMarkData { Href = href } }]);
-                result.AddRange(ReadInlines(hyperlink.ChildElements, linkMarks));
+                result.AddRange(await ReadInlinesAsync(hyperlink.ChildElements, context, linkMarks, cancellationToken));
             }
             else if (element is W.InsertedRun inserted)
             {
                 var revisionId = $"docx-rev-{inserted.Id?.Value ?? Guid.NewGuid().ToString("N")}";
                 var marks = MergeMarks(currentInherited, [new InlineMark { Type = InlineMarkType.Revision, RevisionId = revisionId }]);
-                result.AddRange(ReadInlines(inserted.ChildElements, marks));
+                result.AddRange(await ReadInlinesAsync(inserted.ChildElements, context, marks, cancellationToken));
             }
             else if (element is W.DeletedRun deleted)
             {
                 var revisionId = $"docx-rev-{deleted.Id?.Value ?? Guid.NewGuid().ToString("N")}";
                 var marks = MergeMarks(currentInherited, [new InlineMark { Type = InlineMarkType.Revision, RevisionId = revisionId }]);
-                result.AddRange(ReadInlines(deleted.ChildElements, marks));
+                result.AddRange(await ReadInlinesAsync(deleted.ChildElements, context, marks, cancellationToken));
             }
         }
 
         return result;
+    }
+
+    private async Task ReadRunContentAsync(
+        W.Run run,
+        DocxPartReadContext context,
+        List<InlineMark> marks,
+        List<InlineContent> result,
+        CancellationToken cancellationToken)
+    {
+        foreach (var child in run.ChildElements)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (child is W.Text text && !string.IsNullOrEmpty(text.Text))
+            {
+                result.Add(new TextRun { Text = text.Text, Marks = marks.Select(CloneMark).ToList() });
+            }
+            else if (child is W.Drawing drawing)
+            {
+                var drawingRun = await ReadDrawingRunAsync(drawing, context, marks, cancellationToken);
+                if (drawingRun is not null)
+                {
+                    result.Add(drawingRun);
+                }
+            }
+            else if (child is W.FootnoteReference footnote)
+            {
+                result.Add(new DocumentNoteReferenceRun { NoteId = footnote.Id?.ToString() ?? string.Empty, NoteType = DocumentNoteType.Footnote });
+            }
+            else if (child is W.EndnoteReference endnote)
+            {
+                result.Add(new DocumentNoteReferenceRun { NoteId = endnote.Id?.ToString() ?? string.Empty, NoteType = DocumentNoteType.Endnote });
+            }
+            else if (child is W.TabChar)
+            {
+                result.Add(new TextRun { Text = "\t", Marks = marks.Select(CloneMark).ToList() });
+            }
+        }
+    }
+
+    private async Task<DocumentDrawingRun?> ReadDrawingRunAsync(
+        W.Drawing drawing,
+        DocxPartReadContext context,
+        IReadOnlyList<InlineMark> marks,
+        CancellationToken cancellationToken)
+    {
+        if (!ValidateDrawingForImageImport(drawing, context.OwnerPart))
+        {
+            return null;
+        }
+
+        var drawingRun = await ReadDrawingRunImageAsync(drawing, context.OwnerPart, cancellationToken);
+        if (drawingRun is null)
+        {
+            return null;
+        }
+
+        var link = marks.FirstOrDefault(mark => mark.Type == InlineMarkType.Link && mark.Link is not null)?.Link;
+        if (link is not null)
+        {
+            drawingRun.LinkUrl = link.Href;
+        }
+
+        drawingRun.Marks = marks
+            .Where(mark => mark.Type != InlineMarkType.Link)
+            .Select(CloneMark)
+            .ToList();
+        ApplyImportContext(drawingRun.Layout.Anchor, context);
+        ApplyImportedDrawingIdentity(drawingRun, drawing, drawingRun.Docx!, context);
+        return drawingRun;
+    }
+
+    private static void ApplyImportedDrawingIdentity(
+        DocumentDrawingRun drawingRun,
+        W.Drawing drawing,
+        DocumentDocxDrawingMetadata metadata,
+        DocxPartReadContext context)
+    {
+        var host = GetDrawingHost(drawing);
+        var objectId = host is null ? null : GetTempoAttribute(host, "object-id");
+        objectId ??= CreateStableImportedDrawingObjectId(metadata, context);
+        if (!string.IsNullOrWhiteSpace(objectId))
+        {
+            drawingRun.ObjectId = objectId;
+        }
+
+        var runId = host is null ? null : GetTempoAttribute(host, "run-id");
+        drawingRun.Id = FirstNonWhiteSpace(runId, drawingRun.Id, $"{drawingRun.ObjectId}-run");
+    }
+
+    private static OpenXmlElement? GetDrawingHost(W.Drawing drawing)
+        => (OpenXmlElement?)drawing.Descendants<DW.Inline>().FirstOrDefault()
+            ?? drawing.Descendants<DW.Anchor>().FirstOrDefault();
+
+    private static string CreateStableImportedDrawingObjectId(
+        DocumentDocxDrawingMetadata metadata,
+        DocxPartReadContext context)
+    {
+        var label = FirstNonWhiteSpace(
+            metadata.DocPrName,
+            metadata.PictureName,
+            metadata.DocPrDescription,
+            metadata.PictureDescription,
+            metadata.Media?.OriginalFileName,
+            metadata.Media?.ImagePartUri,
+            "drawing")!;
+        var source = string.Join("|",
+        [
+            context.Region.ToString(),
+            context.HeaderFooterId ?? string.Empty,
+            context.TableId ?? string.Empty,
+            context.CellId ?? string.Empty,
+            metadata.DocPrId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            metadata.DocPrName ?? string.Empty,
+            metadata.DocPrDescription ?? string.Empty,
+            metadata.PictureNonVisualId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            metadata.PictureName ?? string.Empty,
+            metadata.PictureDescription ?? string.Empty,
+            metadata.Media?.SourcePartUri ?? string.Empty,
+            metadata.Media?.ImagePartUri ?? string.Empty
+        ]);
+
+        return $"docx-{SlugForId(label)}-{StableHash(source)}";
+    }
+
+    private static string SlugForId(string value)
+    {
+        var builder = new StringBuilder();
+        foreach (var character in value.Trim().ToLowerInvariant())
+        {
+            if ((character >= 'a' && character <= 'z') || (character >= '0' && character <= '9'))
+            {
+                builder.Append(character);
+            }
+            else if (builder.Length > 0 && builder[^1] != '-')
+            {
+                builder.Append('-');
+            }
+
+            if (builder.Length >= 36)
+            {
+                break;
+            }
+        }
+
+        var slug = builder.ToString().Trim('-');
+        return string.IsNullOrWhiteSpace(slug) ? "drawing" : slug;
+    }
+
+    private static string StableHash(string value)
+    {
+        unchecked
+        {
+            var hash = 2166136261u;
+            foreach (var character in value)
+            {
+                hash ^= character;
+                hash *= 16777619u;
+            }
+
+            return hash.ToString("x8", CultureInfo.InvariantCulture);
+        }
+    }
+
+    private static string? CreateDrawingWarningObjectId(W.Drawing drawing, OpenXmlPartContainer ownerPart)
+    {
+        var host = GetDrawingHost(drawing);
+        var objectId = host is null ? null : GetTempoAttribute(host, "object-id");
+        if (!string.IsNullOrWhiteSpace(objectId))
+        {
+            return objectId;
+        }
+
+        var docPr = drawing.Descendants<DW.DocProperties>().FirstOrDefault();
+        var pictureProperties = drawing.Descendants<PIC.NonVisualDrawingProperties>().FirstOrDefault();
+        var label = FirstNonWhiteSpace(
+            docPr?.Name?.Value,
+            pictureProperties?.Name?.Value,
+            docPr?.Description?.Value,
+            pictureProperties?.Description?.Value,
+            "drawing")!;
+        var source = string.Join("|",
+        [
+            GetPartSourcePath(ownerPart),
+            ToInvariantString(docPr?.Id),
+            docPr?.Name?.Value ?? string.Empty,
+            docPr?.Description?.Value ?? string.Empty,
+            ToInvariantString(pictureProperties?.Id),
+            pictureProperties?.Name?.Value ?? string.Empty,
+            pictureProperties?.Description?.Value ?? string.Empty
+        ]);
+
+        return $"docx-{SlugForId(label)}-{StableHash(source)}";
+    }
+
+    private static string ToInvariantString(UInt32Value? value)
+        => value is null ? string.Empty : value.Value.ToString(CultureInfo.InvariantCulture);
+
+    private static bool IsSafePackagePartPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        var normalized = path.Replace('\\', '/');
+        return normalized.StartsWith("/", StringComparison.Ordinal)
+            && !normalized.Split('/', StringSplitOptions.RemoveEmptyEntries).Any(segment =>
+                segment.Equals("..", StringComparison.Ordinal)
+                || segment.Contains(':', StringComparison.Ordinal));
+    }
+
+    private bool ValidateDrawingForImageImport(W.Drawing drawing, OpenXmlPartContainer ownerPart)
+    {
+        var sourcePath = GetPartSourcePath(ownerPart);
+        var host = (OpenXmlElement?)drawing.Descendants<DW.Inline>().FirstOrDefault()
+            ?? drawing.Descendants<DW.Anchor>().FirstOrDefault();
+        if (host is null)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingHostMissing",
+                "DOCX drawing is missing wp:inline/wp:anchor and cannot be imported as an editor image.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                sourcePath));
+            PreserveUnsupportedDrawingXml(drawing, sourcePath, "host-missing");
+            return false;
+        }
+
+        var graphicData = drawing.Descendants<A.GraphicData>().FirstOrDefault();
+        if (graphicData is null)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingGraphicDataMissing",
+                "DOCX drawing is missing a:graphicData and cannot be imported as an editor image.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                sourcePath));
+            PreserveUnsupportedDrawingXml(drawing, sourcePath, "graphicData-missing");
+            return false;
+        }
+
+        var hasPicture = graphicData.Descendants<PIC.Picture>().Any();
+        var uri = graphicData.Uri?.Value ?? string.Empty;
+        if (!hasPicture)
+        {
+            var (code, label) = ClassifyUnsupportedGraphicData(uri, graphicData);
+            _warnings.Add(Warning(
+                code,
+                $"DOCX drawing graphicData '{label}' is not an image picture and was preserved as unsupported DrawingML metadata.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                sourcePath));
+            PreserveUnsupportedDrawingXml(drawing, sourcePath, label);
+            return false;
+        }
+
+        if (host.GetFirstChild<DW.Extent>() is null)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingExtentMissing",
+                "DOCX image drawing is missing wp:extent; the importer used a default image size.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                sourcePath));
+        }
+
+        if (host.GetFirstChild<DW.DocProperties>() is null)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingDocPrMissing",
+                "DOCX image drawing is missing wp:docPr metadata.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                sourcePath));
+        }
+
+        return true;
+    }
+
+    private static (string Code, string Label) ClassifyUnsupportedGraphicData(string uri, A.GraphicData graphicData)
+    {
+        if (uri.Contains("chart", StringComparison.OrdinalIgnoreCase)
+            || graphicData.Descendants().Any(element => element.LocalName.Equals("chart", StringComparison.OrdinalIgnoreCase)))
+        {
+            return ("docx.drawingChartUnsupported", "chart");
+        }
+
+        if (uri.Contains("diagram", StringComparison.OrdinalIgnoreCase)
+            || graphicData.Descendants().Any(element => element.LocalName.Equals("relIds", StringComparison.OrdinalIgnoreCase)))
+        {
+            return ("docx.drawingSmartArtUnsupported", "smartArt");
+        }
+
+        if (uri.Contains("wordprocessingCanvas", StringComparison.OrdinalIgnoreCase)
+            || graphicData.Descendants().Any(element =>
+                element.LocalName.Equals("wpc", StringComparison.OrdinalIgnoreCase)
+                || element.LocalName.Equals("grpSp", StringComparison.OrdinalIgnoreCase)))
+        {
+            return ("docx.drawingCanvasGroupUnsupported", "canvas-group");
+        }
+
+        return ("docx.drawingUnsupportedGraphicData", string.IsNullOrWhiteSpace(uri) ? "unknown" : uri);
+    }
+
+    private void PreserveUnsupportedDrawingXml(W.Drawing drawing, string sourcePath, string reason)
+    {
+        var rawXml = ReadRawDrawingXml(drawing, sourcePath, warningCode: "docx.rawDrawingXmlTooLarge");
+        if (string.IsNullOrWhiteSpace(rawXml))
+        {
+            return;
+        }
+
+        _preservedDrawingIndex++;
+        _preservedParts.Add(new DocumentFormatPreservedPart
+        {
+            Path = $"{sourcePath}#drawing/{_preservedDrawingIndex}-{reason}.xml",
+            ContentType = "application/vnd.openxmlformats-officedocument.drawingml+xml",
+            Content = Encoding.UTF8.GetBytes(rawXml)
+        });
+    }
+
+    private static void ApplyImportContext(DocumentObjectAnchor anchor, DocxPartReadContext context)
+    {
+        anchor.Region = context.Region;
+        anchor.HeaderFooterId = context.HeaderFooterId ?? anchor.HeaderFooterId;
+        anchor.TableId = context.TableId ?? anchor.TableId;
+        anchor.CellId = context.CellId ?? anchor.CellId;
+    }
+
+    private bool TryGetHyperlink(OpenXmlPartContainer ownerPart, string relationshipId, out string href)
+    {
+        var relationship = ownerPart.HyperlinkRelationships.FirstOrDefault(item => item.Id == relationshipId);
+        if (relationship is not null)
+        {
+            href = relationship.Uri.ToString();
+            return true;
+        }
+
+        return _hyperlinks.TryGetValue(relationshipId, out href!);
     }
 
     private static List<InlineMark> ReadRunMarks(W.RunProperties? properties)
@@ -437,8 +799,12 @@ public sealed class DocxPackageReader
         };
     }
 
-    private DocumentBlock ReadTable(W.Table table)
+    private async Task<DocumentBlock> ReadTableAsync(
+        W.Table table,
+        DocxPartReadContext context,
+        CancellationToken cancellationToken)
     {
+        var tableId = ReadElementId(table, "block-id");
         var tableProperties = table.GetFirstChild<W.TableProperties>();
         var tableLayout = new TableLayoutContent
         {
@@ -452,21 +818,30 @@ public sealed class DocxPackageReader
             var cells = new List<TableCellContent>();
             foreach (var cell in row.Elements<W.TableCell>())
             {
+                var cellId = ReadElementId(cell, "cell-id");
+                var cellContext = context.ForTableCell(tableId, cellId);
                 var properties = cell.TableCellProperties;
                 var columnSpan = Math.Max(1, properties?.GridSpan?.Val?.Value ?? 1);
                 var verticalMerge = properties?.VerticalMerge;
                 var rowSpan = verticalMerge?.Val?.Value == W.MergedCellValues.Restart ? 2 : 1;
-                var blocks = cell.Elements<W.Paragraph>()
-                    .Select(p => new DocumentBlock
+                var blocks = new List<DocumentBlock>();
+                foreach (var paragraph in cell.Elements<W.Paragraph>())
+                {
+                    var inlines = await ReadInlinesAsync(paragraph.ChildElements, cellContext, cancellationToken: cancellationToken);
+                    var block = new DocumentBlock
                     {
+                        Id = ReadElementId(paragraph, "block-id"),
                         Type = DocumentBlockType.Paragraph,
                         Order = 0,
-                        Content = new ParagraphBlockContent { Inlines = ReadInlines(p.ChildElements) }
-                    })
-                    .ToList();
+                        Content = new ParagraphBlockContent { Inlines = inlines }
+                    };
+                    NormalizeDrawingAnchors(block, inlines);
+                    blocks.Add(block);
+                }
 
                 cells.Add(new TableCellContent
                 {
+                    Id = cellId,
                     ColumnSpan = columnSpan,
                     RowSpan = rowSpan,
                     Merge = new TableCellMerge { IsOrigin = verticalMerge?.Val?.Value != W.MergedCellValues.Continue },
@@ -482,6 +857,7 @@ public sealed class DocxPackageReader
 
         return new DocumentBlock
         {
+            Id = tableId,
             Type = DocumentBlockType.Table,
             Order = _order++,
             Content = new TableBlockContent { Layout = tableLayout, Rows = rows }
@@ -490,8 +866,8 @@ public sealed class DocxPackageReader
 
     private static double? TwipsToNullablePoints(string? value)
     {
-        return double.TryParse(value, out var twips) && twips > 0
-            ? Math.Round(twips / 20d, 2)
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var twips) && twips > 0
+            ? Math.Round(DocxUnitConverter.TwipToPoint(twips), 2)
             : null;
     }
 
@@ -539,25 +915,114 @@ public sealed class DocxPackageReader
             : null;
     }
 
-    private async Task<ImageBlockContent?> ReadImageAsync(W.Drawing drawing, MainDocumentPart mainPart, CancellationToken cancellationToken)
+    private async Task<DocumentDrawingRun?> ReadDrawingRunImageAsync(W.Drawing drawing, OpenXmlPartContainer ownerPart, CancellationToken cancellationToken)
     {
+        var sourcePath = GetPartSourcePath(ownerPart);
+        var warningObjectId = CreateDrawingWarningObjectId(drawing, ownerPart);
         var blip = drawing.Descendants<A.Blip>().FirstOrDefault();
+        if (blip is null)
+        {
+            _warnings.Add(Warning(
+                "docx.imageBlipMissing",
+                "DOCX picture is missing a:blip and cannot be imported as an embedded image.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                sourcePath,
+                warningObjectId));
+            return null;
+        }
+
         var relationshipId = blip?.Embed?.Value;
         if (string.IsNullOrWhiteSpace(relationshipId))
         {
+            if (!string.IsNullOrWhiteSpace(blip?.Link?.Value))
+            {
+                _warnings.Add(Warning(
+                    "docx.imageExternalReference",
+                    "DOCX image uses an external relationship, which is not imported as embedded image data.",
+                    DocumentFormatCompatibilitySeverity.Dropped,
+                    sourcePath,
+                    warningObjectId));
+            }
+            else
+            {
+                _warnings.Add(Warning(
+                    "docx.imageRelationshipMissing",
+                    "DOCX picture blip does not contain an embedded image relationship.",
+                    DocumentFormatCompatibilitySeverity.Dropped,
+                    sourcePath,
+                    warningObjectId));
+            }
+
             return null;
         }
 
-        if (mainPart.GetPartById(relationshipId) is not ImagePart imagePart)
+        if (!ownerPart.TryGetPartById(relationshipId, out var part) || part is not ImagePart imagePart)
         {
+            _warnings.Add(Warning(
+                "docx.imageMissingPart",
+                $"DOCX image relationship '{relationshipId}' does not resolve to a readable image part.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                sourcePath,
+                warningObjectId));
             return null;
         }
 
-        await using var stream = imagePart.GetStream(FileMode.Open, FileAccess.Read);
+        var imagePartPath = imagePart.Uri.ToString();
+        if (!IsSafePackagePartPath(imagePartPath))
+        {
+            _warnings.Add(Warning(
+                "docx.imageUnsafePartPath",
+                $"DOCX image part '{imagePartPath}' has an unsafe package path and was not imported.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                imagePartPath,
+                warningObjectId));
+            return null;
+        }
+
         using var memory = new MemoryStream();
-        await stream.CopyToAsync(memory, cancellationToken);
+        try
+        {
+            await using var stream = imagePart.GetStream(FileMode.Open, FileAccess.Read);
+            if (!await CopyImagePartWithinLimitAsync(stream, memory, imagePartPath, warningObjectId, cancellationToken))
+            {
+                return null;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or OpenXmlPackageException)
+        {
+            _warnings.Add(Warning(
+                "docx.imageUnreadablePart",
+                $"DOCX image part '{imagePart.Uri}' could not be read.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                imagePartPath,
+                warningObjectId));
+            return null;
+        }
+
         var bytes = memory.ToArray();
         var fileName = Path.GetFileName(imagePart.Uri.ToString());
+        if (DocxImageContentTypeMapper.HasContentTypeSignatureMismatch(imagePart.ContentType, bytes, out var detectedContentType))
+        {
+            _warnings.Add(Warning(
+                "docx.imageContentTypeMismatch",
+                $"DOCX image part '{imagePart.Uri}' declares content type '{imagePart.ContentType}' but its byte signature is '{detectedContentType}'.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                imagePartPath,
+                warningObjectId));
+            return null;
+        }
+
+        if (!DocxImageContentTypeMapper.TryResolve(imagePart.ContentType, fileName, bytes, out var partInfo))
+        {
+            _warnings.Add(Warning(
+                "docx.imageUnsupportedContentType",
+                $"DOCX image part '{imagePart.Uri}' has unsupported content type '{imagePart.ContentType}'.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                imagePartPath,
+                warningObjectId));
+            return null;
+        }
+
         var assetId = relationshipId;
         string? url = null;
 
@@ -566,7 +1031,7 @@ public sealed class DocxPackageReader
             var imported = await _options.ImageImporter(new DocumentFormatImageImportRequest
             {
                 SourcePath = imagePart.Uri.ToString(),
-                ContentType = imagePart.ContentType,
+                ContentType = partInfo.ContentType,
                 Content = bytes,
                 FileName = fileName
             }, cancellationToken);
@@ -575,31 +1040,311 @@ public sealed class DocxPackageReader
         }
         else
         {
-            url = $"data:{imagePart.ContentType};base64,{Convert.ToBase64String(bytes)}";
+            url = $"data:{partInfo.ContentType};base64,{Convert.ToBase64String(bytes)}";
         }
 
-        var layout = ReadObjectLayout(drawing);
+        var metadata = CreateDrawingMetadata(drawing, ownerPart, imagePart, relationshipId, partInfo, fileName);
+        var layout = ReadObjectLayout(drawing, metadata);
         var extent = drawing.Descendants<DW.Extent>().FirstOrDefault();
         var size = new DocumentImageSize
         {
-            Width = extent?.Cx is null ? 120 : Math.Round(extent.Cx.Value / 12700d, 2),
-            Height = extent?.Cy is null ? 90 : Math.Round(extent.Cy.Value / 12700d, 2)
+            Width = extent?.Cx is null ? 120 : Math.Round(DocxUnitConverter.EmuToPoint(extent.Cx.Value), 2),
+            Height = extent?.Cy is null ? 90 : Math.Round(DocxUnitConverter.EmuToPoint(extent.Cy.Value), 2)
         };
         layout.Transform.Width = size.Width;
         layout.Transform.Height = size.Height;
+        var altText = FirstNonWhiteSpace(metadata.PictureDescription, metadata.DocPrDescription);
 
-        return new ImageBlockContent
+        return new DocumentDrawingRun
         {
             Source = url is not null ? DocumentImageSource.Url : DocumentImageSource.Asset,
             Url = url,
             AssetId = url is null ? assetId : null,
-            AltText = drawing.Descendants<DocumentFormat.OpenXml.Drawing.Pictures.NonVisualDrawingProperties>().FirstOrDefault()?.Description?.Value,
+            AltText = altText,
             Size = size,
-            Layout = layout
+            Layout = layout,
+            Docx = metadata
         };
     }
 
-    private static DocumentObjectLayout ReadObjectLayout(W.Drawing drawing)
+    private string? ReadRawDrawingXml(W.Drawing drawing, string sourcePath, string warningCode)
+    {
+        var rawXml = drawing.OuterXml;
+        if (string.IsNullOrWhiteSpace(rawXml))
+        {
+            return null;
+        }
+
+        var limit = Math.Max(1, _options.MaxRawDrawingXmlChars);
+        if (rawXml.Length > limit)
+        {
+            _warnings.Add(Warning(
+                warningCode,
+                $"DOCX raw DrawingML payload in '{sourcePath}' is larger than the configured import limit of {limit} characters.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                sourcePath));
+            return null;
+        }
+
+        return rawXml;
+    }
+
+    private async Task<bool> CopyImagePartWithinLimitAsync(
+        Stream source,
+        MemoryStream destination,
+        string sourcePath,
+        string? objectId,
+        CancellationToken cancellationToken)
+    {
+        var maxBytes = Math.Max(1L, _options.MaxImagePartBytes);
+        if (source.CanSeek && source.Length > maxBytes)
+        {
+            _warnings.Add(Warning(
+                "docx.imagePartTooLarge",
+                $"DOCX image part '{sourcePath}' is larger than the configured import limit of {maxBytes} bytes.",
+                DocumentFormatCompatibilitySeverity.Dropped,
+                sourcePath,
+                objectId));
+            return false;
+        }
+
+        var buffer = new byte[81920];
+        long total = 0;
+        while (true)
+        {
+            var read = await source.ReadAsync(buffer, cancellationToken);
+            if (read == 0)
+            {
+                return true;
+            }
+
+            total += read;
+            if (total > maxBytes)
+            {
+                _warnings.Add(Warning(
+                    "docx.imagePartTooLarge",
+                    $"DOCX image part '{sourcePath}' is larger than the configured import limit of {maxBytes} bytes.",
+                    DocumentFormatCompatibilitySeverity.Dropped,
+                    sourcePath,
+                    objectId));
+                return false;
+            }
+
+            destination.Write(buffer, 0, read);
+        }
+    }
+
+    private DocumentDocxDrawingMetadata CreateDrawingMetadata(
+        W.Drawing drawing,
+        OpenXmlPartContainer ownerPart,
+        ImagePart imagePart,
+        string relationshipId,
+        DocxImagePartInfo partInfo,
+        string? fileName)
+    {
+        var docPr = drawing.Descendants<DW.DocProperties>().FirstOrDefault();
+        var pictureProperties = drawing.Descendants<PIC.NonVisualDrawingProperties>().FirstOrDefault();
+        var blip = drawing.Descendants<A.Blip>().FirstOrDefault();
+        var blipFill = drawing.Descendants<PIC.BlipFill>().FirstOrDefault();
+        var shapeProperties = drawing.Descendants<PIC.ShapeProperties>().FirstOrDefault();
+        var anchor = drawing.Descendants<DW.Anchor>().FirstOrDefault();
+        var simplePosition = anchor?.GetFirstChild<DW.SimplePosition>();
+        var fillMode = ReadBlipFillMode(blipFill);
+        var presetGeometry = ReadPresetGeometry(drawing, shapeProperties);
+        var unsupportedGeometry = !IsRectPreset(presetGeometry);
+        var sourcePath = GetPartSourcePath(ownerPart);
+        var hasUnsupportedEffects = HasUnsupportedPictureEffects(shapeProperties);
+        if (hasUnsupportedEffects)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingUnsupportedEffectPreserved",
+                "DOCX picture contains DrawingML effects that are not editable in the editor; raw DrawingML was preserved for export fallback.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                sourcePath));
+        }
+
+        return new DocumentDocxDrawingMetadata
+        {
+            DocPrId = docPr?.Id?.Value,
+            DocPrName = docPr?.Name?.Value,
+            DocPrTitle = docPr?.Title?.Value,
+            DocPrDescription = docPr?.Description?.Value,
+            PictureNonVisualId = pictureProperties?.Id?.Value,
+            PictureName = pictureProperties?.Name?.Value,
+            PictureDescription = pictureProperties?.Description?.Value,
+            RelationshipId = relationshipId,
+            ImageReferenceMode = DocumentDocxImageReferenceMode.Embedded,
+            BlipCompressionState = blip?.CompressionState?.Value.ToString(),
+            BlipFillMode = fillMode,
+            RawBlipFillXml = fillMode == DocumentDocxBlipFillMode.Tile || fillMode == DocumentDocxBlipFillMode.Unknown
+                ? blipFill?.OuterXml
+                : null,
+            PresetGeometry = presetGeometry,
+            RawShapePropertiesXml = unsupportedGeometry ? shapeProperties?.OuterXml : null,
+            RawDrawingXml = hasUnsupportedEffects ? ReadRawDrawingXml(drawing, sourcePath, "docx.rawDrawingXmlTooLarge") : null,
+            Media = new DocumentImageMediaInfo
+            {
+                SourcePartUri = ownerPart is OpenXmlPart sourcePart ? sourcePart.Uri.ToString() : null,
+                ImagePartUri = imagePart.Uri.ToString(),
+                ContentType = partInfo.ContentType,
+                OriginalFileName = fileName,
+                Extension = partInfo.Extension
+            },
+            EffectExtent = ReadEffectExtent(drawing),
+            LayoutInCell = anchor?.LayoutInCell?.Value,
+            Hidden = anchor?.Hidden?.Value,
+            UsesSimplePosition = anchor?.SimplePos?.Value,
+            SimplePosition = simplePosition is null
+                ? null
+                : new DocumentObjectPoint
+                {
+                    X = simplePosition.X?.Value ?? 0L,
+                    Y = simplePosition.Y?.Value ?? 0L
+                },
+            AnchorId = anchor?.AnchorId?.Value,
+            EditId = anchor?.EditId?.Value
+        };
+    }
+
+    private static bool HasUnsupportedPictureEffects(PIC.ShapeProperties? shapeProperties)
+    {
+        if (shapeProperties is null)
+        {
+            return false;
+        }
+
+        return shapeProperties.Descendants<A.EffectList>().Any(effectList => effectList.ChildElements.Count > 0)
+            || shapeProperties.Descendants<A.EffectDag>().Any()
+            || shapeProperties.Descendants().Any(element => element.LocalName is "outerShdw" or "innerShdw" or "glow" or "softEdge" or "reflection" or "scene3d" or "sp3d");
+    }
+
+    private DocumentDocxBlipFillMode ReadBlipFillMode(PIC.BlipFill? blipFill)
+    {
+        if (blipFill is null)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingBlipFillMissing",
+                "DOCX picture is missing pic:blipFill; stretch/fillRect fallback metadata was used.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                "word/document.xml"));
+            return DocumentDocxBlipFillMode.Unknown;
+        }
+
+        if (blipFill.GetFirstChild<A.Tile>() is not null)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingBlipFillTileUnsupported",
+                "DOCX picture uses DrawingML tile fill, which is preserved in metadata but rendered as stretch/fillRect in the editor.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                "word/document.xml"));
+            return DocumentDocxBlipFillMode.Tile;
+        }
+
+        if (blipFill.GetFirstChild<A.Stretch>() is not null)
+        {
+            return DocumentDocxBlipFillMode.Stretch;
+        }
+
+        _warnings.Add(Warning(
+            "docx.drawingBlipFillUnsupported",
+            "DOCX picture uses an unsupported blip fill mode, which is preserved in metadata but rendered as stretch/fillRect in the editor.",
+            DocumentFormatCompatibilitySeverity.Warning,
+            "word/document.xml"));
+        return DocumentDocxBlipFillMode.Unknown;
+    }
+
+    private string? ReadPresetGeometry(W.Drawing drawing, PIC.ShapeProperties? shapeProperties)
+    {
+        var presetGeometry = (OpenXmlElement?)shapeProperties?.GetFirstChild<A.PresetGeometry>()
+            ?? shapeProperties?.ChildElements.FirstOrDefault(element => element.LocalName == "prstGeom")
+            ?? drawing.Descendants().FirstOrDefault(element => element.LocalName == "prstGeom");
+        var value = (presetGeometry as A.PresetGeometry)?.Preset?.Value.ToString();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            value = presetGeometry?.GetAttribute("prst", string.Empty).Value;
+        }
+
+        var rawValue = ReadPresetGeometryFromRawXml(drawing.OuterXml);
+        if (!string.IsNullOrWhiteSpace(rawValue))
+        {
+            value = rawValue;
+        }
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (!IsRectPreset(value))
+        {
+            _warnings.Add(Warning(
+                "docx.drawingPresetGeometryFallback",
+                $"DOCX picture preset geometry '{value}' is preserved in metadata but rendered as rectangular image geometry in the editor.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                "word/document.xml"));
+        }
+
+        return value;
+    }
+
+    private static string? ReadPresetGeometryFromRawXml(string? xml)
+    {
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            return null;
+        }
+
+        try
+        {
+            return XDocument.Parse(xml)
+                .Descendants()
+                .FirstOrDefault(element => element.Name.LocalName == "prstGeom")
+                ?.Attribute("prst")
+                ?.Value;
+        }
+        catch (System.Xml.XmlException)
+        {
+            return null;
+        }
+    }
+
+    private static bool IsRectPreset(string? preset)
+        => string.IsNullOrWhiteSpace(preset)
+            || preset.Equals("rect", StringComparison.OrdinalIgnoreCase)
+            || preset.Equals(A.ShapeTypeValues.Rectangle.ToString(), StringComparison.OrdinalIgnoreCase);
+
+    private static DocumentObjectEffectExtent ReadEffectExtent(W.Drawing drawing)
+    {
+        var extent = drawing.Descendants<DW.EffectExtent>().FirstOrDefault();
+        return new DocumentObjectEffectExtent
+        {
+            Left = extent?.LeftEdge?.Value ?? 0L,
+            Top = extent?.TopEdge?.Value ?? 0L,
+            Right = extent?.RightEdge?.Value ?? 0L,
+            Bottom = extent?.BottomEdge?.Value ?? 0L
+        };
+    }
+
+    private static string? FirstNonWhiteSpace(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
+    private sealed record DocxPartReadContext(
+        OpenXmlPartContainer OwnerPart,
+        DocumentRenditionAnchorScope Region,
+        string? HeaderFooterId = null,
+        string? TableId = null,
+        string? CellId = null)
+    {
+        public DocxPartReadContext ForTableCell(string tableId, string cellId)
+            => this with
+            {
+                Region = DocumentRenditionAnchorScope.TableCell,
+                TableId = tableId,
+                CellId = cellId
+            };
+    }
+
+    private DocumentObjectLayout ReadObjectLayout(W.Drawing drawing, DocumentDocxDrawingMetadata? metadata = null)
     {
         var anchor = drawing.Descendants<DW.Anchor>().FirstOrDefault();
         var inline = drawing.Descendants<DW.Inline>().FirstOrDefault();
@@ -616,7 +1361,10 @@ public sealed class DocxPackageReader
                 drawing,
                 fallbackKind: DocumentObjectLayoutKind.Inline,
                 fallbackWrapMode: DocumentWrapMode.Inline,
+                fallbackWrapSide: DocumentObjectWrapSide.BothSides,
+                fallbackWrapContourPoints: [],
                 fallbackHorizontalPosition: null,
+                fallbackVerticalAlignment: DocumentObjectVerticalAlignment.None,
                 fallbackHorizontalRelativeTo: DocumentRelativePosition.Page,
                 fallbackVerticalRelativeTo: DocumentRelativePosition.Paragraph,
                 fallbackX: 0,
@@ -632,48 +1380,188 @@ public sealed class DocxPackageReader
 
         var horizontal = anchor.GetFirstChild<DW.HorizontalPosition>();
         var vertical = anchor.GetFirstChild<DW.VerticalPosition>();
-        var fallbackWrapMode = anchor.Descendants<DW.WrapTopBottom>().Any()
-            ? DocumentWrapMode.TopBottom
-            : anchor.BehindDoc?.Value == true
-                ? DocumentWrapMode.BehindText
-                : anchor.Descendants<DW.WrapNone>().Any()
-                    ? DocumentWrapMode.InFrontOfText
-                    : DocumentWrapMode.Square;
+        var wrapElement = GetWrapElement(anchor);
+        var fallbackWrapMode = GetWrapMode(anchor, wrapElement);
+        var extent = anchor.GetFirstChild<DW.Extent>();
 
         var hAlign = horizontal?.GetFirstChild<DW.HorizontalAlignment>()?.Text?.Trim().ToLowerInvariant();
-        DocumentImageHorizontalPosition? horizontalPosition = hAlign switch
-        {
-            "left" => DocumentImageHorizontalPosition.Left,
-            "center" => DocumentImageHorizontalPosition.Center,
-            "right" => DocumentImageHorizontalPosition.Right,
-            _ => null
-        };
+        var horizontalPosition = FromDocxHorizontalAlignment(hAlign);
+        var verticalAlignment = FromDocxVerticalAlignment(vertical?.GetFirstChild<DW.VerticalAlignment>()?.Text?.Trim().ToLowerInvariant());
+        var fallbackKind = IsFixedAnchor(horizontal, vertical)
+            ? DocumentObjectLayoutKind.Fixed
+            : DocumentObjectLayoutKind.Anchored;
 
         return ReadTempoLayout(
             layoutElement,
             drawing,
-            fallbackKind: DocumentObjectLayoutKind.Anchored,
+            fallbackKind: fallbackKind,
             fallbackWrapMode: fallbackWrapMode,
+            fallbackWrapSide: FromDocxWrapText(wrapElement),
+            fallbackWrapContourPoints: ReadWrapContourPoints(wrapElement, extent, fallbackWrapMode),
             fallbackHorizontalPosition: horizontalPosition,
+            fallbackVerticalAlignment: verticalAlignment,
             fallbackHorizontalRelativeTo: FromDocxHorizontalRelative(horizontal?.RelativeFrom?.Value),
             fallbackVerticalRelativeTo: FromDocxVerticalRelative(vertical?.RelativeFrom?.Value),
             fallbackX: EmuToPoint(horizontal?.GetFirstChild<DW.PositionOffset>()?.Text),
             fallbackY: EmuToPoint(vertical?.GetFirstChild<DW.PositionOffset>()?.Text),
-            fallbackDistanceLeft: EmuToPoint(anchor.DistanceFromLeft?.Value.ToString(CultureInfo.InvariantCulture)),
-            fallbackDistanceRight: EmuToPoint(anchor.DistanceFromRight?.Value.ToString(CultureInfo.InvariantCulture)),
-            fallbackDistanceTop: EmuToPoint(anchor.DistanceFromTop?.Value.ToString(CultureInfo.InvariantCulture)),
-            fallbackDistanceBottom: EmuToPoint(anchor.DistanceFromBottom?.Value.ToString(CultureInfo.InvariantCulture)),
+            fallbackDistanceLeft: ReadWrapDistanceLeft(wrapElement, anchor),
+            fallbackDistanceRight: ReadWrapDistanceRight(wrapElement, anchor),
+            fallbackDistanceTop: ReadWrapDistanceTop(wrapElement, anchor),
+            fallbackDistanceBottom: ReadWrapDistanceBottom(wrapElement, anchor),
             fallbackZIndex: (int)(anchor.RelativeHeight?.Value ?? 0),
             fallbackAllowOverlap: anchor.AllowOverlap?.Value == true,
             fallbackLockAnchor: anchor.Locked?.Value == true);
     }
+
+    private static bool IsFixedAnchor(DW.HorizontalPosition? horizontal, DW.VerticalPosition? vertical)
+        => horizontal?.RelativeFrom?.Value == DW.HorizontalRelativePositionValues.Page
+            && vertical?.RelativeFrom?.Value == DW.VerticalRelativePositionValues.Page;
+
+    private static OpenXmlElement? GetWrapElement(DW.Anchor anchor)
+        => anchor.ChildElements.FirstOrDefault(element =>
+            element is DW.WrapNone or DW.WrapSquare or DW.WrapTight or DW.WrapThrough or DW.WrapTopBottom);
+
+    private static DocumentWrapMode GetWrapMode(DW.Anchor anchor, OpenXmlElement? wrapElement)
+        => wrapElement switch
+        {
+            DW.WrapTopBottom => DocumentWrapMode.TopBottom,
+            DW.WrapTight => DocumentWrapMode.Tight,
+            DW.WrapThrough => DocumentWrapMode.Through,
+            DW.WrapNone => anchor.BehindDoc?.Value == true ? DocumentWrapMode.BehindText : DocumentWrapMode.InFrontOfText,
+            _ => DocumentWrapMode.Square
+        };
+
+    private static DocumentObjectWrapSide FromDocxWrapText(OpenXmlElement? wrapElement)
+    {
+        var value = wrapElement switch
+        {
+            DW.WrapSquare square => square.WrapText?.Value,
+            DW.WrapTight tight => tight.WrapText?.Value,
+            DW.WrapThrough through => through.WrapText?.Value,
+            _ => null
+        };
+
+        if (value == DW.WrapTextValues.Left)
+        {
+            return DocumentObjectWrapSide.Left;
+        }
+
+        if (value == DW.WrapTextValues.Right)
+        {
+            return DocumentObjectWrapSide.Right;
+        }
+
+        if (value == DW.WrapTextValues.Largest)
+        {
+            return DocumentObjectWrapSide.Largest;
+        }
+
+        return DocumentObjectWrapSide.BothSides;
+    }
+
+    private IReadOnlyList<DocumentObjectWrapPoint> ReadWrapContourPoints(OpenXmlElement? wrapElement, DW.Extent? extent, DocumentWrapMode mode)
+    {
+        if (mode is not (DocumentWrapMode.Tight or DocumentWrapMode.Through))
+        {
+            return [];
+        }
+
+        var polygon = wrapElement?.GetFirstChild<DW.WrapPolygon>();
+        if (polygon is null)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingWrapPolygonMissing",
+                "DOCX tight/through drawing wrap is missing wp:wrapPolygon; a rectangular contour fallback was imported.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                "word/document.xml"));
+            return DefaultWrapContourPoints();
+        }
+
+        var cx = extent?.Cx?.Value ?? 0L;
+        var cy = extent?.Cy?.Value ?? 0L;
+        if (cx <= 0 || cy <= 0)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingWrapPolygonExtentMissing",
+                "DOCX drawing wrap polygon could not be normalized because wp:extent is missing or empty; a rectangular contour fallback was imported.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                "word/document.xml"));
+            return DefaultWrapContourPoints();
+        }
+
+        var sourcePoints = new List<DW.Point2DType>();
+        if (polygon.GetFirstChild<DW.StartPoint>() is { } start)
+        {
+            sourcePoints.Add(start);
+        }
+
+        sourcePoints.AddRange(polygon.Elements<DW.LineTo>());
+        var points = sourcePoints
+            .Select(point => new DocumentObjectWrapPoint
+            {
+                X = Math.Clamp((double)(point.X?.Value ?? 0L) / cx, 0, 1),
+                Y = Math.Clamp((double)(point.Y?.Value ?? 0L) / cy, 0, 1)
+            })
+            .ToList();
+        if (points.Count >= 3)
+        {
+            return points;
+        }
+
+        _warnings.Add(Warning(
+            "docx.drawingWrapPolygonMissing",
+            "DOCX tight/through drawing wrap polygon has too few points; a rectangular contour fallback was imported.",
+            DocumentFormatCompatibilitySeverity.Warning,
+            "word/document.xml"));
+        return DefaultWrapContourPoints();
+    }
+
+    private static IReadOnlyList<DocumentObjectWrapPoint> DefaultWrapContourPoints()
+        =>
+        [
+            new() { X = 0, Y = 0 },
+            new() { X = 1, Y = 0 },
+            new() { X = 1, Y = 1 },
+            new() { X = 0, Y = 1 }
+        ];
+
+    private static double ReadWrapDistanceLeft(OpenXmlElement? wrapElement, DW.Anchor anchor)
+        => wrapElement switch
+        {
+            DW.WrapSquare square when square.DistanceFromLeft is not null => EmuToPoint(square.DistanceFromLeft.Value.ToString(CultureInfo.InvariantCulture)),
+            DW.WrapTight tight when tight.DistanceFromLeft is not null => EmuToPoint(tight.DistanceFromLeft.Value.ToString(CultureInfo.InvariantCulture)),
+            DW.WrapThrough through when through.DistanceFromLeft is not null => EmuToPoint(through.DistanceFromLeft.Value.ToString(CultureInfo.InvariantCulture)),
+            _ => EmuToPoint(anchor.DistanceFromLeft?.Value.ToString(CultureInfo.InvariantCulture))
+        };
+
+    private static double ReadWrapDistanceRight(OpenXmlElement? wrapElement, DW.Anchor anchor)
+        => wrapElement switch
+        {
+            DW.WrapSquare square when square.DistanceFromRight is not null => EmuToPoint(square.DistanceFromRight.Value.ToString(CultureInfo.InvariantCulture)),
+            DW.WrapTight tight when tight.DistanceFromRight is not null => EmuToPoint(tight.DistanceFromRight.Value.ToString(CultureInfo.InvariantCulture)),
+            DW.WrapThrough through when through.DistanceFromRight is not null => EmuToPoint(through.DistanceFromRight.Value.ToString(CultureInfo.InvariantCulture)),
+            _ => EmuToPoint(anchor.DistanceFromRight?.Value.ToString(CultureInfo.InvariantCulture))
+        };
+
+    private static double ReadWrapDistanceTop(OpenXmlElement? wrapElement, DW.Anchor anchor)
+        => wrapElement is DW.WrapSquare { DistanceFromTop: not null } square
+            ? EmuToPoint(square.DistanceFromTop.Value.ToString(CultureInfo.InvariantCulture))
+            : EmuToPoint(anchor.DistanceFromTop?.Value.ToString(CultureInfo.InvariantCulture));
+
+    private static double ReadWrapDistanceBottom(OpenXmlElement? wrapElement, DW.Anchor anchor)
+        => wrapElement is DW.WrapSquare { DistanceFromBottom: not null } square
+            ? EmuToPoint(square.DistanceFromBottom.Value.ToString(CultureInfo.InvariantCulture))
+            : EmuToPoint(anchor.DistanceFromBottom?.Value.ToString(CultureInfo.InvariantCulture));
 
     private static DocumentObjectLayout ReadTempoLayout(
         OpenXmlElement element,
         W.Drawing drawing,
         DocumentObjectLayoutKind fallbackKind,
         DocumentWrapMode fallbackWrapMode,
+        DocumentObjectWrapSide fallbackWrapSide,
+        IReadOnlyList<DocumentObjectWrapPoint> fallbackWrapContourPoints,
         DocumentImageHorizontalPosition? fallbackHorizontalPosition,
+        DocumentObjectVerticalAlignment fallbackVerticalAlignment,
         DocumentRelativePosition fallbackHorizontalRelativeTo,
         DocumentRelativePosition fallbackVerticalRelativeTo,
         double fallbackX,
@@ -699,6 +1587,9 @@ public sealed class DocxPackageReader
                 InlineIndex = ParseNullableInt(GetTempoAttribute(element, "anchor-inline-index")),
                 Offset = ParseNullableInt(GetTempoAttribute(element, "anchor-offset")),
                 Region = ParseEnum(GetTempoAttribute(element, "anchor-region"), DocumentRenditionAnchorScope.Body),
+                TableId = GetTempoAttribute(element, "table-id"),
+                CellId = GetTempoAttribute(element, "cell-id"),
+                HeaderFooterId = GetTempoAttribute(element, "header-footer-id"),
                 MoveWithText = ParseBool(GetTempoAttribute(element, "move-with-text"), kind != DocumentObjectLayoutKind.Fixed),
                 FixedOnPage = ParseBool(GetTempoAttribute(element, "fixed-on-page"), kind == DocumentObjectLayoutKind.Fixed),
                 LockAnchor = ParseBool(GetTempoAttribute(element, "lock-anchor"), fallbackLockAnchor)
@@ -710,15 +1601,17 @@ public sealed class DocxPackageReader
                 X = ParseDouble(GetTempoAttribute(element, "x"), fallbackX),
                 Y = ParseDouble(GetTempoAttribute(element, "y"), fallbackY),
                 HorizontalAlignment = horizontalPosition,
-                VerticalAlignment = ParseEnum(GetTempoAttribute(element, "vertical-alignment"), DocumentObjectVerticalAlignment.None)
+                VerticalAlignment = ParseEnum(GetTempoAttribute(element, "vertical-alignment"), fallbackVerticalAlignment)
             },
             Wrap = new DocumentObjectWrap
             {
                 Mode = ParseEnum(GetTempoAttribute(element, "wrap-mode"), fallbackWrapMode),
+                Side = ParseEnum(GetTempoAttribute(element, "wrap-side"), fallbackWrapSide),
                 DistanceLeft = ParseDouble(GetTempoAttribute(element, "distance-left"), fallbackDistanceLeft),
                 DistanceRight = ParseDouble(GetTempoAttribute(element, "distance-right"), fallbackDistanceRight),
                 DistanceTop = ParseDouble(GetTempoAttribute(element, "distance-top"), fallbackDistanceTop),
-                DistanceBottom = ParseDouble(GetTempoAttribute(element, "distance-bottom"), fallbackDistanceBottom)
+                DistanceBottom = ParseDouble(GetTempoAttribute(element, "distance-bottom"), fallbackDistanceBottom),
+                WrapContourPoints = fallbackWrapContourPoints.Select(point => new DocumentObjectWrapPoint { X = point.X, Y = point.Y }).ToList()
             },
             Transform = new DocumentObjectTransform
             {
@@ -727,7 +1620,9 @@ public sealed class DocxPackageReader
                 NaturalWidth = ParseNullableDouble(GetTempoAttribute(element, "natural-width")),
                 NaturalHeight = ParseNullableDouble(GetTempoAttribute(element, "natural-height")),
                 LockAspectRatio = ParseBool(GetTempoAttribute(element, "lock-aspect-ratio"), true),
-                Rotation = ParseDouble(GetTempoAttribute(element, "rotation"), ReadDrawingRotation(drawing))
+                Rotation = ParseDouble(GetTempoAttribute(element, "rotation"), DocxTransformConverter.ReadRotation(drawing)),
+                Crop = DocxCropConverter.FromSourceRectangle(drawing.Descendants<A.SourceRectangle>().FirstOrDefault()),
+                Flip = DocxTransformConverter.ReadFlip(drawing)
             },
             Stacking = new DocumentObjectStacking
             {
@@ -743,6 +1638,9 @@ public sealed class DocxPackageReader
             .FirstOrDefault(attribute => attribute.LocalName == name && attribute.NamespaceUri == TempoNamespace);
         return string.IsNullOrWhiteSpace(attribute.Value) ? null : attribute.Value;
     }
+
+    private static string ReadElementId(OpenXmlElement element, string tempoAttributeName)
+        => GetTempoAttribute(element, tempoAttributeName) ?? Guid.NewGuid().ToString("N");
 
     private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)
         where TEnum : struct
@@ -781,20 +1679,14 @@ public sealed class DocxPackageReader
         return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
     }
 
-    private static double ReadDrawingRotation(W.Drawing drawing)
-    {
-        var rotation = drawing.Descendants<A.Transform2D>().FirstOrDefault()?.Rotation?.Value;
-        return rotation.HasValue ? Math.Round(rotation.Value / 60000d, 4) : 0;
-    }
-
     private static double EmuToPoint(string? value)
     {
         return long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var emu)
-            ? Math.Round(emu / 12700d, 2)
+            ? Math.Round(DocxUnitConverter.EmuToPoint(emu), 2)
             : 0;
     }
 
-    private static DocumentRelativePosition FromDocxHorizontalRelative(DW.HorizontalRelativePositionValues? value)
+    private DocumentRelativePosition FromDocxHorizontalRelative(DW.HorizontalRelativePositionValues? value)
     {
         if (value == DW.HorizontalRelativePositionValues.Margin)
         {
@@ -811,10 +1703,23 @@ public sealed class DocxPackageReader
             return DocumentRelativePosition.Character;
         }
 
+        if (value == DW.HorizontalRelativePositionValues.LeftMargin
+            || value == DW.HorizontalRelativePositionValues.RightMargin
+            || value == DW.HorizontalRelativePositionValues.InsideMargin
+            || value == DW.HorizontalRelativePositionValues.OutsideMargin)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingHorizontalReferenceFallback",
+                $"DOCX drawing horizontal reference '{value}' was approximated as page margin.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                "word/document.xml"));
+            return DocumentRelativePosition.Margin;
+        }
+
         return DocumentRelativePosition.Page;
     }
 
-    private static DocumentRelativePosition FromDocxVerticalRelative(DW.VerticalRelativePositionValues? value)
+    private DocumentRelativePosition FromDocxVerticalRelative(DW.VerticalRelativePositionValues? value)
     {
         if (value == DW.VerticalRelativePositionValues.Margin)
         {
@@ -831,10 +1736,68 @@ public sealed class DocxPackageReader
             return DocumentRelativePosition.Page;
         }
 
+        if (value == DW.VerticalRelativePositionValues.TopMargin
+            || value == DW.VerticalRelativePositionValues.BottomMargin
+            || value == DW.VerticalRelativePositionValues.InsideMargin
+            || value == DW.VerticalRelativePositionValues.OutsideMargin)
+        {
+            _warnings.Add(Warning(
+                "docx.drawingVerticalReferenceFallback",
+                $"DOCX drawing vertical reference '{value}' was approximated as page margin.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                "word/document.xml"));
+            return DocumentRelativePosition.Margin;
+        }
+
         return DocumentRelativePosition.Paragraph;
     }
 
-    private List<DocumentHeaderFooter> ReadHeadersFooters(MainDocumentPart mainPart)
+    private DocumentImageHorizontalPosition? FromDocxHorizontalAlignment(string? value)
+    {
+        return value switch
+        {
+            "left" => DocumentImageHorizontalPosition.Left,
+            "center" => DocumentImageHorizontalPosition.Center,
+            "right" => DocumentImageHorizontalPosition.Right,
+            "inside" => WarnAndReturnHorizontalAlignment(value, DocumentImageHorizontalPosition.Left),
+            "outside" => WarnAndReturnHorizontalAlignment(value, DocumentImageHorizontalPosition.Right),
+            _ => null
+        };
+    }
+
+    private DocumentImageHorizontalPosition WarnAndReturnHorizontalAlignment(string value, DocumentImageHorizontalPosition fallback)
+    {
+        _warnings.Add(Warning(
+            "docx.drawingHorizontalAlignmentFallback",
+            $"DOCX drawing horizontal alignment '{value}' was approximated as '{fallback}'.",
+            DocumentFormatCompatibilitySeverity.Warning,
+            "word/document.xml"));
+        return fallback;
+    }
+
+    private DocumentObjectVerticalAlignment FromDocxVerticalAlignment(string? value)
+    {
+        return value switch
+        {
+            "top" => DocumentObjectVerticalAlignment.Top,
+            "center" => DocumentObjectVerticalAlignment.Middle,
+            "bottom" => DocumentObjectVerticalAlignment.Bottom,
+            "inside" or "outside" => WarnAndReturnVerticalAlignment(value),
+            _ => DocumentObjectVerticalAlignment.None
+        };
+    }
+
+    private DocumentObjectVerticalAlignment WarnAndReturnVerticalAlignment(string value)
+    {
+        _warnings.Add(Warning(
+            "docx.drawingVerticalAlignmentFallback",
+            $"DOCX drawing vertical alignment '{value}' was approximated as no vertical alignment.",
+            DocumentFormatCompatibilitySeverity.Warning,
+            "word/document.xml"));
+        return DocumentObjectVerticalAlignment.None;
+    }
+
+    private async Task<List<DocumentHeaderFooter>> ReadHeadersFootersAsync(MainDocumentPart mainPart, CancellationToken cancellationToken)
     {
         var result = new List<DocumentHeaderFooter>();
         var sectionProperties = mainPart.Document.Body?.Elements<W.SectionProperties>().LastOrDefault();
@@ -850,36 +1813,60 @@ public sealed class DocxPackageReader
         foreach (var part in mainPart.HeaderParts)
         {
             var relationshipId = mainPart.GetIdOfPart(part);
-            result.Add(new DocumentHeaderFooter
+            var header = new DocumentHeaderFooter
             {
+                Id = part.Header is null ? Guid.NewGuid().ToString("N") : ReadElementId(part.Header, "header-footer-id"),
                 Type = DocumentHeaderFooterType.Header,
-                Scope = headerScopes.GetValueOrDefault(relationshipId, DocumentHeaderFooterScope.Primary),
-                Blocks = part.Header?.Elements<W.Paragraph>().Select((p, i) => new DocumentBlock
-                {
-                    Type = DocumentBlockType.Paragraph,
-                    Order = i,
-                    Content = new ParagraphBlockContent { Inlines = ReadInlines(p.ChildElements) }
-                }).ToList() ?? []
-            });
+                Scope = headerScopes.GetValueOrDefault(relationshipId, DocumentHeaderFooterScope.Primary)
+            };
+            header.Blocks = await ReadPartParagraphBlocksAsync(
+                part.Header?.Elements<W.Paragraph>(),
+                new DocxPartReadContext(part, DocumentRenditionAnchorScope.Header, HeaderFooterId: header.Id),
+                cancellationToken);
+            result.Add(header);
         }
 
         foreach (var part in mainPart.FooterParts)
         {
             var relationshipId = mainPart.GetIdOfPart(part);
-            result.Add(new DocumentHeaderFooter
+            var footer = new DocumentHeaderFooter
             {
+                Id = part.Footer is null ? Guid.NewGuid().ToString("N") : ReadElementId(part.Footer, "header-footer-id"),
                 Type = DocumentHeaderFooterType.Footer,
-                Scope = footerScopes.GetValueOrDefault(relationshipId, DocumentHeaderFooterScope.Primary),
-                Blocks = part.Footer?.Elements<W.Paragraph>().Select((p, i) => new DocumentBlock
-                {
-                    Type = DocumentBlockType.Paragraph,
-                    Order = i,
-                    Content = new ParagraphBlockContent { Inlines = ReadInlines(p.ChildElements) }
-                }).ToList() ?? []
-            });
+                Scope = footerScopes.GetValueOrDefault(relationshipId, DocumentHeaderFooterScope.Primary)
+            };
+            footer.Blocks = await ReadPartParagraphBlocksAsync(
+                part.Footer?.Elements<W.Paragraph>(),
+                new DocxPartReadContext(part, DocumentRenditionAnchorScope.Footer, HeaderFooterId: footer.Id),
+                cancellationToken);
+            result.Add(footer);
         }
 
         return result;
+    }
+
+    private async Task<List<DocumentBlock>> ReadPartParagraphBlocksAsync(
+        IEnumerable<W.Paragraph>? paragraphs,
+        DocxPartReadContext context,
+        CancellationToken cancellationToken)
+    {
+        var blocks = new List<DocumentBlock>();
+        var order = 0;
+        foreach (var paragraph in paragraphs ?? [])
+        {
+            var inlines = await ReadInlinesAsync(paragraph.ChildElements, context, cancellationToken: cancellationToken);
+            var block = new DocumentBlock
+            {
+                Id = ReadElementId(paragraph, "block-id"),
+                Type = DocumentBlockType.Paragraph,
+                Order = order++,
+                Content = new ParagraphBlockContent { Inlines = inlines }
+            };
+            NormalizeDrawingAnchors(block, inlines);
+            blocks.Add(block);
+        }
+
+        return blocks;
     }
 
     private static DocumentHeaderFooterScope FromHeaderFooterValues(W.HeaderFooterValues? value)
@@ -897,7 +1884,7 @@ public sealed class DocxPackageReader
         return DocumentHeaderFooterScope.Primary;
     }
 
-    private List<DocumentNote> ReadNotes(MainDocumentPart mainPart)
+    private async Task<List<DocumentNote>> ReadNotesAsync(MainDocumentPart mainPart, CancellationToken cancellationToken)
     {
         var result = new List<DocumentNote>();
         if (mainPart.FootnotesPart?.Footnotes is not null)
@@ -908,12 +1895,10 @@ public sealed class DocxPackageReader
                 {
                     Id = footnote.Id?.Value.ToString() ?? Guid.NewGuid().ToString("N"),
                     Type = DocumentNoteType.Footnote,
-                    Blocks = footnote.Elements<W.Paragraph>().Select((p, i) => new DocumentBlock
-                    {
-                        Type = DocumentBlockType.Paragraph,
-                        Order = i,
-                        Content = new ParagraphBlockContent { Inlines = ReadInlines(p.ChildElements) }
-                    }).ToList()
+                    Blocks = await ReadPartParagraphBlocksAsync(
+                        footnote.Elements<W.Paragraph>(),
+                        new DocxPartReadContext(mainPart.FootnotesPart, DocumentRenditionAnchorScope.Footnote),
+                        cancellationToken)
                 });
             }
         }
@@ -926,12 +1911,10 @@ public sealed class DocxPackageReader
                 {
                     Id = endnote.Id?.Value.ToString() ?? Guid.NewGuid().ToString("N"),
                     Type = DocumentNoteType.Endnote,
-                    Blocks = endnote.Elements<W.Paragraph>().Select((p, i) => new DocumentBlock
-                    {
-                        Type = DocumentBlockType.Paragraph,
-                        Order = i,
-                        Content = new ParagraphBlockContent { Inlines = ReadInlines(p.ChildElements) }
-                    }).ToList()
+                    Blocks = await ReadPartParagraphBlocksAsync(
+                        endnote.Elements<W.Paragraph>(),
+                        new DocxPartReadContext(mainPart.EndnotesPart, DocumentRenditionAnchorScope.Endnote),
+                        cancellationToken)
                 });
             }
         }
@@ -939,27 +1922,40 @@ public sealed class DocxPackageReader
         return result;
     }
 
-    private List<DocumentComment> ReadComments(MainDocumentPart mainPart)
+    private async Task<List<DocumentComment>> ReadCommentsAsync(MainDocumentPart mainPart, CancellationToken cancellationToken)
     {
-        var comments = mainPart.WordprocessingCommentsPart?.Comments;
-        if (comments is null)
+        var commentsPart = mainPart.WordprocessingCommentsPart;
+        if (commentsPart?.Comments is null)
         {
             return [];
         }
 
-        return comments.Elements<W.Comment>().Select(comment => new DocumentComment
+        var result = new List<DocumentComment>();
+        foreach (var comment in commentsPart.Comments.Elements<W.Comment>())
         {
-            Id = comment.Id?.Value ?? Guid.NewGuid().ToString("N"),
-            SourceFormat = "docx",
-            ExternalId = comment.Id?.Value,
-            Anchor = new DocumentCommentAnchor
+            cancellationToken.ThrowIfCancellationRequested();
+            var entries = new List<DocumentCommentEntry>();
+            foreach (var paragraph in comment.Elements<W.Paragraph>())
             {
-                Type = DocumentCommentAnchorType.ImportedDocx,
-                ExternalAnchorId = comment.Id?.Value
-            },
-            Entries =
-            [
-                new DocumentCommentEntry
+                var inlines = await ReadInlinesAsync(
+                    paragraph.ChildElements,
+                    new DocxPartReadContext(commentsPart, DocumentRenditionAnchorScope.Comment),
+                    cancellationToken: cancellationToken);
+                entries.Add(new DocumentCommentEntry
+                {
+                    Author = new DocumentEditorAuthor
+                    {
+                        DisplayName = comment.Author?.Value ?? string.Empty
+                    },
+                    Text = GetInlineText(inlines),
+                    Inlines = inlines,
+                    CreatedAt = comment.Date?.Value ?? DateTimeOffset.UtcNow
+                });
+            }
+
+            if (entries.Count == 0)
+            {
+                entries.Add(new DocumentCommentEntry
                 {
                     Author = new DocumentEditorAuthor
                     {
@@ -967,10 +1963,36 @@ public sealed class DocxPackageReader
                     },
                     Text = string.Join("\n", comment.Descendants<W.Text>().Select(t => t.Text)),
                     CreatedAt = comment.Date?.Value ?? DateTimeOffset.UtcNow
-                }
-            ]
-        }).ToList();
+                });
+            }
+
+            result.Add(new DocumentComment
+            {
+                Id = comment.Id?.Value ?? Guid.NewGuid().ToString("N"),
+                SourceFormat = "docx",
+                ExternalId = comment.Id?.Value,
+                Anchor = new DocumentCommentAnchor
+                {
+                    Type = DocumentCommentAnchorType.ImportedDocx,
+                    ExternalAnchorId = comment.Id?.Value
+                },
+                Entries = entries
+            });
+        }
+
+        return result;
     }
+
+    private static string GetInlineText(IEnumerable<InlineContent> inlines)
+        => string.Concat(inlines.Select(inline => inline switch
+        {
+            TextRun text => text.Text,
+            TokenRun token => token.DisplayName,
+            DocumentFieldRun field => field.DisplayText ?? field.FallbackText ?? string.Empty,
+            DocumentNoteReferenceRun note => note.NoteId,
+            DocumentDrawingRun drawing => drawing.AltText ?? string.Empty,
+            _ => string.Empty
+        }));
 
     private static List<DocumentRevision> ReadRevisions(W.Body body)
     {
@@ -1026,7 +2048,12 @@ public sealed class DocxPackageReader
         }
     }
 
-    private static double TwipsToPoints(double twips) => twips / 20d;
+    private static double TwipsToPoints(double twips) => DocxUnitConverter.TwipToPoint(twips);
+
+    private static string GetPartSourcePath(OpenXmlPartContainer ownerPart)
+        => ownerPart is OpenXmlPart part
+            ? part.Uri.ToString().TrimStart('/')
+            : "word/document.xml";
 
     private void PreserveUnsupportedParts()
     {
@@ -1053,14 +2080,20 @@ public sealed class DocxPackageReader
             }));
     }
 
-    private static DocumentFormatCompatibilityWarning Warning(string code, string message, DocumentFormatCompatibilitySeverity severity, string? path = null)
+    private static DocumentFormatCompatibilityWarning Warning(
+        string code,
+        string message,
+        DocumentFormatCompatibilitySeverity severity,
+        string? path = null,
+        string? objectId = null)
     {
         return new DocumentFormatCompatibilityWarning
         {
             Code = code,
             Message = message,
             Severity = severity,
-            SourcePath = path
+            SourcePath = path,
+            ObjectId = objectId
         };
     }
 }

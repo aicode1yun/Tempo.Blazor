@@ -90,11 +90,11 @@ public class DocumentSerializer
 
     /// <summary>Serialize WYSIWYG model to legacy JSON string.</summary>
     public string Serialize(Wyg.DocumentModel document) =>
-        System.Text.Json.JsonSerializer.Serialize(ToPersistenceModel(document));
+        DocumentEditorJson.Serialize(ToPersistenceModel(document));
 
     /// <summary>Deserialize legacy JSON string to WYSIWYG model.</summary>
     public Wyg.DocumentModel Deserialize(string json) =>
-        FromPersistenceModel(System.Text.Json.JsonSerializer.Deserialize<DocumentEditorDocument>(json)!);
+        FromPersistenceModel(DocumentEditorJson.Deserialize(json));
 
     private static DocumentBlock ToPersistenceBlock(Wyg.Block block)
     {
@@ -140,9 +140,12 @@ public class DocumentSerializer
             Wyg.ImageBlock i => new DocumentBlock
             {
                 Id = i.Id,
-                Type = DocumentBlockType.Image,
+                Type = DocumentBlockType.Paragraph,
                 ParagraphProperties = ToPersistenceParagraphProperties(i.Properties),
-                Content = ToPersistenceImageContent(i)
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [ToPersistenceDrawingRun(i)]
+                }
             },
             Wyg.PageBreakBlock pageBreak => new DocumentBlock
             {
@@ -216,6 +219,7 @@ public class DocumentSerializer
             },
             Wyg.HardBreak hardBreak => new TextRun { Id = hardBreak.Id, Text = "\n" },
             Wyg.TabInline tab => new TextRun { Id = tab.Id, Text = "\t" },
+            Wyg.DrawingInline drawing => ToPersistenceDrawingRun(drawing),
             _ => new TextRun { Text = string.Empty }
         };
     }
@@ -311,15 +315,18 @@ public class DocumentSerializer
         };
     }
 
-    private static ImageBlockContent ToPersistenceImageContent(Wyg.ImageBlock image)
+    private static DocumentDrawingRun ToPersistenceDrawingRun(Wyg.ImageBlock image)
     {
         var width = CssLengthToPoints(image.Size.Width);
         var height = CssLengthToPoints(image.Size.Height);
 
-        return new ImageBlockContent
+        return new DocumentDrawingRun
         {
+            Id = image.Id,
+            ObjectId = image.Id,
+            Kind = DocumentDrawingKind.Image,
             Source = DocumentImageSource.Url,
-            Url = image.Src,
+            Url = ToPersistentImageUrl(DocumentImageSource.Url, image.Src),
             AltText = image.Alt,
             IsDecorative = image.IsDecorative,
             Size = width is null && height is null
@@ -330,6 +337,27 @@ public class DocumentSerializer
                     Height = height
                 },
             Layout = ToPersistenceImageLayout(image, width, height)
+        };
+    }
+
+    private static DocumentDrawingRun ToPersistenceDrawingRun(Wyg.DrawingInline drawing)
+    {
+        return new DocumentDrawingRun
+        {
+            Id = drawing.Id,
+            ObjectId = drawing.ObjectId,
+            Kind = drawing.Kind,
+            Source = drawing.Source,
+            Url = ToPersistentImageUrl(drawing.Source, drawing.Url),
+            AssetId = drawing.Source == DocumentImageSource.Asset ? drawing.AssetId : null,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = CloneImageSize(drawing.Size),
+            NaturalSize = CloneImageSize(drawing.NaturalSize),
+            Layout = CloneLayout(drawing.Layout),
+            LinkUrl = drawing.LinkUrl,
+            Metadata = drawing.Metadata.ToDictionary(pair => pair.Key, pair => pair.Value)
         };
     }
 
@@ -414,6 +442,88 @@ public class DocumentSerializer
             _ => Wyg.ImageWrapMode.Square
         };
 
+    private static string? ToPersistentImageUrl(DocumentImageSource source, string? url)
+        => source == DocumentImageSource.Url && DocumentImagePersistence.IsSafePersistentImageUrl(url)
+            ? url
+            : null;
+
+    private static DocumentImageSize CloneImageSize(DocumentImageSize? size)
+        => size is null
+            ? new DocumentImageSize()
+            : new DocumentImageSize
+            {
+                Width = size.Width,
+                Height = size.Height,
+                LockAspectRatio = size.LockAspectRatio
+            };
+
+    private static DocumentObjectLayout CloneLayout(DocumentObjectLayout? layout)
+    {
+        if (layout is null)
+        {
+            return DocumentObjectLayout.Inline();
+        }
+
+        return new DocumentObjectLayout
+        {
+            Kind = layout.Kind,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = layout.Anchor.BlockId,
+                InlineIndex = layout.Anchor.InlineIndex,
+                Offset = layout.Anchor.Offset,
+                Region = layout.Anchor.Region,
+                TableId = layout.Anchor.TableId,
+                CellId = layout.Anchor.CellId,
+                HeaderFooterId = layout.Anchor.HeaderFooterId,
+                MoveWithText = layout.Anchor.MoveWithText,
+                FixedOnPage = layout.Anchor.FixedOnPage,
+                LockAnchor = layout.Anchor.LockAnchor
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = layout.Position.HorizontalRelativeTo,
+                VerticalRelativeTo = layout.Position.VerticalRelativeTo,
+                X = layout.Position.X,
+                Y = layout.Position.Y,
+                HorizontalAlignment = layout.Position.HorizontalAlignment,
+                VerticalAlignment = layout.Position.VerticalAlignment
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = layout.Wrap.Mode,
+                DistanceLeft = layout.Wrap.DistanceLeft,
+                DistanceRight = layout.Wrap.DistanceRight,
+                DistanceTop = layout.Wrap.DistanceTop,
+                DistanceBottom = layout.Wrap.DistanceBottom,
+                WrapContourPoints = layout.Wrap.WrapContourPoints
+                    .Select(point => new DocumentObjectWrapPoint { X = point.X, Y = point.Y })
+                    .ToList()
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = layout.Transform.Width,
+                Height = layout.Transform.Height,
+                NaturalWidth = layout.Transform.NaturalWidth,
+                NaturalHeight = layout.Transform.NaturalHeight,
+                LockAspectRatio = layout.Transform.LockAspectRatio,
+                Rotation = layout.Transform.Rotation,
+                Crop = new DocumentObjectCrop
+                {
+                    Left = layout.Transform.Crop.Left,
+                    Top = layout.Transform.Crop.Top,
+                    Right = layout.Transform.Crop.Right,
+                    Bottom = layout.Transform.Crop.Bottom
+                }
+            },
+            Stacking = new DocumentObjectStacking
+            {
+                ZIndex = layout.Stacking.ZIndex,
+                AllowOverlap = layout.Stacking.AllowOverlap
+            }
+        };
+    }
+
     private static Wyg.TableBlock FromPersistenceTableBlock(DocumentBlock block)
     {
         var content = block.Content as TableBlockContent;
@@ -478,6 +588,27 @@ public class DocumentSerializer
 
     private static Wyg.Inline FromPersistenceInline(InlineContent inline)
     {
+        if (inline is DocumentDrawingRun drawing)
+        {
+            return new Wyg.DrawingInline
+            {
+                Id = drawing.Id ?? Guid.NewGuid().ToString("N"),
+                ObjectId = drawing.ObjectId,
+                Kind = drawing.Kind,
+                Source = drawing.Source,
+                Url = drawing.Url,
+                AssetId = drawing.AssetId,
+                AltText = drawing.AltText,
+                IsDecorative = drawing.IsDecorative,
+                Caption = drawing.Caption,
+                Size = CloneImageSize(drawing.Size),
+                NaturalSize = CloneImageSize(drawing.NaturalSize),
+                Layout = CloneLayout(drawing.Layout),
+                LinkUrl = drawing.LinkUrl,
+                Metadata = drawing.Metadata.ToDictionary(pair => pair.Key, pair => pair.Value)
+            };
+        }
+
         if (inline is not TextRun textRun)
             return new Wyg.TextRun { Text = string.Empty };
 

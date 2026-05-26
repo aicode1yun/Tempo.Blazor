@@ -73,7 +73,8 @@ public class DocumentEditorE2ETests : WasmTestBase
         var loaded = await LoadDemoDocumentFromPageAsync(page);
         loaded.Metadata.Title.Should().Be("Service agreement");
         loaded.Blocks.Should().NotBeEmpty("the demo shell must be backed by a real document model, not just painted DOM");
-        loaded.Blocks.OfType<DocumentBlock>().Should().Contain(block => block.Content is ImageBlockContent, "the representative demo must include image content");
+        loaded.Blocks.OfType<DocumentBlock>().Should().NotContain(block => block.Content is ImageBlockContent, "the representative demo should use the drawing run image model");
+        DocumentImagePersistence.EnumerateDrawingRuns(loaded).Should().NotBeEmpty("the representative demo must include image content");
         loaded.Comments.Should().NotBeEmpty("the representative contract demo must include review/comment data");
         (await CaptureStrictLayoutIssuesAsync(page)).Should().BeEmpty("the default demo shell must pass the strict layout baseline before document interactions scroll the page");
 
