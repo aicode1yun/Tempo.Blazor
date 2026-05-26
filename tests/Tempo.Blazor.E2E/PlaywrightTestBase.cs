@@ -20,6 +20,7 @@ public abstract class PlaywrightTestBase
     // exhausts Chromium and the OS kills the browser (manifests as cascade of
     // `TargetClosedException: Process exited` in later tests).
     private readonly List<IBrowserContext> _contextsToDispose = new();
+    private readonly HashSet<IBrowserContext> _contextsWithTrace = [];
 
     /// <summary>
     /// Gets the base URL for the demo application under test.
@@ -97,6 +98,17 @@ public abstract class PlaywrightTestBase
             IgnoreHTTPSErrors = true,
             AcceptDownloads = true
         });
+        if (ShouldCollectTraceOnFailure())
+        {
+            await context.Tracing.StartAsync(new TracingStartOptions
+            {
+                Screenshots = true,
+                Snapshots = true,
+                Sources = true
+            });
+            _contextsWithTrace.Add(context);
+        }
+
         _contextsToDispose.Add(context);
         return context;
     }
@@ -122,10 +134,50 @@ public abstract class PlaywrightTestBase
     {
         foreach (var context in _contextsToDispose)
         {
+            await StopTraceAsync(context);
             try { await context.CloseAsync(); }
             catch { /* best-effort: browser may already be gone */ }
         }
         _contextsToDispose.Clear();
+        _contextsWithTrace.Clear();
+    }
+
+    private static bool ShouldCollectTraceOnFailure()
+        => !string.Equals(Environment.GetEnvironmentVariable("TM_E2E_TRACE_ON_FAILURE"), "false", StringComparison.OrdinalIgnoreCase);
+
+    private async Task StopTraceAsync(IBrowserContext context)
+    {
+        if (!_contextsWithTrace.Contains(context))
+        {
+            return;
+        }
+
+        try
+        {
+            if (TestContext.CurrentTestOutcome == UnitTestOutcome.Passed)
+            {
+                await context.Tracing.StopAsync();
+                return;
+            }
+
+            var directory = TestContext.TestResultsDirectory ?? Path.GetTempPath();
+            Directory.CreateDirectory(directory);
+            var name = SanitizeResultFileName(TestContext.TestName ?? "playwright-test");
+            var path = Path.Combine(directory, $"{name}_{DateTime.Now:yyyyMMdd_HHmmss}_trace.zip");
+            await context.Tracing.StopAsync(new TracingStopOptions { Path = path });
+            TestContext.AddResultFile(path);
+        }
+        catch
+        {
+            // Best-effort diagnostics: context/browser may already be gone after a hard failure.
+        }
+    }
+
+    private static string SanitizeResultFileName(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray();
+        return new string(chars);
     }
 
     /// <summary>

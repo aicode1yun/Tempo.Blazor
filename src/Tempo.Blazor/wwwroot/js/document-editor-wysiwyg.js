@@ -208,6 +208,7 @@ window.tmDocumentEditorEngine = (function () {
             layout: _sortObject(_read(raw, 'Layout', 'layout', _read(raw, 'FloatingLayout', 'floatingLayout', {})) || {}),
             style: _sortObject(_read(raw, 'Style', 'style', {}) || {}),
             linkUrl: _read(raw, 'LinkUrl', 'linkUrl', null),
+            docx: _sortObject(_read(raw, 'Docx', 'docx', {}) || {}),
             metadata: _sortObject(_read(raw, 'Metadata', 'metadata', {}) || {}),
             marks: marks,
             revisionId: revisionId || null,
@@ -417,6 +418,8 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: source.headerFooterId || source.HeaderFooterId || null,
             tableId: source.tableId || source.TableId || null,
             cellId: source.cellId || source.CellId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(source.columnIndex ?? source.ColumnIndex),
+            pageFrame: source.pageFrame || source.PageFrame || null,
             pageIndex: source.pageIndex ?? source.PageIndex ?? null
         });
     }
@@ -450,6 +453,7 @@ window.tmDocumentEditorEngine = (function () {
                         var headerFooterId = object.anchorHeaderFooterId || blockContext.headerFooterId || null;
                         var tableId = object.anchorTableId || blockContext.tableId || null;
                         var cellId = object.anchorCellId || blockContext.cellId || null;
+                        var columnIndex = normalizeTextExclusionColumnIndex(object.anchorColumnIndex ?? object.columnIndex ?? blockContext.columnIndex);
                         indexes.objects[objectId] = run;
                         if (!indexes.drawingRunsByBlockId[block.id]) indexes.drawingRunsByBlockId[block.id] = [];
                         indexes.drawingRunsByBlockId[block.id].push(run);
@@ -463,18 +467,20 @@ window.tmDocumentEditorEngine = (function () {
                             region: objectRegion,
                             headerFooterId: headerFooterId,
                             tableId: tableId,
-                            cellId: cellId
+                            cellId: cellId,
+                            columnIndex: columnIndex
                         };
                     }
                 });
             }
             if (block.type === 'table') {
                 _asArray(block.content && block.content.rows).forEach(function (row) {
-                    _asArray(row.cells).forEach(function (cell) {
+                    _asArray(row.cells).forEach(function (cell, columnIndex) {
                         var cellContext = createBlockIndexContext(blockContext, {
                             region: 'TableCell',
                             tableId: block.id,
-                            cellId: cell && cell.id || null
+                            cellId: cell && cell.id || null,
+                            columnIndex: columnIndex
                         });
                         _asArray(cell.blocks).forEach(function (childBlock) {
                             visitBlock(childBlock, cellContext);
@@ -561,6 +567,7 @@ window.tmDocumentEditorEngine = (function () {
             result.NaturalSize = _clone(run.naturalSize || run.NaturalSize || {});
             result.Layout = _clone(run.layout || run.Layout || {});
             result.LinkUrl = run.linkUrl ?? run.LinkUrl ?? null;
+            if (run.docx || run.Docx) result.Docx = _clone(run.docx || run.Docx || {});
             result.Metadata = _clone(run.metadata || run.Metadata || {});
         } else {
             result.$type = 'text';
@@ -1149,6 +1156,7 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: target.headerFooterId || target.HeaderFooterId || null,
             tableId: target.tableId || target.TableId || target.activeTableId || target.ActiveTableId || null,
             cellId: target.cellId || target.CellId || target.activeTableCellId || target.ActiveTableCellId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(target.columnIndex ?? target.ColumnIndex),
             affinity: target.affinity === 'before' || target.Affinity === 'before' ? 'before' : 'after',
             virtualCaret: target.virtualCaret === true || target.VirtualCaret === true,
             layoutIntervalId: target.layoutIntervalId || target.LayoutIntervalId || null,
@@ -1167,7 +1175,8 @@ window.tmDocumentEditorEngine = (function () {
             region: range.region || range.Region || null,
             headerFooterId: range.headerFooterId || range.HeaderFooterId || null,
             tableId: range.tableId || range.TableId || range.activeTableId || range.ActiveTableId || null,
-            cellId: range.cellId || range.CellId || range.activeTableCellId || range.ActiveTableCellId || null
+            cellId: range.cellId || range.CellId || range.activeTableCellId || range.ActiveTableCellId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(range.columnIndex ?? range.ColumnIndex)
         };
     }
 
@@ -1595,6 +1604,8 @@ window.tmDocumentEditorEngine = (function () {
         anchor.tableId = anchor.TableId;
         anchor.CellId = regionContext.cellId || regionContext.CellId || anchor.CellId || anchor.cellId || null;
         anchor.cellId = anchor.CellId;
+        anchor.ColumnIndex = normalizeTextExclusionColumnIndex(regionContext.columnIndex ?? regionContext.ColumnIndex ?? anchor.ColumnIndex ?? anchor.columnIndex);
+        anchor.columnIndex = anchor.ColumnIndex;
         anchor.HeaderFooterId = regionContext.headerFooterId || regionContext.HeaderFooterId || anchor.HeaderFooterId || anchor.headerFooterId || null;
         anchor.headerFooterId = anchor.HeaderFooterId;
         anchor.MoveWithText = (anchor.MoveWithText ?? anchor.moveWithText ?? true) !== false;
@@ -1691,6 +1702,7 @@ window.tmDocumentEditorEngine = (function () {
             Layout: layout,
             Style: _read(image, 'Style', 'style', {}),
             LinkUrl: _read(image, 'LinkUrl', 'linkUrl', null),
+            Docx: _read(image, 'Docx', 'docx', null),
             Metadata: payload.metadata
         }, inlineId);
     }
@@ -2300,7 +2312,8 @@ window.tmDocumentEditorEngine = (function () {
             tableId: regionInfo.tableId || target.tableId || null,
             cellId: regionInfo.cellId || target.cellId || null,
             activeTableId: regionInfo.tableId || target.tableId || null,
-            activeTableCellId: regionInfo.cellId || target.cellId || null
+            activeTableCellId: regionInfo.cellId || target.cellId || null,
+            columnIndex: regionInfo.columnIndex ?? target.columnIndex ?? null
         });
         var nextSelection = createObjectSelectionSnapshot(model, {
             region: regionInfo.region || target.region || 'Body',
@@ -2314,6 +2327,7 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: regionInfo.headerFooterId || target.headerFooterId || null,
             tableId: regionInfo.tableId || target.tableId || null,
             cellId: regionInfo.cellId || target.cellId || null,
+            columnIndex: regionInfo.columnIndex ?? target.columnIndex ?? null,
             textSelection: restoreSelection
         }, restoreSelection);
         var affected = _unique([block.id].concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds)));
@@ -2359,7 +2373,10 @@ window.tmDocumentEditorEngine = (function () {
             buildIndexes(model);
             var drawingAnchor = drawingLayout.Anchor || drawingLayout.anchor || {};
             var updatedObject = normalizeImageObject(runs[runIndex], { blockId: drawing.blockId, inlineIndex: runIndex });
-            var affectedDrawing = _unique([drawing.blockId, drawingAnchor.BlockId || drawingAnchor.blockId]
+            var anchorBlockId = drawingAnchor.BlockId || drawingAnchor.blockId || drawing.blockId;
+            var affectedDrawing = _unique([drawing.blockId, anchorBlockId]
+                .concat(affectedParagraphsAroundObject(model, drawing.blockId))
+                .concat(anchorBlockId !== drawing.blockId ? affectedParagraphsAroundObject(model, anchorBlockId) : [])
                 .concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds))
                 .filter(Boolean));
             differ.record({
@@ -2367,18 +2384,20 @@ window.tmDocumentEditorEngine = (function () {
                 invalidatedLayoutScopes: affectedDrawing,
                 invalidatedOverlayScopes: [drawing.blockId, objectId]
             });
+            var selectionRegion = updatedObject.anchorRegion || updatedObject.region || drawing.region || target.region || 'Body';
             return {
                 ok: true,
                 invalidatedLayoutScopes: affectedDrawing,
                 nextSelection: createObjectSelectionSnapshot(model, {
-                    region: target.region || 'Body',
+                    region: selectionRegion,
                     blockId: drawing.blockId,
                     objectId: objectId,
                     anchorBlockId: drawingAnchor.BlockId || drawingAnchor.blockId || drawing.blockId,
                     anchorInlineIndex: runIndex,
-                    headerFooterId: updatedObject.anchorHeaderFooterId || target.headerFooterId || null,
-                    tableId: updatedObject.anchorTableId || target.tableId || null,
-                    cellId: updatedObject.anchorCellId || target.cellId || null
+                    headerFooterId: updatedObject.anchorHeaderFooterId || drawing.headerFooterId || target.headerFooterId || null,
+                    tableId: updatedObject.anchorTableId || drawing.tableId || target.tableId || null,
+                    cellId: updatedObject.anchorCellId || drawing.cellId || target.cellId || null,
+                    columnIndex: updatedObject.anchorColumnIndex ?? updatedObject.columnIndex ?? drawing.columnIndex ?? target.columnIndex ?? null
                 })
             };
         }
@@ -2418,12 +2437,19 @@ window.tmDocumentEditorEngine = (function () {
 
         var oldAnchor = oldLayout.Anchor || oldLayout.anchor || {};
         var nextAnchor = nextLayout.Anchor || nextLayout.anchor || {};
+        var oldAnchorBlockId = oldAnchor.BlockId || oldAnchor.blockId || null;
+        var nextAnchorBlockId = nextAnchor.BlockId || nextAnchor.blockId || null;
         var affected = _unique([
             target.blockId,
             drawing && drawing.blockId,
-            oldAnchor.BlockId || oldAnchor.blockId,
-            nextAnchor.BlockId || nextAnchor.blockId
-        ].concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds)).filter(Boolean));
+            oldAnchorBlockId,
+            nextAnchorBlockId
+        ]
+            .concat(affectedParagraphsAroundObject(model, drawing && drawing.blockId))
+            .concat(oldAnchorBlockId ? affectedParagraphsAroundObject(model, oldAnchorBlockId) : [])
+            .concat(nextAnchorBlockId ? affectedParagraphsAroundObject(model, nextAnchorBlockId) : [])
+            .concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds))
+            .filter(Boolean));
         op.affectedParagraphIds = affected;
         op.AffectedParagraphIds = affected;
 
@@ -4579,6 +4605,7 @@ window.tmDocumentEditorEngine = (function () {
             objectId: value.objectId || value.ObjectId || null,
             cellId: value.cellId || value.CellId || null,
             tableId: value.tableId || value.TableId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(value.columnIndex ?? value.ColumnIndex),
             headerFooterId: value.headerFooterId || value.HeaderFooterId || null
         });
     }
@@ -4616,7 +4643,8 @@ window.tmDocumentEditorEngine = (function () {
                     offset: value.anchorOffset ?? value.AnchorOffset ?? value.anchorBlockOffset ?? value.AnchorBlockOffset ?? 0,
                     headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
                     tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
-                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null,
+                    columnIndex: value.columnIndex ?? value.ColumnIndex ?? null
                 });
                 var focusPosition = createLogicalPosition({
                     region: value.region || value.Region || fallbackRegion || 'Body',
@@ -4625,7 +4653,8 @@ window.tmDocumentEditorEngine = (function () {
                     offset: value.focusOffset ?? value.FocusOffset ?? value.focusBlockOffset ?? value.FocusBlockOffset ?? value.anchorOffset ?? value.AnchorOffset ?? 0,
                     headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
                     tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
-                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null,
+                    columnIndex: value.columnIndex ?? value.ColumnIndex ?? null
                 });
                 range = createLogicalRange(anchorPosition, focusPosition, value.direction || value.Direction || (anchorPosition.offset <= focusPosition.offset ? 'forward' : 'backward'));
             } else {
@@ -4663,7 +4692,8 @@ window.tmDocumentEditorEngine = (function () {
             isCollapsed: isCollapsed,
             direction: direction,
             cellId: value.cellId || value.CellId || focusPos.cellId || null,
-            tableId: value.tableId || value.TableId || focusPos.tableId || anchorPos.tableId || null
+            tableId: value.tableId || value.TableId || focusPos.tableId || anchorPos.tableId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(value.columnIndex ?? value.ColumnIndex ?? focusPos.columnIndex ?? anchorPos.columnIndex)
         });
     }
 
@@ -4697,6 +4727,7 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: source.headerFooterId || source.HeaderFooterId || value.headerFooterId || value.HeaderFooterId || focus.headerFooterId || anchor.headerFooterId || null,
             tableId: source.tableId || source.TableId || value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || focus.tableId || anchor.tableId || null,
             cellId: source.cellId || source.CellId || value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || focus.cellId || anchor.cellId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(source.columnIndex ?? source.ColumnIndex ?? value.columnIndex ?? value.ColumnIndex ?? focus.columnIndex ?? anchor.columnIndex),
             textSelection: preservedTextSelection
         });
     }
@@ -4729,7 +4760,8 @@ window.tmDocumentEditorEngine = (function () {
                     offset: value.anchorOffset ?? value.AnchorOffset ?? value.anchorBlockOffset ?? value.AnchorBlockOffset ?? 0,
                     headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
                     tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
-                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null,
+                    columnIndex: value.columnIndex ?? value.ColumnIndex ?? null
                 });
                 var focusPosition = createLogicalPosition({
                     region: value.region || value.Region || 'Body',
@@ -4738,7 +4770,8 @@ window.tmDocumentEditorEngine = (function () {
                     offset: value.focusOffset ?? value.FocusOffset ?? value.focusBlockOffset ?? value.FocusBlockOffset ?? value.anchorOffset ?? value.AnchorOffset ?? 0,
                     headerFooterId: value.headerFooterId || value.HeaderFooterId || null,
                     tableId: value.tableId || value.TableId || value.activeTableId || value.ActiveTableId || null,
-                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null
+                    cellId: value.cellId || value.CellId || value.activeTableCellId || value.ActiveTableCellId || null,
+                    columnIndex: value.columnIndex ?? value.ColumnIndex ?? null
                 });
                 range = createLogicalRange(anchorPosition, focusPosition, value.direction || value.Direction || (anchorPosition.offset <= focusPosition.offset ? 'forward' : 'backward'));
             } else {
@@ -4760,8 +4793,8 @@ window.tmDocumentEditorEngine = (function () {
         var region = _asText(value.region || value.Region || range.anchor.region || 'Body');
         var fallbackTextRange = isObjectSelection
             ? createLogicalRange(
-                { region: region, blockId: anchorPos.blockId || focusPos.blockId, offset: anchorPos.offset ?? focusPos.offset ?? 0, headerFooterId: anchorPos.headerFooterId || focusPos.headerFooterId || null, tableId: anchorPos.tableId || focusPos.tableId || null, cellId: anchorPos.cellId || focusPos.cellId || null },
-                { region: region, blockId: anchorPos.blockId || focusPos.blockId, offset: anchorPos.offset ?? focusPos.offset ?? 0, headerFooterId: anchorPos.headerFooterId || focusPos.headerFooterId || null, tableId: anchorPos.tableId || focusPos.tableId || null, cellId: anchorPos.cellId || focusPos.cellId || null },
+                { region: region, blockId: anchorPos.blockId || focusPos.blockId, offset: anchorPos.offset ?? focusPos.offset ?? 0, headerFooterId: anchorPos.headerFooterId || focusPos.headerFooterId || null, tableId: anchorPos.tableId || focusPos.tableId || null, cellId: anchorPos.cellId || focusPos.cellId || null, columnIndex: anchorPos.columnIndex ?? focusPos.columnIndex ?? null },
+                { region: region, blockId: anchorPos.blockId || focusPos.blockId, offset: anchorPos.offset ?? focusPos.offset ?? 0, headerFooterId: anchorPos.headerFooterId || focusPos.headerFooterId || null, tableId: anchorPos.tableId || focusPos.tableId || null, cellId: anchorPos.cellId || focusPos.cellId || null, columnIndex: anchorPos.columnIndex ?? focusPos.columnIndex ?? null },
                 'none')
             : range;
         var textSelection = isObjectSelection
@@ -4807,6 +4840,7 @@ window.tmDocumentEditorEngine = (function () {
             objectId: activeObjectId,
             cellId: value.cellId || value.CellId || focusPos.cellId || null,
             tableId: value.tableId || value.TableId || focusPos.tableId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(value.columnIndex ?? value.ColumnIndex ?? focusPos.columnIndex ?? anchorPos.columnIndex),
             isCellSelection: value.isCellSelection === true || value.IsCellSelection === true || !!(value.cellId || value.CellId || focusPos.cellId),
             isObjectSelection: isObjectSelection,
             activeImageBlockId: activeImageBlockId || null,
@@ -4827,6 +4861,7 @@ window.tmDocumentEditorEngine = (function () {
         var headerFooterId = body.headerFooterId || body.HeaderFooterId || null;
         var tableId = body.tableId || body.TableId || body.activeTableId || body.ActiveTableId || null;
         var cellId = body.cellId || body.CellId || body.activeTableCellId || body.ActiveTableCellId || null;
+        var columnIndex = normalizeTextExclusionColumnIndex(body.columnIndex ?? body.ColumnIndex);
         var found = objectId ? findDrawingRunByObjectId(model, objectId) : null;
         var blockId = '';
         var anchorOffset = 0;
@@ -4846,6 +4881,7 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId = headerFooterId || found.object.anchorHeaderFooterId || found.object.headerFooterId || found.headerFooterId || null;
             tableId = tableId || found.object.anchorTableId || found.object.tableId || found.tableId || null;
             cellId = cellId || found.object.anchorCellId || found.object.cellId || found.cellId || null;
+            columnIndex = normalizeTextExclusionColumnIndex(columnIndex ?? found.object.anchorColumnIndex ?? found.object.columnIndex ?? found.columnIndex);
         }
 
         blockId = _asText(body.anchorBlockId || body.AnchorBlockId || blockId || body.blockId || body.BlockId);
@@ -4853,7 +4889,7 @@ window.tmDocumentEditorEngine = (function () {
         anchorInlineIndex = Number(body.anchorInlineIndex ?? body.AnchorInlineIndex ?? body.inlineIndex ?? body.InlineIndex ?? anchorInlineIndex);
         runId = body.runId || body.RunId || body.inlineId || body.InlineId || runId;
         var textSelection = previousTextSelection || body.textSelection || body.TextSelection || body.previousTextSelection || body.PreviousTextSelection || null;
-        var fallbackText = normalizeTextSelectionPayload({ region: region, blockId: blockId, offset: anchorOffset, headerFooterId: headerFooterId, tableId: tableId, cellId: cellId }, null, region);
+        var fallbackText = normalizeTextSelectionPayload({ region: region, blockId: blockId, offset: anchorOffset, headerFooterId: headerFooterId, tableId: tableId, cellId: cellId, columnIndex: columnIndex }, null, region);
         var preservedTextSelection = textSelection
             ? normalizeTextSelectionPayload(Object.assign({}, textSelection, {
                 region: textSelection.region || textSelection.Region || region,
@@ -4879,6 +4915,7 @@ window.tmDocumentEditorEngine = (function () {
             cellId: cellId,
             activeTableId: tableId,
             activeTableCellId: cellId,
+            columnIndex: columnIndex,
             hitTargetKind: kind,
             selectionMode: 'Object',
             isObjectSelection: true,
@@ -4897,6 +4934,7 @@ window.tmDocumentEditorEngine = (function () {
                 headerFooterId: headerFooterId,
                 tableId: tableId,
                 cellId: cellId,
+                columnIndex: columnIndex,
                 textSelection: preservedTextSelection
             }
         });
@@ -5869,34 +5907,35 @@ window.tmDocumentEditorEngine = (function () {
 
     function findRegionInfoForBlock(model, blockId) {
         var id = _asText(blockId);
-        if (!id) return { region: 'Body', headerFooterId: null, cellId: null, tableId: null };
+        if (!id) return { region: 'Body', headerFooterId: null, cellId: null, tableId: null, columnIndex: null };
         if (_asArray(model && model.body && model.body.blocks).some(function (block) { return block && block.id === id; })) {
-            return { region: 'Body', headerFooterId: null, cellId: null, tableId: null };
+            return { region: 'Body', headerFooterId: null, cellId: null, tableId: null, columnIndex: null };
         }
         for (var h = 0; h < _asArray(model && model.headers).length; h++) {
             var header = model.headers[h];
             if (_asArray(header && header.blocks).some(function (block) { return block && block.id === id; })) {
-                return { region: 'Header', headerFooterId: header.id || null, cellId: null, tableId: null };
+                return { region: 'Header', headerFooterId: header.id || null, cellId: null, tableId: null, columnIndex: null };
             }
         }
         for (var f = 0; f < _asArray(model && model.footers).length; f++) {
             var footer = model.footers[f];
             if (_asArray(footer && footer.blocks).some(function (block) { return block && block.id === id; })) {
-                return { region: 'Footer', headerFooterId: footer.id || null, cellId: null, tableId: null };
+                return { region: 'Footer', headerFooterId: footer.id || null, cellId: null, tableId: null, columnIndex: null };
             }
         }
         var found = null;
         function scanTableBlocks(blocks, owner) {
             _asArray(blocks).forEach(function (block) {
                 if (!block || block.type !== 'table') return;
-                _asArray(block.content && block.content.rows).forEach(function (row) {
-                    _asArray(row.cells).forEach(function (cell) {
+                    _asArray(block.content && block.content.rows).forEach(function (row) {
+                    _asArray(row.cells).forEach(function (cell, columnIndex) {
                         if (_asArray(cell.blocks).some(function (child) { return child && child.id === id; })) {
                             found = {
                                 region: 'TableCell',
                                 headerFooterId: owner && owner.headerFooterId || null,
                                 cellId: cell.id || null,
-                                tableId: block.id || null
+                                tableId: block.id || null,
+                                columnIndex: columnIndex
                             };
                         }
                         scanTableBlocks(cell.blocks, owner);
@@ -5911,7 +5950,7 @@ window.tmDocumentEditorEngine = (function () {
         _asArray(model && model.footers).forEach(function (footer) {
             scanTableBlocks(footer && footer.blocks, { region: 'Footer', headerFooterId: footer && footer.id || null });
         });
-        return found || { region: 'Body', headerFooterId: null, cellId: null, tableId: null };
+        return found || { region: 'Body', headerFooterId: null, cellId: null, tableId: null, columnIndex: null };
     }
 
     function operationRegionInfo(model, op, blockId, fallback) {
@@ -5922,16 +5961,19 @@ window.tmDocumentEditorEngine = (function () {
         var sourceHeaderFooterId = source.headerFooterId || source.HeaderFooterId || snapshot.headerFooterId || null;
         var sourceCellId = source.cellId || source.CellId || snapshot.cellId || null;
         var sourceTableId = source.tableId || source.TableId || snapshot.tableId || null;
+        var sourceColumnIndex = normalizeTextExclusionColumnIndex(source.columnIndex ?? source.ColumnIndex ?? snapshot.columnIndex);
         if (snapshot.blockId === blockId || !snapshot.blockId || source.blockId === blockId || source.BlockId === blockId) {
             if (sourceRegion && sourceRegion !== 'Body') info.region = sourceRegion;
             if (sourceHeaderFooterId) info.headerFooterId = sourceHeaderFooterId;
             if (sourceCellId) info.cellId = sourceCellId;
             if (sourceTableId) info.tableId = sourceTableId;
+            if (sourceColumnIndex !== null) info.columnIndex = sourceColumnIndex;
         }
         if (fallback && fallback.region && (!info.region || info.region === 'Body')) info.region = fallback.region;
         if (fallback && fallback.headerFooterId && !info.headerFooterId) info.headerFooterId = fallback.headerFooterId;
         if (fallback && fallback.tableId && !info.tableId) info.tableId = fallback.tableId;
         if (fallback && fallback.cellId && !info.cellId) info.cellId = fallback.cellId;
+        if (fallback && normalizeTextExclusionColumnIndex(fallback.columnIndex ?? fallback.ColumnIndex) !== null && (info.columnIndex === null || info.columnIndex === undefined)) info.columnIndex = normalizeTextExclusionColumnIndex(fallback.columnIndex ?? fallback.ColumnIndex);
         return info;
     }
 
@@ -5944,7 +5986,8 @@ window.tmDocumentEditorEngine = (function () {
             isCollapsed: true,
             headerFooterId: info.headerFooterId || null,
             cellId: info.cellId || null,
-            tableId: info.tableId || null
+            tableId: info.tableId || null,
+            columnIndex: info.columnIndex ?? null
         });
     }
 
@@ -6358,7 +6401,10 @@ window.tmDocumentEditorEngine = (function () {
             width: Number(opts.width || opts.Width || 0) || 0,
             lineGap: Number(opts.lineGap || opts.LineGap || 0) || 0,
             minReadableWidth: Math.max(1, Number(opts.minReadableWidth || opts.MinReadableWidth || 48) || 48),
-            availableIntervals: _asArray(opts.availableIntervals || opts.AvailableIntervals)
+            availableIntervals: _asArray(opts.availableIntervals || opts.AvailableIntervals),
+            resolveAvailableIntervals: typeof opts.resolveAvailableIntervals === 'function'
+                ? opts.resolveAvailableIntervals
+                : (typeof opts.ResolveAvailableIntervals === 'function' ? opts.ResolveAvailableIntervals : null)
         };
     }
 
@@ -6372,8 +6418,105 @@ window.tmDocumentEditorEngine = (function () {
         return { x: x, y: y, width: width, height: height };
     }
 
+    function normalizeLineRanges(opts, y) {
+        var intervals = opts.availableIntervals.length ? opts.availableIntervals : [{ x: opts.x, y: y, width: opts.width }];
+        var ranges = _asArray(intervals).map(function (raw, index) {
+            raw = raw || {};
+            var x = Number(raw.x ?? raw.X ?? opts.x ?? 0) || 0;
+            var width = Number(raw.width ?? raw.Width ?? opts.width ?? 0) || 0;
+            var rangeY = raw.y !== undefined || raw.Y !== undefined ? Number(raw.y ?? raw.Y ?? y ?? opts.y ?? 0) || 0 : y;
+            var height = Number(raw.height ?? raw.Height ?? 0) || 0;
+            return {
+                id: raw.id || raw.Id || ('range-' + index),
+                index: index,
+                interval: { x: x, y: rangeY, width: width, height: height },
+                x: x,
+                y: rangeY,
+                width: width,
+                height: height,
+                pageIndex: raw.pageIndex ?? raw.PageIndex ?? null,
+                region: raw.region || raw.Region || null,
+                headerFooterId: raw.headerFooterId || raw.HeaderFooterId || null,
+                tableId: raw.tableId || raw.TableId || null,
+                cellId: raw.cellId || raw.CellId || null,
+                usedWidth: 0,
+                start: null,
+                end: 0,
+                segments: [],
+                caretStops: []
+            };
+        }).filter(function (range) {
+            return Number.isFinite(range.x) && Number.isFinite(range.width) && range.width > 0;
+        }).sort(function (a, b) {
+            return a.x - b.x || a.index - b.index;
+        });
+        return ranges.length ? ranges : [{ id: 'range-0', index: 0, interval: { x: opts.x, y: y, width: opts.width, height: 0 }, x: opts.x, y: y, width: opts.width, height: 0, pageIndex: null, region: null, headerFooterId: null, tableId: null, cellId: null, usedWidth: 0, start: null, end: 0, segments: [], caretStops: [] }];
+    }
+
+    function resolveLineRangesForBreaker(opts, y, lineHeight) {
+        if (typeof opts.resolveAvailableIntervals !== 'function') {
+            return normalizeLineRanges(opts, y);
+        }
+        var resolved = opts.resolveAvailableIntervals(y, Math.max(1, Number(lineHeight || 18) || 18), opts.minReadableWidth);
+        if (!resolved) return normalizeLineRanges(opts, y);
+        var moved = resolved.moved === true || resolved.Moved === true;
+        var movedToY = Number(resolved.movedToY ?? resolved.MovedToY ?? y) || y;
+        var lineY = moved && movedToY > y ? movedToY : y;
+        var intervals = _asArray((moved && (resolved.movedIntervals || resolved.MovedIntervals))
+            || resolved.intervals
+            || resolved.availableIntervals
+            || resolved.AvailableIntervals
+            || resolved);
+        if (!intervals.length && moved && _asArray(resolved.intervals || resolved.availableIntervals || resolved.AvailableIntervals).length) {
+            intervals = _asArray(resolved.intervals || resolved.availableIntervals || resolved.AvailableIntervals);
+        }
+        return normalizeLineRanges(Object.assign({}, opts, { availableIntervals: intervals }), lineY);
+    }
+
     function isInvalidInterval(interval, minReadableWidth) {
         return !interval || !Number.isFinite(interval.x) || !Number.isFinite(interval.width) || interval.width < minReadableWidth;
+    }
+
+    function lineRangesAreInvalid(ranges, minReadableWidth) {
+        return !_asArray(ranges).some(function (range) {
+            return !isInvalidInterval(range && range.interval, minReadableWidth);
+        });
+    }
+
+    function coalesceNonBreakingTokens(tokens) {
+        var result = [];
+        var list = _asArray(tokens);
+        for (var i = 0; i < list.length; i++) {
+            var token = list[i];
+            if (!token || token.type === 'newline' || token.type === 'space' || token.type === 'tab') {
+                result.push(token);
+                continue;
+            }
+            if (list[i + 1] && list[i + 1].type === 'nbsp') {
+                var group = [token];
+                var j = i + 1;
+                while (j < list.length) {
+                    group.push(list[j]);
+                    if (list[j].type !== 'nbsp' && !(list[j + 1] && list[j + 1].type === 'nbsp')) break;
+                    j++;
+                }
+                var text = group.map(function (item) { return _asText(item && item.text); }).join('');
+                var first = group[0] || token;
+                var last = group[group.length - 1] || token;
+                result.push(_sortObject(Object.assign({}, first, {
+                    type: 'nbspSequence',
+                    text: text,
+                    start: first.start,
+                    end: last.end,
+                    length: Math.max(0, Number(last.end || 0) - Number(first.start || 0)),
+                    unbreakable: true
+                })));
+                i = j;
+                continue;
+            }
+            result.push(token);
+        }
+        return result;
     }
 
     function createLineBreaker(measurementService, options) {
@@ -6383,28 +6526,55 @@ window.tmDocumentEditorEngine = (function () {
         function breakParagraph(paragraph, options) {
             var opts = Object.assign({}, defaults, options || {});
             var normalizedOptions = normalizeLineBreakerOptions(opts);
-            var firstInterval = normalizeInterval(normalizedOptions, 0);
-            if (isInvalidInterval(firstInterval, normalizedOptions.minReadableWidth)) {
+            var firstRanges = resolveLineRangesForBreaker(normalizedOptions, normalizedOptions.y, 18);
+            if (lineRangesAreInvalid(firstRanges, normalizedOptions.minReadableWidth)) {
                 return buildLineBreakerFallback(paragraph, service, normalizedOptions, 'invalid-available-interval');
             }
 
             var paragraphData = tokensForParagraph(paragraph);
-            var tokens = paragraphData.tokens;
+            var tokens = coalesceNonBreakingTokens(paragraphData.tokens);
             var lines = [];
             var segments = [];
             var caretStops = [];
             var alignment = normalizeParagraphAlignment((paragraph && (paragraph.alignment ?? paragraph.Alignment)) ?? opts.alignment ?? opts.Alignment ?? 'left');
             var y = normalizedOptions.y;
-            var current = createLineDraft(0, normalizeInterval(normalizedOptions, 0), y);
+            var current = createLineDraft(0, firstRanges, y);
             var nextSegmentId = 0;
+
+            function activeRange() {
+                return current.ranges[Math.max(0, Math.min(current.rangeIndex, current.ranges.length - 1))];
+            }
+
+            function activeRangeHasContent() {
+                var range = activeRange();
+                return !!(range && range.segments && range.segments.length);
+            }
+
+            function tokenCanFitInLaterRange(width) {
+                for (var i = current.rangeIndex + 1; i < current.ranges.length; i++) {
+                    if (width <= current.ranges[i].width + 0.0001) return true;
+                }
+                return false;
+            }
+
+            function moveToNextRangeOrLine() {
+                if (current.rangeIndex + 1 < current.ranges.length) {
+                    current.rangeIndex++;
+                    current.movedAcrossRange = true;
+                    return 'range';
+                }
+                finishCurrent(false);
+                return 'line';
+            }
 
             function addCaretStopsForSegment(segment) {
                 var length = Math.max(1, segment.end - segment.start);
                 for (var i = segment.start; i <= segment.end; i++) {
                     var ratio = (i - segment.start) / length;
-                    caretStops.push({
+                    var stop = {
                         blockId: paragraph && (paragraph.id || paragraph.Id) || 'paragraph',
                         offset: i,
+                        rangeIndex: segment.rangeIndex || 0,
                         rect: {
                             x: segment.rect.x + segment.rect.width * ratio,
                             y: segment.rect.y,
@@ -6412,7 +6582,10 @@ window.tmDocumentEditorEngine = (function () {
                             height: segment.rect.height
                         },
                         lineId: current.id
-                    });
+                    };
+                    caretStops.push(stop);
+                    var range = activeRange();
+                    if (range) range.caretStops.push(stop);
                 }
             }
 
@@ -6420,13 +6593,14 @@ window.tmDocumentEditorEngine = (function () {
                 var objectRect = segment.objectRect || segment.rect || {};
                 var y = Number(segment.rect && segment.rect.y || objectRect.y || current.y) || 0;
                 var height = Math.max(1, Number(segment.rect && segment.rect.height || objectRect.height || current.lineHeight || 1) || 1);
-                caretStops.push({
+                var before = {
                     blockId: paragraph && (paragraph.id || paragraph.Id) || 'paragraph',
                     offset: Number(segment.start || 0) || 0,
                     affinity: 'before',
                     objectBoundary: true,
                     objectId: segment.objectId || null,
                     runId: segment.runId || null,
+                    rangeIndex: segment.rangeIndex || 0,
                     rect: {
                         x: Number(objectRect.x || segment.rect && segment.rect.x || 0) || 0,
                         y: y,
@@ -6434,14 +6608,15 @@ window.tmDocumentEditorEngine = (function () {
                         height: height
                     },
                     lineId: current.id
-                });
-                caretStops.push({
+                };
+                var after = {
                     blockId: paragraph && (paragraph.id || paragraph.Id) || 'paragraph',
                     offset: Number(segment.end ?? segment.start ?? 0) || 0,
                     affinity: 'after',
                     objectBoundary: true,
                     objectId: segment.objectId || null,
                     runId: segment.runId || null,
+                    rangeIndex: segment.rangeIndex || 0,
                     rect: {
                         x: Number(objectRect.x || segment.rect && segment.rect.x || 0) + Number(objectRect.width || segment.rect && segment.rect.width || 0),
                         y: y,
@@ -6449,10 +6624,18 @@ window.tmDocumentEditorEngine = (function () {
                         height: height
                     },
                     lineId: current.id
-                });
+                };
+                caretStops.push(before);
+                caretStops.push(after);
+                var range = activeRange();
+                if (range) {
+                    range.caretStops.push(before);
+                    range.caretStops.push(after);
+                }
             }
 
             function pushSegment(token, tokenText, start, end, width, style, splitFromLongToken) {
+                var range = activeRange();
                 var height = service.measureText(tokenText || ' ', style).height;
                 current.lineHeight = Math.max(current.lineHeight, height);
                 var segment = {
@@ -6462,8 +6645,10 @@ window.tmDocumentEditorEngine = (function () {
                     start: start,
                     end: end,
                     runId: token.runId || null,
+                    rangeIndex: range.index,
+                    rangeId: range.id,
                     rect: {
-                        x: current.interval.x + current.width,
+                        x: range.x + range.usedWidth,
                         y: current.y,
                         width: width,
                         height: height
@@ -6471,7 +6656,11 @@ window.tmDocumentEditorEngine = (function () {
                     splitFromLongToken: splitFromLongToken === true
                 };
                 current.segments.push(segment);
-                current.width += width;
+                range.segments.push(segment);
+                range.usedWidth += width;
+                range.start = range.start === null ? start : Math.min(range.start, start);
+                range.end = Math.max(range.end, end);
+                current.width = Math.max(current.width, range.x + range.usedWidth - current.visualLeft);
                 current.start = current.start === null ? start : Math.min(current.start, start);
                 current.end = Math.max(current.end, end);
                 segments.push(segment);
@@ -6479,12 +6668,13 @@ window.tmDocumentEditorEngine = (function () {
             }
 
             function pushInlineObjectSegment(token) {
+                var range = activeRange();
                 var object = token.object || {};
                 var width = Math.max(1, Number(token.width || object.width || 1) || 1);
                 var height = Math.max(1, Number(token.height || object.height || 1) || 1);
                 current.lineHeight = Math.max(current.lineHeight, height);
                 var rect = {
-                    x: current.interval.x + current.width,
+                    x: range.x + range.usedWidth,
                     y: current.y,
                     width: width,
                     height: current.lineHeight
@@ -6498,6 +6688,8 @@ window.tmDocumentEditorEngine = (function () {
                     end: Number(token.end ?? token.start ?? 0) || 0,
                     runId: token.runId || null,
                     objectId: token.objectId || object.objectId || null,
+                    rangeIndex: range.index,
+                    rangeId: range.id,
                     object: _clone(object),
                     objectRect: { x: rect.x, y: rect.y, width: width, height: height },
                     rect: rect,
@@ -6505,7 +6697,11 @@ window.tmDocumentEditorEngine = (function () {
                     inlineObject: true
                 };
                 current.segments.push(segment);
-                current.width += width;
+                range.segments.push(segment);
+                range.usedWidth += width;
+                range.start = range.start === null ? segment.start : Math.min(range.start, segment.start);
+                range.end = Math.max(range.end, segment.end);
+                current.width = Math.max(current.width, range.x + range.usedWidth - current.visualLeft);
                 current.start = current.start === null ? segment.start : Math.min(current.start, segment.start);
                 current.end = Math.max(current.end, segment.end);
                 segments.push(segment);
@@ -6513,11 +6709,18 @@ window.tmDocumentEditorEngine = (function () {
             }
 
             function finishCurrent(hardBreak) {
-                var line = materializeLineDraft(current, lines.length, hardBreak === true);
+                var line = materializeLineDraft(current, lines.length, hardBreak === true, alignment);
                 lines.push(line);
+                Object.keys(line.rangeShifts || {}).forEach(function (key) {
+                    var shift = Number(line.rangeShifts[key] || 0) || 0;
+                    if (Math.abs(shift) < 0.0001) return;
+                    caretStops.forEach(function (stop) {
+                        if (stop.lineId === line.id && Number(stop.rangeIndex || 0) === Number(key)) stop.rect.x += shift;
+                    });
+                });
                 y = line.rect.y + line.rect.height + normalizedOptions.lineGap;
-                current = createLineDraft(lines.length, normalizeInterval(normalizedOptions, lines.length), y);
-                if (isInvalidInterval(current.interval, normalizedOptions.minReadableWidth)) {
+                current = createLineDraft(lines.length, resolveLineRangesForBreaker(normalizedOptions, y, line.rect.height), y);
+                if (lineRangesAreInvalid(current.ranges, normalizedOptions.minReadableWidth)) {
                     current.invalid = true;
                 }
                 return line;
@@ -6534,8 +6737,9 @@ window.tmDocumentEditorEngine = (function () {
                 }
                 if (token.type === 'inlineObject') {
                     var objectWidth = Math.max(1, Number(token.width || token.object && token.object.width || 1) || 1);
-                    if (current.segments.length > 0 && current.width + objectWidth > current.interval.width) {
-                        finishCurrent(false);
+                    var objectRange = activeRange();
+                    if (activeRangeHasContent() && objectRange.usedWidth + objectWidth > objectRange.width) {
+                        moveToNextRangeOrLine();
                     }
                     if (current.invalid) {
                         return buildLineBreakerFallback(paragraph, service, normalizedOptions, 'invalid-available-interval');
@@ -6548,27 +6752,43 @@ window.tmDocumentEditorEngine = (function () {
                 var measurement = service.measureText(tokenText, tokenStyle);
                 var width = measurement.width;
                 var isBreakSpace = token.type === 'space';
-                if (isBreakSpace && current.segments.length === 0) {
+                var isNonBreakingToken = token.type === 'nbsp' || token.type === 'nbspSequence';
+                var range = activeRange();
+                if (isBreakSpace && current.segments.length === 0 && current.movedAcrossRange !== true) {
                     current.start = current.start === null ? token.start : current.start;
                     current.end = Math.max(current.end, token.end);
                     continue;
                 }
-                if (current.segments.length > 0 && current.width + width > current.interval.width && token.type !== 'nbsp') {
-                    finishCurrent(false);
-                    if (isBreakSpace) {
+                if (range.segments.length === 0 && width > range.width && tokenCanFitInLaterRange(width)) {
+                    moveToNextRangeOrLine();
+                    range = activeRange();
+                }
+                if (range.segments.length > 0 && range.usedWidth + width > range.width) {
+                    var movedTo = moveToNextRangeOrLine();
+                    range = activeRange();
+                    if (isBreakSpace && movedTo === 'line') {
                         current.start = current.start === null ? token.start : current.start;
                         current.end = Math.max(current.end, token.end);
                         continue;
+                    }
+                    if (isNonBreakingToken && width > range.width && movedTo === 'range' && tokenCanFitInLaterRange(width)) {
+                        moveToNextRangeOrLine();
+                        range = activeRange();
                     }
                 }
                 if (current.invalid) {
                     return buildLineBreakerFallback(paragraph, service, normalizedOptions, 'invalid-available-interval');
                 }
-                if (width > current.interval.width && (token.type === 'longToken' || token.type === 'word' || token.type === 'cjk')) {
-                    var pieces = splitTokenIntoFittingPieces(token, tokenText, tokenStyle, service, current.interval.width);
+                range = activeRange();
+                if (width > range.width && (token.type === 'longToken' || token.type === 'word' || token.type === 'cjk')) {
+                    var pieces = splitTokenIntoFittingPieces(token, tokenText, tokenStyle, service, range.width);
                     for (var pieceIndex = 0; pieceIndex < pieces.length; pieceIndex++) {
                         var piece = pieces[pieceIndex];
-                        if (current.segments.length > 0 && current.width + piece.width > current.interval.width) finishCurrent(false);
+                        range = activeRange();
+                        if (range.segments.length > 0 && range.usedWidth + piece.width > range.width) {
+                            moveToNextRangeOrLine();
+                            range = activeRange();
+                        }
                         pushSegment(token, piece.text, piece.start, piece.end, piece.width, tokenStyle, true);
                     }
                     continue;
@@ -6600,37 +6820,139 @@ window.tmDocumentEditorEngine = (function () {
         };
     }
 
-    function createLineDraft(index, interval, y) {
+    function createLineDraft(index, ranges, y) {
+        var normalizedRanges = (_asArray(ranges).length ? _asArray(ranges) : [{ x: 0, y: y, width: 0, height: 0 }]).map(function (range, rangeIndex) {
+            var x = Number(range && range.x || 0) || 0;
+            var rangeY = range && range.y !== null && range.y !== undefined ? Number(range.y || 0) || 0 : y;
+            var width = Math.max(0, Number(range && range.width || 0) || 0);
+            var height = Math.max(0, Number(range && range.height || 0) || 0);
+            return {
+                id: range && range.id || ('range-' + rangeIndex),
+                index: rangeIndex,
+                interval: { x: x, y: rangeY, width: width, height: height },
+                x: x,
+                y: rangeY,
+                width: width,
+                height: height,
+                pageIndex: (range && (range.pageIndex ?? range.PageIndex)) ?? null,
+                region: range && (range.region || range.Region) || null,
+                headerFooterId: range && (range.headerFooterId || range.HeaderFooterId) || null,
+                tableId: range && (range.tableId || range.TableId) || null,
+                cellId: range && (range.cellId || range.CellId) || null,
+                usedWidth: 0,
+                start: null,
+                end: 0,
+                segments: [],
+                caretStops: []
+            };
+        });
+        var visualLeft = Math.min.apply(null, normalizedRanges.map(function (range) { return Number(range.x || 0); }));
+        var visualRight = Math.max.apply(null, normalizedRanges.map(function (range) { return Number(range.x || 0) + Number(range.width || 0); }));
+        var lineY = normalizedRanges[0] && normalizedRanges[0].y !== null && normalizedRanges[0].y !== undefined ? normalizedRanges[0].y : y;
         return {
             id: 'line-' + index,
             index: index,
-            interval: interval,
-            y: interval.y === null || interval.y === undefined ? y : interval.y,
+            ranges: normalizedRanges,
+            rangeIndex: 0,
+            interval: normalizedRanges[0] && normalizedRanges[0].interval || normalizedRanges[0],
+            y: lineY,
             start: null,
             end: 0,
             width: 0,
+            visualLeft: visualLeft,
+            visualRight: visualRight,
             lineHeight: 18,
             segments: [],
-            invalid: false
+            invalid: false,
+            movedAcrossRange: false
         };
     }
 
-    function materializeLineDraft(draft, index, hardBreak) {
+    function materializeLineDraft(draft, index, hardBreak, alignment) {
         var height = Math.max(1, draft.lineHeight);
         var start = draft.start === null ? draft.end : draft.start;
+        var lineTop = Number(draft.y || 0) || 0;
+        var ranges = _asArray(draft.ranges).map(function (range, rangeIndex) {
+            var rangeStart = range.start === null ? draft.end : range.start;
+            var rangeEnd = Math.max(rangeStart, Number(range.end || rangeStart) || rangeStart);
+            return _sortObject({
+                id: range.id || ('range-' + rangeIndex),
+                index: rangeIndex,
+                x: Number(range.x || 0) || 0,
+                y: lineTop,
+                width: Math.max(0, Number(range.width || 0) || 0),
+                height: height,
+                pageIndex: range.pageIndex ?? null,
+                region: range.region || null,
+                headerFooterId: range.headerFooterId || null,
+                tableId: range.tableId || null,
+                cellId: range.cellId || null,
+                usedWidth: Math.max(0, Number(range.usedWidth || 0) || 0),
+                start: rangeStart,
+                end: rangeEnd,
+                collapsedOffset: rangeStart === rangeEnd ? rangeStart : null,
+                empty: !range.segments || range.segments.length === 0,
+                segments: _asArray(range.segments)
+            });
+        });
+        var visualLeft = ranges.length ? Math.min.apply(null, ranges.map(function (range) { return range.x; })) : Number(draft.visualLeft || 0) || 0;
+        var visualRight = ranges.length ? Math.max.apply(null, ranges.map(function (range) { return range.x + range.width; })) : visualLeft + Math.max(0, draft.width);
+        var lineWidth = ranges.length > 1 ? Math.max(0, visualRight - visualLeft) : Math.max(0, Number(ranges[0] && ranges[0].usedWidth || draft.width || 0) || 0);
+        var rangeShifts = {};
+        ranges.forEach(function (range) {
+            var remaining = Math.max(0, Number(range.width || 0) - Number(range.usedWidth || 0));
+            var shift = alignment === 'right'
+                ? remaining
+                : (alignment === 'center' ? remaining / 2 : 0);
+            range.alignmentShift = shift;
+            rangeShifts[range.index] = shift;
+            if (Math.abs(shift) > 0.0001) {
+                _asArray(range.segments).forEach(function (segment) {
+                    if (segment && segment.rect) segment.rect.x += shift;
+                    if (segment && segment.objectRect) segment.objectRect.x += shift;
+                });
+            }
+        });
         return {
             id: draft.id,
             index: index,
+            pageIndex: ranges.length ? ranges[0].pageIndex ?? null : null,
             start: start,
             end: draft.end,
             hardBreak: hardBreak === true,
             rect: {
-                x: draft.interval.x,
-                y: draft.y,
-                width: Math.max(0, draft.width),
+                x: ranges.length > 1 ? visualLeft : Number(ranges[0] && ranges[0].x || 0),
+                y: lineTop,
+                width: lineWidth,
                 height: height
             },
-            availableIntervals: [{ x: draft.interval.x, y: draft.y, width: draft.interval.width, height: height, start: start, end: draft.end, collapsedOffset: start === draft.end ? start : null, empty: start === draft.end }],
+            visualRect: {
+                x: visualLeft,
+                y: lineTop,
+                width: Math.max(0, visualRight - visualLeft),
+                height: height
+            },
+            ranges: ranges,
+            textRanges: ranges,
+            rangeShifts: rangeShifts,
+            availableIntervals: ranges.map(function (range) {
+                return _sortObject({
+                    id: range.id,
+                    x: range.x,
+                    y: range.y,
+                    width: range.width,
+                    height: range.height,
+                    pageIndex: range.pageIndex ?? null,
+                    region: range.region || null,
+                    headerFooterId: range.headerFooterId || null,
+                    tableId: range.tableId || null,
+                    cellId: range.cellId || null,
+                    start: range.start,
+                    end: range.end,
+                    collapsedOffset: range.collapsedOffset,
+                    empty: range.empty
+                });
+            }),
             segments: draft.segments.map(function (segment) {
                 segment.rect.height = height;
                 if (segment.type === 'inlineObject' && segment.objectRect) {
@@ -6682,14 +7004,43 @@ window.tmDocumentEditorEngine = (function () {
         var justify = alignment === 'justify' || alignment === 'justified' || alignment === 'block';
         lines.forEach(function (line, index) {
             var isLast = index === lines.length - 1;
-            var interval = line.availableIntervals[0] || { width: line.rect.width };
-            var gaps = line.segments.filter(function (segment) { return segment.type === 'space'; }).length;
-            var remaining = Math.max(0, Number(interval.width || 0) - Number(line.rect.width || 0));
-            if (justify && !isLast && !line.hardBreak && gaps > 0 && remaining > 0) {
-                line.justify = { enabled: true, extraSpacePerGap: remaining / gaps, gapCount: gaps };
-            } else {
-                line.justify = { enabled: false, extraSpacePerGap: 0, gapCount: gaps };
-            }
+            var totalGaps = 0;
+            var anyEnabled = false;
+            var rangeJustify = _asArray(line.ranges && line.ranges.length ? line.ranges : line.availableIntervals).map(function (range, rangeIndex) {
+                var rangeSegments = _asArray(range && range.segments).filter(function (segment) {
+                    return Number(segment.rangeIndex || 0) === Number(range.index ?? rangeIndex);
+                });
+                if (!rangeSegments.length && line.segments && (!line.ranges || line.ranges.length <= 1)) {
+                    rangeSegments = _asArray(line.segments);
+                }
+                var gaps = rangeSegments.filter(function (segment) { return segment.type === 'space'; }).length;
+                totalGaps += gaps;
+                var usedWidth = Number(range && (range.usedWidth ?? range.textWidth) || 0) || 0;
+                if (!usedWidth) {
+                    usedWidth = rangeSegments.reduce(function (sum, segment) {
+                        return sum + Math.max(0, Number(segment && segment.rect && segment.rect.width || 0) || 0);
+                    }, 0);
+                }
+                var remaining = Math.max(0, Number(range && range.width || 0) - usedWidth);
+                var enabled = justify && !isLast && !line.hardBreak && gaps > 0 && remaining > 0;
+                if (enabled) anyEnabled = true;
+                return {
+                    enabled: enabled,
+                    extraSpacePerGap: enabled ? remaining / gaps : 0,
+                    gapCount: gaps,
+                    rangeIndex: (range && (range.index ?? rangeIndex)) ?? rangeIndex,
+                    remainingWidth: remaining
+                };
+            });
+            line.justify = {
+                enabled: anyEnabled,
+                extraSpacePerGap: 0,
+                gapCount: totalGaps,
+                ranges: rangeJustify
+            };
+            _asArray(line.ranges).forEach(function (range, rangeIndex) {
+                range.justify = rangeJustify[rangeIndex] || { enabled: false, extraSpacePerGap: 0, gapCount: 0, rangeIndex: rangeIndex, remainingWidth: 0 };
+            });
         });
     }
 
@@ -6961,8 +7312,16 @@ window.tmDocumentEditorEngine = (function () {
         6: 'InFrontOfText'
     });
 
+    var WRAP_SIDE_NAMES = Object.freeze({
+        0: 'BothSides',
+        1: 'Left',
+        2: 'Right',
+        3: 'Largest'
+    });
+
     function normalizeWrapModeName(value) {
         if (value === undefined || value === null || value === '') return 'Inline';
+        if (typeof value === 'object' && value.value !== undefined) return normalizeWrapModeName(value.value);
         if (typeof value === 'number') return WRAP_MODE_NAMES[value] || 'Inline';
         var raw = String(value).replace(/\s+/g, '').replace(/-/g, '').toLowerCase();
         if (raw === '0' || raw === 'inline' || raw === 'inlined') return 'Inline';
@@ -6972,7 +7331,39 @@ window.tmDocumentEditorEngine = (function () {
         if (raw === '4' || raw === 'topbottom' || raw === 'topandbottom' || raw === 'breaktext') return 'TopBottom';
         if (raw === '5' || raw === 'behindtext' || raw === 'behind') return 'BehindText';
         if (raw === '6' || raw === 'infrontoftext' || raw === 'front') return 'InFrontOfText';
-        return value && WRAP_MODE_NAMES[value.value] || 'Inline';
+        return 'Inline';
+    }
+
+    function normalizeWrapSideName(value) {
+        if (value === undefined || value === null || value === '') return 'BothSides';
+        if (typeof value === 'object' && value.value !== undefined) return normalizeWrapSideName(value.value);
+        if (typeof value === 'number') return WRAP_SIDE_NAMES[value] || 'BothSides';
+        var raw = String(value).replace(/[\s_.:-]+/g, '').toLowerCase();
+        if (raw === '0' || raw === 'both' || raw === 'bothside' || raw === 'bothsides') return 'BothSides';
+        if (raw === '1' || raw === 'left' || raw === 'leftside') return 'Left';
+        if (raw === '2' || raw === 'right' || raw === 'rightside') return 'Right';
+        if (raw === '3' || raw === 'largest' || raw === 'larger' || raw === 'largestside') return 'Largest';
+        return 'BothSides';
+    }
+
+    function wrapSideToValue(value) {
+        var side = normalizeWrapSideName(value);
+        if (side === 'Left') return 1;
+        if (side === 'Right') return 2;
+        if (side === 'Largest') return 3;
+        return 0;
+    }
+
+    function readObjectWrapSide(object) {
+        object = object || {};
+        var wrap = object.wrap || object.Wrap || {};
+        return normalizeWrapSideName(
+            object.wrapSide ?? object.WrapSide
+            ?? object.side ?? object.Side
+            ?? object.wrapText ?? object.WrapText
+            ?? wrap.side ?? wrap.Side
+            ?? wrap.wrapSide ?? wrap.WrapSide
+            ?? wrap.wrapText ?? wrap.WrapText);
     }
 
     function normalizeRelativePositionName(value) {
@@ -7074,7 +7465,15 @@ window.tmDocumentEditorEngine = (function () {
         var stacking = layout.stacking || layout.Stacking || {};
         var horizontal = layout.horizontalPosition || layout.HorizontalPosition || layout.Horizontal || {};
         var vertical = layout.verticalPosition || layout.VerticalPosition || layout.Vertical || {};
+        var layoutInCell = readObjectLayoutInCell(content);
         var wrapMode = normalizeWrapModeName(layout.wrapMode ?? layout.WrapMode ?? wrap.mode ?? wrap.Mode ?? opts.wrapMode ?? opts.WrapMode);
+        var wrapSide = normalizeWrapSideName(
+            layout.wrapSide ?? layout.WrapSide
+            ?? wrap.side ?? wrap.Side
+            ?? wrap.wrapText ?? wrap.WrapText
+            ?? opts.wrapSide ?? opts.WrapSide
+            ?? opts.side ?? opts.Side
+            ?? opts.wrapText ?? opts.WrapText);
         var horizontalAlign = position.horizontalAlignment ?? position.HorizontalAlignment ?? horizontal.align ?? horizontal.Align ?? null;
         if (horizontalAlign === 0) horizontalAlign = 'Left';
         if (horizontalAlign === 1) horizontalAlign = 'Center';
@@ -7128,9 +7527,11 @@ window.tmDocumentEditorEngine = (function () {
             anchorTableId: _asText(anchor.tableId || anchor.TableId || layout.tableId || layout.TableId || opts.tableId || opts.TableId || ''),
             anchorCellId: _asText(anchor.cellId || anchor.CellId || layout.cellId || layout.CellId || opts.cellId || opts.CellId || ''),
             anchorHeaderFooterId: _asText(anchor.headerFooterId || anchor.HeaderFooterId || layout.headerFooterId || layout.HeaderFooterId || opts.headerFooterId || opts.HeaderFooterId || ''),
+            anchorColumnIndex: normalizeTextExclusionColumnIndex(anchor.columnIndex ?? anchor.ColumnIndex ?? layout.columnIndex ?? layout.ColumnIndex ?? opts.columnIndex ?? opts.ColumnIndex),
             layoutKind: layoutKind,
             isInline: layoutKind === 'Inline' || wrapMode === 'Inline',
             isAnchored: layoutKind === 'Anchored' && wrapMode !== 'Inline',
+            layoutInCell: layoutInCell,
             lockAspectRatio: (transform.lockAspectRatio ?? transform.LockAspectRatio ?? contentSize.lockAspectRatio ?? contentSize.LockAspectRatio ?? true) !== false,
             moveWithText: (layout.moveWithText ?? layout.MoveWithText ?? anchor.moveWithText ?? anchor.MoveWithText ?? true) !== false,
             fixedOnPage: (layout.fixedOnPage ?? layout.FixedOnPage ?? anchor.fixedOnPage ?? anchor.FixedOnPage ?? false) === true,
@@ -7147,6 +7548,7 @@ window.tmDocumentEditorEngine = (function () {
                 offset: position.y ?? position.Y ?? vertical.offset ?? vertical.Offset ?? 0
             }), 'Top'),
             wrapMode: wrapMode,
+            wrapSide: wrapSide,
             wrapMargin: wrapMargin,
             distanceLeft: distanceLeft,
             distanceRight: distanceRight,
@@ -7157,6 +7559,9 @@ window.tmDocumentEditorEngine = (function () {
             zIndex: Number(layout.zIndex ?? layout.ZIndex ?? stacking.zIndex ?? stacking.ZIndex ?? 0) || 0,
             width: width,
             height: height,
+            rect: content.rect || content.Rect || layout.rect || layout.Rect || opts.rect || opts.Rect
+                ? rectFromGeometry(content.rect || content.Rect || layout.rect || layout.Rect || opts.rect || opts.Rect)
+                : null,
             caption: _asText(content.caption || content.Caption || ''),
             altText: _asText(content.altText || content.AltText || ''),
             url: content.url || content.Url || null,
@@ -7181,6 +7586,7 @@ window.tmDocumentEditorEngine = (function () {
                 Region: anchorRegionToValue(source.anchorRegion || source.region || 'Body'),
                 TableId: source.anchorTableId || source.tableId || null,
                 CellId: source.anchorCellId || source.cellId || null,
+                ColumnIndex: normalizeTextExclusionColumnIndex(source.anchorColumnIndex ?? source.columnIndex),
                 HeaderFooterId: source.anchorHeaderFooterId || source.headerFooterId || null,
                 MoveWithText: source.moveWithText !== false && source.fixedOnPage !== true,
                 FixedOnPage: source.fixedOnPage === true,
@@ -7196,6 +7602,7 @@ window.tmDocumentEditorEngine = (function () {
             },
             Wrap: {
                 Mode: wrapModeToValue(mode),
+                Side: wrapSideToValue(readObjectWrapSide(source)),
                 DistanceLeft: Number(source.distanceLeft ?? source.DistanceLeft ?? 0) || 0,
                 DistanceRight: Number(source.distanceRight ?? source.DistanceRight ?? 0) || 0,
                 DistanceTop: Number(source.distanceTop ?? source.DistanceTop ?? 0) || 0,
@@ -7246,6 +7653,11 @@ window.tmDocumentEditorEngine = (function () {
             && rectRightGeometry(a) > Number(b.x || 0)
             && Number(a.y || 0) < rectBottomGeometry(b)
             && rectBottomGeometry(a) > Number(b.y || 0);
+    }
+
+    function rectOverlapsHorizontallyGeometry(a, b) {
+        return Number(a && a.x || 0) < rectRightGeometry(b)
+            && rectRightGeometry(a) > Number(b && b.x || 0);
     }
 
     function intersectGeometryRect(a, b) {
@@ -7327,24 +7739,163 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function normalizeTextExclusionPageIndex(object) {
+        var value = object && (
+            object.pageIndex ?? object.PageIndex
+            ?? object.anchorPageIndex ?? object.AnchorPageIndex);
+        var number = Number(value);
+        return Number.isFinite(number) && number >= 0 ? Math.floor(number) : 0;
+    }
+
+    function normalizeTextExclusionColumnIndex(value) {
+        if (value === null || value === undefined || value === '') return null;
+        var number = Number(value);
+        return Number.isFinite(number) && number >= 0 ? Math.floor(number) : null;
+    }
+
+    function readObjectLayoutInCell(object) {
+        var source = object || {};
+        var layout = source.layout || source.Layout || {};
+        var anchor = source.anchor || source.Anchor || layout.anchor || layout.Anchor || {};
+        var docx = source.docx || source.Docx || {};
+        var anchorXml = source.anchorXml || source.AnchorXml || docx.anchorXml || docx.AnchorXml || {};
+        var metadata = source.metadata || source.Metadata || {};
+        var direct = readOptionalBoolean(source, ['layoutInCell', 'LayoutInCell']);
+        if (direct !== null) return direct;
+        var anchorValue = readOptionalBoolean(anchor, ['layoutInCell', 'LayoutInCell']);
+        if (anchorValue !== null) return anchorValue;
+        var layoutValue = readOptionalBoolean(layout, ['layoutInCell', 'LayoutInCell']);
+        if (layoutValue !== null) return layoutValue;
+        var docxValue = readOptionalBoolean(docx, ['layoutInCell', 'LayoutInCell']);
+        if (docxValue !== null) return docxValue;
+        var anchorXmlValue = readOptionalBoolean(anchorXml, ['layoutInCell', 'LayoutInCell']);
+        if (anchorXmlValue !== null) return anchorXmlValue;
+        var metadataValue = readOptionalBoolean(metadata, ['layoutInCell', 'LayoutInCell']);
+        return metadataValue !== null ? metadataValue : true;
+    }
+
+    function createTextExclusionScopeKey(pageIndex, region, headerFooterId, tableId, cellId, columnIndex) {
+        var parts = [
+            String(Math.max(0, Number(pageIndex || 0) || 0)),
+            normalizeAnchorRegionName(region),
+            _asText(headerFooterId || ''),
+            _asText(tableId || ''),
+            _asText(cellId || '')
+        ];
+        var normalizedColumn = normalizeTextExclusionColumnIndex(columnIndex);
+        if (normalizedColumn !== null) parts.push(String(normalizedColumn));
+        return parts.join('|');
+    }
+
+    function readTextExclusionScope(value) {
+        var source = value || {};
+        var pageIndex = normalizeTextExclusionPageIndex(source);
+        var region = normalizeAnchorRegionName(source.region || source.Region || source.anchorRegion || source.AnchorRegion || 'Body');
+        var headerFooterId = source.headerFooterId || source.HeaderFooterId || source.anchorHeaderFooterId || source.AnchorHeaderFooterId || null;
+        var tableId = source.tableId || source.TableId || source.anchorTableId || source.AnchorTableId || null;
+        var cellId = source.cellId || source.CellId || source.anchorCellId || source.AnchorCellId || null;
+        var columnIndex = normalizeTextExclusionColumnIndex(source.columnIndex ?? source.ColumnIndex ?? source.anchorColumnIndex ?? source.AnchorColumnIndex);
+        return _sortObject({
+            pageIndex: pageIndex,
+            region: region,
+            headerFooterId: headerFooterId,
+            tableId: tableId,
+            cellId: cellId,
+            columnIndex: columnIndex,
+            scopeKey: _asText(source.scopeKey || source.ScopeKey || createTextExclusionScopeKey(pageIndex, region, headerFooterId, tableId, cellId, columnIndex))
+        });
+    }
+
+    function createTextExclusionScopeDescriptor(options) {
+        var opts = options || {};
+        var hasExplicitScopeKey = _asText(opts.scopeKey || opts.ScopeKey || '') !== '';
+        var hasScopeField = hasExplicitScopeKey
+            || Object.prototype.hasOwnProperty.call(opts, 'pageIndex')
+            || Object.prototype.hasOwnProperty.call(opts, 'PageIndex')
+            || Object.prototype.hasOwnProperty.call(opts, 'region')
+            || Object.prototype.hasOwnProperty.call(opts, 'Region')
+            || Object.prototype.hasOwnProperty.call(opts, 'headerFooterId')
+            || Object.prototype.hasOwnProperty.call(opts, 'HeaderFooterId')
+            || Object.prototype.hasOwnProperty.call(opts, 'tableId')
+            || Object.prototype.hasOwnProperty.call(opts, 'TableId')
+            || Object.prototype.hasOwnProperty.call(opts, 'cellId')
+            || Object.prototype.hasOwnProperty.call(opts, 'CellId')
+            || Object.prototype.hasOwnProperty.call(opts, 'columnIndex')
+            || Object.prototype.hasOwnProperty.call(opts, 'ColumnIndex');
+        if (!hasScopeField) return { enabled: false, scopeKey: '' };
+        var scope = readTextExclusionScope(opts);
+        if (hasExplicitScopeKey) {
+            scope.scopeKey = _asText(opts.scopeKey || opts.ScopeKey || '');
+            scope.strictScopeKey = true;
+        }
+        scope.enabled = true;
+        return _sortObject(scope);
+    }
+
+    function textExclusionMatchesScope(exclusion, descriptor) {
+        var scope = descriptor || {};
+        if (scope.enabled !== true) return true;
+        if (!exclusion) return false;
+        var candidate = readTextExclusionScope(exclusion);
+        if (candidate.scopeKey && scope.scopeKey && candidate.scopeKey === scope.scopeKey) return true;
+        if (scope.strictScopeKey === true) return false;
+        if (Number(candidate.pageIndex || 0) !== Number(scope.pageIndex || 0)) return false;
+        if (normalizeAnchorRegionName(candidate.region) !== normalizeAnchorRegionName(scope.region)) return false;
+        if (_asText(candidate.headerFooterId || '') !== _asText(scope.headerFooterId || '')) return false;
+        if (_asText(candidate.tableId || '') !== _asText(scope.tableId || '')) return false;
+        if (_asText(candidate.cellId || '') !== _asText(scope.cellId || '')) return false;
+        if (candidate.columnIndex !== null && scope.columnIndex !== null && candidate.columnIndex !== scope.columnIndex) return false;
+        return true;
+    }
+
     function createTextExclusion(objectLayout, bodyFrame) {
         var object = objectLayout || {};
-        var mode = normalizeWrapModeName(object.wrapMode);
+        var wrap = object.wrap || object.Wrap || {};
+        var mode = normalizeWrapModeName(object.wrapMode ?? object.WrapMode ?? wrap.mode ?? wrap.Mode);
         if (!wrapModeCreatesTextExclusion(mode)) return null;
         var body = bodyFrame ? rectFromGeometry(bodyFrame) : null;
-        var rect = rectFromGeometry(object.rect || {
-            x: Number(bodyFrame && bodyFrame.x || 0) + Number(object.horizontalPosition && object.horizontalPosition.offset || 0),
-            y: Number(bodyFrame && bodyFrame.y || 0) + Number(object.verticalPosition && object.verticalPosition.offset || 0),
-            width: Number(object.width || 1) || 1,
-            height: Number(object.height || 1) || 1
+        var horizontalPosition = object.horizontalPosition || object.HorizontalPosition || {};
+        var verticalPosition = object.verticalPosition || object.VerticalPosition || {};
+        var rect = rectFromGeometry(object.rect || object.Rect || {
+            x: Number(bodyFrame && (bodyFrame.x ?? bodyFrame.X) || 0) + Number(horizontalPosition.offset ?? horizontalPosition.Offset ?? 0),
+            y: Number(bodyFrame && (bodyFrame.y ?? bodyFrame.Y) || 0) + Number(verticalPosition.offset ?? verticalPosition.Offset ?? 0),
+            width: Number(object.width ?? object.Width ?? 1) || 1,
+            height: Number(object.height ?? object.Height ?? 1) || 1
         });
         var wrapRect = createObjectWrapRect(object, rect);
+        var pageIndex = normalizeTextExclusionPageIndex(object);
+        var region = normalizeAnchorRegionName(object.region || object.Region || object.anchorRegion || object.AnchorRegion || 'Body');
+        var headerFooterId = object.headerFooterId || object.HeaderFooterId || object.anchorHeaderFooterId || object.AnchorHeaderFooterId || null;
+        var tableId = object.tableId || object.TableId || object.anchorTableId || object.AnchorTableId || null;
+        var cellId = object.cellId || object.CellId || object.anchorCellId || object.AnchorCellId || null;
+        var columnIndex = normalizeTextExclusionColumnIndex(object.columnIndex ?? object.ColumnIndex ?? object.anchorColumnIndex ?? object.AnchorColumnIndex);
+        var layoutInCell = readObjectLayoutInCell(object);
+        var scopeRegion = region;
+        var scopeHeaderFooterId = headerFooterId;
+        var scopeTableId = tableId;
+        var scopeCellId = cellId;
+        var scopeColumnIndex = columnIndex;
+        if (region === 'TableCell' && layoutInCell === false) {
+            scopeRegion = 'Body';
+            scopeHeaderFooterId = null;
+            scopeTableId = null;
+            scopeCellId = null;
+            scopeColumnIndex = null;
+        }
+        var wrapSide = readObjectWrapSide(object);
+        var distanceLeft = readObjectDistance(object, 'distanceLeft', 'DistanceLeft');
+        var distanceRight = readObjectDistance(object, 'distanceRight', 'DistanceRight');
+        var distanceTop = readObjectDistance(object, 'distanceTop', 'DistanceTop');
+        var distanceBottom = readObjectDistance(object, 'distanceBottom', 'DistanceBottom');
         var polygon = [];
         var kind = mode === 'TopBottom'
             ? 'fullWidth'
             : (mode === 'Tight' ? 'contour' : (mode === 'Through' ? 'editableContour' : 'rectangular'));
         var candidate = wrapRect;
         if (mode === 'TopBottom' && body) {
+            if (!rectOverlapsHorizontallyGeometry(createObjectFootprintRect(object, rect), body)) {
+                return null;
+            }
             candidate = {
                 x: body.x,
                 y: wrapRect.y,
@@ -7360,18 +7911,28 @@ window.tmDocumentEditorEngine = (function () {
             return null;
         }
         return _sortObject({
-            objectId: object.objectId || object.blockId || '',
-            blockId: object.blockId || '',
-            region: object.region || object.anchorRegion || 'Body',
-            headerFooterId: object.headerFooterId || object.anchorHeaderFooterId || null,
-            tableId: object.tableId || object.anchorTableId || null,
-            cellId: object.cellId || object.anchorCellId || null,
+            objectId: object.objectId || object.ObjectId || object.blockId || object.BlockId || '',
+            blockId: object.blockId || object.BlockId || '',
+            pageIndex: pageIndex,
+            region: scopeRegion,
+            anchorRegion: region,
+            scopeKey: createTextExclusionScopeKey(pageIndex, scopeRegion, scopeHeaderFooterId, scopeTableId, scopeCellId, scopeColumnIndex),
+            headerFooterId: scopeHeaderFooterId,
+            tableId: scopeTableId,
+            cellId: scopeCellId,
+            columnIndex: scopeColumnIndex,
+            layoutInCell: layoutInCell,
             wrapMode: mode,
+            wrapSide: wrapSide,
             kind: kind,
             rect: exclusionRect,
             sourceRect: _clone(rect),
             wrapRect: wrapRect,
             polygon: polygon,
+            distanceLeft: distanceLeft,
+            distanceRight: distanceRight,
+            distanceTop: distanceTop,
+            distanceBottom: distanceBottom,
             captionIncluded: !!object.caption,
             allowOverlap: object.allowOverlap === true,
             zIndex: Number(object.zIndex || 0) || 0
@@ -7396,6 +7957,8 @@ window.tmDocumentEditorEngine = (function () {
             object.anchorHeaderFooterId = object.anchorHeaderFooterId || regionContext.headerFooterId || '';
             object.anchorTableId = object.anchorTableId || regionContext.tableId || '';
             object.anchorCellId = object.anchorCellId || regionContext.cellId || '';
+            object.anchorColumnIndex = normalizeTextExclusionColumnIndex(object.anchorColumnIndex ?? regionContext.columnIndex);
+            object.layoutInCell = readObjectLayoutInCell(object);
             object.anchorInlineIndex = object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : inlineIndex;
             return _sortObject({ blockId: block.id || '', inlineIndex: inlineIndex, run: run, object: object });
         }).filter(Boolean);
@@ -7465,6 +8028,7 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: source.anchorHeaderFooterId || fallbackInfo.headerFooterId || null,
             tableId: source.anchorTableId || fallbackInfo.tableId || null,
             cellId: source.anchorCellId || fallbackInfo.cellId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(source.anchorColumnIndex ?? source.columnIndex ?? fallbackInfo.columnIndex),
             rect: rect,
             usedFallback: usedFallback,
             fallbackReason: usedFallback ? 'paragraph-start' : ''
@@ -7544,6 +8108,9 @@ window.tmDocumentEditorEngine = (function () {
         object.headerFooterId = reference && reference.headerFooterId || object.anchorHeaderFooterId || object.headerFooterId || null;
         object.tableId = reference && reference.tableId || object.anchorTableId || object.tableId || null;
         object.cellId = reference && reference.cellId || object.anchorCellId || object.cellId || null;
+        object.columnIndex = normalizeTextExclusionColumnIndex((reference ? reference.columnIndex : null) ?? object.anchorColumnIndex ?? object.columnIndex);
+        object.anchorColumnIndex = normalizeTextExclusionColumnIndex(object.anchorColumnIndex ?? object.columnIndex);
+        object.layoutInCell = readObjectLayoutInCell(object);
         object.layer = drawingLayerForWrapMode(object.wrapMode);
         object.rect = rect;
         object.referenceRect = reference && reference.rect ? _clone(reference.rect) : null;
@@ -7673,18 +8240,231 @@ window.tmDocumentEditorEngine = (function () {
         return mergeGeometryIntervals(intervals, minWidth);
     }
 
-    function blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth) {
-        var polygon = _asArray(exclusion && (exclusion.polygon || exclusion.Polygon));
-        if (polygon.length >= 3) {
-            return polygonBlockedIntervalsForGeometry(polygon, atY, lineHeight, body, minWidth);
+    function applyWrapSideToBlockedIntervals(intervals, wrapSide, body, minWidth) {
+        var side = normalizeWrapSideName(wrapSide);
+        var list = _asArray(intervals)
+            .filter(function (interval) { return Number(interval.width || 0) >= minWidth - 0.0001; })
+            .sort(function (a, b) { return Number(a.x || 0) - Number(b.x || 0); });
+        if (side === 'BothSides' || list.length === 0) return list;
+
+        var bodyLeft = Number(body && body.x || 0);
+        var bodyRight = rectRightGeometry(body);
+        var left = Math.min.apply(null, list.map(function (interval) { return Number(interval.x || 0); }));
+        var right = Math.max.apply(null, list.map(function (interval) { return intervalEndGeometry(interval); }));
+        left = Math.max(bodyLeft, left);
+        right = Math.min(bodyRight, right);
+        if (right - left < minWidth - 0.0001) return [];
+
+        var resolvedSide = side;
+        if (side === 'Largest') {
+            var leftSpace = Math.max(0, left - bodyLeft);
+            var rightSpace = Math.max(0, bodyRight - right);
+            resolvedSide = leftSpace >= rightSpace ? 'Left' : 'Right';
         }
 
+        return resolvedSide === 'Left'
+            ? [{ x: left, width: Math.max(0, bodyRight - left) }]
+            : [{ x: bodyLeft, width: Math.max(0, right - bodyLeft) }];
+    }
+
+    function blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth) {
         var rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
-        var left = Math.max(rect.x, body.x);
-        var right = Math.min(rectRightGeometry(rect), rectRightGeometry(body));
-        return right - left >= minWidth - 0.0001
-            ? [{ x: left, width: right - left }]
-            : [];
+        var lineRect = { x: body.x, y: atY, width: body.width, height: lineHeight };
+        if (!rectIntersectsGeometry(lineRect, rect)) return [];
+        var mode = normalizeWrapModeName(exclusion && (exclusion.wrapMode || exclusion.WrapMode));
+        var kind = _asText(exclusion && (exclusion.kind || exclusion.Kind));
+        if (mode === 'TopBottom' || kind === 'fullWidth') {
+            return [{ x: body.x, width: body.width }];
+        }
+
+        var intervals = [];
+        var polygon = _asArray(exclusion && (exclusion.polygon || exclusion.Polygon));
+        if (polygon.length >= 3) {
+            intervals = polygonBlockedIntervalsForGeometry(polygon, atY, lineHeight, body, minWidth);
+        } else {
+            var left = Math.max(rect.x, body.x);
+            var right = Math.min(rectRightGeometry(rect), rectRightGeometry(body));
+            intervals = right - left >= minWidth - 0.0001
+                ? [{ x: left, width: right - left }]
+                : [];
+        }
+
+        return applyWrapSideToBlockedIntervals(intervals, exclusion && (exclusion.wrapSide || exclusion.WrapSide), body, minWidth);
+    }
+
+    function normalizeManagerInterval(interval, atY, lineHeight, extra) {
+        var rawY = interval ? (interval.y ?? interval.Y) : atY;
+        return _sortObject(Object.assign({
+            x: Number(interval && (interval.x ?? interval.X) || 0) || 0,
+            y: Number(rawY ?? atY) || 0,
+            width: Math.max(0, Number(interval && (interval.width ?? interval.Width) || 0) || 0),
+            height: Math.max(1, Number(interval && (interval.height ?? interval.Height) || lineHeight) || lineHeight)
+        }, extra || {}));
+    }
+
+    function mergeBlockedIntervalsForLayout(intervals, body, minWidth, atY, lineHeight) {
+        var bodyLeft = Number(body && body.x || 0);
+        var bodyRight = rectRightGeometry(body);
+        var sorted = _asArray(intervals)
+            .map(function (interval) {
+                var left = Math.max(bodyLeft, Number(interval && (interval.x ?? interval.X) || 0) || 0);
+                var right = Math.min(bodyRight, intervalEndGeometry(interval));
+                if (right <= left) return null;
+                return normalizeManagerInterval(Object.assign({}, interval, {
+                    x: left,
+                    y: atY,
+                    width: right - left,
+                    height: lineHeight
+                }), atY, lineHeight);
+            })
+            .filter(Boolean)
+            .filter(function (interval) { return Number(interval.width || 0) > 0; })
+            .sort(function (a, b) { return Number(a.x || 0) - Number(b.x || 0); });
+        if (sorted.length <= 1) return sorted;
+
+        var merged = [sorted[0]];
+        sorted.slice(1).forEach(function (current) {
+            var previous = merged[merged.length - 1];
+            var previousEnd = intervalEndGeometry(previous);
+            var currentLeft = Number(current.x || 0);
+            var gap = currentLeft - previousEnd;
+            if (gap <= 0.0001 || gap < minWidth - 0.0001) {
+                var right = Math.max(previousEnd, intervalEndGeometry(current));
+                previous.width = right - Number(previous.x || 0);
+                previous.objectId = _unique(_asText(previous.objectId || '').split('|').concat(_asText(current.objectId || '').split('|')).filter(Boolean)).join('|');
+                previous.blockId = _unique(_asText(previous.blockId || '').split('|').concat(_asText(current.blockId || '').split('|')).filter(Boolean)).join('|');
+                previous.wrapMode = previous.wrapMode === current.wrapMode ? previous.wrapMode : 'Mixed';
+                previous.wrapSide = previous.wrapSide === current.wrapSide ? previous.wrapSide : 'Mixed';
+            } else {
+                merged.push(current);
+            }
+        });
+        return merged;
+    }
+
+    function subtractBlockedIntervalsFromBody(body, atY, lineHeight, blockedIntervals, minWidth) {
+        var intervals = [{ x: body.x, y: atY, width: body.width, height: lineHeight }];
+        _asArray(blockedIntervals).forEach(function (blocked) {
+            intervals = subtractGeometryInterval(
+                intervals,
+                Math.max(body.x, Number(blocked.x || 0)),
+                Math.min(rectRightGeometry(body), intervalEndGeometry(blocked)),
+                minWidth,
+                atY,
+                lineHeight);
+        });
+        return intervals
+            .filter(function (interval) { return Number(interval.width || 0) >= minWidth - 0.0001; })
+            .sort(function (a, b) { return Number(a.x || 0) - Number(b.x || 0) || Number(b.width || 0) - Number(a.width || 0); });
+    }
+
+    function createTextExclusionManager(exclusions, bodyFrame, options) {
+        var opts = options || {};
+        var body = rectFromGeometry(bodyFrame || opts.bodyFrame || opts.BodyFrame || { x: 0, y: 0, width: 640, height: 900 });
+        var intervalCacheStats = opts.intervalCacheStats || opts.IntervalCacheStats || null;
+        if (intervalCacheStats) intervalCacheStats.managerBuilds = Number(intervalCacheStats.managerBuilds || 0) + 1;
+        var scopeDescriptor = createTextExclusionScopeDescriptor(opts);
+        var sourceExclusions = _asArray(exclusions).filter(Boolean).filter(function (exclusion) {
+            return textExclusionMatchesScope(exclusion, scopeDescriptor);
+        });
+
+        function collectBlockedIntervals(atY, lineHeight, minReadableWidth) {
+            if (intervalCacheStats) intervalCacheStats.lineResolveCount = Number(intervalCacheStats.lineResolveCount || 0) + 1;
+            var lineY = Number(atY || 0);
+            var height = Math.max(1, Number(lineHeight || 1) || 1);
+            var minWidth = Math.max(1, Number(minReadableWidth || opts.minReadableWidth || opts.MinReadableWidth || 48) || 48);
+            var lineRect = { x: body.x, y: lineY, width: body.width, height: height };
+            var blockingBottom = lineY;
+            var blocked = [];
+
+            sourceExclusions.forEach(function (exclusion) {
+                if (intervalCacheStats) intervalCacheStats.exclusionScanCount = Number(intervalCacheStats.exclusionScanCount || 0) + 1;
+                if (!exclusion || exclusion.allowOverlap === true || exclusion.AllowOverlap === true) return;
+                var rect = rectFromGeometry(exclusion.rect || exclusion.Rect);
+                if (!rectIntersectsGeometry(lineRect, rect)) return;
+                blockingBottom = Math.max(blockingBottom, rectBottomGeometry(rect));
+                if (intervalCacheStats) {
+                    intervalCacheStats.blockedGeometryComputeCount = Number(intervalCacheStats.blockedGeometryComputeCount || 0) + 1;
+                    if (_asArray(exclusion.polygon || exclusion.Polygon).length >= 3) {
+                        intervalCacheStats.polygonComputationCount = Number(intervalCacheStats.polygonComputationCount || 0) + 1;
+                    }
+                }
+                blockedIntervalsForExclusionGeometry(exclusion, lineY, height, body, minWidth).forEach(function (interval) {
+                    blocked.push(normalizeManagerInterval(interval, lineY, height, {
+                        objectId: exclusion.objectId || exclusion.ObjectId || '',
+                        blockId: exclusion.blockId || exclusion.BlockId || '',
+                        wrapMode: normalizeWrapModeName(exclusion.wrapMode || exclusion.WrapMode),
+                        wrapSide: normalizeWrapSideName(exclusion.wrapSide || exclusion.WrapSide)
+                    }));
+                });
+            });
+
+            return _sortObject({
+                blockedIntervals: mergeBlockedIntervalsForLayout(blocked, body, minWidth, lineY, height),
+                blockingBottom: blockingBottom
+            });
+        }
+
+        function computeAt(atY, lineHeight, minReadableWidth) {
+            var collected = collectBlockedIntervals(atY, lineHeight, minReadableWidth);
+            return _sortObject({
+                intervals: subtractBlockedIntervalsFromBody(body, atY, lineHeight, collected.blockedIntervals, minReadableWidth),
+                blockedIntervals: collected.blockedIntervals,
+                blockingBottom: collected.blockingBottom
+            });
+        }
+
+        function resolveLine(atY, lineHeight, minReadableWidth) {
+            var lineY = Number(atY || 0);
+            var height = Math.max(1, Number(lineHeight || 1) || 1);
+            var minWidth = Math.max(1, Number(minReadableWidth || opts.minReadableWidth || opts.MinReadableWidth || 48) || 48);
+            var initial = computeAt(lineY, height, minWidth);
+            var movedToY = lineY;
+            var moved = false;
+            var movedIntervals = initial.intervals;
+            var movedBlockedIntervals = initial.blockedIntervals;
+
+            if (initial.intervals.length === 0) {
+                movedToY = Math.max(lineY + height, initial.blockingBottom);
+                moved = movedToY > lineY;
+                var movedResult = computeAt(movedToY, height, minWidth);
+                movedIntervals = movedResult.intervals;
+                movedBlockedIntervals = movedResult.blockedIntervals;
+            }
+
+            return _sortObject({
+                bodyFrame: body,
+                y: lineY,
+                height: height,
+                minReadableWidth: minWidth,
+                intervals: initial.intervals,
+                blockedIntervals: initial.blockedIntervals,
+                blockingBottom: initial.blockingBottom,
+                movedToY: movedToY,
+                moved: moved,
+                movedIntervals: movedIntervals,
+                movedBlockedIntervals: movedBlockedIntervals
+            });
+        }
+
+        return {
+            bodyFrame: body,
+            scopeKey: scopeDescriptor && scopeDescriptor.enabled ? scopeDescriptor.scopeKey : '',
+            exclusions: sourceExclusions,
+            collectBlockedIntervals: collectBlockedIntervals,
+            computeAt: computeAt,
+            resolveLine: resolveLine,
+            getAvailableIntervals: function (atY, lineHeight, minReadableWidth) {
+                var resolved = resolveLine(atY, lineHeight, minReadableWidth);
+                return _sortObject({
+                    intervals: resolved.movedIntervals,
+                    blockedIntervals: resolved.blockedIntervals,
+                    initialIntervals: resolved.intervals,
+                    movedToY: resolved.movedToY,
+                    moved: resolved.moved
+                });
+            }
+        };
     }
 
     function availableIntervalsCacheNumber(value) {
@@ -7692,7 +8472,8 @@ window.tmDocumentEditorEngine = (function () {
         return Math.round(number * 1000) / 1000;
     }
 
-    function createAvailableIntervalsCacheKey(lineY, lineHeight, body, exclusions, minWidth) {
+    function createAvailableIntervalsCacheKey(lineY, lineHeight, body, exclusions, minWidth, scopeOptions) {
+        var scopeDescriptor = createTextExclusionScopeDescriptor(scopeOptions || {});
         var signature = _asArray(exclusions).map(function (exclusion) {
             var rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
             var polygon = _asArray(exclusion && (exclusion.polygon || exclusion.Polygon))
@@ -7704,6 +8485,18 @@ window.tmDocumentEditorEngine = (function () {
                 });
             return {
                 allowOverlap: exclusion && (exclusion.allowOverlap === true || exclusion.AllowOverlap === true),
+                objectId: _asText(exclusion && (exclusion.objectId || exclusion.ObjectId) || ''),
+                blockId: _asText(exclusion && (exclusion.blockId || exclusion.BlockId) || ''),
+                scopeKey: _asText(exclusion && (exclusion.scopeKey || exclusion.ScopeKey) || ''),
+                wrapMode: normalizeWrapModeName(exclusion && (exclusion.wrapMode || exclusion.WrapMode)),
+                wrapSide: normalizeWrapSideName(exclusion && (exclusion.wrapSide || exclusion.WrapSide)),
+                polygonVersion: _asText(exclusion && (exclusion.polygonVersion || exclusion.PolygonVersion || exclusion.wrapContourVersion || exclusion.WrapContourVersion) || ''),
+                distances: [
+                    availableIntervalsCacheNumber(exclusion && (exclusion.distanceLeft ?? exclusion.DistanceLeft)),
+                    availableIntervalsCacheNumber(exclusion && (exclusion.distanceRight ?? exclusion.DistanceRight)),
+                    availableIntervalsCacheNumber(exclusion && (exclusion.distanceTop ?? exclusion.DistanceTop)),
+                    availableIntervalsCacheNumber(exclusion && (exclusion.distanceBottom ?? exclusion.DistanceBottom))
+                ],
                 rect: [
                     availableIntervalsCacheNumber(rect.x),
                     availableIntervalsCacheNumber(rect.y),
@@ -7723,8 +8516,65 @@ window.tmDocumentEditorEngine = (function () {
                 availableIntervalsCacheNumber(body.width),
                 availableIntervalsCacheNumber(body.height)
             ],
+            scopeKey: scopeDescriptor.enabled === true ? scopeDescriptor.scopeKey : '',
             exclusions: signature
         });
+    }
+
+    function createAvailableIntervalsCacheStats() {
+        return {
+            calls: 0,
+            cacheHits: 0,
+            cacheMisses: 0,
+            cacheClears: 0,
+            cacheEntries: 0,
+            managerBuilds: 0,
+            lineResolveCount: 0,
+            exclusionScanCount: 0,
+            blockedGeometryComputeCount: 0,
+            polygonComputationCount: 0,
+            lastCacheKey: '',
+            lastCacheEvent: ''
+        };
+    }
+
+    function ensureAvailableIntervalsCacheStats(exclusions) {
+        if (!Array.isArray(exclusions)) return createAvailableIntervalsCacheStats();
+        var stats = exclusions.__tmAvailableIntervalsCacheStats;
+        if (stats) return stats;
+        stats = createAvailableIntervalsCacheStats();
+        try {
+            Object.defineProperty(exclusions, '__tmAvailableIntervalsCacheStats', {
+                value: stats,
+                configurable: true,
+                enumerable: false,
+                writable: true
+            });
+        } catch {
+            return stats;
+        }
+        return stats;
+    }
+
+    function getAvailableIntervalsCacheStats(exclusions) {
+        var stats = Array.isArray(exclusions) && exclusions.__tmAvailableIntervalsCacheStats
+            ? exclusions.__tmAvailableIntervalsCacheStats
+            : createAvailableIntervalsCacheStats();
+        stats.cacheEntries = Array.isArray(exclusions) && exclusions.__tmAvailableIntervalsCache
+            ? exclusions.__tmAvailableIntervalsCache.size
+            : Number(stats.cacheEntries || 0);
+        return _clone(stats);
+    }
+
+    function resetAvailableIntervalsCache(exclusions, reason) {
+        if (!Array.isArray(exclusions)) return getAvailableIntervalsCacheStats(exclusions);
+        var cache = ensureAvailableIntervalsCache(exclusions);
+        var stats = ensureAvailableIntervalsCacheStats(exclusions);
+        if (cache) cache.clear();
+        stats.cacheClears++;
+        stats.cacheEntries = 0;
+        stats.lastCacheEvent = _asText(reason || 'manual-reset');
+        return getAvailableIntervalsCacheStats(exclusions);
     }
 
     function ensureAvailableIntervalsCache(exclusions) {
@@ -7745,56 +8595,160 @@ window.tmDocumentEditorEngine = (function () {
         }
     }
 
-    function getAvailableIntervals(y, height, bodyFrame, exclusions, minReadableWidth) {
+    function getAvailableIntervals(y, height, bodyFrame, exclusions, minReadableWidth, scopeOptions) {
         var lineY = Number(y || 0);
         var lineHeight = Math.max(1, Number(height || 1) || 1);
         var body = rectFromGeometry(bodyFrame || { x: 0, y: 0, width: 640, height: 900 });
         var minWidth = Math.max(1, Number(minReadableWidth || 48) || 48);
-        var movedToY = lineY;
         var cache = ensureAvailableIntervalsCache(exclusions);
-        var cacheKey = cache ? createAvailableIntervalsCacheKey(lineY, lineHeight, body, exclusions, minWidth) : '';
-        if (cache && cache.has(cacheKey)) return _clone(cache.get(cacheKey));
-
-        function compute(atY) {
-            var intervals = [{ x: body.x, y: atY, width: body.width, height: lineHeight }];
-            var blockingBottom = atY;
-            _asArray(exclusions).forEach(function (exclusion) {
-                var rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
-                var lineRect = { x: body.x, y: atY, width: body.width, height: lineHeight };
-                var overlapsY = rectIntersectsGeometry(lineRect, rect);
-                if (!overlapsY || exclusion.allowOverlap === true || exclusion.AllowOverlap === true) return;
-                blockingBottom = Math.max(blockingBottom, rectBottomGeometry(rect));
-                blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth).forEach(function (blocked) {
-                    intervals = subtractGeometryInterval(
-                        intervals,
-                        Math.max(body.x, Number(blocked.x || 0)),
-                        Math.min(rectRightGeometry(body), intervalEndGeometry(blocked)),
-                        minWidth,
-                        atY,
-                        lineHeight);
-                });
-            });
-            intervals = intervals
-                .filter(function (interval) { return interval.width >= minWidth; })
-                .sort(function (a, b) { return a.x - b.x || b.width - a.width; });
-            return { intervals: intervals, blockingBottom: blockingBottom };
+        var stats = ensureAvailableIntervalsCacheStats(exclusions);
+        stats.calls++;
+        var managerOptions = Object.assign({ minReadableWidth: minWidth, intervalCacheStats: stats }, scopeOptions || {});
+        var cacheKey = cache ? createAvailableIntervalsCacheKey(lineY, lineHeight, body, exclusions, minWidth, managerOptions) : '';
+        stats.lastCacheKey = cacheKey;
+        if (cache && cache.has(cacheKey)) {
+            stats.cacheHits++;
+            stats.cacheEntries = cache.size;
+            stats.lastCacheEvent = 'hit';
+            return _clone(cache.get(cacheKey));
         }
-
-        var result = compute(lineY);
-        if (result.intervals.length === 0) {
-            movedToY = Math.max(lineY + lineHeight, result.blockingBottom);
-            result = compute(movedToY);
-        }
-        var available = _sortObject({
-            intervals: result.intervals,
-            movedToY: movedToY,
-            moved: movedToY > lineY
-        });
+        stats.cacheMisses++;
+        stats.lastCacheEvent = 'miss';
+        var available = createTextExclusionManager(exclusions, body, managerOptions).getAvailableIntervals(lineY, lineHeight, minWidth);
         if (cache) {
-            if (cache.size > 256) cache.clear();
+            if (cache.size > 256) {
+                cache.clear();
+                stats.cacheClears++;
+            }
             cache.set(cacheKey, _clone(available));
+            stats.cacheEntries = cache.size;
         }
         return available;
+    }
+
+    function normalizeWrapSnapshotInterval(interval, atY, lineHeight, extra) {
+        var rawY = interval ? (interval.y ?? interval.Y) : atY;
+        return _sortObject(Object.assign({
+            x: Number(interval && (interval.x ?? interval.X) || 0) || 0,
+            y: Number(rawY ?? atY) || 0,
+            width: Math.max(0, Number(interval && (interval.width ?? interval.Width) || 0) || 0),
+            height: Math.max(1, Number(interval && (interval.height ?? interval.Height) || lineHeight) || lineHeight)
+        }, extra || {}));
+    }
+
+    function collectBlockedIntervalsForWrapSnapshot(exclusions, atY, lineHeight, body, minWidth) {
+        var blocked = [];
+        _asArray(exclusions).forEach(function (exclusion) {
+            blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth).forEach(function (interval) {
+                blocked.push(normalizeWrapSnapshotInterval(interval, atY, lineHeight, {
+                    objectId: exclusion && (exclusion.objectId || exclusion.ObjectId) || '',
+                    blockId: exclusion && (exclusion.blockId || exclusion.BlockId) || '',
+                    wrapMode: normalizeWrapModeName(exclusion && (exclusion.wrapMode || exclusion.WrapMode)),
+                    wrapSide: normalizeWrapSideName(exclusion && (exclusion.wrapSide || exclusion.WrapSide))
+                }));
+            });
+        });
+        return blocked.sort(function (a, b) { return a.x - b.x || a.width - b.width; });
+    }
+
+    function snapshotWrapLayoutForTest(input) {
+        var opts = input || {};
+        var frame = rectFromGeometry(opts.bodyFrame || opts.BodyFrame || opts.frame || opts.Frame || { x: 0, y: 0, width: 640, height: 900 });
+        var lineY = Number(opts.lineY ?? opts.LineY ?? frame.y) || 0;
+        var lineHeight = Math.max(1, Number(opts.lineHeight ?? opts.LineHeight ?? 18) || 18);
+        var minWidth = Math.max(1, Number(opts.minReadableWidth ?? opts.MinReadableWidth ?? 48) || 48);
+        var source = opts.object || opts.Object || opts.objectLayout || opts.ObjectLayout || {};
+        var normalized = normalizeImageObject(source, {
+            blockId: source.blockId || source.BlockId || opts.blockId || opts.BlockId || 'snapshot-block',
+            wrapMode: source.wrapMode || source.WrapMode || opts.wrapMode || opts.WrapMode || 'Square',
+            width: source.width || source.Width,
+            height: source.height || source.Height
+        });
+        var sourceRect = rectFromGeometry(source.rect || source.Rect || {
+            x: source.x ?? source.X ?? frame.x,
+            y: source.y ?? source.Y ?? lineY,
+            width: source.width ?? source.Width ?? normalized.width,
+            height: source.height ?? source.Height ?? normalized.height
+        });
+        var object = Object.assign({}, normalized, source, {
+            objectId: source.objectId || source.ObjectId || normalized.objectId || 'snapshot-object',
+            blockId: source.blockId || source.BlockId || normalized.blockId || 'snapshot-block',
+            wrapMode: normalizeWrapModeName(source.wrapMode || source.WrapMode || normalized.wrapMode || opts.wrapMode || opts.WrapMode || 'Square'),
+            wrapSide: normalizeWrapSideName(source.wrapSide ?? source.WrapSide ?? source.side ?? source.Side ?? source.wrapText ?? source.WrapText ?? normalized.wrapSide ?? opts.wrapSide ?? opts.WrapSide),
+            pageIndex: Number(source.pageIndex ?? source.PageIndex ?? opts.pageIndex ?? opts.PageIndex ?? 0) || 0,
+            rect: sourceRect,
+            width: Math.max(1, Number(sourceRect.width || normalized.width || 1) || 1),
+            height: Math.max(1, Number(sourceRect.height || normalized.height || 1) || 1),
+            region: source.region || source.Region || normalized.region || normalized.anchorRegion || opts.region || opts.Region || 'Body',
+            headerFooterId: source.headerFooterId || source.HeaderFooterId || normalized.headerFooterId || normalized.anchorHeaderFooterId || opts.headerFooterId || opts.HeaderFooterId || null,
+            tableId: source.tableId || source.TableId || normalized.tableId || normalized.anchorTableId || opts.tableId || opts.TableId || null,
+            cellId: source.cellId || source.CellId || normalized.cellId || normalized.anchorCellId || opts.cellId || opts.CellId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(source.columnIndex ?? source.ColumnIndex ?? normalized.columnIndex ?? normalized.anchorColumnIndex ?? opts.columnIndex ?? opts.ColumnIndex)
+        });
+        var exclusion = createTextExclusion(object, frame);
+        var exclusions = exclusion ? [exclusion] : [];
+        var manager = createTextExclusionManager(exclusions, frame, {
+            minReadableWidth: minWidth,
+            pageIndex: object.pageIndex,
+            region: object.region,
+            headerFooterId: object.headerFooterId,
+            tableId: object.tableId,
+            cellId: object.cellId,
+            columnIndex: object.columnIndex
+        });
+        var resolved = manager.resolveLine(lineY, lineHeight, minWidth);
+        var blocked = _asArray(resolved.blockedIntervals).map(function (interval) {
+            return normalizeWrapSnapshotInterval(interval, lineY, lineHeight);
+        });
+        var available = {
+            intervals: resolved.movedIntervals,
+            movedToY: resolved.movedToY,
+            moved: resolved.moved
+        };
+        var paragraph = opts.paragraph || opts.Paragraph || null;
+        if (!paragraph && (opts.text || opts.Text)) {
+            paragraph = {
+                id: opts.blockId || opts.BlockId || 'snapshot-paragraph',
+                runs: [{ id: 'snapshot-run', kind: 'text', text: _asText(opts.text || opts.Text) }]
+            };
+        }
+        var lineSegments = [];
+        var caretStops = [];
+        if (paragraph) {
+            var breaker = createLineBreaker(createTextMeasurementService());
+            var lineLayout = breaker.breakParagraph(paragraph, {
+                x: frame.x,
+                y: lineY,
+                width: frame.width,
+                lineGap: 0,
+                minReadableWidth: minWidth,
+                availableIntervals: _asArray(available.intervals)
+            });
+            lineSegments = _asArray(lineLayout.segments).map(function (segment) { return _clone(segment); });
+            caretStops = _asArray(lineLayout.caretStops).map(function (stop) { return _clone(stop); });
+        }
+        return _sortObject({
+            source: 'wrap-layout-snapshot',
+            scope: _sortObject({
+                pageIndex: Number(opts.pageIndex ?? opts.PageIndex ?? object.pageIndex ?? 0) || 0,
+                region: object.region || object.anchorRegion || 'Body',
+                headerFooterId: object.headerFooterId || object.anchorHeaderFooterId || null,
+                tableId: object.tableId || object.anchorTableId || null,
+                cellId: object.cellId || object.anchorCellId || null,
+                columnIndex: object.columnIndex ?? object.anchorColumnIndex ?? null
+            }),
+            objectRect: sourceRect,
+            wrapRect: exclusion && (exclusion.wrapRect || exclusion.rect) ? _clone(exclusion.wrapRect || exclusion.rect) : null,
+            exclusion: exclusion ? _clone(exclusion) : null,
+            blockedIntervals: blocked,
+            availableIntervals: _asArray(available.intervals).map(function (interval) {
+                return normalizeWrapSnapshotInterval(interval, available.movedToY, lineHeight);
+            }),
+            movedToY: available.movedToY,
+            moved: available.moved === true,
+            lineSegments: lineSegments,
+            caretStops: caretStops
+        });
     }
 
     function hitTestLayerPriority(layerName, wrapMode) {
@@ -7805,12 +8759,19 @@ window.tmDocumentEditorEngine = (function () {
         return 10;
     }
 
-    function affectedParagraphsAroundObject(model, blockId) {
+    function affectedParagraphsAroundObject(model, blockId, options) {
+        var opts = options || {};
         var container = _findBlockContainer(model, blockId);
         var blocks = _asArray(container && container.blocks || model && model.body && model.body.blocks);
         var index = blocks.findIndex(function (block) { return block.id === blockId; });
         if (index < 0) return [];
-        return blocks.slice(Math.max(0, index + 1), index + 4).filter(function (block) { return block && block.type === 'paragraph'; }).map(function (block) { return block.id; });
+        var owner = blocks[index] || null;
+        var followingCount = Math.max(0, Number(opts.followingCount ?? opts.FollowingCount ?? 3) || 3);
+        var start = owner && owner.type === 'paragraph' ? index : Math.max(0, index - 1);
+        return blocks
+            .slice(start, index + followingCount + 1)
+            .filter(function (block) { return block && block.type === 'paragraph'; })
+            .map(function (block) { return block.id; });
     }
 
     function createImagePreviewController(model, options) {
@@ -7952,7 +8913,11 @@ window.tmDocumentEditorEngine = (function () {
             y: Number(opts.y || opts.Y || page.y) || page.y,
             width: Math.max(1, Number(opts.width || opts.Width || page.width) || page.width),
             minReadableWidth: Math.max(1, Number(opts.minReadableWidth || opts.MinReadableWidth || 48) || 48),
-            lineGap: Number(opts.lineGap || opts.LineGap || 0) || 0
+            lineGap: Number(opts.lineGap || opts.LineGap || 0) || 0,
+            availableIntervals: _asArray(opts.availableIntervals || opts.AvailableIntervals),
+            resolveAvailableIntervals: typeof opts.resolveAvailableIntervals === 'function'
+                ? opts.resolveAvailableIntervals
+                : (typeof opts.ResolveAvailableIntervals === 'function' ? opts.ResolveAvailableIntervals : null)
         };
     }
 
@@ -7979,23 +8944,31 @@ window.tmDocumentEditorEngine = (function () {
                 y: opts.y,
                 width: opts.width,
                 minReadableWidth: opts.minReadableWidth,
-                lineGap: opts.lineGap
+                lineGap: opts.lineGap,
+                availableIntervals: opts.availableIntervals,
+                resolveAvailableIntervals: opts.resolveAvailableIntervals
             });
             var runs = flattenParagraphRuns(paragraphInput);
             var lines = _asArray(lineLayout.lines).map(function (line, index) {
                 var id = block.id + '-line-' + index;
                 var rect = _clone(line.rect || {});
                 var baseline = rect.y + Math.max(1, rect.height || 1) * 0.78;
+                var firstLineInterval = _asArray(line.availableIntervals)[0] || null;
+                var pageIndex = line.pageIndex ?? (firstLineInterval && firstLineInterval.pageIndex) ?? null;
                 return _sortObject(Object.assign({}, line, {
                     id: id,
                     blockId: block.id,
                     lineId: id,
+                    pageIndex: pageIndex,
                     index: index,
                     rect: rect,
                     baseline: baseline,
                     baselineOffset: baseline - rect.y,
                     availableIntervals: _asArray(line.availableIntervals).map(function (interval) {
-                        return Object.assign({}, interval, { blockId: block.id, lineId: id });
+                        return Object.assign({}, interval, { blockId: block.id, lineId: id, pageIndex: interval.pageIndex ?? pageIndex });
+                    }),
+                    ranges: _asArray(line.ranges).map(function (range, rangeIndex) {
+                        return Object.assign({}, range, { blockId: block.id, lineId: id, pageIndex: range.pageIndex ?? pageIndex, index: range.index ?? rangeIndex });
                     })
                 }));
             });
@@ -8033,6 +9006,42 @@ window.tmDocumentEditorEngine = (function () {
             });
             lines.forEach(function (line) {
                 line.segments = segmentsByLine.get(line.id) || [];
+                line.ranges = _asArray(line.ranges && line.ranges.length ? line.ranges : line.availableIntervals).map(function (range, rangeIndex) {
+                    var indexValue = Number(range.index ?? rangeIndex);
+                    var rangeSegments = line.segments.filter(function (segment) {
+                        return Number(segment.rangeIndex || 0) === indexValue;
+                    });
+                    var start = rangeSegments.length
+                        ? rangeSegments.reduce(function (value, segment) { return Math.min(value, Number(segment.start || 0) || 0); }, Number.MAX_SAFE_INTEGER)
+                        : Number(range.start ?? line.end ?? 0) || 0;
+                    var end = rangeSegments.length
+                        ? rangeSegments.reduce(function (value, segment) { return Math.max(value, Number(segment.end || 0) || 0); }, start)
+                        : Number(range.end ?? start) || start;
+                    return _sortObject(Object.assign({}, range, {
+                        blockId: block.id,
+                        lineId: line.id,
+                        pageIndex: range.pageIndex ?? line.pageIndex ?? null,
+                        index: indexValue,
+                        start: start,
+                        end: Math.max(start, end),
+                        empty: rangeSegments.length === 0,
+                        collapsedOffset: rangeSegments.length === 0 ? start : null,
+                        segments: rangeSegments
+                    }));
+                });
+                line.textRanges = line.ranges;
+                line.availableIntervals = _asArray(line.availableIntervals).map(function (interval, intervalIndex) {
+                    var range = line.ranges[intervalIndex] || null;
+                    return _sortObject(Object.assign({}, interval, {
+                        blockId: block.id,
+                        lineId: line.id,
+                        pageIndex: interval.pageIndex ?? line.pageIndex ?? null,
+                        start: range ? range.start : interval.start,
+                        end: range ? range.end : interval.end,
+                        collapsedOffset: range ? range.collapsedOffset : interval.collapsedOffset,
+                        empty: range ? range.empty : interval.empty
+                    }));
+                });
                 line.inlineObjects = line.segments.filter(function (segment) {
                     return segment.inlineObject === true || segment.kind === 'drawing';
                 }).map(function (segment) {
@@ -8086,6 +9095,7 @@ window.tmDocumentEditorEngine = (function () {
             scoped.headerFooterId = ctx.headerFooterId || null;
             scoped.tableId = ctx.tableId || null;
             scoped.cellId = ctx.cellId || null;
+            scoped.columnIndex = ctx.columnIndex ?? null;
             scoped.pageIndex = pageIndex;
             function apply(item) {
                 if (!item) return;
@@ -8093,6 +9103,7 @@ window.tmDocumentEditorEngine = (function () {
                 item.headerFooterId = ctx.headerFooterId || null;
                 item.tableId = ctx.tableId || null;
                 item.cellId = ctx.cellId || null;
+                item.columnIndex = ctx.columnIndex ?? null;
                 item.pageIndex = pageIndex;
             }
             _asArray(scoped.lines).forEach(function (line) {
@@ -8122,39 +9133,48 @@ window.tmDocumentEditorEngine = (function () {
             collectAnchoredDrawingRuns(block, ctx).forEach(function (entry) {
                 var objectId = entry.object && entry.object.objectId || entry.run && (entry.run.objectId || entry.run.id) || '';
                 if (!objectId || scope.anchoredIds.has(objectId)) return;
+                var usesPageScope = ctx.region === 'TableCell'
+                    && readObjectLayoutInCell(entry.object) === false
+                    && !!ctx.pageFrame;
+                var placementFrame = usesPageScope ? rectFromGeometry(ctx.pageFrame) : scopeFrame;
                 var reference = resolveAnchoredDrawingReference(entry.object, laidOutBlocks || [], [], {
                     blockId: block && block.id || '',
                     pageIndex: Number(ctx.pageIndex ?? 0) || 0,
-                    bodyFrame: scopeFrame,
+                    bodyFrame: placementFrame,
                     y: fallbackY,
                     region: ctx.region,
                     headerFooterId: ctx.headerFooterId || null,
                     tableId: ctx.tableId || null,
-                    cellId: ctx.cellId || null
+                    cellId: ctx.cellId || null,
+                    columnIndex: ctx.columnIndex
                 });
                 reference = Object.assign({}, reference, {
                     region: ctx.region || reference.region || 'Body',
                     headerFooterId: ctx.headerFooterId || reference.headerFooterId || null,
                     tableId: ctx.tableId || reference.tableId || null,
-                    cellId: ctx.cellId || reference.cellId || null
+                    cellId: ctx.cellId || reference.cellId || null,
+                    columnIndex: ctx.columnIndex ?? reference.columnIndex ?? null
                 });
                 var placed = createAnchoredDrawingLayoutObject(block, entry, reference, {
                     pageIndex: Number(ctx.pageIndex ?? reference.pageIndex ?? 0) || 0,
-                    rect: scopeFrame,
-                    bodyFrame: scopeFrame
+                    rect: placementFrame,
+                    bodyFrame: placementFrame
                 });
                 placed.region = ctx.region || placed.region || 'Body';
                 placed.headerFooterId = ctx.headerFooterId || placed.headerFooterId || null;
                 placed.tableId = ctx.tableId || placed.tableId || null;
                 placed.cellId = ctx.cellId || placed.cellId || null;
+                placed.columnIndex = normalizeTextExclusionColumnIndex(ctx.columnIndex ?? placed.columnIndex);
                 placed.anchorRegion = placed.anchorRegion || placed.region;
                 placed.anchorHeaderFooterId = placed.anchorHeaderFooterId || placed.headerFooterId || '';
                 placed.anchorTableId = placed.anchorTableId || placed.tableId || '';
                 placed.anchorCellId = placed.anchorCellId || placed.cellId || '';
-                resolveObjectOverlapGeometry(scope.objects, placed, scopeFrame);
+                placed.anchorColumnIndex = normalizeTextExclusionColumnIndex(placed.anchorColumnIndex ?? placed.columnIndex);
+                placed.layoutInCell = readObjectLayoutInCell(placed);
+                resolveObjectOverlapGeometry(scope.objects, placed, placementFrame);
                 scope.objects.push(_sortObject(placed));
                 scope.anchoredIds.add(objectId);
-                var exclusion = createTextExclusion(placed, scopeFrame);
+                var exclusion = createTextExclusion(placed, placementFrame);
                 if (exclusion) scope.exclusions.push(exclusion);
             });
             return scope;
@@ -8174,7 +9194,10 @@ window.tmDocumentEditorEngine = (function () {
                 y: y,
                 width: scopeFrame.width,
                 lineGap: lineGap,
-                minReadableWidth: minReadableWidth
+                minReadableWidth: minReadableWidth,
+                resolveAvailableIntervals: function (atY, lineHeight, requestedMinWidth) {
+                    return getAvailableIntervals(atY, lineHeight, scopeFrame, exclusions || [], requestedMinWidth || minReadableWidth, Object.assign({}, ctx, { pageIndex: pageIndexValue }));
+                }
             }));
             var scoped = {
                 ok: initial.ok !== false,
@@ -8196,78 +9219,18 @@ window.tmDocumentEditorEngine = (function () {
                     invalidatedScopes: [block.id]
                 })
             };
-            var cursorY = y;
             _asArray(initial.lines).forEach(function (line) {
-                var lineHeight = Math.max(1, Number(line.rect && line.rect.height || 18) || 18);
-                var available = getAvailableIntervals(cursorY, lineHeight, scopeFrame, exclusions || [], minReadableWidth);
-                if (available.movedToY > cursorY + 0.01) cursorY = available.movedToY;
-                var interval = _asArray(available.intervals)[0] || { x: scopeFrame.x, y: cursorY, width: scopeFrame.width, height: lineHeight };
-                var deltaY = cursorY - Number(line.rect && line.rect.y || cursorY);
-                var shiftedLine = shiftLayoutLine(line, deltaY, pageIndexValue);
-                var deltaX = Number(interval.x || scopeFrame.x) - Number(shiftedLine.rect.x || scopeFrame.x);
-                shiftedLine.rect.x += deltaX;
-                shiftedLine.rect.width = Math.min(shiftedLine.rect.width, Number(interval.width || shiftedLine.rect.width));
-                shiftedLine.availableIntervals = _asArray(available.intervals).map(function (candidate, candidateIndex) {
-                    var lineStart = Number(line.start ?? shiftedLine.start ?? 0) || 0;
-                    var lineEnd = Math.max(lineStart, Number(line.end ?? shiftedLine.end ?? lineStart) || lineStart);
-                    var ownsText = candidateIndex === 0;
-                    var start = ownsText ? lineStart : lineEnd;
-                    var end = ownsText ? lineEnd : lineEnd;
-                    return _sortObject({
-                        x: Number(candidate.x ?? scopeFrame.x) || scopeFrame.x,
-                        y: cursorY,
-                        width: Math.max(0, Number(candidate.width ?? scopeFrame.width) || 0),
-                        height: lineHeight,
-                        blockId: block.id,
-                        lineId: shiftedLine.id,
-                        pageIndex: pageIndexValue,
-                        region: ctx.region,
-                        headerFooterId: ctx.headerFooterId || null,
-                        tableId: ctx.tableId || null,
-                        cellId: ctx.cellId || null,
-                        start: start,
-                        end: end,
-                        collapsedOffset: start === end ? start : lineEnd,
-                        empty: start === end || ownsText !== true,
-                        affinity: inferCaretIntervalAffinity(candidate, exclusions || [], 'after'),
-                        virtualCaret: (start === end || ownsText !== true) && _asArray(exclusions).length > 0
-                    });
-                });
-                if (!shiftedLine.availableIntervals.length) {
-                    shiftedLine.availableIntervals = [_sortObject({
-                        x: scopeFrame.x,
-                        y: cursorY,
-                        width: scopeFrame.width,
-                        height: lineHeight,
-                        blockId: block.id,
-                        lineId: shiftedLine.id,
-                        pageIndex: pageIndexValue,
-                        region: ctx.region,
-                        headerFooterId: ctx.headerFooterId || null,
-                        tableId: ctx.tableId || null,
-                        cellId: ctx.cellId || null,
-                        start: Number(line.start ?? shiftedLine.start ?? 0) || 0,
-                        end: Math.max(Number(line.start ?? shiftedLine.start ?? 0) || 0, Number(line.end ?? shiftedLine.end ?? 0) || 0),
-                        collapsedOffset: Number(line.start ?? shiftedLine.start ?? 0) || 0,
-                        empty: true,
-                        affinity: 'after',
-                        virtualCaret: false
-                    })];
-                }
+                var shiftedLine = shiftLayoutLine(line, 0, pageIndexValue);
                 var segmentIds = new Set(_asArray(line.segments).map(function (segment) { return segment.id; }));
                 var shiftedSegments = _asArray(initial.segments).filter(function (segment) {
                     return segment.lineId === line.id || segmentIds.has(segment.id);
                 }).map(function (segment) {
-                    var shifted = shiftLayoutSegment(segment, deltaY, pageIndexValue);
-                    shifted.rect.x += deltaX;
-                    return shifted;
+                    return shiftLayoutSegment(segment, 0, pageIndexValue);
                 });
                 var shiftedStops = _asArray(initial.caretStops).filter(function (stop) {
                     return stop.lineId === line.id;
                 }).map(function (stop) {
-                    var shifted = shiftCaretStop(stop, deltaY, pageIndexValue);
-                    shifted.rect.x += deltaX;
-                    return shifted;
+                    return shiftCaretStop(stop, 0, pageIndexValue);
                 });
                 var shiftedInlineObjects = shiftedSegments.filter(function (segment) {
                     return segment.inlineObject === true || segment.kind === 'drawing';
@@ -8275,16 +9238,23 @@ window.tmDocumentEditorEngine = (function () {
                     return createInlineObjectLayoutFromSegment(block, segment, shiftedLine);
                 });
                 shiftedLine.segments = shiftedSegments;
+                shiftedLine.ranges = _asArray(shiftedLine.ranges).map(function (range, rangeIndex) {
+                    var indexValue = Number(range.index ?? rangeIndex);
+                    return _sortObject(Object.assign({}, range, {
+                        pageIndex: pageIndexValue,
+                        segments: shiftedSegments.filter(function (segment) { return Number(segment.rangeIndex || 0) === indexValue; })
+                    }));
+                });
+                shiftedLine.textRanges = shiftedLine.ranges;
                 shiftedLine.inlineObjects = shiftedInlineObjects;
                 decorateScopedLayoutMetadata({ lines: [shiftedLine], segments: shiftedSegments, inlineObjects: shiftedInlineObjects, caretStops: shiftedStops }, Object.assign({}, ctx, { pageIndex: pageIndexValue }));
                 scoped.lines.push(shiftedLine);
                 scoped.segments = scoped.segments.concat(shiftedSegments);
                 scoped.inlineObjects = scoped.inlineObjects.concat(shiftedInlineObjects);
                 scoped.caretStops = scoped.caretStops.concat(shiftedStops);
-                scoped.baselines.push(_sortObject({ blockId: block.id, lineId: shiftedLine.id, y: shiftedLine.baseline, offset: shiftedLine.baselineOffset, pageIndex: pageIndexValue, region: ctx.region, headerFooterId: ctx.headerFooterId || null, tableId: ctx.tableId || null, cellId: ctx.cellId || null }));
+                scoped.baselines.push(_sortObject({ blockId: block.id, lineId: shiftedLine.id, y: shiftedLine.baseline, offset: shiftedLine.baselineOffset, pageIndex: pageIndexValue, region: ctx.region, headerFooterId: ctx.headerFooterId || null, tableId: ctx.tableId || null, cellId: ctx.cellId || null, columnIndex: ctx.columnIndex ?? null }));
                 scoped.rect.y = Math.min(scoped.rect.y, shiftedLine.rect.y);
                 scoped.rect.height = Math.max(scoped.rect.height, shiftedLine.rect.y + shiftedLine.rect.height - scoped.rect.y);
-                cursorY = shiftedLine.rect.y + shiftedLine.rect.height + lineGap;
             });
             if (!scoped.lines.length) {
                 scoped = Object.assign(scoped, decorateScopedLayoutMetadata(initial, Object.assign({}, ctx, { pageIndex: pageIndexValue })));
@@ -8350,8 +9320,10 @@ window.tmDocumentEditorEngine = (function () {
                         region: 'TableCell',
                         tableId: block.id,
                         cellId: cell.id,
+                        columnIndex: columnIndex,
                         headerFooterId: opts.headerFooterId || opts.HeaderFooterId || null,
-                        pageIndex: tablePageIndex
+                        pageIndex: tablePageIndex,
+                        pageFrame: opts.page || null
                     };
                     var scopedFrame = {
                         x: contentFrame.x,
@@ -8386,6 +9358,7 @@ window.tmDocumentEditorEngine = (function () {
                         _asArray(childLayout.lines).forEach(function (line) {
                             line.tableId = block.id;
                             line.cellId = cell.id;
+                            line.columnIndex = columnIndex;
                             line.region = 'TableCell';
                             line.headerFooterId = cellContext.headerFooterId || null;
                             tableLines.push(line);
@@ -8393,6 +9366,7 @@ window.tmDocumentEditorEngine = (function () {
                         _asArray(childLayout.segments).forEach(function (segment) {
                             segment.tableId = block.id;
                             segment.cellId = cell.id;
+                            segment.columnIndex = columnIndex;
                             segment.region = 'TableCell';
                             segment.headerFooterId = cellContext.headerFooterId || null;
                             tableSegments.push(segment);
@@ -8400,6 +9374,7 @@ window.tmDocumentEditorEngine = (function () {
                         _asArray(childLayout.caretStops).forEach(function (stop) {
                             stop.tableId = block.id;
                             stop.cellId = cell.id;
+                            stop.columnIndex = columnIndex;
                             stop.region = 'TableCell';
                             stop.headerFooterId = cellContext.headerFooterId || null;
                             tableCarets.push(stop);
@@ -8410,6 +9385,9 @@ window.tmDocumentEditorEngine = (function () {
                     var contentHeight = Math.max(18, contentY - contentFrame.y);
                     var cellHeight = Math.max(Number(cell.height || cell.Height || 0) || 0, contentHeight + padding * 2, 28);
                     rowHeight = Math.max(rowHeight, cellHeight);
+                    var localCellExclusions = cellScope.exclusions.filter(function (exclusion) {
+                        return textExclusionMatchesScope(exclusion, createTextExclusionScopeDescriptor(cellContext));
+                    });
                     var cellLayout = {
                         tableId: block.id,
                         rowId: row.id,
@@ -8422,7 +9400,7 @@ window.tmDocumentEditorEngine = (function () {
                         contentFrame: { x: contentFrame.x, y: contentFrame.y, width: contentFrame.width, height: Math.max(1, cellHeight - padding * 2) },
                         style: _clone(cell.style || {}),
                         objects: cellScope.objects.slice(),
-                        exclusions: cellScope.exclusions.slice(),
+                        exclusions: localCellExclusions,
                         blockLayouts: blockLayouts
                     };
                     tableObjects = tableObjects.concat(cellScope.objects);
@@ -8496,6 +9474,19 @@ window.tmDocumentEditorEngine = (function () {
                     var clone = _clone(object);
                     clone.pageIndex = clone.pageIndex ?? layout.pageIndex ?? 0;
                     objects.push(clone);
+                });
+                _asArray(layout.exclusions).forEach(function (exclusion) {
+                    var scoped = exclusion || {};
+                    if (normalizeAnchorRegionName(scoped.region || scoped.Region || 'Body') !== 'Body') return;
+                    var pageIndexValue = Number(scoped.pageIndex ?? scoped.PageIndex ?? layout.pageIndex ?? 0) || 0;
+                    var targetPage = ensurePage(pageIndexValue);
+                    var scopeKey = _asText(scoped.scopeKey || scoped.ScopeKey || '');
+                    var objectId = _asText(scoped.objectId || scoped.ObjectId || '');
+                    var exists = targetPage.exclusions.some(function (existing) {
+                        return scopeKey && _asText(existing && (existing.scopeKey || existing.ScopeKey) || '') === scopeKey
+                            && objectId && _asText(existing && (existing.objectId || existing.ObjectId) || '') === objectId;
+                    });
+                    if (!exists) targetPage.exclusions.push(_clone(scoped));
                 });
             };
             var anchoredDrawingObjectIds = new Set();
@@ -8646,19 +9637,72 @@ window.tmDocumentEditorEngine = (function () {
             });
 
             function layoutParagraphAcrossPages(block, page, y, layoutOptions, metrics) {
+                function resolvePagedAvailableIntervals(atY, lineHeight, requestedMinWidth) {
+                    var lineY = Number(atY || y) || y;
+                    var height = Math.max(1, Number(lineHeight || 18) || 18);
+                    var minWidth = requestedMinWidth || metrics.minReadableWidth;
+                    var activePage = ensurePage(page.pageIndex);
+                    while (lineY > activePage.bodyFrame.y && lineY + height > bodyBottom(activePage)) {
+                        activePage = ensurePage(activePage.pageIndex + 1);
+                        if (lineY < activePage.bodyFrame.y) lineY = activePage.bodyFrame.y;
+                    }
+                    if (lineY < activePage.bodyFrame.y) lineY = activePage.bodyFrame.y;
+                    var available = getAvailableIntervals(lineY, height, activePage.bodyFrame, activePage.exclusions, minWidth, {
+                        pageIndex: activePage.pageIndex,
+                        region: 'Body'
+                    });
+                    if (available.movedToY > lineY + 0.01) {
+                        lineY = available.movedToY;
+                        if (lineY + height > bodyBottom(activePage)) {
+                            activePage = ensurePage(activePage.pageIndex + 1);
+                            lineY = activePage.bodyFrame.y;
+                            available = getAvailableIntervals(lineY, height, activePage.bodyFrame, activePage.exclusions, minWidth, {
+                                pageIndex: activePage.pageIndex,
+                                region: 'Body'
+                            });
+                        }
+                    }
+                    var intervals = _asArray(available.intervals).map(function (interval) {
+                        return Object.assign({}, interval, { pageIndex: activePage.pageIndex });
+                    });
+                    var movedIntervals = _asArray(available.movedIntervals).map(function (interval) {
+                        return Object.assign({}, interval, { pageIndex: activePage.pageIndex });
+                    });
+                    return Object.assign({}, available, {
+                        intervals: intervals,
+                        availableIntervals: intervals,
+                        movedIntervals: movedIntervals,
+                        movedToY: lineY,
+                        pageIndex: activePage.pageIndex
+                    });
+                }
+
                 var initial = layoutParagraph(block, Object.assign({}, layoutOptions, {
                     page: page.bodyFrame,
                     x: page.bodyFrame.x,
                     y: y,
                     width: page.bodyFrame.width,
                     lineGap: metrics.lineGap,
-                    minReadableWidth: metrics.minReadableWidth
+                    minReadableWidth: metrics.minReadableWidth,
+                    resolveAvailableIntervals: resolvePagedAvailableIntervals
                 }));
                 var fragmentsByPage = new Map();
-                var cursorPageIndex = page.pageIndex;
-                var cursorY = y;
 
-                function getFragment(fragmentPage) {
+                function linePageIndex(line) {
+                    var interval = _asArray(line && line.availableIntervals)[0] || null;
+                    if (interval && interval.pageIndex !== null && interval.pageIndex !== undefined) return Number(interval.pageIndex || 0) || 0;
+                    if (line && line.pageIndex !== null && line.pageIndex !== undefined) return Number(line.pageIndex || 0) || 0;
+                    var lineY = Number(line && line.rect && line.rect.y || y) || y;
+                    var index = page.pageIndex;
+                    var candidate = ensurePage(index);
+                    while (lineY > candidate.bodyFrame.y && lineY >= bodyBottom(candidate)) {
+                        index++;
+                        candidate = ensurePage(index);
+                    }
+                    return candidate.pageIndex;
+                }
+
+                function getFragment(fragmentPage, lineY) {
                     if (!fragmentsByPage.has(fragmentPage.pageIndex)) {
                         fragmentsByPage.set(fragmentPage.pageIndex, {
                             ok: true,
@@ -8668,7 +9712,7 @@ window.tmDocumentEditorEngine = (function () {
                             type: 'paragraph',
                             pageIndex: fragmentPage.pageIndex,
                             fragmentIndex: fragmentsByPage.size,
-                            rect: { x: fragmentPage.bodyFrame.x, y: cursorY, width: fragmentPage.bodyFrame.width, height: 0 },
+                            rect: { x: fragmentPage.bodyFrame.x, y: lineY, width: fragmentPage.bodyFrame.width, height: 0 },
                             lines: [],
                             segments: [],
                             inlineObjects: [],
@@ -8686,84 +9730,19 @@ window.tmDocumentEditorEngine = (function () {
                 }
 
                 _asArray(initial.lines).forEach(function (line) {
-                    var activePage = ensurePage(cursorPageIndex);
-                    var lineHeight = Math.max(1, Number(line.rect && line.rect.height || 18) || 18);
-                    if (cursorY > activePage.bodyFrame.y && cursorY + lineHeight > bodyBottom(activePage)) {
-                        cursorPageIndex++;
-                        activePage = ensurePage(cursorPageIndex);
-                        cursorY = activePage.bodyFrame.y;
-                    }
-                    var available = getAvailableIntervals(cursorY, lineHeight, activePage.bodyFrame, activePage.exclusions, metrics.minReadableWidth);
-                    if (available.movedToY > cursorY + 0.01) {
-                        cursorY = available.movedToY;
-                        if (cursorY + lineHeight > bodyBottom(activePage)) {
-                            cursorPageIndex++;
-                            activePage = ensurePage(cursorPageIndex);
-                            cursorY = activePage.bodyFrame.y;
-                            available = getAvailableIntervals(cursorY, lineHeight, activePage.bodyFrame, activePage.exclusions, metrics.minReadableWidth);
-                        }
-                    }
-                    var interval = _asArray(available.intervals)[0] || { x: activePage.bodyFrame.x, y: cursorY, width: activePage.bodyFrame.width, height: lineHeight };
-                    var deltaY = cursorY - Number(line.rect && line.rect.y || cursorY);
-                    var fragment = getFragment(activePage);
-                    var shiftedLine = shiftLayoutLine(line, deltaY, activePage.pageIndex);
-                    var deltaX = Number(interval.x || activePage.bodyFrame.x) - Number(shiftedLine.rect.x || activePage.bodyFrame.x);
-                    shiftedLine.rect.x += deltaX;
-                    shiftedLine.rect.width = Math.min(shiftedLine.rect.width, Number(interval.width || shiftedLine.rect.width));
-                    shiftedLine.availableIntervals = _asArray(available.intervals).map(function (candidate, candidateIndex) {
-                        var lineStart = Number(line.start ?? shiftedLine.start ?? 0) || 0;
-                        var lineEnd = Math.max(lineStart, Number(line.end ?? shiftedLine.end ?? lineStart) || lineStart);
-                        var ownsText = candidateIndex === 0;
-                        var start = ownsText ? lineStart : lineEnd;
-                        var end = ownsText ? lineEnd : lineEnd;
-                        var empty = start === end || ownsText !== true;
-                        return _sortObject({
-                            x: Number(candidate.x ?? activePage.bodyFrame.x) || activePage.bodyFrame.x,
-                            y: cursorY,
-                            width: Math.max(0, Number(candidate.width ?? activePage.bodyFrame.width) || 0),
-                            height: lineHeight,
-                            blockId: block.id,
-                            lineId: shiftedLine.id,
-                            pageIndex: activePage.pageIndex,
-                            start: start,
-                            end: end,
-                            collapsedOffset: start === end ? start : lineEnd,
-                            empty: empty,
-                            affinity: inferCaretIntervalAffinity(candidate, activePage.exclusions, ownsText ? 'after' : 'after'),
-                            virtualCaret: empty && _asArray(activePage.exclusions).length > 0
-                        });
-                    });
-                    if (!shiftedLine.availableIntervals.length) {
-                        shiftedLine.availableIntervals = [_sortObject({
-                            x: activePage.bodyFrame.x,
-                            y: cursorY,
-                            width: activePage.bodyFrame.width,
-                            height: lineHeight,
-                            blockId: block.id,
-                            lineId: shiftedLine.id,
-                            pageIndex: activePage.pageIndex,
-                            start: Number(line.start ?? shiftedLine.start ?? 0) || 0,
-                            end: Math.max(Number(line.start ?? shiftedLine.start ?? 0) || 0, Number(line.end ?? shiftedLine.end ?? 0) || 0),
-                            collapsedOffset: Number(line.start ?? shiftedLine.start ?? 0) || 0,
-                            empty: true,
-                            affinity: 'after',
-                            virtualCaret: false
-                        })];
-                    }
+                    var activePage = ensurePage(linePageIndex(line));
+                    var fragment = getFragment(activePage, Number(line.rect && line.rect.y || activePage.bodyFrame.y) || activePage.bodyFrame.y);
+                    var shiftedLine = shiftLayoutLine(line, 0, activePage.pageIndex);
                     var segmentIds = new Set(_asArray(line.segments).map(function (segment) { return segment.id; }));
                     var shiftedSegments = _asArray(initial.segments).filter(function (segment) {
                         return segment.lineId === line.id || segmentIds.has(segment.id);
                     }).map(function (segment) {
-                        var shifted = shiftLayoutSegment(segment, deltaY, activePage.pageIndex);
-                        shifted.rect.x += deltaX;
-                        return shifted;
+                        return shiftLayoutSegment(segment, 0, activePage.pageIndex);
                     });
                     var shiftedStops = _asArray(initial.caretStops).filter(function (stop) {
                         return stop.lineId === line.id;
                     }).map(function (stop) {
-                        var shifted = shiftCaretStop(stop, deltaY, activePage.pageIndex);
-                        shifted.rect.x += deltaX;
-                        return shifted;
+                        return shiftCaretStop(stop, 0, activePage.pageIndex);
                     });
                     var shiftedInlineObjects = shiftedSegments.filter(function (segment) {
                         return segment.inlineObject === true || segment.kind === 'drawing';
@@ -8771,6 +9750,14 @@ window.tmDocumentEditorEngine = (function () {
                         return createInlineObjectLayoutFromSegment(block, segment, shiftedLine);
                     });
                     shiftedLine.segments = shiftedSegments;
+                    shiftedLine.ranges = _asArray(shiftedLine.ranges).map(function (range, rangeIndex) {
+                        var indexValue = Number(range.index ?? rangeIndex);
+                        return _sortObject(Object.assign({}, range, {
+                            pageIndex: activePage.pageIndex,
+                            segments: shiftedSegments.filter(function (segment) { return Number(segment.rangeIndex || 0) === indexValue; })
+                        }));
+                    });
+                    shiftedLine.textRanges = shiftedLine.ranges;
                     shiftedLine.inlineObjects = shiftedInlineObjects;
                     fragment.lines.push(shiftedLine);
                     fragment.segments = fragment.segments.concat(shiftedSegments);
@@ -8779,7 +9766,6 @@ window.tmDocumentEditorEngine = (function () {
                     fragment.baselines.push(_sortObject({ blockId: block.id, lineId: shiftedLine.id, y: shiftedLine.baseline, offset: shiftedLine.baselineOffset, pageIndex: activePage.pageIndex }));
                     fragment.rect.y = Math.min(fragment.rect.y, shiftedLine.rect.y);
                     fragment.rect.height = Math.max(fragment.rect.height, shiftedLine.rect.y + shiftedLine.rect.height - fragment.rect.y);
-                    cursorY = shiftedLine.rect.y + shiftedLine.rect.height + metrics.lineGap;
                 });
 
                 return Array.from(fragmentsByPage.values()).map(function (fragment) {
@@ -8847,10 +9833,172 @@ window.tmDocumentEditorEngine = (function () {
             }
         }
 
+        function blockHasFloatingDrawingRuns(block) {
+            if (!block || block.type !== 'paragraph') return false;
+            return _asArray(block.content && block.content.runs).some(function (run, inlineIndex) {
+                if (!run || !(run.kind === 'drawing' || isDrawingRunSource(run))) return false;
+                var object = normalizeImageObject(run, { blockId: block.id || '', inlineIndex: inlineIndex });
+                return object && object.isInline !== true;
+            });
+        }
+
+        function layoutBlockHasSimpleTextIntervals(blockLayout) {
+            if (!blockLayout || blockLayout.type !== 'paragraph') return false;
+            return _asArray(blockLayout.lines).every(function (line) {
+                var intervals = _asArray(line && line.availableIntervals);
+                if (intervals.length <= 1) return true;
+                return false;
+            });
+        }
+
+        function exclusionScopeMatchesLayoutScope(exclusion, scope) {
+            var candidate = readTextExclusionScope(exclusion || {});
+            var region = normalizeAnchorRegionName(scope && (scope.region || scope.Region) || 'Body');
+            if (normalizeAnchorRegionName(candidate.region) !== region) return false;
+            if (_asText(candidate.headerFooterId || '') !== _asText(scope && (scope.headerFooterId || scope.HeaderFooterId) || '')) return false;
+            if (_asText(candidate.tableId || '') !== _asText(scope && (scope.tableId || scope.TableId) || '')) return false;
+            if (_asText(candidate.cellId || '') !== _asText(scope && (scope.cellId || scope.CellId) || '')) return false;
+            return true;
+        }
+
+        function layoutHasOverlappingExclusion(layout, rect, scope) {
+            var target = rectFromGeometry(rect || {});
+            if (target.width <= 0 || target.height <= 0) return false;
+            var exclusions = [];
+            _asArray(layout && layout.pages).forEach(function (page) {
+                exclusions = exclusions.concat(_asArray(page && page.exclusions));
+            });
+            _asArray(layout && layout.headerFooterRegions).forEach(function (region) {
+                exclusions = exclusions.concat(_asArray(region && region.exclusions));
+            });
+            return exclusions.some(function (exclusion) {
+                if (!exclusionScopeMatchesLayoutScope(exclusion, scope)) return false;
+                var exclusionRect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
+                return rectIntersectsGeometry(target, exclusionRect);
+            });
+        }
+
+        function shiftLayoutBlockForIncrementalReflow(blockLayout, deltaY) {
+            var delta = Number(deltaY || 0) || 0;
+            if (!blockLayout || Math.abs(delta) < 0.0001) return blockLayout;
+            blockLayout.rect = shiftRectY(blockLayout.rect, delta);
+            _asArray(blockLayout.lines).forEach(function (line) {
+                line.rect = shiftRectY(line.rect, delta);
+                line.baseline = Number(line.baseline || 0) + delta;
+                _asArray(line.availableIntervals).forEach(function (interval) { interval.y = Number(interval.y || 0) + delta; });
+                _asArray(line.ranges).forEach(function (range) {
+                    range.y = Number(range.y || 0) + delta;
+                    if (range.interval) range.interval.y = Number(range.interval.y || 0) + delta;
+                });
+            });
+            _asArray(blockLayout.segments).forEach(function (segment) {
+                segment.rect = shiftRectY(segment.rect, delta);
+                if (segment.objectRect) segment.objectRect = shiftRectY(segment.objectRect, delta);
+            });
+            _asArray(blockLayout.inlineObjects).forEach(function (object) {
+                object.rect = shiftRectY(object.rect, delta);
+            });
+            _asArray(blockLayout.caretStops).forEach(function (stop) {
+                stop.rect = shiftRectY(stop.rect, delta);
+            });
+            _asArray(blockLayout.baselines).forEach(function (baseline) {
+                baseline.y = Number(baseline.y || 0) + delta;
+            });
+            return blockLayout;
+        }
+
+        function tryLayoutAfterOperationIncremental(model, operation, previousLayout, options, scope, selection) {
+            if (!previousLayout || !operation || !scope) return null;
+            var type = operation.type || operation.Type || '';
+            if ([OPERATION_TYPES.InsertText, OPERATION_TYPES.DeleteRange, OPERATION_TYPES.ApplyMark, OPERATION_TYPES.RemoveMark, OPERATION_TYPES.SetParagraphAttribute].indexOf(type) < 0) {
+                return null;
+            }
+            if (scope.kind !== LAYOUT_SCOPE_KINDS.ActiveParagraph) return null;
+            if (normalizeAnchorRegionName(scope.region || 'Body') !== 'Body') return null;
+
+            var activeBlockId = scope.blockId || firstScopeBlockId(scope);
+            var block = _findBlock(model, activeBlockId);
+            var previousBlock = findLayoutBlock(previousLayout, activeBlockId);
+            if (!block || block.type !== 'paragraph' || !previousBlock || previousBlock.type !== 'paragraph') return null;
+            if (blockHasFloatingDrawingRuns(block)) return null;
+            if (!layoutBlockHasSimpleTextIntervals(previousBlock)) return null;
+            if (layoutHasOverlappingExclusion(previousLayout, previousBlock.rect, scope)) return null;
+
+            var opts = options || {};
+            var metrics = previousLayout.pageMetrics || {};
+            var local = layoutParagraph(block, Object.assign({}, opts, {
+                page: previousBlock.rect,
+                x: previousBlock.rect.x,
+                y: previousBlock.rect.y,
+                width: previousBlock.rect.width,
+                lineGap: Number(opts.lineGap ?? metrics.lineGap ?? 0) || 0,
+                minReadableWidth: Math.max(1, Number(opts.minReadableWidth ?? metrics.minReadableWidth ?? 48) || 48)
+            }));
+            local.pageIndex = previousBlock.pageIndex ?? 0;
+            local.region = previousBlock.region || 'Body';
+            local.headerFooterId = previousBlock.headerFooterId || null;
+            local.tableId = previousBlock.tableId || null;
+            local.cellId = previousBlock.cellId || null;
+            local.columnIndex = previousBlock.columnIndex ?? null;
+            _asArray(local.lines).forEach(function (line) { line.pageIndex = local.pageIndex; line.region = local.region; });
+            _asArray(local.segments).forEach(function (segment) { segment.pageIndex = local.pageIndex; segment.region = local.region; });
+            _asArray(local.caretStops).forEach(function (stop) { stop.pageIndex = local.pageIndex; stop.region = local.region; });
+
+            var heightDelta = local.rect.height - previousBlock.rect.height;
+            var seenActive = false;
+            var staleFollowing = [];
+            var nextBlocks = _asArray(previousLayout.blocks).map(function (layoutBlock) {
+                if (layoutBlock.blockId === activeBlockId) {
+                    seenActive = true;
+                    return _clone(local);
+                }
+                var clone = _clone(layoutBlock);
+                if (seenActive && Math.abs(heightDelta) > 0.0001 && clone.region === (previousBlock.region || clone.region) && Number(clone.pageIndex || 0) === Number(previousBlock.pageIndex || 0)) {
+                    shiftLayoutBlockForIncrementalReflow(clone, heightDelta);
+                    clone.stale = true;
+                    clone.safeOffsetY = heightDelta;
+                    staleFollowing.push(clone.blockId);
+                }
+                return clone;
+            });
+
+            var next = _clone(previousLayout);
+            next.layoutVersion = ++layoutVersion;
+            next.blocks = nextBlocks;
+            next.caretStops = [];
+            nextBlocks.forEach(function (layoutBlock) {
+                next.caretStops = next.caretStops.concat(_asArray(layoutBlock.caretStops));
+            });
+            next.lineIntervals = collectLayoutLineIntervals({ blocks: nextBlocks });
+            next.activeParagraphLayout = true;
+            next.activeBlockId = activeBlockId;
+            next.staleFollowingBlockIds = staleFollowing;
+            next.selection = selection;
+            next.debug = Object.assign({}, next.debug || {}, {
+                source: 'paragraph-layout-document-incremental',
+                minimalScope: scope,
+                incrementalReflow: true,
+                skippedPageExclusionRebuild: true,
+                invalidatedScopes: [activeBlockId],
+                staleFollowingBlockIds: staleFollowing,
+                heightDelta: heightDelta,
+                reflowBoundary: {
+                    kind: 'activeParagraph',
+                    blockId: activeBlockId,
+                    region: 'Body',
+                    pageIndex: Number(previousBlock.pageIndex || 0) || 0,
+                    reason: type
+                }
+            });
+            return _sortObject(next);
+        }
+
         function layoutAfterOperation(model, operation, previousLayout, options) {
             var scope = inferLayoutScopeFromOperation(operation);
             var opts = options || {};
             var selection = _clone(opts.selection || opts.Selection || null);
+            var incremental = tryLayoutAfterOperationIncremental(model, operation, previousLayout, opts, scope, selection);
+            if (incremental) return incremental;
             var next = layoutDocument(model, opts);
             var activeBlockId = scope.blockId || firstScopeBlockId(scope);
             var previousBlock = findLayoutBlock(previousLayout, activeBlockId);
@@ -9771,7 +10919,9 @@ window.tmDocumentEditorEngine = (function () {
                     return _sortObject({
                         operations: [createOperation(OPERATION_TYPES.RestoreSnapshot, {
                             snapshot: nextModel,
+                            previousSnapshot: _clone(model),
                             selection: objectDeletion.selection,
+                            previousSelection: snapshot,
                             affectedScopeIds: objectDeletion.affectedScopeIds || ['document']
                         }, { source: 'input' }).toJSON()],
                         objectAction: 'deleteObject',
@@ -10809,6 +11959,7 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: sourceInterval.headerFooterId || sourceInterval.HeaderFooterId || sourceLine.headerFooterId || sourceLine.HeaderFooterId || null,
             tableId: sourceInterval.tableId || sourceInterval.TableId || sourceLine.tableId || sourceLine.TableId || null,
             cellId: sourceInterval.cellId || sourceInterval.CellId || sourceLine.cellId || sourceLine.CellId || null,
+            columnIndex: normalizeTextExclusionColumnIndex(sourceInterval.columnIndex ?? sourceInterval.ColumnIndex ?? sourceLine.columnIndex ?? sourceLine.ColumnIndex),
             x: intervalRect.x,
             y: intervalRect.y,
             width: intervalRect.width,
@@ -10860,7 +12011,8 @@ window.tmDocumentEditorEngine = (function () {
                             region: 'TableCell',
                             headerFooterId: cell && cell.headerFooterId || null,
                             tableId: block.blockId || null,
-                            cellId: cell && cell.cellId || null
+                            cellId: cell && cell.cellId || null,
+                            columnIndex: cell ? (cell.columnIndex ?? cell.ColumnIndex ?? null) : null
                         });
                     });
                 });
@@ -10941,6 +12093,76 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function objectTextExclusionRectForHitTest(item, frame) {
+        var mode = normalizeWrapModeName(item && (item.WrapMode || item.wrapMode));
+        if (!wrapModeCreatesTextExclusion(mode)) return null;
+        var explicitRect = item && (item.WrapRect || item.wrapRect || item.TextExclusionRect || item.textExclusionRect || item.ExclusionRect || item.exclusionRect);
+        if (explicitRect) {
+            var normalizedExplicit = hitRectFromAny(explicitRect);
+            if (normalizedExplicit.width > 0 && normalizedExplicit.height > 0) return normalizedExplicit;
+        }
+
+        var objectRect = item && (item.ObjectRect || item.objectRect || item.Rect || item.rect);
+        var rect = hitRectFromAny(objectRect);
+        if (rect.width <= 0 || rect.height <= 0) return null;
+
+        var margin = Math.max(0, finiteNumber(item.WrapMargin ?? item.wrapMargin, 0));
+        var distanceLeft = Math.max(0, finiteNumber(item.DistanceLeft ?? item.distanceLeft, margin));
+        var distanceRight = Math.max(0, finiteNumber(item.DistanceRight ?? item.distanceRight, margin));
+        var distanceTop = Math.max(0, finiteNumber(item.DistanceTop ?? item.distanceTop, margin));
+        var distanceBottom = Math.max(0, finiteNumber(item.DistanceBottom ?? item.distanceBottom, margin));
+        var frameRect = frame ? hitRectFromAny(frame) : null;
+
+        if (mode === 'TopBottom' && frameRect && frameRect.width > 0) {
+            return {
+                x: frameRect.x,
+                y: rect.y - distanceTop,
+                width: frameRect.width,
+                height: rect.height + distanceTop + distanceBottom
+            };
+        }
+
+        return {
+            x: rect.x - distanceLeft,
+            y: rect.y - distanceTop,
+            width: rect.width + distanceLeft + distanceRight,
+            height: rect.height + distanceTop + distanceBottom
+        };
+    }
+
+    function collectLayoutTextExclusionHits(layout, x, y) {
+        var candidates = [];
+        function pushObject(item) {
+            if (!item) return;
+            var layer = _asText(item.Layer || item.layer || drawingLayerForWrapMode(item.WrapMode || item.wrapMode)).toLowerCase();
+            if (layer === 'behind-text' || layer === 'behindtext' || layer === 'in-front-of-text' || layer === 'infrontoftext') return;
+            var rect = objectTextExclusionRectForHitTest(item, layout && (layout.frame || layout.Frame || layout.bodyFrame || layout.BodyFrame));
+            if (!rect || !hitRectContains(rect, x, y)) return;
+            candidates.push(Object.assign({}, item, {
+                priority: objectHitPriority(item),
+                zIndex: finiteNumber(item.ZIndex ?? item.zIndex, 0),
+                hitRect: rect
+            }));
+        }
+
+        _asArray(layout && layout.objects).forEach(pushObject);
+        _asArray(layout && layout.blocks).forEach(function (block) {
+            if (block && block.type === 'image') {
+                pushObject(Object.assign({}, block, {
+                    blockId: block.blockId || block.id || '',
+                    objectId: block.objectId || block.ObjectId || block.blockId || block.id || '',
+                    rect: block.rect || block.Rect,
+                    Rect: block.Rect || block.rect
+                }));
+            }
+        });
+
+        return candidates.sort(function (a, b) {
+            return (finiteNumber(b.priority, 0) - finiteNumber(a.priority, 0))
+                || (finiteNumber(b.zIndex, 0) - finiteNumber(a.zIndex, 0));
+        });
+    }
+
     function compareDomCaretToLayout(root, model, layout, position) {
         var mapped = logicalToDomRange(root, model, position);
         if (!mapped.ok) return { ok: false, error: mapped.error };
@@ -10964,6 +12186,7 @@ window.tmDocumentEditorEngine = (function () {
         var py = Number(y || 0);
         var objectHit = collectLayoutObjectHits(layout, px, py)[0] || null;
         var textIntervalHit = findCaretIntervalHit(layout, px, py);
+        var textExclusionHit = collectLayoutTextExclusionHits(layout, px, py)[0] || null;
         var tableCellHit = null;
         _asArray(layout && layout.blocks).forEach(function (block) {
             var rect = block.rect || {};
@@ -11016,7 +12239,7 @@ window.tmDocumentEditorEngine = (function () {
                 })
             };
         }
-        if (textIntervalHit) {
+        if (textIntervalHit && !textExclusionHit) {
             var offset = caretOffsetFromInterval(textIntervalHit, px);
             var affinity = textIntervalHit.affinity === 'before' ? 'before' : 'after';
             return {
@@ -11493,6 +12716,9 @@ window.tmDocumentEditorEngine = (function () {
             appliedDy: Number(preview && preview.appliedDy || track.appliedDelta && track.appliedDelta.y || 0) || 0,
             width: preview && preview.width === undefined ? null : Number(preview && preview.width || 0) || 0,
             height: preview && preview.height === undefined ? null : Number(preview && preview.height || 0) || 0,
+            previewIntervalsChanged: preview && preview.previewIntervals && preview.previewIntervals.changed === true,
+            previewIntervalLineCount: Number(preview && preview.previewIntervals && preview.previewIntervals.lineCount || 0) || 0,
+            previewIntervals: _clone(preview && preview.previewIntervals || null),
             at: Date.now()
         });
         return stats.lastObjectTrackFrame;
@@ -11928,8 +13154,10 @@ window.tmDocumentEditorEngine = (function () {
             return false;
         }
 
+        var patchedBlockId = '';
         if (type === OPERATION_TYPES.InsertText) {
             var insertTarget = _normalizeTarget(op.target || op.Target);
+            patchedBlockId = insertTarget.blockId;
             var insertBlock = _findBlock(inst.model, insertTarget.blockId);
             if (!insertBlock) return false;
             var insertPatch = replaceLiveParagraphCopies(inst, insertTarget.blockId, insertBlock, inst.selection);
@@ -11937,6 +13165,7 @@ window.tmDocumentEditorEngine = (function () {
             var restoredNode = insertPatch.restoredNode;
         } else if (type === OPERATION_TYPES.DeleteRange) {
             var range = _normalizeRange(op.range || op.Range);
+            patchedBlockId = range.blockId;
             var deleteBlock = _findBlock(inst.model, range.blockId);
             if (!deleteBlock) return false;
             var deletePatch = replaceLiveParagraphCopies(inst, range.blockId, deleteBlock, inst.selection);
@@ -11944,6 +13173,7 @@ window.tmDocumentEditorEngine = (function () {
             restoredNode = deletePatch.restoredNode;
         } else if (type === OPERATION_TYPES.ApplyMark || type === OPERATION_TYPES.RemoveMark) {
             var markRange = _normalizeRange(op.range || op.Range);
+            patchedBlockId = markRange.blockId;
             var markBlock = _findBlock(inst.model, markRange.blockId);
             if (!markBlock) return false;
             var markPatch = replaceLiveParagraphCopies(inst, markRange.blockId, markBlock, inst.selection);
@@ -11951,6 +13181,7 @@ window.tmDocumentEditorEngine = (function () {
             restoredNode = markPatch.restoredNode;
         } else if (type === OPERATION_TYPES.SetParagraphAttribute) {
             var paragraphTarget = _normalizeTarget(op.target || op.Target);
+            patchedBlockId = paragraphTarget.blockId;
             var paragraphBlock = _findBlock(inst.model, paragraphTarget.blockId);
             if (!paragraphBlock) return false;
             var paragraphPatch = replaceLiveParagraphCopies(inst, paragraphTarget.blockId, paragraphBlock, inst.selection);
@@ -11958,6 +13189,7 @@ window.tmDocumentEditorEngine = (function () {
             restoredNode = paragraphPatch.restoredNode;
         } else if (type === OPERATION_TYPES.SplitParagraph) {
             var splitTarget = _normalizeTarget(op.target || op.Target);
+            patchedBlockId = splitTarget.blockId;
             var originalBlock = _findBlock(inst.model, splitTarget.blockId);
             var newBlockId = op.newBlockId || op.NewBlockId || committed && committed.insertedBlockId || inst.selection && inst.selection.blockId;
             var newBlock = _findBlock(inst.model, newBlockId);
@@ -11972,6 +13204,7 @@ window.tmDocumentEditorEngine = (function () {
             }
         } else if (type === OPERATION_TYPES.MergeParagraph) {
             var mergeTarget = _normalizeTarget(op.target || op.Target);
+            patchedBlockId = inst.selection && inst.selection.blockId || mergeTarget.blockId;
             var removedNode = findLiveTextBlockElement(inst, mergeTarget.blockId);
             var targetBlockId = inst.selection && inst.selection.blockId || '';
             var targetBlock = _findBlock(inst.model, targetBlockId);
@@ -11987,6 +13220,11 @@ window.tmDocumentEditorEngine = (function () {
         });
         inst.root.setAttribute('data-live-typing-patch', String(Date.now()));
         inst.root.setAttribute('data-logical-selection', JSON.stringify(_sortObject(inst.selection || {})));
+        syncWysiwygObjectLayerPositions(inst.root);
+        applyWysiwygTextExclusionLayout(inst);
+        if (patchedBlockId) {
+            restoredNode = findLiveTextBlockElementForContext(inst, patchedBlockId, liveBlockContextFromElement(restoredNode), inst.selection) || restoredNode;
+        }
         restoreDomSelectionInLiveBlock(inst, inst.selection, restoredNode);
         recordTimeline(inst, 'live-typing-dom-patch', {
             operationType: type,
@@ -12618,7 +13856,9 @@ window.tmDocumentEditorEngine = (function () {
         if (!objectDeletion.ok) return objectDeletion;
         var result = applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
             snapshot: nextModel,
+            previousSnapshot: _clone(inst.model),
             selection: objectDeletion.selection,
+            previousSelection: snapshot,
             affectedScopeIds: objectDeletion.affectedScopeIds || ['document'],
             source: 'object-selection-delete',
             transactionType: 'delete',
@@ -12955,6 +14195,13 @@ window.tmDocumentEditorEngine = (function () {
         return !!(element.closest && element.closest('.tm-wysiwyg-page__body[contenteditable], .tm-wysiwyg-page__header[contenteditable], .tm-wysiwyg-page__footer[contenteditable], .tm-wysiwyg-block[data-block-id]'));
     }
 
+    function targetIsBehindTextOverlaySurface(target) {
+        var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
+        if (!element || !element.closest) return false;
+        if (element.closest('[data-resize-handle], .tm-wysiwyg-object-rotation-handle, .tm-wysiwyg-layout-bubble, button, input, select, textarea')) return false;
+        return !!element.closest('.tm-wysiwyg-object-selection-overlay[data-object-layer="behind-text"], .tm-wysiwyg-object-guides-overlay[data-object-layer="behind-text"]');
+    }
+
     function nativeCaretRangeFromPoint(x, y) {
         if (typeof document === 'undefined') return null;
         if (typeof document.caretRangeFromPoint === 'function') {
@@ -13110,7 +14357,8 @@ window.tmDocumentEditorEngine = (function () {
             region: region,
             headerFooterId: _asText(source.anchorHeaderFooterId || source.headerFooterId || source.HeaderFooterId || ''),
             tableId: _asText(source.anchorTableId || source.tableId || source.TableId || ''),
-            cellId: _asText(source.anchorCellId || source.cellId || source.CellId || '')
+            cellId: _asText(source.anchorCellId || source.cellId || source.CellId || ''),
+            columnIndex: normalizeTextExclusionColumnIndex(source.anchorColumnIndex ?? source.columnIndex ?? source.ColumnIndex)
         });
     }
 
@@ -13121,7 +14369,8 @@ window.tmDocumentEditorEngine = (function () {
             region: region,
             headerFooterId: _asText(source.headerFooterId || source.HeaderFooterId || ''),
             tableId: _asText(source.tableId || source.TableId || ''),
-            cellId: _asText(source.cellId || source.CellId || '')
+            cellId: _asText(source.cellId || source.CellId || ''),
+            columnIndex: normalizeTextExclusionColumnIndex(source.columnIndex ?? source.ColumnIndex)
         });
     }
 
@@ -13136,6 +14385,7 @@ window.tmDocumentEditorEngine = (function () {
             if (source.tableId && target.tableId && source.tableId !== target.tableId) return false;
             if (source.cellId && target.cellId && source.cellId !== target.cellId) return false;
             if (source.cellId && !target.cellId) return false;
+            if (source.columnIndex !== null && target.columnIndex !== null && source.columnIndex !== target.columnIndex) return false;
         }
         return true;
     }
@@ -13167,12 +14417,14 @@ window.tmDocumentEditorEngine = (function () {
         var table = cell && cell.closest && cell.closest('table[data-block-id], .tm-wysiwyg-table[data-block-id], .tm-wysiwyg-block[data-block-id]');
         var page = blockElement && blockElement.closest && blockElement.closest('.tm-wysiwyg-page[data-page-index]');
         var region = normalizeDropRegionName(regionNode && regionNode.getAttribute('data-render-region'), cell && (cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id')));
+        var columnIndex = normalizeTextExclusionColumnIndex(cell && (cell.getAttribute('data-column-index') || cell.getAttribute('data-table-column-index')));
         return {
             region: region,
             anchorRegion: anchorRegionForNearestTextPosition({ region: region, cellId: cell && (cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id')) || null }),
             headerFooterId: regionNode && regionNode.getAttribute('data-hf-id') || '',
             tableId: table && table.getAttribute('data-block-id') || '',
             cellId: cell && (cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id')) || '',
+            columnIndex: columnIndex,
             pageIndex: page ? Number(page.getAttribute('data-page-index') || 0) || 0 : null
         };
     }
@@ -13266,6 +14518,7 @@ window.tmDocumentEditorEngine = (function () {
         var start = Math.max(0, Math.min(textLength, Number(line.start ?? line.Start ?? line.startOffset ?? line.StartOffset ?? 0) || 0));
         var end = Math.max(start, Math.min(textLength, Number(line.end ?? line.End ?? line.endOffset ?? line.EndOffset ?? textLength) || textLength));
         var cellId = _asText(line.cellId || line.CellId || '');
+        var columnIndex = normalizeTextExclusionColumnIndex(line.columnIndex ?? line.ColumnIndex);
         var region = normalizeDropRegionName(line.region || line.Region || 'Body', cellId);
         var pageIndex = line.pageIndex ?? line.PageIndex;
         return _sortObject({
@@ -13278,11 +14531,27 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: _asText(line.headerFooterId || line.HeaderFooterId || ''),
             tableId: _asText(line.tableId || line.TableId || ''),
             cellId: cellId,
+            columnIndex: columnIndex,
             rect: rect,
             referenceRect: referenceRect,
             start: start,
             end: end,
-            empty: line.empty === true || line.Empty === true || textLength === 0 || start === end
+            empty: line.empty === true || line.Empty === true || textLength === 0 || start === end,
+            availableIntervals: _asArray(line.availableIntervals || line.AvailableIntervals || line.ranges || line.Ranges).map(function (interval, intervalIndex) {
+                var intervalStart = Math.max(start, Math.min(end, Number(interval && (interval.start ?? interval.Start ?? start) || start) || start));
+                var intervalEnd = Math.max(intervalStart, Math.min(end, Number(interval && (interval.end ?? interval.End ?? intervalStart) || intervalStart) || intervalStart));
+                return _sortObject({
+                    id: _asText(interval && (interval.id || interval.Id) || ('drop-interval-' + intervalIndex)),
+                    x: Number(interval && (interval.x ?? interval.X ?? rect.x) || rect.x) || rect.x,
+                    y: Number(interval && (interval.y ?? interval.Y ?? rect.y) || rect.y) || rect.y,
+                    width: Math.max(0, Number(interval && (interval.width ?? interval.Width ?? rect.width) || rect.width) || 0),
+                    height: Math.max(1, Number(interval && (interval.height ?? interval.Height ?? rect.height) || rect.height) || 1),
+                    start: intervalStart,
+                    end: intervalEnd,
+                    collapsedOffset: interval && (interval.collapsedOffset ?? interval.CollapsedOffset) !== undefined ? Number(interval.collapsedOffset ?? interval.CollapsedOffset) || intervalStart : (intervalStart === intervalEnd ? intervalStart : null),
+                    empty: interval && (interval.empty === true || interval.Empty === true) || intervalStart === intervalEnd
+                });
+            })
         });
     }
 
@@ -13306,6 +14575,32 @@ window.tmDocumentEditorEngine = (function () {
         var start = Math.max(0, Number(line && line.start || 0) || 0);
         var end = Math.max(start, Number(line && line.end || start) || start);
         if (end <= start || line && line.empty === true) return start;
+        var intervals = _asArray(line && (line.availableIntervals || line.AvailableIntervals || line.ranges || line.Ranges)).filter(function (interval) {
+            return interval && Number(interval.width ?? interval.Width ?? 0) > 0;
+        });
+        if (intervals.length) {
+            var px = Number(x || 0) || 0;
+            var best = null;
+            intervals.forEach(function (interval) {
+                var left = Number(interval.x ?? interval.X ?? 0) || 0;
+                var width = Math.max(1, Number(interval.width ?? interval.Width ?? 1) || 1);
+                var right = left + width;
+                var distance = px >= left && px <= right ? -1 : Math.min(Math.abs(px - left), Math.abs(px - right));
+                if (!best || distance < best.distance) {
+                    best = {
+                        distance: distance,
+                        interval: {
+                            x: left,
+                            width: width,
+                            start: interval.start ?? interval.Start ?? start,
+                            end: interval.end ?? interval.End ?? end,
+                            collapsedOffset: interval.collapsedOffset ?? interval.CollapsedOffset ?? null
+                        }
+                    };
+                }
+            });
+            if (best) return Math.max(start, Math.min(end, caretOffsetFromInterval(best.interval, px)));
+        }
         var rect = line.rect || {};
         var width = Math.max(1, Number(rect.width || 0) || 1);
         var ratio = Math.max(0, Math.min(1, (Number(x || 0) - Number(rect.x || 0)) / width));
@@ -13342,6 +14637,7 @@ window.tmDocumentEditorEngine = (function () {
             headerFooterId: line.headerFooterId || null,
             tableId: line.tableId || null,
             cellId: line.cellId || null,
+            columnIndex: line.columnIndex ?? null,
             referenceRect: _clone(line.referenceRect || line.rect),
             lineRect: _clone(line.rect),
             score: best.score
@@ -13350,8 +14646,11 @@ window.tmDocumentEditorEngine = (function () {
 
     function shouldReanchorImageObject(object, options) {
         var opts = options || {};
-        if (opts.explicitDrag === true || opts.ExplicitDrag === true) return true;
-        return !(object && (object.lockAnchor === true || object.LockAnchor === true));
+        if (object && (object.fixedOnPage === true || object.FixedOnPage === true)) return false;
+        if (object && (object.lockAnchor === true || object.LockAnchor === true)) {
+            return opts.explicitDrag === true || opts.ExplicitDrag === true;
+        }
+        return true;
     }
 
     var IMAGE_MOVE_TRACK_THRESHOLD = 3;
@@ -13441,6 +14740,10 @@ window.tmDocumentEditorEngine = (function () {
             previewWidth: track.previewWidth === undefined ? null : Number(track.previewWidth || 0),
             previewHeight: track.previewHeight === undefined ? null : Number(track.previewHeight || 0),
             previewPreserveAspectRatio: track.previewPreserveAspectRatio === true,
+            previewRect: _clone(track.previewRect || null),
+            previewWrapRect: _clone(track.previewWrapRect || null),
+            previewExclusion: _clone(track.previewExclusion || null),
+            previewIntervals: _clone(track.previewIntervals || null),
             resizeBadgeText: track.resizeBadgeText || '',
             guides: _clone(track.guides || [])
         });
@@ -13670,7 +14973,9 @@ window.tmDocumentEditorEngine = (function () {
         };
         if (!track) return preview;
         if (track.mode === 'resize') {
-            return computeImageResizePreview(track, rawDx, rawDy, event || {});
+            var resizePreview = computeImageResizePreview(track, rawDx, rawDy, event || {});
+            resizePreview.previewIntervals = computeImageMovePreviewIntervals(track, resizePreview);
+            return resizePreview;
         }
 
         var sourceRect = track.originalRect || { x: 0, y: 0 };
@@ -13680,7 +14985,93 @@ window.tmDocumentEditorEngine = (function () {
         preview.appliedDx = Number(snap.x || 0) - Number(sourceRect.x || 0);
         preview.appliedDy = Number(snap.y || 0) - Number(sourceRect.y || 0);
         preview.guides = _asArray(snap.guides);
+        preview.previewIntervals = computeImageMovePreviewIntervals(track, preview);
         return preview;
+    }
+
+    function normalizePreviewIntervalForCompare(interval) {
+        return [
+            Math.round(Number(interval && (interval.x ?? interval.X) || 0) * 100) / 100,
+            Math.round(Number(interval && (interval.width ?? interval.Width) || 0) * 100) / 100
+        ].join(':');
+    }
+
+    function previewIntervalsSignature(lines) {
+        return _asArray(lines).map(function (line) {
+            return [
+                Math.round(Number(line && line.y || 0) * 100) / 100,
+                _asArray(line && line.intervals).map(normalizePreviewIntervalForCompare).join(','),
+                _asArray(line && line.blockedIntervals).map(normalizePreviewIntervalForCompare).join(',')
+            ].join('|');
+        }).join(';');
+    }
+
+    function computeImageMovePreviewIntervals(track, preview) {
+        if (!track || !preview || !track.snapContext) return null;
+        var context = track.snapContext || {};
+        var body = rectFromGeometry(context.bodyRect || context.BodyRect || { x: 0, y: 0, width: 0, height: 0 });
+        if (body.width <= 0 || body.height <= 0) return null;
+        var originalRect = rectFromGeometry(track.originalRect || {});
+        if (originalRect.width <= 0 || originalRect.height <= 0) return null;
+        var width = Math.max(1, Number(preview.width || originalRect.width) || originalRect.width);
+        var height = Math.max(1, Number(preview.height || originalRect.height) || originalRect.height);
+        var previewRect = {
+            x: Number(originalRect.x || 0) + Number(preview.appliedDx || 0),
+            y: Number(originalRect.y || 0) + Number(preview.appliedDy || 0),
+            width: width,
+            height: height
+        };
+        var originalObject = Object.assign({}, track.originalObject || {}, {
+            rect: originalRect,
+            width: originalRect.width,
+            height: originalRect.height
+        });
+        var previewObject = Object.assign({}, track.originalObject || {}, {
+            rect: previewRect,
+            width: width,
+            height: height
+        });
+        var originalExclusion = createTextExclusion(originalObject, body);
+        var previewExclusion = createTextExclusion(previewObject, body);
+        var minReadableWidth = Math.max(1, Number(context.minReadableWidth || context.MinReadableWidth || 24) || 24);
+        var lineRects = _asArray(context.lines || context.Lines).map(function (line) {
+            var rect = rectFromGeometry(line && (line.Rect || line.rect || line));
+            return rect.width > 0 && rect.height > 0 ? rect : null;
+        }).filter(Boolean);
+        if (!lineRects.length) {
+            lineRects = [{ x: body.x, y: previewRect.y, width: body.width, height: Math.max(1, Math.min(24, previewRect.height)) }];
+        }
+
+        function linesFor(exclusion) {
+            return lineRects.map(function (line) {
+                var resolved = getAvailableIntervals(line.y, line.height, body, exclusion ? [exclusion] : [], minReadableWidth);
+                return _sortObject({
+                    y: line.y,
+                    height: line.height,
+                    intervals: _asArray(resolved && resolved.intervals).map(function (interval) {
+                        return { x: interval.x, y: interval.y, width: interval.width, height: interval.height };
+                    }),
+                    blockedIntervals: _asArray(resolved && resolved.blockedIntervals).map(function (interval) {
+                        return { x: interval.x, y: interval.y, width: interval.width, height: interval.height };
+                    }),
+                    moved: resolved && resolved.moved === true,
+                    movedToY: Number(resolved && resolved.movedToY || line.y) || line.y
+                });
+            });
+        }
+
+        var beforeLines = linesFor(originalExclusion);
+        var afterLines = linesFor(previewExclusion);
+        return _sortObject({
+            changed: previewIntervalsSignature(beforeLines) !== previewIntervalsSignature(afterLines),
+            rect: previewRect,
+            wrapRect: previewExclusion && previewExclusion.wrapRect ? _clone(previewExclusion.wrapRect) : null,
+            originalExclusion: originalExclusion ? _clone(originalExclusion) : null,
+            previewExclusion: previewExclusion ? _clone(previewExclusion) : null,
+            lineCount: afterLines.length,
+            lines: afterLines,
+            beforeLines: beforeLines
+        });
     }
 
     function removeImageMoveTrackGuides(track) {
@@ -13688,6 +15079,96 @@ window.tmDocumentEditorEngine = (function () {
             if (node && node.parentNode) node.parentNode.removeChild(node);
         });
         if (track) track.guideNodes = [];
+    }
+
+    function removeImageMovePreviewNode(track) {
+        var node = track && track.previewNode;
+        if (node && node.parentNode) {
+            node.parentNode.removeChild(node);
+        }
+        if (track) track.previewNode = null;
+    }
+
+    function removeImageMovePreviewExclusionNode(track) {
+        var node = track && track.previewExclusionNode;
+        if (node && node.parentNode) {
+            node.parentNode.removeChild(node);
+        }
+        if (track) track.previewExclusionNode = null;
+    }
+
+    function renderImageMovePreviewNode(inst, track, preview) {
+        if (!inst || !inst.root || !track || !preview || !track.originalRect) return;
+        var node = _asArray(track.nodes)[0];
+        var body = node && node.closest && node.closest('.tm-wysiwyg-page__body--layout, .tm-wysiwyg-page__body')
+            || inst.root.querySelector && inst.root.querySelector('.tm-wysiwyg-page__body--layout, .tm-wysiwyg-page__body')
+            || null;
+        if (!body || !body.querySelector) return;
+        var layer = body.querySelector('.tm-wysiwyg-page__layer--guides');
+        if (!layer || !layer.ownerDocument || typeof layer.getBoundingClientRect !== 'function') return;
+        var layerRect = rectFromGeometry(layer.getBoundingClientRect());
+        var original = rectFromGeometry(track.originalRect);
+        var previewRect = preview.previewIntervals && preview.previewIntervals.rect
+            ? rectFromGeometry(preview.previewIntervals.rect)
+            : {
+                x: original.x + Number(preview.appliedDx || 0),
+                y: original.y + Number(preview.appliedDy || 0),
+                width: Math.max(1, Number(preview.width || original.width) || original.width),
+                height: Math.max(1, Number(preview.height || original.height) || original.height)
+            };
+        var previewNode = track.previewNode;
+        if (!previewNode) {
+            previewNode = layer.ownerDocument.createElement('span');
+            previewNode.className = 'tm-wysiwyg-image-move-preview';
+            previewNode.setAttribute('data-testid', 'document-wysiwyg-image-move-preview');
+            previewNode.setAttribute('aria-hidden', 'true');
+            layer.appendChild(previewNode);
+            track.previewNode = previewNode;
+        }
+        previewNode.setAttribute('data-object-id', track.objectId || '');
+        previewNode.setAttribute('data-preview-intervals-changed', preview.previewIntervals && preview.previewIntervals.changed === true ? 'true' : 'false');
+        previewNode.setAttribute('data-preview-interval-count', String(Math.max.apply(null, [0].concat(_asArray(preview.previewIntervals && preview.previewIntervals.lines).map(function (line) {
+            return _asArray(line && line.intervals).length;
+        })))));
+        if (preview.previewIntervals) {
+            previewNode.setAttribute('data-preview-intervals', JSON.stringify(preview.previewIntervals));
+            previewNode.setAttribute('data-preview-wrap-rect', JSON.stringify(preview.previewIntervals.wrapRect || null));
+            previewNode.setAttribute('data-preview-exclusion-kind', preview.previewIntervals.previewExclusion && preview.previewIntervals.previewExclusion.kind || '');
+        } else {
+            previewNode.removeAttribute('data-preview-intervals');
+            previewNode.removeAttribute('data-preview-wrap-rect');
+            previewNode.removeAttribute('data-preview-exclusion-kind');
+        }
+        previewNode.style.left = (previewRect.x - layerRect.x) + 'px';
+        previewNode.style.top = (previewRect.y - layerRect.y) + 'px';
+        previewNode.style.width = previewRect.width + 'px';
+        previewNode.style.height = previewRect.height + 'px';
+
+        var exclusion = preview.previewIntervals && preview.previewIntervals.previewExclusion || null;
+        if (!exclusion || !exclusion.rect) {
+            removeImageMovePreviewExclusionNode(track);
+            return;
+        }
+
+        var exclusionNode = track.previewExclusionNode;
+        if (!exclusionNode) {
+            exclusionNode = layer.ownerDocument.createElement('span');
+            exclusionNode.className = 'tm-wysiwyg-image-wrap-preview-exclusion';
+            exclusionNode.setAttribute('data-testid', 'document-wysiwyg-image-wrap-preview-exclusion');
+            exclusionNode.setAttribute('aria-hidden', 'true');
+            layer.appendChild(exclusionNode);
+            track.previewExclusionNode = exclusionNode;
+        }
+        var exclusionRect = rectFromGeometry(exclusion.rect);
+        exclusionNode.setAttribute('data-object-id', track.objectId || '');
+        exclusionNode.setAttribute('data-preview-exclusion-kind', exclusion.kind || '');
+        exclusionNode.setAttribute('data-preview-wrap-mode', exclusion.wrapMode || '');
+        exclusionNode.setAttribute('data-preview-wrap-rect', JSON.stringify(exclusion.wrapRect || null));
+        exclusionNode.setAttribute('data-preview-exclusion-rect', JSON.stringify(exclusion.rect || null));
+        exclusionNode.style.left = (exclusionRect.x - layerRect.x) + 'px';
+        exclusionNode.style.top = (exclusionRect.y - layerRect.y) + 'px';
+        exclusionNode.style.width = exclusionRect.width + 'px';
+        exclusionNode.style.height = exclusionRect.height + 'px';
     }
 
     function renderImageMoveTrackGuides(inst, track, preview) {
@@ -13707,6 +15188,7 @@ window.tmDocumentEditorEngine = (function () {
             var line = layer.ownerDocument.createElement('span');
             line.className = 'tm-wysiwyg-object-drag-guide';
             line.setAttribute('data-testid', 'document-wysiwyg-object-drag-guide');
+            line.setAttribute('data-legacy-testid', 'document-wysiwyg-image-move-guide');
             line.setAttribute('data-object-id', track.objectId || '');
             line.setAttribute('data-guide-kind', guide.Kind || guide.kind || '');
             if (guide.X !== undefined || guide.x !== undefined) {
@@ -13779,6 +15261,8 @@ window.tmDocumentEditorEngine = (function () {
     function cleanupImageMoveTrack(inst, track, reason, restorePreview) {
         if (!track) return;
         removeImageMoveTrackGuides(track);
+        removeImageMovePreviewNode(track);
+        removeImageMovePreviewExclusionNode(track);
         removeImageResizeSizeBadge(track);
         if (restorePreview !== false) {
             _asArray(track.nodeStates).forEach(restoreObjectPointerPreviewNodeState);
@@ -13827,6 +15311,7 @@ window.tmDocumentEditorEngine = (function () {
                 node.setAttribute('data-track-dy', String(preview.appliedDy));
             }
         });
+        renderImageMovePreviewNode(inst, track, preview);
         renderImageMoveTrackGuides(inst, track, preview);
     }
 
@@ -13853,6 +15338,10 @@ window.tmDocumentEditorEngine = (function () {
             track.resizeBadgeText = Math.round(Number(preview.width || 0)) + ' x ' + Math.round(Number(preview.height || 0));
         }
         track.guides = preview.guides;
+        track.previewIntervals = preview.previewIntervals || null;
+        track.previewRect = preview.previewIntervals && preview.previewIntervals.rect ? _clone(preview.previewIntervals.rect) : null;
+        track.previewWrapRect = preview.previewIntervals && preview.previewIntervals.wrapRect ? _clone(preview.previewIntervals.wrapRect) : null;
+        track.previewExclusion = preview.previewIntervals && preview.previewIntervals.previewExclusion ? _clone(preview.previewIntervals.previewExclusion) : null;
         recordObjectTrackFrame(inst, track, preview);
         renderImageMoveTrackPreview(inst, track, preview);
         return serializeImageMoveTrack(track);
@@ -13997,44 +15486,26 @@ window.tmDocumentEditorEngine = (function () {
         }));
         var oldLayout = imageObjectToLayout(session.object);
         var newLayout = imageObjectToLayout(commit.next);
-        var commandType = session.mode === 'drag' ? OPERATION_TYPES.MoveDrawingObject : OPERATION_TYPES.UpdateImageLayout;
-        var operationPayload = session.mode === 'drag'
-            ? {
-                target: {
-                    blockId: session.blockId,
-                    objectId: session.objectId,
-                    region: session.object.anchorRegion || 'Body',
-                    headerFooterId: session.object.anchorHeaderFooterId || null,
-                    tableId: session.object.anchorTableId || null,
-                    cellId: session.object.anchorCellId || null
-                },
-                oldLayout: oldLayout,
-                newLayout: newLayout,
-                oldAnchor: _clone(oldLayout.Anchor || oldLayout.anchor || {}),
-                newAnchor: _clone(newLayout.Anchor || newLayout.anchor || {}),
-                layout: newLayout,
-                affectedParagraphIds: commit.affected,
-                source: 'object-pointer-' + session.mode,
-                transactionType: TRANSACTION_TYPES.Default,
-                beforeSelection: session.beforeSelection || inst.selection
-            }
-            : {
-                target: {
-                    blockId: session.blockId,
-                    objectId: session.objectId,
-                    region: session.object.anchorRegion || 'Body',
-                    headerFooterId: session.object.anchorHeaderFooterId || null,
-                    tableId: session.object.anchorTableId || null,
-                    cellId: session.object.anchorCellId || null
-                },
-                oldLayout: oldLayout,
-                newLayout: newLayout,
-                layout: newLayout,
-                affectedParagraphIds: commit.affected,
-                source: 'object-pointer-' + session.mode,
-                transactionType: TRANSACTION_TYPES.Default,
-                beforeSelection: session.beforeSelection || inst.selection
-            };
+        var commandType = OPERATION_TYPES.UpdateImageLayout;
+        var operationPayload = {
+            target: {
+                blockId: session.blockId,
+                objectId: session.objectId,
+                region: session.object.anchorRegion || 'Body',
+                headerFooterId: session.object.anchorHeaderFooterId || null,
+                tableId: session.object.anchorTableId || null,
+                cellId: session.object.anchorCellId || null
+            },
+            oldLayout: oldLayout,
+            newLayout: newLayout,
+            oldAnchor: _clone(oldLayout.Anchor || oldLayout.anchor || {}),
+            newAnchor: _clone(newLayout.Anchor || newLayout.anchor || {}),
+            layout: newLayout,
+            affectedParagraphIds: commit.affected,
+            source: 'object-pointer-' + session.mode,
+            transactionType: TRANSACTION_TYPES.Default,
+            beforeSelection: session.beforeSelection || inst.selection
+        };
         var result = applyCommand(inst.id, commandType, operationPayload);
         inst.lastObjectPointerInteraction = _sortObject(Object.assign({}, inst.lastObjectPointerInteraction || {}, {
             resultOk: result && result.ok !== false,
@@ -14198,7 +15669,8 @@ window.tmDocumentEditorEngine = (function () {
             end.position = Object.assign({}, end.position, {
                 region: 'TableCell',
                 cellId: tableContext.cellId,
-                tableId: tableContext.tableId
+                tableId: tableContext.tableId,
+                columnIndex: tableContext.columnIndex
             });
         }
         var direction = start.position.blockId === end.position.blockId && start.position.offset <= end.position.offset ? 'forward' : 'backward';
@@ -14215,10 +15687,11 @@ window.tmDocumentEditorEngine = (function () {
             var table = cell.closest && cell.closest('table[data-block-id], .tm-wysiwyg-block[data-block-id]');
             return {
                 cellId: cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id') || null,
-                tableId: table && table.getAttribute('data-block-id') || null
+                tableId: table && table.getAttribute('data-block-id') || null,
+                columnIndex: normalizeTextExclusionColumnIndex(cell.getAttribute('data-column-index') || cell.getAttribute('data-table-column-index'))
             };
         }
-        return { cellId: null, tableId: null };
+        return { cellId: null, tableId: null, columnIndex: null };
     }
 
     function selectionSnapshotFromBoundarySnapshot(value) {
@@ -15284,6 +16757,10 @@ window.tmDocumentEditorEngine = (function () {
         var onPointerDown = function (event) {
             var region = getFocusRegionFromElement(root, event.target);
             setActiveFocusRegion(inst, region, event.target, 'pointerdown');
+            if (targetIsBehindTextOverlaySurface(event.target) && applyLayoutPointerTextSelection(inst, event)) {
+                setActiveFocusRegion(inst, 'Body', event.target, 'behind-text-overlay-pointerdown');
+                return;
+            }
             if (region === 'Image') {
                 if (beginObjectPointerInteraction(inst, event)) return;
                 if (typeof event.preventDefault === 'function') event.preventDefault();
@@ -16033,6 +17510,17 @@ window.tmDocumentEditorEngine = (function () {
                                 : 0;
     }
 
+    function wrapModeToCssName(value) {
+        var mode = normalizeWrapModeName(value);
+        return mode === 'TopBottom'
+            ? 'top-bottom'
+            : mode === 'BehindText'
+                ? 'behind-text'
+                : mode === 'InFrontOfText'
+                    ? 'in-front-of-text'
+                    : mode.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+    }
+
     function applyImageWrapModeToLayout(layout, value, options) {
         var opts = options || {};
         var mode = normalizeWrapModeName(value);
@@ -16149,6 +17637,8 @@ window.tmDocumentEditorEngine = (function () {
         anchor.tableId = anchor.TableId;
         anchor.CellId = anchor.CellId ?? anchor.cellId ?? null;
         anchor.cellId = anchor.CellId;
+        anchor.ColumnIndex = normalizeTextExclusionColumnIndex(anchor.ColumnIndex ?? anchor.columnIndex);
+        anchor.columnIndex = anchor.ColumnIndex;
         anchor.HeaderFooterId = anchor.HeaderFooterId ?? anchor.headerFooterId ?? null;
         anchor.headerFooterId = anchor.HeaderFooterId;
         transform.Width = Number(transform.Width ?? transform.width ?? 120) || 120;
@@ -16211,6 +17701,7 @@ window.tmDocumentEditorEngine = (function () {
                     headerFooterId: drawing.headerFooterId || drawing.object && drawing.object.anchorHeaderFooterId || null,
                     tableId: drawing.tableId || drawing.object && drawing.object.anchorTableId || null,
                     cellId: drawing.cellId || drawing.object && drawing.object.anchorCellId || null,
+                    columnIndex: drawing.columnIndex ?? (drawing.object ? (drawing.object.anchorColumnIndex ?? drawing.object.columnIndex ?? null) : null),
                     run: drawing.run,
                     object: drawing.object
                 });
@@ -16229,6 +17720,7 @@ window.tmDocumentEditorEngine = (function () {
                 headerFooterId: assetDrawing.object && assetDrawing.object.anchorHeaderFooterId || null,
                 tableId: assetDrawing.object && assetDrawing.object.anchorTableId || null,
                 cellId: assetDrawing.object && assetDrawing.object.anchorCellId || null,
+                columnIndex: assetDrawing.columnIndex ?? (assetDrawing.object ? (assetDrawing.object.anchorColumnIndex ?? assetDrawing.object.columnIndex ?? null) : null),
                 run: assetDrawing.run,
                 object: assetDrawing.object
             });
@@ -16246,7 +17738,8 @@ window.tmDocumentEditorEngine = (function () {
                 region: target.object && (target.object.anchorRegion || target.object.region) || target.region || 'Body',
                 headerFooterId: target.object && (target.object.anchorHeaderFooterId || target.object.headerFooterId) || target.headerFooterId || null,
                 tableId: target.object && (target.object.anchorTableId || target.object.tableId) || target.tableId || null,
-                cellId: target.object && (target.object.anchorCellId || target.object.cellId) || target.cellId || null
+                cellId: target.object && (target.object.anchorCellId || target.object.cellId) || target.cellId || null,
+                columnIndex: target.object ? (target.object.anchorColumnIndex ?? target.object.columnIndex ?? target.columnIndex ?? null) : (target.columnIndex ?? null)
             });
             return imageObjectToLayout(object);
         }
@@ -16262,7 +17755,8 @@ window.tmDocumentEditorEngine = (function () {
             region: target && target.object && (target.object.anchorRegion || target.object.region) || target && target.region || null,
             headerFooterId: target && target.object && (target.object.anchorHeaderFooterId || target.object.headerFooterId) || target && target.headerFooterId || null,
             tableId: target && target.object && (target.object.anchorTableId || target.object.tableId) || target && target.tableId || null,
-            cellId: target && target.object && (target.object.anchorCellId || target.object.cellId) || target && target.cellId || null
+            cellId: target && target.object && (target.object.anchorCellId || target.object.cellId) || target && target.cellId || null,
+            columnIndex: target && target.object ? (target.object.anchorColumnIndex ?? target.object.columnIndex ?? target.columnIndex ?? null) : (target ? (target.columnIndex ?? null) : null)
         });
     }
 
@@ -16315,6 +17809,7 @@ window.tmDocumentEditorEngine = (function () {
                 headerFooterId: target.object && target.object.anchorHeaderFooterId || target.headerFooterId || null,
                 tableId: target.object && target.object.anchorTableId || target.tableId || null,
                 cellId: target.object && target.object.anchorCellId || target.cellId || null,
+                columnIndex: target.object ? (target.object.anchorColumnIndex ?? target.object.columnIndex ?? target.columnIndex ?? null) : (target.columnIndex ?? null),
                 textSelection: inst.selection && (inst.selection.textSelection || inst.selection.TextSelection)
             });
             var deleteResult = deleteObjectSelection(nextModel, deletionSelection);
@@ -16324,7 +17819,9 @@ window.tmDocumentEditorEngine = (function () {
             buildIndexes(nextModel);
             return applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
                 snapshot: nextModel,
+                previousSnapshot: _clone(inst.model),
                 selection: deleteResult.selection || firstModelSelection(nextModel),
+                previousSelection: inst.selection,
                 affectedScopeIds: deleteResult.affectedScopeIds || ['document'],
                 source: 'image-command',
                 transactionType: TRANSACTION_TYPES.Default,
@@ -18475,96 +19972,95 @@ window.tmDocumentEditorEngine = (function () {
 
     function renderDrawingFigureStyle(object) {
         var width = Math.max(1, Number(object && object.width || 120) || 120);
-        var mode = normalizeWrapModeName(object && object.wrapMode);
-        var align = String(object && object.horizontalPosition && object.horizontalPosition.align || 'Left').toLowerCase();
-        var top = Math.max(0, Number(object && object.distanceTop || 0) || 0);
-        var right = Math.max(0, Number(object && object.distanceRight || object && object.wrapMargin || 0) || 0);
-        var bottom = Math.max(0, Number(object && object.distanceBottom || object && object.wrapMargin || 0) || 0);
-        var left = Math.max(0, Number(object && object.distanceLeft || object && object.wrapMargin || 0) || 0);
-        var styles = ['width:' + width + 'px'];
-        if (mode === 'Square' || mode === 'Tight' || mode === 'Through') {
-            if (align === 'right' || align === 'end') {
-                styles.push('float:right');
-                styles.push('margin:' + top + 'px 0 ' + bottom + 'px ' + Math.max(left, 12) + 'px');
-            } else {
-                styles.push('float:left');
-                styles.push('margin:' + top + 'px ' + Math.max(right, 12) + 'px ' + bottom + 'px 0');
-            }
-        } else if (mode === 'TopBottom') {
-            styles.push('clear:both');
-            styles.push('float:none');
-            styles.push('margin:' + Math.max(top, 8) + 'px auto ' + Math.max(bottom, 8) + 'px auto');
-        } else {
-            styles.push('float:none');
-            styles.push('margin:' + top + 'px auto ' + Math.max(bottom, 8) + 'px auto');
+        var height = Math.max(1, Number(object && object.height || 80) || 80);
+        var rect = objectLayerRectFromObject(object, width, height);
+        var styles = [
+            '--tm-layout-object-width:' + rect.width + 'px',
+            '--tm-layout-object-height:' + rect.height + 'px',
+            'width:' + rect.width + 'px',
+            'min-height:' + rect.height + 'px',
+            'height:' + rect.height + 'px',
+            'box-sizing:border-box'
+        ];
+        if (object && object.isInline === true) {
+            styles.push('display:inline-block');
+            styles.push('vertical-align:baseline');
+            styles.push('margin:0');
+            return styles.join(';');
         }
+        styles.push('position:absolute');
+        styles.push('left:' + rect.x + 'px');
+        styles.push('top:' + rect.y + 'px');
+        styles.push('max-width:none');
+        styles.push('margin:0');
         return styles.join(';');
     }
 
     function renderDrawingAnchorReservationStyle(object, inline) {
         var width = Math.max(1, Number(object && object.width || 120) || 120);
         var height = Math.max(1, Number(object && object.height || 80) || 80);
-        var reservationHeight = inline
-            ? height
-            : createObjectFootprintRect(object || {}, { x: 0, y: 0, width: width, height: height }).height;
-        var mode = normalizeWrapModeName(object && object.wrapMode);
+        var captionReserveHeight = inline ? estimateInlineDrawingCaptionReserveHeight(object, width) : 0;
+        var reserveHeight = height + captionReserveHeight;
         var styles = [
             '--tm-wysiwyg-drawing-anchor-width:' + width + 'px',
-            '--tm-wysiwyg-drawing-anchor-height:' + reservationHeight + 'px'
+            '--tm-wysiwyg-drawing-anchor-height:' + reserveHeight + 'px',
+            '--tm-wysiwyg-drawing-caption-reserve-height:' + captionReserveHeight + 'px'
         ];
 
         if (inline) {
             styles.push('display:inline-block');
             styles.push('width:' + width + 'px');
-            styles.push('height:' + height + 'px');
+            styles.push('height:' + reserveHeight + 'px');
             return styles.join(';');
         }
 
-        if (!wrapModeCreatesTextExclusion(mode)) {
-            styles.push('width:0px');
-            styles.push('height:0px');
-            styles.push('overflow:hidden');
-            return styles.join(';');
-        }
-
-        var align = String(object && object.horizontalPosition && object.horizontalPosition.align || 'Left').toLowerCase();
-        var top = Math.max(0, Number(object && object.distanceTop || 0) || 0);
-        var right = Math.max(0, Number(object && object.distanceRight || object && object.wrapMargin || 0) || 0);
-        var bottom = Math.max(0, Number(object && object.distanceBottom || object && object.wrapMargin || 0) || 0);
-        var left = Math.max(0, Number(object && object.distanceLeft || object && object.wrapMargin || 0) || 0);
-        styles.push('width:' + width + 'px');
-        styles.push('height:' + reservationHeight + 'px');
+        styles.push('display:inline-block');
+        styles.push('width:0px');
+        styles.push('height:0px');
+        styles.push('max-width:0px');
+        styles.push('max-height:0px');
+        styles.push('overflow:hidden');
+        styles.push('line-height:0');
+        styles.push('vertical-align:baseline');
+        styles.push('box-sizing:border-box');
         styles.push('visibility:hidden');
         styles.push('pointer-events:none');
-        styles.push('box-sizing:border-box');
-
-        if (mode === 'TopBottom') {
-            styles.push('display:block');
-            styles.push('clear:both');
-            styles.push('float:none');
-            styles.push('margin:' + Math.max(top, 8) + 'px auto ' + Math.max(bottom, 8) + 'px auto');
-            return styles.join(';');
-        }
-
-        var shape = 'inset(0)';
-        if (mode === 'Tight' || mode === 'Through') {
-            var points = normalizeWrapContourPointsForGeometry(object && (object.wrapContourPoints || object.WrapContourPoints));
-            if (points.length >= 3) {
-                shape = 'polygon(' + points.map(function (point) {
-                    return (Math.round(point.x * 10000) / 100) + '% ' + (Math.round(point.y * 10000) / 100) + '%';
-                }).join(',') + ')';
-            }
-        }
-
-        if (align === 'right' || align === 'end') {
-            styles.push('float:right');
-            styles.push('margin:' + top + 'px 0 ' + bottom + 'px ' + Math.max(left, 12) + 'px');
-        } else {
-            styles.push('float:left');
-            styles.push('margin:' + top + 'px ' + Math.max(right, 12) + 'px ' + bottom + 'px 0');
-        }
-        styles.push('shape-outside:' + shape);
         return styles.join(';');
+    }
+
+    function estimateInlineDrawingCaptionReserveHeight(object, width) {
+        var caption = _asText(object && object.caption || '').trim();
+        if (!caption) return 0;
+        var availableWidth = Math.max(32, Number(width || 0) || 0);
+        var fontSize = 12;
+        var lineHeight = 15;
+        var marginTop = 4;
+        var averageCharacterWidth = fontSize * 0.52;
+        var charactersPerLine = Math.max(8, Math.floor(availableWidth / averageCharacterWidth));
+        var lines = Math.max(1, Math.ceil(caption.length / charactersPerLine));
+        return marginTop + Math.min(lines, 6) * lineHeight;
+    }
+
+    function explicitObjectLayerRect(object) {
+        var source = object && (object.rect || object.Rect || object.layoutRect || object.LayoutRect || object.objectRect || object.ObjectRect);
+        if (!source) return null;
+        var rect = rectFromGeometry(source);
+        if (rect.width <= 0 && rect.height <= 0 && rect.x === 0 && rect.y === 0) return null;
+        return rect;
+    }
+
+    function objectLayerRectFromObject(object, fallbackWidth, fallbackHeight) {
+        var width = Math.max(1, Number(fallbackWidth || object && object.width || 120) || 120);
+        var height = Math.max(1, Number(fallbackHeight || object && object.height || 80) || 80);
+        var rect = explicitObjectLayerRect(object);
+        if (!rect) return { x: 0, y: 0, width: width, height: height, explicit: false };
+        return {
+            x: Number(rect.x || 0) || 0,
+            y: Number(rect.y || 0) || 0,
+            width: Math.max(1, Number(rect.width || width) || width),
+            height: Math.max(1, Number(rect.height || height) || height),
+            explicit: true
+        };
     }
 
     function renderImageFigureClasses(selected, object) {
@@ -18579,9 +20075,6 @@ window.tmDocumentEditorEngine = (function () {
             : (align === 'center' || align === 'middle'
                 ? 'tm-wysiwyg-image--position-center'
                 : 'tm-wysiwyg-image--position-left'));
-        if (mode === 'Square' || mode === 'Tight' || mode === 'Through') {
-            classes.push(align === 'right' || align === 'end' ? 'tm-wysiwyg-image--float-right' : 'tm-wysiwyg-image--float-left');
-        }
         if (selected) {
             classes.push('tm-wysiwyg-image--selected');
             classes.push('tm-wysiwyg-object--selected');
@@ -18936,7 +20429,6 @@ window.tmDocumentEditorEngine = (function () {
         var objectId = _asText(object.objectId || run && (run.objectId || run.ObjectId || run.id || run.Id) || '');
         var runId = _asText(run && (run.id || run.Id) || objectId);
         var inline = object.isInline === true;
-        var reservesFlow = inline !== true && wrapModeCreatesTextExclusion(object.wrapMode);
         var mode = normalizeWrapModeName(object.wrapMode || (inline ? 'Inline' : 'Square'));
         var classes = [
             'tm-document-inline',
@@ -18944,9 +20436,6 @@ window.tmDocumentEditorEngine = (function () {
             inline ? 'tm-wysiwyg-drawing-anchor--inline' : 'tm-wysiwyg-drawing-anchor--anchored',
             'tm-wysiwyg-drawing-anchor--wrap-' + mode.toLowerCase().replace(/[^a-z0-9]+/g, '-')
         ];
-        if (reservesFlow) {
-            classes.push('tm-wysiwyg-drawing-anchor--flow');
-        }
         var attrs = [
             'class="' + classes.join(' ') + '"',
             'data-testid="document-wysiwyg-drawing-anchor"',
@@ -18962,8 +20451,26 @@ window.tmDocumentEditorEngine = (function () {
             'draggable="false"',
             'style="' + _escape(renderDrawingAnchorReservationStyle(object, inline)) + '"'
         ];
-        if (reservesFlow) attrs.push('data-flow-reservation="true"');
         return '<span ' + attrs.join(' ') + '></span>';
+    }
+
+    function findLayoutObjectForRender(layout, objectId, blockId) {
+        var source = _asText(layout && layout.debug && (layout.debug.source || layout.debug.Source) || '');
+        var authoritative = !!(layout && (layout.pageMetrics || layout.PageMetrics || source.indexOf('paragraph-layout') === 0));
+        if (!authoritative) return null;
+        var id = _asText(objectId || '');
+        var anchorBlockId = _asText(blockId || '');
+        var objects = _asArray(layout && layout.objects);
+        _asArray(layout && layout.headerFooterRegions).forEach(function (region) {
+            objects = objects.concat(_asArray(region && region.objects));
+        });
+        return objects.find(function (item) {
+            if (!item) return false;
+            var candidateObjectId = _asText(item.objectId || item.ObjectId || item.id || item.Id || '');
+            if (id && candidateObjectId === id) return true;
+            var candidateBlockId = _asText(item.blockId || item.BlockId || item.anchorBlockId || item.AnchorBlockId || '');
+            return !!anchorBlockId && candidateBlockId === anchorBlockId && candidateObjectId === id;
+        }) || null;
     }
 
     function createWysiwygObjectRenderEntry(inst, block, run, inlineIndex, sourceKind) {
@@ -18971,6 +20478,13 @@ window.tmDocumentEditorEngine = (function () {
         var object = normalizeImageObject(source, { blockId: block && block.id || '', inlineIndex: inlineIndex });
         var objectId = _asText(object.objectId || source.objectId || source.ObjectId || source.id || source.Id || block && block.id || '');
         if (!objectId) return null;
+        var layoutObject = findLayoutObjectForRender(inst && inst.layout, objectId, block && block.id || object.blockId || object.anchorBlockId || '');
+        if (layoutObject && (layoutObject.rect || layoutObject.Rect)) {
+            object = Object.assign({}, object, {
+                rect: rectFromGeometry(layoutObject.rect || layoutObject.Rect),
+                pageIndex: Number(layoutObject.pageIndex ?? layoutObject.PageIndex ?? object.pageIndex ?? 0) || 0
+            });
+        }
         var runId = _asText(source.id || source.Id || objectId);
         var selected = inlineDrawingIsSelected(inst, block, source, object);
         return _sortObject({
@@ -19003,6 +20517,9 @@ window.tmDocumentEditorEngine = (function () {
         var object = entry && entry.object || {};
         var width = Math.max(1, Number(object.width || 120) || 120);
         var height = Math.max(1, Number(object.height || 80) || 80);
+        var rect = objectLayerRectFromObject(object, width, height);
+        width = rect.width;
+        height = rect.height;
         var objectId = _asText(entry && entry.objectId || object.objectId || '');
         var modelBlockId = _asText(entry && entry.blockId || object.blockId || object.anchorBlockId || '');
         var domBlockId = objectId || modelBlockId;
@@ -19029,8 +20546,8 @@ window.tmDocumentEditorEngine = (function () {
             'width:' + width + 'px',
             'min-height:' + height + 'px',
             'height:' + height + 'px',
-            'left:0px',
-            'top:0px',
+            'left:' + rect.x + 'px',
+            'top:' + rect.y + 'px',
             'z-index:' + zIndex
         ];
         var attrs = [
@@ -19046,17 +20563,27 @@ window.tmDocumentEditorEngine = (function () {
             'data-object-layer-kind="' + _escape(object.isInline === true ? 'inline' : 'anchored') + '"',
             'data-object-layer="' + _escape(layer || 'object') + '"',
             'data-wrap-mode="' + _escape(mode) + '"',
+            'data-wrap-side="' + _escape(object.wrapSide || 'BothSides') + '"',
             'data-horizontal-align="' + _escape(object.horizontalPosition && object.horizontalPosition.align || 'Left') + '"',
             'data-horizontal-offset="' + _escape(object.horizontalPosition && object.horizontalPosition.offset || 0) + '"',
             'data-vertical-offset="' + _escape(object.verticalPosition && object.verticalPosition.offset || 0) + '"',
+            'data-distance-left="' + _escape(object.distanceLeft || 0) + '"',
+            'data-distance-right="' + _escape(object.distanceRight || 0) + '"',
+            'data-distance-top="' + _escape(object.distanceTop || 0) + '"',
+            'data-distance-bottom="' + _escape(object.distanceBottom || 0) + '"',
+            'data-fixed-on-page="' + (object.fixedOnPage === true ? 'true' : 'false') + '"',
+            'data-move-with-text="' + (object.moveWithText !== false && object.fixedOnPage !== true ? 'true' : 'false') + '"',
             'data-object-width="' + _escape(width) + '"',
             'data-object-height="' + _escape(height) + '"',
+            'data-object-x="' + _escape(rect.x) + '"',
+            'data-object-y="' + _escape(rect.y) + '"',
             'contenteditable="false"',
             'draggable="false"',
             'role="img"',
             'aria-label="' + _escape(label) + '"',
             'style="' + _escape(styles.join(';')) + '"'
         ];
+        if (rect.explicit === true && object.isInline !== true) attrs.push('data-object-position-source="layout-rect"');
         attrs.push(renderObjectFocusPolicyAttributes(entry && entry.selected));
         if (entry && entry.selected) attrs.push(renderObjectSelectionDescriptionAttribute(inst, true));
         var html = ['<figure ' + attrs.join(' ') + '>'];
@@ -19076,16 +20603,21 @@ window.tmDocumentEditorEngine = (function () {
         var object = entry.object || {};
         var width = Math.max(1, Number(object.width || 120) || 120);
         var height = Math.max(1, Number(object.height || 80) || 80);
+        var rect = objectLayerRectFromObject(object, width, height);
+        width = rect.width;
+        height = rect.height;
         var objectId = _asText(entry.objectId || object.objectId || '');
         var modelBlockId = _asText(entry.blockId || object.blockId || object.anchorBlockId || '');
         var domBlockId = objectId || modelBlockId;
+        var mode = normalizeWrapModeName(object.wrapMode || 'Inline');
+        var layer = drawingLayerForWrapMode(mode);
         var styles = [
             '--tm-layout-object-width:' + width + 'px',
             '--tm-layout-object-height:' + height + 'px',
             'width:' + width + 'px',
             'height:' + height + 'px',
-            'left:0px',
-            'top:0px',
+            'left:' + rect.x + 'px',
+            'top:' + rect.y + 'px',
             'z-index:' + ((Number(object.zIndex || 0) || 0) + 1)
         ];
         var classes = ['tm-wysiwyg-object-selection-overlay'];
@@ -19097,8 +20629,13 @@ window.tmDocumentEditorEngine = (function () {
             'data-render-object-id="' + _escape(objectId) + '"',
             'data-block-id="' + _escape(domBlockId) + '"',
             'data-model-block-id="' + _escape(modelBlockId) + '"',
+            'data-object-layer="' + _escape(layer || 'object') + '"',
+            'data-wrap-mode="' + _escape(mode) + '"',
+            'data-wrap-side="' + _escape(object.wrapSide || 'BothSides') + '"',
             'data-object-width="' + _escape(width) + '"',
             'data-object-height="' + _escape(height) + '"',
+            'data-object-x="' + _escape(rect.x) + '"',
+            'data-object-y="' + _escape(rect.y) + '"',
             'contenteditable="false"',
             'aria-hidden="' + (entry.selected ? 'false' : 'true') + '"',
             'style="' + _escape(styles.join(';')) + '"'
@@ -19123,16 +20660,21 @@ window.tmDocumentEditorEngine = (function () {
         var object = entry.object || {};
         var width = Math.max(1, Number(object.width || 120) || 120);
         var height = Math.max(1, Number(object.height || 80) || 80);
+        var rect = objectLayerRectFromObject(object, width, height);
+        width = rect.width;
+        height = rect.height;
         var objectId = _asText(entry.objectId || object.objectId || '');
         var modelBlockId = _asText(entry.blockId || object.blockId || object.anchorBlockId || '');
         var domBlockId = objectId || modelBlockId;
+        var mode = normalizeWrapModeName(object.wrapMode || 'Inline');
+        var layer = drawingLayerForWrapMode(mode);
         var styles = [
             '--tm-layout-object-width:' + width + 'px',
             '--tm-layout-object-height:' + height + 'px',
             'width:' + width + 'px',
             'height:' + height + 'px',
-            'left:0px',
-            'top:0px',
+            'left:' + rect.x + 'px',
+            'top:' + rect.y + 'px',
             'z-index:' + ((Number(object.zIndex || 0) || 0) + 2)
         ];
         var classes = ['tm-wysiwyg-object-guides-overlay'];
@@ -19144,6 +20686,13 @@ window.tmDocumentEditorEngine = (function () {
             'data-render-object-id="' + _escape(objectId) + '"',
             'data-block-id="' + _escape(domBlockId) + '"',
             'data-model-block-id="' + _escape(modelBlockId) + '"',
+            'data-object-layer="' + _escape(layer || 'object') + '"',
+            'data-wrap-mode="' + _escape(mode) + '"',
+            'data-wrap-side="' + _escape(object.wrapSide || 'BothSides') + '"',
+            'data-object-width="' + _escape(width) + '"',
+            'data-object-height="' + _escape(height) + '"',
+            'data-object-x="' + _escape(rect.x) + '"',
+            'data-object-y="' + _escape(rect.y) + '"',
             'contenteditable="false"',
             'aria-hidden="' + (entry.selected ? 'false' : 'true') + '"',
             'style="' + _escape(styles.join(';')) + '"'
@@ -19156,13 +20705,24 @@ window.tmDocumentEditorEngine = (function () {
         return '<span ' + attrs.join(' ') + '>' + renderImageLayoutBubbleHtml(object) + '</span>';
     }
 
-    function renderWysiwygObjectLayersHtml(inst, entries) {
+    function objectEntryPaintLayer(entry) {
+        var object = entry && entry.object || {};
+        return drawingLayerForWrapMode(object.wrapMode || object.WrapMode || 'Inline');
+    }
+
+    function renderWysiwygObjectPaintLayerHtml(inst, entries, layerName, layerClass, testId) {
         var html = [];
-        html.push('<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--object" data-testid="document-wysiwyg-object-layer">');
+        html.push('<div class="tm-wysiwyg-page__layer ' + layerClass + '" data-testid="' + testId + '">');
         _asArray(entries).forEach(function (entry) {
+            if (objectEntryPaintLayer(entry) !== layerName) return;
             html.push(renderWysiwygObjectLayerItemHtml(inst, entry));
         });
         html.push('</div>');
+        return html.join('');
+    }
+
+    function renderWysiwygObjectOverlayLayersHtml(inst, entries) {
+        var html = [];
         html.push('<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--selection" data-testid="document-wysiwyg-selection-layer">');
         _asArray(entries).forEach(function (entry) {
             html.push(renderWysiwygObjectSelectionOverlayHtml(inst, entry));
@@ -19265,14 +20825,19 @@ window.tmDocumentEditorEngine = (function () {
             return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" data-alignment="' + _escape(alignment) + '" style="text-align:' + _escape(alignment) + '" role="paragraph">' + (content || '<br data-caret-placeholder="true">') + '</p>';
         }
         if (block.type === 'image') {
-            return '<p class="tm-wysiwyg-block tm-wysiwyg-legacy-image-placeholder" data-block-id="' + _escape(block.id) + '" data-legacy-image-block="true" aria-hidden="true"><br data-caret-placeholder="true"></p>';
+            var object = normalizeImageObject(block);
+            var label = getImageObjectAccessibleLabel(object, 'Image');
+            return '<p class="tm-wysiwyg-block tm-wysiwyg-legacy-image-placeholder" data-block-id="' + _escape(block.id) + '" data-legacy-image-block="true" contenteditable="false" role="img" aria-label="' + _escape(label) + '"><br data-caret-placeholder="true"></p>';
         }
         return renderEngineBlockHtml(inst, block, imageAltMissing, pageNumber, totalPages);
     }
 
     function renderWysiwygBodyLayersHtml(inst, blocks, imageAltMissing, pageNumber, totalPages) {
         var entries = collectWysiwygPageObjectEntries(inst, blocks);
-        var html = ['<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--body-text" data-testid="document-wysiwyg-text-layer">'];
+        var html = [
+            renderWysiwygObjectPaintLayerHtml(inst, entries, 'behind-text', 'tm-wysiwyg-page__layer--behind-text', 'document-wysiwyg-behind-text-layer'),
+            '<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--body-text" data-testid="document-wysiwyg-text-layer">'
+        ];
         if (!_asArray(blocks).length) {
             html.push('<p class="tm-wysiwyg-block" data-block-id="empty-paragraph"><br></p>');
         } else {
@@ -19281,23 +20846,27 @@ window.tmDocumentEditorEngine = (function () {
             });
         }
         html.push('</div>');
-        html.push(renderWysiwygObjectLayersHtml(inst, entries));
+        html.push(renderWysiwygObjectPaintLayerHtml(inst, entries, 'object', 'tm-wysiwyg-page__layer--object', 'document-wysiwyg-object-layer'));
+        html.push(renderWysiwygObjectPaintLayerHtml(inst, entries, 'in-front-of-text', 'tm-wysiwyg-page__layer--in-front-of-text', 'document-wysiwyg-in-front-of-text-layer'));
+        html.push(renderWysiwygObjectOverlayLayersHtml(inst, entries));
         return html.join('');
     }
 
     function syncWysiwygObjectLayerPositions(root) {
         if (!root || typeof root.querySelectorAll !== 'function') return;
         Array.from(root.querySelectorAll('.tm-wysiwyg-page__body--layout')).forEach(function (body) {
-            var layer = body.querySelector('.tm-wysiwyg-page__layer--object');
-            if (!layer || typeof layer.getBoundingClientRect !== 'function') return;
-            var layerRect = layer.getBoundingClientRect();
-            Array.from(layer.querySelectorAll('.tm-wysiwyg-object-layer-item[data-object-id]')).forEach(function (item) {
-                var objectId = item.getAttribute('data-object-id') || '';
-                if (!objectId) return;
-                var rect = resolveWysiwygObjectLayerRect(body, layerRect, item);
-                applyWysiwygObjectLayerRect(item, rect);
-                Array.from(body.querySelectorAll('.tm-wysiwyg-object-selection-overlay[data-object-id="' + cssEscape(objectId) + '"], .tm-wysiwyg-object-guides-overlay[data-object-id="' + cssEscape(objectId) + '"]')).forEach(function (overlay) {
-                    applyWysiwygObjectLayerRect(overlay, rect);
+            var layers = Array.from(body.querySelectorAll('.tm-wysiwyg-page__layer--behind-text, .tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--in-front-of-text'));
+            layers.forEach(function (layer) {
+                if (!layer || typeof layer.getBoundingClientRect !== 'function') return;
+                var layerRect = layer.getBoundingClientRect();
+                Array.from(layer.querySelectorAll('.tm-wysiwyg-object-layer-item[data-object-id]')).forEach(function (item) {
+                    var objectId = item.getAttribute('data-object-id') || '';
+                    if (!objectId) return;
+                    var rect = resolveWysiwygObjectLayerRect(body, layerRect, item);
+                    applyWysiwygObjectLayerRect(item, rect);
+                    Array.from(body.querySelectorAll('.tm-wysiwyg-object-selection-overlay[data-object-id="' + cssEscape(objectId) + '"], .tm-wysiwyg-object-guides-overlay[data-object-id="' + cssEscape(objectId) + '"]')).forEach(function (overlay) {
+                        applyWysiwygObjectLayerRect(overlay, rect);
+                    });
                 });
             });
         });
@@ -19312,6 +20881,10 @@ window.tmDocumentEditorEngine = (function () {
         var block = anchorBlockId
             ? body.querySelector('.tm-wysiwyg-block[data-block-id="' + cssEscape(anchorBlockId) + '"]')
             : null;
+        var anchorBlock = anchor && anchor.closest ? anchor.closest('.tm-wysiwyg-block[data-block-id]') : null;
+        var anchorOwnsRequestedBlock = !anchorBlockId
+            || !anchorBlock
+            || (anchorBlock.getAttribute('data-block-id') || '') === anchorBlockId;
         var kind = item.getAttribute('data-object-layer-kind') || 'anchored';
         if (kind === 'inline' && anchor && typeof anchor.getBoundingClientRect === 'function') {
             var anchorRect = anchor.getBoundingClientRect();
@@ -19319,16 +20892,31 @@ window.tmDocumentEditorEngine = (function () {
                 x: anchorRect.left - layerRect.left,
                 y: anchorRect.top - layerRect.top,
                 width: Math.max(width, anchorRect.width || 0),
-                height: Math.max(height, anchorRect.height || 0)
+                height: height
+            };
+        }
+        if (kind !== 'inline' && item.getAttribute('data-object-position-source') === 'layout-rect') {
+            return {
+                x: Number(item.getAttribute('data-object-x') || 0) || 0,
+                y: Number(item.getAttribute('data-object-y') || 0) || 0,
+                width: width,
+                height: height
             };
         }
 
-        var reference = anchor && typeof anchor.getBoundingClientRect === 'function'
+        var fixedOnPage = item.getAttribute('data-fixed-on-page') === 'true';
+        var reference = fixedOnPage
+            ? layerRect
+            : anchor && anchorOwnsRequestedBlock && typeof anchor.getBoundingClientRect === 'function'
             ? anchor.getBoundingClientRect()
             : block && typeof block.getBoundingClientRect === 'function'
                 ? block.getBoundingClientRect()
                 : layerRect;
-        var blockRect = block && typeof block.getBoundingClientRect === 'function' ? block.getBoundingClientRect() : reference;
+        var blockRect = fixedOnPage
+            ? layerRect
+            : block && typeof block.getBoundingClientRect === 'function'
+                ? block.getBoundingClientRect()
+                : reference;
         var align = String(item.getAttribute('data-horizontal-align') || 'Left').toLowerCase();
         var offsetX = Number(item.getAttribute('data-horizontal-offset') || 0) || 0;
         var offsetY = Number(item.getAttribute('data-vertical-offset') || 0) || 0;
@@ -19354,6 +20942,481 @@ window.tmDocumentEditorEngine = (function () {
         node.style.height = Math.max(1, Number(rect.height || 0) || 1) + 'px';
         node.style.setProperty('--tm-layout-object-width', Math.max(1, Number(rect.width || 0) || 1) + 'px');
         node.style.setProperty('--tm-layout-object-height', Math.max(1, Number(rect.height || 0) || 1) + 'px');
+    }
+
+    function applyWysiwygTextExclusionLayout(inst) {
+        if (!inst || !inst.root || !inst.model || typeof inst.root.querySelectorAll !== 'function') return false;
+        var changed = false;
+        var maxPasses = 5;
+        for (var pass = 0; pass < maxPasses; pass++) {
+            syncWysiwygObjectLayerPositions(inst.root);
+            var passChanged = false;
+            Array.from(inst.root.querySelectorAll('.tm-wysiwyg-page__body--layout')).forEach(function (body) {
+                passChanged = applyWysiwygBodyTextExclusionLayout(inst, body) || passChanged;
+            });
+            changed = passChanged || changed;
+            if (!passChanged) break;
+            syncWysiwygObjectLayerPositions(inst.root);
+        }
+        var finalChanged = false;
+        Array.from(inst.root.querySelectorAll('.tm-wysiwyg-page__body--layout')).forEach(function (body) {
+            finalChanged = applyWysiwygBodyTextExclusionLayout(inst, body) || finalChanged;
+        });
+        if (finalChanged) {
+            changed = true;
+            syncWysiwygObjectLayerPositions(inst.root);
+        }
+        return changed;
+    }
+
+    function applyWysiwygBodyTextExclusionLayout(inst, body) {
+        if (!body || typeof body.getBoundingClientRect !== 'function') return false;
+        var textLayer = body.querySelector('.tm-wysiwyg-page__layer--body-text');
+        if (!textLayer) return false;
+        var bodyRect = body.getBoundingClientRect();
+        if (!bodyRect || bodyRect.width <= 1) return false;
+        var frame = { x: 0, y: 0, width: bodyRect.width, height: Math.max(200000, bodyRect.height || 0) };
+        var exclusions = collectWysiwygDomTextExclusions(body, bodyRect, frame);
+        var changed = false;
+        Array.from(textLayer.querySelectorAll(':scope > .tm-wysiwyg-block[data-block-id]')).forEach(function (paragraph) {
+            var blockId = paragraph.getAttribute('data-block-id') || '';
+            var block = _findBlock(inst.model, blockId);
+            if (!block || block.type !== 'paragraph') {
+                changed = restoreWysiwygProjectedParagraph(paragraph) || changed;
+                return;
+            }
+            if (!shouldProjectWysiwygParagraph(paragraph, block)) {
+                changed = restoreWysiwygProjectedParagraph(paragraph) || changed;
+                return;
+            }
+            var paragraphRect = paragraph.getBoundingClientRect();
+            var paragraphTop = Math.max(0, paragraphRect.top - bodyRect.top);
+            var paragraphHeight = Math.max(1, paragraphRect.height || 1);
+            var relevant = exclusions.filter(function (exclusion) {
+                var rect = exclusion && exclusion.rect || {};
+                return exclusion.anchorBlockId === blockId
+                    || (paragraphTop < rect.y + rect.height && paragraphTop + paragraphHeight > rect.y);
+            });
+            if (!relevant.length) {
+                changed = restoreWysiwygProjectedParagraph(paragraph) || changed;
+                return;
+            }
+            changed = projectWysiwygParagraphAroundExclusions(paragraph, block, paragraphTop, bodyRect.width, exclusions, relevant) || changed;
+        });
+        return changed;
+    }
+
+    function collectWysiwygDomTextExclusions(body, bodyRect, frame) {
+        var result = [];
+        Array.from(body.querySelectorAll('.tm-wysiwyg-page__layer--object .tm-wysiwyg-object-layer-item[data-object-id]')).forEach(function (item) {
+            if (!isWysiwygLayoutElementVisible(item)) return;
+            if ((item.getAttribute('data-object-layer-kind') || '') === 'inline') return;
+            var mode = normalizeWrapModeName(item.getAttribute('data-wrap-mode') || 'Inline');
+            if (!wrapModeCreatesTextExclusion(mode)) return;
+            var objectRect = getWysiwygObjectVisualRectRelativeTo(item, bodyRect);
+            if (!objectRect || objectRect.width <= 0 || objectRect.height <= 0) return;
+            var anchorBlockId = item.getAttribute('data-anchor-block-id') || item.getAttribute('data-model-block-id') || item.getAttribute('data-block-id') || '';
+            var object = {
+                objectId: item.getAttribute('data-object-id') || '',
+                blockId: anchorBlockId,
+                anchorBlockId: anchorBlockId,
+                pageIndex: 0,
+                region: 'Body',
+                wrapMode: mode,
+                wrapSide: normalizeWrapSideName(item.getAttribute('data-wrap-side') || 'BothSides'),
+                rect: objectRect,
+                width: objectRect.width,
+                height: objectRect.height,
+                distanceLeft: Number(item.getAttribute('data-distance-left') || 0) || 0,
+                distanceRight: Number(item.getAttribute('data-distance-right') || 0) || 0,
+                distanceTop: Number(item.getAttribute('data-distance-top') || 0) || 0,
+                distanceBottom: Number(item.getAttribute('data-distance-bottom') || 0) || 0,
+                allowOverlap: false
+            };
+            var exclusion = createTextExclusion(object, frame);
+            if (!exclusion) return;
+            exclusion.anchorBlockId = anchorBlockId;
+            exclusion.objectElement = item;
+            result.push(exclusion);
+        });
+        return result;
+    }
+
+    function isWysiwygLayoutElementVisible(element) {
+        if (!element || typeof element.getBoundingClientRect !== 'function') return false;
+        var rect = element.getBoundingClientRect();
+        if (!rect || rect.width <= 0.5 || rect.height <= 0.5) return false;
+        if (typeof window === 'undefined' || !window.getComputedStyle) return true;
+        var style = window.getComputedStyle(element);
+        return style.display !== 'none'
+            && style.visibility !== 'hidden'
+            && Number(style.opacity || 1) > 0.01;
+    }
+
+    function getWysiwygRectRelativeTo(rect, origin) {
+        return {
+            x: Number((rect && (rect.left ?? rect.x)) || 0) - Number((origin && (origin.left ?? origin.x)) || 0),
+            y: Number((rect && (rect.top ?? rect.y)) || 0) - Number((origin && (origin.top ?? origin.y)) || 0),
+            width: Math.max(0, Number(rect && rect.width || 0) || 0),
+            height: Math.max(0, Number(rect && rect.height || 0) || 0)
+        };
+    }
+
+    function unionWysiwygRects(rects) {
+        var list = _asArray(rects).filter(function (rect) { return rect && rect.width > 0 && rect.height > 0; });
+        if (!list.length) return null;
+        var left = Math.min.apply(null, list.map(function (rect) { return rect.x; }));
+        var top = Math.min.apply(null, list.map(function (rect) { return rect.y; }));
+        var right = Math.max.apply(null, list.map(function (rect) { return rect.x + rect.width; }));
+        var bottom = Math.max.apply(null, list.map(function (rect) { return rect.y + rect.height; }));
+        return { x: left, y: top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+    }
+
+    function getWysiwygObjectVisualRectRelativeTo(item, bodyRect) {
+        var rects = [];
+        var image = item && item.querySelector ? item.querySelector('img') : null;
+        if (image && isWysiwygLayoutElementVisible(image)) {
+            rects.push(getWysiwygRectRelativeTo(image.getBoundingClientRect(), bodyRect));
+        } else if (item && typeof item.getBoundingClientRect === 'function') {
+            rects.push(getWysiwygRectRelativeTo(item.getBoundingClientRect(), bodyRect));
+        }
+        var caption = item && item.querySelector ? item.querySelector('figcaption') : null;
+        if (caption && isWysiwygLayoutElementVisible(caption)) {
+            rects.push(getWysiwygRectRelativeTo(caption.getBoundingClientRect(), bodyRect));
+        }
+        return unionWysiwygRects(rects);
+    }
+
+    function shouldProjectWysiwygParagraph(paragraph, block) {
+        if (!paragraph || !block || block.type !== 'paragraph') return false;
+        if (!_blockText(block).trim()) return false;
+        if (paragraph.querySelector('.tm-wysiwyg-marker, .tm-document-inline--comment-anchor, .tm-document-inline--revision')) return false;
+        return true;
+    }
+
+    function restoreWysiwygProjectedParagraph(paragraph) {
+        if (!paragraph || paragraph.getAttribute('data-wysiwyg-projected-layout') !== 'true') return false;
+        if (paragraph.__tmWysiwygOriginalHtml !== undefined) paragraph.innerHTML = paragraph.__tmWysiwygOriginalHtml;
+        paragraph.classList.remove('tm-wysiwyg-block--projected-layout');
+        paragraph.removeAttribute('data-wysiwyg-projected-layout');
+        paragraph.removeAttribute('data-wysiwyg-layout-signature');
+        paragraph.style.position = '';
+        paragraph.style.minHeight = '';
+        paragraph.style.height = '';
+        paragraph.style.whiteSpace = '';
+        return true;
+    }
+
+    function projectWysiwygParagraphAroundExclusions(paragraph, block, paragraphTop, bodyWidth, allExclusions, relevantExclusions) {
+        var style = typeof window !== 'undefined' && window.getComputedStyle
+            ? window.getComputedStyle(paragraph)
+            : null;
+        var fontSize = style ? (parseFloat(style.fontSize) || 16) : 16;
+        var lineHeight = style ? (parseFloat(style.lineHeight) || Math.ceil(fontSize * 1.25)) : Math.ceil(fontSize * 1.25);
+        var paragraphInput = _clone(block);
+        paragraphInput.style = Object.assign({}, paragraphInput.style || {}, paragraphInput.content && paragraphInput.content.style || {}, {
+            fontFamily: style && style.fontFamily || 'Arial',
+            fontSize: fontSize,
+            lineHeight: lineHeight,
+            fontWeight: style && style.fontWeight || '400',
+            fontStyle: style && style.fontStyle || 'normal'
+        });
+        var frame = { x: 0, y: 0, width: bodyWidth, height: Math.max(200000, paragraphTop + 2000) };
+        var engine = createParagraphLayoutEngine(createTextMeasurementService(), { lineGap: 0, minReadableWidth: 36 });
+        var layout = engine.layoutParagraph(paragraphInput, {
+            x: 0,
+            y: paragraphTop,
+            width: bodyWidth,
+            lineGap: 0,
+            minReadableWidth: 36,
+            resolveAvailableIntervals: function (atY, height, minWidth) {
+                return getAvailableIntervals(atY, height, frame, allExclusions, minWidth || 36, { pageIndex: 0, region: 'Body' });
+            }
+        });
+        var segments = _asArray(layout && layout.segments).filter(function (segment) {
+            return segment && segment.inlineObject !== true && segment.text !== undefined;
+        });
+        if (!segments.length) return restoreWysiwygProjectedParagraph(paragraph);
+        segments = splitProjectedWysiwygSegmentsForReflow(segments, paragraphInput.style);
+        var projected = reflowProjectedWysiwygSegments(segments, paragraphTop, lineHeight, bodyWidth, frame, allExclusions);
+        segments = projected.segments;
+        var lines = projected.lines.length ? projected.lines : _asArray(layout && layout.lines);
+        if (!segments.length) return restoreWysiwygProjectedParagraph(paragraph);
+        var layoutBottom = Math.max.apply(null, lines.map(function (line) {
+            return Number(line && line.rect && line.rect.y || paragraphTop) + Number(line && line.rect && line.rect.height || lineHeight);
+        }).concat(segments.map(function (segment) {
+            return Number(segment.rect && segment.rect.y || paragraphTop) + Number(segment.rect && segment.rect.height || lineHeight);
+        })));
+        _asArray(relevantExclusions).forEach(function (exclusion) {
+            var rect = exclusion && exclusion.rect || {};
+            if (Number(rect.y || 0) < layoutBottom && Number(rect.y || 0) + Number(rect.height || 0) > paragraphTop) {
+                layoutBottom = Math.max(layoutBottom, Number(rect.y || 0) + Number(rect.height || 0));
+            }
+        });
+        var paragraphHeight = Math.max(lineHeight, layoutBottom - paragraphTop);
+        var signature = createWysiwygParagraphProjectionSignature(segments, paragraphHeight, paragraphTop);
+        if (paragraph.getAttribute('data-wysiwyg-layout-signature') === signature) return false;
+        if (paragraph.__tmWysiwygOriginalHtml === undefined && paragraph.getAttribute('data-wysiwyg-projected-layout') !== 'true') {
+            paragraph.__tmWysiwygOriginalHtml = paragraph.innerHTML;
+        }
+        paragraph.classList.add('tm-wysiwyg-block--projected-layout');
+        paragraph.setAttribute('data-wysiwyg-projected-layout', 'true');
+        paragraph.setAttribute('data-wysiwyg-layout-signature', signature);
+        paragraph.style.position = 'relative';
+        paragraph.style.minHeight = Math.ceil(paragraphHeight) + 'px';
+        paragraph.style.height = Math.ceil(paragraphHeight) + 'px';
+        paragraph.style.whiteSpace = 'normal';
+        paragraph.replaceChildren();
+        lines.forEach(function (line) {
+            var marker = document.createElement('span');
+            marker.className = 'tm-wysiwyg-layout-line';
+            marker.setAttribute('data-layout-line-id', line.id || '');
+            marker.setAttribute('aria-hidden', 'true');
+            marker.style.left = Math.round(Number(line.rect && line.rect.x || 0) * 100) / 100 + 'px';
+            marker.style.top = Math.round((Number(line.rect && line.rect.y || paragraphTop) - paragraphTop) * 100) / 100 + 'px';
+            marker.style.width = Math.max(1, Number(line.rect && line.rect.width || bodyWidth) || bodyWidth) + 'px';
+            marker.style.height = Math.max(1, Number(line.rect && line.rect.height || lineHeight) || lineHeight) + 'px';
+            marker.style.pointerEvents = 'none';
+            paragraph.appendChild(marker);
+        });
+        groupProjectedWysiwygSegmentsByLine(segments).forEach(function (line) {
+            paragraph.appendChild(renderProjectedWysiwygLine(line, paragraphTop, bodyWidth, lineHeight));
+        });
+        return true;
+    }
+
+    function splitProjectedWysiwygSegmentsForReflow(segments, fallbackStyle) {
+        var service = createTextMeasurementService();
+        var output = [];
+        _asArray(segments).forEach(function (segment, segmentIndex) {
+            var text = _asText(segment && segment.text || '');
+            if (!text) return;
+            var style = Object.assign({}, fallbackStyle || {}, segment && segment.style || {});
+            var baseStart = Number(segment && (segment.start ?? segment.Start) || 0) || 0;
+            var tokens = text.match(/\s+|[^\s]+/g) || [text];
+            var cursor = 0;
+            tokens.forEach(function (token, tokenIndex) {
+                if (!token) return;
+                var tokenWidth = Math.max(1, service.measureText(token, style).width);
+                var rect = Object.assign({}, segment && segment.rect || {}, { width: tokenWidth });
+                output.push(Object.assign({}, segment, {
+                    id: _asText(segment && segment.id || segment && segment.Id || 'segment') + '-token-' + segmentIndex + '-' + tokenIndex,
+                    text: token,
+                    start: baseStart + cursor,
+                    end: baseStart + cursor + token.length,
+                    rect: rect,
+                    style: style
+                }));
+                cursor += token.length;
+            });
+        });
+        return output.length ? output : segments;
+    }
+
+    function reflowProjectedWysiwygSegments(segments, paragraphTop, lineHeight, bodyWidth, frame, allExclusions) {
+        var source = _asArray(segments).map(function (segment, index) {
+            return Object.assign({}, segment, {
+                __tmIndex: index,
+                rect: Object.assign({}, segment && segment.rect || {})
+            });
+        }).sort(function (a, b) {
+            return Number(a.start ?? 0) - Number(b.start ?? 0) || Number(a.__tmIndex || 0) - Number(b.__tmIndex || 0);
+        });
+        var output = [];
+        var lines = [];
+        var y = paragraphTop;
+        var line = resolveProjectedWysiwygLineIntervals(y, lineHeight, bodyWidth, frame, allExclusions);
+        var intervalIndex = 0;
+        var cursorX = line.intervals[0].x;
+        var hasContentOnLine = false;
+
+        function currentInterval() {
+            return line.intervals[Math.max(0, Math.min(intervalIndex, line.intervals.length - 1))];
+        }
+
+        function startNewLine(minY) {
+            y = Math.max(Number(minY || 0) || 0, Number(line.y || y) + lineHeight);
+            line = resolveProjectedWysiwygLineIntervals(y, lineHeight, bodyWidth, frame, allExclusions);
+            intervalIndex = 0;
+            cursorX = line.intervals[0].x;
+            hasContentOnLine = false;
+        }
+
+        function moveToNextIntervalOrLine(width) {
+            for (var i = intervalIndex + 1; i < line.intervals.length; i++) {
+                if (Number(line.intervals[i].width || 0) + 0.0001 >= width) {
+                    intervalIndex = i;
+                    cursorX = line.intervals[i].x;
+                    hasContentOnLine = false;
+                    return;
+                }
+            }
+            startNewLine();
+        }
+
+        source.forEach(function (segment) {
+            var text = _asText(segment.text || '');
+            var width = Math.max(1, Number(segment.rect && segment.rect.width || 1) || 1);
+            var isSpace = /^\s+$/.test(text);
+            if (isSpace && !hasContentOnLine) return;
+            var guard = 0;
+            while (guard++ < 100) {
+                var interval = currentInterval();
+                var intervalRight = Number(interval.x || 0) + Number(interval.width || 0);
+                if (cursorX + width <= intervalRight + 0.0001 || width > Number(interval.width || 0)) break;
+                moveToNextIntervalOrLine(width);
+                if (isSpace && !hasContentOnLine) return;
+            }
+            var rect = {
+                x: cursorX,
+                y: Number(line.y || y) || y,
+                width: width,
+                height: lineHeight
+            };
+            var next = Object.assign({}, segment, { rect: rect });
+            output.push(next);
+            cursorX += width;
+            hasContentOnLine = hasContentOnLine || !isSpace;
+            var lineId = 'projected-line-' + lines.length;
+            var existing = lines.find(function (candidate) {
+                return Math.abs(Number(candidate.rect && candidate.rect.y || 0) - rect.y) < 0.5;
+            });
+            if (!existing) {
+                lines.push({
+                    id: lineId,
+                    rect: { x: 0, y: rect.y, width: bodyWidth, height: lineHeight },
+                    availableIntervals: line.intervals.map(_clone)
+                });
+            }
+        });
+
+        return {
+            segments: output,
+            lines: lines
+        };
+    }
+
+    function resolveProjectedWysiwygLineIntervals(y, lineHeight, bodyWidth, frame, allExclusions) {
+        var result = getAvailableIntervals(y, lineHeight, frame, allExclusions, 36, { pageIndex: 0, region: 'Body' });
+        var moved = result && (result.moved === true || result.Moved === true);
+        var lineY = moved ? Number(result.movedToY ?? result.MovedToY ?? y) || y : y;
+        var intervals = _asArray(moved
+            ? (result.movedIntervals || result.MovedIntervals || result.intervals || result.Intervals)
+            : (result && (result.intervals || result.Intervals || result.availableIntervals || result.AvailableIntervals)));
+        intervals = intervals.map(function (interval, index) {
+            return {
+                id: interval && (interval.id || interval.Id) || ('projected-interval-' + index),
+                x: Math.max(0, Number(interval && (interval.x ?? interval.X) || 0) || 0),
+                y: lineY,
+                width: Math.max(0, Number(interval && (interval.width ?? interval.Width) || 0) || 0),
+                height: lineHeight
+            };
+        }).filter(function (interval) {
+            return interval.width >= 1;
+        }).sort(function (a, b) {
+            return a.x - b.x;
+        });
+        if (!intervals.length) {
+            intervals = [{ id: 'projected-interval-0', x: 0, y: lineY, width: bodyWidth, height: lineHeight }];
+        }
+        return { y: lineY, intervals: intervals };
+    }
+
+    function createWysiwygParagraphProjectionSignature(segments, height, top) {
+        return stableChecksum({
+            height: Math.round(Number(height || 0) * 10) / 10,
+            top: Math.round(Number(top || 0) * 10) / 10,
+            segments: _asArray(segments).map(function (segment) {
+                var rect = segment.rect || {};
+                return [
+                    segment.text || '',
+                    segment.start,
+                    segment.end,
+                    Math.round(Number(rect.x || 0) * 10) / 10,
+                    Math.round(Number(rect.y || 0) * 10) / 10,
+                    Math.round(Number(rect.width || 0) * 10) / 10,
+                    Math.round(Number(rect.height || 0) * 10) / 10
+                ];
+            })
+        });
+    }
+
+    function groupProjectedWysiwygSegmentsByLine(segments) {
+        var lines = [];
+        _asArray(segments).forEach(function (segment) {
+            var rect = segment && segment.rect || {};
+            var y = Number(rect.y || 0) || 0;
+            var height = Math.max(1, Number(rect.height || 0) || 1);
+            var line = lines.find(function (candidate) {
+                return Math.abs(Number(candidate.y || 0) - y) <= Math.max(1, height * 0.2);
+            });
+            if (!line) {
+                line = { y: y, height: height, segments: [] };
+                lines.push(line);
+            }
+            line.height = Math.max(line.height, height);
+            line.segments.push(segment);
+        });
+        lines.forEach(function (line) {
+            line.segments.sort(function (a, b) {
+                var ar = a && a.rect || {};
+                var br = b && b.rect || {};
+                return Number(ar.x || 0) - Number(br.x || 0);
+            });
+        });
+        return lines.sort(function (a, b) { return Number(a.y || 0) - Number(b.y || 0); });
+    }
+
+    function renderProjectedWysiwygLine(line, paragraphTop, bodyWidth, fallbackLineHeight) {
+        var span = document.createElement('span');
+        var y = Number(line && line.y || paragraphTop) || paragraphTop;
+        var height = Math.max(1, Number(line && line.height || fallbackLineHeight) || fallbackLineHeight);
+        span.className = 'tm-wysiwyg-layout-text-line';
+        span.style.position = 'absolute';
+        span.style.left = '0px';
+        span.style.top = Math.round((y - paragraphTop) * 100) / 100 + 'px';
+        span.style.width = Math.max(1, Number(bodyWidth || 1) || 1) + 'px';
+        span.style.height = height + 'px';
+        span.style.lineHeight = height + 'px';
+        span.style.whiteSpace = 'pre';
+        span.style.overflow = 'visible';
+        span.style.display = 'block';
+        var cursorX = 0;
+        _asArray(line && line.segments).forEach(function (segment) {
+            var rect = segment && segment.rect || {};
+            var x = Math.max(0, Number(rect.x || 0) || 0);
+            var width = Math.max(1, Number(rect.width || 1) || 1);
+            var fragment = renderProjectedWysiwygSegment(segment, fallbackLineHeight);
+            var gap = Math.max(0, x - cursorX);
+            fragment.style.marginLeft = Math.round(gap * 100) / 100 + 'px';
+            fragment.style.width = Math.round(width * 100) / 100 + 'px';
+            span.appendChild(fragment);
+            cursorX = x + width;
+        });
+        return span;
+    }
+
+    function renderProjectedWysiwygSegment(segment, fallbackLineHeight) {
+        var span = document.createElement('span');
+        var rect = segment && segment.rect || {};
+        span.className = 'tm-wysiwyg-layout-segment tm-wysiwyg-layout-segment--projected';
+        span.setAttribute('data-layout-segment-id', segment.id || '');
+        span.setAttribute('data-model-block-id', segment.blockId || '');
+        span.setAttribute('data-model-run-id', segment.runId || '');
+        span.setAttribute('data-model-start', segment.start ?? 0);
+        span.setAttribute('data-model-end', segment.end ?? segment.start ?? 0);
+        span.setAttribute('data-layout-height', Math.max(1, Number(rect.height || fallbackLineHeight) || fallbackLineHeight));
+        if (segment.runId) span.setAttribute('data-inline-id', segment.runId);
+        span.style.position = 'relative';
+        span.style.width = Math.max(1, Math.round(Number(rect.width || 1) * 100) / 100) + 'px';
+        span.style.height = Math.max(1, Math.round(Number(rect.height || fallbackLineHeight) * 100) / 100) + 'px';
+        span.style.lineHeight = Math.max(1, Number(rect.height || fallbackLineHeight) || fallbackLineHeight) + 'px';
+        span.style.whiteSpace = 'pre';
+        span.style.overflow = 'visible';
+        span.style.display = 'inline-block';
+        applySegmentStyleToElement(span, segment.style || {}, segment.decorations || []);
+        span.appendChild(document.createTextNode(segment.text || ''));
+        return span;
     }
 
     function renderHeaderFooterHtml(inst, page, type, readOnly, totalPages) {
@@ -19431,9 +21494,9 @@ window.tmDocumentEditorEngine = (function () {
             var height = Math.max(1, Number(object.height || 80) || 80);
             var html = ['<figure class="' + renderImageFigureClasses(selected, object) + '" style="' + _escape(renderDrawingFigureStyle(object)) + '" data-block-id="' + _escape(block.id) + '" data-wrap-mode="' + _escape(object.wrapMode) + '" role="figure" aria-label="' + _escape(alt || caption || 'Image') + '"' + ariaDescription + renderObjectFocusPolicyAttributes(selected) + '>'];
             if (src) {
-                html.push('<img src="' + _escape(src) + '" alt="' + _escape(alt) + '" style="width:100%;height:' + height + 'px;object-fit:contain" draggable="false" />');
+                html.push('<img src="' + _escape(src) + '" alt="' + _escape(alt) + '" role="img" style="width:100%;height:' + height + 'px;object-fit:contain" draggable="false" />');
             } else {
-                html.push('<div class="tm-wysiwyg-image__placeholder" style="height:' + height + 'px" aria-hidden="true">' + _escape(alt || caption || 'Image') + '</div>');
+                html.push('<div class="tm-wysiwyg-image__placeholder" style="height:' + height + 'px" role="img" aria-label="' + _escape(alt || caption || 'Image') + '">' + _escape(alt || caption || 'Image') + '</div>');
             }
             if (caption) html.push('<figcaption>' + _escape(caption) + '</figcaption>');
             html.push('<span class="tm-wysiwyg-selection-box" data-testid="document-wysiwyg-object-selection-box" aria-hidden="true"></span>');
@@ -19496,6 +21559,7 @@ window.tmDocumentEditorEngine = (function () {
             inst.root.innerHTML = html.join('');
             recordFullRenderSwap(inst, 'render', invalidatedScopeIds, pagePlan);
             syncWysiwygObjectLayerPositions(inst.root);
+            applyWysiwygTextExclusionLayout(inst);
             var layoutStart = strictPerformanceNow();
             if (diagnostics.forceLayoutFailure) {
                 diagnostics.forceLayoutFailure = false;
@@ -19611,7 +21675,7 @@ window.tmDocumentEditorEngine = (function () {
                 if (cell.style && cell.style.background) style.push('background:' + _escape(cell.style.background));
                 if (cell.style && cell.style.border) style.push('border:' + _escape(cell.style.border));
                 if (cell.style && cell.style.padding !== undefined) style.push('padding:' + Number(cell.style.padding || 0) + 'px');
-                html.push('<td data-cell-id="' + _escape(cell.id) + '" colspan="' + _escape(cell.colSpan || 1) + '" rowspan="' + _escape(cell.rowSpan || 1) + '" role="gridcell" tabindex="-1" aria-label="Table cell ' + (cellIndex + 1) + '"' + (style.length ? ' style="' + style.join(';') + '"' : '') + '>');
+                html.push('<td data-cell-id="' + _escape(cell.id) + '" data-column-index="' + _escape(cellIndex) + '" colspan="' + _escape(cell.colSpan || 1) + '" rowspan="' + _escape(cell.rowSpan || 1) + '" role="gridcell" tabindex="-1" aria-label="Table cell ' + (cellIndex + 1) + '"' + (style.length ? ' style="' + style.join(';') + '"' : '') + '>');
                 _asArray(cell.blocks).forEach(function (child) {
                     if (child.type === 'paragraph') {
                         html.push('<p class="tm-wysiwyg-block" data-block-id="' + _escape(child.id) + '">' + _escape(_textFromRuns(child.content && child.content.runs)) + '</p>');
@@ -19695,24 +21759,19 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function testWrapMode(value) {
-        if (value === null || value === undefined || value === '') return { value: 0, css: 'inline' };
-        if (typeof value === 'number') {
-            if (value === 0) return { value: 0, css: 'inline' };
-            if (value === 1) return { value: 1, css: 'square' };
-            if (value === 2) return { value: 2, css: 'tight' };
-            if (value === 4) return { value: 4, css: 'top-bottom' };
-            if (value === 5) return { value: 5, css: 'behind-text' };
-            if (value === 6) return { value: 6, css: 'in-front-of-text' };
-        }
+        var mode = normalizeWrapModeName(value);
+        return { value: wrapModeToValue(mode), css: wrapModeToCssName(mode) };
+    }
 
-        var key = _asText(value).replace(/[^a-z0-9]/gi, '').toLowerCase();
-        if (key === 'inline' || key === 'inlined') return { value: 0, css: 'inline' };
-        if (key === 'square') return { value: 1, css: 'square' };
-        if (key === 'tight') return { value: 2, css: 'tight' };
-        if (key === 'topbottom' || key === 'topandbottom') return { value: 4, css: 'top-bottom' };
-        if (key === 'behindtext') return { value: 5, css: 'behind-text' };
-        if (key === 'infrontoftext' || key === 'frontoftext') return { value: 6, css: 'in-front-of-text' };
-        return { value: 0, css: 'inline' };
+    function testWrapSide(value) {
+        var side = normalizeWrapSideName(value);
+        return {
+            value: wrapSideToValue(side),
+            name: side,
+            css: side === 'BothSides'
+                ? 'both-sides'
+                : side.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+        };
     }
 
     function testHorizontalPosition(value) {
@@ -20026,6 +22085,25 @@ window.tmDocumentEditorEngine = (function () {
             var rects = _asArray(item.VisualRects || item.visualRects);
             return (rects.length ? rects : [item.Rect || item.rect]).some(function (rect) { return rectContains(rect, x, y); });
         }
+        function bodyFrameForTextExclusion(item) {
+            var explicit = item && (item.BodyRect || item.bodyRect || item.FrameRect || item.frameRect);
+            if (explicit) return explicit;
+            var rect = item && (item.WrapRect || item.wrapRect || item.Rect || item.rect || item.ObjectRect || item.objectRect);
+            var objectRect = hitRectFromAny(rect);
+            return (_asArray(source.BodyRects || source.bodyRects).map(function (body) { return body.Rect || body.rect || body; }).find(function (body) {
+                var bodyRect = hitRectFromAny(body);
+                return bodyRect.width > 0
+                    && bodyRect.height > 0
+                    && objectRect.y < bodyRect.y + bodyRect.height
+                    && objectRect.y + objectRect.height > bodyRect.y;
+            })) || null;
+        }
+        function pointInTextExclusion(item) {
+            var layer = String(item.Layer || item.layer || drawingLayerForWrapMode(item.WrapMode || item.wrapMode)).toLowerCase();
+            if (layer === 'behind-text' || layer === 'behindtext' || layer === 'in-front-of-text' || layer === 'infrontoftext') return false;
+            var rect = objectTextExclusionRectForHitTest(item, bodyFrameForTextExclusion(item));
+            return !!rect && hitRectContains(rect, x, y);
+        }
         function caretFromLine(line) {
             var rect = rectFromAny(line.Rect || line.rect);
             var segment = _asArray(line.Segments || line.segments)[0] || {};
@@ -20069,6 +22147,7 @@ window.tmDocumentEditorEngine = (function () {
                 LayoutSegmentId: segment.Id || segment.id || null,
                 VisualLineIndex: Number(line.VisualLineIndex ?? line.visualLineIndex ?? 0) || 0,
                 Offset: start + Math.round(ratio * length),
+                BlockId: line.BlockId || line.blockId || segment.BlockId || segment.blockId || null,
                 ActiveImageBlockId: null,
                 ActiveObjectId: null
             };
@@ -20094,6 +22173,10 @@ window.tmDocumentEditorEngine = (function () {
         }).sort(function (a, b) {
             return (objectHitPriority(b) - objectHitPriority(a)) || (Number(b.ZIndex || b.zIndex || 0) - Number(a.ZIndex || a.zIndex || 0));
         })[0];
+        var textExclusionHit = _asArray(source.Objects).filter(pointInTextExclusion)
+            .sort(function (a, b) {
+                return (objectHitPriority(b) - objectHitPriority(a)) || (Number(b.ZIndex || b.zIndex || 0) - Number(a.ZIndex || a.zIndex || 0));
+            })[0];
         if (objectHit) {
             return Object.assign(base('ImageObject'), {
                 Kind: objectHit.Kind || 'ImageObject',
@@ -20103,7 +22186,7 @@ window.tmDocumentEditorEngine = (function () {
                 BlockId: objectHit.BlockId || objectHit.blockId || null
             });
         }
-        if (lineHit) return lineHit;
+        if (lineHit && !textExclusionHit) return lineHit;
         var body = _asArray(source.BodyRects).find(function (item) { return rectContains(item.Rect, x, y); });
         if (body) return base('Body');
         var page = _asArray(source.PageRects).find(function (item) { return rectContains(item.Rect, x, y); });
@@ -21426,26 +23509,17 @@ window.tmDocumentEditorEngine = (function () {
                     }
                     var oldLayout = imageObjectToLayout(session.object);
                     var newLayout = imageObjectToLayout(commit.next);
-                    var operationType = session.mode === 'resize' ? OPERATION_TYPES.UpdateImageLayout : OPERATION_TYPES.MoveDrawingObject;
-                    var operationBody = session.mode === 'resize'
-                        ? {
-                            target: { blockId: session.blockId, objectId: session.objectId },
-                            oldLayout: oldLayout,
-                            newLayout: newLayout,
-                            layout: newLayout,
-                            affectedParagraphIds: commit.affected,
-                            source: 'phase16-resize-track-test'
-                        }
-                        : {
-                            target: { blockId: session.blockId, objectId: session.objectId },
-                            oldLayout: oldLayout,
-                            newLayout: newLayout,
-                            oldAnchor: _clone(oldLayout.Anchor || oldLayout.anchor || {}),
-                            newAnchor: _clone(newLayout.Anchor || newLayout.anchor || {}),
-                            layout: newLayout,
-                            affectedParagraphIds: commit.affected,
-                            source: 'phase14-drag-track-test'
-                        };
+                    var operationType = OPERATION_TYPES.UpdateImageLayout;
+                    var operationBody = {
+                        target: { blockId: session.blockId, objectId: session.objectId },
+                        oldLayout: oldLayout,
+                        newLayout: newLayout,
+                        oldAnchor: _clone(oldLayout.Anchor || oldLayout.anchor || {}),
+                        newAnchor: _clone(newLayout.Anchor || newLayout.anchor || {}),
+                        layout: newLayout,
+                        affectedParagraphIds: commit.affected,
+                        source: session.mode === 'resize' ? 'phase16-resize-track-test' : 'phase14-drag-track-test'
+                    };
                     var operation = createOperation(operationType, operationBody, { source: operationBody.source });
                     var result = applyOperation(model, operation);
                     if (!result || result.ok === false) throw new Error(JSON.stringify(result && result.errors || result));
@@ -21691,7 +23765,7 @@ window.tmDocumentEditorEngine = (function () {
                         Layout: {
                             Kind: 1,
                             Wrap: { Mode: 1, DistanceLeft: 8, DistanceRight: 8 },
-                            Anchor: { BlockId: sourceBlockId, Offset: 0, InlineIndex: 0, Region: 'Body', MoveWithText: true, LockAnchor: opts.lockAnchor === true },
+                            Anchor: { BlockId: sourceBlockId, Offset: 0, InlineIndex: 0, Region: 'Body', MoveWithText: opts.fixedOnPage === true ? false : true, FixedOnPage: opts.fixedOnPage === true, LockAnchor: opts.lockAnchor === true },
                             Position: { HorizontalRelativeTo: 2, HorizontalAlignment: 0, VerticalRelativeTo: 3, VerticalAlignment: 1, X: 100, Y: 120 },
                             Transform: { Width: 96, Height: 64 }
                         }
@@ -21791,7 +23865,7 @@ window.tmDocumentEditorEngine = (function () {
                 next.anchorHeaderFooterId = nearest.headerFooterId || '';
             }
             var newLayout = imageObjectToLayout(next);
-            var operation = createOperation(OPERATION_TYPES.MoveDrawingObject, {
+            var operation = createOperation(OPERATION_TYPES.UpdateImageLayout, {
                 target: { blockId: drawing.blockId || sourceBlockId, objectId: objectId },
                 oldLayout: oldLayout,
                 newLayout: newLayout,
@@ -21819,7 +23893,10 @@ window.tmDocumentEditorEngine = (function () {
             commitAt: commitAt,
             object: readObject,
             shouldReanchor: function (lockAnchor, explicitDrag) {
-                return shouldReanchorImageObject({ lockAnchor: lockAnchor === true }, { explicitDrag: explicitDrag === true });
+                return shouldReanchorImageObject({
+                    lockAnchor: lockAnchor === true,
+                    fixedOnPage: opts.fixedOnPage === true
+                }, { explicitDrag: explicitDrag === true });
             }
         };
     }
@@ -22008,6 +24085,8 @@ window.tmDocumentEditorEngine = (function () {
             createTableController: createTableController
         },
         objects: {
+            normalizeWrapModeName: normalizeWrapModeName,
+            normalizeWrapSideName: normalizeWrapSideName,
             normalizeDrawingRun: normalizeDrawingRun,
             normalizeImageObject: normalizeImageObject,
             splitInlineListForDrawingInsert: splitInlineListForDrawingInsert,
@@ -22015,7 +24094,11 @@ window.tmDocumentEditorEngine = (function () {
             getDrawingRuntimeDiagnostics: getDrawingRuntimeDiagnostics,
             getImageRuntimeSourceDiagnostics: getImageRuntimeSourceDiagnostics,
             createTextExclusion: createTextExclusion,
+            createTextExclusionManager: createTextExclusionManager,
             getAvailableIntervals: getAvailableIntervals,
+            getAvailableIntervalsCacheStats: getAvailableIntervalsCacheStats,
+            resetAvailableIntervalsCache: resetAvailableIntervalsCache,
+            snapshotWrapLayoutForTest: snapshotWrapLayoutForTest,
             createObjectWrapRect: createObjectWrapRect,
             projectWrapContourPoints: projectWrapContourPointsForGeometry,
             imageObjectToLayout: imageObjectToLayout,
@@ -22149,7 +24232,11 @@ window.tmDocumentEditorEngine = (function () {
             getDrawingRuntimeDiagnostics: getDrawingRuntimeDiagnostics,
             getImageRuntimeSourceDiagnostics: getImageRuntimeSourceDiagnostics,
             createTextExclusion: createTextExclusion,
+            createTextExclusionManager: createTextExclusionManager,
             getAvailableIntervals: getAvailableIntervals,
+            getAvailableIntervalsCacheStats: getAvailableIntervalsCacheStats,
+            resetAvailableIntervalsCache: resetAvailableIntervalsCache,
+            snapshotWrapLayoutForTest: snapshotWrapLayoutForTest,
             createObjectWrapRect: createObjectWrapRect,
             projectWrapContourPoints: projectWrapContourPointsForGeometry,
             imageObjectToLayout: imageObjectToLayout,
@@ -22207,7 +24294,10 @@ window.tmDocumentEditorEngine = (function () {
                 return renderWysiwygBodyLayersHtml(inst, pageBlocks, inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.', 1, 1);
             },
             createRenderPlan: createRenderPlanForTest,
+            normalizeWrapModeName: normalizeWrapModeName,
             normalizeWrapMode: testWrapMode,
+            normalizeWrapSideName: normalizeWrapSideName,
+            normalizeWrapSide: testWrapSide,
             normalizeHorizontalPosition: testHorizontalPosition,
             normalizeWrapContourPoints: normalizeWrapContourPoints,
             getLayoutAvailableIntervals: getLayoutAvailableIntervalsForTest,
@@ -23316,6 +25406,9 @@ window.tmDocumentEditorRuntime = (function () {
             normalizeSnapshot: _normalizeSnapshot,
             normalizeWrapMode: function (value) {
                 return _googleDocsEngine().__testHooks.normalizeWrapMode(value);
+            },
+            normalizeWrapSide: function (value) {
+                return _googleDocsEngine().__testHooks.normalizeWrapSide(value);
             },
             normalizeHorizontalPosition: function (value) {
                 return _googleDocsEngine().__testHooks.normalizeHorizontalPosition(value);

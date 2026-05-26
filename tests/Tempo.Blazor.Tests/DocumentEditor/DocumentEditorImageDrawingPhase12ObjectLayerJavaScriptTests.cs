@@ -59,11 +59,13 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
             assert.ok(objectLayer.includes('data-anchor-block-id="p1"'), 'object layer must expose the anchor paragraph separately from the object id');
             assert.ok(textLayer.includes('data-testid="document-wysiwyg-drawing-anchor"'), 'text layer must contain a non-editable drawing anchor');
             assert.ok(textLayer.includes('data-object-anchor-id="phase12-object"'), 'text anchor must map to the object id');
-            assert.ok(textLayer.includes('data-flow-reservation="true"'), 'text anchor must reserve flow space for wrapped drawings');
-            assert.ok(textLayer.includes('float:left'), 'square wrap must reserve a left-floating exclusion in the text layer');
-            assert.ok(textLayer.includes('width:96px'), 'flow reservation must use the drawing width');
-            assert.ok(textLayer.includes('height:64px'), 'flow reservation must use the drawing height');
-            assert.ok(textLayer.includes('visibility:hidden'), 'flow reservation must not duplicate the visible object layer image');
+            assert.strictEqual(textLayer.includes('data-flow-reservation="true"'), false, 'text anchor must not reserve browser flow for wrapped drawings');
+            assert.strictEqual(textLayer.includes('float:left'), false, 'square wrap must not use a left CSS float in the text layer');
+            assert.strictEqual(textLayer.includes('float:right'), false, 'square wrap must not use a right CSS float in the text layer');
+            assert.strictEqual(textLayer.includes('shape-outside'), false, 'square wrap must not use CSS shape-outside in the text layer');
+            assert.ok(textLayer.includes('width:0px'), 'floating text anchor must have zero inline footprint');
+            assert.ok(textLayer.includes('height:0px'), 'floating text anchor must have zero block footprint');
+            assert.ok(textLayer.includes('visibility:hidden'), 'text anchor must not duplicate the visible object layer image');
             assert.ok(html.indexOf('document-wysiwyg-text-layer') < html.indexOf('document-wysiwyg-object-layer'), 'text layer should be rendered before object layer');
 
             console.log('OK');
@@ -159,7 +161,7 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
     }
 
     [Fact]
-    public async Task Phase12_WysiwygDrawingUsesHiddenFlowReservationInsteadOfVisibleTextLayerFigure()
+    public async Task Phase12_WysiwygDrawingUsesZeroFootprintAnchorInsteadOfVisibleTextLayerFigure()
     {
         var scriptPath = GetWysiwygScriptPath();
         if (!IsNodeAvailable()) return;
@@ -182,8 +184,10 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
             const objectLayer = extractLayer(html, 'document-wysiwyg-object-layer');
 
             assert.strictEqual(textLayer.includes('<figure'), false, 'text layer must not duplicate the visible image figure');
-            assert.ok(textLayer.includes('tm-wysiwyg-drawing-anchor--flow'), 'text layer must contain a hidden flow reservation anchor');
-            assert.ok(textLayer.includes('float:left'), 'the hidden reservation must participate in browser text flow');
+            assert.strictEqual(textLayer.includes('tm-wysiwyg-drawing-anchor--flow'), false, 'text layer must not contain browser flow reservation anchors');
+            assert.ok(textLayer.includes('tm-wysiwyg-drawing-anchor--anchored'), 'text layer still contains a stable zero-footprint model anchor');
+            assert.strictEqual(textLayer.includes('float:left'), false, 'floating drawing layout is resolved by the interval engine, not CSS flow');
+            assert.strictEqual(textLayer.includes('shape-outside'), false, 'floating drawing layout is resolved by the interval engine, not CSS shape-outside');
             assert.ok(objectLayer.includes('tm-wysiwyg-object-layer-item--wrap-square'), 'wrap mode should be represented on the object-layer item');
             assert.ok(objectLayer.includes('tm-wysiwyg-image--wrap-square'), 'visible object keeps image wrap classes for existing UI selectors');
 
@@ -196,7 +200,7 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
     }
 
     [Fact]
-    public async Task Phase12_TopBottomDrawingAnchorReservesFullLineBand()
+    public async Task Phase12_TopBottomDrawingAnchorDoesNotReserveFullLineBandInTextLayer()
     {
         var scriptPath = GetWysiwygScriptPath();
         if (!IsNodeAvailable()) return;
@@ -217,11 +221,11 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
             const html = hooks.renderWysiwygBodyLayersHtmlForTest({ model, selection: null, options: {} }, model.body.blocks);
             const textLayer = extractLayer(html, 'document-wysiwyg-text-layer');
 
-            assert.ok(textLayer.includes('data-flow-reservation="true"'), 'top-bottom wrap must reserve space in the text layer');
+            assert.strictEqual(textLayer.includes('data-flow-reservation="true"'), false, 'top-bottom wrap must be resolved by the layout engine');
             assert.ok(textLayer.includes('data-wrap-mode="TopBottom"'), 'anchor must expose the active wrap mode');
-            assert.ok(textLayer.includes('display:block'), 'top-bottom reservation must break the line');
-            assert.ok(textLayer.includes('clear:both'), 'top-bottom reservation must clear surrounding floats');
-            assert.ok(textLayer.includes('float:none'), 'top-bottom reservation must not float beside text');
+            assert.strictEqual(textLayer.includes('display:block'), false, 'top-bottom anchor must not break the browser line');
+            assert.strictEqual(textLayer.includes('clear:both'), false, 'top-bottom anchor must not clear browser floats');
+            assert.strictEqual(textLayer.includes('float:'), false, 'top-bottom anchor must not decide browser flow');
 
             console.log('OK');
             """;
@@ -232,7 +236,77 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
     }
 
     [Fact]
-    public async Task Phase12_FlowReservationIncludesCaptionHeight()
+    public async Task Phase0_CenteredSquareWrapUsesSideIntervalsAndIsNotTopBottom()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = createSandbox();
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const source = createDocument('Square');
+            source.Blocks[0].Content.Inlines[1].Layout.Position.HorizontalAlignment = 1;
+            const model = hooks.importFromCSharpJson(source);
+            const html = hooks.renderWysiwygBodyLayersHtmlForTest({ model, selection: null, options: {} }, model.body.blocks);
+            const textLayer = extractLayer(html, 'document-wysiwyg-text-layer');
+            const objectLayer = extractLayer(html, 'document-wysiwyg-object-layer');
+            // Centered Square is still Square, not TopBottom: it must keep side intervals.
+            const snapshot = hooks.snapshotWrapLayoutForTest({
+                frame: { x: 0, y: 0, width: 600, height: 420 },
+                lineY: 40,
+                lineHeight: 20,
+                minReadableWidth: 24,
+                object: {
+                    objectId: 'phase0-center-object',
+                    blockId: 'p1',
+                    wrapMode: 'Square',
+                    rect: { x: 250, y: 24, width: 100, height: 80 },
+                    distanceLeft: 0,
+                    distanceRight: 0,
+                    distanceTop: 0,
+                    distanceBottom: 0
+                },
+                text: 'Center square wrapping must keep usable text intervals on both sides of the image.'
+            });
+
+            assert.strictEqual(snapshot.blockedIntervals.length, 1, 'centered Square should create one central blocked interval');
+            assert.strictEqual(snapshot.blockedIntervals[0].x, 250, 'blocked interval starts at the image left edge');
+            assert.strictEqual(snapshot.blockedIntervals[0].width, 100, 'blocked interval width follows the image width, not the whole frame');
+            assert.strictEqual(snapshot.availableIntervals.length, 2, 'centered Square must expose left and right text intervals');
+            assert.strictEqual(snapshot.availableIntervals[0].x, 0, 'left interval starts at the text frame left edge');
+            assert.strictEqual(snapshot.availableIntervals[0].width, 250, 'left interval ends before the centered object');
+            assert.strictEqual(snapshot.availableIntervals[1].x, 350, 'right interval starts after the centered object');
+            assert.strictEqual(snapshot.availableIntervals[1].width, 250, 'right interval ends at the text frame right edge');
+            assert.ok(Array.isArray(snapshot.lineSegments), 'diagnostic snapshot exposes line segments');
+            assert.ok(Array.isArray(snapshot.caretStops), 'diagnostic snapshot exposes caret stops');
+
+            assert.ok(textLayer.includes('data-wrap-mode="Square"'), 'centered reservation must keep the active square wrap mode');
+            assert.strictEqual(textLayer.includes('display:block'), false, 'centered Square is not TopBottom and must not use a full-line anchor reservation');
+            assert.strictEqual(textLayer.includes('clear:both'), false, 'centered Square must not clear text as if it were TopBottom');
+            assert.strictEqual(textLayer.includes('float:none'), false, 'centered Square wrapping must be resolved by interval layout, not a block anchor fallback');
+            assert.strictEqual(textLayer.includes('float:left'), false, 'centered Square must not degrade to left CSS float reservation');
+            assert.strictEqual(textLayer.includes('float:right'), false, 'centered Square must not degrade to right CSS float reservation');
+            assert.ok(objectLayer.includes('tm-wysiwyg-image--position-center'), 'visible object keeps the centered position class');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript, "center-square-reservation");
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase12_CaptionHeightBelongsToObjectLayerNotTextReservation()
     {
         var scriptPath = GetWysiwygScriptPath();
         if (!IsNodeAvailable()) return;
@@ -253,10 +327,12 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
             model.body.blocks[0].content.runs[1].caption = '1234567890123456789012345678901234567890';
             const html = hooks.renderWysiwygBodyLayersHtmlForTest({ model, selection: null, options: {} }, model.body.blocks);
             const textLayer = extractLayer(html, 'document-wysiwyg-text-layer');
+            const objectLayer = extractLayer(html, 'document-wysiwyg-object-layer');
 
-            assert.ok(textLayer.includes('data-flow-reservation="true"'), 'wrapped drawings with captions still reserve text flow');
-            assert.ok(textLayer.includes('height:88px'), '64px image plus 24px caption estimate must be reserved');
-            assert.ok(textLayer.includes('--tm-wysiwyg-drawing-anchor-height:88px'), 'CSS variable should expose the full reserved footprint');
+            assert.strictEqual(textLayer.includes('data-flow-reservation="true"'), false, 'wrapped drawings with captions must not reserve browser text flow');
+            assert.strictEqual(textLayer.includes('height:88px'), false, 'caption height must not enlarge the text-layer anchor');
+            assert.ok(textLayer.includes('height:0px'), 'floating anchor remains zero-height even with a caption');
+            assert.ok(objectLayer.includes('<figcaption>1234567890123456789012345678901234567890</figcaption>'), 'caption is rendered with the visual object');
 
             console.log('OK');
             """;

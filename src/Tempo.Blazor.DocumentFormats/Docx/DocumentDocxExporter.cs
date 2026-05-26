@@ -807,6 +807,7 @@ public sealed class DocxPackageWriter
         SetTempoAttribute(element, "horizontal-alignment", layout.Position.HorizontalAlignment?.ToString());
         SetTempoAttribute(element, "vertical-alignment", layout.Position.VerticalAlignment.ToString());
         SetTempoAttribute(element, "wrap-mode", layout.Wrap.Mode.ToString());
+        SetTempoAttribute(element, "wrap-side", layout.Wrap.Side.ToString());
         SetTempoAttribute(element, "distance-left", FormatNumber(layout.Wrap.DistanceLeft));
         SetTempoAttribute(element, "distance-right", FormatNumber(layout.Wrap.DistanceRight));
         SetTempoAttribute(element, "distance-top", FormatNumber(layout.Wrap.DistanceTop));
@@ -896,7 +897,11 @@ public sealed class DocxPackageWriter
         var wrapText = ToDocxWrapText(wrap.Side);
         return wrap.Mode switch
         {
-            DocumentWrapMode.TopBottom => new DW.WrapTopBottom(),
+            DocumentWrapMode.TopBottom => new DW.WrapTopBottom
+            {
+                DistanceFromTop = ToPositiveEmu(wrap.DistanceTop),
+                DistanceFromBottom = ToPositiveEmu(wrap.DistanceBottom)
+            },
             DocumentWrapMode.BehindText or DocumentWrapMode.InFrontOfText => new DW.WrapNone(),
             DocumentWrapMode.Tight => new DW.WrapTight(CreateWrapPolygon(wrap, extent))
             {

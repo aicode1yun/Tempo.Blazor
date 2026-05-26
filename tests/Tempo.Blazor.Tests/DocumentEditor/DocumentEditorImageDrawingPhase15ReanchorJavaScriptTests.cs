@@ -14,7 +14,7 @@ public sealed class DocumentEditorImageDrawingPhase15ReanchorJavaScriptTests
             const harness = hooks.createImageReanchorHarness();
             const committed = harness.commitAt(20, 45);
 
-            assert.strictEqual(committed.operation.type, 'MoveDrawingObject');
+            assert.strictEqual(committed.operation.type, 'UpdateImageLayout');
             assert.strictEqual(committed.object.anchorBlockId, 'target-p');
             assert.strictEqual(committed.object.anchorRegion, 'Body');
             assert.strictEqual(committed.operation.newAnchor.BlockId, 'target-p');
@@ -122,21 +122,21 @@ public sealed class DocumentEditorImageDrawingPhase15ReanchorJavaScriptTests
     }
 
     [Fact]
-    public async Task Phase15_MoveDrawingObjectUndoRedoRestoresAnchorAndPosition()
+    public async Task Phase15_UpdateImageLayoutUndoRedoRestoresAnchorAndPosition()
     {
         var result = await RunScenarioAsync(
             "undo-redo",
             """
             const harness = hooks.createImageReanchorHarness();
             const committed = harness.commitAt(20, 45);
-            const undo = hooks.createOperation('MoveDrawingObject', committed.operation).getReversed();
+            const undo = hooks.createOperation('UpdateImageLayout', committed.operation).getReversed();
             const undoResult = hooks.applyOperation(harness.model, undo);
             if (!undoResult || undoResult.ok === false) throw new Error(JSON.stringify(undoResult && undoResult.errors || undoResult));
 
             assert.strictEqual(harness.object().anchorBlockId, 'source-p');
             assert.strictEqual(harness.object().anchorOffset, 0);
 
-            const redo = hooks.createOperation('MoveDrawingObject', committed.operation);
+            const redo = hooks.createOperation('UpdateImageLayout', committed.operation);
             const redoResult = hooks.applyOperation(harness.model, redo);
             if (!redoResult || redoResult.ok === false) throw new Error(JSON.stringify(redoResult && redoResult.errors || redoResult));
 

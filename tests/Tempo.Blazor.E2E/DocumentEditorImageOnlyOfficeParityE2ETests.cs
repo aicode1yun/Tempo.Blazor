@@ -608,6 +608,71 @@ public sealed class DocumentEditorImageOnlyOfficeParityE2ETests : DocumentEditor
         await AssertNoDocumentEditorConsoleErrorsAsync(page, console, nameof(ImageOnlyOfficeParity_ResizeImageUndoRestoresSizeWithSingleStep));
     }
 
+    [TestMethod]
+    public async Task ImageOnlyOfficeParity_PerformanceBudget_TypingResizeAndUndoStayResponsive()
+    {
+        var page = await OpenOnlyOfficeParityDocumentAsync(width: 1440, height: 900);
+        var console = GetMandatoryDocumentEditorConsoleCapture(page);
+        var typed = $"phase16wrap{DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await ScrollImageIntoViewAsync(page, LeftSquareImageId);
+        var clickPoint = await ReadWrappedTextIntervalClickPointAsync(page, LeftSquareImageId, LeftSquareAnchorId);
+        await ClearImagePerformanceMetricsAsync(page);
+        await page.Mouse.ClickAsync((float)clickPoint.X, (float)clickPoint.Y);
+        var typingStarted = DateTimeOffset.UtcNow;
+        await page.Keyboard.TypeAsync(typed, new() { Delay = 0 });
+        await WaitForEditorStableAsync(page, "phase 16 type beside wrapped image", LeftSquareAnchorId, typed);
+        var typingElapsed = DateTimeOffset.UtcNow - typingStarted;
+
+        var typingMetrics = await ReadImagePerformanceMetricsAsync(page);
+        Assert.AreEqual(0, typingMetrics.FullRenderCount,
+            $"Typing next to a wrapped image must stay on the partial JS-owned path. Metrics: {typingMetrics}");
+        Assert.IsTrue(typingElapsed < TimeSpan.FromSeconds(8),
+            $"Typing next to a wrapped image took too long: {typingElapsed.TotalMilliseconds:0} ms. Metrics: {typingMetrics}");
+        if (typingMetrics.InputDomApplyCount > 0 || typingMetrics.InputOperationCount > 0)
+        {
+            Assert.IsTrue(typingMetrics.PartialRenderCount > 0,
+                $"Typing next to a wrapped image must patch visible DOM incrementally. Metrics: {typingMetrics}");
+            Assert.IsTrue(typingMetrics.MaxInputLatencyMs < 600,
+                $"Typing next to a wrapped image exceeded the visible-input budget. Metrics: {typingMetrics}");
+        }
+
+        await ClickImageCenterAsync(page, LeftSquareImageId);
+        await ClearImagePerformanceMetricsAsync(page);
+        var beforeResize = await ReadDocumentEditorImageRectAsync(page, LeftSquareImageId);
+        await DragImageResizeHandleAsync(page, LeftSquareImageId, 40, 24);
+        await WaitForEditorStableAsync(page, "phase 16 resize wrapped image", LeftSquareAnchorId);
+
+        var resizeMetrics = await WaitForImagePerformanceMetricsAsync(
+            page,
+            metrics => metrics.ObjectTrackResizeFrameCount > 0 && metrics.ObjectTrackResizeCommitCount > 0,
+            "resize wrapped image preview");
+        Assert.IsTrue(resizeMetrics.ObjectTrackResizeFrameCount >= 2,
+            $"Resize preview must produce tracked frames rather than a silent final jump. Metrics: {resizeMetrics}");
+        Assert.AreEqual(1, resizeMetrics.ObjectTrackResizeCommitCount,
+            $"Resize must commit once for a single undo step. Metrics: {resizeMetrics}");
+        if (resizeMetrics.ImageDragLatencyCount > 0)
+        {
+            Assert.IsTrue(resizeMetrics.MaxImageDragLatencyMs < 250,
+                $"Resize commit exceeded the image operation budget. Metrics: {resizeMetrics}");
+        }
+
+        await ClearImagePerformanceMetricsAsync(page);
+        var undoStarted = DateTimeOffset.UtcNow;
+        await page.Keyboard.PressAsync("Control+Z");
+        await WaitForEditorStableAsync(page, "phase 16 undo wrapped image resize", LeftSquareAnchorId);
+        var undoElapsed = DateTimeOffset.UtcNow - undoStarted;
+        var afterUndo = await ReadDocumentEditorImageRectAsync(page, LeftSquareImageId);
+        var undoMetrics = await ReadImagePerformanceMetricsAsync(page);
+
+        AssertRectNear(beforeResize, afterUndo, 3, "Undo after resize must restore the original wrapped image size.");
+        Assert.IsTrue(undoElapsed < TimeSpan.FromSeconds(4),
+            $"Undo after image resize took too long: {undoElapsed.TotalMilliseconds:0} ms. Metrics: {undoMetrics}");
+        Assert.IsTrue(undoMetrics.FullRenderCount <= 1,
+            $"Undo after image resize must avoid repeated full render work. Metrics: {undoMetrics}");
+        await AssertNoDocumentEditorConsoleErrorsAsync(page, console, nameof(ImageOnlyOfficeParity_PerformanceBudget_TypingResizeAndUndoStayResponsive));
+    }
+
     private static async Task<JsonDocument> LoadOnlyOfficeParityDocumentFromApiAsync()
     {
         using var handler = new HttpClientHandler
@@ -1218,6 +1283,49 @@ public sealed class DocumentEditorImageOnlyOfficeParityE2ETests : DocumentEditor
     private static string FormatRect(DocumentEditorRectProbe rect)
         => $"x={rect.X:0.##}, y={rect.Y:0.##}, w={rect.Width:0.##}, h={rect.Height:0.##}";
 
+    private static Task ClearImagePerformanceMetricsAsync(IPage page)
+        => page.EvaluateAsync(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                window.tmDocumentEditorEngine?.clearDebugMetrics?.(instanceId);
+            }
+            """);
+
+    private static Task<ImagePerformanceMetricsProbe> ReadImagePerformanceMetricsAsync(IPage page)
+        => page.EvaluateAsync<ImagePerformanceMetricsProbe>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                return window.tmDocumentEditorEngine?.getDebugMetrics?.(instanceId) || {};
+            }
+            """);
+
+    private static async Task<ImagePerformanceMetricsProbe> WaitForImagePerformanceMetricsAsync(
+        IPage page,
+        Func<ImagePerformanceMetricsProbe, bool> predicate,
+        string behavior)
+    {
+        ImagePerformanceMetricsProbe? latest = null;
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            latest = await ReadImagePerformanceMetricsAsync(page);
+            if (predicate(latest))
+            {
+                return latest;
+            }
+
+            await page.WaitForTimeoutAsync(100);
+        }
+
+        latest ??= await ReadImagePerformanceMetricsAsync(page);
+        Assert.Fail($"Timed out waiting for performance metrics during {behavior}. Latest: {latest}");
+        return latest;
+    }
+
     private static void RequireBlock(IEnumerable<JsonElement> blocks, string id, List<string> issues)
     {
         if (!blocks.Any(block => string.Equals(GetString(block, "Id"), id, StringComparison.Ordinal)))
@@ -1557,5 +1665,29 @@ public sealed class DocumentEditorImageOnlyOfficeParityE2ETests : DocumentEditor
         public string AltText { get; init; } = string.Empty;
 
         public string Debug { get; init; } = string.Empty;
+    }
+
+    private sealed class ImagePerformanceMetricsProbe
+    {
+        public int FullRenderCount { get; init; }
+
+        public int PartialRenderCount { get; init; }
+
+        public int InputDomApplyCount { get; init; }
+
+        public int InputOperationCount { get; init; }
+
+        public double MaxInputLatencyMs { get; init; }
+
+        public int ImageDragLatencyCount { get; init; }
+
+        public double MaxImageDragLatencyMs { get; init; }
+
+        public int ObjectTrackResizeFrameCount { get; init; }
+
+        public int ObjectTrackResizeCommitCount { get; init; }
+
+        public override string ToString()
+            => $"full={FullRenderCount}, partial={PartialRenderCount}, domApply={InputDomApplyCount}, ops={InputOperationCount}, maxInput={MaxInputLatencyMs:0.##}, imageOps={ImageDragLatencyCount}, maxImage={MaxImageDragLatencyMs:0.##}, resizeFrames={ObjectTrackResizeFrameCount}, resizeCommits={ObjectTrackResizeCommitCount}";
     }
 }

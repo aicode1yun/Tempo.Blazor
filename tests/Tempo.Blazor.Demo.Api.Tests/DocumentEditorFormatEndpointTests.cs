@@ -130,6 +130,75 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
     }
 
     [Fact]
+    public async Task Phase14_ContractDemoSeedIncludesOnlyOfficeLevelImageWrapScenarios()
+    {
+        var load = await _client.GetFromJsonAsync<DocumentEditorLoadResult>("/api/document-editor/documents/contract-demo");
+
+        load.Should().NotBeNull();
+        load!.Found.Should().BeTrue();
+        load.Document.Should().NotBeNull();
+        var document = load.Document!;
+        document.Blocks.Should().NotContain(block => block.Content is ImageBlockContent);
+
+        var drawings = DocumentImagePersistence.EnumerateDrawingRuns(document)
+            .ToDictionary(drawing => drawing.ObjectId, StringComparer.Ordinal);
+        drawings.Keys.Should().Contain([
+            "contract-left-wrap-image",
+            "contract-right-wrap-image",
+            "contract-center-wrap-image",
+            "contract-offset-wrap-image",
+            "contract-top-bottom-image",
+            "contract-tight-wrap-image",
+            "contract-in-front-image",
+            "contract-behind-text-image",
+            "contract-header-logo-image",
+            "contract-footer-logo-image",
+            "contract-table-cell-image"
+        ]);
+
+        AssertDrawing(drawings["contract-left-wrap-image"], DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left, DocumentRenditionAnchorScope.Body);
+        AssertDrawing(drawings["contract-right-wrap-image"], DocumentWrapMode.Square, DocumentImageHorizontalPosition.Right, DocumentRenditionAnchorScope.Body);
+        AssertDrawing(drawings["contract-center-wrap-image"], DocumentWrapMode.Square, DocumentImageHorizontalPosition.Center, DocumentRenditionAnchorScope.Body);
+        drawings["contract-center-wrap-image"].Layout.Anchor.BlockId.Should().Be("contract-center-wrap-text");
+
+        var offset = drawings["contract-offset-wrap-image"];
+        offset.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        offset.Layout.Position.HorizontalAlignment.Should().BeNull();
+        offset.Layout.Position.X.Should().BeGreaterThan(40);
+        offset.Layout.Position.Y.Should().BeGreaterThan(0);
+
+        var tight = drawings["contract-tight-wrap-image"];
+        tight.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Tight);
+        tight.Layout.Wrap.Side.Should().Be(DocumentObjectWrapSide.Largest);
+        tight.Layout.Wrap.WrapContourPoints.Should().HaveCountGreaterThanOrEqualTo(4);
+
+        drawings["contract-in-front-image"].Layout.Wrap.Mode.Should().Be(DocumentWrapMode.InFrontOfText);
+        drawings["contract-in-front-image"].Layout.Kind.Should().Be(DocumentObjectLayoutKind.Fixed);
+        drawings["contract-in-front-image"].Layout.Anchor.FixedOnPage.Should().BeTrue();
+
+        drawings["contract-behind-text-image"].Layout.Wrap.Mode.Should().Be(DocumentWrapMode.BehindText);
+        drawings["contract-behind-text-image"].Layout.Kind.Should().Be(DocumentObjectLayoutKind.Fixed);
+        drawings["contract-behind-text-image"].Layout.Anchor.FixedOnPage.Should().BeTrue();
+
+        AssertDrawing(drawings["contract-header-logo-image"], DocumentWrapMode.Inline, null, DocumentRenditionAnchorScope.Header);
+        drawings["contract-header-logo-image"].Layout.Anchor.HeaderFooterId.Should().Be("contract-header-primary");
+        AssertDrawing(drawings["contract-footer-logo-image"], DocumentWrapMode.Inline, null, DocumentRenditionAnchorScope.Footer);
+        drawings["contract-footer-logo-image"].Layout.Anchor.HeaderFooterId.Should().Be("contract-footer-primary");
+
+        var tableCell = drawings["contract-table-cell-image"];
+        tableCell.Layout.Anchor.Region.Should().Be(DocumentRenditionAnchorScope.TableCell);
+        tableCell.Layout.Anchor.TableId.Should().Be("contract-pricing-table");
+        tableCell.Layout.Anchor.CellId.Should().Be("contract-pricing-table-r1-evidence");
+        tableCell.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+
+        GetBlockText(document, "contract-center-wrap-text").Should().Contain("both sides of the centered preview");
+        GetBlockText(document, "contract-center-wrap-text").Length.Should().BeGreaterThan(240);
+        GetBlockText(document, "contract-offset-wrap-text").Should().Contain("arbitrary drag-like offset");
+        GetBlockText(document, "contract-tight-wrap-text").Should().Contain("custom diamond contour");
+        GetBlockText(document, "contract-layering-text").Should().Contain("in front of text");
+    }
+
+    [Fact]
     public async Task ExportDocx_ReturnsDocxPackage()
     {
         var response = await _client.GetAsync("/api/document-editor/contract-demo/export/docx");
@@ -655,6 +724,72 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
 
         return document;
     }
+
+    private static void AssertDrawing(
+        DocumentDrawingRun drawing,
+        DocumentWrapMode wrapMode,
+        DocumentImageHorizontalPosition? horizontalPosition,
+        DocumentRenditionAnchorScope region)
+    {
+        drawing.Layout.Wrap.Mode.Should().Be(wrapMode);
+        drawing.Layout.Anchor.Region.Should().Be(region);
+        drawing.ObjectId.Should().NotBeNullOrWhiteSpace();
+        drawing.Caption.Should().NotBeNullOrWhiteSpace();
+        if (horizontalPosition.HasValue)
+        {
+            drawing.Layout.Position.HorizontalAlignment.Should().Be(horizontalPosition);
+        }
+    }
+
+    private static string GetBlockText(DocumentEditorDocument document, string blockId)
+    {
+        var block = FindBlock(document.Blocks, blockId);
+        block.Should().NotBeNull($"document should contain block {blockId}");
+        return string.Concat(GetInlineText(block!.Content));
+    }
+
+    private static DocumentBlock? FindBlock(IEnumerable<DocumentBlock> blocks, string blockId)
+    {
+        foreach (var block in blocks)
+        {
+            if (string.Equals(block.Id, blockId, StringComparison.Ordinal))
+            {
+                return block;
+            }
+
+            if (block.Content is not TableBlockContent table)
+            {
+                continue;
+            }
+
+            var nested = FindBlock(table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks), blockId);
+            if (nested is not null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> GetInlineText(DocumentBlockContent? content)
+        => content switch
+        {
+            ParagraphBlockContent paragraph => paragraph.Inlines.Select(GetInlineText),
+            HeadingBlockContent heading => heading.Inlines.Select(GetInlineText),
+            ListBlockContent list => list.Inlines.Select(GetInlineText),
+            QuoteBlockContent quote => quote.Inlines.Select(GetInlineText),
+            _ => []
+        };
+
+    private static string GetInlineText(InlineContent inline)
+        => inline switch
+        {
+            TextRun text => text.Text,
+            TokenRun token => token.FallbackText ?? token.DisplayName,
+            DocumentDrawingRun drawing => drawing.AltText ?? string.Empty,
+            _ => string.Empty
+        };
 
     private static XDocument ReadPackageXml(ZipArchive archive, string path)
     {

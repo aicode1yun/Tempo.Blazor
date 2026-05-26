@@ -168,7 +168,7 @@ public sealed class DocumentEditorImageDrawingPhase14DragTrackJavaScriptTests
             assert.notStrictEqual(committed.modelJson, before, 'pointerup must commit the model change');
             assert.strictEqual(committed.commitCount, 1);
             assert.strictEqual(secondUp.commitCount, 1);
-            assert.strictEqual(committed.commits[0].type, 'MoveDrawingObject');
+            assert.strictEqual(committed.commits[0].type, 'UpdateImageLayout');
             assert.strictEqual(committed.commits[0].dx, 24);
             assert.strictEqual(committed.commits[0].dy, 9);
             assert.strictEqual(committed.node.trackState, '');

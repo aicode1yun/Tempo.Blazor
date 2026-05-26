@@ -110,7 +110,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             "The agreement keeps a compact first page with realistic contract text, review markup, image wrapping, captions, an accessibility warning, and a small pricing table. Every block uses stable identifiers so E2E tests can compare the canonical reset without being disturbed by random demo data.",
             spacingAfter: 14));
 
-        contract.Blocks.Add(CreateImage(
+        contract.Blocks.Add(CreateImageDrawingParagraph(
             "contract-left-wrap-image",
             31,
             DocumentImageSource.Asset,
@@ -129,7 +129,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             "This paragraph demonstrates a left positioned evidence preview. Text must start beside the image, wrap around its square contour, remain editable on every visual line, and continue below the object without colliding with the caption.",
             spacingAfter: 16));
 
-        contract.Blocks.Add(CreateImage(
+        contract.Blocks.Add(CreateImageDrawingParagraph(
             "contract-right-wrap-image",
             41,
             DocumentImageSource.Asset,
@@ -148,7 +148,45 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             "This paragraph proves the opposite wrap direction. The image is anchored to the same paragraph on the right, while the text remains readable and clickable on the left. The demo intentionally keeps enough words here to exercise multiple wrapped lines.",
             spacingAfter: 16));
 
-        contract.Blocks.Add(CreateImage(
+        contract.Blocks.Add(CreateImageDrawingParagraph(
+            "contract-center-wrap-image",
+            45,
+            DocumentImageSource.Asset,
+            null,
+            ContractAssetId,
+            "Centered square evidence preview",
+            "Centered square wrapped exhibit preview",
+            132,
+            74,
+            DocumentImageAlignment.Center,
+            CreateCenterWrappedImageLayout(132, 74, "contract-center-wrap-text")));
+
+        contract.Blocks.Add(CreateParagraph(
+            "contract-center-wrap-text",
+            46,
+            "This center square scenario deliberately contains enough words to fill both sides of the centered preview. The first lines should split into a left interval and a right interval, continue around the object, and then return to a normal full-width line below the image without becoming a top-and-bottom band.",
+            spacingAfter: 16));
+
+        contract.Blocks.Add(CreateImageDrawingParagraph(
+            "contract-offset-wrap-image",
+            48,
+            DocumentImageSource.Asset,
+            null,
+            ContractAssetId,
+            "Offset square evidence preview",
+            "Square image with arbitrary drag-like offset",
+            118,
+            66,
+            DocumentImageAlignment.Start,
+            CreateOffsetWrappedImageLayout(118, 66, "contract-offset-wrap-text")));
+
+        contract.Blocks.Add(CreateParagraph(
+            "contract-offset-wrap-text",
+            49,
+            "This paragraph is anchored to an arbitrary drag-like offset rather than a preset left, center, or right alignment. Text should adapt to the actual rectangle position, preserve ordinary word spacing, and remain easy to select before, beside, and after the image.",
+            spacingAfter: 16));
+
+        contract.Blocks.Add(CreateImageDrawingParagraph(
             "contract-top-bottom-image",
             50,
             DocumentImageSource.Asset,
@@ -164,12 +202,63 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
         contract.Blocks.Add(CreateParagraph(
             "contract-top-bottom-text",
             51,
-            "Top and bottom wrapping should reserve the full object band. No text line is allowed to slide horizontally through this image because that would make the page feel unpredictable.",
+            "Top and bottom wrapping should reserve the full object band. No text line is allowed to slide horizontally through this image because that would make the page feel unpredictable, especially after saving, resetting, and reloading the demo document.",
+            spacingAfter: 16));
+
+        contract.Blocks.Add(CreateImageDrawingParagraph(
+            "contract-tight-wrap-image",
+            52,
+            DocumentImageSource.Asset,
+            null,
+            ContractAssetId,
+            "Tight contour evidence preview",
+            "Tight wrapped image with a custom diamond contour",
+            128,
+            72,
+            DocumentImageAlignment.Center,
+            CreateTightWrappedImageLayout(128, 72, "contract-tight-wrap-text")));
+
+        contract.Blocks.Add(CreateParagraph(
+            "contract-tight-wrap-text",
+            53,
+            "This tight wrapping paragraph uses a custom diamond contour so the available line intervals differ from a plain rectangle. The text is intentionally stable and descriptive, giving E2E checks predictable words while proving that polygon metadata can survive save, reload, and DOCX export workflows.",
+            spacingAfter: 16));
+
+        contract.Blocks.Add(CreateImageDrawingParagraph(
+            "contract-in-front-image",
+            54,
+            DocumentImageSource.Asset,
+            null,
+            ContractAssetId,
+            "In front floating evidence badge",
+            "In front of text object positioned in the page margin",
+            96,
+            54,
+            DocumentImageAlignment.End,
+            CreateInFrontImageLayout(96, 54, "contract-layering-text")));
+
+        contract.Blocks.Add(CreateImageDrawingParagraph(
+            "contract-behind-text-image",
+            54.25,
+            DocumentImageSource.Asset,
+            null,
+            ContractAssetId,
+            "Behind text evidence watermark",
+            "Behind text object positioned in the page margin",
+            96,
+            54,
+            DocumentImageAlignment.End,
+            CreateBehindTextImageLayout(96, 54, "contract-layering-text")));
+
+        contract.Blocks.Add(CreateParagraph(
+            "contract-layering-text",
+            54.5,
+            "This layering scenario keeps one image in front of text and another behind text without hiding the paragraph itself. Both badges are deliberately positioned in the page margin so the demo exercises front and behind layer serialization while keeping the contract copy readable and overlap-free.",
             spacingAfter: 16));
 
         contract.Blocks.Add(CreatePageBreak("contract-engine-scenarios-page-break", 55));
 
-        contract.Blocks.Add(CreateImage(
+        contract.Blocks.Add(CreateImageDrawingParagraph(
             "contract-inline-image",
             60,
             DocumentImageSource.Asset,
@@ -182,7 +271,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             DocumentImageAlignment.Center,
             DocumentObjectLayout.Inline()));
 
-        contract.Blocks.Add(CreateImage(
+        contract.Blocks.Add(CreateImageDrawingParagraph(
             "contract-missing-alt-image",
             70,
             DocumentImageSource.Asset,
@@ -196,9 +285,9 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             DocumentObjectLayout.Inline()));
 
         contract.Blocks.Add(CreateContractTable());
+        AddContractHeaderFooterDrawingRuns(contract);
         contract.Comments.Add(CreateCanonicalComment());
         AddCanonicalDeletionRevision(contract);
-        DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(contract);
         DocumentImagePersistence.Sanitize(contract);
     }
 
@@ -266,6 +355,74 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             }
         };
 
+    private static DocumentObjectLayout CreateCenterWrappedImageLayout(double width, double height, string? anchorBlockId = null) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = true,
+                FixedOnPage = false
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Center,
+                Y = 0
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Square,
+                DistanceLeft = 10,
+                DistanceRight = 10,
+                DistanceBottom = 10
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
+    private static DocumentObjectLayout CreateOffsetWrappedImageLayout(double width, double height, string? anchorBlockId = null) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = true,
+                FixedOnPage = false
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                X = 214,
+                Y = 4
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Square,
+                DistanceLeft = 10,
+                DistanceRight = 12,
+                DistanceBottom = 10
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
     private static DocumentObjectLayout CreateTopBottomImageLayout(double width, double height, string? anchorBlockId = null) =>
         new()
         {
@@ -295,6 +452,120 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
                 NaturalWidth = width,
                 NaturalHeight = height,
                 LockAspectRatio = true
+            }
+        };
+
+    private static DocumentObjectLayout CreateTightWrappedImageLayout(double width, double height, string? anchorBlockId = null) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = true,
+                FixedOnPage = false
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Center
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Tight,
+                Side = DocumentObjectWrapSide.Largest,
+                DistanceLeft = 8,
+                DistanceRight = 8,
+                DistanceTop = 4,
+                DistanceBottom = 8,
+                WrapContourPoints =
+                [
+                    new() { X = 0.5, Y = 0 },
+                    new() { X = 1, Y = 0.45 },
+                    new() { X = 0.62, Y = 1 },
+                    new() { X = 0, Y = 0.55 }
+                ]
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
+    private static DocumentObjectLayout CreateInFrontImageLayout(double width, double height, string? anchorBlockId = null) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Fixed,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = false,
+                FixedOnPage = true
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Page,
+                X = -124,
+                Y = 250
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.InFrontOfText
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            },
+            Stacking = new DocumentObjectStacking
+            {
+                ZIndex = 20,
+                AllowOverlap = true
+            }
+        };
+
+    private static DocumentObjectLayout CreateBehindTextImageLayout(double width, double height, string? anchorBlockId = null) =>
+        new()
+        {
+            Kind = DocumentObjectLayoutKind.Fixed,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = false,
+                FixedOnPage = true
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Page,
+                X = -124,
+                Y = 318
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.BehindText
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            },
+            Stacking = new DocumentObjectStacking
+            {
+                ZIndex = 0,
+                AllowOverlap = true
             }
         };
 
@@ -333,7 +604,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             Order = order
         };
 
-    private static DocumentBlock CreateImage(
+    private static DocumentBlock CreateImageDrawingParagraph(
         string id,
         double order,
         DocumentImageSource source,
@@ -427,7 +698,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             {
                 Layout = new TableLayoutContent
                 {
-                    Width = 420,
+                    Width = 560,
                     Alignment = TableHorizontalAlignment.Center,
                     CellPadding = 7,
                     BackgroundColor = "#ffffff",
@@ -447,7 +718,8 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
                         [
                             CreateTableCell("Item", isHeader: true, backgroundColor: "#eef2ff", id: "contract-pricing-table-h-item"),
                             CreateTableCell("Responsibility", isHeader: true, backgroundColor: "#eef2ff", id: "contract-pricing-table-h-responsibility"),
-                            CreateTableCell("Status", isHeader: true, backgroundColor: "#eef2ff", id: "contract-pricing-table-h-status")
+                            CreateTableCell("Status", isHeader: true, backgroundColor: "#eef2ff", id: "contract-pricing-table-h-status"),
+                            CreateTableCell("Evidence", isHeader: true, backgroundColor: "#eef2ff", id: "contract-pricing-table-h-evidence")
                         ]
                     },
                     new TableRowContent
@@ -456,7 +728,8 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
                         [
                             CreateTableCell("Implementation", id: "contract-pricing-table-r1-item"),
                             CreateTableCell("Provider", id: "contract-pricing-table-r1-responsibility"),
-                            CreateTableCell("Ready for review", id: "contract-pricing-table-r1-status")
+                            CreateTableCell("Ready for review", id: "contract-pricing-table-r1-status"),
+                            CreateTableCellWithImage("contract-pricing-table", "contract-pricing-table-r1-evidence")
                         ]
                     },
                     new TableRowContent
@@ -465,12 +738,165 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
                         [
                             CreateTableCell("Client data", id: "contract-pricing-table-r2-item"),
                             CreateTableCell("Client", id: "contract-pricing-table-r2-responsibility"),
-                            CreateTableCell("Pending confirmation", id: "contract-pricing-table-r2-status")
+                            CreateTableCell("Pending confirmation", id: "contract-pricing-table-r2-status"),
+                            CreateTableCell("Awaiting upload", id: "contract-pricing-table-r2-evidence")
                         ]
                     }
                 ]
             }
         };
+
+    private static TableCellContent CreateTableCellWithImage(string tableId, string cellId)
+    {
+        const string blockId = "contract-pricing-table-r1-evidence-block";
+        var drawing = CreateImageDrawingRun(
+            "contract-table-cell-image",
+            DocumentImageSource.Asset,
+            null,
+            ContractAssetId,
+            "Table cell evidence image",
+            "Image wrapped inside a pricing table cell",
+            76,
+            43,
+            CreateTableCellImageLayout(tableId, cellId, blockId, 76, 43));
+        drawing.Layout.Anchor.Region = DocumentRenditionAnchorScope.TableCell;
+        drawing.Layout.Anchor.TableId = tableId;
+        drawing.Layout.Anchor.CellId = cellId;
+        drawing.Layout.Anchor.BlockId = blockId;
+        drawing.Docx = new DocumentDocxDrawingMetadata { LayoutInCell = true };
+
+        return new TableCellContent
+        {
+            Id = cellId,
+            Padding = 8,
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = blockId,
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines =
+                        [
+                            drawing,
+                            new TextRun
+                            {
+                                Id = "contract-pricing-table-r1-evidence-text",
+                                Text = " Stable table-cell image text proves local wrapping without affecting neighboring cells."
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
+    }
+
+    private static DocumentObjectLayout CreateTableCellImageLayout(string tableId, string cellId, string blockId, double width, double height)
+        => new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = blockId,
+                Region = DocumentRenditionAnchorScope.TableCell,
+                TableId = tableId,
+                CellId = cellId,
+                MoveWithText = true
+            },
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Column,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Left
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Square,
+                DistanceRight = 6,
+                DistanceBottom = 4
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height,
+                LockAspectRatio = true
+            }
+        };
+
+    private static void AddContractHeaderFooterDrawingRuns(DocumentEditorDocument document)
+    {
+        AddDrawingRunToHeaderFooter(
+            document,
+            "contract-header-primary",
+            "contract-header-primary-block",
+            CreateHeaderFooterDrawingRun(
+                "contract-header-logo-image",
+                "Header logo evidence",
+                DocumentRenditionAnchorScope.Header,
+                "contract-header-primary",
+                "contract-header-primary-block",
+                52,
+                29));
+        AddDrawingRunToHeaderFooter(
+            document,
+            "contract-footer-primary",
+            "contract-footer-primary-block",
+            CreateHeaderFooterDrawingRun(
+                "contract-footer-logo-image",
+                "Footer logo evidence",
+                DocumentRenditionAnchorScope.Footer,
+                "contract-footer-primary",
+                "contract-footer-primary-block",
+                44,
+                25));
+    }
+
+    private static DocumentDrawingRun CreateHeaderFooterDrawingRun(
+        string objectId,
+        string altText,
+        DocumentRenditionAnchorScope region,
+        string headerFooterId,
+        string blockId,
+        double width,
+        double height)
+    {
+        var drawing = CreateImageDrawingRun(
+            objectId,
+            DocumentImageSource.Asset,
+            null,
+            ContractAssetId,
+            altText,
+            altText,
+            width,
+            height,
+            DocumentObjectLayout.Inline());
+        drawing.Layout.Anchor.Region = region;
+        drawing.Layout.Anchor.HeaderFooterId = headerFooterId;
+        drawing.Layout.Anchor.BlockId = blockId;
+        return drawing;
+    }
+
+    private static void AddDrawingRunToHeaderFooter(
+        DocumentEditorDocument document,
+        string headerFooterId,
+        string blockId,
+        DocumentDrawingRun drawing)
+    {
+        var paragraph = document.HeadersFooters
+            .FirstOrDefault(headerFooter => string.Equals(headerFooter.Id, headerFooterId, StringComparison.Ordinal))
+            ?.Blocks.FirstOrDefault(block => string.Equals(block.Id, blockId, StringComparison.Ordinal))
+            ?.Content as ParagraphBlockContent;
+        if (paragraph is null)
+        {
+            return;
+        }
+
+        drawing.Layout.Anchor.InlineIndex = paragraph.Inlines.Count;
+        paragraph.Inlines.Add(drawing);
+    }
 
     private static DocumentComment CreateCanonicalComment() =>
         new()
@@ -694,7 +1120,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
                 Inlines = [new TextRun { Text = "This demo document keeps image drawing runs in the editor JSON model." }]
             }
         });
-        document.Blocks.Add(CreateImage(
+        document.Blocks.Add(CreateImageDrawingParagraph(
             "exhibits-url-image",
             30,
             DocumentImageSource.Asset,
@@ -707,7 +1133,7 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             DocumentImageAlignment.Start,
             CreateLeftWrappedImageLayout(220, 124),
             sectionId: null));
-        document.Blocks.Add(CreateImage(
+        document.Blocks.Add(CreateImageDrawingParagraph(
             "exhibits-provider-image",
             40,
             DocumentImageSource.Asset,
@@ -720,7 +1146,6 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             DocumentImageAlignment.Center,
             CreateTopBottomImageLayout(240, 135),
             sectionId: null));
-        DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(document);
         DocumentImagePersistence.Sanitize(document);
         return document;
     }

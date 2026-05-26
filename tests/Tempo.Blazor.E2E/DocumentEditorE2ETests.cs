@@ -174,6 +174,122 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Phase0_DefaultDemoImageWrapBaselineCoversOnlyOfficeIntervals()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        await host.Locator(".tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)").First.ScrollIntoViewIfNeededAsync();
+
+        try
+        {
+            var overlapProbe = await CaptureDocumentOverlapProbeAsync(page);
+            overlapProbe.TextRects.Should().NotBeEmpty("the interval baseline needs measurable text");
+            overlapProbe.ImageRects.Should().NotBeEmpty("the interval baseline needs measurable images");
+            overlapProbe.Collisions.Should().BeEmpty("phase 0 baseline starts with no visible text/image overlap");
+
+            var issues = await page.EvaluateAsync<string[]>(
+                """
+                () => {
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const issues = [];
+                    const isVisible = element => {
+                        if (!element || element.closest('.tm-wysiwyg-page--virtual, [aria-hidden="true"]')) return false;
+                        const rect = element.getBoundingClientRect();
+                        const style = getComputedStyle(element);
+                        return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+                    };
+                    const visibleFigures = Array.from(host?.querySelectorAll('figure.tm-wysiwyg-image') || [])
+                        .filter(isVisible);
+                    const figures = visibleFigures
+                        .map(figure => ({
+                            id: figure.getAttribute('data-block-id') || figure.getAttribute('data-object-id') || '',
+                            wrap: figure.getAttribute('data-wrap-mode') || '',
+                            classes: figure.className || ''
+                        }));
+                    const hasSquareLeft = figures.some(item => /Square/i.test(item.wrap) && /tm-wysiwyg-image--position-left/.test(item.classes));
+                    const hasSquareRight = figures.some(item => /Square/i.test(item.wrap) && /tm-wysiwyg-image--position-right/.test(item.classes));
+                    const hasSquareCenter = figures.some(item => /Square/i.test(item.wrap) && /tm-wysiwyg-image--position-center/.test(item.classes));
+                    const hasTopBottom = figures.some(item => /TopBottom/i.test(item.wrap) && /tm-wysiwyg-image--position-center/.test(item.classes));
+                    if (!hasSquareLeft) issues.push('default demo is missing a left Square image baseline');
+                    if (!hasSquareRight) issues.push('default demo is missing a right Square image baseline');
+                    if (!hasSquareCenter) issues.push('default demo is missing a center Square image baseline');
+                    if (!hasTopBottom) issues.push('default demo is missing a centered TopBottom image baseline');
+                    const centerSquares = visibleFigures
+                        .filter(figure => /Square/i.test(figure.getAttribute('data-wrap-mode') || '')
+                            && /tm-wysiwyg-image--position-center/.test(figure.className || ''));
+                    const intersects = (a, b) => a.left < b.right - 1
+                        && a.right > b.left + 1
+                        && a.top < b.bottom - 1
+                        && a.bottom > b.top + 1;
+                    const inspectCenterSquare = figure => {
+                        const imageRect = (figure.querySelector('img') || figure).getBoundingClientRect();
+                        const body = figure.closest('.tm-wysiwyg-page__body[contenteditable], .tm-wysiwyg-page__body') || host;
+                        let hasLeft = false;
+                        let hasRight = false;
+                        let hasBelow = false;
+                        let hasOverlap = false;
+                        const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+                            acceptNode: node => {
+                                const parent = node.parentElement;
+                                if (!parent || !(node.textContent || '').trim()) return NodeFilter.FILTER_SKIP;
+                                if (parent.closest('figure.tm-wysiwyg-image, [aria-hidden="true"], .tm-wysiwyg-page--virtual, [role="toolbar"], .tm-wysiwyg-layout-bubble')) {
+                                    return NodeFilter.FILTER_REJECT;
+                                }
+                                const owner = parent.closest('.tm-wysiwyg-block[data-block-id]') || parent;
+                                const style = getComputedStyle(owner);
+                                return style.display === 'none' || style.visibility === 'hidden'
+                                    ? NodeFilter.FILTER_REJECT
+                                    : NodeFilter.FILTER_ACCEPT;
+                            }
+                        });
+                        while (walker.nextNode()) {
+                            const range = document.createRange();
+                            range.selectNodeContents(walker.currentNode);
+                            const rects = Array.from(range.getClientRects())
+                                .filter(rect => rect.width > 0 && rect.height > 0);
+                            for (const rect of rects) {
+                                if (intersects(rect, imageRect)) hasOverlap = true;
+                                if (rect.top < imageRect.bottom - 2 && rect.bottom > imageRect.top + 2) {
+                                    if (rect.right <= imageRect.left - 2) hasLeft = true;
+                                    if (rect.left >= imageRect.right + 2) hasRight = true;
+                                }
+                                if (rect.top >= imageRect.bottom - 2 && rect.left < imageRect.right - 2 && rect.right > imageRect.left + 2) {
+                                    hasBelow = true;
+                                }
+                            }
+                            range.detach?.();
+                        }
+                        return { hasLeft, hasRight, hasBelow, hasOverlap };
+                    };
+                    const centerReports = centerSquares.map(inspectCenterSquare);
+                    if (centerReports.some(report => report.hasOverlap)) {
+                        issues.push('default center Square image has text overlapping the image after load');
+                    }
+                    if (centerReports.length > 0 && !centerReports.some(report => report.hasLeft && report.hasRight)) {
+                        issues.push('default center Square image does not expose both left and right text intervals after load');
+                    }
+                    if (centerReports.length > 0 && !centerReports.some(report => report.hasBelow)) {
+                        issues.push('default center Square image does not let text continue below the object after side intervals are exhausted');
+                    }
+                    return issues;
+                }
+                """);
+
+            issues.Should().BeEmpty("phase 0 needs explicit left, right, center Square and TopBottom demo baselines before the interval engine work starts");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Phase0_DefaultDemoImageWrapBaselineCoversOnlyOfficeIntervals),
+                "Open the reset default contract demo and classify visible image wrap positions.",
+                "The baseline must expose left Square, right Square, center Square and TopBottom scenarios, with no initial visual overlap.");
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_DefaultDemo_ImageWrapLayoutMatrixAcrossViewports()
     {
         (int Width, int Height, string Name)[] viewports =
@@ -824,6 +940,7 @@ public class DocumentEditorE2ETests : WasmTestBase
         try
         {
             var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
             var bodyRect = await CaptureWysiwygBodyRectAsync(page);
             await figure.ClickAsync();
             await page.WaitForTimeoutAsync(50);
@@ -836,17 +953,27 @@ public class DocumentEditorE2ETests : WasmTestBase
             await page.Mouse.DownAsync();
             await page.Mouse.MoveAsync((float)bodyCenterX, (float)startY, new() { Steps = 10 });
 
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-move-preview']")).ToBeVisibleAsync(new() { Timeout = 3000 });
-            var centerGuide = page.Locator("[data-testid='document-wysiwyg-image-move-guide'][data-guide-kind='page-center-x']");
+            var preview = page.Locator("[data-testid='document-wysiwyg-image-move-preview']").First;
+            await Assertions.Expect(preview).ToBeVisibleAsync(new() { Timeout = 3000 });
+            (await preview.GetAttributeAsync("data-preview-intervals-changed")).Should().Be("true", "drag preview must recompute text intervals before the drop");
+            int.TryParse(await preview.GetAttributeAsync("data-preview-interval-count"), out var previewIntervalCount).Should().BeTrue();
+            previewIntervalCount.Should().BeGreaterThanOrEqualTo(2, "center drag preview must expose both side intervals around the image");
+
+            var centerGuide = page.Locator("[data-testid='document-wysiwyg-object-drag-guide'][data-guide-kind='page-center-x'], [data-testid='document-wysiwyg-image-move-guide'][data-guide-kind='page-center-x']");
             var centerGuideVisible = await centerGuide.CountAsync() > 0 && await centerGuide.First.IsVisibleAsync();
             for (var offset = -180; !centerGuideVisible && offset <= 180; offset += 12)
             {
                 await page.Mouse.MoveAsync((float)(bodyCenterX + offset), (float)startY, new() { Steps = 2 });
                 await page.WaitForTimeoutAsync(60);
+                if (await preview.CountAsync() > 0)
+                {
+                    int.TryParse(await preview.GetAttributeAsync("data-preview-interval-count"), out previewIntervalCount);
+                }
                 centerGuideVisible = await centerGuide.CountAsync() > 0 && await centerGuide.First.IsVisibleAsync();
             }
 
             centerGuideVisible.Should().BeTrue("dragging near the page center must reveal the center snap guide");
+            previewIntervalCount.Should().BeGreaterThanOrEqualTo(2, "preview intervals should keep updating while dragging near center");
             await page.Mouse.UpAsync();
 
             var after = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
@@ -865,6 +992,25 @@ public class DocumentEditorE2ETests : WasmTestBase
             if (!await LineHasTextOnBothSidesOfImageAsync(page, imageId, text))
             {
                 issues.Add("dragging the image to the center did not render text segments on both sides of the image");
+            }
+
+            await ClickUndoAsync(page);
+            var undone = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (!RectApproximatelyEquals(before.ImageLayoutRect, undone.ImageLayoutRect, 4))
+            {
+                issues.Add("undo after center drag did not restore the original image position");
+            }
+
+            await ClickRedoAsync(page);
+            var redone = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (!RectApproximatelyEquals(after.ImageLayoutRect, redone.ImageLayoutRect, 4))
+            {
+                issues.Add("redo after center drag did not restore the centered image position");
+            }
+
+            if (!redone.Lines.Any(line => line.AvailableIntervalCount >= 2))
+            {
+                issues.Add("redo after center drag did not restore the split side intervals");
             }
 
             issues.Should().BeEmpty("center-dragged square images must show move feedback, snap to guides, and create split text intervals");
@@ -1245,6 +1391,232 @@ public class DocumentEditorE2ETests : WasmTestBase
                 nameof(DocumentEditor_Strict_ImageWrap_TightContourEditorReflowsAndPersists),
                 "Set a tight diamond contour, edit wrap points with pointer interactions, save, reset and close the editor.",
                 "The contour must change real line boxes, expose visible draggable points, persist added points, reset to a rectangle, and close on Escape.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase8_TightPolygonSmoke_TextFollowsTrapezoidContour()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"phase8-tight-polygon-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"phase8-tight-trapezoid-{Guid.NewGuid():N}";
+        var textId = $"{imageId}-text";
+        const string text =
+            "Phase eight tight polygon text starts near the narrow top edge of the contour and continues down the object. "
+            + "Every following visual line should move right as the trapezoid widens, while the paragraph remains one normal editable block. "
+            + "The smoke test catches rectangular fallbacks because those would keep the same start x for each wrapped line.";
+
+        try
+        {
+            var document = await LoadDemoDocumentFromPageAsync(page);
+            document.Blocks.Clear();
+            document.Theme.BodyFontSize = 12;
+            document.Theme.BodyLineHeight = 1.25;
+            document.Theme.ParagraphSpacingAfter = 6;
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = imageId,
+                Type = DocumentBlockType.Image,
+                Order = 10,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Url,
+                    Url = "/favicon.png",
+                    AltText = "Phase 8 tight trapezoid contour",
+                    Size = new DocumentImageSize { Width = 180, Height = 120, LockAspectRatio = true },
+                    NaturalSize = new DocumentImageSize { Width = 180, Height = 120, LockAspectRatio = true },
+                    Alignment = DocumentImageAlignment.Start,
+                    Layout = new DocumentObjectLayout
+                    {
+                        Kind = DocumentObjectLayoutKind.Anchored,
+                        Position = new DocumentObjectPosition
+                        {
+                            HorizontalRelativeTo = DocumentRelativePosition.Page,
+                            VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                            HorizontalAlignment = DocumentImageHorizontalPosition.Left,
+                            X = 0,
+                            Y = 0
+                        },
+                        Wrap = new DocumentObjectWrap
+                        {
+                            Mode = DocumentWrapMode.Tight,
+                            Side = DocumentObjectWrapSide.Right,
+                            WrapContourPoints =
+                            [
+                                new() { X = 0.05, Y = 0 },
+                                new() { X = 0.45, Y = 0 },
+                                new() { X = 1, Y = 1 },
+                                new() { X = 0, Y = 1 }
+                            ]
+                        },
+                        Transform = new DocumentObjectTransform
+                        {
+                            Width = 180,
+                            Height = 120,
+                            NaturalWidth = 180,
+                            NaturalHeight = 120,
+                            LockAspectRatio = true
+                        },
+                        Stacking = new DocumentObjectStacking
+                        {
+                            AllowOverlap = false,
+                            ZIndex = 1
+                        }
+                    }
+                }
+            });
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = textId,
+                Type = DocumentBlockType.Paragraph,
+                Order = 20,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines =
+                    [
+                        new TextRun
+                        {
+                            Id = $"{textId}-run",
+                            Text = text
+                        }
+                    ]
+                }
+            });
+
+            await SaveDemoDocumentAsync(document);
+            await ReloadDocumentEditorPageAsync(page);
+            var host = page.Locator("[data-testid='document-wysiwyg-host']");
+            await WaitForWysiwygBodyAsync(host);
+            await Assertions.Expect(host).ToContainTextAsync(text, new() { Timeout = 5000 });
+            await page.WaitForFunctionAsync(
+                """
+                ({ imageId, textId }) => {
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const instanceId = host?.getAttribute('data-instance-id') || '';
+                    const probe = window.tmDocumentEditorEngine?.getLayoutProbe?.(instanceId);
+                    const image = probe?.imageRects?.find(item => item.blockId === imageId);
+                    const lines = (probe?.lineBoxes || []).filter(line => line.blockId === textId);
+                    return !!image && lines.length >= 3;
+                }
+                """,
+                new { imageId, textId },
+                new() { Timeout = 5000 });
+
+            var issues = await page.EvaluateAsync<string[]>(
+                """
+                ({ imageId, textId }) => {
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const instanceId = host?.getAttribute('data-instance-id') || '';
+                    const probe = window.tmDocumentEditorEngine?.getLayoutProbe?.(instanceId);
+                    const issues = [];
+                    if (!probe?.ok) return ['layout probe was not available'];
+
+                    const image = (probe.imageRects || []).find(item => item.blockId === imageId);
+                    if (!image) return [`image ${imageId} was not present in the layout probe`];
+
+                    const contour = [
+                        { x: 0.05, y: 0 },
+                        { x: 0.45, y: 0 },
+                        { x: 1, y: 1 },
+                        { x: 0, y: 1 }
+                    ];
+                    const rect = image.rect;
+                    const polygon = contour.map(point => ({
+                        x: rect.x + rect.width * point.x,
+                        y: rect.y + rect.height * point.y
+                    }));
+                    const rightOf = interval => interval.x + interval.width;
+                    const intervalsAtY = y => {
+                        const xs = [];
+                        for (let index = 0; index < polygon.length; index++) {
+                            const a = polygon[index];
+                            const b = polygon[(index + 1) % polygon.length];
+                            if (Math.abs(a.y - b.y) < 0.0001) continue;
+                            const minY = Math.min(a.y, b.y);
+                            const maxY = Math.max(a.y, b.y);
+                            if (y < minY || y >= maxY) continue;
+                            xs.push(a.x + ((y - a.y) * (b.x - a.x) / (b.y - a.y)));
+                        }
+
+                        xs.sort((left, right) => left - right);
+                        const intervals = [];
+                        for (let index = 0; index + 1 < xs.length; index += 2) {
+                            if (xs[index + 1] > xs[index] + 0.0001) {
+                                intervals.push({ x: xs[index], width: xs[index + 1] - xs[index] });
+                            }
+                        }
+
+                        return intervals;
+                    };
+                    const blockedRightForBand = (y, height) => {
+                        const top = y;
+                        const bottom = y + height;
+                        const samples = [top + 0.0001, top + height / 2, bottom - 0.0001];
+                        for (const point of polygon) {
+                            if (point.y > top + 0.0001 && point.y < bottom - 0.0001) samples.push(point.y);
+                        }
+
+                        let right = Number.NEGATIVE_INFINITY;
+                        for (const sample of samples) {
+                            for (const interval of intervalsAtY(Math.max(top, Math.min(bottom, sample)))) {
+                                right = Math.max(right, rightOf(interval));
+                            }
+                        }
+
+                        return Number.isFinite(right) ? right : null;
+                    };
+                    const overlapsVertically = (a, b) => a.y < b.y + b.height - 0.5 && a.y + a.height > b.y + 0.5;
+                    const lines = (probe.lineBoxes || [])
+                        .filter(line => line.blockId === textId && overlapsVertically(line.rect, rect))
+                        .sort((a, b) => a.rect.y - b.rect.y || a.rect.x - b.rect.x);
+
+                    if (lines.length < 3) {
+                        issues.push(`expected at least three text lines inside the trapezoid vertical band, found ${lines.length}`);
+                    }
+
+                    if (lines.length >= 2) {
+                        const first = lines[0];
+                        const last = lines[lines.length - 1];
+                        if (last.rect.x <= first.rect.x + 30) {
+                            issues.push(`line x positions did not follow the widening trapezoid: first=${Math.round(first.rect.x)}, last=${Math.round(last.rect.x)}`);
+                        }
+                    }
+
+                    for (const line of lines) {
+                        const blockedRight = blockedRightForBand(line.rect.y, line.rect.height);
+                        if (blockedRight !== null && line.rect.x < blockedRight - 1) {
+                            issues.push(`line ${line.id} starts at ${Math.round(line.rect.x)} before polygon blocked right ${Math.round(blockedRight)}`);
+                        }
+                    }
+
+                    const textRects = (probe.textRects || [])
+                        .filter(item => item.blockId === textId && overlapsVertically(item.rect, rect));
+                    for (const textRect of textRects) {
+                        const blockedRight = blockedRightForBand(textRect.rect.y, textRect.rect.height);
+                        if (blockedRight !== null && textRect.rect.x < blockedRight - 1) {
+                            issues.push(`text segment ${textRect.id} enters polygon blocked interval: x=${Math.round(textRect.rect.x)}, blockedRight=${Math.round(blockedRight)}`);
+                        }
+                    }
+
+                    const savedWrap = host?.querySelector(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`)?.getAttribute('data-wrap-mode') || '';
+                    if (savedWrap !== '2' && savedWrap !== 'Tight') {
+                        issues.push(`DOM wrap mode should be Tight/2, got ${savedWrap}`);
+                    }
+
+                    return issues;
+                }
+                """,
+                new { imageId, textId });
+
+            issues.Should().BeEmpty("tight trapezoid wrapping must affect real line boxes and keep text out of the polygon blocked interval");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Phase8_TightPolygonSmoke_TextFollowsTrapezoidContour),
+                "Seed a tight-wrapped image with a trapezoid contour and inspect engine line boxes.",
+                "Text lines should move horizontally as the polygon widens and no text segment should enter the computed polygon interval.");
             throw;
         }
     }
@@ -11230,6 +11602,375 @@ public class DocumentEditorE2ETests : WasmTestBase
             .ToBeVisibleAsync(new() { Timeout = 5000 });
     }
 
+    private static async Task PrepareImageWrapPhase10CaretScenarioAsync(
+        IPage page,
+        string textId,
+        string imageId,
+        DocumentImageHorizontalPosition horizontalPosition,
+        string beforeText,
+        string afterText)
+    {
+        var document = await LoadDemoDocumentFromPageAsync(page);
+        document.Blocks.Clear();
+        document.Anchors.Clear();
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = new DocumentPageSize { Name = "Image wrap phase 10", Width = 560, Height = 680 },
+            Margins = new DocumentPageMargins { Top = 60, Right = 60, Bottom = 60, Left = 60 }
+        };
+        document.Theme.BodyFontSize = 12;
+        document.Theme.BodyLineHeight = 1.2;
+        document.Theme.ParagraphSpacingAfter = 4;
+
+        var inlines = new List<InlineContent>();
+        if (!string.IsNullOrEmpty(beforeText))
+        {
+            inlines.Add(new TextRun { Id = $"{textId}-before", Text = beforeText });
+        }
+
+        inlines.Add(new DocumentDrawingRun
+        {
+            Id = $"{imageId}-run",
+            ObjectId = imageId,
+            Source = DocumentImageSource.Url,
+            Url = "/favicon.png",
+            AltText = "Phase 10 caret image",
+            Size = new DocumentImageSize { Width = 120, Height = 84, LockAspectRatio = true },
+            NaturalSize = new DocumentImageSize { Width = 120, Height = 84, LockAspectRatio = true },
+            Layout = new DocumentObjectLayout
+            {
+                Kind = DocumentObjectLayoutKind.Anchored,
+                Anchor = new DocumentObjectAnchor
+                {
+                    BlockId = textId,
+                    Offset = beforeText.Length,
+                    InlineIndex = string.IsNullOrEmpty(beforeText) ? 0 : 1,
+                    Region = DocumentRenditionAnchorScope.Body,
+                    MoveWithText = true,
+                    FixedOnPage = false,
+                    LockAnchor = false
+                },
+                Position = new DocumentObjectPosition
+                {
+                    HorizontalRelativeTo = DocumentRelativePosition.Margin,
+                    VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                    HorizontalAlignment = horizontalPosition,
+                    X = 0,
+                    Y = 0
+                },
+                Wrap = new DocumentObjectWrap
+                {
+                    Mode = DocumentWrapMode.Square,
+                    DistanceLeft = 12,
+                    DistanceRight = 12,
+                    DistanceTop = 6,
+                    DistanceBottom = 6
+                },
+                Transform = new DocumentObjectTransform
+                {
+                    Width = 120,
+                    Height = 84,
+                    NaturalWidth = 120,
+                    NaturalHeight = 84,
+                    LockAspectRatio = true
+                },
+                Stacking = new DocumentObjectStacking
+                {
+                    ZIndex = 1,
+                    AllowOverlap = true
+                }
+            }
+        });
+
+        if (!string.IsNullOrEmpty(afterText))
+        {
+            inlines.Add(new TextRun { Id = $"{textId}-after", Text = afterText });
+        }
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = textId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 10,
+            Content = new ParagraphBlockContent { Inlines = inlines }
+        });
+
+        await SaveDemoDocumentAsync(document);
+        await ReloadDocumentEditorPageAsync(page);
+        await Assertions.Expect(page.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible"))
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+    }
+
+    private static Task<ImageWrapPhase10CaretProbe> CaptureImageWrapPhase10CaretProbeAsync(
+        IPage page,
+        string textId,
+        string imageId)
+        => page.EvaluateAsync<ImageWrapPhase10CaretProbe>(
+            """
+            async ({ textId, imageId }) => {
+                const waitForFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+                };
+                const issues = [];
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(isVisible);
+                const block = Array.from(host?.querySelectorAll(`.tm-wysiwyg-block[data-block-id="${CSS.escape(textId)}"], [data-block-id="${CSS.escape(textId)}"]`) || [])
+                    .find(element => isVisible(element) && !element.matches('figure.tm-wysiwyg-image'));
+                if (!figure) issues.push(`visible image ${imageId} was not found`);
+                if (!block) issues.push(`visible text block ${textId} was not found`);
+                if (issues.length) {
+                    return {
+                        Issues: issues,
+                        LeftPoint: { X: 0, Y: 0 },
+                        RightPoint: { X: 0, Y: 0 },
+                        ObjectPoint: { X: 0, Y: 0 },
+                        GapPoint: { X: 0, Y: 0 },
+                        LeftHitKind: '',
+                        RightHitKind: '',
+                        ObjectHitKind: '',
+                        GapHitKind: '',
+                        LeftHitBlockId: '',
+                        RightHitBlockId: '',
+                        ObjectHitObjectId: '',
+                        GapHitBlockId: ''
+                    };
+                }
+
+                figure.scrollIntoView({ block: 'center', inline: 'center' });
+                await waitForFrame();
+                const imageRect = (figure.querySelector('img') || figure).getBoundingClientRect();
+                const frameRect = (block.closest('.tm-wysiwyg-page__body') || block).getBoundingClientRect();
+                const y = imageRect.top + Math.max(8, Math.min(imageRect.height - 8, imageRect.height / 2));
+                const leftX = Math.max(frameRect.left + 8, imageRect.left - 28);
+                const rightX = Math.min(frameRect.right - 8, imageRect.right + 28);
+                const objectX = imageRect.left + imageRect.width / 2;
+                const gapX = imageRect.left - 6 > frameRect.left + 8
+                    ? imageRect.left - 6
+                    : Math.min(frameRect.right - 8, imageRect.right + 6);
+                const service = new window.tmDocumentEditorEngine.DocumentHitTestService(host);
+                const hitAt = (x, y) => service.hitTest(x, y) || {};
+                const leftHit = hitAt(leftX, y);
+                const rightHit = hitAt(rightX, y);
+                const objectHit = hitAt(objectX, y);
+                const gapHit = hitAt(gapX, y);
+
+                if (leftHit.Kind !== 'TextCaret' || leftHit.BlockId !== textId) {
+                    issues.push(`left interval hit must be a text caret in ${textId}, got ${JSON.stringify(leftHit)}`);
+                }
+
+                if (rightHit.Kind !== 'TextCaret' || rightHit.BlockId !== textId) {
+                    issues.push(`right interval hit must be a text caret in ${textId}, got ${JSON.stringify(rightHit)}`);
+                }
+
+                if (objectHit.Kind !== 'ImageObject' || objectHit.ActiveObjectId !== imageId) {
+                    issues.push(`visible object hit must select ${imageId}, got ${JSON.stringify(objectHit)}`);
+                }
+
+                if (gapHit.Kind === 'TextCaret' || gapHit.Kind === 'ImageObject') {
+                    issues.push(`wrap gap hit must not create a text caret or object selection, got ${JSON.stringify(gapHit)}`);
+                }
+
+                return {
+                    Issues: issues,
+                    LeftPoint: { X: leftX, Y: y },
+                    RightPoint: { X: rightX, Y: y },
+                    ObjectPoint: { X: objectX, Y: y },
+                    GapPoint: { X: gapX, Y: y },
+                    LeftHitKind: leftHit.Kind || '',
+                    RightHitKind: rightHit.Kind || '',
+                    ObjectHitKind: objectHit.Kind || '',
+                    GapHitKind: gapHit.Kind || '',
+                    LeftHitBlockId: leftHit.BlockId || '',
+                    RightHitBlockId: rightHit.BlockId || '',
+                    ObjectHitObjectId: objectHit.ActiveObjectId || objectHit.ObjectId || '',
+                    GapHitBlockId: gapHit.BlockId || ''
+                };
+            }
+            """,
+            new { textId, imageId });
+
+    private static Task WaitForImageWrapPhase10TextSelectionAsync(IPage page, string textId)
+        => page.WaitForFunctionAsync(
+            """
+            textId => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtime = window.tmDocumentEditorEngine;
+                const selection = runtime?.getSelectionSnapshot?.(instanceId)
+                    || runtime?.getDebugSnapshot?.(instanceId)?.CurrentSelection
+                    || null;
+                const blockId = selection?.anchorBlockId || selection?.AnchorBlockId || selection?.blockId || selection?.BlockId || '';
+                const activeObjectId = selection?.activeObjectId || selection?.ActiveObjectId
+                    || selection?.activeImageBlockId || selection?.ActiveImageBlockId
+                    || selection?.objectId || selection?.ObjectId
+                    || '';
+                return blockId === textId && !activeObjectId;
+            }
+            """,
+            textId,
+            new() { Timeout = 5000 });
+
+    private static Task<string[]> CaptureImageWrapPhase10InsertedTextSideIssuesAsync(
+        IPage page,
+        string imageId,
+        string insertedText,
+        string expectedSide)
+        => page.EvaluateAsync<string[]>(
+            """
+            ({ imageId, insertedText, expectedSide }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const issues = [];
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+                };
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(isVisible);
+                if (!figure) return [`visible image ${imageId} was not found`];
+                const imageRect = (figure.querySelector('img') || figure).getBoundingClientRect();
+                const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT, {
+                    acceptNode: node => {
+                        const parent = node.parentElement;
+                        if (!parent || parent.closest('figure.tm-wysiwyg-image, [aria-hidden="true"], .tm-wysiwyg-page--virtual, [role="toolbar"]')) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return (node.textContent || '').includes(insertedText)
+                            ? NodeFilter.FILTER_ACCEPT
+                            : NodeFilter.FILTER_SKIP;
+                    }
+                });
+                const rects = [];
+                while (walker.nextNode()) {
+                    const node = walker.currentNode;
+                    const index = (node.textContent || '').indexOf(insertedText);
+                    if (index < 0) continue;
+                    const range = document.createRange();
+                    range.setStart(node, index);
+                    range.setEnd(node, index + insertedText.length);
+                    rects.push(...Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0));
+                    range.detach?.();
+                }
+
+                if (!rects.length) return [`inserted text "${insertedText}" was not rendered`];
+                const verticallyBesideImage = rect => rect.top < imageRect.bottom - 2 && rect.bottom > imageRect.top + 2;
+                const sideOk = expectedSide === 'left'
+                    ? rects.some(rect => verticallyBesideImage(rect) && rect.right <= imageRect.left - 2)
+                    : rects.some(rect => verticallyBesideImage(rect) && rect.left >= imageRect.right + 2);
+                if (!sideOk) {
+                    issues.push(`inserted text "${insertedText}" was not rendered on the ${expectedSide} side of the image`);
+                }
+
+                if (rects.some(rect => rect.left < imageRect.right - 1 && rect.right > imageRect.left + 1 && rect.top < imageRect.bottom - 1 && rect.bottom > imageRect.top + 1)) {
+                    issues.push(`inserted text "${insertedText}" overlaps the image`);
+                }
+
+                return issues;
+            }
+            """,
+            new { imageId, insertedText, expectedSide });
+
+    private static async Task PreparePhase9OverlayLayerSwitchScenarioAsync(
+        IPage page,
+        string textId,
+        string imageId)
+    {
+        var document = await LoadDemoDocumentFromPageAsync(page);
+        document.Blocks.Clear();
+        document.Anchors.Clear();
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = new DocumentPageSize { Name = "Phase 9", Width = 500, Height = 650 },
+            Margins = new DocumentPageMargins { Top = 60, Right = 60, Bottom = 60, Left = 60 }
+        };
+        document.Theme.BodyFontSize = 12;
+        document.Theme.BodyLineHeight = 1.2;
+        document.Theme.ParagraphSpacingAfter = 4;
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = textId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 10,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = $"{textId}-before",
+                        Text = "Phase nine overlay text starts before the image and must remain editable even when the image is behind it. "
+                    },
+                    new DocumentDrawingRun
+                    {
+                        Id = $"{imageId}-run",
+                        ObjectId = imageId,
+                        Source = DocumentImageSource.Url,
+                        Url = "/favicon.png",
+                        AltText = "Phase 9 overlay image",
+                        Size = new DocumentImageSize { Width = 130, Height = 90, LockAspectRatio = true },
+                        NaturalSize = new DocumentImageSize { Width = 130, Height = 90, LockAspectRatio = true },
+                        Layout = new DocumentObjectLayout
+                        {
+                            Kind = DocumentObjectLayoutKind.Anchored,
+                            Anchor = new DocumentObjectAnchor
+                            {
+                                BlockId = textId,
+                                Offset = 8,
+                                InlineIndex = 1,
+                                Region = DocumentRenditionAnchorScope.Body,
+                                MoveWithText = true,
+                                FixedOnPage = false
+                            },
+                            Position = new DocumentObjectPosition
+                            {
+                                HorizontalRelativeTo = DocumentRelativePosition.Margin,
+                                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                                HorizontalAlignment = DocumentImageHorizontalPosition.Left,
+                                X = 32,
+                                Y = 0
+                            },
+                            Wrap = new DocumentObjectWrap
+                            {
+                                Mode = DocumentWrapMode.Square,
+                                DistanceRight = 14,
+                                DistanceBottom = 8
+                            },
+                            Transform = new DocumentObjectTransform
+                            {
+                                Width = 130,
+                                Height = 90,
+                                NaturalWidth = 130,
+                                NaturalHeight = 90,
+                                LockAspectRatio = true
+                            },
+                            Stacking = new DocumentObjectStacking
+                            {
+                                ZIndex = 1,
+                                AllowOverlap = true
+                            }
+                        }
+                    },
+                    new TextRun
+                    {
+                        Id = $"{textId}-after",
+                        Text = " Additional words continue through the same visual band so hit testing can prove which layer wins at the overlap point. ".PadRight(190, 'x')
+                    }
+                ]
+            }
+        });
+
+        await SaveDemoDocumentAsync(document);
+        await ReloadDocumentEditorPageAsync(page);
+        await Assertions.Expect(page.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible"))
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+    }
+
     private static async Task PreparePhase11LayeringScenarioAsync(
         IPage page,
         string textId,
@@ -17721,6 +18462,35 @@ public class DocumentEditorE2ETests : WasmTestBase
         public string ExpectedText { get; set; } = string.Empty;
     }
 
+    private sealed class ImageWrapPhase10CaretProbe
+    {
+        public string[] Issues { get; set; } = [];
+
+        public MousePointProbe LeftPoint { get; set; } = new();
+
+        public MousePointProbe RightPoint { get; set; } = new();
+
+        public MousePointProbe ObjectPoint { get; set; } = new();
+
+        public MousePointProbe GapPoint { get; set; } = new();
+
+        public string LeftHitKind { get; set; } = string.Empty;
+
+        public string RightHitKind { get; set; } = string.Empty;
+
+        public string ObjectHitKind { get; set; } = string.Empty;
+
+        public string GapHitKind { get; set; } = string.Empty;
+
+        public string LeftHitBlockId { get; set; } = string.Empty;
+
+        public string RightHitBlockId { get; set; } = string.Empty;
+
+        public string ObjectHitObjectId { get; set; } = string.Empty;
+
+        public string GapHitBlockId { get; set; } = string.Empty;
+    }
+
     private sealed class FloatingImagePosition
     {
         public double X { get; set; }
@@ -18195,6 +18965,82 @@ public class DocumentEditorE2ETests : WasmTestBase
         }
     }
 
+    [TestMethod]
+    public async Task DocumentEditor_Phase7_TopBottomWrapBlocksFullBandAndUndoRedoReturnsSquare()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync("phase7-top-bottom-toggle", width: 1800, height: 1000);
+        var imageId = $"e2e-top-bottom-toggle-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var beforeLine = FirstPhase0LineOverlappingImage(before);
+            beforeLine.Should().NotBeNull("the starting Square image must have text beside the left-positioned image");
+            beforeLine!.Rect.X.Should().BeGreaterThan(before.ImageWrapRect.Right - 4);
+
+            await figure.ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-image-inspector-wrap-top-bottom']").ClickAsync();
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-top-bottom"), new() { Timeout = 5000 });
+
+            var topBottom = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var issues = CollectCommonPhase0ImageLayoutIssues(before, topBottom, imageId);
+            if (FirstPhase0LineOverlappingImage(topBottom) is not null)
+            {
+                issues.Add("TopBottom wrap left a text line in the image vertical band instead of moving text below the object");
+            }
+
+            var topBottomFirstLine = topBottom.Lines.OrderBy(line => line.Rect.Y).FirstOrDefault();
+            if (topBottomFirstLine is null)
+            {
+                issues.Add("TopBottom wrap removed measurable wrapped text lines");
+            }
+            else if (topBottomFirstLine.Rect.Y < topBottom.ImageWrapRect.Bottom - 2)
+            {
+                issues.Add($"TopBottom first text line starts before the reserved image band ends: lineY={topBottomFirstLine.Rect.Y:0.##}, imageBottom={topBottom.ImageWrapRect.Bottom:0.##}");
+            }
+
+            await page.Locator("[data-testid='document-image-inspector-wrap-square']").ClickAsync();
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
+            var square = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            issues.AddRange(CollectCommonPhase0ImageLayoutIssues(before, square, imageId));
+            var squareLine = FirstPhase0LineOverlappingImage(square);
+            if (squareLine is null)
+            {
+                issues.Add("Switching back to Square did not restore a side-wrapped line in the image band");
+            }
+            else if (squareLine.Rect.X < square.ImageWrapRect.Right - 4)
+            {
+                issues.Add($"Square text did not return beside the left-positioned image: textX={squareLine.Rect.X:0.##}, imageRight={square.ImageWrapRect.Right:0.##}");
+            }
+
+            await ClickUndoAsync(page);
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-top-bottom"), new() { Timeout = 5000 });
+            var undone = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (FirstPhase0LineOverlappingImage(undone) is not null)
+            {
+                issues.Add("Undo of the Square wrap change did not restore the TopBottom full-band reservation");
+            }
+
+            await ClickRedoAsync(page);
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
+            var redone = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (FirstPhase0LineOverlappingImage(redone) is null)
+            {
+                issues.Add("Redo of the Square wrap change did not restore side-wrapped text");
+            }
+
+            issues.Should().BeEmpty("TopBottom must be a real full-band wrap mode and switching it back to Square must be one undoable image-layout command");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase7_TopBottomWrapBlocksFullBandAndUndoRedoReturnsSquare));
+            throw;
+        }
+    }
+
     private static async Task AssertImageLayoutCommandLeavesImageSelectedAsync(ILocator figure)
     {
         var issues = await figure.EvaluateAsync<string[]>(
@@ -18392,6 +19238,106 @@ public class DocumentEditorE2ETests : WasmTestBase
         catch
         {
             await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase7_DemoImagePositionLeftAfterReloadEnablesSideText));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase0_CenterSquareWrapUsesLeftAndRightTextIntervals()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        await ReloadDocumentEditorPageAsync(page);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var figure = host.Locator("figure.tm-wysiwyg-image:visible").First;
+            await figure.ScrollIntoViewIfNeededAsync();
+            var imageId = await figure.GetAttributeAsync("data-block-id");
+            imageId.Should().NotBeNullOrWhiteSpace();
+
+            await figure.ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-image-inspector-align-center']").ClickAsync();
+
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--position-center"), new() { Timeout = 5000 });
+
+            var issues = await page.EvaluateAsync<string[]>(
+                """
+                imageId => {
+                    const issues = [];
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const isVisible = element => {
+                        if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                        const rect = element.getBoundingClientRect();
+                        const style = getComputedStyle(element);
+                        return rect.width > 0
+                            && rect.height > 0
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden';
+                    };
+                    const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                        .find(isVisible);
+                    if (!figure) return [`visible centered image ${imageId} was not found`];
+                    const imageRect = (figure.querySelector('img') || figure).getBoundingClientRect();
+                    const intersects = (a, b) => a.left < b.right - 1
+                        && a.right > b.left + 1
+                        && a.top < b.bottom - 1
+                        && a.bottom > b.top + 1;
+                    const overlapsY = rect => rect.top < imageRect.bottom - 2 && rect.bottom > imageRect.top + 2;
+                    let hasLeftTextInterval = false;
+                    let hasRightTextInterval = false;
+                    const body = host?.querySelector('.tm-wysiwyg-page__body[contenteditable]') || host;
+                    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+                        acceptNode: node => {
+                            const parent = node.parentElement;
+                            if (!parent || !(node.textContent || '').trim()) return NodeFilter.FILTER_SKIP;
+                            if (parent.closest('figure.tm-wysiwyg-image, [aria-hidden="true"], .tm-wysiwyg-page--virtual, [role="toolbar"], .tm-wysiwyg-layout-bubble')) {
+                                return NodeFilter.FILTER_REJECT;
+                            }
+                            const owner = parent.closest('.tm-wysiwyg-block[data-block-id]') || parent;
+                            const style = getComputedStyle(owner);
+                            if (style.display === 'none' || style.visibility === 'hidden') return NodeFilter.FILTER_REJECT;
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                    });
+                    while (walker.nextNode()) {
+                        const range = document.createRange();
+                        range.selectNodeContents(walker.currentNode);
+                        const rects = Array.from(range.getClientRects())
+                            .filter(rect => rect.width > 0 && rect.height > 0);
+                        const collision = rects.find(rect => intersects(rect, imageRect));
+                        if (collision) {
+                            issues.push(`text intersects centered image: "${(walker.currentNode.textContent || '').trim().slice(0, 80)}"`);
+                            break;
+                        }
+                        for (const rect of rects) {
+                            if (!overlapsY(rect)) continue;
+                            if (rect.right <= imageRect.left - 2) hasLeftTextInterval = true;
+                            if (rect.left >= imageRect.right + 2) hasRightTextInterval = true;
+                        }
+                        range.detach?.();
+                    }
+                    const reservation = host?.querySelector(`[data-testid="document-wysiwyg-drawing-anchor"][data-object-anchor-id="${CSS.escape(imageId)}"][data-flow-reservation="true"]`);
+                    if (reservation) {
+                        const style = getComputedStyle(reservation);
+                        if (style.display === 'block' && style.clear === 'both' && style.float === 'none') {
+                            issues.push('centered Square still uses a TopBottom-style full-band reservation anchor');
+                        }
+                    }
+                    if (!hasLeftTextInterval) issues.push('centered Square image has no text interval on the left side');
+                    if (!hasRightTextInterval) issues.push('centered Square image has no text interval on the right side');
+                    return issues;
+                }
+                """,
+                imageId);
+            issues.Should().BeEmpty("centered Square wrapping must use real left and right text intervals around the object, not a full-band TopBottom fallback");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase0_CenterSquareWrapUsesLeftAndRightTextIntervals));
             throw;
         }
     }
@@ -19715,6 +20661,212 @@ public class DocumentEditorE2ETests : WasmTestBase
                 nameof(DocumentEditor_Phase11_ImageLayeringSelectionPaneZOrderAndPersist),
                 "Create behind-text and in-front images, verify caret pass-through, select behind object through handle and selection pane, change z-order, save and reload.",
                 "Behind text must not block text caret; in-front objects must win visual clicks; z-order changes must decide hit testing and persist.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase9_BehindTextCaretPassThroughAndInFrontSelectionAfterWrapSwitch()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"phase9-overlay-layers-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var textId = $"phase9-overlay-text-{Guid.NewGuid():N}";
+        var imageId = $"{textId}-image";
+
+        try
+        {
+            await PreparePhase9OverlayLayerSwitchScenarioAsync(page, textId, imageId);
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", "1", new() { Timeout = 5000 });
+            await figure.ClickAsync();
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+
+            await ExecuteWysiwygCommandAsync(page, "setImageWrapMode", new { objectId = imageId, WrapMode = "BehindText" });
+            await Assertions.Expect(host.Locator($"[data-testid='document-wysiwyg-behind-text-layer'] figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First)
+                .ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", "5", new() { Timeout = 5000 });
+
+            var behindTextPoint = await CapturePhase11BehindTextCaretPointAsync(page, imageId, textId);
+            var behindHitJson = await page.EvaluateAsync<string>(
+                """
+                ({ x, y }) => {
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const service = new window.tmDocumentEditorEngine.DocumentHitTestService(host);
+                    return JSON.stringify(service.hitTest(x, y));
+                }
+                """,
+                new { x = behindTextPoint.X, y = behindTextPoint.Y });
+            behindHitJson.Should().Contain("\"Kind\":\"TextCaret\"", "BehindText must let text receive the caret. Hit: {0}", behindHitJson);
+            behindHitJson.Should().Contain(textId, "BehindText hit testing must resolve the paragraph under the image. Hit: {0}", behindHitJson);
+
+            await page.Mouse.ClickAsync((float)behindTextPoint.X, (float)behindTextPoint.Y);
+            await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+            var activeTextBlock = await page.EvaluateAsync<string>(
+                """
+                () => {
+                    const selection = window.getSelection();
+                    const element = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE
+                        ? selection.anchorNode
+                        : selection?.anchorNode?.parentElement;
+                    return element?.closest?.('[data-block-id]')?.getAttribute('data-block-id') || '';
+                }
+                """);
+            activeTextBlock.Should().Be(textId, "a click through a BehindText image must place the caret in the text layer");
+
+            await ExecuteWysiwygCommandAsync(page, "setImageWrapMode", new { objectId = imageId, WrapMode = "InFrontOfText" });
+            await Assertions.Expect(host.Locator($"[data-testid='document-wysiwyg-in-front-of-text-layer'] figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First)
+                .ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", "6", new() { Timeout = 5000 });
+
+            var frontPoint = await CapturePhase11ImageCenterAsync(page, imageId);
+            await page.Mouse.ClickAsync((float)frontPoint.X, (float)frontPoint.Y);
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Phase9_BehindTextCaretPassThroughAndInFrontSelectionAfterWrapSwitch),
+                "Create a drawing image, switch it to BehindText, click the overlapping text, then switch it to InFrontOfText and click the image.",
+                "BehindText must render below text and allow caret pass-through; InFrontOfText must render above text and win object selection hit testing.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_ImageWrapPhase10_CenterSquareIntervalsObjectAndBlockedGapHitTesting()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"image-wrap-phase10-hit-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var textId = $"phase10-hit-text-{Guid.NewGuid():N}";
+        var imageId = $"{textId}-image";
+        const string before = "Left side words stay before the centered image and provide a real editable interval. ";
+        const string after = "Right side words continue after the centered image and must also be clickable beside the object. ";
+
+        try
+        {
+            await PrepareImageWrapPhase10CaretScenarioAsync(page, textId, imageId, DocumentImageHorizontalPosition.Center, before, after.PadRight(180, 'r'));
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--position-center"), new() { Timeout = 5000 });
+
+            var probe = await CaptureImageWrapPhase10CaretProbeAsync(page, textId, imageId);
+            probe.Issues.Should().BeEmpty("center Square must expose left/right text intervals, object body hit and a non-caret blocked wrap gap");
+
+            await page.Mouse.ClickAsync((float)probe.LeftPoint.X, (float)probe.LeftPoint.Y);
+            await WaitForImageWrapPhase10TextSelectionAsync(page, textId);
+            await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+
+            await page.Mouse.ClickAsync((float)probe.RightPoint.X, (float)probe.RightPoint.Y);
+            await WaitForImageWrapPhase10TextSelectionAsync(page, textId);
+            await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+
+            await page.Mouse.ClickAsync((float)probe.ObjectPoint.X, (float)probe.ObjectPoint.Y);
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_ImageWrapPhase10_CenterSquareIntervalsObjectAndBlockedGapHitTesting),
+                "Create a centered square anchored drawing, hit-test both side intervals, the visual object and the invisible wrap gap.",
+                "Side clicks must create text carets, visual object click must select the image and a wrap gap must not synthesize a text caret inside the blocked rect.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_ImageWrapPhase10_EmptyParagraphTypingUsesVirtualCaretAffinityAndEscapeRestoresText()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"image-wrap-phase10-empty-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var rightTextId = $"phase10-empty-right-{Guid.NewGuid():N}";
+        var rightImageId = $"{rightTextId}-image";
+        var rightInserted = $"right-{Guid.NewGuid():N}"[..18];
+        var leftTextId = $"phase10-empty-left-{Guid.NewGuid():N}";
+        var leftImageId = $"{leftTextId}-image";
+        var leftInserted = $"left-{Guid.NewGuid():N}"[..18];
+        var afterEscape = $"escape-{Guid.NewGuid():N}"[..18];
+
+        try
+        {
+            await PrepareImageWrapPhase10CaretScenarioAsync(page, rightTextId, rightImageId, DocumentImageHorizontalPosition.Left, string.Empty, string.Empty);
+            var rightProbe = await CaptureImageWrapPhase10CaretProbeAsync(page, rightTextId, rightImageId);
+            rightProbe.Issues.Should().BeEmpty("an empty paragraph with a left Square image must publish a virtual right-side caret interval");
+            await page.Mouse.ClickAsync((float)rightProbe.RightPoint.X, (float)rightProbe.RightPoint.Y);
+            await WaitForImageWrapPhase10TextSelectionAsync(page, rightTextId);
+            await page.Keyboard.InsertTextAsync(rightInserted);
+            await Assertions.Expect(host).ToContainTextAsync(rightInserted, new() { Timeout = 5000 });
+            (await CaptureImageWrapPhase10InsertedTextSideIssuesAsync(page, rightImageId, rightInserted, "right"))
+                .Should().BeEmpty("typing from a right-side virtual caret must create text beside the image, not below it");
+
+            await PrepareImageWrapPhase10CaretScenarioAsync(page, leftTextId, leftImageId, DocumentImageHorizontalPosition.Center, string.Empty, string.Empty);
+            var leftProbe = await CaptureImageWrapPhase10CaretProbeAsync(page, leftTextId, leftImageId);
+            leftProbe.Issues.Should().BeEmpty("an empty paragraph with a center Square image must publish a virtual left-side caret interval");
+            await page.Mouse.ClickAsync((float)leftProbe.LeftPoint.X, (float)leftProbe.LeftPoint.Y);
+            await WaitForImageWrapPhase10TextSelectionAsync(page, leftTextId);
+            await page.Keyboard.InsertTextAsync(leftInserted);
+            await Assertions.Expect(host).ToContainTextAsync(leftInserted, new() { Timeout = 5000 });
+            (await CaptureImageWrapPhase10InsertedTextSideIssuesAsync(page, leftImageId, leftInserted, "left"))
+                .Should().BeEmpty("typing from a left-side virtual caret must create text beside the centered image");
+
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{leftImageId}']:visible").First;
+            var refreshedProbe = await CaptureImageWrapPhase10CaretProbeAsync(page, leftTextId, leftImageId);
+            await page.Mouse.ClickAsync((float)refreshedProbe.ObjectPoint.X, (float)refreshedProbe.ObjectPoint.Y);
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+            await page.Keyboard.PressAsync("Escape");
+            await WaitForImageWrapPhase10TextSelectionAsync(page, leftTextId);
+            await page.Keyboard.InsertTextAsync(afterEscape);
+            await Assertions.Expect(host).ToContainTextAsync(afterEscape, new() { Timeout = 5000 });
+            await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_ImageWrapPhase10_EmptyParagraphTypingUsesVirtualCaretAffinityAndEscapeRestoresText),
+                "Click virtual caret intervals in empty paragraphs beside left and centered square images, type text, select the image and press Escape.",
+                "Inserted text must appear on the clicked side of the image; Escape from object selection must return a text caret so further typing edits the paragraph.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_ImageWrapPhase10_ArrowKeysStayTextAndExplicitShortcutSelectsObject()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"image-wrap-phase10-arrow-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var textId = $"phase10-arrow-text-{Guid.NewGuid():N}";
+        var imageId = $"{textId}-image";
+        const string before = "Arrow navigation remains a text operation before the floating drawing. ";
+        const string after = "More text continues after the anchor so left and right arrows cross the anchor offset without selecting the image. ";
+
+        try
+        {
+            await PrepareImageWrapPhase10CaretScenarioAsync(page, textId, imageId, DocumentImageHorizontalPosition.Center, before, after.PadRight(170, 'a'));
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            var probe = await CaptureImageWrapPhase10CaretProbeAsync(page, textId, imageId);
+            probe.Issues.Should().BeEmpty("the keyboard navigation scenario needs a stable side caret interval");
+
+            await page.Mouse.ClickAsync((float)probe.LeftPoint.X, (float)probe.LeftPoint.Y);
+            await WaitForImageWrapPhase10TextSelectionAsync(page, textId);
+            foreach (var key in new[] { "ArrowRight", "ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp" })
+            {
+                await page.Keyboard.PressAsync(key);
+                await WaitForImageWrapPhase10TextSelectionAsync(page, textId);
+                await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+            }
+
+            await page.Keyboard.PressAsync("Alt+Shift+O");
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_ImageWrapPhase10_ArrowKeysStayTextAndExplicitShortcutSelectsObject),
+                "Place the caret in wrapped text, press arrow keys, then use the explicit object navigation shortcut.",
+                "Plain arrows must keep a text selection; object selection is entered only through the explicit keyboard command.");
             throw;
         }
     }

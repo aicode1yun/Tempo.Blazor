@@ -145,6 +145,85 @@ public sealed class DocumentEditorImageDrawingPhase10CaretHitTestingJavaScriptTe
     }
 
     [Fact]
+    public async Task Phase10_HitTestGeometry_DoesNotFallbackCaretIntoObjectWrapExclusion()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = createSandbox();
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hitTest = sandbox.window.tmDocumentEditorEngine.__testHooks.hitTestLayoutGeometry;
+            const base = {
+                RootRect: { X: 0, Y: 0, Width: 640, Height: 760 },
+                PageRects: [{ PageIndex: 0, Rect: { X: 0, Y: 0, Width: 620, Height: 740 } }],
+                BodyRects: [{ PageIndex: 0, Rect: { X: 40, Y: 80, Width: 520, Height: 600 } }],
+                HeaderFooters: [],
+                TableCells: [],
+                Controls: [],
+                Objects: [{
+                    Kind: 'ImageObject',
+                    ObjectId: 'phase10-square-object',
+                    BlockId: 'p1',
+                    WrapMode: 'Square',
+                    Layer: 'object',
+                    ZIndex: 1,
+                    Rect: { X: 150, Y: 118, Width: 80, Height: 72 },
+                    VisualRects: [{ X: 150, Y: 118, Width: 80, Height: 72 }],
+                    WrapRect: { X: 130, Y: 108, Width: 120, Height: 92 },
+                    Selectable: true
+                }],
+                Lines: [{
+                    Id: 'p1-line-0',
+                    BlockId: 'p1',
+                    VisualLineIndex: 0,
+                    Rect: { X: 40, Y: 126, Width: 360, Height: 18 },
+                    Segments: [{
+                        Id: 'p1-segment-0',
+                        LineId: 'p1-line-0',
+                        BlockId: 'p1',
+                        StartOffset: 0,
+                        TextLength: 30,
+                        Rect: { X: 40, Y: 126, Width: 360, Height: 18 }
+                    }]
+                }]
+            };
+
+            const visibleObject = hitTest({ ...base, X: 170, Y: 134 });
+            assert.strictEqual(visibleObject.Kind, 'ImageObject');
+            assert.strictEqual(visibleObject.ActiveObjectId, 'phase10-square-object');
+
+            const leftWrapGap = hitTest({ ...base, X: 140, Y: 134 });
+            assert.notStrictEqual(leftWrapGap.Kind, 'TextCaret', 'fallback line hit testing must not place a caret inside the left wrap exclusion gap');
+            assert.notStrictEqual(leftWrapGap.Kind, 'ImageObject', 'the invisible wrap gap must not select the image');
+            assert.strictEqual(leftWrapGap.Kind, 'Body');
+
+            const rightWrapGap = hitTest({ ...base, X: 240, Y: 134 });
+            assert.notStrictEqual(rightWrapGap.Kind, 'TextCaret', 'fallback line hit testing must not place a caret inside the right wrap exclusion gap');
+            assert.notStrictEqual(rightWrapGap.Kind, 'ImageObject', 'the invisible wrap gap must not select the image');
+            assert.strictEqual(rightWrapGap.Kind, 'Body');
+
+            const realText = hitTest({ ...base, X: 72, Y: 134 });
+            assert.strictEqual(realText.Kind, 'TextCaret');
+            assert.strictEqual(realText.BlockId, 'p1');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript, "wrap-exclusion-fallback");
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
     public async Task Phase10_RuntimePointerHitTest_UsesPublishedLineIntervalsAroundAnchoredDrawing()
     {
         var scriptPath = GetWysiwygScriptPath();

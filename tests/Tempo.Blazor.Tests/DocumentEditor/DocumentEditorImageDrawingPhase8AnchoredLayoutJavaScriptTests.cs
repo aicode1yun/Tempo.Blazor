@@ -206,8 +206,9 @@ public sealed class DocumentEditorImageDrawingPhase8AnchoredLayoutJavaScriptTest
             assert.ok(html.indexOf('document-wysiwyg-anchored-drawing') >= 0, 'anchored drawing must render as floating object');
             assert.strictEqual(html.indexOf('document-wysiwyg-inline-drawing'), -1, 'anchored drawing must not render through the inline drawing element');
             assert.ok(html.indexOf('tm-wysiwyg-anchored-drawing') >= 0, 'anchored drawing class must be present');
-            assert.ok(html.indexOf('tm-wysiwyg-image--float-left') >= 0, 'square-left anchored drawing should use float-left CSS');
-            assert.ok(html.indexOf('float:left') >= 0, 'square-left anchored drawing should use float-left style');
+            assert.strictEqual(html.indexOf('tm-wysiwyg-image--float-left'), -1, 'square-left anchored drawing must not use legacy float-left CSS');
+            assert.strictEqual(html.indexOf('float:left'), -1, 'square-left anchored drawing must not use browser float layout');
+            assert.ok(html.indexOf('position:absolute') >= 0, 'anchored drawing visual position should come from the object layer geometry');
             assert.ok(html.indexOf('data-object-id="phase8-render-object"') >= 0, 'rendered object id must be exposed');
             assert.ok(html.indexOf('data-anchor-block-id="p1"') >= 0, 'anchor block id must be exposed');
             assert.ok(html.indexOf('data-wrap-mode="Square"') >= 0, 'wrap mode must be exposed');

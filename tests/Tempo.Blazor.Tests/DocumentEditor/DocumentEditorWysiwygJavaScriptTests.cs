@@ -2227,12 +2227,14 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 ['inline',        { value: 0, css: 'inline' }],
                 ['Square',        { value: 1, css: 'square' }],
                 ['square',        { value: 1, css: 'square' }],
+                ['Through',       { value: 3, css: 'through' }],
                 ['TopBottom',     { value: 4, css: 'top-bottom' }],
                 ['topandbottom',  { value: 4, css: 'top-bottom' }],
                 ['InFrontOfText', { value: 6, css: 'in-front-of-text' }],
                 [null,            { value: 0, css: 'inline' }],
                 [0,               { value: 0, css: 'inline' }],
                 [1,               { value: 1, css: 'square' }],
+                [3,               { value: 3, css: 'through' }],
                 [4,               { value: 4, css: 'top-bottom' }],
             ];
             for (const [input, expected] of cases) {

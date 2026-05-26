@@ -277,7 +277,7 @@ public sealed class DocumentEditorImageDrawingPhase18RegionScopeJavaScriptTests
             const allowedObject = hooks.normalizeImageObject(hooks.findDrawingRunByObjectId(allowed.model, 'header-drag').run, { blockId: 'body-p' });
 
             assert.strictEqual(allowedState.commitCount, 1, JSON.stringify(allowedState.commits));
-            assert.strictEqual(allowedState.commits[0].type, 'MoveDrawingObject');
+            assert.strictEqual(allowedState.commits[0].type, 'UpdateImageLayout');
             assert.strictEqual(allowedObject.anchorBlockId, 'body-p');
             assert.strictEqual(allowedObject.anchorRegion, 'Body');
             """);

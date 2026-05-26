@@ -1544,14 +1544,20 @@ public sealed class DocxPackageReader
         };
 
     private static double ReadWrapDistanceTop(OpenXmlElement? wrapElement, DW.Anchor anchor)
-        => wrapElement is DW.WrapSquare { DistanceFromTop: not null } square
-            ? EmuToPoint(square.DistanceFromTop.Value.ToString(CultureInfo.InvariantCulture))
-            : EmuToPoint(anchor.DistanceFromTop?.Value.ToString(CultureInfo.InvariantCulture));
+        => wrapElement switch
+        {
+            DW.WrapSquare { DistanceFromTop: not null } square => EmuToPoint(square.DistanceFromTop.Value.ToString(CultureInfo.InvariantCulture)),
+            DW.WrapTopBottom { DistanceFromTop: not null } topBottom => EmuToPoint(topBottom.DistanceFromTop.Value.ToString(CultureInfo.InvariantCulture)),
+            _ => EmuToPoint(anchor.DistanceFromTop?.Value.ToString(CultureInfo.InvariantCulture))
+        };
 
     private static double ReadWrapDistanceBottom(OpenXmlElement? wrapElement, DW.Anchor anchor)
-        => wrapElement is DW.WrapSquare { DistanceFromBottom: not null } square
-            ? EmuToPoint(square.DistanceFromBottom.Value.ToString(CultureInfo.InvariantCulture))
-            : EmuToPoint(anchor.DistanceFromBottom?.Value.ToString(CultureInfo.InvariantCulture));
+        => wrapElement switch
+        {
+            DW.WrapSquare { DistanceFromBottom: not null } square => EmuToPoint(square.DistanceFromBottom.Value.ToString(CultureInfo.InvariantCulture)),
+            DW.WrapTopBottom { DistanceFromBottom: not null } topBottom => EmuToPoint(topBottom.DistanceFromBottom.Value.ToString(CultureInfo.InvariantCulture)),
+            _ => EmuToPoint(anchor.DistanceFromBottom?.Value.ToString(CultureInfo.InvariantCulture))
+        };
 
     private static DocumentObjectLayout ReadTempoLayout(
         OpenXmlElement element,

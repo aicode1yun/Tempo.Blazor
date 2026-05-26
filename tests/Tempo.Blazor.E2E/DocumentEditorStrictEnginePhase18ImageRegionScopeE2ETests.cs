@@ -240,7 +240,7 @@ public sealed class DocumentEditorStrictEnginePhase18ImageRegionScopeE2ETests : 
         result.RejectedType.Should().Be("DropRejected");
         result.RejectedReason.Should().Be("cross-region-drop");
         result.RejectedRestored.Should().BeTrue();
-        result.AllowedType.Should().Be("MoveDrawingObject");
+        result.AllowedType.Should().Be("UpdateImageLayout");
         result.AllowedRegion.Should().Be(0);
     }
 
