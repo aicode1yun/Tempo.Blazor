@@ -13532,19 +13532,29 @@ public class DocumentEditorE2ETests : WasmTestBase
     private static async Task ClickWrappedImageSideTextAsync(IPage page, ILocator figure, bool rightOfLeftImage)
     {
         var line = await CaptureWrappedImageLineBesideImageAsync(figure, rightOfLeftImage);
-        line.LineId.Should().NotBeNullOrWhiteSpace("typing beside a wrapped image must target a real layout line, not a generated sidecar paragraph");
+        line.Rect.Width.Should().BeGreaterThan(0, "typing beside a wrapped image must target visible text beside the object, not a generated sidecar paragraph");
+        line.Rect.Height.Should().BeGreaterThan(0, "typing beside a wrapped image must target visible text beside the object, not a generated sidecar paragraph");
 
-        var escapedLineId = line.LineId.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("'", "\\'", StringComparison.Ordinal);
-        var lineLocator = page.Locator($".tm-wysiwyg-layout-line[data-layout-line-id='{escapedLineId}']").First;
-        await lineLocator.ScrollIntoViewIfNeededAsync();
-        await lineLocator.ClickAsync(new()
+        var clickX = (float)(line.Rect.X + Math.Max(1, Math.Min(Math.Max(1, line.Rect.Width - 1), line.Rect.Width / 4)));
+        var clickY = (float)(line.Rect.Y + Math.Max(1, line.Rect.Height / 2));
+        if (!string.IsNullOrWhiteSpace(line.LineId))
         {
-            Position = new()
+            var escapedLineId = line.LineId.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("'", "\\'", StringComparison.Ordinal);
+            var lineLocator = page.Locator($".tm-wysiwyg-layout-line[data-layout-line-id='{escapedLineId}']").First;
+            await lineLocator.ScrollIntoViewIfNeededAsync();
+            await lineLocator.ClickAsync(new()
             {
-                X = (float)Math.Max(1, Math.Min(Math.Max(1, line.Rect.Width - 1), line.Rect.Width / 4)),
-                Y = (float)Math.Max(1, line.Rect.Height / 2)
-            }
-        });
+                Position = new()
+                {
+                    X = (float)Math.Max(1, Math.Min(Math.Max(1, line.Rect.Width - 1), line.Rect.Width / 4)),
+                    Y = (float)Math.Max(1, line.Rect.Height / 2)
+                }
+            });
+        }
+        else
+        {
+            await page.Mouse.ClickAsync(clickX, clickY);
+        }
 
         await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
         await AssertSelectionInsideWrappedImageSideTextAsync(figure);
@@ -13580,6 +13590,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                 const onRequestedSide = rect => rightOfLeftImage
                     ? rect.left >= imageRect.right - 2
                     : rect.right <= imageRect.left + 2;
+                const anchorBlockId = figure.getAttribute('data-anchor-block-id') || figure.getAttribute('data-model-block-id') || '';
                 const lineElements = Array.from(host?.querySelectorAll('.tm-wysiwyg-layout-line[data-layout-line-id]') || [])
                     .filter(isVisible)
                     .map((element, index) => {
@@ -13609,6 +13620,47 @@ public class DocumentEditorE2ETests : WasmTestBase
                     .sort((a, b) => Math.abs(a.rect.top - imageRect.top) - Math.abs(b.rect.top - imageRect.top))[0];
                 if (preferred) return preferred.probe;
 
+                const textCandidates = [];
+                const body = host?.querySelector('.tm-wysiwyg-page__body[contenteditable]') || host;
+                const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+                    acceptNode: node => {
+                        const parent = node.parentElement;
+                        if (!parent || parent.closest('figure.tm-wysiwyg-image, [aria-hidden="true"], .tm-wysiwyg-page--virtual')) return NodeFilter.FILTER_REJECT;
+                        const block = parent.closest('.tm-wysiwyg-block[data-block-id]');
+                        if (!block) return NodeFilter.FILTER_REJECT;
+                        if (anchorBlockId && block.getAttribute('data-block-id') !== anchorBlockId) return NodeFilter.FILTER_REJECT;
+                        return (node.textContent || '').trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+                    }
+                });
+                while (walker.nextNode()) {
+                    const node = walker.currentNode;
+                    const range = document.createRange();
+                    range.selectNodeContents(node);
+                    const block = node.parentElement?.closest?.('.tm-wysiwyg-block[data-block-id]');
+                    Array.from(range.getClientRects())
+                        .filter(rect => rect.width > 0 && rect.height > 0 && overlapsY(rect) && onRequestedSide(rect))
+                        .forEach(rect => {
+                            textCandidates.push({
+                                rect,
+                                probe: {
+                                    Index: textCandidates.length,
+                                    LineId: '',
+                                    AvailableIntervalCount: 1,
+                                    StartOffset: 0,
+                                    EndOffset: (node.textContent || '').length,
+                                    Text: block?.textContent || node.textContent || '',
+                                    Rect: toRect(rect),
+                                    LayoutRect: toRect(rect)
+                                }
+                            });
+                        });
+                    range.detach?.();
+                }
+
+                const fallback = textCandidates
+                    .sort((a, b) => Math.abs(a.rect.top - imageRect.top) - Math.abs(b.rect.top - imageRect.top))[0];
+                if (fallback) return fallback.probe;
+
                 return {
                     Index: -1,
                     LineId: '',
@@ -13637,15 +13689,26 @@ public class DocumentEditorE2ETests : WasmTestBase
                     ? selection.anchorNode
                     : selection.anchorNode?.parentElement;
                 const line = anchor?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
-                if (!line || figure.contains(line)) {
-                    issues.push('caret anchor is not inside a normal layout text line');
+                const block = anchor?.closest?.('.tm-wysiwyg-block[data-block-id]');
+                if ((line && figure.contains(line)) || anchor?.closest?.('figure.tm-wysiwyg-image')) {
+                    issues.push('caret anchor is inside the wrapped image instead of beside-image text');
+                }
+
+                if (!line && !block) {
+                    issues.push('caret anchor is not inside normal document text');
                 }
 
                 const imageElement = figure.querySelector('img');
                 let imageRect = (imageElement || figure).getBoundingClientRect();
                 if (imageRect.width <= 0 || imageRect.height <= 0) imageRect = figure.getBoundingClientRect();
                 const rects = Array.from(range.getClientRects ? range.getClientRects() : []);
-                const rangeRect = rects.find(rect => rect.height > 0) || (line ? line.getBoundingClientRect() : null);
+                const sideMatches = rect => expectedSide === 'right'
+                    ? rect.left > imageRect.right + 2
+                    : rect.right < imageRect.left - 2;
+                const rangeRect = rects.find(rect => rect.height > 0 && sideMatches(rect))
+                    || rects.find(rect => rect.height > 0)
+                    || (line ? line.getBoundingClientRect() : null)
+                    || (anchor && anchor.getBoundingClientRect ? Array.from(anchor.getClientRects()).find(rect => rect.height > 0 && sideMatches(rect)) || anchor.getBoundingClientRect() : null);
                 if (!rangeRect || rangeRect.height <= 0) {
                     issues.push('caret has no visible rectangle');
                     return issues;
@@ -13688,8 +13751,16 @@ public class DocumentEditorE2ETests : WasmTestBase
                     : selection.focusNode?.parentElement;
                 const anchorLine = anchor?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
                 const focusLine = focus?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
-                if (!anchorLine || figure.contains(anchorLine)) issues.push('selection anchor is not inside a normal layout text line');
-                if (!focusLine || figure.contains(focusLine)) issues.push('selection focus is not inside a normal layout text line');
+                const anchorBlock = anchor?.closest?.('.tm-wysiwyg-block[data-block-id]');
+                const focusBlock = focus?.closest?.('.tm-wysiwyg-block[data-block-id]');
+                if ((anchorLine && figure.contains(anchorLine)) || anchor?.closest?.('figure.tm-wysiwyg-image')) {
+                    issues.push('selection anchor is inside the wrapped image instead of beside-image text');
+                }
+                if ((focusLine && figure.contains(focusLine)) || focus?.closest?.('figure.tm-wysiwyg-image')) {
+                    issues.push('selection focus is inside the wrapped image instead of beside-image text');
+                }
+                if (!anchorLine && !anchorBlock) issues.push('selection anchor is not inside normal document text');
+                if (!focusLine && !focusBlock) issues.push('selection focus is not inside normal document text');
                 return issues;
             }
             """);
@@ -13729,9 +13800,10 @@ public class DocumentEditorE2ETests : WasmTestBase
                         if (!parent || parent.closest('figure.tm-wysiwyg-image')) return NodeFilter.FILTER_REJECT;
                         if (parent.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return NodeFilter.FILTER_REJECT;
                         const line = parent.closest('.tm-wysiwyg-layout-line[data-layout-line-id]');
-                        if (!line || figure.contains(line)) return NodeFilter.FILTER_REJECT;
-                        const rect = line.getBoundingClientRect();
-                        const style = getComputedStyle(line);
+                        if (line && figure.contains(line)) return NodeFilter.FILTER_REJECT;
+                        const owner = line || parent.closest('.tm-wysiwyg-block[data-block-id]') || parent;
+                        const rect = owner.getBoundingClientRect();
+                        const style = getComputedStyle(owner);
                         if (rect.width <= 0 || rect.height <= 0 || style.display === 'none' || style.visibility === 'hidden') {
                             return NodeFilter.FILTER_REJECT;
                         }
@@ -13785,15 +13857,20 @@ public class DocumentEditorE2ETests : WasmTestBase
                 }
 
                 const line = startEntry.node.parentElement?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
-                if (!line || figure.contains(line)) {
-                    issues.push('typed text is not inside a normal layout line');
+                const block = startEntry.node.parentElement?.closest?.('.tm-wysiwyg-block[data-block-id]');
+                if ((line && figure.contains(line)) || startEntry.node.parentElement?.closest?.('figure.tm-wysiwyg-image')) {
+                    issues.push('typed text is inside the wrapped image instead of normal document text');
+                }
+
+                if (!line && !block) {
+                    issues.push('typed text is not inside normal document text');
                 }
 
                 const isOnExpectedSide = rect => args.expectedSide === 'right'
                     ? rect.left > imageRect.right + 2
                     : rect.right < imageRect.left - 2;
                 const isVerticallyBesideImage = rect => rect.top < imageRect.bottom && rect.bottom > imageRect.top;
-                const lineRect = line?.getBoundingClientRect?.();
+                const lineRect = line?.getBoundingClientRect?.() || null;
                 const besideTextRect = textRects.find(rect => isVerticallyBesideImage(rect) && isOnExpectedSide(rect));
                 const besideLineRect = lineRect && isVerticallyBesideImage(lineRect) && isOnExpectedSide(lineRect);
                 if (!besideTextRect && !besideLineRect) {
@@ -18268,7 +18345,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             await AssertWrappedImageSideTextAsync(figure, sideText, expectedSide: "right");
             await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
 
-            var headingText = await host.Locator("h1.tm-wysiwyg-block").First.InnerTextAsync();
+            var headingText = await host.Locator(".tm-wysiwyg-block[data-block-id='contract-heading']").First.InnerTextAsync();
             headingText.Should().Be("Service agreement");
         }
         catch
@@ -18309,7 +18386,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             await TypeTextBesideWrappedImageAsync(page, figure, sideText, rightOfLeftImage: true);
             await AssertWrappedImageSideTextAsync(figure, sideText, expectedSide: "right");
 
-            var headingText = await host.Locator("h1.tm-wysiwyg-block").First.InnerTextAsync();
+            var headingText = await host.Locator(".tm-wysiwyg-block[data-block-id='contract-heading']").First.InnerTextAsync();
             headingText.Should().Be("Service agreement");
         }
         catch
@@ -18610,9 +18687,23 @@ public class DocumentEditorE2ETests : WasmTestBase
                     };
                 }
                 """);
-            computed.FloatValue.Should().Be("right");
-            computed.MarginInlineStart.Should().BeGreaterThan(0);
-            computed.MarginBlockEnd.Should().BeGreaterThan(0);
+            computed.FloatValue.Should().Be("none", "the visible drawing belongs to the object layer; text wrapping is reserved by the hidden text-layer anchor");
+
+            var reservation = page.Locator($"[data-testid='document-wysiwyg-drawing-anchor'][data-object-anchor-id='{imageId}'][data-flow-reservation='true']").First;
+            var reservationComputed = await reservation.EvaluateAsync<WrappedImageComputedStyle>(
+                """
+                element => {
+                    const style = getComputedStyle(element);
+                    return {
+                        FloatValue: style.float,
+                        MarginInlineStart: parseFloat(style.marginInlineStart || '0') || 0,
+                        MarginBlockEnd: parseFloat(style.marginBlockEnd || '0') || 0
+                    };
+                }
+                """);
+            reservationComputed.FloatValue.Should().Be("right");
+            reservationComputed.MarginInlineStart.Should().BeGreaterThan(0);
+            reservationComputed.MarginBlockEnd.Should().BeGreaterThanOrEqualTo(0);
 
             await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase7_DesktopScreenshotShowsSquareWrapRight));
         }

@@ -2944,9 +2944,17 @@
     pointer-events: auto;
 }
 
-.tm-wysiwyg-page__layer--selection > .tm-wysiwyg-behind-object-handle,
+.tm-wysiwyg-page__layer--selection > .tm-wysiwyg-behind-object-handle {
+    pointer-events: auto;
+}
+
 .tm-wysiwyg-page__layer--selection > .tm-wysiwyg-object-selection-overlay,
 .tm-wysiwyg-page__layer--guides > .tm-wysiwyg-object-guides-overlay {
+    pointer-events: none;
+}
+
+.tm-wysiwyg-page__layer--selection > .tm-wysiwyg-object-selection-overlay.tm-wysiwyg-object--selected,
+.tm-wysiwyg-page__layer--guides > .tm-wysiwyg-object-guides-overlay.tm-wysiwyg-object--selected {
     pointer-events: auto;
 }
 
@@ -3494,6 +3502,14 @@
     block-size: 0;
     overflow: hidden;
     vertical-align: baseline;
+}
+
+.tm-wysiwyg-drawing-anchor--flow {
+    visibility: hidden;
+    pointer-events: none;
+    background: transparent;
+    border: 0;
+    outline: 0;
 }
 
 .tm-wysiwyg-image--floating {

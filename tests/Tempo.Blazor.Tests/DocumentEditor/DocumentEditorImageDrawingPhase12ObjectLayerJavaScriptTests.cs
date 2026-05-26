@@ -1,10 +1,34 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 
 namespace Tempo.Blazor.Tests.DocumentEditor;
 
 public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
 {
+    [Fact]
+    public void Phase12_CssUnselectedObjectOverlaysDoNotInterceptImageClicks()
+    {
+        var css = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "Tempo.Blazor",
+            "wwwroot",
+            "css",
+            "components",
+            "_document-editor.css"));
+
+        Regex.IsMatch(
+            css,
+            @"\.tm-wysiwyg-page__layer--selection\s*>\s*\.tm-wysiwyg-object-selection-overlay,\s*\.tm-wysiwyg-page__layer--guides\s*>\s*\.tm-wysiwyg-object-guides-overlay\s*\{\s*pointer-events:\s*none;",
+            RegexOptions.Singleline).Should().BeTrue("unselected overlay layers must not intercept image clicks");
+
+        Regex.IsMatch(
+            css,
+            @"\.tm-wysiwyg-page__layer--selection\s*>\s*\.tm-wysiwyg-object-selection-overlay\.tm-wysiwyg-object--selected,\s*\.tm-wysiwyg-page__layer--guides\s*>\s*\.tm-wysiwyg-object-guides-overlay\.tm-wysiwyg-object--selected\s*\{\s*pointer-events:\s*auto;",
+            RegexOptions.Singleline).Should().BeTrue("selected overlays still need pointer events for handles and the layout bubble");
+    }
+
     [Fact]
     public async Task Phase12_WysiwygDrawingRendersInObjectLayerWithTextAnchor()
     {
@@ -30,8 +54,16 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
 
             assert.ok(objectLayer.includes('data-testid="document-wysiwyg-object-layer-item"'), 'object layer must contain the drawing object');
             assert.ok(objectLayer.includes('data-object-id="phase12-object"'), 'object layer must expose object id');
+            assert.ok(objectLayer.includes('data-block-id="phase12-object"'), 'object layer keeps the image object id as data-block-id for existing UI selectors');
+            assert.ok(objectLayer.includes('data-model-block-id="p1"'), 'object layer must expose the owning paragraph separately from the object id');
+            assert.ok(objectLayer.includes('data-anchor-block-id="p1"'), 'object layer must expose the anchor paragraph separately from the object id');
             assert.ok(textLayer.includes('data-testid="document-wysiwyg-drawing-anchor"'), 'text layer must contain a non-editable drawing anchor');
             assert.ok(textLayer.includes('data-object-anchor-id="phase12-object"'), 'text anchor must map to the object id');
+            assert.ok(textLayer.includes('data-flow-reservation="true"'), 'text anchor must reserve flow space for wrapped drawings');
+            assert.ok(textLayer.includes('float:left'), 'square wrap must reserve a left-floating exclusion in the text layer');
+            assert.ok(textLayer.includes('width:96px'), 'flow reservation must use the drawing width');
+            assert.ok(textLayer.includes('height:64px'), 'flow reservation must use the drawing height');
+            assert.ok(textLayer.includes('visibility:hidden'), 'flow reservation must not duplicate the visible object layer image');
             assert.ok(html.indexOf('document-wysiwyg-text-layer') < html.indexOf('document-wysiwyg-object-layer'), 'text layer should be rendered before object layer');
 
             console.log('OK');
@@ -127,7 +159,7 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
     }
 
     [Fact]
-    public async Task Phase12_WysiwygDrawingDoesNotUseLegacyFloatClasses()
+    public async Task Phase12_WysiwygDrawingUsesHiddenFlowReservationInsteadOfVisibleTextLayerFigure()
     {
         var scriptPath = GetWysiwygScriptPath();
         if (!IsNodeAvailable()) return;
@@ -146,17 +178,124 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
             const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
             const model = hooks.importFromCSharpJson(createDocument('Square'));
             const html = hooks.renderWysiwygBodyLayersHtmlForTest({ model, selection: null, options: {} }, model.body.blocks);
+            const textLayer = extractLayer(html, 'document-wysiwyg-text-layer');
+            const objectLayer = extractLayer(html, 'document-wysiwyg-object-layer');
 
-            assert.strictEqual(html.includes('tm-wysiwyg-image--float-left'), false, 'wysiwyg drawing render must not use float-left class');
-            assert.strictEqual(html.includes('tm-wysiwyg-image--float-right'), false, 'wysiwyg drawing render must not use float-right class');
-            assert.strictEqual(html.includes('float:left'), false, 'wysiwyg drawing render must not use CSS float left');
-            assert.strictEqual(html.includes('float:right'), false, 'wysiwyg drawing render must not use CSS float right');
-            assert.ok(html.includes('tm-wysiwyg-object-layer-item--wrap-square'), 'wrap mode should be represented on the object-layer item');
+            assert.strictEqual(textLayer.includes('<figure'), false, 'text layer must not duplicate the visible image figure');
+            assert.ok(textLayer.includes('tm-wysiwyg-drawing-anchor--flow'), 'text layer must contain a hidden flow reservation anchor');
+            assert.ok(textLayer.includes('float:left'), 'the hidden reservation must participate in browser text flow');
+            assert.ok(objectLayer.includes('tm-wysiwyg-object-layer-item--wrap-square'), 'wrap mode should be represented on the object-layer item');
+            assert.ok(objectLayer.includes('tm-wysiwyg-image--wrap-square'), 'visible object keeps image wrap classes for existing UI selectors');
 
             console.log('OK');
             """;
 
-        var result = await RunNodeAsync(scriptPath, nodeScript, "no-floats");
+        var result = await RunNodeAsync(scriptPath, nodeScript, "flow-reservation");
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase12_TopBottomDrawingAnchorReservesFullLineBand()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = createSandbox();
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const model = hooks.importFromCSharpJson(createDocument('TopBottom'));
+            const html = hooks.renderWysiwygBodyLayersHtmlForTest({ model, selection: null, options: {} }, model.body.blocks);
+            const textLayer = extractLayer(html, 'document-wysiwyg-text-layer');
+
+            assert.ok(textLayer.includes('data-flow-reservation="true"'), 'top-bottom wrap must reserve space in the text layer');
+            assert.ok(textLayer.includes('data-wrap-mode="TopBottom"'), 'anchor must expose the active wrap mode');
+            assert.ok(textLayer.includes('display:block'), 'top-bottom reservation must break the line');
+            assert.ok(textLayer.includes('clear:both'), 'top-bottom reservation must clear surrounding floats');
+            assert.ok(textLayer.includes('float:none'), 'top-bottom reservation must not float beside text');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript, "top-bottom-reservation");
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase12_FlowReservationIncludesCaptionHeight()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = createSandbox();
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const model = hooks.importFromCSharpJson(createDocument('Square'));
+            model.body.blocks[0].content.runs[1].caption = '1234567890123456789012345678901234567890';
+            const html = hooks.renderWysiwygBodyLayersHtmlForTest({ model, selection: null, options: {} }, model.body.blocks);
+            const textLayer = extractLayer(html, 'document-wysiwyg-text-layer');
+
+            assert.ok(textLayer.includes('data-flow-reservation="true"'), 'wrapped drawings with captions still reserve text flow');
+            assert.ok(textLayer.includes('height:88px'), '64px image plus 24px caption estimate must be reserved');
+            assert.ok(textLayer.includes('--tm-wysiwyg-drawing-anchor-height:88px'), 'CSS variable should expose the full reserved footprint');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript, "caption-reservation");
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase12_BehindTextDrawingAnchorDoesNotReserveTextFlow()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = createSandbox();
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            const model = hooks.importFromCSharpJson(createDocument('BehindText'));
+            const html = hooks.renderWysiwygBodyLayersHtmlForTest({ model, selection: null, options: {} }, model.body.blocks);
+            const textLayer = extractLayer(html, 'document-wysiwyg-text-layer');
+
+            assert.strictEqual(textLayer.includes('data-flow-reservation="true"'), false, 'behind-text drawings must not reserve text flow');
+            assert.strictEqual(textLayer.includes('float:left'), false, 'behind-text drawings must not float');
+            assert.strictEqual(textLayer.includes('float:right'), false, 'behind-text drawings must not float');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript, "behind-no-reservation");
         result.ExitCode.Should().Be(0, result.StandardError);
         result.StandardOutput.Trim().Should().Be("OK");
     }
@@ -352,7 +491,16 @@ public sealed class DocumentEditorImageDrawingPhase12ObjectLayerJavaScriptTests
         }
 
         function createDocument(wrapMode) {
-            const mode = wrapMode === 'Inline' ? 0 : 1;
+            const modes = {
+                Inline: 0,
+                Square: 1,
+                Tight: 2,
+                Through: 3,
+                TopBottom: 4,
+                BehindText: 5,
+                InFrontOfText: 6
+            };
+            const mode = modes[wrapMode] ?? 1;
             const kind = wrapMode === 'Inline' ? 0 : 1;
             return {
                 DocumentId: 'image-drawing-phase12',

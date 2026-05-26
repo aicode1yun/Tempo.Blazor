@@ -18501,13 +18501,84 @@ window.tmDocumentEditorEngine = (function () {
         return styles.join(';');
     }
 
+    function renderDrawingAnchorReservationStyle(object, inline) {
+        var width = Math.max(1, Number(object && object.width || 120) || 120);
+        var height = Math.max(1, Number(object && object.height || 80) || 80);
+        var reservationHeight = inline
+            ? height
+            : createObjectFootprintRect(object || {}, { x: 0, y: 0, width: width, height: height }).height;
+        var mode = normalizeWrapModeName(object && object.wrapMode);
+        var styles = [
+            '--tm-wysiwyg-drawing-anchor-width:' + width + 'px',
+            '--tm-wysiwyg-drawing-anchor-height:' + reservationHeight + 'px'
+        ];
+
+        if (inline) {
+            styles.push('display:inline-block');
+            styles.push('width:' + width + 'px');
+            styles.push('height:' + height + 'px');
+            return styles.join(';');
+        }
+
+        if (!wrapModeCreatesTextExclusion(mode)) {
+            styles.push('width:0px');
+            styles.push('height:0px');
+            styles.push('overflow:hidden');
+            return styles.join(';');
+        }
+
+        var align = String(object && object.horizontalPosition && object.horizontalPosition.align || 'Left').toLowerCase();
+        var top = Math.max(0, Number(object && object.distanceTop || 0) || 0);
+        var right = Math.max(0, Number(object && object.distanceRight || object && object.wrapMargin || 0) || 0);
+        var bottom = Math.max(0, Number(object && object.distanceBottom || object && object.wrapMargin || 0) || 0);
+        var left = Math.max(0, Number(object && object.distanceLeft || object && object.wrapMargin || 0) || 0);
+        styles.push('width:' + width + 'px');
+        styles.push('height:' + reservationHeight + 'px');
+        styles.push('visibility:hidden');
+        styles.push('pointer-events:none');
+        styles.push('box-sizing:border-box');
+
+        if (mode === 'TopBottom') {
+            styles.push('display:block');
+            styles.push('clear:both');
+            styles.push('float:none');
+            styles.push('margin:' + Math.max(top, 8) + 'px auto ' + Math.max(bottom, 8) + 'px auto');
+            return styles.join(';');
+        }
+
+        var shape = 'inset(0)';
+        if (mode === 'Tight' || mode === 'Through') {
+            var points = normalizeWrapContourPointsForGeometry(object && (object.wrapContourPoints || object.WrapContourPoints));
+            if (points.length >= 3) {
+                shape = 'polygon(' + points.map(function (point) {
+                    return (Math.round(point.x * 10000) / 100) + '% ' + (Math.round(point.y * 10000) / 100) + '%';
+                }).join(',') + ')';
+            }
+        }
+
+        if (align === 'right' || align === 'end') {
+            styles.push('float:right');
+            styles.push('margin:' + top + 'px 0 ' + bottom + 'px ' + Math.max(left, 12) + 'px');
+        } else {
+            styles.push('float:left');
+            styles.push('margin:' + top + 'px ' + Math.max(right, 12) + 'px ' + bottom + 'px 0');
+        }
+        styles.push('shape-outside:' + shape);
+        return styles.join(';');
+    }
+
     function renderImageFigureClasses(selected, object) {
         var mode = normalizeWrapModeName(object && object.wrapMode);
-        var align = String(object && object.horizontalPosition && object.horizontalPosition.align || '').toLowerCase();
+        var align = String(object && object.horizontalPosition && object.horizontalPosition.align || 'Left').toLowerCase();
         var modeClass = mode === 'TopBottom'
             ? 'top-bottom'
             : (mode === 'BehindText' ? 'behind-text' : (mode === 'InFrontOfText' ? 'in-front-of-text' : mode.toLowerCase()));
         var classes = ['tm-wysiwyg-block', 'tm-wysiwyg-image', 'tm-wysiwyg-image--wrap-' + modeClass];
+        classes.push(align === 'right' || align === 'end'
+            ? 'tm-wysiwyg-image--position-right'
+            : (align === 'center' || align === 'middle'
+                ? 'tm-wysiwyg-image--position-center'
+                : 'tm-wysiwyg-image--position-left'));
         if (mode === 'Square' || mode === 'Tight' || mode === 'Through') {
             classes.push(align === 'right' || align === 'end' ? 'tm-wysiwyg-image--float-right' : 'tm-wysiwyg-image--float-left');
         }
@@ -18862,22 +18933,19 @@ window.tmDocumentEditorEngine = (function () {
 
     function renderDrawingAnchorHtml(inst, block, run, inlineIndex) {
         var object = normalizeImageObject(run, { blockId: block && block.id || '', inlineIndex: inlineIndex });
-        var width = Math.max(1, Number(object.width || 120) || 120);
-        var height = Math.max(1, Number(object.height || 80) || 80);
         var objectId = _asText(object.objectId || run && (run.objectId || run.ObjectId || run.id || run.Id) || '');
         var runId = _asText(run && (run.id || run.Id) || objectId);
         var inline = object.isInline === true;
+        var reservesFlow = inline !== true && wrapModeCreatesTextExclusion(object.wrapMode);
+        var mode = normalizeWrapModeName(object.wrapMode || (inline ? 'Inline' : 'Square'));
         var classes = [
             'tm-document-inline',
             'tm-wysiwyg-drawing-anchor',
-            inline ? 'tm-wysiwyg-drawing-anchor--inline' : 'tm-wysiwyg-drawing-anchor--anchored'
+            inline ? 'tm-wysiwyg-drawing-anchor--inline' : 'tm-wysiwyg-drawing-anchor--anchored',
+            'tm-wysiwyg-drawing-anchor--wrap-' + mode.toLowerCase().replace(/[^a-z0-9]+/g, '-')
         ];
-        var styles = [
-            '--tm-wysiwyg-drawing-anchor-width:' + width + 'px',
-            '--tm-wysiwyg-drawing-anchor-height:' + height + 'px'
-        ];
-        if (inline) {
-            styles.push('width:' + width + 'px', 'height:' + height + 'px');
+        if (reservesFlow) {
+            classes.push('tm-wysiwyg-drawing-anchor--flow');
         }
         var attrs = [
             'class="' + classes.join(' ') + '"',
@@ -18888,12 +18956,13 @@ window.tmDocumentEditorEngine = (function () {
             'data-anchor-block-id="' + _escape(object.anchorBlockId || block && block.id || '') + '"',
             'data-anchor-offset="' + _escape(object.anchorOffset) + '"',
             'data-anchor-inline-index="' + _escape(object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : inlineIndex) + '"',
-            'data-wrap-mode="' + _escape(object.wrapMode || (inline ? 'Inline' : 'Square')) + '"',
+            'data-wrap-mode="' + _escape(mode) + '"',
             'contenteditable="false"',
             'aria-hidden="true"',
             'draggable="false"',
-            'style="' + _escape(styles.join(';')) + '"'
+            'style="' + _escape(renderDrawingAnchorReservationStyle(object, inline)) + '"'
         ];
+        if (reservesFlow) attrs.push('data-flow-reservation="true"');
         return '<span ' + attrs.join(' ') + '></span>';
     }
 
@@ -18935,20 +19004,24 @@ window.tmDocumentEditorEngine = (function () {
         var width = Math.max(1, Number(object.width || 120) || 120);
         var height = Math.max(1, Number(object.height || 80) || 80);
         var objectId = _asText(entry && entry.objectId || object.objectId || '');
-        var blockId = _asText(entry && entry.blockId || object.blockId || object.anchorBlockId || '');
+        var modelBlockId = _asText(entry && entry.blockId || object.blockId || object.anchorBlockId || '');
+        var domBlockId = objectId || modelBlockId;
         var alt = _asText(object.altText || '');
         var caption = _asText(object.caption || '');
         var label = alt || caption || 'Image';
         var mode = normalizeWrapModeName(object.wrapMode || 'Inline');
         var layer = drawingLayerForWrapMode(mode);
         var zIndex = Number(object.zIndex || 0) || 0;
-        var classes = [
+        var imageClasses = renderImageFigureClasses(entry && entry.selected, object)
+            .split(/\s+/)
+            .filter(function (item) { return item && item !== 'tm-wysiwyg-block'; });
+        var classes = _unique([
             'tm-wysiwyg-layout-object',
             'tm-wysiwyg-object-layer-item',
             'tm-wysiwyg-object-layer-item--image',
             'tm-wysiwyg-object-layer-item--wrap-' + mode.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
             object.isInline === true ? 'tm-wysiwyg-object-layer-item--inline' : 'tm-wysiwyg-object-layer-item--anchored'
-        ];
+        ].concat(imageClasses));
         if (entry && entry.selected) classes.push('tm-wysiwyg-object-layer-item--selected');
         var styles = [
             '--tm-layout-object-width:' + width + 'px',
@@ -18965,8 +19038,9 @@ window.tmDocumentEditorEngine = (function () {
             'data-testid="document-wysiwyg-object-layer-item"',
             'data-object-id="' + _escape(objectId) + '"',
             'data-render-object-id="' + _escape(objectId) + '"',
-            'data-block-id="' + _escape(blockId) + '"',
-            'data-anchor-block-id="' + _escape(object.anchorBlockId || blockId) + '"',
+            'data-block-id="' + _escape(domBlockId) + '"',
+            'data-model-block-id="' + _escape(modelBlockId) + '"',
+            'data-anchor-block-id="' + _escape(object.anchorBlockId || modelBlockId) + '"',
             'data-anchor-offset="' + _escape(object.anchorOffset) + '"',
             'data-anchor-inline-index="' + _escape(object.anchorInlineIndex >= 0 ? object.anchorInlineIndex : entry && entry.inlineIndex) + '"',
             'data-object-layer-kind="' + _escape(object.isInline === true ? 'inline' : 'anchored') + '"',
@@ -19003,7 +19077,8 @@ window.tmDocumentEditorEngine = (function () {
         var width = Math.max(1, Number(object.width || 120) || 120);
         var height = Math.max(1, Number(object.height || 80) || 80);
         var objectId = _asText(entry.objectId || object.objectId || '');
-        var blockId = _asText(entry.blockId || object.blockId || object.anchorBlockId || '');
+        var modelBlockId = _asText(entry.blockId || object.blockId || object.anchorBlockId || '');
+        var domBlockId = objectId || modelBlockId;
         var styles = [
             '--tm-layout-object-width:' + width + 'px',
             '--tm-layout-object-height:' + height + 'px',
@@ -19020,7 +19095,8 @@ window.tmDocumentEditorEngine = (function () {
             'data-testid="document-wysiwyg-object-selection-overlay"',
             'data-object-id="' + _escape(objectId) + '"',
             'data-render-object-id="' + _escape(objectId) + '"',
-            'data-block-id="' + _escape(blockId) + '"',
+            'data-block-id="' + _escape(domBlockId) + '"',
+            'data-model-block-id="' + _escape(modelBlockId) + '"',
             'data-object-width="' + _escape(width) + '"',
             'data-object-height="' + _escape(height) + '"',
             'contenteditable="false"',
@@ -19047,6 +19123,9 @@ window.tmDocumentEditorEngine = (function () {
         var object = entry.object || {};
         var width = Math.max(1, Number(object.width || 120) || 120);
         var height = Math.max(1, Number(object.height || 80) || 80);
+        var objectId = _asText(entry.objectId || object.objectId || '');
+        var modelBlockId = _asText(entry.blockId || object.blockId || object.anchorBlockId || '');
+        var domBlockId = objectId || modelBlockId;
         var styles = [
             '--tm-layout-object-width:' + width + 'px',
             '--tm-layout-object-height:' + height + 'px',
@@ -19061,9 +19140,10 @@ window.tmDocumentEditorEngine = (function () {
         var attrs = [
             'class="' + classes.join(' ') + '"',
             'data-testid="document-wysiwyg-object-guides-overlay"',
-            'data-object-id="' + _escape(entry.objectId) + '"',
-            'data-render-object-id="' + _escape(entry.objectId) + '"',
-            'data-block-id="' + _escape(entry.blockId) + '"',
+            'data-object-id="' + _escape(objectId) + '"',
+            'data-render-object-id="' + _escape(objectId) + '"',
+            'data-block-id="' + _escape(domBlockId) + '"',
+            'data-model-block-id="' + _escape(modelBlockId) + '"',
             'contenteditable="false"',
             'aria-hidden="' + (entry.selected ? 'false' : 'true') + '"',
             'style="' + _escape(styles.join(';')) + '"'
