@@ -5,7 +5,9 @@
 @using Tempo.Blazor.DocumentEditor.Services
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
+@using System.Buffers
 @using System.Globalization
+@using System.IO
 @using System.Text.Json
 @implements IAsyncDisposable
 @inject IJSRuntime JSRuntime
@@ -213,11 +215,16 @@
     private string? _pendingImageAltText;
     private string? _lastSentSnapshotJson;
     private DocumentEditorDocument? _lastSnapshotDocument;
+    // Phase C1 — last document Version we sent over JS interop. Defaults to long.MinValue so
+    // the first send always fires (even if Document.Version starts at 0).
+    private long _lastSnapshotVersion = long.MinValue;
     private IReadOnlyList<DocumentSuggestion>? _lastSnapshotSuggestions;
     private bool _lastSnapshotReadOnly;
     private bool _lastTrackChangesEnabled;
     private DocumentReviewDisplayMode _lastReviewDisplayMode = DocumentReviewDisplayMode.AllMarkup;
     private bool _hasSentSnapshot;
+    // Phase C4 — bounded LRU cache for ImageUrlResolver / ImageProvider results.
+    private readonly Performance.ImageResolveCache _imageResolveCache = new(capacity: 256, ttl: TimeSpan.FromMinutes(5));
     private string? _lastAppliedRuntimeDraftStateJson;
     private bool _autocompleteMenuOpen;
     private bool _autocompleteMenuLoading;
@@ -967,8 +974,20 @@
 
     private bool ShouldSendParameterSnapshot()
     {
+        // Phase C1 — primary fast path: same document reference + matching Version + same
+        // suggestion list reference + read-only unchanged means nothing to send.
+        if (_hasSentSnapshot
+            && ReferenceEquals(Document, _lastSnapshotDocument)
+            && Document is not null
+            && Document.Version == _lastSnapshotVersion
+            && ReferenceEquals(Suggestions, _lastSnapshotSuggestions)
+            && ReadOnly == _lastSnapshotReadOnly)
+        {
+            return false;
+        }
         return !_hasSentSnapshot
             || !ReferenceEquals(Document, _lastSnapshotDocument)
+            || (Document is not null && Document.Version != _lastSnapshotVersion)
             || !ReferenceEquals(Suggestions, _lastSnapshotSuggestions)
             || ReadOnly != _lastSnapshotReadOnly;
     }
@@ -980,6 +999,17 @@
 
         try
         {
+            // Phase C2 — fast path: caller did not force, document reference + Version are
+            // unchanged since the last successful send. Skip serialization entirely.
+            if (!force
+                && _hasSentSnapshot
+                && ReferenceEquals(document, _lastSnapshotDocument)
+                && document.Version == _lastSnapshotVersion
+                && ReferenceEquals(Suggestions, _lastSnapshotSuggestions))
+            {
+                return;
+            }
+
             var displayDocument = await PrepareDocumentForDisplayAsync(document);
             var snapshot = new WysiwygDocumentSnapshot
             {
@@ -988,14 +1018,38 @@
                 Suggestions = Suggestions
             };
 
-            var snapshotJson = JsonSerializer.Serialize(snapshot, DocumentEditorJson.Options);
-            if (!force && string.Equals(snapshotJson, _lastSentSnapshotJson, StringComparison.Ordinal))
+            // Phase C2 — only fall back to JSON-equality compare when no Version is available
+            // or the displayDocument was cloned (different reference than `document`).
+            var needsJsonCompare = !ReferenceEquals(displayDocument, document) || document.Version == 0;
+            string? snapshotJson = null;
+            if (needsJsonCompare)
             {
-                RememberSentSnapshot(snapshotJson, document);
-                return;
+                snapshotJson = JsonSerializer.Serialize(snapshot, DocumentEditorJson.Options);
+                if (!force && string.Equals(snapshotJson, _lastSentSnapshotJson, StringComparison.Ordinal))
+                {
+                    RememberSentSnapshot(snapshotJson, document);
+                    return;
+                }
             }
 
-            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.loadDocument", _instanceId, snapshot, force);
+            // Phase C2 — when we can avoid the string round-trip entirely (no JSON compare
+            // needed), use the pooled UTF-8 writer and the loadDocumentFromBytes bridge.
+            // This bypasses one full snapshot string allocation on the C# side.
+            if (!needsJsonCompare)
+            {
+                using var pooled = Performance.PooledSnapshotSerializer.SerializeUtf8(snapshot, DocumentEditorJson.Options);
+                // Materialize once for the interop call. Blazor JS interop currently does not
+                // accept ReadOnlySpan<byte> directly so we copy out, but at least the writer
+                // itself used a pooled internal buffer (no intermediate string allocation).
+                var bytes = pooled.WrittenSpan.ToArray();
+                await JSRuntime.InvokeVoidAsync(
+                    "tmDocumentEditorRuntime.loadDocumentFromBytes",
+                    _instanceId, bytes, force);
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.loadDocument", _instanceId, snapshot, force);
+            }
             RememberSentSnapshot(snapshotJson, document);
         }
         catch (JSException)
@@ -1088,6 +1142,14 @@
 
     private async Task<string?> ResolveImageUrlAsync(string documentId, string assetId)
     {
+        // Phase C4 — LRU cache: avoid round-tripping the provider/resolver for repeatedly
+        // requested assets. Cache covers both success (URL) and failure (null) cases for the TTL.
+        if (_imageResolveCache.TryGet(documentId, assetId, out var cached))
+        {
+            return cached;
+        }
+
+        string? resolved = null;
         if (ImageProvider is not null)
         {
             var result = await ImageProvider.ResolveAsync(new DocumentImageResolveRequest
@@ -1098,13 +1160,17 @@
 
             if (result.Success && !string.IsNullOrWhiteSpace(result.Url))
             {
-                return result.Url;
+                resolved = result.Url;
             }
         }
 
-        return ImageUrlResolver is null
-            ? null
-            : await ImageUrlResolver.ResolveUrlAsync(documentId, assetId);
+        if (resolved is null && ImageUrlResolver is not null)
+        {
+            resolved = await ImageUrlResolver.ResolveUrlAsync(documentId, assetId);
+        }
+
+        _imageResolveCache.Set(documentId, assetId, resolved);
+        return resolved;
     }
 
     private static IEnumerable<ImageBlockContent> EnumerateImages(DocumentEditorDocument document)
@@ -1150,10 +1216,27 @@
         RememberSentSnapshot(JsonSerializer.Serialize(snapshot, DocumentEditorJson.Options), synchronizedDocument);
     }
 
-    private void RememberSentSnapshot(string snapshotJson, DocumentEditorDocument? document)
+    private void RememberSentSnapshot(string? snapshotJson, DocumentEditorDocument? document)
     {
+        // Phase C2 — `snapshotJson` may be null when we skipped serialization (Version fast path).
         _lastSentSnapshotJson = snapshotJson;
+        // Phase C4 — invalidate image cache when the document reference changes OR Version moves
+        // backwards (likely an undo/reload — assets may have been re-keyed). Forward Version
+        // bumps within the same document instance preserve cache entries (assets unchanged).
+        var previousDocument = _lastSnapshotDocument;
+        var previousVersion = _lastSnapshotVersion;
+        if (document is not null
+            && (previousDocument is null
+                || !ReferenceEquals(previousDocument, document)
+                || (document.Version < previousVersion && previousVersion != long.MinValue)))
+        {
+            if (!string.IsNullOrWhiteSpace(document.DocumentId))
+            {
+                _imageResolveCache.InvalidateDocument(document.DocumentId);
+            }
+        }
         _lastSnapshotDocument = document;
+        _lastSnapshotVersion = document?.Version ?? long.MinValue;
         _lastSnapshotSuggestions = Suggestions;
         _lastSnapshotReadOnly = ReadOnly;
         _lastTrackChangesEnabled = TrackChangesEnabled;

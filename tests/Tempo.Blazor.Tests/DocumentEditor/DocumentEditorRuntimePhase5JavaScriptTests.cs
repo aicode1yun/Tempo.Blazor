@@ -54,6 +54,7 @@ public sealed class DocumentEditorRuntimePhase5JavaScriptTests
                 'getUndoState',
                 'insertImageNode',
                 'loadDocument',
+                'loadDocumentFromBytes',
                 'markSaved',
                 'onSelectionStateChanged',
                 'onTransactionCommitted',

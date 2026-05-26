@@ -53,6 +53,23 @@ public class DocumentEditorDocument
     /// <summary>Editable regions within a protected document. Empty means the whole document is locked.</summary>
     public List<DocumentRestrictedMarker> RestrictedMarkers { get; set; } = [];
 
+    /// <summary>Monotonic mutation counter. Phase C — incremented by mutators so consumers (e.g.
+    /// <c>TmDocumentWysiwygHost</c>) can detect change without comparing serialized JSON.</summary>
+    /// <remarks>
+    /// Not serialized: consumers re-derive Version from the live in-memory edits; persisted snapshots
+    /// always start at 0. JSON-ignored to avoid coupling clients to an internal counter.
+    /// </remarks>
+    [JsonIgnore]
+    public long Version { get; set; }
+
+    /// <summary>Bumps <see cref="Version"/>. Call after any structural or content change so dependent
+    /// systems (snapshot diff, autosave, dirty tracking) observe the new state cheaply.</summary>
+    public long BumpVersion()
+    {
+        Version = unchecked(Version + 1);
+        return Version;
+    }
+
     /// <summary>Creates a new empty document with one default section.</summary>
     public static DocumentEditorDocument Empty(string? documentId = null)
     {

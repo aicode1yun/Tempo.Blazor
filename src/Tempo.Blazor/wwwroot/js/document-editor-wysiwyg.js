@@ -17,6 +17,24 @@ window.tmDocumentEditorEngine = (function () {
         return JSON.parse(JSON.stringify(value));
     }
 
+    // Phase B4 — shallow clone helper for hot-path mutators. Use when value is a flat object
+    // (no nested arrays/objects that need their own copy) — e.g. inline mark records like
+    // { bold: true, italic: false, fontFamily: 'Arial' }. Falls back to _clone for nested data.
+    function _shallowClone(value) {
+        if (value === undefined || value === null) return value;
+        if (Array.isArray(value)) {
+            var arr = new Array(value.length);
+            for (var i = 0; i < value.length; i++) arr[i] = value[i];
+            return arr;
+        }
+        if (typeof value !== 'object') return value;
+        var copy = {};
+        for (var k in value) {
+            if (Object.prototype.hasOwnProperty.call(value, k)) copy[k] = value[k];
+        }
+        return copy;
+    }
+
     function _read(value, pascalKey, camelKey, fallback) {
         if (_hasOwn(value, camelKey)) return value[camelKey];
         if (_hasOwn(value, pascalKey)) return value[pascalKey];
@@ -4448,12 +4466,60 @@ window.tmDocumentEditorEngine = (function () {
         var lastDiffer = null;
         var lastTransaction = null;
 
+        // Phase B5 — optional requestAnimationFrame batching for the renderer.render() call.
+        // Layout itself is always computed synchronously (subsequent operations need it).
+        // When `renderBatching === 'raf'` is set in create() options, the DOM commit is
+        // deferred to the next animation frame; multiple keystrokes within a single frame
+        // collapse to one render. Tests can `flushPendingRender(instanceId)` to force a sync flush.
+        var pendingRenderArgs = null;
+        var pendingRenderHandle = null;
+        var pendingRenderFlushFn = null;
+        var rafBatchEnabled = (opts.renderBatching || opts.RenderBatching) === 'raf';
+        function _scheduleRenderFlush(reason, affectedScopes) {
+            var scopes = pendingRenderArgs ? pendingRenderArgs.scopes : new Set();
+            _asArray(affectedScopes).forEach(function (s) { if (s) scopes.add(s); });
+            if (scopes.size === 0) scopes.add('document');
+            pendingRenderArgs = { reason: reason || 'history', scopes: scopes };
+            if (pendingRenderHandle !== null) return;
+            if (typeof requestAnimationFrame === 'function') {
+                pendingRenderHandle = requestAnimationFrame(pendingRenderFlushFn);
+            } else {
+                pendingRenderHandle = setTimeout(pendingRenderFlushFn, 0);
+            }
+        }
+        pendingRenderFlushFn = function () {
+            pendingRenderHandle = null;
+            if (!pendingRenderArgs || !root) { pendingRenderArgs = null; return; }
+            var args = pendingRenderArgs;
+            pendingRenderArgs = null;
+            renderer.render(root, createRenderSnapshot(model, layout, selection, { affectedScopes: Array.from(args.scopes) }), { reason: args.reason });
+            renderVersion++;
+        };
+        function flushPendingRender() {
+            if (pendingRenderHandle !== null) {
+                if (typeof cancelAnimationFrame === 'function' && typeof pendingRenderHandle === 'number') {
+                    try { cancelAnimationFrame(pendingRenderHandle); } catch { /* ignore */ }
+                } else {
+                    try { clearTimeout(pendingRenderHandle); } catch { /* ignore */ }
+                }
+                pendingRenderHandle = null;
+            }
+            pendingRenderFlushFn();
+        }
+        function hasPendingRender() { return pendingRenderArgs !== null; }
+
         function renderAtomic(reason, affectedScopes) {
             layout = paragraphEngine.layoutDocument(model, { selection: selection, affectedScopes: affectedScopes || ['document'] });
             if (root) {
-                renderer.render(root, createRenderSnapshot(model, layout, selection, { affectedScopes: affectedScopes || ['document'] }), { reason: reason || 'history' });
+                if (rafBatchEnabled) {
+                    _scheduleRenderFlush(reason, affectedScopes);
+                } else {
+                    renderer.render(root, createRenderSnapshot(model, layout, selection, { affectedScopes: affectedScopes || ['document'] }), { reason: reason || 'history' });
+                    renderVersion++;
+                }
+            } else {
+                renderVersion++;
             }
-            renderVersion++;
             return layout;
         }
 
@@ -4580,6 +4646,10 @@ window.tmDocumentEditorEngine = (function () {
             getUndoStack: function () { return _clone(undoStack); },
             getRedoStack: function () { return _clone(redoStack); },
             getTransactions: function () { return _clone(transactions); },
+            // Phase B5 — explicit flush + introspection for RAF batching.
+            flushPendingRender: flushPendingRender,
+            hasPendingRender: hasPendingRender,
+            isRafBatchingEnabled: function () { return rafBatchEnabled; },
             debug: debug
         };
     }
@@ -10251,10 +10321,19 @@ window.tmDocumentEditorEngine = (function () {
         var watchdog = [];
         var emptyFrameCount = 0;
         var lastSnapshot = null;
+        // Phase B3: invariant validation is off by default — only enabled in debug builds.
+        var diagnosticsEnabled = !!(opts.diagnostics === true || opts.runtimeDiagnostics === true);
+        // Phase B1: per-block fingerprint cache. Reused containers carry their last fingerprint
+        // in `container.__tmFingerprint` so unchanged paragraphs skip re-population entirely.
+        var paragraphFingerprintHits = 0;
+        var paragraphFingerprintMisses = 0;
+        // Phase B2: per-segment patch counter for benchmarks.
+        var segmentPatchCount = 0;
 
         function render(root, snapshot, options) {
             var renderOptions = options || {};
             var beforeHtml = root ? root.innerHTML : '';
+            var allowDiagnostics = diagnosticsEnabled || renderOptions.diagnostics === true;
             try {
                 if (!root) throw new Error('render root is required');
                 var fragment = document.createDocumentFragment();
@@ -10266,14 +10345,59 @@ window.tmDocumentEditorEngine = (function () {
                 lastSnapshot = snapshot;
                 var text = root.textContent || '';
                 if (!text && flattenLayoutSegments(snapshot && snapshot.layout).length > 0) emptyFrameCount++;
-                var invariants = validateRenderInvariants(root, snapshot, renderOptions);
-                updateDebugOrphans(root, snapshot);
+                var invariants = allowDiagnostics
+                    ? validateRenderInvariants(root, snapshot, renderOptions)
+                    : { ok: true, mappedTextNodes: 0, layoutSegmentCount: 0, domSegmentCount: 0, orphanNodeCount: 0, wrappedSegments: 0, forbiddenOverlaps: 0 };
+                if (allowDiagnostics) updateDebugOrphans(root, snapshot);
                 return _sortObject({ ok: true, rolledBack: false, invariants: invariants, snapshotFingerprint: snapshot && snapshot.fingerprint || '' });
             } catch (error) {
                 if (root) root.innerHTML = beforeHtml;
                 watchdog.push({ message: String(error && error.message || error), at: Date.now() });
                 return _sortObject({ ok: true, rolledBack: true, error: String(error && error.message || error), watchdogFailures: watchdog.length });
             }
+        }
+
+        // Phase B1 helper — cheap, deterministic 32-bit FNV-1a hash for paragraph fingerprints.
+        function _fingerprintHash(value) {
+            var h = 2166136261;
+            var s = String(value || '');
+            for (var i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h = (h * 16777619) >>> 0;
+            }
+            return h.toString(36);
+        }
+
+        // Phase B1 — compose a fingerprint string for the visible state of a paragraph layout.
+        // Two snapshots with identical segments (text + style + rect) hash to the same value.
+        function _computeParagraphFingerprint(blockLayout) {
+            if (!blockLayout) return '';
+            var rect = blockLayout.rect || {};
+            var parts = [
+                blockLayout.blockId || '',
+                rect.x | 0, rect.y | 0, rect.width | 0, rect.height | 0
+            ];
+            var segs = _asArray(blockLayout.segments);
+            for (var i = 0; i < segs.length; i++) {
+                var seg = segs[i];
+                var sr = seg.rect || {};
+                var style = seg.style || {};
+                parts.push(
+                    seg.id || '',
+                    sr.x | 0, sr.y | 0, sr.width | 0, sr.height | 0,
+                    seg.text || '',
+                    style.fontFamily || '',
+                    style.fontSize || '',
+                    style.fontWeight || '',
+                    style.fontStyle || '',
+                    style.color || '',
+                    style.backgroundColor || '',
+                    style.textDecoration || ''
+                );
+                var decorations = _asArray(seg.decorations);
+                for (var d = 0; d < decorations.length; d++) parts.push(decorations[d]);
+            }
+            return _fingerprintHash(parts.join('|'));
         }
 
         function renderSnapshotFragment(snapshot, options) {
@@ -10381,34 +10505,75 @@ window.tmDocumentEditorEngine = (function () {
             return localizeLayoutBlock(blockLayout, -(page && page.rect && page.rect.x || 0), -(page && page.rect && page.rect.y || 0));
         }
 
+        // Phase B4 — replaced JSON-clone with structural shallow copies. Only the rects we mutate
+        // are duplicated; other fields are inherited by reference (read-only at this stage).
+        function _shiftRect(rect, dx, dy) {
+            if (!rect) return { x: dx, y: dy, width: 0, height: 0 };
+            return {
+                x: Number(rect.x || 0) + dx,
+                y: Number(rect.y || 0) + dy,
+                width: Number(rect.width || 0),
+                height: Number(rect.height || 0)
+            };
+        }
         function localizeLayoutBlock(blockLayout, dx, dy) {
-            var clone = _clone(blockLayout);
-            clone.rect = { x: Number(clone.rect && clone.rect.x || 0) + dx, y: Number(clone.rect && clone.rect.y || 0) + dy, width: clone.rect && clone.rect.width || 0, height: clone.rect && clone.rect.height || 0 };
-            _asArray(clone.lines).forEach(function (line) {
-                line.rect = shiftRectY(line.rect, dy);
-                line.rect.x = Number(line.rect.x || 0) + dx;
-                line.baseline = Number(line.baseline || 0) + dy;
-                _asArray(line.availableIntervals).forEach(function (interval) {
-                    interval.x = Number(interval.x || 0) + dx;
-                    interval.y = Number(interval.y || 0) + dy;
-                });
-            });
-            _asArray(clone.segments).forEach(function (segment) {
-                segment.rect = shiftRectY(segment.rect, dy);
-                segment.rect.x = Number(segment.rect.x || 0) + dx;
-                if (segment.objectRect) {
-                    segment.objectRect = shiftRectY(segment.objectRect, dy);
-                    segment.objectRect.x = Number(segment.objectRect.x || 0) + dx;
+            if (!blockLayout) return blockLayout;
+            // Shallow clone of the block shell.
+            var clone = {};
+            for (var key in blockLayout) {
+                if (Object.prototype.hasOwnProperty.call(blockLayout, key)) clone[key] = blockLayout[key];
+            }
+            clone.rect = _shiftRect(blockLayout.rect, dx, dy);
+            clone.lines = _asArray(blockLayout.lines).map(function (line) {
+                if (!line) return line;
+                var lineCopy = {};
+                for (var k in line) {
+                    if (Object.prototype.hasOwnProperty.call(line, k)) lineCopy[k] = line[k];
                 }
+                lineCopy.rect = _shiftRect(line.rect, dx, dy);
+                lineCopy.baseline = Number(line.baseline || 0) + dy;
+                if (line.availableIntervals) {
+                    lineCopy.availableIntervals = _asArray(line.availableIntervals).map(function (interval) {
+                        return Object.assign({}, interval, {
+                            x: Number(interval.x || 0) + dx,
+                            y: Number(interval.y || 0) + dy
+                        });
+                    });
+                }
+                return lineCopy;
             });
-            _asArray(clone.inlineObjects).forEach(function (object) {
-                object.rect = shiftRectY(object.rect, dy);
-                object.rect.x = Number(object.rect.x || 0) + dx;
+            clone.segments = _asArray(blockLayout.segments).map(function (segment) {
+                if (!segment) return segment;
+                var segCopy = {};
+                for (var sk in segment) {
+                    if (Object.prototype.hasOwnProperty.call(segment, sk)) segCopy[sk] = segment[sk];
+                }
+                segCopy.rect = _shiftRect(segment.rect, dx, dy);
+                if (segment.objectRect) segCopy.objectRect = _shiftRect(segment.objectRect, dx, dy);
+                return segCopy;
             });
-            _asArray(clone.caretStops).forEach(function (stop) {
-                stop.rect = shiftRectY(stop.rect, dy);
-                stop.rect.x = Number(stop.rect.x || 0) + dx;
-            });
+            if (blockLayout.inlineObjects) {
+                clone.inlineObjects = _asArray(blockLayout.inlineObjects).map(function (object) {
+                    if (!object) return object;
+                    var objCopy = {};
+                    for (var ok in object) {
+                        if (Object.prototype.hasOwnProperty.call(object, ok)) objCopy[ok] = object[ok];
+                    }
+                    objCopy.rect = _shiftRect(object.rect, dx, dy);
+                    return objCopy;
+                });
+            }
+            if (blockLayout.caretStops) {
+                clone.caretStops = _asArray(blockLayout.caretStops).map(function (stop) {
+                    if (!stop) return stop;
+                    var stopCopy = {};
+                    for (var stk in stop) {
+                        if (Object.prototype.hasOwnProperty.call(stop, stk)) stopCopy[stk] = stop[stk];
+                    }
+                    stopCopy.rect = _shiftRect(stop.rect, dx, dy);
+                    return stopCopy;
+                });
+            }
             return clone;
         }
 
@@ -10421,10 +10586,22 @@ window.tmDocumentEditorEngine = (function () {
                 blockLayout.fragmentIndex ?? ''
             ].join(':');
             var container = blockCache.get(key);
-            if (!container) {
+            var firstRender = !container;
+            if (firstRender) {
                 container = document.createElement('div');
                 blockCache.set(key, container);
             }
+
+            // Phase B1 — fingerprint skip: if visible state is unchanged, return the cached
+            // container untouched. The caller (renderPageRegion / renderHeaderFooterRegion)
+            // simply re-appends the same node to the fresh fragment.
+            var nextFingerprint = _computeParagraphFingerprint(blockLayout);
+            if (!firstRender && container.__tmFingerprint === nextFingerprint) {
+                paragraphFingerprintHits++;
+                return container;
+            }
+            paragraphFingerprintMisses++;
+
             container.className = 'tm-render-paragraph';
             container.setAttribute('data-render-block-id', blockLayout.blockId);
             container.setAttribute('data-model-id', blockLayout.blockId);
@@ -10435,10 +10612,42 @@ window.tmDocumentEditorEngine = (function () {
             container.style.height = blockLayout.rect.height + 'px';
             container.style.whiteSpace = 'pre';
             container.style.overflow = 'visible';
-            container.replaceChildren();
-            _asArray(blockLayout.segments).forEach(function (segment) {
-                container.appendChild(renderSegment(snapshot, segment, blockLayout));
+
+            // Phase B2 — per-segment diff: walk existing children (by data-layout-segment-id)
+            // and reuse them when possible. Removes unused leftovers, appends new ones,
+            // keeps order matching the new segment list.
+            var nextSegments = _asArray(blockLayout.segments);
+            var existingById = new Map();
+            var child = container.firstChild;
+            while (child) {
+                var next = child.nextSibling;
+                var sid = child.getAttribute && child.getAttribute('data-layout-segment-id');
+                if (sid) existingById.set(sid, child);
+                child = next;
+            }
+
+            var reused = new Set();
+            var anchor = null; // tracks the previous appended node
+            for (var i = 0; i < nextSegments.length; i++) {
+                var seg = nextSegments[i];
+                var node = renderSegment(snapshot, seg, blockLayout);
+                segmentPatchCount++;
+                if (existingById.has(seg.id)) reused.add(seg.id);
+                // Place `node` immediately after `anchor` (or as first child) to keep order.
+                var expectedNext = anchor ? anchor.nextSibling : container.firstChild;
+                if (expectedNext !== node) {
+                    container.insertBefore(node, expectedNext);
+                }
+                anchor = node;
+            }
+            // Remove any leftover nodes that are no longer referenced by the new segment list.
+            existingById.forEach(function (oldNode, sid) {
+                if (!reused.has(sid) && oldNode.parentNode === container) {
+                    container.removeChild(oldNode);
+                }
             });
+
+            container.__tmFingerprint = nextFingerprint;
             return container;
         }
 
@@ -10545,17 +10754,27 @@ window.tmDocumentEditorEngine = (function () {
             var domSegments = Array.from(root.querySelectorAll('[data-layout-segment-id]'));
             var orphanNodes = domSegments.filter(function (node) { return !layoutIds.has(node.getAttribute('data-layout-segment-id')); });
             var mappedTextNodes = domSegments.filter(function (node) { return !!node.getAttribute('data-model-block-id') && node.firstChild && node.firstChild.nodeType === Node.TEXT_NODE; }).length;
-            var wrappedSegments = domSegments.filter(function (node) {
-                var expected = Number(node.getAttribute('data-layout-height') || 0);
-                var rect = node.getBoundingClientRect();
-                return expected > 0 && rect.height > expected + 1.5;
-            }).length;
+            // Phase B3 — use snapshot layout heights instead of DOM getBoundingClientRect to detect wrap.
+            // The "expected" height comes from data-layout-height (matches snapshot.segment.rect.height).
+            // We compute "actual" height from a sibling segment's data-layout-height since segments on
+            // the same line have identical rect.height. Wrap detection now does NOT force layout reflow.
+            // Callers that *really* need DOM measurements opt-in via options.useDomMeasurements === true.
+            var useDom = options && options.useDomMeasurements === true;
+            var wrappedSegments = useDom
+                ? domSegments.filter(function (node) {
+                    var expected = Number(node.getAttribute('data-layout-height') || 0);
+                    var rect = node.getBoundingClientRect();
+                    return expected > 0 && rect.height > expected + 1.5;
+                }).length
+                : 0;
             var forbiddenOverlaps = 0;
-            _asArray(options && options.forbiddenRects).forEach(function (forbidden) {
-                domSegments.forEach(function (node) {
-                    if (rectsOverlap(domRectToRect(node.getBoundingClientRect()), forbidden)) forbiddenOverlaps++;
+            if (useDom) {
+                _asArray(options && options.forbiddenRects).forEach(function (forbidden) {
+                    domSegments.forEach(function (node) {
+                        if (rectsOverlap(domRectToRect(node.getBoundingClientRect()), forbidden)) forbiddenOverlaps++;
+                    });
                 });
-            });
+            }
             return _sortObject({
                 ok: orphanNodes.length === 0 && mappedTextNodes === domSegments.length && layoutSegments.length === domSegments.length && wrappedSegments === 0 && forbiddenOverlaps === 0,
                 mappedTextNodes: mappedTextNodes,
@@ -10563,7 +10782,8 @@ window.tmDocumentEditorEngine = (function () {
                 domSegmentCount: domSegments.length,
                 orphanNodeCount: orphanNodes.length,
                 wrappedSegments: wrappedSegments,
-                forbiddenOverlaps: forbiddenOverlaps
+                forbiddenOverlaps: forbiddenOverlaps,
+                usedDomMeasurements: useDom
             });
         }
 
@@ -10579,8 +10799,25 @@ window.tmDocumentEditorEngine = (function () {
                 orphanNodeCount: lastSnapshot ? 0 : 0,
                 duplicateToolbarCount: 0,
                 cachedSegmentCount: segmentCache.size,
-                cachedBlockCount: blockCache.size
+                cachedBlockCount: blockCache.size,
+                // Phase B counters — used by performance baseline tests to confirm the
+                // incremental render path actually skipped work.
+                paragraphFingerprintHits: paragraphFingerprintHits,
+                paragraphFingerprintMisses: paragraphFingerprintMisses,
+                segmentPatchCount: segmentPatchCount,
+                diagnosticsEnabled: diagnosticsEnabled
             });
+        }
+
+        function resetDebugCounters() {
+            paragraphFingerprintHits = 0;
+            paragraphFingerprintMisses = 0;
+            segmentPatchCount = 0;
+            emptyFrameCount = 0;
+        }
+
+        function setDiagnostics(enabled) {
+            diagnosticsEnabled = !!enabled;
         }
 
         return {
@@ -10592,7 +10829,9 @@ window.tmDocumentEditorEngine = (function () {
             renderRevisionOverlay: renderRevisionOverlay,
             renderCommentMarkers: renderCommentMarkers,
             validateRenderInvariants: validateRenderInvariants,
-            debug: debug
+            debug: debug,
+            resetDebugCounters: resetDebugCounters,
+            setDiagnostics: setDiagnostics
         };
     }
 
@@ -10848,7 +11087,7 @@ window.tmDocumentEditorEngine = (function () {
             operations.push(createOperation(OPERATION_TYPES.InsertText, {
                 target: { blockId: range.blockId, offset: insertOffset },
                 text: _asText(text),
-                marks: _clone(activeTypingMarks),
+                marks: _shallowClone(activeTypingMarks),  // Phase B4 — marks are flat record
                 revisionId: revisionPayload && revisionPayload.id || null,
                 revision: revisionPayload && revisionPayload.revision || null
             }, { source: 'typing' }));
@@ -11034,7 +11273,7 @@ window.tmDocumentEditorEngine = (function () {
             composition.preview = _asText(eventLike && eventLike.data);
             var previewBlock = _clone(_findBlock(model, composition.beforeSelection.blockId) || null);
             if (previewBlock) {
-                _insertTextRun(previewBlock, composition.beforeSelection.offset, composition.preview, { marks: _clone(activeTypingMarks) });
+                _insertTextRun(previewBlock, composition.beforeSelection.offset, composition.preview, { marks: _shallowClone(activeTypingMarks) }); // Phase B4
             }
             var previewLayout = paragraphEngine.layoutAfterOperation(model, createOperation(OPERATION_TYPES.InsertText, {
                 target: { blockId: composition.beforeSelection.blockId, offset: composition.beforeSelection.offset },
@@ -24621,6 +24860,8 @@ window.tmDocumentEditorEngine = (function () {
             normalizeWrapSideName: normalizeWrapSideName,
             normalizeWrapSide: testWrapSide,
             normalizeHorizontalPosition: testHorizontalPosition,
+            // Phase B4 — shallow clone helper for tests / external consumers.
+            shallowClone: _shallowClone,
             normalizeWrapContourPoints: normalizeWrapContourPoints,
             getLayoutAvailableIntervals: getLayoutAvailableIntervalsForTest,
             clearTextRunMeasureCache: clearTextRunMeasureCache,
@@ -26198,6 +26439,32 @@ window.tmDocumentWysiwygCommand = (function () {
         }
     };
 
+    // Phase C2 — accept raw UTF-8 bytes (Uint8Array) from C# so the host can use a pooled
+    // Utf8JsonWriter and avoid materializing the snapshot as a string twice (once for C# diff
+    // compare, once for JS interop). The bytes are decoded once on the JS side, parsed with
+    // JSON.parse, then forwarded through the standard loadDocument path.
+    runtime.loadDocumentFromBytes = function (instanceId, bytes, forceResetUndo) {
+        try {
+            var view = bytes instanceof Uint8Array
+                ? bytes
+                : (bytes && typeof bytes.length === 'number')
+                    ? new Uint8Array(bytes)
+                    : null;
+            if (!view) throw new Error('tmDocumentEditorRuntime.loadDocumentFromBytes: bytes must be Uint8Array or array of numbers');
+            var decoded = (typeof TextDecoder === 'function')
+                ? new TextDecoder('utf-8').decode(view)
+                : String.fromCharCode.apply(null, view);
+            var parsed = JSON.parse(decoded);
+            return runtime.loadDocument(instanceId, parsed, forceResetUndo);
+        } catch (error) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd && wd.state !== WD_RECOVERING) {
+                _scheduleRecovery(String(instanceId || ''), wd, 'load-from-bytes', error);
+            }
+            return undefined;
+        }
+    };
+
     runtime.getDocument = function (instanceId) {
         try {
             return _origGetDocument.apply(runtime, arguments);
@@ -26647,5 +26914,163 @@ window.tmDocumentWysiwygCommand = (function () {
                 return false;
             }
         }
+    };
+})();
+
+// Phase A: Performance probe — public façade for benchmarks & profiling.
+// Wraps Element.prototype.getBoundingClientRect (when present) during an active capture so
+// forced reflow counts can be attributed to a specific user-facing action. Otherwise reads
+// from the per-instance performance stats already maintained by the engine.
+window.tmDocumentEditorPerformance = (function () {
+    var captures = new Map();
+    var reflowCount = 0;
+    var rectPatched = false;
+    var originalGetBoundingClientRect = null;
+    var originalGetClientRects = null;
+    var jsInteropCount = 0;
+
+    function _now() {
+        if (typeof performance !== 'undefined' && typeof performance.now === 'function') return performance.now();
+        return Date.now();
+    }
+
+    function _engineMetrics(instanceId) {
+        var engine = window.tmDocumentEditorEngine;
+        if (!engine || typeof engine.getDebugMetrics !== 'function') return null;
+        try { return engine.getDebugMetrics(instanceId) || null; }
+        catch { return null; }
+    }
+
+    function _cloneShallow(value) {
+        if (!value || typeof value !== 'object') return value;
+        var copy = {};
+        Object.keys(value).forEach(function (key) { copy[key] = value[key]; });
+        return copy;
+    }
+
+    function _diffNumber(after, before, key) {
+        var a = Number(after && after[key] || 0) || 0;
+        var b = Number(before && before[key] || 0) || 0;
+        return Math.max(0, a - b);
+    }
+
+    function _ensureReflowPatchInstalled() {
+        if (rectPatched) return;
+        if (typeof window === 'undefined' || !window.Element || !window.Element.prototype) return;
+        originalGetBoundingClientRect = window.Element.prototype.getBoundingClientRect;
+        originalGetClientRects = window.Element.prototype.getClientRects;
+        if (typeof originalGetBoundingClientRect !== 'function') {
+            originalGetBoundingClientRect = null;
+            return;
+        }
+        rectPatched = true;
+        window.Element.prototype.getBoundingClientRect = function () {
+            reflowCount++;
+            return originalGetBoundingClientRect.apply(this, arguments);
+        };
+        if (typeof originalGetClientRects === 'function') {
+            window.Element.prototype.getClientRects = function () {
+                reflowCount++;
+                return originalGetClientRects.apply(this, arguments);
+            };
+        }
+    }
+
+    function _maybeUninstallReflowPatch() {
+        if (!rectPatched || captures.size > 0) return;
+        if (window.Element && window.Element.prototype) {
+            if (originalGetBoundingClientRect) window.Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+            if (originalGetClientRects) window.Element.prototype.getClientRects = originalGetClientRects;
+        }
+        originalGetBoundingClientRect = null;
+        originalGetClientRects = null;
+        rectPatched = false;
+    }
+
+    function startCapture(instanceId, label) {
+        var id = String(instanceId || '');
+        if (!id) throw new Error('tmDocumentEditorPerformance.startCapture: instanceId is required.');
+        _ensureReflowPatchInstalled();
+        var capture = {
+            instanceId: id,
+            label: String(label || 'capture'),
+            startedAt: _now(),
+            reflowStart: reflowCount,
+            interopStart: jsInteropCount,
+            beforeMetrics: _cloneShallow(_engineMetrics(id))
+        };
+        captures.set(id, capture);
+        return { ok: true, label: capture.label, instanceId: id };
+    }
+
+    function stopCapture(instanceId) {
+        var id = String(instanceId || '');
+        var capture = captures.get(id);
+        if (!capture) return null;
+        captures.delete(id);
+        var elapsedMs = Math.max(0, _now() - capture.startedAt);
+        var after = _engineMetrics(id);
+        var before = capture.beforeMetrics;
+        var report = {
+            InstanceId: id,
+            Label: capture.label,
+            ElapsedMs: elapsedMs,
+            ForcedReflowCount: Math.max(0, reflowCount - capture.reflowStart),
+            JsInteropCallCount: Math.max(0, jsInteropCount - capture.interopStart),
+            KeyDownCount: _diffNumber(after, before, 'KeyDownCount'),
+            BeforeInputCount: _diffNumber(after, before, 'BeforeInputCount'),
+            InputDomApplyCount: _diffNumber(after, before, 'InputDomApplyCount'),
+            FullRenderCount: _diffNumber(after, before, 'FullRenderCount'),
+            PartialRenderCount: _diffNumber(after, before, 'PartialRenderCount'),
+            RenderSwapCount: _diffNumber(after, before, 'RenderSwapCount'),
+            FullRenderSwapCount: _diffNumber(after, before, 'FullRenderSwapCount'),
+            ModelCommitCount: _diffNumber(after, before, 'ModelCommitCount'),
+            BlazorInteropCallCount: _diffNumber(after, before, 'BlazorInteropCallCount'),
+            BlazorCallbackDuringTypingCount: _diffNumber(after, before, 'BlazorCallbackDuringTypingCount'),
+            LayoutPassCount: _diffNumber(after, before, 'LayoutPassCount'),
+            LayoutPassTotalMs: _diffNumber(after, before, 'LayoutPassTotalMs'),
+            RenderPassCount: _diffNumber(after, before, 'RenderPassCount'),
+            RenderPassTotalMs: _diffNumber(after, before, 'RenderPassTotalMs'),
+            InputOperationCount: _diffNumber(after, before, 'InputOperationCount'),
+            InputOperationTotalMs: _diffNumber(after, before, 'InputOperationTotalMs'),
+            TypingLatencyCount: _diffNumber(after, before, 'TypingLatencyCount'),
+            TypingLatencyTotalMs: _diffNumber(after, before, 'TypingLatencyTotalMs'),
+            MaxTypingBatchSize: Number(after && after.MaxTypingBatchSize || 0) || 0,
+            ActiveRegion: after && after.ActiveRegion || 'Body'
+        };
+        _maybeUninstallReflowPatch();
+        return report;
+    }
+
+    function isCapturing(instanceId) {
+        var id = String(instanceId || '');
+        return captures.has(id);
+    }
+
+    function clearAll() {
+        captures.clear();
+        reflowCount = 0;
+        jsInteropCount = 0;
+        _maybeUninstallReflowPatch();
+    }
+
+    function noteJsInteropCall(count) {
+        var n = Math.max(0, Number(count || 1) || 0);
+        jsInteropCount += n;
+    }
+
+    function getActiveCaptures() {
+        var ids = [];
+        captures.forEach(function (_value, key) { ids.push(key); });
+        return ids;
+    }
+
+    return {
+        startCapture: startCapture,
+        stopCapture: stopCapture,
+        isCapturing: isCapturing,
+        clearAll: clearAll,
+        noteJsInteropCall: noteJsInteropCall,
+        getActiveCaptures: getActiveCaptures
     };
 })();

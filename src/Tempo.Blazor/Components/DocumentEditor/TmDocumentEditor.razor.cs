@@ -1782,6 +1782,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _document.Blocks.Insert(anchorBlockIndex + 1, pageBreak);
         _document.Blocks.Insert(anchorBlockIndex + 2, paragraph);
         NormalizeBlockOrder(_document.Blocks);
+        _document.BumpVersion();  // Phase C1
 
         var afterSelection = new WysiwygSelectionSnapshot
         {
@@ -1883,6 +1884,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var insertOffset = ResolveNoteInsertionOffset(selection, inlines);
         InsertInlineAtBlockOffset(inlines, reference, insertOffset);
         _document.Notes.Add(note);
+        _document.BumpVersion();  // Phase C1
 
         var afterSelection = CloneForEditor(selection);
         afterSelection.Region = "Body";
@@ -2099,6 +2101,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         var before = DocumentEditorCommandCloner.Clone(_document);
         _document.PageSettings = CloneForEditor(settings);
+        _document.BumpVersion();  // Phase C1
         var section = !string.IsNullOrWhiteSpace(activeSectionId)
             ? _document.Sections.FirstOrDefault(item => string.Equals(item.Id, activeSectionId, StringComparison.Ordinal))
             : null;
@@ -3822,6 +3825,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _isCaretInEditableRegion = false;
             _document.RestrictedMarkers.Clear();
         }
+        _document.BumpVersion();  // Phase C1
         if (_wysiwygHost is not null)
             await _wysiwygHost.SetProtectionModeAsync(_isDocumentProtected, BuildMarkerPayloads());
         await RefreshCommandRegistryAsync();
@@ -3849,6 +3853,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             EndOffset = endOffset
         };
         _document.RestrictedMarkers.Add(marker);
+        _document.BumpVersion();  // Phase C1
 
         if (_wysiwygHost is not null)
             await _wysiwygHost.SetProtectionModeAsync(true, BuildMarkerPayloads());
@@ -4155,6 +4160,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return Task.CompletedTask;
         }
 
+        _document.BumpVersion();  // Phase C1
         _currentDocument = _document;
         return InvokeAsync(StateHasChanged);
     }
@@ -5702,6 +5708,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         blocks.RemoveAt(index);
         _document.Anchors.RemoveAll(anchor => string.Equals(anchor.ObjectBlockId, blockId, StringComparison.Ordinal));
+        _document.BumpVersion();  // Phase C1
         return true;
     }
 
@@ -8484,12 +8491,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         {
             _document.Comments.RemoveAll(item => item.Id == comment.Id);
             _document.Comments.Add(CloneForEditor(comment));
+            _document.BumpVersion();  // Phase C1
         }
 
         if (_currentDocument is not null && !ReferenceEquals(_currentDocument, _document))
         {
             _currentDocument.Comments.RemoveAll(item => item.Id == comment.Id);
             _currentDocument.Comments.Add(CloneForEditor(comment));
+            _currentDocument.BumpVersion();  // Phase C1
         }
     }
 
@@ -8504,6 +8513,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         if (_document is not null)
         {
             _document.Comments.RemoveAll(item => item.Id == commentId);
+            _document.BumpVersion();  // Phase C1
             ApplyCommentMarksFromComments(_document);
         }
 
