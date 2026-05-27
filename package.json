@@ -1,0 +1,15 @@
+{
+  "name": "tempo-blazor-documenteditor-build",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Build tooling for the document editor JS modules. Not published.",
+  "type": "module",
+  "scripts": {
+    "build:document-editor": "node tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs",
+    "build:document-editor:watch": "node tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs --watch",
+    "test:document-editor-modules": "node --test src/Tempo.Blazor/wwwroot/js/document-editor/**/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
+  }
+}
