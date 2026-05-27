@@ -55,3 +55,8 @@ src/Tempo.Blazor/wwwroot/css/tempo-blazor.bundled.css
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Phase D — JS module build artifacts
+node_modules/
+src/Tempo.Blazor/wwwroot/js/document-editor.dist.js
+src/Tempo.Blazor/wwwroot/js/document-editor.dist.js.map
