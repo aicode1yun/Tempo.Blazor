@@ -80,6 +80,503 @@ import {
     mergeAdjacentTextRuns,
     plainRuns,
 } from '../core/inline-runs.mjs';
+import {
+    importParagraphContent,
+    importImageObject,
+    importTable,
+    importBlock,
+    importRegion,
+} from '../core/block-import.mjs';
+import { exportBlock, readCommentId } from '../core/block-export.mjs';
+import { exportComment, exportRevision } from '../core/comment-revision-export.mjs';
+import {
+    exportToCSharpJson,
+    exportRevisionsToCSharpJson,
+    exportCommentsToCSharpJson,
+} from '../core/document-export.mjs';
+import { validateModel } from '../core/validate-model.mjs';
+import {
+    stableJsonString,
+    hashStableString,
+    createDocumentFingerprint,
+    createSelectionDocumentFingerprint,
+} from '../core/fingerprint.mjs';
+import {
+    createAccessibilityAnnouncer,
+    announcementDebounceMs,
+} from '../accessibility/announcements.mjs';
+import { readOptionalBoolean } from '../core/value-readers.mjs';
+import {
+    normalizeAnchorRegionName,
+    anchorRegionToValue,
+    readObjectLayoutInCell,
+} from '../objects/anchor-region.mjs';
+import {
+    normalizeTextExclusionPageIndex,
+    createTextExclusionScopeKey,
+    readTextExclusionScope,
+} from '../layout/text-exclusion.mjs';
+import {
+    createTextExclusionScopeDescriptor,
+    textExclusionMatchesScope,
+} from '../layout/text-exclusion-scope.mjs';
+import { createTextExclusion } from '../layout/text-exclusion-factory.mjs';
+import { createAnchoredDrawingRunCollector } from '../objects/anchored-drawing-collector.mjs';
+import {
+    resolvePositionReferenceRect,
+    resolveAlignedHorizontal,
+    resolveAlignedVertical,
+    resolveAnchoredDrawingRect,
+} from '../objects/anchored-drawing-position.mjs';
+import {
+    intervalEndGeometry,
+    subtractGeometryInterval,
+    objectOverlapCollisionRect,
+    resolveObjectOverlapGeometry,
+} from '../objects/overlap-geometry.mjs';
+import { createAnchoredDrawingResolvers } from '../objects/anchored-drawing-layout.mjs';
+import {
+    polygonIntervalsAtYGeometry,
+    mergeGeometryIntervals,
+    polygonBlockedIntervalsForGeometry,
+    applyWrapSideToBlockedIntervals,
+    blockedIntervalsForExclusionGeometry,
+} from '../layout/blocked-intervals.mjs';
+import {
+    normalizeManagerInterval,
+    mergeBlockedIntervalsForLayout,
+    subtractBlockedIntervalsFromBody,
+} from '../layout/exclusion-intervals.mjs';
+import { createTextExclusionManager } from '../layout/text-exclusion-manager.mjs';
+import {
+    availableIntervalsCacheNumber,
+    createAvailableIntervalsCacheKey,
+    createAvailableIntervalsCacheStats,
+    ensureAvailableIntervalsCacheStats,
+    getAvailableIntervalsCacheStats,
+    ensureAvailableIntervalsCache,
+    resetAvailableIntervalsCache,
+    getAvailableIntervals,
+} from '../layout/available-intervals-cache.mjs';
+import {
+    normalizeWrapSnapshotInterval,
+    collectBlockedIntervalsForWrapSnapshot,
+} from '../layout/wrap-snapshot-intervals.mjs';
+import { normalizeParagraphLayoutOptions } from '../layout/paragraph-layout-options.mjs';
+import { createScopedLayoutMetadataDecorator } from '../layout/scoped-layout-metadata.mjs';
+import {
+    createAnchoredDrawingLayoutScope,
+    createAnchoredDrawingScopeAggregator,
+} from '../layout/anchored-drawing-scope.mjs';
+import {
+    normalizeLayoutSegmentStyle,
+    decorationsFromMarks,
+    applySegmentStyleToElement,
+} from '../layout/segment-style.mjs';
+import {
+    paragraphRectFromLines,
+    createInlineObjectLayoutFromSegmentFactory,
+    firstScopeBlockId,
+    findLayoutBlock,
+    createLayoutObjectBlockFactory,
+} from '../layout/paragraph-layout-tree.mjs';
+import {
+    flattenLayoutSegments,
+    stableChecksum,
+    createRenderSnapshot,
+} from '../render/render-snapshot.mjs';
+import {
+    domRectToRect,
+    rectsOverlap,
+    rectsOverlapWithTolerance,
+    hasRevisionRun,
+    scopeIncludesBlock,
+    markOverlayNonText,
+} from '../render/render-helpers.mjs';
+import { nowMs, elapsedWithSimulated } from '../core/timing.mjs';
+import { createSelectionToRange } from '../core/selection-to-range.mjs';
+import { createTypingChangeBufferFactory } from '../input/typing-change-buffer.mjs';
+import {
+    isInlineBreakNode,
+    isCaretPlaceholderNode,
+    domLogicalLength,
+    domBoundaryLogicalOffset,
+    createFindTextNodeFactory,
+} from '../render/dom-text-mapping.mjs';
+import { createModelProjections } from '../render/model-projections.mjs';
+import { createOverlayRenderers } from '../render/overlay-renderers.mjs';
+import {
+    createEditorWidgetFactory,
+    createImageInspectorStateFactory,
+} from '../objects/editor-widget.mjs';
+import { createImagePreviewControllerFactory } from '../objects/image-preview-controller.mjs';
+import {
+    createIndexBuilder,
+    createBlockIndexContext,
+    findBlockByIndex,
+} from '../core/indexes.mjs';
+import { createTransactionsModule } from '../history/transactions.mjs';
+import {
+    WD_READY,
+    WD_RECOVERING,
+    WD_RECOVERED,
+    WD_FAILED,
+    WD_DEFAULT_MAX_ATTEMPTS,
+    WD_DEFAULT_BACKOFF_MS,
+    WD_EVENT_HISTORY_LIMIT,
+    computeWatchdogBackoff,
+    cloneWatchdogJson,
+    parseWatchdogJson,
+    unwrapWatchdogDocumentSnapshot,
+    wrapWatchdogDocumentSnapshot,
+    safeCall,
+    watchdogNow,
+    buildWatchdogEventDetail,
+    recordWatchdogEvent,
+    createWatchdogContext,
+    isWatchdogProcessing,
+    lastEventWas,
+} from './watchdog-helpers.mjs';
+import { InstanceManager, defaultInstanceManager } from './instance-manager.mjs';
+import {
+    readObjectWrapSide,
+    normalizeRelativePositionName,
+    relativePositionToValue,
+    verticalAlignmentToValue,
+    normalizePositionSpec,
+    normalizeLayoutKindName,
+} from '../objects/layout-helpers.mjs';
+import {
+    normalizeCommandColorValue,
+    commandMark,
+    isClearValueCommand,
+} from '../input/command-marks.mjs';
+import {
+    commandSource,
+    inlineCommandTypes,
+    paragraphCommandTypes,
+    markMatchesCommand,
+} from '../input/command-classifiers.mjs';
+import { normalizeCommandId } from '../input/command-id.mjs';
+import { pendingMarkForCommand } from '../input/pending-marks.mjs';
+import { findInheritedTextColor } from '../core/inherited-style.mjs';
+import {
+    normalizeRevisionType,
+    normalizeRevisionStatus,
+    normalizeRevisionRange,
+} from '../core/revision-normalize.mjs';
+import { escapeHtml } from '../render/escape.mjs';
+import { resolveInlineRunDisplayText, textFromRunsForRender } from '../render/run-text.mjs';
+import {
+    findRunAtOffset,
+    inlineAtOffset,
+    resolveTextOffsetToInlineIndex,
+} from '../core/run-finders.mjs';
+import { runsForRange } from '../core/runs-for-range.mjs';
+import { toBlazorFormattingState } from '../core/blazor-formatting-state.mjs';
+import { normalizePasteText } from '../clipboard/paste-text.mjs';
+import {
+    createLogicalPosition,
+    createLogicalRange,
+    normalizeSelectionModeValue,
+    normalizeTextSelectionPayload,
+    normalizeObjectSelectionPayload,
+    isObjectSelectionSnapshot,
+    createSelectionSnapshot,
+} from '../core/selection-snapshot.mjs';
+import {
+    shouldCoalesceTyping,
+    coalesceTypingOperation,
+    defaultCoalesceWindowMs,
+} from '../input/typing-coalescer.mjs';
+import {
+    disposedResult,
+    missingResult,
+    errorResult,
+} from './instance-results.mjs';
+import { normalizeHorizontalPositionName, horizontalPositionToValue } from '../objects/horizontal-position.mjs';
+import { wrapModeToValue, wrapModeToCssName, wrapModeCreatesTextExclusion } from '../objects/wrap-mode-value.mjs';
+import {
+    rectFromGeometry,
+    rectRightGeometry,
+    rectBottomGeometry,
+    rectIntersectsGeometry,
+    rectOverlapsHorizontallyGeometry,
+    intersectGeometryRect,
+    geometryBoundsOfPoints,
+    normalizeWrapContourPointsForGeometry,
+    normalizeWrapContourPoints,
+    readObjectDistance,
+    createObjectFootprintRect,
+    createObjectWrapRect,
+    projectWrapContourPointsForGeometry,
+} from '../objects/geometry.mjs';
+import { normalizeImageObject, imageObjectToLayout } from '../objects/image-object.mjs';
+import { syncImageLayoutCase, applyImageWrapModeToLayout } from '../objects/sync-image-layout.mjs';
+import { createDrawingRunsModule } from '../objects/drawing-runs.mjs';
+import {
+    BeforeInputCommands,
+    normalizeBeforeInput,
+    createBeforeInputNormalizer,
+} from '../input/before-input.mjs';
+import {
+    operationTouchesRevisions,
+    operationMayChangeRevisions,
+    isFormattingVisualOperation,
+} from '../history/operation-classifiers.mjs';
+import {
+    createApplyOperationDispatcher,
+    ApplyOperationHandlerNames,
+} from '../history/apply-operation-dispatcher.mjs';
+import { createImportOrchestrator } from '../core/import-orchestrator.mjs';
+import { detectAutocompleteTriggerText } from '../input/autocomplete-trigger.mjs';
+import { compactCommandName } from '../input/command-name.mjs';
+import { computeFloatingPosition } from '../render/floating-position.mjs';
+import { firstTextBlock, firstModelSelection } from '../core/first-block.mjs';
+import {
+    operationAffectedBlockIds,
+    transactionAffectedBlockIds,
+} from '../history/operation-affected.mjs';
+import { createSimpleHandlers } from '../history/handlers-simple.mjs';
+import { createDiffer } from '../history/differ.mjs';
+import { createOperationValidator } from '../history/validate-operation.mjs';
+import { createReplaceModelContents } from '../core/replace-model.mjs';
+import {
+    findRegionInfoForBlock,
+    operationRegionInfo,
+    nextSelectionForOperation,
+} from '../core/region-info.mjs';
+import { commentIdsAtInsertionOffset } from '../core/comment-resolver.mjs';
+import { styleHasValues, resolveTypingStyleAtInsertion } from '../core/typing-style.mjs';
+import { insertTextRun } from '../core/insert-text-run.mjs';
+import {
+    setParagraphText,
+    cloneRunSlice,
+    deleteTextRange,
+    splitParagraphRuns,
+    splitRunsForRange,
+} from '../core/run-mutators.mjs';
+import { splitParagraphRunsAtOffset } from '../core/split-paragraph-runs.mjs';
+import { createEmptyTableCellFactory } from '../core/table-cell-factory.mjs';
+import { createFindBlock } from '../core/find-block.mjs';
+import { createBuildIndexes } from '../core/build-indexes.mjs';
+import { createTextHandlers } from '../history/handlers-text.mjs';
+import { createSplitHandler } from '../history/handlers-split.mjs';
+import { createTrackedHandlers } from '../history/handlers-tracked.mjs';
+import { createParagraphAttributeHandler } from '../history/handlers-paragraph-attribute.mjs';
+import { createRestoreSnapshotHandler } from '../history/handlers-restore-snapshot.mjs';
+import { createRevisionDecisionHandler } from '../history/handlers-revision-decision.mjs';
+import { createTableHandlers } from '../history/handlers-table.mjs';
+import {
+    revisionById,
+    readRevisionStatus,
+    readRevisionTypeName,
+    readRevisionMarkerType,
+    setRevisionPayloadText,
+    createTrackedRevisionPayload,
+    createInsertionRevisionPayload,
+    createStructureRevisionPayload,
+    createDeletionRevisionPayloadFactory,
+    transformRunsInRange,
+    createRevisionListHelpers,
+    createSetRevisionForRange,
+} from '../history/revision-helpers.mjs';
+import {
+    resolveTrackChangesState,
+    isTrackChangesEnabled,
+    resolveRevisionUserId,
+    revisionPayloadText,
+    stableRevisionStringify,
+} from '../history/track-changes.mjs';
+import {
+    revisionAuthorMergeKey,
+    revisionRunFormattingMergeKey,
+    canMergeAdjacentRevisionRuns,
+    replaceRevisionIdOnRun,
+} from '../history/revision-merge.mjs';
+import { createRevisionList } from '../history/revision-list.mjs';
+import { createRevisionRunMutators } from '../history/revision-run-mutators.mjs';
+import { normalizeRevision } from '../history/normalize-revision.mjs';
+import { createRevisionGroupNormaliser } from '../history/revision-groups.mjs';
+import { revisionDecorativeStyle } from '../history/revision-decorative.mjs';
+import {
+    createTextMeasurementService,
+    normalizeMeasureStyle,
+    computeMeasureCacheKey,
+    measureTextRunPure,
+} from '../layout/text-measurement.mjs';
+import { createLineBreakerModule } from '../layout/line-breaker.mjs';
+import {
+    normalizeLineBreakerOptions,
+    normalizeLineRanges,
+    resolveLineRangesForBreaker,
+    isInvalidInterval,
+    lineRangesAreInvalid,
+    coalesceNonBreakingTokens,
+    splitTokenIntoFittingPieces,
+    applyJustifyMetadata,
+} from '../layout/line-breaker-helpers.mjs';
+import {
+    createLineDraft,
+    materializeLineDraft,
+} from '../layout/line-draft.mjs';
+import {
+    isCjkCharacter,
+    isTokenDelimiter,
+    cssLengthToPixels,
+    mergeTextStyle,
+    tokenizeText,
+    runForOffset,
+    createParagraphTokenizer,
+} from '../layout/paragraph-tokenizer.mjs';
+import { normalizeParagraphAlignment } from '../layout/paragraph-alignment.mjs';
+import { createLineBreakerFallback } from '../layout/line-breaker-fallback.mjs';
+import {
+    normalizeSelectionTokenRegion,
+    readSelectionTokenValue,
+    parseSelectionTokenData,
+    readSelectionTokenData,
+} from '../core/selection-token.mjs';
+import { createSelectionTextRange } from '../core/selection-range.mjs';
+import { createObjectSelectionRestorer } from '../core/object-selection-restore.mjs';
+import { createRangeFormatting } from '../core/range-formatting.mjs';
+import {
+    IMAGE_RESIZE_MIN_WIDTH,
+    IMAGE_RESIZE_MIN_HEIGHT,
+    normalizeImageResizeHandleName,
+    imageResizeHandleIndex,
+    computeImageResizeFixedPoint,
+    createImageResizeBounds,
+    clampImageResizeSize,
+} from '../objects/image-resize.mjs';
+import { formatNonPrintingText } from '../render/non-printing.mjs';
+import { formatA11yLabel } from '../accessibility/labels.mjs';
+import {
+    objectAccessibilityIdFragment,
+    activeObjectStatusId,
+    appendAriaDescribedByToken,
+    getImageObjectAccessibleLabel,
+    objectResizeHandleDirectionLabel,
+    objectResizeHandleAriaLabel,
+} from '../accessibility/object-aria.mjs';
+import { findActiveHeadingBlockIdFromRects } from '../render/heading-finder.mjs';
+import { findLimitForBlock } from '../core/limit-finder.mjs';
+import { rectFromAny, rectContains } from '../render/rect-helpers.mjs';
+import { createPerformanceMetricsHarness } from './performance-metrics.mjs';
+import {
+    schemaAllowsBlockForTest,
+    normalizeInsertionBlocksForSchema,
+} from '../core/schema-validation.mjs';
+import { applyLayoutTextEditModel } from '../input/layout-text-edit-model.mjs';
+import { formattingScalarValue } from '../core/formatting-scalar.mjs';
+import { median, percentileNearestRank } from '../core/stats.mjs';
+import {
+    createDefaultLatencyBudgets,
+    createLatencyHistogramState,
+    ensureLatencyHistogramState,
+    latencyBudgetForName,
+    createLatencyHistogramSummary,
+} from './latency-histograms.mjs';
+import { createStrictPerformanceStats } from './strict-performance-stats.mjs';
+import {
+    PERFORMANCE_HISTOGRAM_LIMIT,
+    PARTIAL_RENDER_SCOPE_SAMPLES_LIMIT,
+    recordLatencyHistogram,
+    recordPartialRenderScope,
+} from './strict-performance-recorders.mjs';
+import {
+    strictPerformanceNow,
+    normalizePerformanceRegion,
+    activeRegionForSelection,
+    activeRegionForInstance,
+    ensureStrictPerformanceStats,
+} from './strict-performance-helpers.mjs';
+import {
+    typingHotPathWindowMs,
+    isTypingHotPath,
+} from './typing-hot-path.mjs';
+import {
+    DIAGNOSTICS_TIMELINE_LIMIT,
+    DIAGNOSTICS_ERROR_LIMIT,
+    DIAGNOSTICS_WATCHDOG_FAILURE_LIMIT,
+    createDiagnosticsState,
+    ensureDiagnostics,
+    recordTimeline,
+    recordDiagnosticError,
+    recordWatchdogFailure,
+} from './diagnostics.mjs';
+import {
+    recordLayoutMetric,
+    recordRenderMetric,
+} from './layout-render-metrics.mjs';
+import { recordOperationPerformance } from './operation-performance.mjs';
+import {
+    isElementNode,
+    getFocusRegionFromElement,
+    getFocusTargetDetails,
+} from '../render/focus-region.mjs';
+import { cssEscape } from '../render/css-escape.mjs';
+import {
+    findLiveTextBlockElement,
+    findLiveTextBlockElements,
+    findLiveTextBlockElementForContext,
+    liveBlockElementMatchesSelection,
+    liveBlockContextFromElement,
+} from '../render/live-block-finder.mjs';
+import {
+    selectionBelongsToEditor,
+    selectionTargetsTextSurface,
+} from '../render/dom-selection.mjs';
+import { selectedDomRect } from '../render/selection-rect.mjs';
+import { pageIndexFromPoint } from '../render/page-finder.mjs';
+import {
+    floatingViewportBoundsAvoidingChrome,
+    floatingViewportWidthAvoidingSidePanel,
+} from '../render/floating-viewport.mjs';
+import { createMiniToolbarPredicate } from '../render/mini-toolbar-predicate.mjs';
+import {
+    finiteNumber,
+    caretOffsetFromInterval,
+    nearestOffsetWithinLine,
+} from '../layout/caret-math.mjs';
+import {
+    testTextMeasureStyle,
+    getTextRunMeasureCacheKey,
+    createTestTextMeasurer,
+} from '../layout/test-text-measurer.mjs';
+import { hitRectFromAny, hitRectContains } from '../layout/hit-rect.mjs';
+import { normalizeCaretInterval } from '../layout/caret-interval.mjs';
+import {
+    collectLayoutLineIntervals,
+    findCaretIntervalHit,
+} from '../layout/caret-interval-collector.mjs';
+import { inferCaretIntervalAffinity } from '../layout/caret-affinity.mjs';
+import {
+    findLayoutBlockById,
+    findReferenceLineForOffset,
+} from '../layout/layout-block-finder.mjs';
+import { scoreNearestTextPositionLineBox } from '../layout/line-box-scorer.mjs';
+import {
+    drawingLayerForWrapMode,
+    hitTestLayerPriority,
+} from '../objects/layer-priority.mjs';
+import { objectHitPriority } from '../objects/hit-priority.mjs';
+import { createDrawingObjectSnapshotFactory } from '../objects/drawing-snapshot.mjs';
+import { createDrawingIndexHelpers } from '../objects/drawing-index.mjs';
+import { createFindDrawingRunByAsset } from '../objects/find-drawing-by-asset.mjs';
+import { createAffectedParagraphsAroundObject } from '../objects/affected-paragraphs.mjs';
+import {
+    normalizeDropRegionName,
+    anchorRegionForNearestTextPosition,
+    imageAnchorScopeKey,
+    imageDropScopeKey,
+    canDropImageInNearestTextScope,
+} from '../objects/drop-region.mjs';
+import {
+    testWrapMode,
+    testWrapSide,
+    testHorizontalPosition,
+} from '../objects/wrap-mode-test.mjs';
 import { LayoutScopeKinds } from '../layout/scope-kinds.mjs';
 import { createLayoutScope, inferLayoutScopeFromOperation } from '../layout/layout-scope.mjs';
 import {
@@ -110,6 +607,11 @@ export const core = {
     helperNamed,
     DocumentSchemaRegistry,
     createDefaultSchemaRegistry,
+    timing: {
+        nowMs,
+        elapsedWithSimulated,
+    },
+    createSelectionToRange,
     text: {
         blockText,
         isEditableTextBlock,
@@ -170,6 +672,197 @@ export const core = {
         mergeAdjacentTextRuns,
         plainRuns,
     },
+    blockImport: {
+        importParagraphContent,
+        importImageObject,
+        importTable,
+        importBlock,
+        importRegion,
+    },
+    blockExport: {
+        exportBlock,
+        readCommentId,
+        exportComment,
+        exportRevision,
+    },
+    documentExport: {
+        exportToCSharpJson,
+        exportRevisionsToCSharpJson,
+        exportCommentsToCSharpJson,
+    },
+    validate: {
+        validateModel,
+    },
+    fingerprint: {
+        stableJsonString,
+        hashStableString,
+        createDocumentFingerprint,
+        createSelectionDocumentFingerprint,
+    },
+    valueReaders: {
+        readOptionalBoolean,
+    },
+    indexes: {
+        createIndexBuilder,
+        createBlockIndexContext,
+        findBlockByIndex,
+    },
+    revisionNormalize: {
+        normalizeRevisionType,
+        normalizeRevisionStatus,
+        normalizeRevisionRange,
+    },
+    runFinders: {
+        findRunAtOffset,
+        inlineAtOffset,
+        resolveTextOffsetToInlineIndex,
+    },
+    runsForRange,
+    toBlazorFormattingState,
+    selectionSnapshot: {
+        createLogicalPosition,
+        createLogicalRange,
+        normalizeSelectionModeValue,
+        normalizeTextSelectionPayload,
+        normalizeObjectSelectionPayload,
+        isObjectSelectionSnapshot,
+        createSelectionSnapshot,
+    },
+    firstBlock: {
+        firstTextBlock,
+        firstModelSelection,
+    },
+    createImportOrchestrator,
+    createReplaceModelContents,
+    regionInfo: {
+        findRegionInfoForBlock,
+        operationRegionInfo,
+        nextSelectionForOperation,
+    },
+    commentIdsAtInsertionOffset,
+    typingStyle: {
+        styleHasValues,
+        resolveTypingStyleAtInsertion,
+    },
+    insertTextRun,
+    runMutators: {
+        setParagraphText,
+        cloneRunSlice,
+        deleteTextRange,
+        splitParagraphRuns,
+        splitRunsForRange,
+        splitParagraphRunsAtOffset,
+    },
+    createEmptyTableCellFactory,
+    createFindBlock,
+    createBuildIndexes,
+    selectionToken: {
+        normalizeSelectionTokenRegion,
+        readSelectionTokenValue,
+        parseSelectionTokenData,
+        readSelectionTokenData,
+    },
+    createSelectionTextRange,
+    createObjectSelectionRestorer,
+    createRangeFormatting,
+    findLimitForBlock,
+    findInheritedTextColor,
+    schemaValidation: {
+        schemaAllowsBlockForTest,
+        normalizeInsertionBlocksForSchema,
+    },
+    formattingScalarValue,
+    stats: { median, percentileNearestRank },
+};
+
+export const clipboard = {
+    normalizePasteText,
+};
+
+export const accessibility = {
+    createAccessibilityAnnouncer,
+    announcementDebounceMs,
+    formatA11yLabel,
+    objectAria: {
+        objectAccessibilityIdFragment,
+        activeObjectStatusId,
+        appendAriaDescribedByToken,
+        getImageObjectAccessibleLabel,
+        objectResizeHandleDirectionLabel,
+        objectResizeHandleAriaLabel,
+    },
+};
+
+export const runtime = {
+    InstanceManager,
+    defaultInstanceManager,
+    createPerformanceMetricsHarness,
+    latency: {
+        createDefaultLatencyBudgets,
+        createLatencyHistogramState,
+        ensureLatencyHistogramState,
+        latencyBudgetForName,
+        createLatencyHistogramSummary,
+    },
+    createStrictPerformanceStats,
+    perfHelpers: {
+        strictPerformanceNow,
+        normalizePerformanceRegion,
+        activeRegionForSelection,
+        activeRegionForInstance,
+        ensureStrictPerformanceStats,
+    },
+    typingHotPath: {
+        typingHotPathWindowMs,
+        isTypingHotPath,
+    },
+    diagnostics: {
+        DIAGNOSTICS_TIMELINE_LIMIT,
+        DIAGNOSTICS_ERROR_LIMIT,
+        DIAGNOSTICS_WATCHDOG_FAILURE_LIMIT,
+        createDiagnosticsState,
+        ensureDiagnostics,
+        recordTimeline,
+        recordDiagnosticError,
+        recordWatchdogFailure,
+    },
+    metrics: {
+        recordLayoutMetric,
+        recordRenderMetric,
+        recordOperationPerformance,
+    },
+    recorders: {
+        PERFORMANCE_HISTOGRAM_LIMIT,
+        PARTIAL_RENDER_SCOPE_SAMPLES_LIMIT,
+        recordLatencyHistogram,
+        recordPartialRenderScope,
+    },
+    results: {
+        disposedResult,
+        missingResult,
+        errorResult,
+    },
+    watchdog: {
+        WD_READY,
+        WD_RECOVERING,
+        WD_RECOVERED,
+        WD_FAILED,
+        WD_DEFAULT_MAX_ATTEMPTS,
+        WD_DEFAULT_BACKOFF_MS,
+        WD_EVENT_HISTORY_LIMIT,
+        computeWatchdogBackoff,
+        cloneWatchdogJson,
+        parseWatchdogJson,
+        unwrapWatchdogDocumentSnapshot,
+        wrapWatchdogDocumentSnapshot,
+        safeCall,
+        watchdogNow,
+        buildWatchdogEventDetail,
+        recordWatchdogEvent,
+        createWatchdogContext,
+        isWatchdogProcessing,
+        lastEventWas,
+    },
 };
 
 export const history = {
@@ -183,6 +876,50 @@ export const history = {
     transactionAffectsDocument,
     supportsOperationHistory,
     supportsLightweightTransactionSnapshots,
+    createTransactionsModule,
+    operationTouchesRevisions,
+    operationMayChangeRevisions,
+    isFormattingVisualOperation,
+    createApplyOperationDispatcher,
+    ApplyOperationHandlerNames,
+    operationAffectedBlockIds,
+    transactionAffectedBlockIds,
+    createSimpleHandlers,
+    createDiffer,
+    createOperationValidator,
+    createTextHandlers,
+    createSplitHandler,
+    createTrackedHandlers,
+    createParagraphAttributeHandler,
+    createRestoreSnapshotHandler,
+    createRevisionDecisionHandler,
+    createTableHandlers,
+    revisionById,
+    readRevisionStatus,
+    readRevisionTypeName,
+    readRevisionMarkerType,
+    setRevisionPayloadText,
+    createTrackedRevisionPayload,
+    createInsertionRevisionPayload,
+    createStructureRevisionPayload,
+    createDeletionRevisionPayloadFactory,
+    transformRunsInRange,
+    createRevisionListHelpers,
+    createSetRevisionForRange,
+    resolveTrackChangesState,
+    isTrackChangesEnabled,
+    resolveRevisionUserId,
+    revisionPayloadText,
+    stableRevisionStringify,
+    revisionAuthorMergeKey,
+    revisionRunFormattingMergeKey,
+    canMergeAdjacentRevisionRuns,
+    replaceRevisionIdOnRun,
+    createRevisionList,
+    createRevisionRunMutators,
+    normalizeRevision,
+    createRevisionGroupNormaliser,
+    revisionDecorativeStyle,
 };
 
 export const layout = {
@@ -201,6 +938,108 @@ export const layout = {
         resolveFieldRunText,
         cloneBlockWithResolvedFields,
     },
+    textExclusion: {
+        normalizeTextExclusionPageIndex,
+        createTextExclusionScopeKey,
+        readTextExclusionScope,
+        createTextExclusionScopeDescriptor,
+        textExclusionMatchesScope,
+        createTextExclusion,
+    },
+    blockedIntervals: {
+        polygonIntervalsAtYGeometry,
+        mergeGeometryIntervals,
+        polygonBlockedIntervalsForGeometry,
+        applyWrapSideToBlockedIntervals,
+        blockedIntervalsForExclusionGeometry,
+    },
+    exclusionIntervals: {
+        normalizeManagerInterval,
+        mergeBlockedIntervalsForLayout,
+        subtractBlockedIntervalsFromBody,
+    },
+    createTextExclusionManager,
+    availableIntervalsCache: {
+        availableIntervalsCacheNumber,
+        createAvailableIntervalsCacheKey,
+        createAvailableIntervalsCacheStats,
+        ensureAvailableIntervalsCacheStats,
+        getAvailableIntervalsCacheStats,
+        ensureAvailableIntervalsCache,
+        resetAvailableIntervalsCache,
+        getAvailableIntervals,
+    },
+    wrapSnapshotIntervals: {
+        normalizeWrapSnapshotInterval,
+        collectBlockedIntervalsForWrapSnapshot,
+    },
+    normalizeParagraphLayoutOptions,
+    createScopedLayoutMetadataDecorator,
+    createAnchoredDrawingLayoutScope,
+    createAnchoredDrawingScopeAggregator,
+    segmentStyle: {
+        normalizeLayoutSegmentStyle,
+        decorationsFromMarks,
+        applySegmentStyleToElement,
+    },
+    paragraphLayoutTree: {
+        paragraphRectFromLines,
+        createInlineObjectLayoutFromSegmentFactory,
+        firstScopeBlockId,
+        findLayoutBlock,
+        createLayoutObjectBlockFactory,
+    },
+    textMeasurement: {
+        createTextMeasurementService,
+        normalizeMeasureStyle,
+        computeMeasureCacheKey,
+        measureTextRunPure,
+    },
+    createLineBreakerModule,
+    caretMath: {
+        finiteNumber,
+        caretOffsetFromInterval,
+        nearestOffsetWithinLine,
+    },
+    hitRect: {
+        hitRectFromAny,
+        hitRectContains,
+    },
+    testTextMeasurer: {
+        testTextMeasureStyle,
+        getTextRunMeasureCacheKey,
+        createTestTextMeasurer,
+    },
+    inferCaretIntervalAffinity,
+    normalizeCaretInterval,
+    collectLayoutLineIntervals,
+    findCaretIntervalHit,
+    findLayoutBlockById,
+    findReferenceLineForOffset,
+    scoreNearestTextPositionLineBox,
+    lineBreakerHelpers: {
+        normalizeLineBreakerOptions,
+        normalizeLineRanges,
+        resolveLineRangesForBreaker,
+        isInvalidInterval,
+        lineRangesAreInvalid,
+        coalesceNonBreakingTokens,
+        splitTokenIntoFittingPieces,
+        applyJustifyMetadata,
+        createLineDraft,
+        materializeLineDraft,
+    },
+    paragraphTokenizer: {
+        isCjkCharacter,
+        isTokenDelimiter,
+        cssLengthToPixels,
+        mergeTextStyle,
+        tokenizeText,
+        runForOffset,
+        createParagraphTokenizer,
+    },
+    normalizeParagraphAlignment,
+    createLineBreakerFallback,
 };
 
 export const objects = {
@@ -211,6 +1050,166 @@ export const objects = {
     wrapSideToValue,
     normalizeDrawingKindName,
     exportDrawingKind,
+    normalizeAnchorRegionName,
+    anchorRegionToValue,
+    readObjectLayoutInCell,
+    readObjectWrapSide,
+    normalizeRelativePositionName,
+    relativePositionToValue,
+    verticalAlignmentToValue,
+    normalizePositionSpec,
+    normalizeLayoutKindName,
+    normalizeHorizontalPositionName,
+    horizontalPositionToValue,
+    wrapModeToValue,
+    wrapModeToCssName,
+    wrapModeCreatesTextExclusion,
+    normalizeImageObject,
+    imageObjectToLayout,
+    syncImageLayoutCase,
+    applyImageWrapModeToLayout,
+    createDrawingRunsModule,
+    geometry: {
+        rectFromGeometry,
+        rectRightGeometry,
+        rectBottomGeometry,
+        rectIntersectsGeometry,
+        rectOverlapsHorizontallyGeometry,
+        intersectGeometryRect,
+        geometryBoundsOfPoints,
+        normalizeWrapContourPointsForGeometry,
+        normalizeWrapContourPoints,
+        readObjectDistance,
+        createObjectFootprintRect,
+        createObjectWrapRect,
+        projectWrapContourPointsForGeometry,
+    },
+    layerPriority: {
+        drawingLayerForWrapMode,
+        hitTestLayerPriority,
+    },
+    objectHitPriority,
+    createDrawingObjectSnapshotFactory,
+    createDrawingIndexHelpers,
+    createFindDrawingRunByAsset,
+    createAffectedParagraphsAroundObject,
+    createAnchoredDrawingRunCollector,
+    anchoredPosition: {
+        resolvePositionReferenceRect,
+        resolveAlignedHorizontal,
+        resolveAlignedVertical,
+        resolveAnchoredDrawingRect,
+    },
+    overlap: {
+        intervalEndGeometry,
+        subtractGeometryInterval,
+        objectOverlapCollisionRect,
+        resolveObjectOverlapGeometry,
+    },
+    createAnchoredDrawingResolvers,
+    createEditorWidgetFactory,
+    createImageInspectorStateFactory,
+    createImagePreviewControllerFactory,
+    dropRegion: {
+        normalizeDropRegionName,
+        anchorRegionForNearestTextPosition,
+        imageAnchorScopeKey,
+        imageDropScopeKey,
+        canDropImageInNearestTextScope,
+    },
+    wrapModeTest: {
+        testWrapMode,
+        testWrapSide,
+        testHorizontalPosition,
+    },
+    imageResize: {
+        IMAGE_RESIZE_MIN_WIDTH,
+        IMAGE_RESIZE_MIN_HEIGHT,
+        normalizeImageResizeHandleName,
+        imageResizeHandleIndex,
+        computeImageResizeFixedPoint,
+        createImageResizeBounds,
+        clampImageResizeSize,
+    },
+};
+
+export const input = {
+    normalizeCommandColorValue,
+    commandMark,
+    isClearValueCommand,
+    commandSource,
+    inlineCommandTypes,
+    paragraphCommandTypes,
+    markMatchesCommand,
+    normalizeCommandId,
+    pendingMarkForCommand,
+    shouldCoalesceTyping,
+    coalesceTypingOperation,
+    defaultCoalesceWindowMs,
+    BeforeInputCommands,
+    normalizeBeforeInput,
+    createBeforeInputNormalizer,
+    detectAutocompleteTriggerText,
+    compactCommandName,
+    applyLayoutTextEditModel,
+    createTypingChangeBufferFactory,
+};
+
+export const render = {
+    escapeHtml,
+    resolveInlineRunDisplayText,
+    textFromRunsForRender,
+    computeFloatingPosition,
+    formatNonPrintingText,
+    findActiveHeadingBlockIdFromRects,
+    rectFromAny,
+    rectContains,
+    focusRegion: {
+        isElementNode,
+        getFocusRegionFromElement,
+        getFocusTargetDetails,
+    },
+    cssEscape,
+    liveBlockFinder: {
+        findLiveTextBlockElement,
+        findLiveTextBlockElements,
+        findLiveTextBlockElementForContext,
+        liveBlockElementMatchesSelection,
+        liveBlockContextFromElement,
+    },
+    domSelection: {
+        selectionBelongsToEditor,
+        selectionTargetsTextSurface,
+    },
+    selectedDomRect,
+    pageIndexFromPoint,
+    floatingViewport: {
+        floatingViewportBoundsAvoidingChrome,
+        floatingViewportWidthAvoidingSidePanel,
+    },
+    createMiniToolbarPredicate,
+    snapshot: {
+        flattenLayoutSegments,
+        stableChecksum,
+        createRenderSnapshot,
+    },
+    helpers: {
+        domRectToRect,
+        rectsOverlap,
+        rectsOverlapWithTolerance,
+        hasRevisionRun,
+        scopeIncludesBlock,
+        markOverlayNonText,
+    },
+    createModelProjections,
+    createOverlayRenderers,
+    domTextMapping: {
+        isInlineBreakNode,
+        isCaretPlaceholderNode,
+        domLogicalLength,
+        domBoundaryLogicalOffset,
+        createFindTextNodeFactory,
+    },
 };
 
 // Top-level default — what `window.tmDocumentEditorModules` becomes after the IIFE wrap.
@@ -219,5 +1218,10 @@ export default Object.freeze({
     history,
     layout,
     objects,
-    version: 'phase-d-skeleton-6',
+    input,
+    render,
+    clipboard,
+    accessibility,
+    runtime,
+    version: 'phase-d-skeleton-122',
 });
