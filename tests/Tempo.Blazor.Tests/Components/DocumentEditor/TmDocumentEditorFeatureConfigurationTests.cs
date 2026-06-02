@@ -16,7 +16,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider));
 
@@ -33,7 +33,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [DocumentEditorFeatureNames.Image]));
@@ -51,7 +51,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [DocumentEditorFeatureNames.Table]));
@@ -69,7 +69,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [
@@ -90,7 +90,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [DocumentEditorFeatureNames.Table]));

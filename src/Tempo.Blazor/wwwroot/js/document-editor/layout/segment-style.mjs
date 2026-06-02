@@ -28,6 +28,9 @@ export function decorationsFromMarks(marks) {
         const type = String((mark && (mark.type || mark.Type)) || '').toLowerCase();
         if (type === 'underline') decorations.push('underline');
         if (type === 'strikethrough' || type === 'strike') decorations.push('line-through');
+        if (type === 'link' || type === 'hyperlink') decorations.push('underline'); // hyperlinks underline
+        if (type === 'insertion') decorations.push('underline'); // tracked insert
+        if (type === 'deletion') decorations.push('line-through'); // tracked delete
     });
     return unique(decorations);
 }
@@ -37,7 +40,10 @@ export function applySegmentStyleToElement(element, style, decorations) {
     element.style.fontSize = (Number(style.fontSize || 16) || 16) + 'px';
     element.style.fontWeight = style.fontWeight || '400';
     element.style.fontStyle = style.fontStyle || 'normal';
-    if (style.color) element.style.color = style.color;
-    if (style.backgroundColor) element.style.backgroundColor = style.backgroundColor;
-    if (asArray(decorations).length) element.style.textDecoration = decorations.join(' ');
+    // Always assign (with an empty reset) so a REUSED span clears stale color/decoration
+    // when a mark is removed (unbold / unlink / accept-revision); otherwise the old value
+    // would linger because the renderer reuses segment elements by id.
+    element.style.color = style.color || '';
+    element.style.backgroundColor = style.backgroundColor || '';
+    element.style.textDecoration = asArray(decorations).length ? decorations.join(' ') : '';
 }

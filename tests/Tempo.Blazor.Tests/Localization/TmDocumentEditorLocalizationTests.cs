@@ -107,14 +107,14 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
             ["TmDocumentEditor_EmptyDocument"] = "LOC empty"
         });
 
-        var missingProvider = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var missingProvider = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1"));
         missingProvider.Markup.Should().Contain("LOC provider title");
         missingProvider.Markup.Should().Contain("LOC provider message");
 
         var emptyProvider = new InMemoryDocumentEditorProvider();
         emptyProvider.SeedEmptyDocument("doc-empty");
-        var empty = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var empty = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-empty")
             .Add(p => p.Provider, emptyProvider)
             .Add(p => p.ShowToolbar, false)
@@ -123,7 +123,7 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
         empty.WaitForAssertion(() => empty.Markup.Should().Contain("LOC empty"));
         empty.Markup.Should().NotContain("This document is empty");
 
-        var failed = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var failed = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-fail")
             .Add(p => p.Provider, new ThrowingDocumentEditorProvider())
             .Add(p => p.ShowToolbar, false)

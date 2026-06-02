@@ -47,7 +47,7 @@ public class DocumentEditorToolbarModeTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ToolbarMode, DocumentToolbarMode.Compact));

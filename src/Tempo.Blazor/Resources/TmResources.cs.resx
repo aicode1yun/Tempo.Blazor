@@ -2836,6 +2836,7 @@
   <data name="TmDocumentEditor_StatusBarLabel"         xml:space="preserve"><value>Stav dokumentu</value></data>
   <data name="TmDocumentEditor_TextContextMenuLabel"   xml:space="preserve"><value>Kontextové menu textu</value></data>
   <data name="TmDocumentEditor_TableContextMenuLabel"  xml:space="preserve"><value>Kontextové menu tabulky</value></data>
+  <data name="TmDocumentEditor_ContextMenuLabel"  xml:space="preserve"><value>Kontextové menu</value></data>
   <data name="TmDocumentEditor_UntitledDocument"       xml:space="preserve"><value>Nepojmenovaný dokument</value></data>
   <data name="TmDocumentEditor_StatusLoaded"           xml:space="preserve"><value>Načteno</value></data>
   <data name="TmDocumentEditor_EmptyDocument"          xml:space="preserve"><value>Tento dokument je prázdný</value></data>

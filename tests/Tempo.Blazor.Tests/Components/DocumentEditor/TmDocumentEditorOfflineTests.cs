@@ -17,7 +17,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
         var seeded = provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineStore, store));
@@ -38,7 +38,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
         var seeded = provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
@@ -70,7 +70,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
@@ -98,7 +98,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
@@ -128,7 +128,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
@@ -158,7 +158,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.SyncProvider, new ConflictSyncProvider())
@@ -182,7 +182,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
         provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)

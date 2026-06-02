@@ -10,6 +10,8 @@
      data-can-view-audit="@CanViewAudit.ToString()"
      data-ribbon-keyboard-mode="@_ribbonKeyboardMode.ToString().ToLowerInvariant()"
      data-blazor-render-count="@NextBlazorRenderCount"
+     data-render-engine="@EffectiveRenderEngine.ToString()"
+     data-render-engine-requested="@RenderEngine.ToString()"
      @onkeydown="HandleEditorKeyDownAsync"
      @onclick="CloseFloatingUi"
      @attributes="AdditionalAttributes">
@@ -134,6 +136,9 @@
                                      OnToggleInsert="ToggleInsertPanelAsync"
                                      OnInsertTable="() => InsertTableAsync()"
                                      OnInsertTableWithDimensions="d => InsertTableAsync(d.Rows, d.Columns)"
+                                     ShowBlockStyle="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CoreEnginePreview)"
+                                     CurrentBlockStyle="@_coreBlockStyle"
+                                     OnBlockStyleChanged="ApplyBlockStyleAsync"
                                      OnInsertImage="OpenImageDialogAsync"
                                      CanUploadImages="@(ImageProvider is not null)"
                                      CanBrowseImageAssets="@(ImageAssetOptions.Count > 0)"
@@ -276,7 +281,9 @@
                                  OnResultsChanged="HandleFindResultsChangedAsync"
                                  OnActiveResultChanged="HandleActiveSearchResultChangedAsync"
                                  OnReplaceOneRequested="HandleFindReplaceOneRequestedAsync"
-                                 OnReplaceAllRequested="HandleFindReplaceAllRequestedAsync" />
+                                 OnReplaceAllRequested="HandleFindReplaceAllRequestedAsync"
+                                 OnSearchRequested="HandleFindSearchRequestedAsync"
+                                 OnNavigateRequested="HandleFindNavigateAsync" />
         }
 
         <TmDocumentCommandPalette IsOpen="@_commandPaletteOpen"
@@ -307,6 +314,125 @@
                             <TmIcon Name="file-text" Size="IconSize.Lg" />
                             <span>@Loc["TmDocumentEditor_EmptyDocument"]</span>
                         </div>
+                    }
+                    else if (EffectiveRenderEngine == DocumentEditorRenderEngine.CoreEnginePreview)
+                    {
+                        @* R.4.8 preview — new model-owned engine (render + keyboard/IME edit +
+                           save round-trip). Toolbar/autosave/collab not yet routed here. *@
+                        <TmDocumentCoreEngineHost @ref="_coreHost"
+                                                  Document="@DisplayedDocument"
+                                                  AriaLabel="@(Loc["TmDocumentEditor_EditorLabel"])"
+                                                  ChangeDebounceMs="@CoreChangeDebounceMs"
+                                                  OnModelChanged="HandleCoreModelChangedAsync"
+                                                  OnContextMenu="HandleCoreContextMenuAsync"
+                                                  OnObjectSelected="HandleCoreObjectSelectedAsync" />
+                        @if (_coreContextMenu is not null)
+                        {
+                            <div class="tm-document-core-context-backdrop"
+                                 data-testid="document-core-context-backdrop"
+                                 @onclick="CloseCoreContextMenu"
+                                 @oncontextmenu="CloseCoreContextMenu"
+                                 @oncontextmenu:preventDefault="true"></div>
+                            <section class="tm-document-editor__context-menu tm-document-core-context-menu"
+                                     style="@CoreContextMenuStyle()"
+                                     role="menu"
+                                     aria-label="@Loc["TmDocumentEditor_ContextMenuLabel"]"
+                                     data-testid="document-core-context-menu"
+                                     @onpointerdown:preventDefault="true">
+                                <button type="button" role="menuitem" data-testid="document-core-context-cut"
+                                        disabled="@(!_coreContextMenu.Info.HasSelection)"
+                                        @onclick='() => RunCoreContextCommandAsync("cut")'>
+                                    <TmIcon Name="scissors" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Cut"]</span>
+                                </button>
+                                <button type="button" role="menuitem" data-testid="document-core-context-copy"
+                                        disabled="@(!_coreContextMenu.Info.HasSelection)"
+                                        @onclick='() => RunCoreContextCommandAsync("copy")'>
+                                    <TmIcon Name="copy" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Copy"]</span>
+                                </button>
+                                <button type="button" role="menuitem" data-testid="document-core-context-paste"
+                                        @onclick='() => RunCoreContextCommandAsync("paste")'>
+                                    <TmIcon Name="clipboard" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Paste"]</span>
+                                </button>
+                                <div class="tm-document-editor__context-separator" role="separator"></div>
+                                <button type="button" role="menuitem" data-testid="document-core-context-comment"
+                                        disabled="@(!_coreContextMenu.Info.HasSelection)"
+                                        @onclick="BeginCoreContextCommentAsync">
+                                    <TmIcon Name="message-square" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_AddComment"]</span>
+                                </button>
+                                @if (string.IsNullOrEmpty(_coreContextMenu.Info.Link))
+                                {
+                                    <button type="button" role="menuitem" data-testid="document-core-context-link"
+                                            disabled="@(!_coreContextMenu.Info.HasSelection)"
+                                            @onclick="AddCoreContextLinkAsync">
+                                        <TmIcon Name="link" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Link"]</span>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" role="menuitem" data-testid="document-core-context-remove-link"
+                                            @onclick='() => RunCoreContextCommandAsync("removelink")'>
+                                        <TmIcon Name="unlink" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_RemoveLink"]</span>
+                                    </button>
+                                }
+                                @if (_coreContextMenu.Info.Misspelling is { } misspelling)
+                                {
+                                    <div class="tm-document-editor__context-separator" role="separator"></div>
+                                    @foreach (var suggestion in misspelling.Suggestions.Take(4))
+                                    {
+                                        var pick = suggestion;
+                                        <button type="button" role="menuitem"
+                                                data-testid="document-core-context-spell-suggestion"
+                                                @onclick="() => ApplyCoreSpellSuggestionAsync(pick)">
+                                            <TmIcon Name="check" Size="IconSize.Sm" /><span>@pick</span>
+                                        </button>
+                                    }
+                                }
+                                @if (_coreContextMenu.Info.InTable)
+                                {
+                                    <div class="tm-document-editor__context-separator" role="separator"></div>
+                                    <button type="button" role="menuitem" data-testid="document-core-context-table-row"
+                                            @onclick='() => RunCoreContextCommandAsync("addtablerow")'>
+                                        <TmIcon Name="insert-row" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_AddRowAfter"]</span>
+                                    </button>
+                                    <button type="button" role="menuitem" data-testid="document-core-context-table-col"
+                                            @onclick='() => RunCoreContextCommandAsync("addtablecolumn")'>
+                                        <TmIcon Name="insert-column" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_AddColumnAfter"]</span>
+                                    </button>
+                                }
+                            </section>
+                        }
+                        @if (_coreImageDialogOpen)
+                        {
+                            <div class="tm-document-core-image-dialog"
+                                 role="dialog"
+                                 aria-modal="true"
+                                 aria-label="@Loc["TmDocumentEditor_InsertImage"]"
+                                 data-testid="document-core-image-dialog">
+                                <label class="tm-document-core-image-dialog__field">
+                                    <span>@Loc["TmDocumentEditor_ImageInsertUrl"]</span>
+                                    <input type="text"
+                                           value="@_coreImageUrl"
+                                           @oninput="args => _coreImageUrl = args.Value?.ToString() ?? string.Empty"
+                                           placeholder="https://…"
+                                           data-testid="document-core-image-url" />
+                                </label>
+                                <label class="tm-document-core-image-dialog__field">
+                                    <span>@Loc["TmDocumentEditor_UploadImage"]</span>
+                                    <InputFile OnChange="HandleCoreImageFileAsync"
+                                               accept="image/*"
+                                               data-testid="document-core-image-file" />
+                                </label>
+                                <div class="tm-document-core-image-dialog__actions">
+                                    <button type="button"
+                                            disabled="@string.IsNullOrWhiteSpace(_coreImageUrl)"
+                                            @onclick="InsertCoreImageAsync"
+                                            data-testid="document-core-image-insert">@Loc["TmDocumentEditor_InsertImage"]</button>
+                                    <button type="button"
+                                            @onclick="CancelCoreImageDialog"
+                                            data-testid="document-core-image-cancel">@Loc["TmDocumentEditor_Cancel"]</button>
+                                </div>
+                            </div>
+                        }
                     }
                     else
                     {
@@ -440,7 +566,27 @@
                                             OnClose="CloseVersionPanel" />
                 </VersionsContent>
                 <PropertiesContent>
-                    @if (ActiveImageContent is { } activeImage)
+                    @if (UsingCoreEngine && _coreActiveImage is { } coreImage)
+                    {
+                        @* R.4.8 — image inspector driven by the core engine's object selection
+                           (JS→.NET). Alt text + wrap mode route to the engine; other controls
+                           are no-ops in preview. *@
+                        <section class="tm-document-image-properties-panel"
+                                 data-testid="document-image-properties-panel"
+                                 data-active-object-id="@_coreSelectedObject?.ObjectId">
+                            <TmDocumentImageInspector Image="coreImage"
+                                                      AltTextChanged="SetActiveImageAltTextFromPanelAsync"
+                                                      WrapModeChanged="SetActiveImageWrapModeFromPanelAsync"
+                                                      SizeChanged="SetActiveImageSizeFromPanelAsync"
+                                                      AlignmentChanged="SetActiveImageAlignmentFromPanelAsync"
+                                                      CaptionChanged="SetActiveImageCaptionFromPanelAsync"
+                                                      ToggleCaption="ToggleActiveImageCaptionFromPanelAsync"
+                                                      PositionChanged="SetActiveImagePositionFromPanelAsync"
+                                                      BringForward="BringActiveImageForwardFromPanelAsync"
+                                                      SendBackward="SendActiveImageBackwardFromPanelAsync" />
+                        </section>
+                    }
+                    else if (ActiveImageContent is { } activeImage)
                     {
                         <section class="tm-document-image-properties-panel"
                                  data-testid="document-image-properties-panel"

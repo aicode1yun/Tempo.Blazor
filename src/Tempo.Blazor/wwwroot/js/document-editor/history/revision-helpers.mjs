@@ -73,6 +73,26 @@ export function createStructureRevisionPayload(range, label, userId, source, ext
         'Structure', range, label || 'SplitBlock', userId, source || 'structure', extra);
 }
 
+// Live-typing insertion payload: derives the range from a selection (via the
+// injected `selectionToRange`) and spans `[caret, caret + text.length]`. Exposed as
+// a factory so the engine can inject its selection→range resolver.
+export function createLiveInsertionRevisionPayloadFactory(options) {
+    const opts = options || {};
+    if (typeof opts.selectionToRange !== 'function') {
+        throw new TypeError(
+            'createLiveInsertionRevisionPayloadFactory requires options.selectionToRange (function)');
+    }
+    const { selectionToRange } = opts;
+    return function createLiveInsertionRevisionPayload(selection, text, userId) {
+        const range = selectionToRange(selection || {});
+        return createInsertionRevisionPayload({
+            blockId: range.blockId,
+            start: Number(range.start || 0),
+            end: Number(range.start || 0) + asText(text).length,
+        }, text, userId || 'local', 'keydown');
+    };
+}
+
 export function createDeletionRevisionPayloadFactory(options) {
     const opts = options || {};
     if (typeof opts.findBlock !== 'function') {

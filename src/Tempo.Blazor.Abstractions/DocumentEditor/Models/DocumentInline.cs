@@ -228,7 +228,10 @@ public enum InlineMarkType
     FontFamily,
 
     /// <summary>Font size.</summary>
-    FontSize
+    FontSize,
+
+    /// <summary>Named bookmark anchor (R.5.5). The bookmark name is carried in the mark value.</summary>
+    Bookmark
 }
 
 /// <summary>Hyperlink metadata.</summary>

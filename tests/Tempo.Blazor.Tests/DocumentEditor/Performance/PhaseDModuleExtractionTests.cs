@@ -1043,11 +1043,3783 @@ public sealed class PhaseDModuleExtractionTests
                 && typeof mod.render.domTextMapping.domBoundaryLogicalOffset === 'function'
                 && typeof mod.render.domTextMapping.createFindTextNodeFactory === 'function',
                 'entry.mjs must re-export render.domTextMapping helpers');
-            assert.ok(mod.default && mod.default.version === 'phase-d-skeleton-122',
+            assert.ok(typeof mod.layout.createCaretRectFromLayout === 'function',
+                'entry.mjs must re-export layout.createCaretRectFromLayout');
+            assert.ok(mod.core.wordBoundary
+                && typeof mod.core.wordBoundary.previousWordBoundary === 'function'
+                && typeof mod.core.wordBoundary.nextWordBoundary === 'function',
+                'entry.mjs must re-export core.wordBoundary helpers');
+            assert.ok(typeof mod.layout.createObjectTextExclusionRectForHitTest === 'function',
+                'entry.mjs must re-export layout.createObjectTextExclusionRectForHitTest');
+            assert.ok(mod.render.liveParagraphFastPatch
+                && typeof mod.render.liveParagraphFastPatch.liveTextNodeCanUseFastPatch === 'function'
+                && typeof mod.render.liveParagraphFastPatch.createTextBlockHasOnlyPlainTextRuns === 'function',
+                'entry.mjs must re-export render.liveParagraphFastPatch helpers');
+            assert.ok(typeof mod.history.createInitialDirtyState === 'function'
+                && typeof mod.history.getOperationId === 'function',
+                'entry.mjs must re-export history.createInitialDirtyState and getOperationId');
+            assert.ok(typeof mod.history.createTextEditHandlers === 'function',
+                'entry.mjs must re-export history.createTextEditHandlers');
+            assert.ok(typeof mod.history.createImageHandlers === 'function',
+                'entry.mjs must re-export history.createImageHandlers');
+            assert.ok(typeof mod.layout.createObjectHitCollectors === 'function',
+                'entry.mjs must re-export layout.createObjectHitCollectors');
+            assert.ok(typeof mod.render.createSetLiveParagraphText === 'function',
+                'entry.mjs must re-export render.createSetLiveParagraphText');
+            assert.ok(typeof mod.render.createTargetIsBehindTextOverlaySurface === 'function',
+                'entry.mjs must re-export render.createTargetIsBehindTextOverlaySurface');
+            assert.ok(typeof mod.render.createNativeCaretRangeFromPoint === 'function',
+                'entry.mjs must re-export render.createNativeCaretRangeFromPoint');
+            assert.ok(typeof mod.render.createEditableSurfacePredicates === 'function',
+                'entry.mjs must re-export render.createEditableSurfacePredicates');
+            assert.ok(mod.objects.previewIntervalsSignature
+                && typeof mod.objects.previewIntervalsSignature.normalizePreviewIntervalForCompare === 'function'
+                && typeof mod.objects.previewIntervalsSignature.previewIntervalsSignature === 'function',
+                'entry.mjs must re-export objects.previewIntervalsSignature helpers');
+            assert.ok(mod.objects.imageMoveTrack
+                && typeof mod.objects.imageMoveTrack.captureObjectPointerPreviewNodeState === 'function'
+                && typeof mod.objects.imageMoveTrack.restoreObjectPointerPreviewNodeState === 'function'
+                && typeof mod.objects.imageMoveTrack.createSerializeImageMoveTrack === 'function'
+                && typeof mod.objects.imageMoveTrack.createReadImageMoveTrackOriginalRect === 'function',
+                'entry.mjs must re-export objects.imageMoveTrack helpers');
+            assert.ok(mod.objects.imageResizePreview
+                && typeof mod.objects.imageResizePreview.shouldReanchorImageObject === 'function'
+                && typeof mod.objects.imageResizePreview.createComputeImageResizePreview === 'function',
+                'entry.mjs must re-export objects.imageResizePreview helpers');
+            assert.ok(typeof mod.objects.createComputeImageMoveSnap === 'function',
+                'entry.mjs must re-export objects.createComputeImageMoveSnap');
+            assert.ok(typeof mod.render.createReadTextPositionDomContext === 'function',
+                'entry.mjs must re-export render.createReadTextPositionDomContext');
+            assert.ok(typeof mod.layout.createNormalizeNearestTextPositionLineBox === 'function',
+                'entry.mjs must re-export layout.createNormalizeNearestTextPositionLineBox');
+            assert.ok(typeof mod.render.createBlockTextLineRectsFromDom === 'function',
+                'entry.mjs must re-export render.createBlockTextLineRectsFromDom');
+            assert.ok(typeof mod.render.findNearestBodyParagraphBlockIdFromPoint === 'function',
+                'entry.mjs must re-export render.findNearestBodyParagraphBlockIdFromPoint');
+            assert.ok(typeof mod.render.createGetObjectPointerTarget === 'function',
+                'entry.mjs must re-export render.createGetObjectPointerTarget');
+            assert.ok(typeof mod.objects.createResolveImageObjectPointerModelTarget === 'function',
+                'entry.mjs must re-export objects.createResolveImageObjectPointerModelTarget');
+            assert.ok(typeof mod.objects.createImageTargetHelpers === 'function',
+                'entry.mjs must re-export objects.createImageTargetHelpers');
+            assert.ok(mod.objects.insertImagePayload
+                && typeof mod.objects.insertImagePayload.createFirstDrawingRunFromSourceBlock === 'function'
+                && typeof mod.objects.insertImagePayload.createImagePayloadFromInsertImageCommand === 'function',
+                'entry.mjs must re-export objects.insertImagePayload helpers');
+            assert.ok(typeof mod.objects.createNormalizeImageInsertPayload === 'function',
+                'entry.mjs must re-export objects.createNormalizeImageInsertPayload');
+            assert.ok(typeof mod.objects.createActiveImageTarget === 'function',
+                'entry.mjs must re-export objects.createActiveImageTarget');
+            assert.ok(typeof mod.objects.createSelectionTargetForInsertImageCommand === 'function',
+                'entry.mjs must re-export objects.createSelectionTargetForInsertImageCommand');
+            assert.ok(typeof mod.render.normalizeSearchMarkersForRender === 'function',
+                'entry.mjs must re-export render.normalizeSearchMarkersForRender');
+            assert.ok(typeof mod.render.overlapArea === 'function'
+                && typeof mod.render.createTextOverlapArea === 'function',
+                'entry.mjs must re-export render.overlapArea + createTextOverlapArea');
+            assert.ok(mod.render.wysiwygLayoutGeometry
+                && typeof mod.render.wysiwygLayoutGeometry.createIsWysiwygLayoutElementVisible === 'function'
+                && typeof mod.render.wysiwygLayoutGeometry.getWysiwygRectRelativeTo === 'function'
+                && typeof mod.render.wysiwygLayoutGeometry.createUnionWysiwygRects === 'function',
+                'entry.mjs must re-export render.wysiwygLayoutGeometry helpers');
+            assert.ok(mod.render.wysiwygRenderHelpers
+                && typeof mod.render.wysiwygRenderHelpers.normalizeScopedBlockIdSet === 'function'
+                && typeof mod.render.wysiwygRenderHelpers.createWysiwygParagraphProjectionSignature === 'function'
+                && typeof mod.render.wysiwygRenderHelpers.createObjectEntryPaintLayer === 'function',
+                'entry.mjs must re-export render.wysiwygRenderHelpers');
+            assert.ok(mod.render.wysiwygObjectLayerRect
+                && typeof mod.render.wysiwygObjectLayerRect.applyWysiwygObjectLayerRect === 'function'
+                && typeof mod.render.wysiwygObjectLayerRect.createResolveWysiwygObjectLayerRect === 'function',
+                'entry.mjs must re-export render.wysiwygObjectLayerRect helpers');
+            assert.ok(typeof mod.render.createGetWysiwygObjectVisualRectRelativeTo === 'function',
+                'entry.mjs must re-export render.createGetWysiwygObjectVisualRectRelativeTo');
+            assert.ok(typeof mod.render.groupProjectedWysiwygSegmentsByLine === 'function'
+                && typeof mod.render.createProjectedWysiwygLineRenderer === 'function',
+                'entry.mjs must re-export render projected-wysiwyg-line helpers');
+            assert.ok(typeof mod.render.createSplitProjectedWysiwygSegmentsForReflow === 'function',
+                'entry.mjs must re-export render.createSplitProjectedWysiwygSegmentsForReflow');
+            assert.ok(typeof mod.render.createResolveProjectedWysiwygLineIntervals === 'function',
+                'entry.mjs must re-export render.createResolveProjectedWysiwygLineIntervals');
+            assert.ok(typeof mod.render.restoreWysiwygProjectedParagraph === 'function'
+                && typeof mod.render.createShouldProjectWysiwygParagraph === 'function',
+                'entry.mjs must re-export render projected-paragraph-state helpers');
+            assert.ok(typeof mod.render.createReflowProjectedWysiwygSegments === 'function',
+                'entry.mjs must re-export render.createReflowProjectedWysiwygSegments');
+            assert.ok(typeof mod.render.createProjectWysiwygParagraphAroundExclusions === 'function',
+                'entry.mjs must re-export render.createProjectWysiwygParagraphAroundExclusions');
+            assert.ok(typeof mod.render.createCollectWysiwygDomTextExclusions === 'function',
+                'entry.mjs must re-export render.createCollectWysiwygDomTextExclusions');
+            assert.ok(mod.render.reviewDisplayMode
+                && typeof mod.render.reviewDisplayMode.normalizeReviewDisplayModeClass === 'function'
+                && typeof mod.render.reviewDisplayMode.applyReviewDisplayModeClass === 'function',
+                'entry.mjs must re-export render.reviewDisplayMode helpers');
+            assert.ok(mod.core.markerReaders
+                && typeof mod.core.markerReaders.readCommentId === 'function'
+                && typeof mod.core.markerReaders.readCommentStatus === 'function'
+                && typeof mod.core.markerReaders.commentById === 'function'
+                && typeof mod.core.markerReaders.createRevisionReaders === 'function',
+                'entry.mjs must re-export core.markerReaders helpers');
+            assert.ok(typeof mod.core.createAnchorRanges === 'function',
+                'entry.mjs must re-export core.createAnchorRanges');
+            assert.ok(typeof mod.core.createInlineMarkerRanges === 'function',
+                'entry.mjs must re-export core.createInlineMarkerRanges');
+            assert.ok(typeof mod.core.createRuntimeMarkerBuilders === 'function',
+                'entry.mjs must re-export core.createRuntimeMarkerBuilders');
+            assert.ok(mod.core.testProjections
+                && typeof mod.core.testProjections.blockTypeForTest === 'function'
+                && typeof mod.core.testProjections.paragraphRunsForTest === 'function',
+                'entry.mjs must re-export core.testProjections helpers');
+            assert.ok(typeof mod.core.createMarkerStoreFactory === 'function',
+                'entry.mjs must re-export core.createMarkerStoreFactory');
+            assert.ok(mod.render.headerFooter
+                && typeof mod.render.headerFooter.normalizeHeaderFooterScope === 'function'
+                && typeof mod.render.headerFooter.resolveHeaderFooterRegion === 'function',
+                'entry.mjs must re-export render.headerFooter helpers');
+            assert.ok(mod.render.inlineStyleSanitise
+                && typeof mod.render.inlineStyleSanitise.isSafeInlineCssColor === 'function'
+                && typeof mod.render.inlineStyleSanitise.isSafeInlineFontFamily === 'function'
+                && typeof mod.render.inlineStyleSanitise.normalizeInlineFontSize === 'function'
+                && typeof mod.render.inlineStyleSanitise.createRenderInlineTextHtml === 'function',
+                'entry.mjs must re-export render.inlineStyleSanitise helpers');
+            assert.ok(typeof mod.render.createRenderFormattedInlineHtml === 'function',
+                'entry.mjs must re-export render.createRenderFormattedInlineHtml');
+            assert.ok(mod.render.markerSpanHtml
+                && typeof mod.render.markerSpanHtml.createRenderCommentSpanHtml === 'function'
+                && typeof mod.render.markerSpanHtml.createRenderRevisionSpanHtml === 'function'
+                && typeof mod.render.markerSpanHtml.createRenderSearchSpanHtml === 'function',
+                'entry.mjs must re-export render.markerSpanHtml');
+            assert.ok(mod.render.inlineDrawingHelpers
+                && typeof mod.render.inlineDrawingHelpers.inlineDrawingIsSelected === 'function'
+                && typeof mod.render.inlineDrawingHelpers.createRenderDrawingObjectTestMarkerHtml === 'function',
+                'entry.mjs must re-export render.inlineDrawingHelpers');
+            assert.ok(mod.render.objectAriaHtml
+                && typeof mod.render.objectAriaHtml.createRenderObjectSelectionDescriptionAttribute === 'function'
+                && typeof mod.render.objectAriaHtml.createRenderObjectResizeHandleHtml === 'function'
+                && typeof mod.render.objectAriaHtml.createRenderObjectFocusPolicyAttributes === 'function',
+                'entry.mjs must re-export render.objectAriaHtml');
+            assert.ok(mod.render.imageLayoutBubble
+                && typeof mod.render.imageLayoutBubble.createRenderImageLayoutBubbleButton === 'function'
+                && typeof mod.render.imageLayoutBubble.createRenderImageLayoutBubbleHtml === 'function',
+                'entry.mjs must re-export render.imageLayoutBubble');
+            assert.ok(mod.render.drawingFigureStyle
+                && typeof mod.render.drawingFigureStyle.createExplicitObjectLayerRect === 'function'
+                && typeof mod.render.drawingFigureStyle.createObjectLayerRectFromObject === 'function'
+                && typeof mod.render.drawingFigureStyle.createRenderDrawingFigureStyle === 'function'
+                && typeof mod.render.drawingFigureStyle.estimateInlineDrawingCaptionReserveHeight === 'function'
+                && typeof mod.render.drawingFigureStyle.createRenderDrawingAnchorReservationStyle === 'function',
+                'entry.mjs must re-export render.drawingFigureStyle');
+            assert.ok(typeof mod.render.createRenderImageFigureClasses === 'function',
+                'entry.mjs must re-export render.createRenderImageFigureClasses');
+            assert.ok(mod.render.domTextPoint
+                && typeof mod.render.domTextPoint.createFirstTextPointInElement === 'function'
+                && typeof mod.render.domTextPoint.createProjectedDomTextPointAtBlockOffset === 'function',
+                'entry.mjs must re-export render.domTextPoint');
+            assert.ok(typeof mod.render.findLayoutObjectForRender === 'function',
+                'entry.mjs must re-export render.findLayoutObjectForRender');
+            assert.ok(typeof mod.render.createCollectWysiwygPageObjectEntries === 'function',
+                'entry.mjs must re-export render.createCollectWysiwygPageObjectEntries');
+            assert.ok(typeof mod.render.createWysiwygObjectRenderEntryFactory === 'function',
+                'entry.mjs must re-export render.createWysiwygObjectRenderEntryFactory');
+            assert.ok(typeof mod.render.createSyncWysiwygObjectLayerPositions === 'function',
+                'entry.mjs must re-export render.createSyncWysiwygObjectLayerPositions');
+            assert.ok(typeof mod.render.createRenderEngineTableHtml === 'function',
+                'entry.mjs must re-export render.createRenderEngineTableHtml');
+            assert.ok(typeof mod.render.createMarkersForBlock === 'function',
+                'entry.mjs must re-export render.createMarkersForBlock');
+            assert.ok(mod.objects.imageInsert
+                && typeof mod.objects.imageInsert.insertDrawingRunAtTextOffset === 'function'
+                && typeof mod.objects.imageInsert.splitInlineListForDrawingInsert === 'function',
+                'entry.mjs must re-export objects.imageInsert');
+            assert.ok(typeof mod.history.createLiveInsertionRevisionPayloadFactory === 'function',
+                'entry.mjs must re-export history.createLiveInsertionRevisionPayloadFactory');
+            assert.ok(typeof mod.input.createFormattingStateModule === 'function',
+                'entry.mjs must re-export input.createFormattingStateModule');
+            assert.ok(mod.core.canonical
+                && typeof mod.core.canonical.fromCanonicalDocument === 'function'
+                && typeof mod.core.canonical.diffCanonicalDocuments === 'function',
+                'entry.mjs must re-export core.canonical');
+            assert.ok(typeof mod.core.createObjectSelectionSnapshotFactory === 'function',
+                'entry.mjs must re-export core.createObjectSelectionSnapshotFactory');
+            assert.ok(typeof mod.core.createSelectionNormalizers === 'function',
+                'entry.mjs must re-export core.createSelectionNormalizers');
+            assert.ok(typeof mod.core.createSelectionPostFixerFactory === 'function',
+                'entry.mjs must re-export core.createSelectionPostFixerFactory');
+            assert.ok(typeof mod.objects.createTableControllerFactory === 'function',
+                'entry.mjs must re-export objects.createTableControllerFactory');
+            assert.ok(typeof mod.history.createCommandDispatcherFactory === 'function',
+                'entry.mjs must re-export history.createCommandDispatcherFactory');
+            assert.ok(typeof mod.history.createRevisionEngineFactory === 'function',
+                'entry.mjs must re-export history.createRevisionEngineFactory');
+            assert.ok(typeof mod.history.createHistoryControllerFactory === 'function',
+                'entry.mjs must re-export history.createHistoryControllerFactory');
+            assert.ok(typeof mod.runtime.createBoundaryPatchModule === 'function',
+                'entry.mjs must re-export runtime.createBoundaryPatchModule');
+            assert.ok(typeof mod.runtime.createWatchdogInstaller === 'function',
+                'entry.mjs must re-export runtime.createWatchdogInstaller');
+            assert.ok(mod.runtime.commandExecute
+                && typeof mod.runtime.commandExecute.createCommandExecutor === 'function'
+                && typeof mod.runtime.commandExecute.readCommandName === 'function',
+                'entry.mjs must re-export runtime.commandExecute');
+            assert.ok(typeof mod.runtime.createPerformanceProbe === 'function',
+                'entry.mjs must re-export runtime.createPerformanceProbe');
+            assert.ok(typeof mod.layout.createParagraphLayoutEngineFactory === 'function',
+                'entry.mjs must re-export layout.createParagraphLayoutEngineFactory');
+            assert.ok(mod.layout.paragraphRuns
+                && typeof mod.layout.paragraphRuns.flattenParagraphRuns === 'function',
+                'entry.mjs must re-export layout.paragraphRuns');
+            assert.ok(mod.layout.fontMetrics
+                && typeof mod.layout.fontMetrics.createFontMetricsService === 'function'
+                && typeof mod.layout.fontMetrics.syntheticRunMetrics === 'function',
+                'entry.mjs must re-export layout.fontMetrics');
+            assert.ok(mod.render.atomicOverlays
+                && typeof mod.render.atomicOverlays.createObjectFocusPolicy === 'function'
+                && typeof mod.render.atomicOverlays.createRenderSelectionOverlay === 'function',
+                'entry.mjs must re-export render.atomicOverlays');
+            assert.ok(typeof mod.render.createAtomicRendererFactory === 'function',
+                'entry.mjs must re-export render.createAtomicRendererFactory');
+            assert.ok(mod.coreEngine && typeof mod.coreEngine.createRenderHost === 'function',
+                'entry.mjs must re-export coreEngine.createRenderHost');
+            assert.ok(typeof mod.coreEngine.createInputSurface === 'function'
+                && mod.coreEngine.editModel && typeof mod.coreEngine.editModel.applyInsertText === 'function',
+                'entry.mjs must re-export coreEngine.createInputSurface + editModel');
+            assert.ok(mod.coreEngine.hitTest && typeof mod.coreEngine.hitTest.hitTestPoint === 'function'
+                && mod.coreEngine.caret && typeof mod.coreEngine.caret.moveCaretByKey === 'function'
+                && mod.coreEngine.selection && typeof mod.coreEngine.selection.selectionRectsForRange === 'function',
+                'entry.mjs must re-export coreEngine.hitTest + caret + selection');
+            assert.ok(typeof mod.coreEngine.editModel.applyReplaceRange === 'function'
+                && typeof mod.coreEngine.selection.createCompositionUnderlineElement === 'function',
+                'entry.mjs must re-export R.4.4 IME composition primitives');
+            assert.ok(mod.layout.bidi && typeof mod.layout.bidi.resolveLevels === 'function'
+                && typeof mod.layout.bidi.reorderVisual === 'function'
+                && mod.layout.grapheme && typeof mod.layout.grapheme.nextGraphemeBoundary === 'function'
+                && mod.coreEngine.bidi && typeof mod.coreEngine.bidi.applyBidiToLayout === 'function',
+                'entry.mjs must re-export R.4.5 bidi + grapheme');
+            assert.ok(mod.coreEngine.editFormat && typeof mod.coreEngine.editFormat.applyMarkToBlockRange === 'function'
+                && typeof mod.coreEngine.editFormat.blockRangeHasMark === 'function'
+                && typeof mod.coreEngine.editFormat.setParagraphProperty === 'function',
+                'entry.mjs must re-export R.4.6 editFormat');
+            assert.ok(mod.coreEngine.objectOverlay && typeof mod.coreEngine.objectOverlay.createObjectElement === 'function'
+                && typeof mod.coreEngine.objectOverlay.objectHitTest === 'function'
+                && typeof mod.coreEngine.objectOverlay.resizeRectByHandle === 'function',
+                'entry.mjs must re-export R.4.6d objectOverlay');
+            assert.ok(typeof mod.coreEngine.createUndoStack === 'function',
+                'entry.mjs must re-export R.4.6i createUndoStack');
+            assert.ok(mod.coreEngine.paragraphStyles && typeof mod.coreEngine.paragraphStyles.applyParagraphStyle === 'function'
+                && typeof mod.coreEngine.paragraphStyles.getDocumentOutline === 'function',
+                'entry.mjs must re-export R.4.6b paragraphStyles');
+            assert.ok(mod.coreEngine.editTable && typeof mod.coreEngine.editTable.createTableModel === 'function'
+                && typeof mod.coreEngine.editTable.addTableRow === 'function'
+                && typeof mod.coreEngine.editTable.addTableColumn === 'function',
+                'entry.mjs must re-export R.4.6c editTable');
+            assert.ok(typeof mod.coreEngine.editFormat.firstMarkValueInRange === 'function',
+                'entry.mjs must re-export R.4.6h firstMarkValueInRange (hyperlinks)');
+            assert.ok(mod.coreEngine.findReplace && typeof mod.coreEngine.findReplace.findMatches === 'function',
+                'entry.mjs must re-export R.4.6h-2 findReplace');
+            assert.ok(mod.coreEngine.trackChanges && typeof mod.coreEngine.trackChanges.acceptAllRevisions === 'function'
+                && typeof mod.coreEngine.trackChanges.rejectAllRevisions === 'function',
+                'entry.mjs must re-export R.4.6f trackChanges');
+            assert.ok(mod.coreEngine.comments && typeof mod.coreEngine.comments.addCommentMarkToRange === 'function'
+                && typeof mod.coreEngine.comments.commentAnchorText === 'function',
+                'entry.mjs must re-export R.4.6g comments');
+            assert.ok(mod.coreEngine.headerFooter && typeof mod.coreEngine.headerFooter.pageNumberField === 'function'
+                && typeof mod.coreEngine.headerFooter.setRegion === 'function',
+                'entry.mjs must re-export R.4.6e headerFooter');
+            assert.ok(mod.coreEngine.a11y && typeof mod.coreEngine.a11y.applyEditorAria === 'function'
+                && typeof mod.coreEngine.a11y.describeCaretContext === 'function'
+                && typeof mod.coreEngine.a11y.createLiveRegion === 'function',
+                'entry.mjs must re-export R.4.7 a11y');
+            assert.ok(typeof mod.coreEngine.createCoreEditor === 'function',
+                'entry.mjs must re-export R.4.8 createCoreEditor (bridge facade)');
+            assert.ok(mod.default && mod.default.version === 'phase-d-skeleton-261',
                 'entry.mjs default export must carry the current skeleton version marker');
             console.log('OK');
             """;
         await RunNodeScriptAsync("phase-d-entry-point", script, "runtime/entry.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageInsertModuleMatchesLegacyIifeByteForByte()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        // Behaviour-parity check against the legacy IIFE's __testHooks for the image
+        // insert split/insert pipeline. Both implementations mutate the supplied block,
+        // so each case is cloned before being handed to either side.
+        var script = """
+            const path = require('path');
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+
+            const legacyPath = path.resolve(process.argv[3]);
+            const legacy = fs.readFileSync(legacyPath, 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout };
+            vm.createContext(sandbox);
+            vm.runInContext(legacy, sandbox);
+            const hooks = sandbox.window.tmDocumentEditorEngine.__testHooks;
+            assert.ok(typeof hooks.splitInlineListForDrawingInsert === 'function',
+                'legacy IIFE must expose __testHooks.splitInlineListForDrawingInsert');
+            assert.ok(typeof hooks.insertDrawingRunAtTextOffset === 'function',
+                'legacy IIFE must expose __testHooks.insertDrawingRunAtTextOffset');
+
+            function makeBlock() {
+                return {
+                    id: 'p1',
+                    type: 'paragraph',
+                    content: {
+                        type: 'paragraph',
+                        runs: [
+                            { kind: 'text', id: 'r1', text: 'Hello ' },
+                            { kind: 'text', id: 'r2', text: 'world' },
+                        ],
+                    },
+                };
+            }
+            const drawing = {
+                kind: 'drawing', id: 'd1', objectId: 'obj-1',
+                url: 'http://img/x.png', layout: {},
+            };
+
+            // --- splitInlineListForDrawingInsert parity (offsets + affinity) ---
+            const splitCases = [
+                [0, undefined], [3, undefined], [6, undefined],
+                [11, undefined], [3, { affinity: 'before' }],
+            ];
+            for (let i = 0; i < splitCases.length; i++) {
+                const [offset, opts] = splitCases[i];
+                const legacyOut = hooks.splitInlineListForDrawingInsert(makeBlock(), offset, opts);
+                const moduleOut = mod.splitInlineListForDrawingInsert(makeBlock(), offset, opts);
+                assert.strictEqual(JSON.stringify(moduleOut), JSON.stringify(legacyOut),
+                    `split case ${i} diverged (offset=${offset})` +
+                    `\\n  module: ${JSON.stringify(moduleOut)}` +
+                    `\\n  legacy: ${JSON.stringify(legacyOut)}`);
+            }
+
+            // --- insertDrawingRunAtTextOffset parity ---
+            for (let i = 0; i < splitCases.length; i++) {
+                const [offset, opts] = splitCases[i];
+                const legacyBlock = makeBlock();
+                const moduleBlock = makeBlock();
+                const legacyOut = hooks.insertDrawingRunAtTextOffset(
+                    legacyBlock, offset, JSON.parse(JSON.stringify(drawing)), opts);
+                const moduleOut = mod.insertDrawingRunAtTextOffset(
+                    moduleBlock, offset, JSON.parse(JSON.stringify(drawing)), opts);
+                assert.strictEqual(JSON.stringify(moduleOut), JSON.stringify(legacyOut),
+                    `insert result case ${i} diverged (offset=${offset})` +
+                    `\\n  module: ${JSON.stringify(moduleOut)}` +
+                    `\\n  legacy: ${JSON.stringify(legacyOut)}`);
+                assert.strictEqual(JSON.stringify(moduleBlock), JSON.stringify(legacyBlock),
+                    `insert block mutation case ${i} diverged (offset=${offset})`);
+            }
+
+            // readImageInsertDimension precedence + clamp
+            assert.strictEqual(
+                mod.readImageInsertDimension({ Width: 200 }, { Transform: { Width: 50 } }, 'Width', 120),
+                50, 'transform width wins');
+            assert.strictEqual(
+                mod.readImageInsertDimension({}, {}, 'Height', 80), 80, 'fallback used');
+            assert.strictEqual(
+                mod.readImageInsertDimension({ Width: -5 }, {}, 'Width', 120), 1,
+                'non-positive clamps to the Math.max(1, ...) floor');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync(
+            "phase-d-image-insert-parity",
+            script,
+            "objects/image-insert.mjs",
+            extraArgs: PerformanceScenarioRunner.GetWysiwygScriptPath());
+    }
+
+    [Fact]
+    public async Task PhaseD2_CanonicalDocumentModuleMatchesLegacyRuntimeSerialization()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        // Byte-parity against the legacy IIFE's window.tmDocumentEditorRuntime.serialization
+        // surface for the canonical document normaliser.
+        var script = """
+            const path = require('path');
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+
+            const legacyPath = path.resolve(process.argv[3]);
+            const legacy = fs.readFileSync(legacyPath, 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout };
+            vm.createContext(sandbox);
+            vm.runInContext(legacy, sandbox);
+            const ser = sandbox.window.tmDocumentEditorRuntime
+                && sandbox.window.tmDocumentEditorRuntime.__testHooks;
+            assert.ok(ser && typeof ser.fromCanonicalDocument === 'function',
+                'legacy runtime __testHooks must expose fromCanonicalDocument');
+
+            const docs = [
+                {},
+                { DocumentId: 'doc-1', Blocks: [
+                    { Content: { Inlines: [
+                        { Text: 'a', Marks: [] },
+                        { Text: 'b', Marks: [] },
+                        { Text: 'c', Marks: [{ type: 'bold' }] },
+                    ] } },
+                ] },
+                { Blocks: [
+                    { Content: { Rows: [ { Cells: [ { Blocks: [] } ] } ] } },
+                ] },
+                { Blocks: [
+                    { Content: { Url: 'http://img/a.png', FloatingLayout: {
+                        Inline: false, WrapMode: 2, ZIndex: 3, AllowOverlap: 'true',
+                        WrapContourPoints: [{ X: 2, Y: -1 }, { X: 0.5, Y: 0.5 }],
+                    } } },
+                ] },
+                { document: { DocumentId: 'wrapped', Blocks: [] } },
+            ];
+
+            function cmp(label, a, b) {
+                assert.strictEqual(JSON.stringify(a), JSON.stringify(b),
+                    label + ' diverged\\n  module: ' + JSON.stringify(a) +
+                    '\\n  legacy: ' + JSON.stringify(b));
+            }
+
+            for (let i = 0; i < docs.length; i++) {
+                const input = () => JSON.parse(JSON.stringify(docs[i]));
+                cmp(`from[${i}]`, mod.fromCanonicalDocument(input()), ser.fromCanonicalDocument(input()));
+                cmp(`to[${i}]`, mod.toCanonicalDocument(input()), ser.toCanonicalDocument(input()));
+                cmp(`roundTrip[${i}]`,
+                    mod.roundTripCanonicalDocument(input()), ser.roundTripCanonicalDocument(input()));
+                cmp(`normalizeSnapshot[${i}]`,
+                    mod.normalizeCanonicalSnapshot({ Document: input() }),
+                    ser.normalizeSnapshot({ Document: input() }));
+            }
+
+            // diffCanonicalDocuments — equal and differing cases
+            cmp('diff-equal',
+                mod.diffCanonicalDocuments(docs[1], docs[1]),
+                ser.diffCanonicalDocuments(docs[1], docs[1]));
+            cmp('diff-different',
+                mod.diffCanonicalDocuments(docs[1], docs[2]),
+                ser.diffCanonicalDocuments(docs[1], docs[2]));
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync(
+            "phase-d-canonical-document-parity",
+            script,
+            "core/canonical-document.mjs",
+            extraArgs: PerformanceScenarioRunner.GetWysiwygScriptPath());
+    }
+
+    [Fact]
+    public async Task PhaseD2_FormattingStateModuleDerivesInlineAndDisabledState()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Factory guards
+            assert.throws(() => mod.createFormattingStateModule({}), /findBlock/);
+            assert.throws(() => mod.createFormattingStateModule({ findBlock: () => null }),
+                /buildIndexes/);
+
+            // Minimal injected index: walk body blocks into model.indexes.blocks.
+            function buildIndexes(model) {
+                model.indexes = model.indexes || {};
+                model.indexes.blocks = {};
+                ((model.body && model.body.blocks) || []).forEach(
+                    (b) => { model.indexes.blocks[b.id] = b; });
+            }
+            function findBlock(model, id) {
+                if (!model || !id) return null;
+                if (!model.indexes || !model.indexes.blocks) buildIndexes(model);
+                return model.indexes.blocks[id] || null;
+            }
+            const fmt = mod.createFormattingStateModule({ findBlock, buildIndexes });
+
+            const model = {
+                body: { blocks: [
+                    {
+                        id: 'p1', type: 'paragraph',
+                        content: {
+                            type: 'paragraph', alignment: 'center',
+                            runs: [
+                                { id: 'r1', kind: 'text', text: 'AB', marks: [{ type: 'bold' }] },
+                                { id: 'r2', kind: 'text', text: 'CD', marks: [] },
+                            ],
+                        },
+                    },
+                    { id: 'img', type: 'image', content: { objectId: 'o1', layout: {} } },
+                ] },
+            };
+
+            // Whole-paragraph selection: bold present on r1 only → active but mixed.
+            const whole = { anchor: { blockId: 'p1', offset: 0 }, focus: { blockId: 'p1', offset: 4 } };
+            const stateWhole = fmt.collectFormattingState(model, whole, []);
+            assert.strictEqual(stateWhole.inline.active.bold, true, 'first run bold → active');
+            assert.strictEqual(stateWhole.inline.mixed.bold, true, 'second run not bold → mixed');
+            assert.strictEqual(stateWhole.commandValues.bold, false, 'mixed suppresses commandValue');
+            assert.strictEqual(stateWhole.paragraph.alignment, 'center');
+
+            // Bold-only run selection: not mixed.
+            const boldOnly = { anchor: { blockId: 'p1', offset: 0 }, focus: { blockId: 'p1', offset: 2 } };
+            const stateBold = fmt.collectFormattingState(model, boldOnly, []);
+            assert.strictEqual(stateBold.inline.mixed.bold, false, 'uniform bold not mixed');
+            assert.strictEqual(stateBold.commandValues.bold, true);
+
+            // selectionDisabledReason: inline command on image block is disabled.
+            assert.strictEqual(
+                fmt.selectionDisabledReason(model, { blockId: 'p1', offset: 0 }, 'bold'), '');
+            assert.strictEqual(
+                fmt.selectionDisabledReason(model, { blockId: 'img', offset: 0 }, 'bold'),
+                'selection-not-text');
+            assert.strictEqual(
+                fmt.selectionDisabledReason(model, { blockId: 'missing', offset: 0 }, 'bold'),
+                'missing-selection');
+
+            // computeFormattingState flattens scalar values.
+            const computed = fmt.computeFormattingState(model, boldOnly, []);
+            assert.strictEqual(computed.bold, true);
+            assert.strictEqual(computed.isDisabled, false);
+            assert.strictEqual(computed.disabledReason, '');
+
+            // resolveFormattingSelection falls back to the first text block.
+            const fallback = fmt.resolveFormattingSelection(model, null);
+            assert.strictEqual(fallback.blockId, 'p1', 'no selection → first text block');
+
+            // formattingScalarValue returns 'mixed' sentinel.
+            assert.strictEqual(
+                fmt.formattingScalarValue(stateWhole, 'bold', false), 'mixed');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-formatting-state", script,
+            "input/formatting-state.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD3_ObjectSelectionSnapshotFactoryBuildsObjectMode()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            assert.throws(() => mod.createObjectSelectionSnapshotFactory({}),
+                /findDrawingRunByObjectId/);
+
+            const found = {
+                object: { anchorBlockId: 'p1', anchorOffset: 2, anchorInlineIndex: 0,
+                    kind: 'image', anchorRegion: 'Body' },
+                run: { id: 'r1' }, inlineIndex: 0,
+            };
+            const create = mod.createObjectSelectionSnapshotFactory({
+                findDrawingRunByObjectId: (model, id) => (id === 'obj-1' ? found : null),
+            });
+
+            const snap = create({}, 'obj-1');
+            assert.strictEqual(snap.isObjectSelection, true);
+            assert.strictEqual(snap.selectionMode, 'Object');
+            assert.strictEqual(snap.objectId, 'obj-1');
+            assert.strictEqual(snap.activeObjectId, 'obj-1');
+            assert.ok(snap.objectSelection, 'has objectSelection');
+            assert.strictEqual(snap.objectSelection.blockId, 'p1');
+            assert.strictEqual(snap.objectSelection.anchorOffset, 2);
+            assert.strictEqual(snap.objectSelection.kind, 'image');
+            assert.strictEqual(snap.isCollapsed, false);
+
+            // Unknown object id → no anchor resolved, but still object mode
+            const empty = create({}, 'missing');
+            assert.strictEqual(empty.isObjectSelection, true);
+            assert.strictEqual(empty.objectSelection.blockId, '');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-object-selection-snapshot", script,
+            "core/object-selection-snapshot.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD3_SelectionNormalizersClampPositionAndCollapseCrossLimit()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            assert.throws(() => mod.createSelectionNormalizers({}), /findBlock/);
+
+            const blocks = {
+                p1: { id: 'p1', type: 'paragraph',
+                    content: { type: 'paragraph', runs: [{ kind: 'text', id: 'r1', text: 'hello' }] } },
+                p2: { id: 'p2', type: 'paragraph',
+                    content: { type: 'paragraph', runs: [{ kind: 'text', id: 'r2', text: 'world' }] } },
+            };
+            const norm = mod.createSelectionNormalizers({
+                findBlock: (model, id) => blocks[id] || null,
+            });
+
+            // Offset clamps to the block's text length (5)
+            const pos = norm.normalizeLogicalPosition({}, { blockId: 'p1', offset: 99 });
+            assert.strictEqual(pos.blockId, 'p1');
+            assert.strictEqual(pos.offset, 5, 'offset clamped to text length');
+
+            // Range within one block is preserved
+            const range = norm.normalizeLogicalRange({}, {
+                anchor: { blockId: 'p1', offset: 1 },
+                focus: { blockId: 'p1', offset: 3 },
+            });
+            assert.strictEqual(range.anchor.offset, 1);
+            assert.strictEqual(range.focus.offset, 3);
+
+            const snap = norm.normalizeSelectionSnapshot({}, {
+                anchor: { blockId: 'p1', offset: 0 },
+                focus: { blockId: 'p1', offset: 2 },
+            });
+            assert.strictEqual(snap.anchor.blockId, 'p1');
+            assert.strictEqual(snap.focus.offset, 2);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-selection-normalize", script,
+            "core/selection-normalize.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD3_SelectionPostFixerCanonicalisesSelection()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            assert.throws(() => mod.createSelectionPostFixerFactory({}), /findBlock/);
+
+            const blocks = {
+                p1: { id: 'p1', type: 'paragraph',
+                    content: { type: 'paragraph', runs: [{ kind: 'text', id: 'r1', text: 'hello' }] } },
+                img: { id: 'img', type: 'image', content: { objectId: 'o1' } },
+            };
+            let objectSnapshotCalls = 0;
+            const factory = mod.createSelectionPostFixerFactory({
+                findBlock: (model, id) => blocks[id] || null,
+                findDrawingRunByObjectId: (model, id) => (id === 'o1' ? { object: {} } : null),
+                createObjectSelectionSnapshot: (model, input) => {
+                    objectSnapshotCalls++;
+                    return { isObjectSelection: true, objectId: input.objectId, _viaFactory: true };
+                },
+            });
+            const postFixer = factory();
+            assert.ok(postFixer.schema, 'default schema applied');
+
+            // Plain in-block text selection passes through (collapsed normalisation)
+            const fixed = postFixer.fix({}, {
+                anchor: { blockId: 'p1', offset: 1 },
+                focus: { blockId: 'p1', offset: 3 },
+            });
+            assert.strictEqual(fixed.focus.blockId, 'p1');
+
+            // Caret on an image block snaps to the object (collapsed)
+            const onImage = postFixer.fix({}, {
+                anchor: { blockId: 'img', offset: 0 },
+                focus: { blockId: 'img', offset: 0 },
+            });
+            assert.strictEqual(onImage.isCollapsed, true);
+            assert.strictEqual(onImage.focus.objectId, 'o1');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-selection-post-fixer", script,
+            "core/selection-post-fixer.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD3_TableControllerInsertsRowsAndRecordsOperations()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            assert.throws(() => mod.createTableControllerFactory({}), /findBlock/);
+
+            function para(id) {
+                return { id, type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', text: '' }] } };
+            }
+            const table = {
+                id: 't1', type: 'table',
+                content: { type: 'table', rows: [
+                    { id: 't1-row0', cells: [
+                        { id: 'c00', blocks: [para('p00')] },
+                        { id: 'c01', blocks: [para('p01')] },
+                    ] },
+                ] },
+            };
+            const model = { body: { blocks: [table] } };
+            const ops = [];
+            const factory = mod.createTableControllerFactory({
+                findBlock: (m, id) => (id === 't1' ? table : null),
+                buildIndexes: () => {},
+                createOperation: (type, payload) => ({ type, payload, toJSON: () => ({ type, payload }) }),
+                pointerHitTest: () => ({ type: 'none' }),
+            });
+            const controller = factory(model);
+
+            assert.strictEqual(table.content.rows.length, 1);
+            const res = controller.insertRowBelow({ blockId: 'p00' });
+            assert.strictEqual(res.ok, true, 'insertRowBelow ok');
+            assert.strictEqual(table.content.rows.length, 2, 'row inserted');
+            assert.ok(res.selection, 'returns next selection');
+            assert.ok(controller.getCommittedOperations().length >= 1, 'records an operation');
+
+            // Missing table selection → error
+            const miss = controller.insertRowBelow({ blockId: 'nope' });
+            assert.strictEqual(miss.ok, false);
+            assert.strictEqual(miss.error.code, 'missing-table-selection');
+
+            // insertColumnRight widens every row
+            const colRes = controller.insertColumnRight({ blockId: 'p00' });
+            assert.strictEqual(colRes.ok, true);
+            assert.strictEqual(table.content.rows[0].cells.length, 3, 'column added');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-table-controller", script,
+            "objects/table-controller.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD3_CommandDispatcherRegistersCommandsAndSetsPendingMarks()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            assert.throws(() => mod.createCommandDispatcherFactory({}), /findBlock/);
+
+            const block = { id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', id: 'r1', text: 'hi' }] } };
+            const factory = mod.createCommandDispatcherFactory({
+                findBlock: () => block,
+                buildIndexes: () => {},
+                createOperation: (type, payload) => ({ type, payload, toJSON: () => ({ type, payload }) }),
+                applyOperation: () => ({ ok: true }),
+                collectFormattingState: () => ({ disabledReasons: {}, commandValues: {} }),
+                createTableController: () => ({ getCommittedOperations: () => [] }),
+            });
+            const dispatcher = factory(model = {}, { selection: { blockId: 'p1', offset: 0 } });
+
+            const ids = dispatcher.getRegisteredCommandIds();
+            assert.ok(ids.includes('bold'), 'inline command registered');
+            assert.ok(ids.includes('alignment'), 'paragraph command registered');
+            assert.ok(ids.includes('insertTable'), 'table command registered');
+
+            // Collapsed selection → bold sets a pending typing mark instead of an op
+            const result = dispatcher.executeCommand('bold');
+            assert.strictEqual(result.ok, true);
+            const pending = dispatcher.getPendingTypingMarks();
+            assert.ok(pending.length >= 1, 'pending typing mark recorded');
+
+            // Unknown command → ok:false with unknown-command error
+            const unknown = dispatcher.executeCommand('frobnicate');
+            assert.strictEqual(unknown.ok, false);
+            assert.strictEqual(unknown.error.code, 'unknown-command');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-command-dispatcher", script,
+            "history/command-dispatcher.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD3_RevisionEngineInsertsAndReviewsRevisions()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            assert.throws(() => mod.createRevisionEngineFactory({}), /findBlock/);
+
+            const block = { id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', id: 'r1', text: 'ab' }] } };
+            const revisions = {};
+            let statusUpdated = null;
+            const factory = mod.createRevisionEngineFactory({
+                findBlock: () => block,
+                buildIndexes: () => {},
+                ensureRevisionList: (m) => { m.revisions = m.revisions || []; },
+                addRevision: (m, rev) => { m.revisions.push(rev); revisions[rev.id] = rev; return rev; },
+                getRevisionById: (m, id) => revisions[id] || null,
+                setRevisionForRange: () => {},
+                applyRevisionMark: () => {},
+                clearRevisionFromRuns: () => {},
+                removeRevisionRuns: () => {},
+                updateRevisionStatus: (m, id, status) => { statusUpdated = { id, status }; },
+                removeRangeText: () => {},
+                splitParagraphPreservingInlineMetadata: () => ({ ok: true }),
+            });
+
+            // Without track changes → plain insert, no revision id
+            const engine = factory({ revisions: [] }, {});
+            const ins = engine.insertText({ blockId: 'p1', offset: 2 }, 'c');
+            assert.strictEqual(ins.ok, true);
+            assert.strictEqual(ins.revisionId, '', 'no revision when track changes off');
+
+            // With track changes → records an Insertion revision
+            const tracked = factory({ revisions: [] }, { trackChanges: true });
+            const insTracked = tracked.insertText({ blockId: 'p1', offset: 0 }, 'x');
+            assert.ok(insTracked.revisionId, 'revision recorded when tracking');
+
+            // acceptRevision flips status to Accepted
+            const revId = insTracked.revisionId;
+            const accepted = tracked.acceptRevision(revId, { blockId: 'p1', offset: 0 });
+            assert.strictEqual(accepted.status, 'Accepted');
+            assert.deepStrictEqual(statusUpdated, { id: revId, status: 'Accepted' });
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-revision-engine", script,
+            "history/revision-engine.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD3_HistoryControllerWiresStacksAndCommits()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            assert.throws(() => mod.createHistoryControllerFactory({}), /createTransaction/);
+
+            // A fake transaction that records applied ops and reports as document-affecting.
+            function makeTransaction() {
+                const tx = {
+                    type: 'Default', operations: [], invalidatedScopes: ['document'],
+                    afterSelection: null, afterModelSnapshot: null,
+                    apply(op) { tx.operations.push(op); return { ok: true }; },
+                    commit() { return { differ: { snapshot: () => ({}) } }; },
+                    toJSON() { return { type: tx.type, operationCount: tx.operations.length, invalidatedScopes: tx.invalidatedScopes }; },
+                };
+                return tx;
+            }
+            const factory = mod.createHistoryControllerFactory({
+                createTransaction: () => makeTransaction(),
+                applyOperation: () => ({ ok: true }),
+                createOperation: (type, payload) => ({ type, payload, toJSON: () => ({ type, payload }) }),
+                attachOperationMethods: (op) => Object.assign({ toJSON: () => op }, op),
+                createUndoHistoryOperations: (ops) => ops,
+                createRedoHistoryOperations: (ops) => ops,
+                withStableSelectionToken: (id, sel) => sel,
+                createParagraphLayoutEngine: () => ({ layoutDocument: () => ({ invalidatedScopeIds: [] }) }),
+                createAtomicRenderer: () => ({ render: () => {} }),
+                createSelectionPostFixer: () => ({ fix: (m, s) => s }),
+            });
+            const controller = factory({ body: { blocks: [] } }, {});
+
+            assert.strictEqual(typeof controller.commitOperation, 'function');
+            assert.strictEqual(typeof controller.undo, 'function');
+            const dbg = controller.debug();
+            assert.strictEqual(dbg.undoDepth, 0);
+            assert.strictEqual(dbg.redoDepth, 0);
+
+            const committed = controller.commitOperation({ type: 'InsertText', timestamp: 1 });
+            assert.strictEqual(committed.ok, true, 'commit succeeds');
+            assert.strictEqual(controller.debug().undoDepth, 1, 'undo stack grew');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-history-controller", script,
+            "history/history-controller.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD8_BoundaryPatchModuleBuildsAndDispatches()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Factory guards
+            assert.throws(() => mod.createBoundaryPatchModule({}), /attachOperationMethods/);
+
+            const dispatched = [];
+            const dirtyDispatched = [];
+            const timeline = [];
+            let perfStats = {};
+            const bp = mod.createBoundaryPatchModule({
+                attachOperationMethods: (op) =>
+                    Object.assign({ toJSON: () => op, id: op.id }, op),
+                exportToCSharpJson: (model) => ({ schemaVersion: 1, blocks: [] }),
+                invokeBoundaryMethod: (inst, method, payload) => {
+                    if (method === 'HandleJsBoundaryPatchGenerated') dispatched.push(payload);
+                    if (method === 'HandleJsDirtyStateChanged') dirtyDispatched.push(payload);
+                },
+                recordTimeline: (inst, kind, detail) => timeline.push({ kind, detail }),
+                ensurePerformanceStats: (inst) => { inst.__stats = inst.__stats || {}; return inst.__stats; },
+                flushRuntimeRevisionsChanged: () => {},
+            });
+
+            // Basic factory shape
+            assert.strictEqual(typeof bp.commitBoundaryPatch, 'function');
+            assert.strictEqual(typeof bp.shouldDeferBoundarySnapshot, 'function');
+            assert.strictEqual(typeof bp.mergeBoundaryPatches, 'function');
+
+            // shouldDeferBoundarySnapshot: typing → defer, non-typing → no-defer
+            assert.strictEqual(bp.shouldDeferBoundarySnapshot({ type: 'Typing' }, [], null), true,
+                'Typing transaction defers');
+            assert.strictEqual(bp.shouldDeferBoundarySnapshot({ type: 'Default' }, [], null), false,
+                'Default transaction does not defer');
+            assert.strictEqual(bp.shouldDeferBoundarySnapshot(null, [], 'undo'), true,
+                'undo source defers');
+
+            // Non-typing commitBoundaryPatch: dispatches immediately
+            const model = { body: { blocks: [] }, revisions: [] };
+            const inst = {
+                id: 'i1', model, selection: null,
+                dirtyState: null, lastDiffer: null, modelEpoch: 0,
+                boundaryPatches: [], pendingTypingBoundaryPatches: [],
+                pendingDeferredBoundaryPatches: [], options: {},
+                timers: [],
+            };
+            const txn = { type: 'Default', id: 'tx1', toJSON: () => ({ id: 'tx1', type: 'Default' }) };
+            // InsertImage is not a formatting-visual op → dispatches immediately
+            const ops = [{ id: 'op1', type: 'InsertImage' }];
+            const patch = bp.commitBoundaryPatch(inst, txn, ops, null, 'test');
+            assert.ok(patch, 'patch returned');
+            assert.strictEqual(patch.transactionId, 'tx1');
+            assert.strictEqual(dispatched.length, 1, 'dispatched once');
+            assert.strictEqual(dirtyDispatched.length, 1, 'dirty state dispatched');
+            assert.ok(patch.csharpDocument, 'snapshot was hydrated (non-typing = immediate)');
+
+            // Typing commitBoundaryPatch: batched (timer), not dispatched yet
+            const instTyping = {
+                id: 'i2', model, selection: null,
+                dirtyState: null, lastDiffer: null, modelEpoch: 0,
+                boundaryPatches: [], pendingTypingBoundaryPatches: [],
+                pendingDeferredBoundaryPatches: [], options: { typingBatchMs: 10000 },
+                timers: [],
+            };
+            const typingTxn = { type: 'Typing', id: 'ty1', toJSON: () => ({ id: 'ty1', type: 'Typing' }) };
+            bp.commitBoundaryPatch(instTyping, typingTxn, ops, null, null);
+            assert.strictEqual(dispatched.length, 1, 'typing patch not dispatched yet');
+            assert.strictEqual(instTyping.pendingTypingBoundaryPatches.length, 1, 'queued');
+
+            // Explicit flush dispatches the merged typing batch
+            bp.flushTypingBoundaryPatchDispatch(instTyping);
+            assert.strictEqual(dispatched.length, 2, 'typing patch dispatched after flush');
+            assert.strictEqual(instTyping.pendingTypingBoundaryPatches.length, 0, 'queue cleared');
+
+            // mergeBoundaryPatches coalesces operations and affectedBlockIds
+            const p1 = { transactionId: 't1', transactionType: 'Typing',
+                operations: [{ id: 'a' }], affectedBlockIds: ['b1'],
+                dirtyState: {}, createdAt: 1 };
+            const p2 = { transactionId: 't2', transactionType: 'Typing',
+                operations: [{ id: 'b' }], affectedBlockIds: ['b2'],
+                dirtyState: {}, createdAt: 2 };
+            const merged = bp.mergeBoundaryPatches(instTyping, [p1, p2], 'Typing');
+            assert.ok(merged, 'merged patch returned');
+            assert.strictEqual(merged.operations.length, 2, 'operations merged');
+            assert.strictEqual(merged.affectedBlockIds.length, 2, 'blocks merged');
+            assert.strictEqual(merged.coalescedPatchCount, 2);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-boundary-patch", script,
+            "runtime/boundary-patch.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD9_WatchdogInstallerWrapsRuntimeAndRecovers()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Factory guard
+            assert.throws(() => mod.createWatchdogInstaller().then(() => {}), undefined,
+                'createWatchdogInstaller returns a function — no throw here');
+            const install = mod.createWatchdogInstaller({});
+            assert.throws(() => install(null), /runtime object/, 'null runtime throws');
+
+            // Build a minimal stub runtime
+            const calls = [];
+            const runtime = {
+                create: (rootEl, opts, ref) => { calls.push({ m: 'create', id: opts && opts.instanceId }); return 'i1'; },
+                dispose: (id) => { calls.push({ m: 'dispose', id }); },
+                loadDocument: (id, snap) => { calls.push({ m: 'loadDocument', id }); return { ok: true }; },
+                getDocument: (id) => { calls.push({ m: 'getDocument', id }); return JSON.stringify({ Document: { blocks: [] } }); },
+                executeCommand: (id, cmd) => { calls.push({ m: 'cmd', id }); return { ok: true }; },
+                getOfflineState: () => null,
+                applyOfflineState: () => null,
+                applyRemoteOperationBatch: (id) => { calls.push({ m: 'batch', id }); return { ok: true }; },
+                applyRemoteOperation: (id) => { calls.push({ m: 'remote', id }); },
+                getSelectionSnapshot: () => null,
+                getRuntimeSelection: () => null,
+                getUndoState: () => null,
+                getDebugUndoStack: () => null,
+                getMarkers: () => [],
+                upsertMarker: () => null,
+                restoreSelection: () => null,
+            };
+
+            const { watchdogApi, uninstall } = install(runtime);
+            assert.ok(runtime.__watchdog, '__watchdog API installed');
+            assert.strictEqual(typeof watchdogApi.getState, 'function');
+            assert.strictEqual(typeof watchdogApi.simulateCrash, 'function');
+
+            // create registers watchdog context
+            runtime.create('root', { instanceId: 'inst1' }, null);
+            assert.strictEqual(watchdogApi.getState('inst1'), 'ready',
+                'state starts as ready after create');
+            assert.strictEqual(watchdogApi.getStableSnapshot('inst1'), null,
+                'no stable snapshot yet');
+
+            // loadDocument stores stable snapshot
+            runtime.loadDocument('inst1', JSON.stringify({ Document: { blocks: [] } }));
+            const snap = watchdogApi.getStableSnapshot('inst1');
+            assert.ok(snap !== null, 'stable snapshot captured after loadDocument');
+
+            // executeCommand remembers snapshot and keeps state ready
+            runtime.executeCommand('inst1', 'bold', {});
+            assert.strictEqual(watchdogApi.getState('inst1'), 'ready');
+
+            // dispose removes context
+            runtime.dispose('inst1');
+            assert.strictEqual(watchdogApi.getState('inst1'), null, 'context removed after dispose');
+
+            // uninstall restores original methods
+            uninstall();
+            assert.ok(!runtime.__watchdog, '__watchdog removed after uninstall');
+            // original create works directly
+            runtime.create('root', { instanceId: 'inst2' }, null);
+            assert.ok(calls.some(c => c.m === 'create' && c.id === 'inst2'), 'original create called');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-watchdog", script,
+            "runtime/watchdog.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD10_CommandExecuteParseAndRoutes()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Pure parsers
+            assert.strictEqual(mod.readCommandName('bold'), 'bold', 'string command');
+            assert.strictEqual(mod.readCommandName({ command: 'italic' }), 'italic');
+            assert.strictEqual(mod.readCommandName({ CommandName: 'fontSize' }), 'fontSize');
+            assert.strictEqual(mod.readCommandName({}), '');
+
+            assert.deepStrictEqual(mod.readPayload('bold'), {});
+            assert.deepStrictEqual(mod.readPayload({ payload: { value: 12 } }), { value: 12 });
+            assert.deepStrictEqual(mod.readPayload({ Payload: { x: 1 } }), { x: 1 });
+
+            assert.strictEqual(mod.readSelectionToken('bold'), null, 'string → null');
+            assert.strictEqual(mod.readSelectionToken({ selectionToken: 'tok1' }), 'tok1');
+            assert.strictEqual(mod.readSelectionToken({ Payload: { SelectionToken: 'tok2' } }), 'tok2');
+            assert.strictEqual(mod.readSelectionToken({ selection: { stableSelectionToken: 'tok3' } }), 'tok3');
+
+            // normalizeResult
+            const plain = mod.normalizeResult('i1', 'bold', { ok: true, x: 1 });
+            assert.strictEqual(plain.instanceId, 'i1');
+            assert.strictEqual(plain.command, 'bold');
+            assert.strictEqual(plain.x, 1);
+            const boolResult = mod.normalizeResult('i1', 'bold', true);
+            assert.strictEqual(boolResult.ok, true);
+            assert.strictEqual(boolResult.result, true);
+            const failResult = mod.normalizeResult('i1', 'bold', false);
+            assert.strictEqual(failResult.ok, false);
+
+            // Factory guard
+            assert.throws(() => mod.createCommandExecutor({}), /getRuntime/);
+
+            // execute: missing instanceId
+            const exec = mod.createCommandExecutor({ getRuntime: () => null });
+            const noId = exec.execute('', 'bold');
+            assert.strictEqual(noId.ok, false);
+            assert.strictEqual(noId.error.code, 'invalid-command-request');
+            assert.strictEqual(noId.error.reason, 'missing-instance-id');
+
+            // execute: missing command name
+            const noCmd = exec.execute('inst1', '');
+            assert.strictEqual(noCmd.ok, false);
+            assert.strictEqual(noCmd.error.reason, 'missing-command-name');
+
+            // execute: runtime unavailable
+            const noRt = exec.execute('inst1', 'bold');
+            assert.strictEqual(noRt.ok, false);
+            assert.strictEqual(noRt.error.code, 'runtime-unavailable');
+
+            // execute: successful dispatch
+            const rtCalls = [];
+            const rt = { executeCommand: (id, cmd, payload) => { rtCalls.push({ id, cmd, payload }); return { ok: true, state: true }; } };
+            const execRt = mod.createCommandExecutor({ getRuntime: () => rt });
+            const ok = execRt.execute('inst1', { command: 'bold', payload: { value: true }, selectionToken: 'tok9' });
+            assert.strictEqual(ok.ok, true);
+            assert.strictEqual(ok.command, 'bold');
+            assert.strictEqual(rtCalls.length, 1);
+            assert.strictEqual(rtCalls[0].cmd, 'bold');
+            assert.strictEqual(rtCalls[0].payload.selectionToken, 'tok9', 'token forwarded');
+
+            // execute: exception from runtime → command-exception
+            const rtThrows = { executeCommand: () => { throw new Error('boom'); } };
+            const execThrows = mod.createCommandExecutor({ getRuntime: () => rtThrows });
+            const exc = execThrows.execute('inst1', 'bold');
+            assert.strictEqual(exc.ok, false);
+            assert.strictEqual(exc.error.code, 'command-exception');
+            assert.ok(exc.error.reason.includes('boom'));
+
+            // selection forwarded when no payload.selection
+            const selRt = { executeCommand: (id, cmd, payload) => ({ ok: true, payload }) };
+            const execSel = mod.createCommandExecutor({ getRuntime: () => selRt });
+            const selRes = execSel.execute('inst1', { command: 'bold', selection: { blockId: 'p1', offset: 3 } });
+            assert.ok(selRes.payload && selRes.payload.Selection, 'selection forwarded as payload.Selection');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-command-execute", script,
+            "runtime/command-execute.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD13_PerformanceProbeTracksReflowsAndInteropCalls()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Factory guard
+            const probe = mod.createPerformanceProbe({
+                getEngineMetrics: () => null,
+                now: (() => { let t = 0; return () => (t += 10); })(),
+                // Stub Element.prototype so DOM patching works in Node
+                getElementPrototype: () => {
+                    const proto = {};
+                    proto.getBoundingClientRect = function () { return {}; };
+                    proto.getClientRects = function () { return []; };
+                    return proto;
+                },
+            });
+
+            // startCapture requires instanceId
+            assert.throws(() => probe.startCapture(''), /instanceId is required/);
+
+            // startCapture returns ok + label
+            const started = probe.startCapture('inst1', 'test-label');
+            assert.strictEqual(started.ok, true);
+            assert.strictEqual(started.label, 'test-label');
+            assert.strictEqual(started.instanceId, 'inst1');
+
+            // isCapturing
+            assert.strictEqual(probe.isCapturing('inst1'), true);
+            assert.strictEqual(probe.isCapturing('other'), false);
+
+            // getActiveCaptures
+            const active = probe.getActiveCaptures();
+            assert.deepStrictEqual(active, ['inst1']);
+
+            // noteJsInteropCall increments counter
+            probe.noteJsInteropCall(3);
+
+            // stopCapture returns a report
+            const report = probe.stopCapture('inst1');
+            assert.ok(report, 'report returned');
+            assert.strictEqual(report.InstanceId, 'inst1');
+            assert.strictEqual(report.Label, 'test-label');
+            assert.ok(report.ElapsedMs >= 0, 'elapsed is non-negative');
+            assert.strictEqual(report.JsInteropCallCount, 3, 'interop delta tracked');
+            assert.strictEqual(report.ForcedReflowCount, 0, 'no reflows yet');
+
+            // stopCapture unknown → null
+            assert.strictEqual(probe.stopCapture('nope'), null);
+
+            // isCapturing cleared after stop
+            assert.strictEqual(probe.isCapturing('inst1'), false);
+
+            // Reflow counting via patched Element.prototype
+            const proto2 = {};
+            let reflowsCalled = 0;
+            proto2.getBoundingClientRect = function () { reflowsCalled++; return {}; };
+            const probe2 = mod.createPerformanceProbe({
+                getEngineMetrics: () => ({ KeyDownCount: 5, TypingLatencyTotalMs: 100 }),
+                now: (() => { let t = 0; return () => (t += 5); })(),
+                getElementPrototype: () => proto2,
+            });
+            probe2.startCapture('inst2', 'reflow-test');
+            // Simulate 2 forced reflows by calling the patched method
+            proto2.getBoundingClientRect.call({});
+            proto2.getBoundingClientRect.call({});
+            const report2 = probe2.stopCapture('inst2');
+            assert.strictEqual(report2.ForcedReflowCount, 2, 'two reflows counted');
+            assert.strictEqual(report2.KeyDownCount, 0,
+                'metrics delta is 0 when before===after (same snapshot returned)');
+
+            // clearAll resets state
+            probe2.startCapture('inst3');
+            probe2.clearAll();
+            assert.strictEqual(probe2.isCapturing('inst3'), false);
+            assert.deepStrictEqual(probe2.getActiveCaptures(), []);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-performance-probe", script,
+            "runtime/performance-probe.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD4_ParagraphRunsHelpersWork()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // cssLengthToPixels
+            assert.strictEqual(mod.cssLengthToPixels(16, 12), 16);
+            assert.strictEqual(mod.cssLengthToPixels('12pt', 16), 16, '12pt = 16px');
+            assert.strictEqual(mod.cssLengthToPixels('bad', 10), 10, 'bad → fallback');
+
+            // mergeTextStyle: bold mark sets fontWeight
+            const style = mod.mergeTextStyle({ fontFamily: 'Arial' }, { marks: [{ type: 'bold' }] });
+            assert.strictEqual(style.fontFamily, 'Arial');
+            assert.strictEqual(style.fontWeight, '700', 'bold mark sets fontWeight');
+
+            // flattenParagraphRuns: basic text
+            const para = {
+                id: 'p1',
+                runs: [
+                    { id: 'r1', kind: 'text', text: 'hello', marks: [] },
+                    { id: 'r2', kind: 'text', text: ' world', marks: [{ type: 'italic' }] },
+                ],
+                style: {},
+            };
+            const runs = mod.flattenParagraphRuns(para, null);
+            assert.strictEqual(runs.length, 2);
+            assert.strictEqual(runs[0].text, 'hello');
+            assert.strictEqual(runs[0].start, 0);
+            assert.strictEqual(runs[0].end, 5);
+            assert.strictEqual(runs[1].start, 5);
+            assert.strictEqual(runs[1].end, 11);
+
+            // runForOffset
+            assert.strictEqual(mod.runForOffset(runs, 0).id, 'r1');
+            assert.strictEqual(mod.runForOffset(runs, 5).id, 'r2', 'offset 5 at start of r2');
+            assert.strictEqual(mod.runForOffset(runs, 11).id, 'r2', 'past end → last run');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-paragraph-runs", script,
+            "layout/paragraph-runs.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD4_ParagraphLayoutEngineLayoutsDocumentAndParas()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Factory guards
+            assert.throws(() => mod.createParagraphLayoutEngineFactory({}), /findBlock/);
+
+            // Build a minimal engine with stubs for the injected deps.
+            // collectAnchoredDrawingRuns: return no drawings.
+            // resolveAnchoredDrawingReference / createAnchoredDrawingLayoutObject: unused in this test.
+            const factory = mod.createParagraphLayoutEngineFactory({
+                findBlock: (model, id) => (model.indexes && model.indexes.blocks && model.indexes.blocks[id]) || null,
+                normalizeImageObject: () => null,
+                createAnchoredDrawingResolvers: () => ({
+                    resolveAnchoredDrawingReference: () => ({ rect: {}, pageIndex: 0 }),
+                    createAnchoredDrawingLayoutObject: () => ({}),
+                }),
+                createAnchoredDrawingRunCollector: () => ({
+                    collectAnchoredDrawingRuns: () => [],
+                }),
+            });
+
+            // Single-paragraph document.
+            const model = {
+                body: { blocks: [
+                    { id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r1', kind: 'text', text: 'Hello world' }] } },
+                ] },
+            };
+            // Build a simple index for findBlock.
+            model.indexes = { blocks: {} };
+            model.body.blocks.forEach(b => { model.indexes.blocks[b.id] = b; });
+
+            const engine = factory(null, { width: 640, x: 72, y: 72 });
+            assert.strictEqual(typeof engine.layoutDocument, 'function');
+            assert.strictEqual(typeof engine.layoutParagraph, 'function');
+            assert.strictEqual(typeof engine.layoutAfterOperation, 'function');
+
+            const layout = engine.layoutDocument(model, {
+                width: 640, x: 72, y: 72,
+                pageSettings: { width: 794, height: 1123, marginTop: 72, marginBottom: 72, marginLeft: 72, marginRight: 72 },
+            });
+            assert.ok(layout.ok, 'layout succeeds');
+            assert.ok(Array.isArray(layout.blocks), 'has blocks array');
+            assert.strictEqual(layout.blocks.length, 1, 'one block layout');
+            const blockLayout = layout.blocks[0];
+            assert.strictEqual(blockLayout.blockId, 'p1');
+            assert.ok(blockLayout.rect && blockLayout.rect.width > 0, 'has a non-zero rect width');
+            assert.ok(Array.isArray(blockLayout.lines) && blockLayout.lines.length >= 1, 'has at least one line');
+            assert.ok(Array.isArray(blockLayout.caretStops), 'has caretStops');
+
+            // layoutParagraph directly
+            const para = model.body.blocks[0];
+            const paraLayout = engine.layoutParagraph(para, { x: 72, y: 100, width: 500 });
+            assert.strictEqual(paraLayout.blockId, 'p1');
+            assert.ok(paraLayout.rect && paraLayout.rect.width > 0);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-paragraph-engine", script,
+            "layout/paragraph-engine.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD4_AtomicOverlaysModuleBuildsOverlayNodes()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // createObjectFocusPolicy — pure, no DOM
+            const policy = mod.createObjectFocusPolicy(true);
+            assert.strictEqual(policy.selected, true);
+            assert.strictEqual(policy.focusPolicy, 'selection-only');
+            const unselected = mod.createObjectFocusPolicy(false);
+            assert.strictEqual(unselected.selected, false);
+
+            // Minimal DOM stub — just enough for the overlay factories
+            function makeEl(tag) {
+                const attrs = new Map();
+                return {
+                    tagName: tag,
+                    className: '',
+                    style: {},
+                    children: [],
+                    getAttribute: (k) => attrs.get(k) ?? null,
+                    setAttribute: (k, v) => attrs.set(k, v),
+                    removeAttribute: (k) => attrs.delete(k),
+                    appendChild: (child) => { child._parent = this; return child; },
+                    textContent: '',
+                    _attrs: attrs,
+                };
+            }
+            const doc = {
+                createElement: (tag) => makeEl(tag),
+            };
+
+            // renderSelectionOverlay
+            const renderSel = mod.createRenderSelectionOverlay(doc);
+            const selOverlay = renderSel({ selection: { blockId: 'p1', offset: 3 } });
+            assert.strictEqual(selOverlay._attrs.get('data-render-overlay'), 'selection');
+
+            // renderRevisionOverlay
+            const renderRev = mod.createRenderRevisionOverlay(doc);
+            const revOverlay = renderRev({ model: { revisions: [{ id: 'r1', type: 'Insertion' }] } });
+            assert.strictEqual(revOverlay._attrs.get('data-render-overlay'), 'revision');
+
+            // renderCommentMarkers
+            const renderCom = mod.createRenderCommentMarkers(doc);
+            const comOverlay = renderCom({ model: { comments: [{ id: 'c1' }] } });
+            assert.strictEqual(comOverlay._attrs.get('data-render-overlay'), 'comments');
+
+            // restoreLogicalSelection
+            const root = makeEl('div');
+            mod.restoreLogicalSelection(root, { blockId: 'p1', offset: 5 });
+            const stored = JSON.parse(root._attrs.get('data-logical-selection'));
+            assert.strictEqual(stored.blockId, 'p1');
+            assert.strictEqual(stored.offset, 5);
+
+            // createApplyObjectFocusPolicyToElement
+            assert.ok(typeof mod.createApplyObjectFocusPolicyToElement === 'function');
+            const apply = mod.createApplyObjectFocusPolicyToElement({});
+            const el = makeEl('div');
+            el.classList = {
+                toggle: (cls, val) => {},
+                remove: (cls) => {},
+                contains: (cls) => false,
+            };
+            const result = apply(el, true, null);
+            assert.strictEqual(result.selected, true);
+            assert.strictEqual(el._attrs.get('data-object-focus-policy'), 'selection-only');
+            assert.strictEqual(el._attrs.get('aria-selected'), 'true');
+
+            // no element → returns policy object
+            const noEl = apply(null, false, null);
+            assert.strictEqual(noEl.selected, false);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-atomic-overlays", script,
+            "render/atomic-overlays.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD4_AtomicRendererFactoryRendersAndSkipsByFingerprint()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- Minimal DOM stub (structural only) ----
+            function makeEl(tag) {
+                const el = {
+                    nodeType: 1, tagName: String(tag || 'div').toUpperCase(),
+                    attributes: {}, style: {}, className: '', __tmFingerprint: undefined,
+                    parentNode: null, firstChild: null, lastChild: null,
+                    nextSibling: null, previousSibling: null, textContent: '', innerHTML: '',
+                    setAttribute(n, v) { this.attributes[n] = String(v); },
+                    getAttribute(n) { return this.attributes[n] === undefined ? null : this.attributes[n]; },
+                    removeAttribute(n) { delete this.attributes[n]; },
+                    appendChild(c) { return _append(this, c); },
+                    insertBefore(c, b) { return _insert(this, c, b); },
+                    removeChild(c) { return _remove(this, c); },
+                    replaceChildren() {
+                        const args = Array.from(arguments);
+                        while (this.firstChild) _remove(this, this.firstChild);
+                        args.forEach((n) => _append(this, n));
+                    },
+                    contains(n) { let c = n; while (c) { if (c === this) return true; c = c.parentNode; } return false; },
+                    querySelectorAll() { return []; },
+                    getBoundingClientRect() { return { x: 0, y: 0, width: 0, height: 0 }; },
+                };
+                return el;
+            }
+            function _append(p, c) {
+                if (c.parentNode) _remove(c.parentNode, c);
+                const last = p.lastChild; c.parentNode = p; c.previousSibling = last; c.nextSibling = null;
+                if (last) last.nextSibling = c; else p.firstChild = c;
+                p.lastChild = c; return c;
+            }
+            function _insert(p, c, b) {
+                if (!b) return _append(p, c);
+                if (c.parentNode) _remove(c.parentNode, c);
+                c.parentNode = p; c.previousSibling = b.previousSibling; c.nextSibling = b;
+                if (b.previousSibling) b.previousSibling.nextSibling = c; else p.firstChild = c;
+                b.previousSibling = c; return c;
+            }
+            function _remove(p, c) {
+                if (c.previousSibling) c.previousSibling.nextSibling = c.nextSibling; else p.firstChild = c.nextSibling;
+                if (c.nextSibling) c.nextSibling.previousSibling = c.previousSibling; else p.lastChild = c.previousSibling;
+                c.parentNode = null; c.previousSibling = null; c.nextSibling = null; return c;
+            }
+            const doc = {
+                createElement: makeEl,
+                createDocumentFragment() { const f = makeEl('fragment'); f.nodeType = 11; return f; },
+                createTextNode(t) { return { nodeType: 3, nodeValue: String(t || ''), firstChild: null, parentNode: null, previousSibling: null, nextSibling: null }; },
+            };
+
+            // ---- Factory guard ----
+            assert.throws(() => mod.createAtomicRendererFactory({}), /findBlock/);
+
+            const factory = mod.createAtomicRendererFactory({
+                findBlock: () => null,
+                applyObjectFocusPolicyToElement: () => ({ selected: false }),
+                renderSelectionOverlay: () => doc.createElement('div'),
+                renderRevisionOverlay: () => doc.createElement('div'),
+                renderCommentMarkers: () => doc.createElement('div'),
+                restoreLogicalSelection: () => {},
+                doc,
+            });
+            const renderer = factory();
+
+            // API shape
+            assert.strictEqual(typeof renderer.render, 'function');
+            assert.strictEqual(typeof renderer.renderParagraphScope, 'function');
+            assert.strictEqual(typeof renderer.debug, 'function');
+            assert.strictEqual(typeof renderer.setDiagnostics, 'function');
+
+            const debug0 = renderer.debug();
+            assert.strictEqual(debug0.paragraphFingerprintHits, 0);
+            assert.strictEqual(debug0.paragraphFingerprintMisses, 0);
+
+            // ---- Snapshot with one paragraph block ----
+            const snapshot = {
+                fingerprint: 'fp1', modelVersion: 1, layoutVersion: 1, selectionVersion: 1,
+                model: { revisions: [], comments: [] },
+                selection: { blockId: 'p1', offset: 0 },
+                layout: {
+                    pages: [{ rect: { x: 0, y: 0, width: 640, height: 900 }, bodyFrame: { x: 0, y: 0, width: 640, height: 900 }, headerFrame: {}, footerFrame: {} }],
+                    headerFooterRegions: [],
+                    blocks: [
+                        { blockId: 'p1', type: 'paragraph', pageIndex: 0, rect: { x: 0, y: 0, width: 500, height: 20 },
+                          segments: [{ id: 's1', blockId: 'p1', runId: 'r1', start: 0, end: 5, text: 'Hello', rect: { x: 0, y: 0, width: 50, height: 20 }, style: {}, decorations: [] }],
+                          lines: [], caretStops: [] },
+                    ],
+                },
+            };
+
+            const root = makeEl('div');
+            const r1 = renderer.render(root, snapshot);
+            assert.strictEqual(r1.ok, true);
+            assert.strictEqual(r1.rolledBack, false);
+            const afterFirst = renderer.debug();
+            assert.strictEqual(afterFirst.paragraphFingerprintMisses, 1, 'first render is a miss');
+
+            // ---- Render again with identical snapshot → fingerprint skip (B1) ----
+            const r2 = renderer.render(root, snapshot);
+            assert.strictEqual(r2.ok, true);
+            const afterSecond = renderer.debug();
+            assert.strictEqual(afterSecond.paragraphFingerprintHits, 1, 'identical block skipped (fingerprint hit)');
+
+            // ---- Render with no root → rolled back gracefully ----
+            const rNull = renderer.render(null, snapshot);
+            assert.strictEqual(rNull.rolledBack, true);
+
+            // resetDebugCounters
+            renderer.resetDebugCounters();
+            assert.strictEqual(renderer.debug().paragraphFingerprintHits, 0);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-atomic-renderer", script,
+            "render/atomic-renderer.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD4_AtomicRendererInsertsInOrderAndEvictsRemovedBlocks()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- Minimal DOM stub (firstChild/nextSibling linked list) ----
+            function makeEl(tag) {
+                const el = {
+                    nodeType: 1, tagName: String(tag || 'div').toUpperCase(),
+                    attributes: {}, style: {}, className: '', __tmFingerprint: undefined,
+                    parentNode: null, firstChild: null, lastChild: null,
+                    nextSibling: null, previousSibling: null, textContent: '', innerHTML: '',
+                    setAttribute(n, v) { this.attributes[n] = String(v); },
+                    getAttribute(n) { return this.attributes[n] === undefined ? null : this.attributes[n]; },
+                    removeAttribute(n) { delete this.attributes[n]; },
+                    appendChild(c) { return _append(this, c); },
+                    insertBefore(c, b) { return _insert(this, c, b); },
+                    removeChild(c) { return _remove(this, c); },
+                    replaceChildren() { const a = Array.from(arguments); while (this.firstChild) _remove(this, this.firstChild); a.forEach((n) => _append(this, n)); },
+                    contains(n) { let c = n; while (c) { if (c === this) return true; c = c.parentNode; } return false; },
+                    querySelectorAll() { return []; },
+                    getBoundingClientRect() { return { x: 0, y: 0, width: 0, height: 0 }; },
+                };
+                return el;
+            }
+            function _append(p, c) { if (c.parentNode) _remove(c.parentNode, c); const l = p.lastChild; c.parentNode = p; c.previousSibling = l; c.nextSibling = null; if (l) l.nextSibling = c; else p.firstChild = c; p.lastChild = c; return c; }
+            function _insert(p, c, b) { if (!b) return _append(p, c); if (c.parentNode) _remove(c.parentNode, c); c.parentNode = p; c.previousSibling = b.previousSibling; c.nextSibling = b; if (b.previousSibling) b.previousSibling.nextSibling = c; else p.firstChild = c; b.previousSibling = c; return c; }
+            function _remove(p, c) { if (c.previousSibling) c.previousSibling.nextSibling = c.nextSibling; else p.firstChild = c.nextSibling; if (c.nextSibling) c.nextSibling.previousSibling = c.previousSibling; else p.lastChild = c.previousSibling; c.parentNode = null; c.previousSibling = null; c.nextSibling = null; return c; }
+            const doc = {
+                createElement: makeEl,
+                createDocumentFragment() { const f = makeEl('fragment'); f.nodeType = 11; return f; },
+                createTextNode(t) { return { nodeType: 3, nodeValue: String(t || ''), firstChild: null, parentNode: null, previousSibling: null, nextSibling: null }; },
+            };
+
+            function makeBlock(id, text) {
+                return { blockId: id, type: 'paragraph', pageIndex: 0, rect: { x: 0, y: 0, width: 500, height: 20 },
+                    segments: [{ id: id + '-s1', blockId: id, runId: id + '-r1', start: 0, end: text.length, text, rect: { x: 0, y: 0, width: 50, height: 20 }, style: {}, decorations: [] }],
+                    lines: [], caretStops: [] };
+            }
+            function snapshotWith(blocks) {
+                return { fingerprint: 'fp', model: { revisions: [], comments: [] }, selection: {},
+                    layout: { pages: [{ rect: { x: 0, y: 0, width: 640, height: 900 }, bodyFrame: { x: 0, y: 0, width: 640, height: 900 }, headerFrame: {}, footerFrame: {} }], headerFooterRegions: [], blocks } };
+            }
+            // Walk the whole tree collecting data-render-block-id in document order.
+            function blockOrder(root) {
+                const ids = []; const stack = [root];
+                while (stack.length) {
+                    const n = stack.shift();
+                    if (n && n.getAttribute) { const id = n.getAttribute('data-render-block-id'); if (id) ids.push(id); }
+                    let c = n && n.firstChild; const kids = [];
+                    while (c) { kids.push(c); c = c.nextSibling; }
+                    stack.unshift(...kids);
+                }
+                return ids;
+            }
+
+            const factory = mod.createAtomicRendererFactory({
+                findBlock: () => null,
+                applyObjectFocusPolicyToElement: () => ({}),
+                renderSelectionOverlay: () => doc.createElement('div'),
+                renderRevisionOverlay: () => doc.createElement('div'),
+                renderCommentMarkers: () => doc.createElement('div'),
+                restoreLogicalSelection: () => {},
+                doc,
+            });
+            const renderer = factory();
+            const root = makeEl('div');
+
+            // ---- B1.3 — inserted blocks painted in snapshot order ----
+            renderer.render(root, snapshotWith([makeBlock('p1', 'A'), makeBlock('p2', 'B'), makeBlock('p3', 'C')]));
+            assert.deepStrictEqual(blockOrder(root), ['p1', 'p2', 'p3'], 'blocks painted in order');
+
+            // Reorder + insert: p2, p1, p4, p3 — order must follow snapshot
+            renderer.render(root, snapshotWith([makeBlock('p2', 'B'), makeBlock('p1', 'A'), makeBlock('p4', 'D'), makeBlock('p3', 'C')]));
+            assert.deepStrictEqual(blockOrder(root), ['p2', 'p1', 'p4', 'p3'], 'reordered + inserted block follows snapshot order');
+
+            // ---- B1.4 — removed blocks evicted from caches ----
+            renderer.resetDebugCounters();
+            const before = renderer.debug();
+            assert.strictEqual(before.blockEvictionCount, 0);
+            // Now render with only p1, p3 → p2 and p4 removed → 2 evictions
+            renderer.render(root, snapshotWith([makeBlock('p1', 'A'), makeBlock('p3', 'C')]));
+            assert.deepStrictEqual(blockOrder(root), ['p1', 'p3'], 'survivors in order after removal');
+            const after = renderer.debug();
+            assert.strictEqual(after.blockEvictionCount, 2, 'p2 + p4 evicted from blockCache');
+            assert.ok(after.segmentEvictionCount >= 2, 'their segments evicted from segmentCache');
+            assert.strictEqual(after.cachedBlockCount, 2, 'only p1 + p3 remain cached');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-atomic-renderer-evict", script,
+            "render/atomic-renderer.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR0_FontMetricsServiceFallsBackSyntheticAndUsesRealContext()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- Pure helpers ----
+            const style = mod.normalizeFontMetricStyle({ text: 'Hi', fontSize: 16, bold: true, italic: true });
+            assert.strictEqual(style.fontWeight, '700', 'bold → 700');
+            assert.strictEqual(style.fontStyle, 'italic', 'italic flag → italic');
+            assert.strictEqual(style.fontSize, 16);
+            // explicit fontWeight/fontStyle win over bold/italic shorthand
+            const style2 = mod.normalizeFontMetricStyle({ text: 'x', fontWeight: '300', fontStyle: 'normal' });
+            assert.strictEqual(style2.fontWeight, '300');
+
+            // fontStringFromStyle — CSS shorthand
+            assert.strictEqual(mod.fontStringFromStyle(style), 'italic 700 16px Arial');
+            assert.strictEqual(mod.fontStringFromStyle(mod.normalizeFontMetricStyle({ text: 'x', fontSize: 12, fontFamily: 'Georgia' })), '12px Georgia');
+
+            // syntheticRunMetrics — rich shape
+            const syn = mod.syntheticRunMetrics(mod.normalizeFontMetricStyle({ text: 'Hello', fontSize: 16 }));
+            assert.ok(syn.width > 0 && syn.ascent > 0 && syn.descent >= 0 && syn.lineHeight > 0);
+
+            // ---- Node fallback (no canvas) ----
+            const fallback = mod.createFontMetricsService({ createMeasureContext: () => null });
+            assert.strictEqual(fallback.isUsingRealMetrics(), false, 'no context → synthetic');
+            const fb = fallback.measureRun({ text: 'Hello', fontSize: 16 });
+            assert.ok(fb.width > 0, 'synthetic width');
+            // measureTextRun drop-in shape (Text/Width/Height) for the engine
+            const tr = fallback.measureTextRun({ text: 'Hello', fontSize: 16 });
+            assert.strictEqual(tr.Text, 'Hello');
+            assert.ok(tr.Width >= 1 && tr.Height >= 1);
+            // drop-in width matches the legacy synthetic model exactly (byte-stable engine)
+            assert.strictEqual(Math.round(tr.Width * 100), Math.round(fb.width * 100));
+
+            // ---- Real context (injected fake canvas) ----
+            let lastFont = '';
+            const fakeCtx = {
+                set font(v) { lastFont = v; }, get font() { return lastFont; },
+                measureText(t) {
+                    return { width: t.length * 7, fontBoundingBoxAscent: 13, fontBoundingBoxDescent: 3 };
+                },
+            };
+            const real = mod.createFontMetricsService({ createMeasureContext: () => fakeCtx });
+            assert.strictEqual(real.isUsingRealMetrics(), true, 'context present → real');
+            const rm = real.measureRun({ text: 'abcd', fontSize: 16, bold: true });
+            assert.strictEqual(lastFont, '700 16px Arial', 'font string set on context');
+            assert.strictEqual(rm.width, 28, '4 chars * 7px advance (no letterSpacing)');
+            assert.strictEqual(rm.ascent, 13);
+            assert.strictEqual(rm.descent, 3);
+            assert.strictEqual(rm.lineHeight, Math.ceil((13 + 3) * 1.15));
+
+            // letterSpacing adds (n-1)*spacing
+            const rmLs = real.measureRun({ text: 'abcd', fontSize: 16, letterSpacing: 2 });
+            assert.strictEqual(rmLs.width, 28 + 3 * 2, 'letterSpacing applied between glyphs');
+
+            // zoom scales width + metrics
+            const rmZoom = real.measureRun({ text: 'ab', fontSize: 16, zoom: 2 });
+            assert.strictEqual(rmZoom.width, 2 * 7 * 2, 'zoom doubles width');
+
+            // ---- LRU cache + stats ----
+            real.clearCache();
+            real.measureRun({ text: 'cached', fontSize: 16 });
+            real.measureRun({ text: 'cached', fontSize: 16 });
+            const stats = real.getStats();
+            assert.strictEqual(stats.MeasureCacheHits, 1, 'second identical call is a cache hit');
+            assert.strictEqual(stats.MeasureCount, 1, 'only one real measure');
+            assert.strictEqual(stats.UsingRealMetrics, true);
+
+            // LRU eviction with tiny cap
+            const tiny = mod.createFontMetricsService({ createMeasureContext: () => fakeCtx, cacheLimit: 2 });
+            tiny.measureRun({ text: 'a', fontSize: 16 });
+            tiny.measureRun({ text: 'b', fontSize: 16 });
+            tiny.measureRun({ text: 'c', fontSize: 16 }); // evicts 'a'
+            assert.ok(tiny.getStats().MeasureEvictions >= 1, 'LRU evicts beyond cap');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r0-font-metrics", script,
+            "layout/font-metrics.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR1_RenderHostRunsPipelineAndVirtualizes()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- Compact structural DOM stub ----
+            function makeEl(tag) {
+                const a = new Map();
+                const el = {
+                    nodeType: 1, tagName: String(tag || 'div').toUpperCase(), style: {}, className: '',
+                    __tmFingerprint: undefined, parentNode: null, firstChild: null, lastChild: null,
+                    nextSibling: null, previousSibling: null, textContent: '', innerHTML: '',
+                    setAttribute(n, v) { a.set(n, String(v)); }, getAttribute(n) { return a.has(n) ? a.get(n) : null; },
+                    removeAttribute(n) { a.delete(n); },
+                    appendChild(c) { return ap(this, c); }, insertBefore(c, b) { return ins(this, c, b); },
+                    removeChild(c) { return rm(this, c); },
+                    replaceChildren() { const args = Array.from(arguments); while (this.firstChild) rm(this, this.firstChild); args.forEach((n) => ap(this, n)); },
+                    contains(n) { let c = n; while (c) { if (c === this) return true; c = c.parentNode; } return false; },
+                    querySelectorAll() { return []; }, getBoundingClientRect() { return { x: 0, y: 0, width: 0, height: 0 }; },
+                };
+                return el;
+            }
+            function ap(p, c) { if (c.parentNode) rm(c.parentNode, c); const l = p.lastChild; c.parentNode = p; c.previousSibling = l; c.nextSibling = null; if (l) l.nextSibling = c; else p.firstChild = c; p.lastChild = c; return c; }
+            function ins(p, c, b) { if (!b) return ap(p, c); if (c.parentNode) rm(c.parentNode, c); c.parentNode = p; c.previousSibling = b.previousSibling; c.nextSibling = b; if (b.previousSibling) b.previousSibling.nextSibling = c; else p.firstChild = c; b.previousSibling = c; return c; }
+            function rm(p, c) { if (c.previousSibling) c.previousSibling.nextSibling = c.nextSibling; else p.firstChild = c.nextSibling; if (c.nextSibling) c.nextSibling.previousSibling = c.previousSibling; else p.lastChild = c.previousSibling; c.parentNode = null; c.previousSibling = null; c.nextSibling = null; return c; }
+            const doc = { createElement: makeEl, createDocumentFragment() { const f = makeEl('frag'); f.nodeType = 11; return f; }, createTextNode(t) { return { nodeType: 3, nodeValue: String(t || ''), firstChild: null, parentNode: null, previousSibling: null, nextSibling: null }; } };
+            function countAttr(root, attr) { let n = 0; const stk = [root]; while (stk.length) { const x = stk.shift(); if (x && x.getAttribute && x.getAttribute(attr) !== null) n++; let c = x && x.firstChild; while (c) { stk.push(c); c = c.nextSibling; } } return n; }
+
+            // ---- Build a 120-paragraph document ----
+            const blocks = [];
+            for (let i = 0; i < 120; i++) blocks.push({ id: 'p' + i, type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r' + i, kind: 'text', text: 'Paragraph number ' + i + ' with some words to fill the line.' }] } });
+            const model = { documentId: 'doc-120p', body: { blocks } };
+
+            const host = mod.createRenderHost({ doc, pageSettings: { width: 794, height: 1123, marginTop: 72, marginBottom: 72, marginLeft: 72, marginRight: 72 } });
+
+            // Guard: render before mount
+            assert.strictEqual(host.render().ok, false, 'render before mount fails gracefully');
+
+            const root = makeEl('div');
+            host.mount(root).setModel(model).setSelection({ blockId: 'p0', offset: 0 });
+            const res = host.render();
+            assert.strictEqual(res.ok, true, 'pipeline render ok');
+            assert.ok(res.layout.pages.length >= 2, 'multi-page layout');
+            assert.strictEqual(res.layout.blocks.length, 120, 'all blocks laid out');
+            const paintedBlocksAll = countAttr(root, 'data-render-block-id');
+            assert.strictEqual(paintedBlocksAll, 120, 'all blocks painted without viewport');
+
+            // ---- Virtualization: only visible pages painted ----
+            host.setViewport({ scrollTop: 0, height: 1200, overscanPages: 0 });
+            const resV = host.render();
+            const visible = resV.snapshot.layout.visiblePageIndices;
+            assert.ok(Array.isArray(visible) && visible.length >= 1 && visible.length < res.layout.pages.length,
+                'virtualized to a subset of pages: ' + JSON.stringify(visible));
+            const paintedBlocksV = countAttr(root, 'data-render-block-id');
+            assert.ok(paintedBlocksV > 0 && paintedBlocksV < 120, 'virtualized paints fewer blocks: ' + paintedBlocksV);
+            // Page frames preserved (scroll height) — page sections still rendered for all pages.
+            assert.ok(countAttr(root, 'data-render-page-index') > 0, 'page sections present');
+
+            // ---- Idempotent re-render reuses block containers (B1 fingerprint hit) ----
+            host.setViewport(null);
+            host.render();
+            const before = host.getRenderer().debug().paragraphFingerprintHits;
+            host.render();
+            const after = host.getRenderer().debug().paragraphFingerprintHits;
+            assert.ok(after > before, 'second identical render hits the fingerprint cache (B1)');
+
+            host.destroy();
+            assert.strictEqual(host.render().ok, false, 'render after destroy fails gracefully');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r1-render-host", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR2_EditModelMutatesRunsAndCaret()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const editUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const edit = await import(editUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const idx = await import(require('url').pathToFileURL(dir + '/../core/indexes.mjs').href);
+            const finders = await import(require('url').pathToFileURL(dir + '/../core/model-finders.mjs').href);
+            const img = await import(require('url').pathToFileURL(dir + '/../objects/image-object.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            const { buildIndexes } = idx.createIndexBuilder({ normalizeImageObject: img.normalizeImageObject });
+            const findBlock = (m, id) => { if (!m.indexes) buildIndexes(m); return idx.findBlockByIndex(m, id); };
+            const deps = { findBlock, findBlockContainer: finders.findBlockContainer };
+            const text = (b) => th.blockText(b);
+
+            // insertText preserves runs + advances caret
+            let model = { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r1', kind: 'text', text: 'Hello', marks: [{ type: 'bold' }] }] } }] } };
+            buildIndexes(model);
+            let r = edit.applyInsertText(model, { blockId: 'p1', offset: 5 }, ' world', deps);
+            assert.strictEqual(r.ok, true);
+            assert.strictEqual(text(findBlock(model, 'p1')), 'Hello world');
+            assert.strictEqual(r.caret.offset, 11);
+            // the bold mark on the first run survives (run structure preserved)
+            assert.ok(findBlock(model, 'p1').content.runs.some(run => (run.marks || []).some(m => m.type === 'bold')), 'marks preserved');
+
+            // deleteBackward within block
+            r = edit.applyDeleteBackward(model, { blockId: 'p1', offset: 11 }, deps);
+            assert.strictEqual(text(findBlock(model, 'p1')), 'Hello worl');
+            assert.strictEqual(r.deletedText, 'd');
+            assert.strictEqual(r.caret.offset, 10);
+
+            // insertParagraph splits the block (structural)
+            model.indexes = null;
+            r = edit.applyInsertParagraph(model, { blockId: 'p1', offset: 5 }, deps);
+            assert.strictEqual(r.structural, true);
+            assert.strictEqual(model.body.blocks.length, 2);
+            assert.strictEqual(text(model.body.blocks[0]), 'Hello');
+            assert.strictEqual(text(model.body.blocks[1]), ' worl');
+            assert.strictEqual(r.caret.blockId, model.body.blocks[1].id);
+            assert.strictEqual(r.caret.offset, 0);
+
+            // deleteBackward at offset 0 merges into the previous paragraph
+            model.indexes = null;
+            r = edit.applyDeleteBackward(model, { blockId: model.body.blocks[1].id, offset: 0 }, deps);
+            assert.strictEqual(r.structural, true);
+            assert.strictEqual(model.body.blocks.length, 1);
+            assert.strictEqual(text(model.body.blocks[0]), 'Hello worl');
+            assert.strictEqual(r.caret.offset, 5, 'caret at the join point');
+
+            // deleteForward at end merges next paragraph
+            model = { body: { blocks: [
+                { id: 'a', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'ra', kind: 'text', text: 'AAA' }] } },
+                { id: 'b', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'rb', kind: 'text', text: 'BBB' }] } },
+            ] } };
+            buildIndexes(model);
+            r = edit.applyDeleteForward(model, { blockId: 'a', offset: 3 }, deps);
+            assert.strictEqual(model.body.blocks.length, 1);
+            assert.strictEqual(text(model.body.blocks[0]), 'AAABBB');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r2-edit-model", script,
+            "core-engine/edit-model.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR2_InputSurfaceRoutesKeystrokesToModel()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const idx = await import(require('url').pathToFileURL(dir + '/../core/indexes.mjs').href);
+            const img = await import(require('url').pathToFileURL(dir + '/../objects/image-object.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            // DOM stub with event listeners + dispatch.
+            function makeEl(tag) {
+                const a = new Map(); const L = {};
+                const el = {
+                    nodeType: 1, tagName: String(tag || 'div').toUpperCase(), style: { cssText: '' }, className: '', value: '',
+                    __tmFingerprint: undefined, parentNode: null, firstChild: null, lastChild: null, nextSibling: null, previousSibling: null, textContent: '', innerHTML: '',
+                    setAttribute(n, v) { a.set(n, String(v)); }, getAttribute(n) { return a.has(n) ? a.get(n) : null; }, removeAttribute(n) { a.delete(n); },
+                    appendChild(c) { return ap(this, c); }, insertBefore(c, b) { return ins(this, c, b); }, removeChild(c) { return rm(this, c); },
+                    replaceChildren() { const args = Array.from(arguments); while (this.firstChild) rm(this, this.firstChild); args.forEach((n) => ap(this, n)); },
+                    contains(n) { let c = n; while (c) { if (c === this) return true; c = c.parentNode; } return false; },
+                    querySelectorAll() { return []; }, getBoundingClientRect() { return { x: 0, y: 0, width: 0, height: 0 }; },
+                    addEventListener(t, fn) { (L[t] = L[t] || []).push(fn); }, removeEventListener(t, fn) { if (L[t]) L[t] = L[t].filter((x) => x !== fn); },
+                    dispatchEvent(ev) { (L[ev.type] || []).forEach((fn) => fn(ev)); return true; }, focus() {}, blur() {},
+                };
+                return el;
+            }
+            function ap(p, c) { if (c.parentNode) rm(c.parentNode, c); const l = p.lastChild; c.parentNode = p; c.previousSibling = l; c.nextSibling = null; if (l) l.nextSibling = c; else p.firstChild = c; p.lastChild = c; return c; }
+            function ins(p, c, b) { if (!b) return ap(p, c); if (c.parentNode) rm(c.parentNode, c); c.parentNode = p; c.previousSibling = b.previousSibling; c.nextSibling = b; if (b.previousSibling) b.previousSibling.nextSibling = c; else p.firstChild = c; b.previousSibling = c; return c; }
+            function rm(p, c) { if (c.previousSibling) c.previousSibling.nextSibling = c.nextSibling; else p.firstChild = c.nextSibling; if (c.nextSibling) c.nextSibling.previousSibling = c.previousSibling; else p.lastChild = c.previousSibling; c.parentNode = null; c.previousSibling = null; c.nextSibling = null; return c; }
+            const doc = { createElement: makeEl, createDocumentFragment() { const f = makeEl('frag'); f.nodeType = 11; return f; }, createTextNode(t) { return { nodeType: 3, nodeValue: String(t || ''), firstChild: null, parentNode: null, previousSibling: null, nextSibling: null }; } };
+
+            const { buildIndexes } = idx.createIndexBuilder({ normalizeImageObject: img.normalizeImageObject });
+            const findBlock = (m, id) => { if (!m.indexes) buildIndexes(m); return idx.findBlockByIndex(m, id); };
+            const beforeInput = (ta, inputType, data) => ta.dispatchEvent({ type: 'beforeinput', inputType, data: data ?? null, preventDefault() {} });
+            const keyDown = (ta, key, shiftKey) => ta.dispatchEvent({ type: 'keydown', key, shiftKey: !!shiftKey, preventDefault() {} });
+
+            const model = { documentId: 'd', body: { blocks: [{ id: 'b1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: '' }] } }] } };
+            const host = hostMod.createRenderHost({ doc, pageSettings: { width: 794, height: 1123, marginTop: 72, marginBottom: 72, marginLeft: 72, marginRight: 72 } });
+            const root = makeEl('div');
+            host.mount(root).setModel(model).setSelection({ blockId: 'b1', offset: 0 }).attachInput();
+            host.render();
+
+            const surface = host.getInputSurface();
+            assert.ok(surface && surface.element, 'input surface created');
+            assert.strictEqual(surface.element.tagName, 'TEXTAREA', 'off-screen capture is a textarea (not visible contenteditable)');
+            assert.ok(/left:-9999px/.test(surface.element.style.cssText), 'capture element is off-screen');
+            const ta = surface.element;
+
+            // Type "Hi"
+            beforeInput(ta, 'insertText', 'H');
+            beforeInput(ta, 'insertText', 'i');
+            assert.strictEqual(th.blockText(findBlock(model, 'b1')), 'Hi');
+            assert.strictEqual(host.getCaret().offset, 2);
+
+            // Enter (keydown) → new block, caret moves
+            keyDown(ta, 'Enter');
+            assert.strictEqual(model.body.blocks.length, 2);
+            const line2 = host.getCaret().blockId;
+            assert.notStrictEqual(line2, 'b1');
+
+            // Type on line 2, then Backspace twice (delete X, then merge)
+            beforeInput(ta, 'insertText', 'X');
+            assert.strictEqual(th.blockText(findBlock(model, line2)), 'X');
+            keyDown(ta, 'Backspace');
+            keyDown(ta, 'Backspace');
+            assert.strictEqual(model.body.blocks.length, 1, 'cross-block merge on Backspace at offset 0');
+            assert.strictEqual(th.blockText(model.body.blocks[0]), 'Hi');
+
+            // composition end commits final text
+            beforeInput(ta, 'insertText', ' ');
+            ta.dispatchEvent({ type: 'compositionstart' });
+            assert.strictEqual(surface.isComposing(), true);
+            ta.dispatchEvent({ type: 'compositionend', data: '世界' });
+            assert.strictEqual(surface.isComposing(), false);
+            assert.ok(th.blockText(model.body.blocks[0]).includes('世界'), 'composition committed CJK text');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r2-input-surface", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR3_CaretGeometryHitTestAndSelection()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const ht = await import(require('url').pathToFileURL(dir + '/hit-test.mjs').href);
+            const ca = await import(require('url').pathToFileURL(dir + '/caret.mjs').href);
+            const sel = await import(require('url').pathToFileURL(dir + '/selection-overlay.mjs').href);
+            const assert = require('assert');
+
+            function makeEl(t){const a=new Map();const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{},className:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',innerHTML:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(){},removeEventListener(){},dispatchEvent(){return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;c.previousSibling=b.previousSibling;c.nextSibling=b;if(b.previousSibling)b.previousSibling.nextSibling=c;else p.firstChild=c;b.previousSibling=c;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;}};
+
+            const model={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r1',kind:'text',text:'Hello world example'}]}}]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:{width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72}});
+            host.mount(makeEl('div')).setModel(model).setSelection({blockId:'p1',offset:0});
+            const L=host.render().layout;
+
+            // hit-test: click near x=72+33 (after 'Hello'; page has a 72px left/top margin) → offset 5
+            assert.strictEqual(ht.hitTestPoint(L,105,81).offset,5,'click after Hello → offset 5');
+            assert.strictEqual(ht.hitTestPoint(L,72,81).offset,0,'click at start → offset 0');
+            assert.strictEqual(ht.hitTestPoint(L,1000,81).offset,19,'click far right → end offset');
+            assert.strictEqual(ht.hitTestPoint(L,0,81).offset,0,'click far left → start');
+
+            // caretStopAt gives exact rect (offset by the 72px left margin)
+            assert.strictEqual(ca.caretRect(L,{blockId:'p1',offset:0}).x,72);
+            assert.strictEqual(ca.caretRect(L,{blockId:'p1',offset:5}).x,105);
+            assert.strictEqual(ca.blockMaxOffset(L,'p1'),19);
+
+            // caret movement
+            assert.strictEqual(ca.moveCaretByKey(L,{blockId:'p1',offset:0},'ArrowRight').offset,1);
+            assert.strictEqual(ca.moveCaretByKey(L,{blockId:'p1',offset:5},'ArrowLeft').offset,4);
+            assert.strictEqual(ca.moveCaretByKey(L,{blockId:'p1',offset:0},'End').offset,19);
+            assert.strictEqual(ca.moveCaretByKey(L,{blockId:'p1',offset:19},'Home').offset,0);
+            // ArrowLeft at offset 0 stays (single block)
+            assert.strictEqual(ca.moveCaretByKey(L,{blockId:'p1',offset:0},'ArrowLeft').offset,0);
+
+            // selection rects: 'Hello' = offset 0..5 → one rect at x=72 (left margin) width 33
+            const rects = sel.selectionRectsForRange(L,{blockId:'p1',offset:0},{blockId:'p1',offset:5});
+            assert.strictEqual(rects.length,1);
+            assert.strictEqual(rects[0].rect.x,72);
+            assert.strictEqual(rects[0].rect.width,33);
+            // collapsed selection → no rects
+            assert.strictEqual(sel.selectionRectsForRange(L,{blockId:'p1',offset:3},{blockId:'p1',offset:3}).length,0);
+
+            // render-host caret move API + selection range
+            host.setSelection({blockId:'p1',offset:0});
+            host.moveCaret('ArrowRight', false);
+            assert.strictEqual(host.getCaret().offset,1,'host.moveCaret advances caret');
+            host.moveCaret('ArrowRight', true); // shift-extend
+            const range = host.getSelectionRange();
+            assert.strictEqual(range.anchor.offset,1);
+            assert.strictEqual(range.focus.offset,2,'shift+Right extends focus, keeps anchor');
+
+            // multi-block: caret crosses paragraph boundary
+            const model2={documentId:'d2',body:{blocks:[
+              {id:'a',type:'paragraph',content:{type:'paragraph',runs:[{id:'ra',kind:'text',text:'AB'}]}},
+              {id:'b',type:'paragraph',content:{type:'paragraph',runs:[{id:'rb',kind:'text',text:'CD'}]}}]}};
+            const host2=hostMod.createRenderHost({doc,pageSettings:{width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72}});
+            host2.mount(makeEl('div')).setModel(model2).setSelection({blockId:'a',offset:2});
+            const L2=host2.render().layout;
+            assert.strictEqual(ca.moveCaretByKey(L2,{blockId:'a',offset:2},'ArrowRight').blockId,'b','Right at block end → next block');
+            assert.strictEqual(ca.moveCaretByKey(L2,{blockId:'b',offset:0},'ArrowLeft').blockId,'a','Left at block start → prev block');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r3-caret-geometry", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR4_ImeCompositionPreviewAndCommit()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const idx = await import(require('url').pathToFileURL(dir + '/../core/indexes.mjs').href);
+            const img = await import(require('url').pathToFileURL(dir + '/../objects/image-object.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const edit = await import(require('url').pathToFileURL(dir + '/edit-model.mjs').href);
+            const finders = await import(require('url').pathToFileURL(dir + '/../core/model-finders.mjs').href);
+            const assert = require('assert');
+
+            function makeEl(tag) {
+                const a = new Map(); const L = {};
+                const el = {
+                    nodeType: 1, tagName: String(tag || 'div').toUpperCase(), style: { cssText: '' }, className: '', value: '',
+                    parentNode: null, firstChild: null, lastChild: null, nextSibling: null, previousSibling: null, textContent: '', innerHTML: '',
+                    setAttribute(n, v) { a.set(n, String(v)); }, getAttribute(n) { return a.has(n) ? a.get(n) : null; }, removeAttribute(n) { a.delete(n); },
+                    appendChild(c) { return ap(this, c); }, insertBefore(c, b) { return ins(this, c, b); }, removeChild(c) { return rm(this, c); },
+                    replaceChildren() { const args = Array.from(arguments); while (this.firstChild) rm(this, this.firstChild); args.forEach((n) => ap(this, n)); },
+                    contains(n) { let c = n; while (c) { if (c === this) return true; c = c.parentNode; } return false; },
+                    querySelector(s) { return qs(this, s); }, querySelectorAll() { return []; }, getBoundingClientRect() { return { x: 0, y: 0, width: 0, height: 0, left: 0, top: 0 }; },
+                    addEventListener(t, fn) { (L[t] = L[t] || []).push(fn); }, removeEventListener(t, fn) { if (L[t]) L[t] = L[t].filter((x) => x !== fn); },
+                    dispatchEvent(ev) { (L[ev.type] || []).forEach((fn) => fn(ev)); return true; }, focus() {}, blur() {},
+                };
+                return el;
+            }
+            // Real-DOM semantics: appending/inserting a DocumentFragment (nodeType 11)
+            // moves its children into the parent and empties the fragment.
+            function ap(p, c) { if (c && c.nodeType === 11) { let n = c.firstChild; while (n) { const next = n.nextSibling; ap(p, n); n = next; } return c; } if (c.parentNode) rm(c.parentNode, c); const l = p.lastChild; c.parentNode = p; c.previousSibling = l; c.nextSibling = null; if (l) l.nextSibling = c; else p.firstChild = c; p.lastChild = c; return c; }
+            function ins(p, c, b) { if (!b) return ap(p, c); if (c && c.nodeType === 11) { let n = c.firstChild; while (n) { const next = n.nextSibling; ins(p, n, b); n = next; } return c; } if (c.parentNode) rm(c.parentNode, c); c.parentNode = p; c.previousSibling = b.previousSibling; c.nextSibling = b; if (b.previousSibling) b.previousSibling.nextSibling = c; else p.firstChild = c; b.previousSibling = c; return c; }
+            function rm(p, c) { if (c.previousSibling) c.previousSibling.nextSibling = c.nextSibling; else p.firstChild = c.nextSibling; if (c.nextSibling) c.nextSibling.previousSibling = c.previousSibling; else p.lastChild = c.previousSibling; c.parentNode = null; c.previousSibling = null; c.nextSibling = null; return c; }
+            // Minimal querySelector: supports `[data-render-page-index="N"]` optionally
+            // prefixed with `.tm-render-page` — enough for pageSectionFor() to find pages.
+            function matchSel(el, sel) { const m = String(sel).match(/^(?:\.([\w-]+))?\[data-render-page-index="(\d+)"\]$/); if (!m) return false; if (m[1] && !String(el.className || '').split(/\s+/).includes(m[1])) return false; return el.getAttribute && el.getAttribute('data-render-page-index') === m[2]; }
+            function qs(root, sel) { let found = null; (function walk(n) { if (found || !n) return; let c = n.firstChild; while (c) { if (c.nodeType === 1) { if (matchSel(c, sel)) { found = c; return; } walk(c); } c = c.nextSibling; } })(root); return found; }
+            const doc = { createElement: makeEl, createDocumentFragment() { const f = makeEl('frag'); f.nodeType = 11; return f; }, createTextNode(t) { return { nodeType: 3, nodeValue: String(t || ''), firstChild: null, parentNode: null, previousSibling: null, nextSibling: null }; }, body: makeEl('body'), head: makeEl('head'), getElementById() { return null; } };
+
+            const { buildIndexes } = idx.createIndexBuilder({ normalizeImageObject: img.normalizeImageObject });
+            const findBlock = (m, id) => { if (!m.indexes) buildIndexes(m); return idx.findBlockByIndex(m, id); };
+            const text = (m) => th.blockText(findBlock(m, 'p1'));
+            const deps = { findBlock, findBlockContainer: finders.findBlockContainer };
+            const compStart = (ta) => ta.dispatchEvent({ type: 'compositionstart' });
+            const compUpdate = (ta, data) => ta.dispatchEvent({ type: 'compositionupdate', data });
+            const compEnd = (ta, data) => ta.dispatchEvent({ type: 'compositionend', data });
+
+            // --- (1) applyReplaceRange primitive: replace span, preserve surrounding text
+            let pm = { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Hi world' }] } }] } };
+            buildIndexes(pm);
+            let rr = edit.applyReplaceRange(pm, 'p1', 2, 7, 'XYZ', deps); // replace ' worl' → 'XYZ'
+            assert.strictEqual(th.blockText(findBlock(pm, 'p1')), 'HiXYZd');
+            assert.strictEqual(rr.caret.offset, 5);
+            assert.strictEqual(rr.structural, false);
+
+            // --- (2) full composition through the off-screen surface
+            const model = { documentId: 'd', body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Hi' }] } }] } };
+            const host = hostMod.createRenderHost({ doc, pageSettings: { width: 794, height: 1123, marginTop: 72, marginBottom: 72, marginLeft: 72, marginRight: 72 } });
+            const root = makeEl('div');
+            const wrap = makeEl('div'); ap(wrap, root); // give root a parentNode so the surface mounts as a sibling
+            host.mount(root).setModel(model).setSelection({ blockId: 'p1', offset: 2 }).attachInput();
+            host.render();
+            const ta = host.getInputSurface().element;
+
+            // compositionstart: empty preview, composing flag on
+            compStart(ta);
+            assert.strictEqual(host.isComposing(), true, 'composing after start');
+            assert.strictEqual(host.getComposition().text, '');
+            assert.strictEqual(host.getComposition().start, 2);
+
+            // compositionupdate: live preview text REPLACES the previous preview (not appended)
+            compUpdate(ta, 'か');
+            assert.strictEqual(text(model), 'Hiか', 'preview か');
+            assert.strictEqual(host.getCaret().offset, 3, 'caret at end of preview');
+            compUpdate(ta, 'かん');
+            assert.strictEqual(text(model), 'Hiかん', 'preview かん');
+            assert.strictEqual(host.getCaret().offset, 4);
+            compUpdate(ta, '感'); // IME collapsed two kana into one kanji → preview shrinks
+            assert.strictEqual(text(model), 'Hi感', 'preview replaced (not Hiかん感)');
+            assert.strictEqual(host.getCaret().offset, 3);
+
+            // a composing underline overlay is painted during composition
+            assert.ok(host.getSelectionElements().some((el) => el.getAttribute('data-testid') === 'core-engine-composition-underline'),
+                'composing underline painted during composition');
+
+            // compositionend: commit the final string as one edit, composition cleared
+            compEnd(ta, '感じ');
+            assert.strictEqual(host.isComposing(), false, 'not composing after end');
+            assert.strictEqual(host.getComposition(), null);
+            assert.strictEqual(text(model), 'Hi感じ', 'final committed text');
+            assert.strictEqual(host.getCaret().offset, 4, 'caret after committed text');
+            assert.ok(!host.getSelectionElements().some((el) => el.getAttribute('data-testid') === 'core-engine-composition-underline'),
+                'underline removed after commit');
+
+            // --- (3) cancelled composition (compositionend with empty data) removes the preview
+            const m2 = { documentId: 'd2', body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'AB' }] } }] } };
+            const h2 = hostMod.createRenderHost({ doc, pageSettings: { width: 794, height: 1123, marginTop: 72, marginBottom: 72, marginLeft: 72, marginRight: 72 } });
+            const root2 = makeEl('div'); const wrap2 = makeEl('div'); ap(wrap2, root2);
+            h2.mount(root2).setModel(m2).setSelection({ blockId: 'p1', offset: 2 }).attachInput();
+            h2.render();
+            const ta2 = h2.getInputSurface().element;
+            compStart(ta2); compUpdate(ta2, 'ね');
+            assert.strictEqual(th.blockText(findBlock(m2, 'p1')), 'ABね');
+            compEnd(ta2, ''); // user cancelled (Escape) → preview discarded
+            assert.strictEqual(th.blockText(findBlock(m2, 'p1')), 'AB', 'cancelled composition leaves no text');
+            assert.strictEqual(h2.isComposing(), false);
+
+            // --- (4) Apple/quirk: compositionupdate before compositionstart starts lazily;
+            //         and a keydown with keyCode 229 (IME process key) is NOT routed as a key
+            const m3 = { documentId: 'd3', body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Z' }] } }] } };
+            const h3 = hostMod.createRenderHost({ doc, pageSettings: { width: 794, height: 1123, marginTop: 72, marginBottom: 72, marginLeft: 72, marginRight: 72 } });
+            const root3 = makeEl('div'); const wrap3 = makeEl('div'); ap(wrap3, root3);
+            h3.mount(root3).setModel(m3).setSelection({ blockId: 'p1', offset: 1 }).attachInput();
+            h3.render();
+            const ta3 = h3.getInputSurface().element;
+            // IME process keydown (keyCode 229) — must be ignored (no Enter split, no caret move)
+            ta3.dispatchEvent({ type: 'keydown', key: 'Enter', keyCode: 229, shiftKey: false, preventDefault() {} });
+            assert.strictEqual(m3.body.blocks.length, 1, 'keyCode 229 keydown is not routed as Enter');
+            // update without a preceding start → lazy begin at the caret
+            compUpdate(ta3, '日');
+            assert.strictEqual(th.blockText(findBlock(m3, 'p1')), 'Z日', 'lazy composition start on update');
+            compEnd(ta3, '日本');
+            assert.strictEqual(th.blockText(findBlock(m3, 'p1')), 'Z日本', 'lazy composition commits');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r4-ime-composition", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR5_BidiAndGraphemeShapingAndCaret()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const bidi = await import(require('url').pathToFileURL(dir + '/../layout/bidi.mjs').href);
+            const gr = await import(require('url').pathToFileURL(dir + '/../layout/grapheme.mjs').href);
+            const ca = await import(require('url').pathToFileURL(dir + '/caret.mjs').href);
+            const assert = require('assert');
+
+            const HE = 'שלום';   // שלום (Hebrew, all strong R)
+            const AR = 'عربي';   // عربي (Arabic)
+            const visual = (t, d) => { const r = bidi.resolveLevels(t, d); return bidi.reorderVisual(r.levels).map(i => t[i]).join(''); };
+
+            // --- bidi.mjs: classification + level resolution + L2 reorder ---
+            assert.strictEqual(bidi.bidiClass('a'.codePointAt(0)), 'L');
+            assert.strictEqual(bidi.bidiClass(HE.codePointAt(0)), 'R');
+            assert.strictEqual(bidi.bidiClass(AR.codePointAt(0)), 'AL');
+            assert.strictEqual(bidi.bidiClass('5'.codePointAt(0)), 'EN');
+            assert.strictEqual(bidi.baseDirection('abc'), 'ltr');
+            assert.strictEqual(bidi.baseDirection(HE), 'rtl');
+            assert.strictEqual(bidi.baseDirection(AR), 'rtl');
+            assert.strictEqual(visual('abc'), 'abc', 'pure LTR unchanged');
+            assert.strictEqual(visual(HE), HE.split('').reverse().join(''), 'pure Hebrew reversed');
+            assert.strictEqual(visual('ab' + HE), 'ab' + HE.split('').reverse().join(''), 'LTR base: Hebrew reversed after latin');
+            // RTL base with European numbers: numbers stay LTR, placed left of the reversed letters
+            assert.strictEqual(visual(HE + '12'), '12' + HE.split('').reverse().join(''), 'numbers LTR within RTL line');
+            assert.ok(!bidi.hasRtl(bidi.resolveLevels('hello').levels));
+            assert.ok(bidi.hasRtl(bidi.resolveLevels(HE).levels));
+
+            // --- grapheme.mjs: emoji + combining marks ---
+            const FAM = 'a👨‍👩‍👧b'; // a👨‍👩‍👧b
+            assert.deepStrictEqual(gr.graphemeBoundaries(FAM), [0, 1, 9, 10], 'ZWJ family is one cluster');
+            assert.strictEqual(gr.graphemeCount(FAM), 3);
+            assert.strictEqual(gr.nextGraphemeBoundary(FAM, 1), 9, 'skip the whole emoji');
+            assert.strictEqual(gr.prevGraphemeBoundary(FAM, 9), 1);
+            const ACC = 'éfg'; // é f g  (e + combining acute)
+            assert.deepStrictEqual(gr.graphemeBoundaries(ACC), [0, 2, 3, 4]);
+            assert.strictEqual(gr.nextGraphemeBoundary(ACC, 0), 2, 'base+combining is one cluster');
+
+            // --- caret.mjs: grapheme-aware horizontal movement (pure) ---
+            const THUMB = 'a👍b'; // a👍b  (👍 = 2 code units)
+            const fakeLayout = { blocks: [{ blockId: 'p1', caretStops: [0,1,2,3,4].map(o => ({ blockId:'p1', offset:o, lineId:'l', rect:{x:o*5,y:0,width:1,height:16} })) }] };
+            assert.strictEqual(ca.moveCaretByKey(fakeLayout, {blockId:'p1',offset:1}, 'ArrowRight', {text:THUMB}).offset, 3, 'ArrowRight jumps over emoji');
+            assert.strictEqual(ca.moveCaretByKey(fakeLayout, {blockId:'p1',offset:3}, 'ArrowLeft', {text:THUMB}).offset, 1, 'ArrowLeft jumps over emoji');
+            assert.strictEqual(ca.moveCaretByKey(fakeLayout, {blockId:'p1',offset:1}, 'ArrowRight').offset, 2, 'without text falls back to code units');
+
+            // --- integration through render-host: RTL visual placement + mirrored caret x ---
+            function makeEl(t){const a=new Map();const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',innerHTML:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(){},removeEventListener(){},dispatchEvent(){return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);if(c.parentNode)rm(c.parentNode,c);c.parentNode=p;c.previousSibling=b.previousSibling;c.nextSibling=b;if(b.previousSibling)b.previousSibling.nextSibling=c;else p.firstChild=c;b.previousSibling=c;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+
+            const heModel={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:HE}]}}]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            host.mount(makeEl('div')).setModel(heModel).setSelection({blockId:'p1',offset:0});
+            const L=host.render().layout;
+            const blk=L.blocks[0];
+            assert.ok(blk.segments.every(s => s.direction === 'rtl'), 'Hebrew segments tagged rtl');
+            const stopX = (o) => blk.caretStops.filter(s => s.offset === o)[0].rect.x;
+            assert.ok(stopX(0) > stopX(4), 'RTL: caret at offset 0 is to the RIGHT of offset 4');
+            assert.ok(stopX(0) > stopX(1) && stopX(1) > stopX(2), 'caret x decreases as logical offset increases (RTL)');
+
+            // LTR document is untouched (no direction tag, ascending caret x)
+            const enModel={documentId:'d2',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:'Hello'}]}}]}};
+            const host2=hostMod.createRenderHost({doc,pageSettings:ps});
+            host2.mount(makeEl('div')).setModel(enModel).setSelection({blockId:'p1',offset:0});
+            const L2=host2.render().layout; const b2=L2.blocks[0];
+            assert.ok(b2.segments.every(s => s.direction == null || s.direction === 'ltr'), 'LTR segments not rtl');
+            const sx2 = (o) => b2.caretStops.filter(s => s.offset === o)[0].rect.x;
+            assert.ok(sx2(0) < sx2(5), 'LTR: caret x ascends with offset');
+
+            // render-host grapheme caret movement over an emoji
+            const emModel={documentId:'d3',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:THUMB}]}}]}};
+            const host3=hostMod.createRenderHost({doc,pageSettings:ps});
+            host3.mount(makeEl('div')).setModel(emModel).setSelection({blockId:'p1',offset:0});
+            host3.render();
+            host3.moveCaret('ArrowRight', false); assert.strictEqual(host3.getCaret().offset, 1);
+            host3.moveCaret('ArrowRight', false); assert.strictEqual(host3.getCaret().offset, 3, 'host caret skips emoji');
+            host3.moveCaret('ArrowLeft', false); assert.strictEqual(host3.getCaret().offset, 1, 'host caret skips emoji back');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r5-bidi-grapheme", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6a_InlineMarksAndParagraphFormatting()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const fmt = await import(require('url').pathToFileURL(dir + '/edit-format.mjs').href);
+            const idx = await import(require('url').pathToFileURL(dir + '/../core/indexes.mjs').href);
+            const img = await import(require('url').pathToFileURL(dir + '/../objects/image-object.mjs').href);
+            const mk = await import(require('url').pathToFileURL(dir + '/../core/marks.mjs').href);
+            const assert = require('assert');
+
+            const { buildIndexes } = idx.createIndexBuilder({ normalizeImageObject: img.normalizeImageObject });
+            const findBlock = (m, id) => { if (!m.indexes) buildIndexes(m); return idx.findBlockByIndex(m, id); };
+            const hasType = (run, type) => (run.marks || []).some((x) => mk.markType(x) === type);
+
+            // --- pure edit-format ---
+            let model = { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Hello world' }] } }] } };
+            buildIndexes(model);
+            let blk = findBlock(model, 'p1');
+            assert.strictEqual(fmt.blockRangeHasMark(blk, 0, 5, 'bold'), false);
+            fmt.applyMarkToBlockRange(blk, 0, 5, 'bold', { mode: 'toggle' });
+            assert.ok(fmt.blockRangeHasMark(blk, 0, 5, 'bold'), 'bold applied to Hello');
+            assert.ok(!fmt.blockRangeHasMark(blk, 0, 11, 'bold'), 'world not bold');
+            // toggle off
+            fmt.applyMarkToBlockRange(blk, 0, 5, 'bold', { mode: 'toggle' });
+            assert.ok(!fmt.blockRangeHasMark(blk, 0, 5, 'bold'), 'bold toggled off');
+            // value mark: color set-by-type (replaces previous color of same type)
+            fmt.applyMarkToBlockRange(blk, 0, 5, 'textcolor', { value: '#ff0000' });
+            fmt.applyMarkToBlockRange(blk, 0, 5, 'textcolor', { value: '#0000ff' });
+            const colored = blk.content.runs.filter((r) => (r.marks || []).some((m) => mk.markType(m) === 'textcolor'));
+            assert.ok(colored.length && colored.every((r) => r.marks.filter((m) => mk.markType(m) === 'textcolor').length === 1), 'one color mark per run (set, not stacked)');
+            assert.ok(colored.some((r) => r.marks.some((m) => mk.markValue(m) === '#0000ff')), 'latest color wins');
+            // paragraph property
+            fmt.setParagraphProperty(blk, 'alignment', 'center');
+            assert.strictEqual(blk.content.alignment, 'center');
+
+            // --- integration through render-host (selection → toggle → render) ---
+            function makeEl(t){const a=new Map();const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',innerHTML:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(){},removeEventListener(){},dispatchEvent(){return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);if(c.parentNode)rm(c.parentNode,c);c.parentNode=p;c.previousSibling=b.previousSibling;c.nextSibling=b;if(b.previousSibling)b.previousSibling.nextSibling=c;else p.firstChild=c;b.previousSibling=c;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+
+            const m2 = { documentId: 'd', body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Hello world' }] } }] } };
+            const host = hostMod.createRenderHost({ doc, pageSettings: ps });
+            host.mount(makeEl('div')).setModel(m2).setSelection({ blockId: 'p1', offset: 0 });
+            host.render();
+            // Select "Hello" (offsets 0..5) via shift+ArrowRight ×5.
+            for (let i = 0; i < 5; i++) host.moveCaret('ArrowRight', true);
+            const range = host.getSelectionRange();
+            assert.strictEqual(range.anchor.offset, 0); assert.strictEqual(range.focus.offset, 5);
+
+            assert.strictEqual(host.isMarkActive('bold'), false);
+            host.toggleMark('bold');
+            assert.ok(host.isMarkActive('bold'), 'host reports bold active after toggle');
+            // model: the "Hello" run carries bold; "world" does not
+            const b2 = findBlock(m2, 'p1');
+            assert.ok(b2.content.runs.some((r) => r.text.startsWith('Hello') && hasType(r, 'bold')), 'Hello run is bold');
+            assert.ok(b2.content.runs.some((r) => /world/.test(r.text) && !hasType(r, 'bold')), 'world run is not bold');
+            // rendered segment style reflects the mark
+            const boldSeg = host.getLayout().blocks[0].segments.find((s) => /Hello/.test(s.text || ''));
+            assert.strictEqual(boldSeg.style.fontWeight, '700', 'bold renders as fontWeight 700');
+
+            // toggle off
+            host.toggleMark('bold');
+            assert.strictEqual(host.isMarkActive('bold'), false, 'bold toggled off');
+
+            // underline → textDecoration
+            host.toggleMark('underline');
+            const uSeg = host.getLayout().blocks[0].segments.find((s) => /Hello/.test(s.text || ''));
+            assert.ok(/underline/.test(uSeg.style.textDecoration || ''), 'underline renders as text-decoration');
+
+            // alignment (paragraph-level) — even applies with the same selection
+            host.setAlignment('center');
+            assert.strictEqual(findBlock(m2, 'p1').content.alignment, 'center', 'alignment set on the paragraph');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6a-marks-formatting", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6d_FloatingImageWrappingAndResizeHandles()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const ov = await import(require('url').pathToFileURL(dir + '/object-overlay.mjs').href);
+            const assert = require('assert');
+
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(s){return qs(this,s);},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            function matchSel(el,s){const m=String(s).match(/^(?:\.([\w-]+))?\[data-render-page-index="(\d+)"\]$/);if(!m)return false;if(m[1]&&!String(el.className||'').split(/\s+/).includes(m[1]))return false;return el.getAttribute&&el.getAttribute('data-render-page-index')===m[2];}
+            function qs(root,s){let f=null;(function walk(n){if(f||!n)return;let c=n.firstChild;while(c){if(c.nodeType===1){if(matchSel(c,s)){f=c;return;}walk(c);}c=c.nextSibling;}})(root);return f;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const countHandles = (fig) => { let n=0,c=fig&&fig.firstChild; while(c){ if(c.getAttribute&&c.getAttribute('data-resize-handle'))n++; c=c.nextSibling; } return n; };
+            const hasImg = (fig) => { let c=fig&&fig.firstChild; while(c){ if(c.tagName==='IMG')return true; c=c.nextSibling; } return false; };
+
+            // --- pure object-overlay ---
+            const selFig = ov.createObjectElement({ doc, object: { objectId: 'o1', url: 'x.png', rect: { x: 0, y: 0, width: 100, height: 80 } }, selected: true });
+            assert.strictEqual(countHandles(selFig), 8, 'selected object has 8 resize handles');
+            assert.ok(hasImg(selFig), 'object renders an <img>');
+            const plainFig = ov.createObjectElement({ doc, object: { objectId: 'o1', url: 'x.png', rect: { width: 100, height: 80 } }, selected: false });
+            assert.strictEqual(countHandles(plainFig), 0, 'unselected object has no handles');
+            assert.strictEqual(ov.objectHitTest([{ objectId: 'o1', rect: { x: 10, y: 10, width: 50, height: 40 }, zIndex: 1 }], 20, 20), 'o1');
+            assert.strictEqual(ov.objectHitTest([{ objectId: 'o1', rect: { x: 10, y: 10, width: 50, height: 40 } }], 200, 200), null);
+            const se = ov.resizeRectByHandle({ width: 100, height: 80 }, 'se', 40, 20, {});
+            assert.deepStrictEqual(se, { width: 140, height: 100 }, 'SE handle grows width+height');
+            const nw = ov.resizeRectByHandle({ width: 100, height: 80 }, 'nw', 30, 10, {});
+            assert.deepStrictEqual(nw, { width: 70, height: 70 }, 'NW handle shrinks by drag delta');
+
+            // --- integration through render-host ---
+            const model = { documentId: 'd', body: { blocks: [{ id: 'p0', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 't', kind: 'text', text: 'The quick brown fox jumps over the lazy dog and keeps running across the field for a long time and even longer to force wrapped lines beside the image.' }] } }] } };
+            const host = hostMod.createRenderHost({ doc, pageSettings: ps });
+            const root = makeEl('div'); const wrapEl = makeEl('div'); ap(wrapEl, root);
+            host.mount(root).setModel(model).setSelection({ blockId: 'p0', offset: 0 }).attachInput();
+            host.render();
+            const firstSegX = () => { const s = host.getLayout().blocks[0].segments.find((x) => /The/.test(x.text || '')); return Math.round(s.rect.x); };
+            assert.strictEqual(host.getObjects().length, 0);
+            assert.strictEqual(firstSegX(), 72, 'no image → text starts at the 72px left margin');
+
+            const r = host.insertImage({ url: 'pic.png', width: 160, height: 120, wrapMode: 'square', alt: 'pic' });
+            assert.ok(r && r.objectId, 'insertImage returns an objectId');
+            assert.strictEqual(host.getObjects().length, 1, 'floating object in layout');
+            assert.strictEqual(host.getSelectedObjectId(), r.objectId, 'inserted image is selected');
+            // R.4.8 inspector — selected-object snapshot + alt/wrap edits
+            const info = host.getSelectedObjectInfo();
+            assert.strictEqual(info.objectId, r.objectId, 'getSelectedObjectInfo returns the selected object');
+            assert.strictEqual(info.url, 'pic.png');
+            assert.strictEqual(info.wrapMode, 'square');
+            assert.strictEqual(info.altText, 'pic');
+            assert.strictEqual(host.setSelectedObjectAltText('new alt'), true);
+            assert.strictEqual(host.getSelectedObjectInfo().altText, 'new alt', 'alt text updates the selected object');
+            assert.strictEqual(host.setSelectedObjectWrapMode('tight'), true);
+            assert.strictEqual(host.getSelectedObjectInfo().wrapMode, 'tight', 'wrap mode updates the selected object');
+            assert.ok(firstSegX() >= 160, 'text wraps to the right of the 160px image, got ' + firstSegX());
+            // painted figure with handles (it is selected)
+            let fig = host.getObjectElements()[0];
+            assert.strictEqual(fig.getAttribute('data-object-id'), r.objectId);
+            assert.strictEqual(countHandles(fig), 8, 'selected image paints handles');
+
+            // resize bigger → wrap gap widens
+            const beforeX = firstSegX();
+            host.resizeSelectedObject(240, 180);
+            assert.strictEqual(host.getObjects()[0].rect.width, 240);
+            assert.ok(firstSegX() > beforeX, 'wider image pushes text further right');
+
+            // deselect → handles gone; reselect → back
+            host.clearObjectSelection();
+            assert.strictEqual(host.getSelectedObjectId(), null);
+            assert.strictEqual(countHandles(host.getObjectElements()[0]), 0, 'deselected image hides handles');
+            host.selectObject(r.objectId);
+            assert.strictEqual(countHandles(host.getObjectElements()[0]), 8, 'reselect shows handles');
+
+            // move nudges position offset
+            host.moveSelectedObject(20, 15);
+            const run = model.body.blocks[0].content.runs.find((x) => x.kind === 'drawing');
+            assert.strictEqual(run.layout.horizontalPosition.offset, 20);
+            assert.strictEqual(run.layout.verticalPosition.offset, 15);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6d-floating-image", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6i_UndoRedoSnapshotAndCoalescing()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const us = await import(require('url').pathToFileURL(dir + '/undo-stack.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            // --- pure undo-stack: coalescing + redo invalidation + limit ---
+            const stack = us.createUndoStack({ clone: (v) => JSON.parse(JSON.stringify(v)), limit: 3 });
+            const st = (n) => ({ model: { n }, caret: { blockId: 'b', offset: n } });
+            assert.strictEqual(stack.canUndo(), false);
+            assert.strictEqual(stack.record(st(0), 'type'), true, 'first type push');
+            assert.strictEqual(stack.record(st(1), 'type'), false, 'second type coalesces (no push)');
+            assert.deepStrictEqual(stack.depth(), { undo: 1, redo: 0 }, 'typing run = 1 undo step');
+            stack.breakCoalescing();
+            assert.strictEqual(stack.record(st(2), 'type'), true, 'after break, type pushes again');
+            assert.deepStrictEqual(stack.depth(), { undo: 2, redo: 0 });
+            const u = stack.undo(st(9));
+            assert.strictEqual(u.model.n, 2, 'undo returns the pre-edit snapshot');
+            assert.deepStrictEqual(stack.depth(), { undo: 1, redo: 1 });
+            const r = stack.redo(st(5));
+            assert.strictEqual(r.model.n, 9, 'redo returns the state captured at undo time');
+            // recording a NEW edit kills redo
+            stack.record(st(7), null); stack.record(st(8), null);
+            assert.strictEqual(stack.canRedo(), false, 'new edit clears redo');
+            // limit caps undo depth
+            stack.record(st(10), null); stack.record(st(11), null); stack.record(st(12), null);
+            assert.ok(stack.depth().undo <= 3, 'undo stack capped at limit');
+
+            // --- integration through render-host ---
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+
+            const model={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:''}]}}]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            const root=makeEl('div'); const wrap=makeEl('div'); ap(wrap,root);
+            host.mount(root).setModel(model).setSelection({blockId:'p1',offset:0}).attachInput();
+            host.render();
+            const ta=host.getInputSurface().element;
+            const bi=(d)=>ta.dispatchEvent({type:'beforeinput',inputType:'insertText',data:d,preventDefault(){}});
+            const txt=()=>th.blockText(host.getSnapshot().model.body.blocks[0]);
+
+            'Hello'.split('').forEach(bi);
+            assert.strictEqual(txt(),'Hello');
+            assert.deepStrictEqual(host.getHistoryDepth(), { undo: 1, redo: 0 }, 'typing run coalesced to one undo step');
+            assert.strictEqual(host.getCaret().offset, 5);
+            assert.strictEqual(host.undo(), true);
+            assert.strictEqual(txt(), '', 'undo removes the whole typed run');
+            assert.strictEqual(host.getCaret().offset, 0, 'caret restored to pre-edit position');
+            assert.strictEqual(host.redo(), true);
+            assert.strictEqual(txt(), 'Hello', 'redo restores the run');
+
+            // caret move breaks coalescing → distinct undo steps
+            bi(' '); host.moveCaret('ArrowLeft', false); bi('X');
+            assert.strictEqual(txt(), 'HelloX ');
+            host.undo(); assert.strictEqual(txt(), 'Hello ', 'undo X');
+            host.undo(); assert.strictEqual(txt(), 'Hello', 'undo space');
+            host.undo(); assert.strictEqual(txt(), '', 'undo Hello');
+
+            // bold is undoable too (whole-model snapshot)
+            host.redo(); host.redo(); host.redo(); // back to 'HelloX '
+            host.setSelection({ blockId: 'p1', offset: 0 });
+            for (let i = 0; i < 5; i++) host.moveCaret('ArrowRight', true); // select Hello
+            host.toggleMark('bold');
+            assert.ok(host.isMarkActive('bold'), 'bold applied');
+            host.undo();
+            assert.strictEqual(host.isMarkActive('bold'), false, 'undo reverts the bold mark');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6i-undo-redo", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6b_ParagraphStylesHeadingsAndOutline()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const sty = await import(require('url').pathToFileURL(dir + '/paragraph-styles.mjs').href);
+            const assert = require('assert');
+
+            // --- pure paragraph-styles ---
+            const blk = { id: 'h', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Title' }] } };
+            assert.strictEqual(sty.paragraphStyleName(blk), 'Normal', 'default style is Normal');
+            sty.applyParagraphStyle(blk, 'Heading1');
+            assert.strictEqual(blk.content.styleName, 'Heading1');
+            assert.strictEqual(blk.content.style.fontSize, 32, 'Heading 1 base font size');
+            assert.strictEqual(blk.content.headingLevel, 1);
+            sty.applyParagraphStyle(blk, 'Normal');
+            assert.strictEqual(blk.content.styleName, 'Normal');
+            assert.ok(!('headingLevel' in blk.content), 'Normal clears the heading level');
+            // unknown style falls back to Normal
+            sty.applyParagraphStyle(blk, 'Bogus');
+            assert.strictEqual(blk.content.styleName, 'Normal');
+
+            const model = { body: { blocks: [
+                { id: 'a', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', text: 'Chapter' }], styleName: 'Heading1', headingLevel: 1 } },
+                { id: 'b', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', text: 'body' }] } },
+                { id: 'c', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', text: 'Section' }], styleName: 'Heading2', headingLevel: 2 } },
+            ] } };
+            const outline = sty.getDocumentOutline(model);
+            assert.strictEqual(outline.length, 2, 'two headings in the outline');
+            assert.deepStrictEqual(outline.map((o) => o.level), [1, 2]);
+            assert.deepStrictEqual(outline.map((o) => o.text), ['Chapter', 'Section']);
+
+            // --- integration through render-host: heading renders bigger + outline + undo ---
+            function makeEl(t){const a=new Map();const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(){},removeEventListener(){},dispatchEvent(){return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const m2 = { documentId: 'd', body: { blocks: [{ id: 'h', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'My Heading' }] } }] } };
+            const host = hostMod.createRenderHost({ doc, pageSettings: ps });
+            const root = makeEl('div'); const wrapEl = makeEl('div'); ap(wrapEl, root);
+            host.mount(root).setModel(m2).setSelection({ blockId: 'h', offset: 0 }).attachInput();
+            host.render();
+            const fontSize = () => host.getLayout().blocks[0].segments[0].style.fontSize;
+            assert.strictEqual(fontSize(), 16, 'normal paragraph renders at 16');
+            assert.strictEqual(host.getParagraphStyle(), 'Normal');
+            host.setParagraphStyle('Heading1');
+            assert.strictEqual(fontSize(), 32, 'Heading 1 renders larger');
+            assert.strictEqual(host.getParagraphStyle(), 'Heading1');
+            assert.strictEqual(host.getOutline().length, 1, 'heading appears in the outline');
+            assert.strictEqual(host.getOutline()[0].text, 'My Heading');
+            host.undo();
+            assert.strictEqual(fontSize(), 16, 'undo reverts the heading style');
+            assert.strictEqual(host.getOutline().length, 0, 'outline empty after undo');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6b-paragraph-styles", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR9_ListsModelMarkersToggleLevelAndRenderHost()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const lm = await import(require('url').pathToFileURL(dir + '/list-model.mjs').href);
+            const assert = require('assert');
+
+            // --- pure list-model: a list item is a PARAGRAPH carrying content.listType ---
+            const p = (id, text) => ({ id, type: 'paragraph', content: { type: 'paragraph', runs: [{ id: id + 'r', kind: 'text', text }] } });
+            const b = p('x', 'Item');
+            assert.strictEqual(lm.isListBlock(b), false, 'a plain paragraph is not a list');
+            lm.toggleListType(b, 'bullet');
+            assert.strictEqual(b.type, 'paragraph', 'a list item stays a paragraph block (engine only lays out paragraphs)');
+            assert.strictEqual(lm.isListBlock(b), true);
+            assert.strictEqual(lm.listTypeOf(b), 'bullet');
+            assert.strictEqual(lm.listLevelOf(b), 0);
+            lm.toggleListType(b, 'ordered');           // switch bullet → ordered keeps the level
+            assert.strictEqual(lm.listTypeOf(b), 'ordered');
+            lm.toggleListType(b, 'ordered');           // toggle the active type OFF → plain paragraph
+            assert.strictEqual(lm.isListBlock(b), false, 'toggling the active list type off clears it');
+
+            // level: indent / outdent; outdenting below 0 leaves the list
+            lm.toggleListType(b, 'bullet');
+            assert.strictEqual(lm.changeListLevel(b, 1), true);
+            assert.strictEqual(lm.listLevelOf(b), 1);
+            lm.changeListLevel(b, -1);
+            assert.strictEqual(lm.listLevelOf(b), 0);
+            lm.changeListLevel(b, -1);                  // below 0 → demote to paragraph
+            assert.strictEqual(lm.isListBlock(b), false);
+
+            // --- computeListMarkers: numbering across document order ---
+            const mk = (id, type, level) => ({ id, type: 'paragraph', content: { type: 'paragraph', runs: [], listType: type, level } });
+            const bullets = lm.computeListMarkers([mk('a', 'bullet', 0), mk('b', 'bullet', 0)]);
+            assert.strictEqual(bullets.get('a'), '•'); assert.strictEqual(bullets.get('b'), '•');
+            const ordered = lm.computeListMarkers([mk('a', 'ordered', 0), mk('b', 'ordered', 0), mk('c', 'ordered', 0)]);
+            assert.deepStrictEqual([ordered.get('a'), ordered.get('b'), ordered.get('c')], ['1.', '2.', '3.']);
+            const nested = lm.computeListMarkers([mk('a', 'ordered', 0), mk('b', 'ordered', 1), mk('c', 'ordered', 1), mk('d', 'ordered', 0)]);
+            assert.deepStrictEqual([nested.get('a'), nested.get('b'), nested.get('c'), nested.get('d')], ['1.', 'a.', 'b.', '2.'], 'nested ordered uses a./b. and the parent continues at 2.');
+            const interrupted = lm.computeListMarkers([mk('a', 'ordered', 0), p('para', 'x'), mk('c', 'ordered', 0)]);
+            assert.deepStrictEqual([interrupted.get('a'), interrupted.get('c')], ['1.', '1.'], 'a non-list block restarts numbering');
+
+            // --- integration through render-host: marker render + indent + state + undo ---
+            function makeEl(t){const a=new Map();const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,bb){return ins(this,c,bb);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(){},removeEventListener(){},dispatchEvent(){return true;},focus(){},blur(){}};return el;}
+            function ap(p2,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p2,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p2.lastChild;c.parentNode=p2;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p2.firstChild=c;p2.lastChild=c;return c;}
+            function ins(p2,c,bb){if(!bb)return ap(p2,c);c.parentNode=p2;return c;}
+            function rm(p2,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p2.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p2.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const m2 = { documentId: 'd', body: { blocks: [{ id: 'i', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Groceries' }] } }] } };
+            const host = hostMod.createRenderHost({ doc, pageSettings: ps });
+            const root = makeEl('div'); const wrapEl = makeEl('div'); ap(wrapEl, root);
+            host.mount(root).setModel(m2).setSelection({ blockId: 'i', offset: 0 }).attachInput();
+            host.render();
+            const block0 = () => host.getLayout().blocks[0];
+            const segX = () => block0().segments[0].rect.x;
+            const beforeX = segX();
+            assert.ok(!block0().listMarker, 'plain paragraph has no list marker');
+
+            host.toggleList('bullet');
+            assert.strictEqual(host.getSnapshot().model.body.blocks[0].content.listType, 'bullet', 'toggleList tags the paragraph as a bullet list');
+            assert.ok(block0().listMarker, 'list block gets a marker descriptor');
+            assert.strictEqual(block0().listMarker.text, '•', 'bullet glyph marker');
+            assert.ok(segX() > beforeX, 'list text is indented right of the marker gutter');
+            assert.strictEqual(host.getFormattingState().bulletList, true, 'formatting state reports the bullet list (toolbar read-back)');
+            assert.strictEqual(host.activeListType(), 'bullet');
+
+            host.toggleList('ordered'); // switch bullet → numbered
+            assert.strictEqual(block0().listMarker.text, '1.', 'numbered list shows 1.');
+            assert.strictEqual(host.getFormattingState().numberedList, true);
+
+            const indentedFromX = segX();
+            host.indentList();
+            assert.strictEqual(host.getSnapshot().model.body.blocks[0].content.level, 1, 'indentList nests the item');
+            assert.ok(segX() > indentedFromX, 'a nested item indents further');
+            assert.ok(block0().listMarker.localX > 0, 'nested marker shifts into its level gutter');
+
+            host.undo(); // revert indent
+            assert.strictEqual(host.getSnapshot().model.body.blocks[0].content.level, 0, 'undo reverts the nesting');
+            host.undo(); // revert ordered switch
+            host.undo(); // revert bullet toggle
+            assert.ok(!lm.isListBlock(host.getSnapshot().model.body.blocks[0]), 'undo peels back to a plain paragraph');
+            assert.ok(!block0().listMarker, 'no marker after fully undoing the list');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r9-lists", script, "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR10_EditModelReportsDirtyBlockIdsForIncrementalRender()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const editUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const edit = await import(editUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const idx = await import(require('url').pathToFileURL(dir + '/../core/indexes.mjs').href);
+            const finders = await import(require('url').pathToFileURL(dir + '/../core/model-finders.mjs').href);
+            const img = await import(require('url').pathToFileURL(dir + '/../objects/image-object.mjs').href);
+            const assert = require('assert');
+            const { buildIndexes } = idx.createIndexBuilder({ normalizeImageObject: img.normalizeImageObject });
+            const findBlock = (m, id) => { if (!m.indexes) buildIndexes(m); return idx.findBlockByIndex(m, id); };
+            const deps = { findBlock, findBlockContainer: finders.findBlockContainer };
+            const fresh = () => ({ body: { blocks: [
+                { id: 'a', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'ar', kind: 'text', text: 'Alpha' }] } },
+                { id: 'b', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'br', kind: 'text', text: 'Bravo' }] } },
+            ] } });
+
+            // R.4.9.2 — every edit reports the blocks it touched + whether it is structural.
+            let m, r;
+            // typing → one block, non-structural (the incremental fast path)
+            m = fresh(); r = edit.applyInsertText(m, { blockId: 'a', offset: 5 }, 'X', deps);
+            assert.deepStrictEqual(r.dirtyBlockIds, ['a']); assert.strictEqual(r.structural, false);
+            // in-block backspace → one block, non-structural
+            m = fresh(); r = edit.applyDeleteBackward(m, { blockId: 'a', offset: 5 }, deps);
+            assert.deepStrictEqual(r.dirtyBlockIds, ['a']); assert.strictEqual(r.structural, false);
+            // backspace at block start → merge b into a: dirty [a], removed [b], structural
+            m = fresh(); r = edit.applyDeleteBackward(m, { blockId: 'b', offset: 0 }, deps);
+            assert.deepStrictEqual(r.dirtyBlockIds, ['a']); assert.deepStrictEqual(r.removedBlockIds, ['b']); assert.strictEqual(r.structural, true);
+            // in-block delete → one block
+            m = fresh(); r = edit.applyDeleteForward(m, { blockId: 'a', offset: 0 }, deps);
+            assert.deepStrictEqual(r.dirtyBlockIds, ['a']); assert.strictEqual(r.structural, false);
+            // delete at block end → pull b up into a: dirty [a], removed [b], structural
+            m = fresh(); r = edit.applyDeleteForward(m, { blockId: 'a', offset: 5 }, deps);
+            assert.deepStrictEqual(r.dirtyBlockIds, ['a']); assert.deepStrictEqual(r.removedBlockIds, ['b']); assert.strictEqual(r.structural, true);
+            // Enter (split) → dirty [original, new], structural
+            m = fresh(); r = edit.applyInsertParagraph(m, { blockId: 'a', offset: 2 }, deps);
+            assert.strictEqual(r.structural, true);
+            assert.strictEqual(r.dirtyBlockIds.length, 2);
+            assert.strictEqual(r.dirtyBlockIds[0], 'a');
+            assert.strictEqual(r.dirtyBlockIds[1], r.insertedBlockId);
+            // IME replace-range → one block, non-structural
+            m = fresh(); r = edit.applyReplaceRange(m, 'a', 0, 2, 'YY', deps);
+            assert.deepStrictEqual(r.dirtyBlockIds, ['a']); assert.strictEqual(r.structural, false);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r10-dirty-tracking", script, "core-engine/edit-model.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR11_ClipboardSerializeAndParseRoundTrip()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const url = require('url').pathToFileURL(process.argv[2]).href;
+            const clip = await import(url);
+            const assert = require('assert');
+
+            const model = { body: { blocks: [
+                { id: 'p0', type: 'paragraph', content: { type: 'paragraph', runs: [
+                    { id: 'r0', kind: 'text', text: 'Hello ' },
+                    { id: 'r1', kind: 'text', text: 'bold', marks: [{ type: 'bold' }] },
+                    { id: 'r2', kind: 'text', text: ' world' },
+                ] } },
+                { id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r3', kind: 'text', text: 'Second' }] } },
+            ] } };
+
+            // R.5.2 — serialize a cross-block range ("bold world" + newline + "Sec").
+            const range = { anchor: { blockId: 'p0', offset: 6 }, focus: { blockId: 'p1', offset: 3 } };
+            const ser = clip.serializeRange(model, clip.orderRange(model, range));
+            assert.strictEqual(ser.text, 'bold world\nSec');
+            assert.ok(ser.html.indexOf('<strong>bold</strong>') !== -1, 'bold run wrapped in <strong>');
+
+            // Internal fragment round-trips marks losslessly.
+            const internalLines = clip.parseClipboard(function (mime) { return mime === clip.INTERNAL_MIME ? ser.internal : ''; }, {});
+            assert.strictEqual(internalLines.length, 2);
+            assert.strictEqual(internalLines[0].map(function (r) { return r.text; }).join(''), 'bold world');
+            assert.ok(internalLines[0].some(function (r) { return (r.marks || []).some(function (m) { return m.type === 'bold'; }); }), 'bold mark preserved');
+            assert.strictEqual(internalLines[1].map(function (r) { return r.text; }).join(''), 'Sec');
+
+            // Plain-text fallback splits on newlines.
+            const plain = clip.parseClipboard(function (mime) { return mime === 'text/plain' ? 'a\nb\nc' : ''; }, {});
+            assert.strictEqual(plain.length, 3);
+            assert.strictEqual(plain[0][0].text, 'a');
+
+            // plain:true ignores the internal/html fragment and uses text only.
+            const forcedPlain = clip.parseClipboard(function (mime) { return mime === 'text/plain' ? 'x' : (mime === clip.INTERNAL_MIME ? ser.internal : ''); }, { plain: true });
+            assert.strictEqual(forcedPlain.length, 1);
+            assert.strictEqual(forcedPlain[0][0].text, 'x');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r11-clipboard", script, "core-engine/clipboard.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR12_FindRegexAndBackReferences()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const url = require('url').pathToFileURL(process.argv[2]).href;
+            const fr = await import(url);
+            const assert = require('assert');
+
+            const model = { body: { blocks: [
+                { id: 'p0', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r0', kind: 'text', text: 'Call 2026-05-31 then 2025-01-02.' }] } },
+            ] } };
+
+            // R.5.14 — regex find with capture groups.
+            const matches = fr.findMatches(model, '(\\d{4})-(\\d{2})-(\\d{2})', { regex: true });
+            assert.strictEqual(matches.length, 2, 'two ISO dates matched');
+            assert.strictEqual(matches[0].text, '2026-05-31');
+            assert.deepStrictEqual(matches[0].groups, ['2026', '05', '31'], 'capture groups');
+
+            // Back-reference expansion ($3/$2/$1 → reordered).
+            assert.strictEqual(fr.expandReplacement('$3.$2.$1', matches[0].text, matches[0].groups), '31.05.2026');
+            // $& = whole match, $$ = literal $.
+            assert.strictEqual(fr.expandReplacement('[$&]$$', matches[1].text, matches[1].groups), '[2025-01-02]$');
+
+            // Invalid pattern → no matches (no throw).
+            assert.deepStrictEqual(fr.findMatches(model, '(', { regex: true }), []);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r12-find-regex", script, "core-engine/find-replace.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR13_BidiExplicitFormattingCharacters()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const url = require('url').pathToFileURL(process.argv[2]).href;
+            const b = await import(url);
+            const assert = require('assert');
+
+            // R.5.16 — directional MARKS are strong (zero-width L/R/AL).
+            assert.strictEqual(b.bidiClass(0x200E), 'L', 'LRM is strong L');
+            assert.strictEqual(b.bidiClass(0x200F), 'R', 'RLM is strong R');
+            assert.strictEqual(b.bidiClass(0x061C), 'AL', 'ALM is Arabic strong');
+
+            // RLO ... PDF — directional OVERRIDE forces the span to RTL (odd levels).
+            const rlo = b.resolveLevels('a‮bc‬d');
+            assert.strictEqual(rlo.levels[2] % 2, 1, 'RLO content is odd-level (RTL)');
+            assert.strictEqual(rlo.levels[3] % 2, 1);
+
+            // RLE ... PDF — embedding raises the level above the base (LTR content nests inside RTL).
+            const rle = b.resolveLevels('a‫bc‬d');
+            assert.ok(rle.levels[2] > rle.baseLevel, 'RLE raised the embedding level');
+
+            // No format chars → unchanged (no regression).
+            assert.deepStrictEqual(b.resolveLevels('abcd').levels, [0, 0, 0, 0]);
+
+            // LRM acts as a strong L for neutral resolution (mixed text).
+            const lrm = b.resolveLevels('א‎?'); // Hebrew + LRM + '?' → '?' leans L
+            assert.strictEqual(lrm.levels[0] % 2, 1, 'Hebrew letter is RTL');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r13-bidi-explicit", script, "layout/bidi.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6c_TableInsertRenderTypeAndStructure()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const tbl = await import(require('url').pathToFileURL(dir + '/edit-table.mjs').href);
+            const finders = await import(require('url').pathToFileURL(dir + '/../core/model-finders.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            // --- pure edit-table ---
+            const t = tbl.createTableModel(2, 3, 'tt');
+            assert.strictEqual(t.type, 'table');
+            assert.strictEqual(t.content.rows.length, 2);
+            assert.strictEqual(t.content.rows[0].cells.length, 3);
+            assert.strictEqual(t.content.rows[0].cells[0].type, 'tableCell');
+            assert.strictEqual(tbl.firstCellParagraphId(t), 'tt-r0-c0-p');
+            tbl.addTableRow({ body: { blocks: [t] } }, 'tt', null, {});
+            assert.strictEqual(t.content.rows.length, 3, 'row added');
+            tbl.addTableColumn({ body: { blocks: [t] } }, 'tt', null, {});
+            assert.ok(t.content.rows.every((r) => r.cells.length === 4), 'column added to every row');
+            const m0 = { body: { blocks: [t] } };
+            assert.strictEqual(tbl.findTableContaining(m0, 'tt-r0-c0-p').id, 'tt', 'find table by cell block');
+
+            // --- integration through render-host ---
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const model={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:'Para'}]}}]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            const root=makeEl('div'); const wrapEl=makeEl('div'); ap(wrapEl,root);
+            host.mount(root).setModel(model).setSelection({blockId:'p1',offset:4}).attachInput();
+            host.render();
+
+            const r=host.insertTable({rows:2,cols:2});
+            assert.ok(r && r.tableId, 'insertTable returns a tableId');
+            assert.deepStrictEqual(host.getTableInfo(), { tableId: r.tableId, rows: 2, cols: 2 });
+            assert.strictEqual(host.getCaret().blockId, r.tableId + '-r0-c0-p', 'caret drops into the first cell');
+            const layoutTable = host.getLayout().blocks.find((b) => b.type === 'table');
+            assert.ok(layoutTable, 'table block laid out');
+            assert.strictEqual((layoutTable.cells || []).length, 4, 'four cell layouts');
+
+            // type into the first cell
+            const ta=host.getInputSurface().element;
+            'Hi'.split('').forEach((d)=>ta.dispatchEvent({type:'beforeinput',inputType:'insertText',data:d,preventDefault(){}}));
+            const findCell=(id)=>{let res=null;(function f(bs){for(const b of bs){if(b.id===id){res=b;return;}if(b.content&&b.content.rows)for(const row of b.content.rows)for(const c of row.cells)f(c.blocks||[]);}})(model.body.blocks);return res;};
+            assert.strictEqual(th.blockText(findCell(r.tableId + '-r0-c0-p')), 'Hi', 'typing routes into the cell');
+
+            // structure ops + undo
+            host.addTableRow(); assert.strictEqual(host.getTableInfo().rows, 3);
+            host.addTableColumn(); assert.strictEqual(host.getTableInfo().cols, 3);
+            host.undo(); assert.strictEqual(host.getTableInfo().cols, 2, 'undo column');
+            host.undo(); assert.strictEqual(host.getTableInfo().rows, 2, 'undo row');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6c-tables", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6h_HyperlinkMarkApplyRemoveAndRender()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const fmt = await import(require('url').pathToFileURL(dir + '/edit-format.mjs').href);
+            const pr = await import(require('url').pathToFileURL(dir + '/../layout/paragraph-runs.mjs').href);
+            const mk = await import(require('url').pathToFileURL(dir + '/../core/marks.mjs').href);
+            const assert = require('assert');
+
+            // --- pure: link is a value mark; styling adds underline + blue ---
+            const blk = { id: 'p', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Click here now' }] } };
+            fmt.applyMarkToBlockRange(blk, 6, 10, 'link', { value: 'https://example.com' }); // "here"
+            assert.strictEqual(fmt.firstMarkValueInRange(blk, 6, 10, 'link'), 'https://example.com', 'link href set on range');
+            assert.strictEqual(fmt.firstMarkValueInRange(blk, 0, 5, 'link'), null, '"Click" has no link');
+            const linkedRun = blk.content.runs.find((r) => r.text === 'here');
+            const style = pr.mergeTextStyle({}, linkedRun);
+            assert.ok(/underline/.test(style.textDecoration || ''), 'link renders underlined');
+            assert.ok(style.color, 'link gets a color');
+            // setting a new href replaces (one link mark per run)
+            fmt.applyMarkToBlockRange(blk, 6, 10, 'link', { value: 'https://second.com' });
+            assert.strictEqual(linkedRun.marks ? null : null, null);
+            const r2 = blk.content.runs.find((r) => r.text === 'here');
+            assert.strictEqual(r2.marks.filter((m) => mk.markType(m) === 'link').length, 1, 'still one link mark');
+            assert.strictEqual(mk.markValue(r2.marks.find((m) => mk.markType(m) === 'link')), 'https://second.com', 'href replaced');
+            // remove by type
+            fmt.applyMarkToBlockRange(blk, 6, 10, 'link', { mode: 'remove' });
+            assert.strictEqual(fmt.firstMarkValueInRange(blk, 6, 10, 'link'), null, 'link removed');
+
+            // --- integration through render-host ---
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const model={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:'Visit site'}]}}]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            const root=makeEl('div'); const wrapEl=makeEl('div'); ap(wrapEl,root);
+            host.mount(root).setModel(model).setSelection({blockId:'p1',offset:6}).attachInput();
+            host.render();
+            // select "site" (offsets 6..10)
+            for (let i = 0; i < 4; i++) host.moveCaret('ArrowRight', true);
+            assert.strictEqual(host.getLinkHref(), null, 'no link yet');
+            host.applyLink('https://tempo.dev');
+            assert.strictEqual(host.getLinkHref(), 'https://tempo.dev', 'link applied to selection');
+            const linkSeg = host.getLayout().blocks[0].segments.find((s) => /site/.test(s.text || ''));
+            assert.ok(linkSeg && (linkSeg.marks || []).some((m) => mk.markType(m) === 'link'), 'link mark on the rendered segment');
+            assert.ok(/underline/.test(linkSeg.style.textDecoration || ''), 'rendered link is underlined');
+            host.undo();
+            assert.strictEqual(host.getLinkHref(), null, 'undo removes the link');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6h-hyperlinks", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6fr_FindReplaceMatchesNavigateAndReplace()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const fr = await import(require('url').pathToFileURL(dir + '/find-replace.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            // --- pure findMatches: case-insensitive default, whole-word, table cells ---
+            const model0 = { body: { blocks: [
+                { id: 'a', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', text: 'The cat sat on the mat' }] } },
+                { id: 'b', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', text: 'Cathedral' }] } },
+            ] } };
+            assert.strictEqual(fr.findMatches(model0, 'cat').length, 2, 'case-insensitive: "cat" in The cat + "Cat" in Cathedral');
+            assert.strictEqual(fr.findMatches(model0, 'cat', { caseSensitive: true }).length, 1, 'case-sensitive: only lowercase "cat"');
+            assert.strictEqual(fr.findMatches(model0, 'cat', { wholeWord: true }).length, 1, 'whole word: only the standalone cat');
+            assert.strictEqual(fr.findMatches(model0, 'the').length, 3, '"The", "the", and the in "Cathedral"');
+            assert.strictEqual(fr.findMatches(model0, 'the', { wholeWord: true }).length, 2, 'whole-word "the": the two standalone ones');
+            assert.deepStrictEqual(fr.findMatches(model0, 'cat')[0], { blockId: 'a', start: 4, end: 7, text: 'cat' });
+
+            // --- integration through render-host ---
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const model={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:'one two one two one'}]}}]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            const root=makeEl('div'); const wrapEl=makeEl('div'); ap(wrapEl,root);
+            host.mount(root).setModel(model).setSelection({blockId:'p1',offset:0}).attachInput();
+            host.render();
+
+            assert.strictEqual(host.find('one'), 3, 'three matches for one');
+            assert.deepStrictEqual(host.getFindState(), { query: 'one', count: 3, index: 0 });
+            // first match selected
+            let range = host.getSelectionRange();
+            assert.strictEqual(range.anchor.offset, 0); assert.strictEqual(range.focus.offset, 3);
+            host.findNext(); assert.strictEqual(host.getFindState().index, 1);
+            host.findNext(); assert.strictEqual(host.getFindState().index, 2);
+            host.findNext(); assert.strictEqual(host.getFindState().index, 0, 'wraps around');
+            host.findPrev(); assert.strictEqual(host.getFindState().index, 2, 'prev wraps back');
+
+            // replace all "one" → "ONE!"
+            const n = host.replaceAll('one', 'ONE!');
+            assert.strictEqual(n, 3);
+            assert.strictEqual(th.blockText(host.getSnapshot().model.body.blocks[0]), 'ONE! two ONE! two ONE!');
+            assert.strictEqual(host.getFindState(), null, 'find cleared after replaceAll');
+            // undo reverts all three replacements at once
+            host.undo();
+            assert.strictEqual(th.blockText(host.getSnapshot().model.body.blocks[0]), 'one two one two one', 'replaceAll is one undo step');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6fr-find-replace", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6f_TrackChangesInsertDeleteAcceptReject()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const tc = await import(require('url').pathToFileURL(dir + '/track-changes.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            // --- pure track-changes resolve ---
+            const mk = (text, type) => ({ id: text, kind: 'text', text, marks: type ? [{ type, value: 'rv' }] : [] });
+            function doc() { return { body: { blocks: [ { id: 'p', type: 'paragraph', content: { type: 'paragraph', runs: [ mk('Keep ', null), mk('added', 'insertion'), mk(' ', null), mk('gone', 'deletion'), mk(' end', null) ] } } ] } }; }
+            let d = doc();
+            assert.deepStrictEqual(tc.listRevisions(d).map((r) => r.kind + ':' + r.text), ['insertion:added', 'deletion:gone']);
+            assert.strictEqual(tc.hasRevisions(d), true);
+            tc.acceptAllRevisions(d); // keep insertion text, drop deletion text
+            assert.strictEqual(th.blockText(d.body.blocks[0]), 'Keep added  end', 'accept keeps insert, removes delete');
+            assert.strictEqual(tc.hasRevisions(d), false, 'no revisions remain after accept');
+            d = doc();
+            tc.rejectAllRevisions(d); // drop insertion text, keep deletion text
+            assert.strictEqual(th.blockText(d.body.blocks[0]), 'Keep  gone end', 'reject removes insert, keeps delete');
+
+            // --- integration through render-host ---
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const document_={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            function freshHost() {
+                const model={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:'Hello'}]}}]}};
+                const host=hostMod.createRenderHost({doc:document_,pageSettings:ps});
+                const root=makeEl('div'); const wrapEl=makeEl('div'); ap(wrapEl,root);
+                host.mount(root).setModel(model).setSelection({blockId:'p1',offset:5}).attachInput();
+                host.render();
+                return { host, model, ta: host.getInputSurface().element };
+            }
+            const text = (h) => th.blockText(h.getSnapshot().model.body.blocks[0]);
+
+            // type " there" tracked, then tracked-backspace the 'o' of the original word
+            const A = freshHost();
+            A.host.setTrackChanges(true);
+            assert.strictEqual(A.host.isTrackChanges(), true);
+            ' there'.split('').forEach((dch)=>A.ta.dispatchEvent({type:'beforeinput',inputType:'insertText',data:dch,preventDefault(){}}));
+            assert.strictEqual(text(A.host), 'Hello there', 'tracked insert keeps text in the model');
+            // rendered insertion is underlined + carries the mark
+            const insSeg = A.host.getLayout().blocks[0].segments.find((s) => /there/.test(s.text || ''));
+            assert.ok(insSeg && /underline/.test(insSeg.style.textDecoration || ''), 'tracked insert renders underlined');
+            A.host.setSelection({ blockId: 'p1', offset: 5 });
+            A.ta.dispatchEvent({type:'keydown',key:'Backspace',preventDefault(){}});
+            assert.strictEqual(text(A.host), 'Hello there', 'tracked delete keeps the text (struck through)');
+            const kindsA = A.host.getRevisions().map((r) => r.kind);
+            assert.ok(kindsA.includes('insertion') && kindsA.includes('deletion'), 'both an insertion and a deletion are tracked');
+            assert.strictEqual(A.host.hasRevisions(), true);
+            A.host.acceptAllRevisions();
+            assert.strictEqual(text(A.host), 'Hell there', 'accept: insert kept, deleted char removed');
+            assert.strictEqual(A.host.hasRevisions(), false);
+
+            // same edits, then REJECT → back to original
+            const B = freshHost();
+            B.host.setTrackChanges(true);
+            ' there'.split('').forEach((dch)=>B.ta.dispatchEvent({type:'beforeinput',inputType:'insertText',data:dch,preventDefault(){}}));
+            B.host.setSelection({ blockId: 'p1', offset: 5 });
+            B.ta.dispatchEvent({type:'keydown',key:'Backspace',preventDefault(){}});
+            B.host.rejectAllRevisions();
+            assert.strictEqual(text(B.host), 'Hello', 'reject: insert removed, deleted char kept');
+
+            // accept/reject are undoable
+            const C = freshHost();
+            C.host.setTrackChanges(true);
+            'X'.split('').forEach((dch)=>C.ta.dispatchEvent({type:'beforeinput',inputType:'insertText',data:dch,preventDefault(){}}));
+            assert.strictEqual(text(C.host), 'HelloX');
+            C.host.acceptAllRevisions();
+            C.host.undo();
+            assert.strictEqual(C.host.hasRevisions(), true, 'undo restores the tracked change');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6f-track-changes", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6g_CommentsAnchorResolveAndRemove()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const cm = await import(require('url').pathToFileURL(dir + '/comments.mjs').href);
+            const assert = require('assert');
+
+            // --- pure comments: anchor marks (overlap), strip, anchor text ---
+            const blk = { id: 'p', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'The quick brown fox' }] } };
+            cm.addCommentMarkToRange(blk, 4, 9, 'c1'); // "quick"
+            cm.addCommentMarkToRange(blk, 4, 15, 'c2'); // "quick brown" (overlaps c1)
+            const model0 = { body: { blocks: [blk] } };
+            assert.deepStrictEqual(cm.collectCommentIds(model0).sort(), ['c1', 'c2'], 'two overlapping comments');
+            assert.strictEqual(cm.commentAnchorText(model0, 'c1'), 'quick');
+            assert.strictEqual(cm.commentAnchorText(model0, 'c2'), 'quick brown');
+            assert.deepStrictEqual(cm.commentIdsInRange(blk, 5, 6).sort(), ['c1', 'c2'], 'both comments cover offset 5');
+            cm.stripCommentMark(model0, 'c1');
+            assert.deepStrictEqual(cm.collectCommentIds(model0), ['c2'], 'c1 stripped, c2 remains');
+            assert.strictEqual(cm.commentAnchorText(model0, 'c2'), 'quick brown', 'c2 anchor intact after stripping c1');
+
+            // --- integration through render-host ---
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const model={documentId:'d',body:{blocks:[{id:'p1',type:'paragraph',content:{type:'paragraph',runs:[{id:'r',kind:'text',text:'Hello world'}]}}]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            const root=makeEl('div'); const wrapEl=makeEl('div'); ap(wrapEl,root);
+            host.mount(root).setModel(model).setSelection({blockId:'p1',offset:0}).attachInput();
+            host.render();
+            // select "Hello" and add a comment
+            for (let i = 0; i < 5; i++) host.moveCaret('ArrowRight', true);
+            const id = host.addComment('Looks good?', 'Reviewer');
+            assert.ok(id, 'addComment returns an id');
+            const comments = host.getComments();
+            assert.strictEqual(comments.length, 1);
+            assert.strictEqual(comments[0].text, 'Looks good?');
+            assert.strictEqual(comments[0].author, 'Reviewer');
+            assert.strictEqual(comments[0].anchorText, 'Hello', 'comment anchored to the selected text');
+            assert.strictEqual(comments[0].resolved, false);
+            // rendered: commented segment has a highlight background
+            const cseg = host.getLayout().blocks[0].segments.find((s) => /Hello/.test(s.text || ''));
+            assert.ok(cseg && cseg.style.backgroundColor, 'commented text is highlighted');
+            // caret inside the comment reports it
+            host.setSelection({ blockId: 'p1', offset: 2 });
+            assert.deepStrictEqual(host.getCommentIdsAtCaret(), [id]);
+            // resolve → highlight clears, record kept as resolved
+            host.resolveComment(id);
+            assert.strictEqual(host.getComments()[0].resolved, true);
+            const cseg2 = host.getLayout().blocks[0].segments.find((s) => /Hello/.test(s.text || ''));
+            assert.ok(!cseg2.style.backgroundColor, 'resolved comment no longer highlights');
+            // undo restores the unresolved comment
+            host.undo();
+            assert.strictEqual(host.getComments()[0].resolved, false, 'undo reverts resolve');
+            // remove drops the comment entirely
+            host.removeComment(id);
+            assert.strictEqual(host.getComments().length, 0);
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6g-comments", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6e_HeaderFooterFieldsResolvePerPage()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const hf = await import(require('url').pathToFileURL(dir + '/header-footer.mjs').href);
+            const assert = require('assert');
+
+            // --- pure builders ---
+            assert.deepStrictEqual({ kind: hf.pageNumberField().kind, ft: hf.pageNumberField().fieldType }, { kind: 'field', ft: 'pageNumber' });
+            const m0 = {};
+            hf.setRegion(m0, 'header', 'My Doc');
+            assert.strictEqual(m0.headers[0].blocks[0].content.runs[0].text, 'My Doc');
+            hf.setRegion(m0, 'footer', [hf.textRun('p'), hf.pageNumberField()]);
+            assert.strictEqual(m0.footers[0].blocks[0].content.runs.length, 2);
+            hf.clearRegion(m0, 'header');
+            assert.strictEqual(m0.headers.length, 0);
+
+            // --- integration through render-host: fields resolve per page ---
+            function makeEl(t){const a=new Map();const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(){},removeEventListener(){},dispatchEvent(){return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const blocks=[]; for(let i=0;i<60;i++) blocks.push({id:'p'+i,type:'paragraph',content:{type:'paragraph',runs:[{id:'r'+i,kind:'text',text:'Paragraph '+i+' lorem ipsum dolor sit amet consectetur adipiscing.'}]}});
+            const model={documentId:'d',body:{blocks}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            host.mount(makeEl('div')).setModel(model).setSelection({blockId:'p0',offset:0});
+            host.render();
+            host.setFooter([hf.textRun('Page '), hf.pageNumberField(), hf.textRun(' of '), hf.pageCountField()]);
+            const regions = host.getLayout().headerFooterRegions || [];
+            const pages = host.getLayout().pages.length;
+            assert.ok(pages >= 2, 'document spans multiple pages');
+            assert.strictEqual(regions.length, pages, 'one footer region per page');
+            const regText = (r) => (r.blocks || []).flatMap((b) => (b.segments || []).map((s) => s.text)).join('');
+            const byPage = {}; regions.forEach((r) => { byPage[r.pageIndex] = regText(r); });
+            assert.strictEqual(byPage[0], 'Page 1 of ' + pages, 'page 0 footer resolves page number 1');
+            assert.strictEqual(byPage[1], 'Page 2 of ' + pages, 'page 1 footer resolves page number 2');
+            // header string + clear
+            host.setHeader('Confidential');
+            assert.ok((host.getLayout().headerFooterRegions || []).some((r) => r.region === 'Header' && /Confidential/.test(regText(r))), 'header text renders');
+            host.clearFooter();
+            assert.ok(!(host.getLayout().headerFooterRegions || []).some((r) => r.region === 'Footer'), 'footer cleared');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6e-header-footer", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR6i2_LayoutCacheReusedAcrossNonEditRenders()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,textContent:'',setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const blocks=[]; for(let i=0;i<40;i++) blocks.push({id:'p'+i,type:'paragraph',content:{type:'paragraph',runs:[{id:'r'+i,kind:'text',text:'Paragraph '+i+' lorem ipsum dolor sit amet.'}]}});
+            const model={documentId:'d',body:{blocks}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps});
+            const root=makeEl('div'); const wrapEl=makeEl('div'); ap(wrapEl,root);
+            host.mount(root).setModel(model).setSelection({blockId:'p0',offset:0}).attachInput();
+
+            host.render();
+            assert.strictEqual(host.getLayoutComputeCount(), 1, 'first render lays out once');
+
+            // scroll / viewport re-renders reuse the cached layout (no model change)
+            host.setViewport({ scrollTop: 0, height: 600, overscanPages: 0 }); host.render();
+            host.setViewport({ scrollTop: 800, height: 600, overscanPages: 0 }); host.render();
+            host.setViewport(null); host.render();
+            assert.strictEqual(host.getLayoutComputeCount(), 1, 'scroll/viewport renders reuse the cached layout');
+
+            // an edit (version bump) invalidates the cache → exactly one recompute
+            const ta = host.getInputSurface().element;
+            ta.dispatchEvent({ type: 'beforeinput', inputType: 'insertText', data: 'X', preventDefault() {} });
+            assert.strictEqual(host.getLayoutComputeCount(), 1, 'R.4.9 — a plain keystroke is incremental (re-lays-out only the dirty block, no full computeLayout)');
+            assert.ok(/^XParagraph 0/.test(th.blockText(host.getSnapshot().model.body.blocks[0])), 'edit applied correctly through the incremental path');
+            // further scroll renders reuse again
+            host.setViewport({ scrollTop: 200, height: 600 }); host.render();
+            assert.strictEqual(host.getLayoutComputeCount(), 1, 'still no full recompute after the incremental edit');
+
+            // undo swaps the whole model → not incremental → full recompute
+            host.undo();
+            assert.strictEqual(host.getLayoutComputeCount(), 2, 'undo recomputes (model swapped → full render)');
+            assert.ok(/^Paragraph 0/.test(th.blockText(host.getSnapshot().model.body.blocks[0])), 'undo restored text');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r6i2-layout-cache", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR7_AccessibilityRolesHeadingsAndLiveRegion()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const hostUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const hostMod = await import(hostUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const a = await import(require('url').pathToFileURL(dir + '/a11y.mjs').href);
+            const idx = await import(require('url').pathToFileURL(dir + '/../core/indexes.mjs').href);
+            const img = await import(require('url').pathToFileURL(dir + '/../objects/image-object.mjs').href);
+            const assert = require('assert');
+
+            function makeEl(t){const at=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',textContent:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,setAttribute(n,v){at.set(n,String(v));},getAttribute(n){return at.has(n)?at.get(n):null;},removeAttribute(n){at.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+
+            // --- pure a11y ---
+            const r0 = makeEl('div'); a.applyEditorAria(r0, { label: 'My Editor' });
+            assert.strictEqual(r0.getAttribute('role'), 'document');
+            assert.strictEqual(r0.getAttribute('aria-label'), 'My Editor');
+            assert.strictEqual(r0.getAttribute('aria-roledescription'), 'rich text editor');
+            assert.deepStrictEqual(a.headingAriaForBlock({ content: { headingLevel: 2 } }), { role: 'heading', level: 2 });
+            assert.strictEqual(a.headingAriaForBlock({ content: {} }), null);
+            const live = a.createLiveRegion(doc);
+            assert.strictEqual(live.element.getAttribute('aria-live'), 'polite');
+            live.announce('alpha'); assert.strictEqual(live.getText(), 'alpha');
+            live.announce('alpha'); assert.strictEqual(live.getText(), 'alpha'); // dedup, no error
+            live.announce('beta'); assert.strictEqual(live.getText(), 'beta');
+
+            const { buildIndexes } = idx.createIndexBuilder({ normalizeImageObject: img.normalizeImageObject });
+            const findBlock = (m, id) => { if (!m.indexes) buildIndexes(m); return idx.findBlockByIndex(m, id); };
+            const model0 = { body: { blocks: [
+                { id: 'h', type: 'paragraph', content: { type: 'paragraph', styleName: 'Heading1', headingLevel: 1, runs: [{ kind: 'text', text: 'Chapter One' }] } },
+                { id: 'p', type: 'paragraph', content: { type: 'paragraph', runs: [{ kind: 'text', text: 'Body text.' }] } },
+            ] } };
+            buildIndexes(model0);
+            assert.strictEqual(a.describeCaretContext(model0, { blockId: 'h', offset: 0 }, { findBlock }), 'Heading level 1, Chapter One');
+            assert.strictEqual(a.describeCaretContext(model0, { blockId: 'p', offset: 0 }, { findBlock }), 'Body text.');
+
+            // --- integration through render-host ---
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+            const model={documentId:'d',body:{blocks:[
+                { id:'h', type:'paragraph', content:{type:'paragraph', styleName:'Heading1', headingLevel:1, runs:[{id:'rh',kind:'text',text:'Title'}]}},
+                { id:'p', type:'paragraph', content:{type:'paragraph', runs:[{id:'rp',kind:'text',text:'Hello'}]}},
+            ]}};
+            const host=hostMod.createRenderHost({doc,pageSettings:ps,ariaLabel:'Doc'});
+            const root=makeEl('div'); const wrapEl=makeEl('div'); ap(wrapEl,root);
+            host.mount(root).setModel(model).setSelection({blockId:'h',offset:0}).attachInput();
+            host.render();
+            assert.strictEqual(root.getAttribute('role'), 'document', 'root has document role');
+            assert.strictEqual(root.getAttribute('aria-label'), 'Doc');
+            // input surface is an accessible textbox (not aria-hidden)
+            const ta = host.getInputSurface().element;
+            assert.strictEqual(ta.getAttribute('role'), 'textbox');
+            assert.strictEqual(ta.getAttribute('aria-multiline'), 'true');
+            assert.notStrictEqual(ta.getAttribute('aria-hidden'), 'true');
+            // live region announces the caret's (heading) context
+            assert.ok(host.getLiveRegionElement(), 'live region created');
+            assert.strictEqual(host.getLiveRegionText(), 'Heading level 1, Title', 'announces heading context');
+            host.setSelection({ blockId: 'p', offset: 0 });
+            assert.strictEqual(host.getLiveRegionText(), 'Hello', 'announcement updates on caret block change');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r7-a11y", script,
+            "core-engine/render-host.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR8_CoreEditorBridgeFacade()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const ceUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const ce = await import(ceUrl);
+            const dir = require('path').dirname(process.argv[2]);
+            const mk = await import(require('url').pathToFileURL(dir + '/../core/marks.mjs').href);
+            const th = await import(require('url').pathToFileURL(dir + '/../core/text-helpers.mjs').href);
+            const assert = require('assert');
+
+            function makeEl(t){const a=new Map();const L={};const el={nodeType:1,tagName:String(t||'div').toUpperCase(),style:{cssText:''},className:'',value:'',textContent:'',parentNode:null,firstChild:null,lastChild:null,nextSibling:null,previousSibling:null,setAttribute(n,v){a.set(n,String(v));},getAttribute(n){return a.has(n)?a.get(n):null;},removeAttribute(n){a.delete(n);},appendChild(c){return ap(this,c);},insertBefore(c,b){return ins(this,c,b);},removeChild(c){return rm(this,c);},replaceChildren(){const x=[...arguments];while(this.firstChild)rm(this,this.firstChild);x.forEach(n=>ap(this,n));},contains(){return false;},querySelector(){return null;},querySelectorAll(){return[];},getBoundingClientRect(){return{x:0,y:0,width:0,height:0,left:0,top:0};},addEventListener(t,fn){(L[t]=L[t]||[]).push(fn);},removeEventListener(){},dispatchEvent(ev){(L[ev.type]||[]).forEach(fn=>fn(ev));return true;},focus(){},blur(){}};return el;}
+            function ap(p,c){if(c&&c.nodeType===11){let n=c.firstChild;while(n){const nx=n.nextSibling;ap(p,n);n=nx;}return c;}if(c.parentNode)rm(c.parentNode,c);const l=p.lastChild;c.parentNode=p;c.previousSibling=l;c.nextSibling=null;if(l)l.nextSibling=c;else p.firstChild=c;p.lastChild=c;return c;}
+            function ins(p,c,b){if(!b)return ap(p,c);c.parentNode=p;return c;}
+            function rm(p,c){if(c.previousSibling)c.previousSibling.nextSibling=c.nextSibling;else p.firstChild=c.nextSibling;if(c.nextSibling)c.nextSibling.previousSibling=c.previousSibling;else p.lastChild=c.previousSibling;c.parentNode=null;return c;}
+            const doc={createElement:makeEl,createDocumentFragment(){const f=makeEl('f');f.nodeType=11;return f;},createTextNode(t){return{nodeType:3,nodeValue:String(t||'')};},body:makeEl('body'),head:makeEl('head'),getElementById(){return null;},addEventListener(){},removeEventListener(){}};
+            const ps={width:794,height:1123,marginTop:72,marginBottom:72,marginLeft:72,marginRight:72};
+
+            const root = makeEl('div'); const wrap = makeEl('div'); ap(wrap, root);
+            const model = { documentId: 'd', version: 0, body: { blocks: [{ id: 'p1', type: 'paragraph', content: { type: 'paragraph', runs: [{ id: 'r', kind: 'text', text: 'Hello world' }] } }] } };
+            const editor = ce.createCoreEditor({ root, doc, model, pageSettings: ps, ariaLabel: 'Doc' });
+
+            // starts clean
+            assert.strictEqual(editor.isDirty(), false, 'clean after load');
+            // select "Hello" via the underlying host, then exec a toolbar command id
+            const host = editor.getHost();
+            host.setSelection({ blockId: 'p1', offset: 0 });
+            for (let i = 0; i < 5; i++) host.moveCaret('ArrowRight', true);
+            assert.strictEqual(editor.queryCommand('bold'), false);
+            editor.execCommand('bold');
+            assert.strictEqual(editor.queryCommand('bold'), true, 'execCommand(bold) toggles + queryCommand reflects it');
+            assert.ok(editor.isDirty(), 'edit marks dirty');
+            const m = editor.getModel();
+            assert.ok(m.body.blocks[0].content.runs.some((r) => /Hello/.test(r.text) && (r.marks || []).some((x) => mk.markType(x) === 'bold')), 'bold applied via the bridge command');
+
+            // alias command ids + value commands route correctly
+            editor.execCommand('align', 'center');
+            assert.strictEqual(editor.getModel().body.blocks[0].content.alignment, 'center');
+            editor.execCommand('Heading 1');
+            assert.strictEqual(editor.getModel().body.blocks[0].content.styleName, 'Heading1', 'heading command maps to style');
+            assert.strictEqual(editor.getOutline().length, 1, 'outline reflects the heading');
+
+            // save resets dirty; undo works through the facade
+            editor.markSaved();
+            assert.strictEqual(editor.isDirty(), false, 'markSaved clears dirty');
+            assert.ok(editor.canUndo());
+            editor.execCommand('undo');
+            assert.notStrictEqual(editor.getModel().body.blocks[0].content.styleName, 'Heading1', 'undo reverts the heading style');
+            assert.strictEqual(editor.getOutline().length, 0, 'outline empty after undoing the heading');
+            assert.ok(editor.isDirty(), 'dirty again after undo past the saved point');
+
+            // typing flows through the attached input surface
+            const ta = host.getInputSurface().element;
+            host.setSelection({ blockId: 'p1', offset: 11 });
+            ta.dispatchEvent({ type: 'beforeinput', inputType: 'insertText', data: '!', preventDefault() {} });
+            assert.ok(/Hello world!/.test(th.blockText(editor.getModel().body.blocks[0])), 'typing routes through the bridge');
+
+            // value commands the toolbar routes (R.4.8 step 3b): textcolor / highlight / fontsize
+            host.setSelection({ blockId: 'p1', offset: 0 });
+            for (let i = 0; i < 5; i++) host.moveCaret('ArrowRight', true);
+            editor.execCommand('textcolor', '#ff0000');
+            editor.execCommand('fontsize', '20pt');
+            const runs = editor.getModel().body.blocks[0].content.runs;
+            const colored = runs0Has(runs, 'textcolor', '#ff0000', mk);
+            assert.ok(colored, 'execCommand(textcolor) applies a color mark via the bridge');
+            assert.ok(runs0Has(runs, 'fontsize', null, mk), 'execCommand(fontsize) applies a font-size mark via the bridge');
+            function runs0Has(rs, type, value, mkmod) {
+                return rs.some((r) => /Hello/.test(r.text || '') && (r.marks || []).some((m) => mkmod.markType(m) === type && (value == null || mkmod.markValue(m) === value)));
+            }
+
+            // link + table commands the toolbar routes (R.4.8 step 3b³)
+            host.setSelection({ blockId: 'p1', offset: 0 });
+            for (let i = 0; i < 5; i++) host.moveCaret('ArrowRight', true);
+            editor.execCommand('link', 'https://tempo.dev');
+            assert.ok(runs0Has(editor.getModel().body.blocks[0].content.runs, 'link', 'https://tempo.dev', mk), 'execCommand(link) applies a link mark via the bridge');
+            host.setSelection({ blockId: 'p1', offset: 0 });
+            editor.execCommand('insertTable', { rows: 2, cols: 3 });
+            const tbl = editor.getModel().body.blocks.find((b) => b.type === 'table');
+            assert.ok(tbl, 'execCommand(insertTable) inserts a table block via the bridge');
+            assert.strictEqual(tbl.content.rows.length, 2);
+            assert.strictEqual(tbl.content.rows[0].cells.length, 3);
+
+            // formatting-state read-back (R.4.8 step 3b): toolbar reflects the engine
+            host.setSelection({ blockId: 'p1', offset: 0 });
+            for (let i = 0; i < 5; i++) host.moveCaret('ArrowRight', true);
+            const fs = editor.getFormattingState();
+            assert.strictEqual(typeof fs.bold, 'boolean');
+            assert.strictEqual(fs.bold, host.isMarkActive('bold'), 'getFormattingState.bold matches the engine');
+            assert.ok('alignment' in fs, 'formatting state carries alignment');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r8-core-editor", script,
+            "core-engine/core-editor.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR14_OperationAlgebraInvertsAndConvergesUnderOt()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        // R.5.18 / R.5.22 — the operation algebra: invert(op) round-trips, and the OT transform
+        // satisfies TP1 convergence (concurrent ops applied in either order, each transformed
+        // against the other, reach the same text). Covers deterministic cases + a fuzz loop.
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const ops = await import(moduleUrl);
+            const assert = require('assert');
+            const { invertOperation, applyToText, applyOps, transformOperation } = ops;
+
+            // 1) invert round-trips for insert + delete.
+            const base = 'The quick brown fox';
+            const ins = { type: 'insert', blockId: 'p0', offset: 4, text: 'very ' };
+            assert.strictEqual(applyToText(base, ins), 'The very quick brown fox');
+            assert.strictEqual(applyToText(applyToText(base, ins), invertOperation(ins)), base, 'invert(insert) restores the text');
+            const del = { type: 'delete', blockId: 'p0', offset: 4, text: 'quick ' };
+            assert.strictEqual(applyToText(base, del), 'The brown fox');
+            assert.strictEqual(applyToText(applyToText(base, del), invertOperation(del)), base, 'invert(delete) restores the text');
+
+            // 2) TP1 convergence helper: applying a then b' equals b then a' (transform → op list).
+            function converges(text, a, b) {
+                const ab = applyOps(applyToText(text, a), transformOperation(b, a, 'right'));
+                const ba = applyOps(applyToText(text, b), transformOperation(a, b, 'left'));
+                return ab === ba ? ab : ('MISMATCH:' + JSON.stringify(ab) + ' != ' + JSON.stringify(ba));
+            }
+            const T = 'ABCDEFGH';
+            // insert/insert at the same point, insert/insert apart, insert/delete, delete/delete overlap.
+            assert.strictEqual(converges(T, { type:'insert', blockId:'p', offset:2, text:'xx' }, { type:'insert', blockId:'p', offset:2, text:'yy' }).indexOf('MISMATCH'), -1, 'insert/insert@same converges');
+            assert.strictEqual(converges(T, { type:'insert', blockId:'p', offset:1, text:'x' }, { type:'insert', blockId:'p', offset:6, text:'y' }).indexOf('MISMATCH'), -1, 'insert/insert apart converges');
+            assert.strictEqual(converges(T, { type:'insert', blockId:'p', offset:4, text:'z' }, { type:'delete', blockId:'p', offset:2, text:'CD' }).indexOf('MISMATCH'), -1, 'insert/delete converges');
+            assert.strictEqual(converges(T, { type:'delete', blockId:'p', offset:1, text:'BCD' }, { type:'delete', blockId:'p', offset:3, text:'DEF' }).indexOf('MISMATCH'), -1, 'overlapping deletes converge');
+            assert.strictEqual(converges(T, { type:'delete', blockId:'p', offset:0, text:'ABCDEFGH' }, { type:'delete', blockId:'p', offset:3, text:'DE' }).indexOf('MISMATCH'), -1, 'subsumed delete converges');
+            // cross-block ops are independent: the transform leaves the offset untouched.
+            const xOp = { type:'insert', blockId:'p0', offset:5, text:'A' };
+            const yOp = { type:'delete', blockId:'p9', offset:0, text:'BB' };
+            const xT = transformOperation(xOp, yOp, 'right');
+            assert.strictEqual(xT.length, 1, 'cross-block transform yields one op');
+            assert.strictEqual(xT[0].offset, 5, 'cross-block transform does not shift the offset');
+
+            // 3) Fuzz: random concurrent op pairs must converge.
+            function rngOp(text, seed) { const r = ((seed * 9301 + 49297) % 233280) / 233280; const off = Math.floor(r * (text.length + 1));
+                const kind = (Math.floor(r * 7) % 2 === 0) || text.length === 0; // bias toward insert when empty
+                if (kind) return { type:'insert', blockId:'p', offset: off, text: String.fromCharCode(97 + (seed % 5)) };
+                const maxLen = Math.max(1, Math.min(3, text.length - off)); const len = 1 + (seed % maxLen);
+                return { type:'delete', blockId:'p', offset: Math.min(off, Math.max(0, text.length - len)), text: text.substr(Math.min(off, Math.max(0, text.length - len)), len) };
+            }
+            let mismatches = 0;
+            for (let i = 1; i <= 400; i++) {
+                const txt = 'ABCDEFGH';
+                const a = rngOp(txt, i * 7 + 1);
+                const b = rngOp(txt, i * 13 + 3);
+                if (converges(txt, a, b).indexOf('MISMATCH') === 0) { mismatches++; if (mismatches <= 3) console.error('FUZZ MISMATCH', JSON.stringify({ a, b })); }
+            }
+            assert.strictEqual(mismatches, 0, 'OT transform converges for all 400 fuzzed concurrent pairs');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r14-operations", script, "core-engine/operations.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR15_CollabProtocolConvergesAcrossClientsAndServer()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        // R.5.22 — the FULL collaboration protocol: a server sequencer/relay + N clients each
+        // running the OT control. Random concurrent edits with arbitrary (causal) delivery must
+        // leave every client AND the server holding identical text. Proves the transport design
+        // before any SignalR wiring.
+        var script = """
+            const clientUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const collab = await import(clientUrl);
+            const ops = await import(new URL('./operations.mjs', clientUrl).href);
+            const assert = require('assert');
+            const { createCollabClient } = collab;
+            const { applyToText } = ops;
+
+            // Deterministic PRNG for reproducible fuzzing.
+            let _s = 123456789;
+            function rnd() { _s = (_s * 1103515245 + 12345) & 0x7fffffff; return _s / 0x7fffffff; }
+            function pick(n) { return Math.floor(rnd() * n); }
+
+            function runScenario(numClients, rounds, seed) {
+                _s = seed;
+                const INITIAL = 'ABCDEFGH';
+                // Server: total-order sequencer. Transforms each incoming change past the
+                // history committed after its baseRevision, commits at HEAD, broadcasts.
+                const server = { history: [], text: INITIAL };
+                function serverSubmit(change) {
+                    let incoming = change.ops.slice();
+                    for (let r = change.revision; r < server.history.length; r++) {
+                        const t = collab.transformChange(incoming, server.history[r].ops, true);
+                        incoming = t.remote; // incoming yields to already-committed ops
+                    }
+                    server.history.push({ ops: incoming, clientId: change.clientId });
+                    incoming.forEach((o) => { server.text = applyToText(server.text, o); });
+                    return { kind: 'op', ops: incoming, revision: server.history.length, clientId: change.clientId };
+                }
+
+                const net = []; // in-flight client→server submissions (FIFO = server order)
+                const broadcasts = []; // server→clients, delivered in commit order to ALL
+                const clients = [];
+                for (let i = 0; i < numClients; i++) {
+                    const c = { id: 'c' + i, text: INITIAL };
+                    c.client = createCollabClient({
+                        clientId: c.id,
+                        applyRemote: (op) => { c.text = applyToText(c.text, op); },
+                        send: (msg) => { net.push(Object.assign({ _client: i }, msg)); },
+                    });
+                    clients.push(c);
+                }
+
+                let delivered = 0;
+                for (let step = 0; step < rounds; step++) {
+                    const action = pick(3);
+                    if (action === 0) {
+                        // a random client makes a local edit (applied locally + fed to its control).
+                        const ci = pick(numClients);
+                        const c = clients[ci];
+                        const len = c.text.length;
+                        let op;
+                        if (len === 0 || pick(2) === 0) { op = { type: 'insert', blockId: 'p', offset: pick(len + 1), text: String.fromCharCode(97 + pick(6)) }; }
+                        else { const off = pick(len); op = { type: 'delete', blockId: 'p', offset: off, text: c.text.substr(off, 1) }; }
+                        c.text = applyToText(c.text, op);
+                        c.client.localOperation(op);
+                    } else if (action === 1 && net.length) {
+                        // server processes the next queued submission and broadcasts to ALL clients.
+                        const sub = net.shift();
+                        broadcasts.push(serverSubmit(sub));
+                    } else if (broadcasts.length > delivered) {
+                        // deliver the next broadcast (in commit order) to every client.
+                        const b = broadcasts[delivered++];
+                        clients.forEach((c) => c.client.receiveServerChange(b));
+                    }
+                }
+                // Drain: process all remaining submissions, then deliver all broadcasts.
+                while (net.length) broadcasts.push(serverSubmit(net.shift()));
+                while (broadcasts.length > delivered) { const b = broadcasts[delivered++]; clients.forEach((c) => c.client.receiveServerChange(b)); }
+                // A second drain pass — late local ops may still be buffered/outstanding.
+                for (let pass = 0; pass < numClients + 2; pass++) {
+                    while (net.length) broadcasts.push(serverSubmit(net.shift()));
+                    while (broadcasts.length > delivered) { const b = broadcasts[delivered++]; clients.forEach((c) => c.client.receiveServerChange(b)); }
+                }
+                return { server: server.text, clients: clients.map((c) => c.text) };
+            }
+
+            let fails = 0;
+            for (let s = 1; s <= 40; s++) {
+                const r = runScenario(2 + (s % 3), 60, s * 2654435761 & 0x7fffffff);
+                const allEqual = r.clients.every((t) => t === r.server);
+                if (!allEqual) { fails++; if (fails <= 3) console.error('DIVERGED', JSON.stringify(r)); }
+            }
+            assert.strictEqual(fails, 0, 'all clients converge to the server text across 40 randomized scenarios');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r15-collab", script, "core-engine/collab-client.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR16_RelayCollabConvergesOverPureRelaySequencer()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        // R.5.22 — the chosen integration: the EXISTING DocumentEditorCollaborationHub is a pure
+        // relay/sequencer (assigns `sequence`, broadcasts, NO server-side transform). Prove that
+        // `createRelayCollabClient` (transform-to-head against the committed suffix) keeps 2–4
+        // clients convergent over such a relay under randomized concurrent edits + interleaving.
+        var script = """
+            const clientUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const collab = await import(clientUrl);
+            const ops = await import(new URL('./operations.mjs', clientUrl).href);
+            const assert = require('assert');
+            const { createRelayCollabClient } = collab;
+            const { applyToText } = ops;
+
+            let _s = 1;
+            function rnd() { _s = (_s * 1103515245 + 12345) & 0x7fffffff; return _s / 0x7fffffff; }
+            function pick(n) { return Math.floor(rnd() * n); }
+
+            function runScenario(numClients, rounds, seed) {
+                _s = seed >>> 0 || 1;
+                const INITIAL = 'ABCDEFGH';
+                // PURE RELAY: assign a sequence, broadcast verbatim (no transform).
+                let seq = 0;
+                const broadcasts = [];
+                const net = []; // queued client submissions, processed FIFO = total order
+                const clients = [];
+                for (let i = 0; i < numClients; i++) {
+                    const c = { id: 'c' + i, text: INITIAL };
+                    c.client = createRelayCollabClient({
+                        clientId: c.id,
+                        applyRemote: (op) => { c.text = applyToText(c.text, op); },
+                        send: (msg) => { net.push(Object.assign({ _from: i }, msg)); },
+                    });
+                    clients.push(c);
+                }
+                let delivered = 0;
+                for (let step = 0; step < rounds; step++) {
+                    const action = pick(3);
+                    if (action === 0) {
+                        const ci = pick(numClients); const c = clients[ci]; const len = c.text.length;
+                        let op;
+                        if (len === 0 || pick(2) === 0) op = { type: 'insert', blockId: 'p', offset: pick(len + 1), text: String.fromCharCode(97 + pick(6)) };
+                        else { const off = pick(len); op = { type: 'delete', blockId: 'p', offset: off, text: c.text.substr(off, 1) }; }
+                        c.text = applyToText(c.text, op);
+                        c.client.localOperation(op);
+                    } else if (action === 1 && net.length) {
+                        const sub = net.shift();
+                        broadcasts.push({ ops: sub.ops, base: sub.base, sequence: ++seq, clientId: sub.clientId });
+                    } else if (broadcasts.length > delivered) {
+                        const b = broadcasts[delivered++];
+                        clients.forEach((c) => c.client.receiveServerChange(b)); // same order to ALL
+                    }
+                }
+                // Drain to quiescence.
+                for (let pass = 0; pass < numClients + 4; pass++) {
+                    while (net.length) { const sub = net.shift(); broadcasts.push({ ops: sub.ops, base: sub.base, sequence: ++seq, clientId: sub.clientId }); }
+                    while (broadcasts.length > delivered) { const b = broadcasts[delivered++]; clients.forEach((c) => c.client.receiveServerChange(b)); }
+                }
+                return clients.map((c) => c.text);
+            }
+
+            // 2-client relay converges (TP1 is sufficient when at most one peer is concurrent).
+            let twoFails = 0; let twoSample = null;
+            for (let s = 1; s <= 120; s++) {
+                const texts = runScenario(2, 80, (s * 2654435761) >>> 0);
+                if (!texts.every((t) => t === texts[0])) { twoFails++; if (!twoSample) twoSample = texts; }
+            }
+            if (twoFails) console.error('2-CLIENT DIVERGED', JSON.stringify(twoSample));
+            assert.strictEqual(twoFails, 0, '2-client relay converges across 120 randomized scenarios (TP1)');
+
+            // 3 and 4 clients over the pure relay ALSO converge (transform-to-head holds TP1/TP2
+            // for these insert/delete ops across the fuzz once committed-suffix priority is right).
+            let manyFails = 0; let manySample = null;
+            for (let s = 1; s <= 200; s++) {
+                const texts = runScenario(3 + (s % 2), 90, (s * 40503) >>> 0);
+                if (!texts.every((t) => t === texts[0])) { manyFails++; if (!manySample) manySample = texts; }
+            }
+            if (manyFails) console.error('3-4 CLIENT DIVERGED', JSON.stringify(manySample));
+            assert.strictEqual(manyFails, 0, '3-4 client relay converges across 200 randomized scenarios');
+            console.error('relay collab converged: 2-client/120 + 3-4-client/200 scenarios');
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r16-relay-collab", script, "core-engine/collab-client.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseR17_UndoStack_OperationLogEntriesCoalesceAndInvertInReverse()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        // R.5.18 — operation-log undo entries: a typing run COALESCES into one step whose `redo`
+        // grows forward and `undo` grows in REVERSE (inverses replay back-to-front); snapshot and
+        // ops entries coexist on the same stack, discriminated by `kind`.
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const us = await import(moduleUrl);
+            const assert = require('assert');
+            const stack = us.createUndoStack({ clone: (v) => JSON.parse(JSON.stringify(v)) });
+
+            const ins = (off, ch) => ({ type: 'insert', blockId: 'p', offset: off, text: ch });
+            const del = (off, ch) => ({ type: 'delete', blockId: 'p', offset: off, text: ch });
+
+            // Two keystrokes of the same run coalesce into ONE ops entry.
+            assert.strictEqual(stack.recordOps({ undo: [del(0, 'H')], redo: [ins(0, 'H')], before: { caret: { blockId: 'p', offset: 0 } }, after: { caret: { blockId: 'p', offset: 1 } } }, 'type'), true, 'first op pushes');
+            assert.strictEqual(stack.recordOps({ undo: [del(1, 'i')], redo: [ins(1, 'i')], before: { caret: { blockId: 'p', offset: 1 } }, after: { caret: { blockId: 'p', offset: 2 } } }, 'type'), false, 'second op coalesces (no push)');
+            assert.deepStrictEqual(stack.depth(), { undo: 1, redo: 0 }, 'the run is one undo step');
+
+            const u = stack.undo({ model: { n: 9 } });
+            assert.strictEqual(u.kind, 'ops', 'undo returns an ops entry');
+            assert.strictEqual(u.undo.length, 2, 'both inverses are present');
+            assert.strictEqual(u.undo[0].text, 'i', 'inverses replay in REVERSE order (last char first)');
+            assert.strictEqual(u.undo[1].text, 'H');
+            assert.strictEqual(u.redo.length, 2, 'forward ops preserved for redo');
+            assert.strictEqual(u.before.caret.offset, 0, 'before-state is the run start');
+            assert.strictEqual(u.after.caret.offset, 2, 'after-state is the run end');
+
+            const r = stack.redo({ model: { n: 5 } });
+            assert.strictEqual(r.kind, 'ops');
+            assert.strictEqual(r.redo[0].text, 'H', 'redo replays forward order');
+            assert.strictEqual(r.redo[1].text, 'i');
+
+            // A snapshot edit after the ops run is a DISTINCT step (different kind → no coalesce).
+            stack.record({ model: { n: 1 }, caret: { blockId: 'p', offset: 2 } }, 'type');
+            assert.deepStrictEqual(stack.depth(), { undo: 2, redo: 0 }, 'snapshot edit is its own step even with the same key');
+            const s = stack.undo({ model: { n: 2 } });
+            assert.strictEqual(s.kind, 'snapshot', 'snapshot entry discriminated by kind');
+            assert.strictEqual(s.model.n, 1, 'snapshot exposes model directly (backward compatible)');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-r17-oplog-undo", script, "core-engine/undo-stack.mjs");
     }
 
     [Fact]
@@ -9957,6 +13729,22 @@ public sealed class PhaseDModuleExtractionTests
                 { blocks: {} }, { blockId: 'missing', start: 0, end: 5 }, 'u1');
             assert.strictEqual(missing.payloadJson, '');
 
+            // createLiveInsertionRevisionPayloadFactory — requires injection, derives
+            // the range from the selection via selectionToRange and spans the text.
+            assert.throws(() => mod.createLiveInsertionRevisionPayloadFactory({}),
+                /selectionToRange/);
+            const selectionToRange = (sel) => ({ blockId: sel.blockId, start: sel.offset || 0 });
+            const createLive = mod.createLiveInsertionRevisionPayloadFactory({ selectionToRange });
+            const live = createLive({ blockId: 'b9', offset: 3 }, 'abc', 'u2');
+            assert.strictEqual(live.type, 'Insertion');
+            assert.strictEqual(live.source, 'keydown');
+            assert.strictEqual(live.author, 'u2');
+            assert.strictEqual(live.range.blockId, 'b9');
+            assert.strictEqual(live.range.start, 3);
+            assert.strictEqual(live.range.end, 6, 'end = caret + text length');
+            const liveDefault = createLive({ blockId: 'b9', offset: 0 }, 'x');
+            assert.strictEqual(liveDefault.author, 'local', 'userId defaults to local');
+
             console.log('OK');
             """;
         await RunNodeScriptAsync("phase-d-revision-payloads", script,
@@ -13769,19 +17557,19 @@ public sealed class PhaseDModuleExtractionTests
             assert.strictEqual(styleBag.backgroundColor, '#fff');
             assert.strictEqual(styleBag.textDecoration, 'underline');
 
-            // No decorations → textDecoration not set
+            // No decorations → textDecoration reset to '' (so a reused span clears it)
             const styleBag2 = {};
             mod.applySegmentStyleToElement({ style: styleBag2 }, {
                 fontFamily: 'Arial', fontSize: 16,
             }, []);
-            assert.strictEqual(styleBag2.textDecoration, undefined);
+            assert.strictEqual(styleBag2.textDecoration, '');
 
-            // Falsy color preserves whatever was there
+            // Falsy color resets to '' (clears a stale color on a reused span)
             const styleBag3 = { color: 'preserved' };
             mod.applySegmentStyleToElement({ style: styleBag3 }, {
                 fontFamily: 'Arial', fontSize: 16, color: null,
             }, []);
-            assert.strictEqual(styleBag3.color, 'preserved');
+            assert.strictEqual(styleBag3.color, '');
 
             console.log('OK');
             """;
@@ -14737,6 +18525,5672 @@ public sealed class PhaseDModuleExtractionTests
         await RunNodeScriptAsync("phase-d-dom-text-mapping", script,
             "render/dom-text-mapping.mjs");
     }
+
+    [Fact]
+    public async Task PhaseD2_CaretRectFromLayoutMatchesCaretStopByBlockAndOffset()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Stub normalizeLogicalPosition — echoes blockId/offset with defaults
+            function normalizeLogicalPosition(model, position) {
+                const p = position || {};
+                return {
+                    blockId: p.blockId || '',
+                    offset: Number(p.offset || 0),
+                    region: p.region || 'Body',
+                    affinity: p.affinity || 'after',
+                };
+            }
+
+            const caretRectFromLayout = mod.createCaretRectFromLayout({ normalizeLogicalPosition });
+
+            const layout = {
+                caretStops: [
+                    { blockId: 'p1', offset: 0, rect: { x: 0, y: 0, width: 1, height: 18 } },
+                    { blockId: 'p1', offset: 5, rect: { x: 50, y: 0, width: 1, height: 18 } },
+                    { blockId: 'p2', offset: 0, rect: { x: 0, y: 20, width: 1, height: 18 } },
+                ],
+            };
+
+            // Match by blockId + offset
+            const r1 = caretRectFromLayout({}, layout, { blockId: 'p1', offset: 5 });
+            assert.deepStrictEqual(r1, { x: 50, y: 0, width: 1, height: 18 });
+
+            // Returns a clone, not the original reference
+            assert.notStrictEqual(r1, layout.caretStops[1].rect);
+
+            // Different block
+            const r2 = caretRectFromLayout({}, layout, { blockId: 'p2', offset: 0 });
+            assert.strictEqual(r2.y, 20);
+
+            // No match → null
+            assert.strictEqual(caretRectFromLayout({}, layout, { blockId: 'p1', offset: 99 }), null);
+            assert.strictEqual(caretRectFromLayout({}, layout, { blockId: 'nope', offset: 0 }), null);
+
+            // Empty / missing layout → null
+            assert.strictEqual(caretRectFromLayout({}, null, { blockId: 'p1', offset: 0 }), null);
+            assert.strictEqual(caretRectFromLayout({}, {}, { blockId: 'p1', offset: 0 }), null);
+
+            // Factory validation
+            try {
+                mod.createCaretRectFromLayout({});
+                assert.fail('expected throw for missing normalizeLogicalPosition');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-caret-rect", script,
+            "layout/caret-rect.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_WordBoundaryNavigationSkipsWhitespaceAndWords()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            const text = 'hello world foo';
+            //            0123456789012345
+            //            h=0 w=6 f=12
+
+            // previousWordBoundary — from mid/end of a word lands at word start
+            assert.strictEqual(mod.previousWordBoundary(text, 9), 6);   // inside 'world' → 6
+            assert.strictEqual(mod.previousWordBoundary(text, 11), 6);  // end of 'world' → 6
+            assert.strictEqual(mod.previousWordBoundary(text, 6), 0);   // start of 'world' → previous word 'hello'
+            assert.strictEqual(mod.previousWordBoundary(text, 0), 0);   // already at start
+            assert.strictEqual(mod.previousWordBoundary(text, 15), 12); // end → start of 'foo'
+
+            // nextWordBoundary — lands at start of following word (past trailing ws)
+            assert.strictEqual(mod.nextWordBoundary(text, 0), 6);   // 'hello ' → 6
+            assert.strictEqual(mod.nextWordBoundary(text, 6), 12);  // 'world ' → 12
+            assert.strictEqual(mod.nextWordBoundary(text, 12), 15); // 'foo' → end (no trailing ws)
+            assert.strictEqual(mod.nextWordBoundary(text, 15), 15); // already at end
+
+            // Leading whitespace handling
+            const padded = '  ab cd';
+            //              0123456
+            // From 0 (on whitespace): word-body loop is a no-op, then whitespace
+            // loop skips to start of 'ab' = index 2
+            assert.strictEqual(mod.nextWordBoundary(padded, 0), 2);
+            // From inside 'ab' (index 2): skip 'ab' + trailing ws → start of 'cd' = 5
+            assert.strictEqual(mod.nextWordBoundary(padded, 2), 5);
+            assert.strictEqual(mod.previousWordBoundary(padded, 7), 5); // from end → start of 'cd'
+
+            // Null/zero offset handling
+            assert.strictEqual(mod.previousWordBoundary(text, 0), 0);
+            assert.strictEqual(mod.nextWordBoundary(text, null), 6);
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-word-boundary", script,
+            "core/word-boundary.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ObjectTextExclusionHitRectGrowsByDistances()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function normalizeWrapModeName(v) { return v || 'None'; }
+            function wrapModeCreatesTextExclusion(mode) {
+                return mode === 'Square' || mode === 'TopBottom' || mode === 'Tight' || mode === 'Through';
+            }
+            function finiteNumber(v, fallback) {
+                const n = Number(v);
+                return Number.isFinite(n) ? n : fallback;
+            }
+            function hitRectFromAny(rect) {
+                const s = rect || {};
+                return {
+                    x: finiteNumber(s.x ?? s.X ?? s.left ?? s.Left, 0),
+                    y: finiteNumber(s.y ?? s.Y ?? s.top ?? s.Top, 0),
+                    width: Math.max(0, finiteNumber(s.width ?? s.Width, 0)),
+                    height: Math.max(0, finiteNumber(s.height ?? s.Height, 0)),
+                };
+            }
+
+            const fn = mod.createObjectTextExclusionRectForHitTest({
+                normalizeWrapModeName, wrapModeCreatesTextExclusion, hitRectFromAny, finiteNumber,
+            });
+
+            // Wrap mode without exclusion → null
+            assert.strictEqual(fn({ wrapMode: 'None', rect: { x: 0, y: 0, width: 10, height: 10 } }, null), null);
+
+            // Explicit wrapRect (non-degenerate) wins
+            const explicit = fn({
+                wrapMode: 'Square',
+                wrapRect: { x: 5, y: 6, width: 20, height: 30 },
+                rect: { x: 0, y: 0, width: 100, height: 100 },
+            }, null);
+            assert.deepStrictEqual(explicit, { x: 5, y: 6, width: 20, height: 30 });
+
+            // Degenerate explicit rect ignored → falls through to object rect + margins
+            const degenerate = fn({
+                wrapMode: 'Square',
+                wrapRect: { x: 0, y: 0, width: 0, height: 0 },
+                rect: { x: 10, y: 10, width: 40, height: 20 },
+                wrapMargin: 5,
+            }, null);
+            assert.deepStrictEqual(degenerate, { x: 5, y: 5, width: 50, height: 30 });
+
+            // Degenerate object rect → null
+            assert.strictEqual(fn({ wrapMode: 'Square', rect: { x: 0, y: 0, width: 0, height: 5 } }, null), null);
+
+            // Per-side distances override the margin default
+            const perSide = fn({
+                wrapMode: 'Square',
+                rect: { x: 100, y: 100, width: 50, height: 50 },
+                wrapMargin: 1,
+                distanceLeft: 10, distanceRight: 20, distanceTop: 3, distanceBottom: 7,
+            }, null);
+            assert.deepStrictEqual(perSide, { x: 90, y: 97, width: 80, height: 60 });
+
+            // TopBottom mode stretches to body frame width
+            const topBottom = fn({
+                wrapMode: 'TopBottom',
+                rect: { x: 200, y: 100, width: 50, height: 40 },
+                distanceTop: 5, distanceBottom: 5,
+            }, { x: 0, y: 0, width: 600, height: 800 });
+            assert.deepStrictEqual(topBottom, { x: 0, y: 95, width: 600, height: 50 });
+
+            // TopBottom without a frame falls back to the rect-grow path
+            const tbNoFrame = fn({
+                wrapMode: 'TopBottom',
+                rect: { x: 200, y: 100, width: 50, height: 40 },
+                wrapMargin: 0,
+            }, null);
+            assert.deepStrictEqual(tbNoFrame, { x: 200, y: 100, width: 50, height: 40 });
+
+            // Pascal-case input
+            const pascal = fn({
+                WrapMode: 'Square',
+                Rect: { X: 10, Y: 10, Width: 30, Height: 20 },
+                WrapMargin: 2,
+            }, null);
+            assert.deepStrictEqual(pascal, { x: 8, y: 8, width: 34, height: 24 });
+
+            // Factory validation
+            try {
+                mod.createObjectTextExclusionRectForHitTest({});
+                assert.fail('expected throw for missing deps');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-object-exclusion-hit-rect", script,
+            "layout/object-exclusion-hit-rect.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_LiveParagraphFastPatchGatesPlainTextOnly()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // liveTextNodeCanUseFastPatch — DOM predicate
+            function node(attrs, matchSelector) {
+                const a = attrs || {};
+                return {
+                    getAttribute(k) { return Object.prototype.hasOwnProperty.call(a, k) ? a[k] : null; },
+                    querySelector(sel) { return matchSelector ? {} : null; },
+                };
+            }
+            // Plain node with no blocking children → fast patch allowed
+            assert.strictEqual(mod.liveTextNodeCanUseFastPatch(node({}, false)), true);
+            // Projected-layout container → blocked
+            assert.strictEqual(
+                mod.liveTextNodeCanUseFastPatch(node({ 'data-wysiwyg-projected-layout': 'true' }, false)),
+                false);
+            // Has a blocking child (querySelector returns a match) → blocked
+            assert.strictEqual(mod.liveTextNodeCanUseFastPatch(node({}, true)), false);
+            // null → blocked
+            assert.strictEqual(mod.liveTextNodeCanUseFastPatch(null), false);
+
+            // createTextBlockHasOnlyPlainTextRuns
+            function isEditableTextBlock(block) {
+                return !!(block && block.type === 'paragraph');
+            }
+            function isDrawingRunSource(run) { return run && run.kind === 'drawing'; }
+            function asArray(v) { return Array.isArray(v) ? v : []; }
+            function asText(v) { return v === null || v === undefined ? '' : String(v); }
+            function readCommentIdsFromRun(run) { return asArray(run && run.commentIds); }
+            function readRevisionIdsFromRun(run) { return run && run.revisionId ? [run.revisionId] : []; }
+
+            const fn = mod.createTextBlockHasOnlyPlainTextRuns({
+                isEditableTextBlock, isDrawingRunSource, asArray, asText,
+                readCommentIdsFromRun, readRevisionIdsFromRun,
+            });
+
+            // Non-editable → false
+            assert.strictEqual(fn({ type: 'image' }), false);
+
+            // All plain text runs → true
+            assert.strictEqual(fn({
+                type: 'paragraph',
+                content: { runs: [{ kind: 'text', text: 'a' }, { text: 'b' }] },
+            }), true);
+
+            // Run with marks → false
+            assert.strictEqual(fn({
+                type: 'paragraph',
+                content: { runs: [{ kind: 'text', text: 'a', marks: [{ type: 'bold' }] }] },
+            }), false);
+
+            // Run with comment → false
+            assert.strictEqual(fn({
+                type: 'paragraph',
+                content: { runs: [{ kind: 'text', text: 'a', commentIds: ['c1'] }] },
+            }), false);
+
+            // Run with revision → false
+            assert.strictEqual(fn({
+                type: 'paragraph',
+                content: { runs: [{ kind: 'text', text: 'a', revisionId: 'r1' }] },
+            }), false);
+
+            // Drawing run → false
+            assert.strictEqual(fn({
+                type: 'paragraph',
+                content: { runs: [{ kind: 'drawing' }] },
+            }), false);
+
+            // Field run → false
+            assert.strictEqual(fn({
+                type: 'paragraph',
+                content: { runs: [{ kind: 'text', text: 'a', fieldType: 'page' }] },
+            }), false);
+
+            // Run with key → false
+            assert.strictEqual(fn({
+                type: 'paragraph',
+                content: { runs: [{ kind: 'text', text: 'a', key: 'k1' }] },
+            }), false);
+
+            // Empty runs → vacuously true
+            assert.strictEqual(fn({ type: 'paragraph', content: { runs: [] } }), true);
+
+            // Factory validation
+            try {
+                mod.createTextBlockHasOnlyPlainTextRuns({});
+                assert.fail('expected throw for missing deps');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-live-paragraph-fast-patch", script,
+            "render/live-paragraph-fast-patch.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_DirtyStateInitialShapeAndOperationId()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // createInitialDirtyState
+            const state = mod.createInitialDirtyState();
+            assert.strictEqual(state.isDirty, false);
+            assert.strictEqual(state.epoch, 0);
+            assert.strictEqual(state.savedEpoch, 0);
+            assert.strictEqual(state.version, null);
+            assert.strictEqual(state.lastSavedMarker, '');
+            assert.strictEqual(state.lastFailure, null);
+            assert.strictEqual(state.pendingPatchCount, 0);
+            // Fresh object each call
+            assert.notStrictEqual(mod.createInitialDirtyState(), state);
+
+            // getOperationId — camel + pascal variants
+            assert.strictEqual(mod.getOperationId({ id: 'op-1' }), 'op-1');
+            assert.strictEqual(mod.getOperationId({ Id: 'op-2' }), 'op-2');
+            assert.strictEqual(mod.getOperationId({ operationId: 'op-3' }), 'op-3');
+            assert.strictEqual(mod.getOperationId({ OperationId: 'op-4' }), 'op-4');
+            // id wins over operationId
+            assert.strictEqual(mod.getOperationId({ id: 'a', operationId: 'b' }), 'a');
+            // Missing → empty string
+            assert.strictEqual(mod.getOperationId({}), '');
+            assert.strictEqual(mod.getOperationId(null), '');
+            // Numeric coerced to string
+            assert.strictEqual(mod.getOperationId({ id: 42 }), '42');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-dirty-state", script,
+            "history/dirty-state.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_TextEditHandlersInsertAndDeleteWithRevisions()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- minimal model + stub deps ----
+            function blockText(block) {
+                return (block.content.runs || []).map(r => r.text || '').join('');
+            }
+            function findBlock(model, id) {
+                return model.blocks.find(b => b.id === id);
+            }
+            function normalizeTarget(t) {
+                const x = t || {};
+                return { blockId: x.blockId, offset: Number(x.offset || 0), affinity: x.affinity || 'after', virtualCaret: x.virtualCaret === true };
+            }
+            function normalizeRange(r) {
+                const x = r || {};
+                return { blockId: x.blockId, start: Number(x.start || 0), end: Number(x.end || 0) };
+            }
+            function asText(v) { return v === null || v === undefined ? '' : String(v); }
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+            function sortObject(v) { return v; }
+            function normalizeMarks(m) { return Array.isArray(m) ? m : []; }
+            function styleHasValues(s) { return s && Object.keys(s).length > 0; }
+            function resolveTypingStyleAtInsertion() { return { fontFamily: 'Arial' }; }
+            function revisionById(model, id) { return (model.revisions || []).find(r => r.id === id) || null; }
+            // Simple single-run text model mutators
+            function insertTextRun(block, offset, text, attrs) {
+                const current = (block.content.runs[0] && block.content.runs[0].text) || '';
+                const next = current.slice(0, offset) + text + current.slice(offset);
+                block.content.runs = [{ kind: 'text', text: next, marks: attrs.marks, style: attrs.style, revisionId: attrs.revisionId }];
+            }
+            function deleteTextRange(block, start, end) {
+                const current = (block.content.runs[0] && block.content.runs[0].text) || '';
+                block.content.runs = [{ kind: 'text', text: current.slice(0, start) + current.slice(end) }];
+            }
+            function nextSelectionForOperation(model, op, blockId, offset) {
+                return { blockId, offset, isCollapsed: true };
+            }
+            function normalizeRevision(r) { return Object.assign({ id: 'rev-auto', affectedRange: {} }, r || {}); }
+            function normalizeRevisionRange(r) { return r || {}; }
+            function setRevisionPayloadText(rev, text) { rev.payload = { text }; rev.payloadJson = text; }
+            const addedRevisions = [];
+            function addRevision(model, rev) { (model.revisions = model.revisions || []).push(rev); addedRevisions.push(rev); }
+            const rangeSets = [];
+            function setRevisionForRange(model, id, range) { rangeSets.push({ id, range }); }
+
+            const handlers = mod.createTextEditHandlers({
+                normalizeTarget, normalizeRange, findBlock, blockText, asText, clone, sortObject,
+                normalizeMarks, styleHasValues, resolveTypingStyleAtInsertion, revisionById,
+                insertTextRun, deleteTextRange, nextSelectionForOperation, normalizeRevision,
+                normalizeRevisionRange, setRevisionPayloadText, addRevision, setRevisionForRange,
+            });
+            assert.ok(typeof handlers.applyInsertText === 'function');
+            assert.ok(typeof handlers.applyDeleteRange === 'function');
+
+            function makeModel(text) {
+                return { blocks: [{ id: 'p1', type: 'paragraph', content: { runs: [{ kind: 'text', text }] } }], revisions: [] };
+            }
+
+            // applyInsertText — plain insert
+            let model = makeModel('Hello');
+            let differLog = [];
+            const differ = { record(d) { differLog.push(d); } };
+            const insRes = handlers.applyInsertText(model, { target: { blockId: 'p1', offset: 5 }, text: ' World' }, differ);
+            assert.strictEqual(insRes.ok, true);
+            assert.strictEqual(blockText(model.blocks[0]), 'Hello World');
+            assert.deepStrictEqual(insRes.invalidatedLayoutScopes, ['p1']);
+            assert.strictEqual(insRes.nextSelection.offset, 11);
+            assert.deepStrictEqual(differLog[0].insertedRange, { blockId: 'p1', start: 5, end: 11 });
+
+            // applyInsertText — with revision registration
+            model = makeModel('Hi');
+            differLog = [];
+            handlers.applyInsertText(model, {
+                target: { blockId: 'p1', offset: 2 }, text: 'X',
+                revisionId: 'rev-1', revision: { id: 'rev-1', type: 'Insertion' },
+            }, { record(d) { differLog.push(d); } });
+            assert.strictEqual(model.revisions.length, 1);
+            assert.strictEqual(model.revisions[0].id, 'rev-1');
+
+            // applyDeleteRange — untracked
+            model = makeModel('Hello World');
+            differLog = [];
+            const delRes = handlers.applyDeleteRange(model, { range: { blockId: 'p1', start: 5, end: 11 } }, { record(d) { differLog.push(d); } });
+            assert.strictEqual(delRes.ok, true);
+            assert.strictEqual(blockText(model.blocks[0]), 'Hello');
+            assert.strictEqual(differLog[0].removedRange.text, ' World');
+            assert.strictEqual(differLog[0].removedRange.tracked, undefined);
+            assert.strictEqual(delRes.nextSelection.offset, 5);
+
+            // applyDeleteRange — tracked (revision): text stays, marker recorded
+            model = makeModel('Hello World');
+            differLog = [];
+            addedRevisions.length = 0;
+            const tracked = handlers.applyDeleteRange(model, {
+                range: { blockId: 'p1', start: 5, end: 11 },
+                revisionId: 'del-1',
+            }, { record(d) { differLog.push(d); } });
+            assert.strictEqual(tracked.ok, true);
+            // Text remains because deletion is tracked, not applied
+            assert.strictEqual(blockText(model.blocks[0]), 'Hello World');
+            assert.strictEqual(addedRevisions.length, 1);
+            assert.strictEqual(addedRevisions[0].type, 'Deletion');
+            assert.strictEqual(differLog[0].removedRange.tracked, true);
+            assert.deepStrictEqual(differLog[0].markerChange, { revisionId: 'del-1', status: 'Pending', type: 'Deletion' });
+            // op gets the deletedText stamped
+            const opObj = { range: { blockId: 'p1', start: 0, end: 5 } };
+            handlers.applyDeleteRange(makeModel('Hello'), opObj, { record() {} });
+            assert.strictEqual(opObj.deletedText, 'Hello');
+
+            // Factory validation
+            try {
+                mod.createTextEditHandlers({});
+                assert.fail('expected throw for missing deps');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-handlers-text-edit", script,
+            "history/handlers-text-edit.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageHandlersInsertUpdateMoveAndMetadata()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function asText(v) { return v == null ? '' : String(v); }
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+            function sortObject(v) { return v; }
+            function unique(arr) { return Array.from(new Set(asArray(arr))); }
+            function normalizeTarget(t) {
+                const x = t || {};
+                return { blockId: x.blockId, offset: Number(x.offset || 0), affinity: x.affinity || 'after', objectId: x.objectId || null, region: x.region || null };
+            }
+            function findBlockContainer(model, id) {
+                const blocks = model.body.blocks;
+                const index = blocks.findIndex(b => b.id === id);
+                return index < 0 ? null : { blocks, index, block: blocks[index] };
+            }
+            function isEditableTextBlock(block) { return !!(block && block.type === 'paragraph'); }
+            function importBlock(spec) {
+                return { id: spec.Id, type: 'paragraph', content: { runs: [{ kind: 'text', text: '' }] } };
+            }
+            function stableId(prefix) { return prefix + '-stable'; }
+            function blockText(block) { return (block.content.runs || []).map(r => r.text || '').join(''); }
+            function operationRegionInfo() { return { region: 'Body' }; }
+            function splitInlineListForDrawingInsert() { return {}; }
+            function createDrawingRunFromImageInsert() { return { kind: 'drawing', objectId: 'obj-new', id: 'run-new' }; }
+            function insertDrawingRunAtTextOffset(block, offset, drawing) {
+                block.content.runs.push(drawing);
+                return { objectId: 'obj-new', runId: 'run-new', inlineIndex: 0, offset };
+            }
+            const buildCalls = [];
+            function buildIndexes(model) { buildCalls.push(model); }
+            function createSelectionSnapshot(s) { return Object.assign({ isCollapsed: true }, s); }
+            function createObjectSelectionSnapshot(model, s) { return Object.assign({ kind: 'object' }, s); }
+            function findDrawingRunByObjectId(model, objectId) {
+                for (const b of model.body.blocks) {
+                    const runs = (b.content && b.content.runs) || [];
+                    const idx = runs.findIndex(r => r.objectId === objectId);
+                    if (idx >= 0) return { blockId: b.id, inlineIndex: idx, inlineId: runs[idx].id, run: runs[idx], region: 'Body' };
+                }
+                return null;
+            }
+            function findBlock(model, id) { return model.body.blocks.find(b => b.id === id); }
+            function syncImageLayoutCase(l) { return l || {}; }
+            function normalizeImageObject(run, ctx) {
+                return { anchorBlockId: ctx.blockId, anchorRegion: 'Body', objectId: run.objectId };
+            }
+            function affectedParagraphsAroundObject() { return []; }
+            function imageObjectToLayout(obj) { return { Transform: { Width: 100, Height: 80 } }; }
+            const OperationTypes = { UpdateImageLayout: 'UpdateImageLayout' };
+
+            const handlers = mod.createImageHandlers({
+                normalizeTarget, findBlockContainer, isEditableTextBlock, importBlock, stableId,
+                blockText, operationRegionInfo, splitInlineListForDrawingInsert,
+                createDrawingRunFromImageInsert, insertDrawingRunAtTextOffset, buildIndexes,
+                createSelectionSnapshot, createObjectSelectionSnapshot, unique, asArray, asText,
+                findDrawingRunByObjectId, findBlock, clone, syncImageLayoutCase, sortObject,
+                normalizeImageObject, affectedParagraphsAroundObject, imageObjectToLayout, OperationTypes,
+            });
+            assert.ok(typeof handlers.applyInsertImage === 'function');
+            assert.ok(typeof handlers.applyUpdateImageLayout === 'function');
+            assert.ok(typeof handlers.applyMoveDrawingObject === 'function');
+            assert.ok(typeof handlers.applyUpdateImageMetadata === 'function');
+
+            function differCollector() { const log = []; return { log, record(d) { log.push(d); } }; }
+
+            // applyInsertImage — missing target
+            let model = { body: { blocks: [] } };
+            const missing = handlers.applyInsertImage(model, { target: { blockId: 'nope' } }, differCollector());
+            assert.strictEqual(missing.ok, false);
+            assert.strictEqual(missing.errors[0].code, 'missing-target-block');
+
+            // applyInsertImage — into a paragraph
+            model = { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { runs: [{ kind: 'text', text: 'hi' }] } }] } };
+            let d = differCollector();
+            const ins = handlers.applyInsertImage(model, { target: { blockId: 'p1', offset: 2 } }, d);
+            assert.strictEqual(ins.ok, true);
+            assert.strictEqual(ins.insertedObjectId, 'obj-new');
+            assert.deepStrictEqual(ins.invalidatedLayoutScopes, ['p1']);
+            assert.strictEqual(d.log[0].objectChange.type, 'insert-drawing-run');
+
+            // applyUpdateImageLayout — object not found
+            model = { body: { blocks: [] } };
+            const ulMissing = handlers.applyUpdateImageLayout(model, { target: { objectId: 'x' } }, differCollector());
+            assert.strictEqual(ulMissing.ok, false);
+            assert.strictEqual(ulMissing.errors[0].code, 'drawing-layout-target-not-found');
+
+            // applyUpdateImageLayout — success
+            model = { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { runs: [{ kind: 'drawing', objectId: 'obj-1', id: 'run-1' }] } }] } };
+            d = differCollector();
+            const ul = handlers.applyUpdateImageLayout(model, {
+                target: { objectId: 'obj-1' },
+                newLayout: { Transform: { Width: 200, Height: 150 } },
+            }, d);
+            assert.strictEqual(ul.ok, true);
+            assert.strictEqual(model.body.blocks[0].content.runs[0].size.width, 200);
+            assert.strictEqual(model.body.blocks[0].content.runs[0].size.height, 150);
+            assert.strictEqual(d.log[0].objectChange.type, 'layout');
+            assert.strictEqual(ul.nextSelection.kind, 'object');
+
+            // applyMoveDrawingObject — delegates to layout update + stamps op
+            model = { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { runs: [{ kind: 'drawing', objectId: 'obj-1', id: 'run-1' }] } }] } };
+            const moveOp = { target: { objectId: 'obj-1' }, newLayout: { Transform: { Width: 300, Height: 200 } } };
+            const mv = handlers.applyMoveDrawingObject(model, moveOp, differCollector());
+            assert.strictEqual(mv.ok, true);
+            assert.ok(moveOp.oldLayout, 'oldLayout stamped on op');
+            assert.ok(moveOp.newLayout, 'newLayout stamped on op');
+            assert.ok(Array.isArray(moveOp.affectedParagraphIds));
+
+            // applyUpdateImageMetadata — success
+            model = { body: { blocks: [{ id: 'p1', type: 'paragraph', content: { runs: [{ kind: 'drawing', objectId: 'obj-1', id: 'run-1' }] } }] } };
+            d = differCollector();
+            const meta = handlers.applyUpdateImageMetadata(model, {
+                target: { objectId: 'obj-1' },
+                metadata: { altText: 'desc' },
+            }, d);
+            assert.strictEqual(meta.ok, true);
+            assert.strictEqual(model.body.blocks[0].content.runs[0].altText, 'desc');
+            assert.strictEqual(d.log[0].objectChange.type, 'metadata');
+
+            // applyUpdateImageMetadata — not found
+            const metaMissing = handlers.applyUpdateImageMetadata({ body: { blocks: [] } }, { target: { objectId: 'x' } }, differCollector());
+            assert.strictEqual(metaMissing.ok, false);
+            assert.strictEqual(metaMissing.errors[0].code, 'drawing-metadata-target-not-found');
+
+            // Factory validation — missing function dep
+            try {
+                mod.createImageHandlers({});
+                assert.fail('expected throw for missing deps');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-handlers-image", script,
+            "history/handlers-image.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ObjectHitCollectorsRankByPriorityAndZIndex()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function asText(v) { return v == null ? '' : String(v); }
+            function finiteNumber(v, fallback) { const n = Number(v); return Number.isFinite(n) ? n : fallback; }
+            function hitRectFromAny(rect) {
+                const s = rect || {};
+                return { x: finiteNumber(s.x ?? s.X, 0), y: finiteNumber(s.y ?? s.Y, 0), width: finiteNumber(s.width ?? s.Width, 0), height: finiteNumber(s.height ?? s.Height, 0) };
+            }
+            function hitRectContains(rect, x, y) {
+                const r = hitRectFromAny(rect);
+                return x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
+            }
+            function drawingLayerForWrapMode(mode) {
+                if (mode === 'BehindText') return 'behind-text';
+                if (mode === 'InFrontOfText') return 'in-front-of-text';
+                return 'object';
+            }
+            function objectHitPriority(item) {
+                return finiteNumber(item.layerPriority ?? item.LayerPriority, 10);
+            }
+            function objectTextExclusionRectForHitTest(item) {
+                // exclusion rect = the object rect grown by 5 on each side, unless behind/front
+                const r = hitRectFromAny(item.rect || item.Rect);
+                if (r.width <= 0) return null;
+                return { x: r.x - 5, y: r.y - 5, width: r.width + 10, height: r.height + 10 };
+            }
+
+            const collectors = mod.createObjectHitCollectors({
+                asArray, asText, drawingLayerForWrapMode, hitRectContains, hitRectFromAny,
+                objectHitPriority, finiteNumber, objectTextExclusionRectForHitTest,
+            });
+            assert.ok(typeof collectors.collectLayoutObjectHits === 'function');
+            assert.ok(typeof collectors.collectLayoutTextExclusionHits === 'function');
+
+            // ---- collectLayoutObjectHits ----
+            const layout = {
+                objects: [
+                    { objectId: 'a', wrapMode: 'Square', rect: { x: 0, y: 0, width: 100, height: 100 }, zIndex: 1, layerPriority: 10 },
+                    { objectId: 'b', wrapMode: 'Square', rect: { x: 0, y: 0, width: 100, height: 100 }, zIndex: 5, layerPriority: 10 },
+                    { objectId: 'behind', wrapMode: 'BehindText', rect: { x: 0, y: 0, width: 100, height: 100 } },
+                    { objectId: 'miss', wrapMode: 'Square', rect: { x: 500, y: 500, width: 10, height: 10 } },
+                    { objectId: 'nope', selectable: false, wrapMode: 'Square', rect: { x: 0, y: 0, width: 100, height: 100 } },
+                ],
+            };
+            const hits = collectors.collectLayoutObjectHits(layout, 50, 50);
+            // a and b match (behind-text excluded, miss out of bounds, nope unselectable)
+            assert.strictEqual(hits.length, 2);
+            // sorted: same priority → higher zIndex first → b before a
+            assert.strictEqual(hits[0].objectId, 'b');
+            assert.strictEqual(hits[1].objectId, 'a');
+            assert.ok(hits[0].hitRect);
+            assert.strictEqual(hits[0].layer, 'object');
+
+            // Image blocks are folded in
+            const withImage = {
+                objects: [],
+                blocks: [{ id: 'img-1', type: 'image', rect: { x: 0, y: 0, width: 80, height: 80 } }],
+            };
+            const imgHits = collectors.collectLayoutObjectHits(withImage, 10, 10);
+            assert.strictEqual(imgHits.length, 1);
+            assert.strictEqual(imgHits[0].objectId, 'img-1');
+
+            // ---- collectLayoutTextExclusionHits ----
+            const exclLayout = {
+                objects: [
+                    { objectId: 'e1', wrapMode: 'Square', rect: { x: 20, y: 20, width: 40, height: 40 }, layerPriority: 10, zIndex: 0 },
+                    { objectId: 'front', wrapMode: 'InFrontOfText', rect: { x: 20, y: 20, width: 40, height: 40 } },
+                    { objectId: 'behind', wrapMode: 'BehindText', rect: { x: 20, y: 20, width: 40, height: 40 } },
+                ],
+            };
+            // point (16,16) is within e1's exclusion rect (15..65) but not within front/behind (excluded by layer)
+            const exclHits = collectors.collectLayoutTextExclusionHits(exclLayout, 16, 16);
+            assert.strictEqual(exclHits.length, 1);
+            assert.strictEqual(exclHits[0].objectId, 'e1');
+            assert.ok(exclHits[0].hitRect);
+
+            // Out-of-bounds point → no hits
+            assert.strictEqual(collectors.collectLayoutTextExclusionHits(exclLayout, 500, 500).length, 0);
+
+            // Factory validation
+            try {
+                mod.createObjectHitCollectors({});
+                assert.fail('expected throw for missing deps');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-object-hit-collectors", script,
+            "layout/object-hit-collectors.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_SetLiveParagraphTextWritesTextOrPlaceholder()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asText(v) { return v == null ? '' : String(v); }
+            const created = [];
+            const document = {
+                createElement(tag) {
+                    const node = { tagName: tag, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } };
+                    created.push(node);
+                    return node;
+                },
+            };
+
+            const setLiveParagraphText = mod.createSetLiveParagraphText({ document, asText });
+
+            // Non-empty text → textContent set, no placeholder
+            const node = { textContent: '', children: null, replaceChildren(...c) { this.children = c; } };
+            assert.strictEqual(setLiveParagraphText(node, 'hello'), true);
+            assert.strictEqual(node.textContent, 'hello');
+            assert.strictEqual(node.children, null);
+
+            // Empty text → caret placeholder <br> inserted
+            const empty = { textContent: 'old', children: null, replaceChildren(...c) { this.children = c; } };
+            assert.strictEqual(setLiveParagraphText(empty, ''), true);
+            assert.ok(Array.isArray(empty.children) && empty.children.length === 1);
+            assert.strictEqual(empty.children[0].tagName, 'br');
+            assert.strictEqual(empty.children[0].attrs['data-caret-placeholder'], 'true');
+
+            // Null/undefined text → treated as empty → placeholder
+            const nullText = { replaceChildren(...c) { this.children = c; } };
+            assert.strictEqual(setLiveParagraphText(nullText, null), true);
+            assert.strictEqual(nullText.children[0].tagName, 'br');
+
+            // Null node → false
+            assert.strictEqual(setLiveParagraphText(null, 'x'), false);
+
+            // Factory validation
+            try {
+                mod.createSetLiveParagraphText({});
+                assert.fail('expected throw for missing deps');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-live-paragraph-text", script,
+            "render/live-paragraph-text.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_BehindTextOverlaySurfaceDetectsClickThrough()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            const ELEMENT_NODE = 1;
+            // Build an element stub whose closest(sel) returns true for given matchers
+            function el(matchers, nodeType) {
+                return {
+                    nodeType: nodeType === undefined ? ELEMENT_NODE : nodeType,
+                    closest(sel) {
+                        return matchers.some(m => sel.indexOf(m) >= 0) ? {} : null;
+                    },
+                };
+            }
+
+            const fn = mod.createTargetIsBehindTextOverlaySurface({ ELEMENT_NODE });
+
+            // Behind-text overlay surface → true
+            assert.strictEqual(
+                fn(el(['.tm-wysiwyg-object-selection-overlay[data-object-layer="behind-text"]'])),
+                true);
+            assert.strictEqual(
+                fn(el(['.tm-wysiwyg-object-guides-overlay[data-object-layer="behind-text"]'])),
+                true);
+
+            // Interactive chrome inside overlay → false (short-circuit)
+            assert.strictEqual(
+                fn(el(['[data-resize-handle]', '.tm-wysiwyg-object-selection-overlay[data-object-layer="behind-text"]'])),
+                false);
+            assert.strictEqual(
+                fn(el(['button', '.tm-wysiwyg-object-selection-overlay[data-object-layer="behind-text"]'])),
+                false);
+
+            // No overlay match → false
+            assert.strictEqual(fn(el([])), false);
+
+            // null target → false
+            assert.strictEqual(fn(null), false);
+
+            // Text-node target resolves through parentElement
+            const overlayEl = el(['.tm-wysiwyg-object-selection-overlay[data-object-layer="behind-text"]']);
+            const textNode = { nodeType: 3, parentElement: overlayEl };
+            assert.strictEqual(fn(textNode), true);
+
+            // Element without closest → false
+            assert.strictEqual(fn({ nodeType: ELEMENT_NODE }), false);
+
+            // Default ELEMENT_NODE (no option) falls back to 1
+            const fnDefault = mod.createTargetIsBehindTextOverlaySurface();
+            assert.strictEqual(
+                fnDefault(el(['.tm-wysiwyg-object-guides-overlay[data-object-layer="behind-text"]'])),
+                true);
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-behind-text-surface", script,
+            "render/behind-text-surface.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_NativeCaretRangeFromPointPrefersWebkitFallsBackToStandard()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // WebKit path: caretRangeFromPoint wins
+            const webkitDoc = {
+                caretRangeFromPoint(x, y) { return { kind: 'webkit', x, y }; },
+                caretPositionFromPoint() { throw new Error('should not be called'); },
+                createRange() { throw new Error('should not be called'); },
+            };
+            const webkit = mod.createNativeCaretRangeFromPoint({ document: webkitDoc });
+            assert.deepStrictEqual(webkit(10, 20), { kind: 'webkit', x: 10, y: 20 });
+
+            // Firefox path: caretPositionFromPoint → build a collapsed range
+            const events = [];
+            const firefoxDoc = {
+                caretPositionFromPoint(x, y) { return { offsetNode: { id: 'n1' }, offset: 3 }; },
+                createRange() {
+                    return {
+                        setStart(node, offset) { events.push(['setStart', node.id, offset]); },
+                        collapse(toStart) { events.push(['collapse', toStart]); },
+                    };
+                },
+            };
+            const firefox = mod.createNativeCaretRangeFromPoint({ document: firefoxDoc });
+            const range = firefox(5, 6);
+            assert.ok(range);
+            assert.deepStrictEqual(events[0], ['setStart', 'n1', 3]);
+            assert.deepStrictEqual(events[1], ['collapse', true]);
+
+            // Firefox path with no offsetNode → null
+            const ffNoNode = mod.createNativeCaretRangeFromPoint({
+                document: {
+                    caretPositionFromPoint() { return { offsetNode: null }; },
+                    createRange() { return {}; },
+                },
+            });
+            assert.strictEqual(ffNoNode(1, 1), null);
+
+            // No caret API → null
+            const noApi = mod.createNativeCaretRangeFromPoint({ document: {} });
+            assert.strictEqual(noApi(0, 0), null);
+
+            // No document at all → null
+            const noDoc = mod.createNativeCaretRangeFromPoint({ document: null });
+            assert.strictEqual(noDoc(0, 0), null);
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-native-caret-range", script,
+            "render/native-caret-range.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_EditableSurfacePredicatesGatePointerTargets()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            const ELEMENT_NODE = 1;
+            // element stub: closest(sel) matches if any token in `matches` appears in sel
+            function el(matches) {
+                const self = {
+                    nodeType: ELEMENT_NODE,
+                    closest(sel) { return matches.some(m => sel.indexOf(m) >= 0) ? {} : null; },
+                };
+                return self;
+            }
+            function rootContaining(allowed) {
+                return { root: { contains(elm) { return allowed ? allowed(elm) : true; } } };
+            }
+
+            // Each test uses its own nativeCaretRangeFromPoint stub
+            function build(nativeCaretRangeFromPoint) {
+                return mod.createEditableSurfacePredicates({ ELEMENT_NODE, nativeCaretRangeFromPoint });
+            }
+
+            // --- targetIsEditableDocumentSurface ---
+            let preds = build(() => null);
+            const inst = rootContaining(() => true);
+
+            // Editable block → true
+            assert.strictEqual(
+                preds.targetIsEditableDocumentSurface(inst, el(['.tm-wysiwyg-block[data-block-id]'])),
+                true);
+            // Contenteditable body → true
+            assert.strictEqual(
+                preds.targetIsEditableDocumentSurface(inst, el(['.tm-wysiwyg-page__body[contenteditable]'])),
+                true);
+            // Inside object overlay → false (short-circuit)
+            assert.strictEqual(
+                preds.targetIsEditableDocumentSurface(inst, el(['.tm-wysiwyg-object-selection-overlay[data-object-id]', '.tm-wysiwyg-block[data-block-id]'])),
+                false);
+            // Not an editable region → false
+            assert.strictEqual(preds.targetIsEditableDocumentSurface(inst, el([])), false);
+            // Missing inst/target → false
+            assert.strictEqual(preds.targetIsEditableDocumentSurface(null, el(['.tm-wysiwyg-block[data-block-id]'])), false);
+            assert.strictEqual(preds.targetIsEditableDocumentSurface(inst, null), false);
+            // Element outside root → false
+            const outsideInst = rootContaining(() => false);
+            assert.strictEqual(
+                outsideInst.root.contains(el([])) === false &&
+                preds.targetIsEditableDocumentSurface(outsideInst, el(['.tm-wysiwyg-block[data-block-id]'])),
+                false);
+
+            // --- nativePointTargetsEditableText ---
+            // Text node in a block → true
+            const textInBlock = { nodeType: 3, parentElement: el(['[data-block-id]']) };
+            preds = build(() => ({ startContainer: textInBlock }));
+            assert.strictEqual(preds.nativePointTargetsEditableText(inst, 1, 2), true);
+
+            // No range → false
+            preds = build(() => null);
+            assert.strictEqual(preds.nativePointTargetsEditableText(inst, 1, 2), false);
+
+            // Inside a toolbar → false
+            const textInToolbar = { nodeType: 3, parentElement: el(['[role="toolbar"]', '[data-block-id]']) };
+            preds = build(() => ({ startContainer: textInToolbar }));
+            assert.strictEqual(preds.nativePointTargetsEditableText(inst, 1, 2), false);
+
+            // Element node (not text) inside block → false (must be text node, nodeType 3)
+            const elementInBlock = el(['[data-block-id]']);
+            preds = build(() => ({ startContainer: elementInBlock }));
+            assert.strictEqual(preds.nativePointTargetsEditableText(inst, 1, 2), false);
+
+            // Factory validation
+            try {
+                mod.createEditableSurfacePredicates({});
+                assert.fail('expected throw for missing nativeCaretRangeFromPoint');
+            } catch (e) {
+                assert.ok(e instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-editable-surface", script,
+            "render/editable-surface.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_PreviewIntervalsSignatureIsStableAndJitterTolerant()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // normalizePreviewIntervalForCompare → "x:width" rounded to 2 decimals
+            assert.strictEqual(mod.normalizePreviewIntervalForCompare({ x: 1.234, width: 5.678 }), '1.23:5.68');
+            assert.strictEqual(mod.normalizePreviewIntervalForCompare({ X: 10, Width: 20 }), '10:20');
+            assert.strictEqual(mod.normalizePreviewIntervalForCompare(null), '0:0');
+
+            // Sub-pixel jitter below 0.005 rounds to the same value
+            assert.strictEqual(
+                mod.normalizePreviewIntervalForCompare({ x: 1.001, width: 2.002 }),
+                mod.normalizePreviewIntervalForCompare({ x: 1.004, width: 2.001 }));
+
+            // previewIntervalsSignature joins per-line y + intervals + blockedIntervals
+            const lines = [
+                { y: 10, intervals: [{ x: 0, width: 100 }], blockedIntervals: [{ x: 40, width: 20 }] },
+                { y: 30, intervals: [{ x: 0, width: 50 }, { x: 60, width: 40 }], blockedIntervals: [] },
+            ];
+            const sig = mod.previewIntervalsSignature(lines);
+            assert.strictEqual(sig, '10|0:100|40:20;30|0:50,60:40|');
+
+            // Identical structure → identical signature (frame-skip)
+            const lines2 = JSON.parse(JSON.stringify(lines));
+            assert.strictEqual(mod.previewIntervalsSignature(lines2), sig);
+
+            // Jitter within rounding tolerance → same signature
+            const jittered = [
+                { y: 10.002, intervals: [{ x: 0.001, width: 100.004 }], blockedIntervals: [{ x: 40, width: 20 }] },
+                { y: 30, intervals: [{ x: 0, width: 50 }, { x: 60, width: 40 }], blockedIntervals: [] },
+            ];
+            assert.strictEqual(mod.previewIntervalsSignature(jittered), sig);
+
+            // Different content → different signature
+            const moved = JSON.parse(JSON.stringify(lines));
+            moved[0].intervals[0].width = 90;
+            assert.notStrictEqual(mod.previewIntervalsSignature(moved), sig);
+
+            // Empty / null input
+            assert.strictEqual(mod.previewIntervalsSignature([]), '');
+            assert.strictEqual(mod.previewIntervalsSignature(null), '');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-preview-intervals-signature", script,
+            "objects/preview-intervals-signature.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageMoveTrackCaptureRestoreAndSerialize()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- capture/restore preview node state ----
+            function makeNode(style, attrs) {
+                const a = Object.assign({}, attrs);
+                const removed = [];
+                return {
+                    style: Object.assign({}, style),
+                    classes: new Set(['tm-wysiwyg-object-track--predrag', 'tm-wysiwyg-object-track--active', 'keep']),
+                    classList: {
+                        remove(c) { /* set below */ },
+                    },
+                    getAttribute(k) { return Object.prototype.hasOwnProperty.call(a, k) ? a[k] : null; },
+                    setAttribute(k, v) { a[k] = v; },
+                    removeAttribute(k) { delete a[k]; removed.push(k); },
+                    _attrs: a, _removed: removed,
+                };
+            }
+            const node = makeNode(
+                { transform: 'translate(5px,5px)', width: '100px', height: '80px', minHeight: '10px' },
+                { 'data-track-state': 'active', 'data-track-dx': '5', 'data-track-dy': '7' });
+            node.classList.remove = function (c) { node.classes.delete(c); };
+
+            const state = mod.captureObjectPointerPreviewNodeState(node);
+            assert.strictEqual(state.transform, 'translate(5px,5px)');
+            assert.strictEqual(state.width, '100px');
+            assert.strictEqual(state.trackState, 'active');
+            assert.strictEqual(state.trackDx, '5');
+            assert.strictEqual(state.node, node);
+
+            // Mutate node then restore
+            node.style.transform = 'scale(2)';
+            node.style.width = '999px';
+            mod.restoreObjectPointerPreviewNodeState(state);
+            assert.strictEqual(node.style.transform, 'translate(5px,5px)');
+            assert.strictEqual(node.style.width, '100px');
+            // Track classes removed
+            assert.strictEqual(node.classes.has('tm-wysiwyg-object-track--predrag'), false);
+            assert.strictEqual(node.classes.has('tm-wysiwyg-object-track--active'), false);
+            assert.strictEqual(node.classes.has('keep'), true);
+            // Track attrs restored
+            assert.strictEqual(node._attrs['data-track-state'], 'active');
+
+            // Restore with empty trackState removes the attribute
+            const node2 = makeNode({}, {});
+            node2.classList.remove = function (c) {};
+            const emptyState = { node: node2, transform: '', width: '', height: '', minHeight: '', trackState: '', trackDx: '', trackDy: '' };
+            node2.setAttribute('data-track-state', 'leftover');
+            mod.restoreObjectPointerPreviewNodeState(emptyState);
+            assert.ok(node2._removed.indexOf('data-track-state') >= 0);
+
+            // null node → no throw
+            mod.restoreObjectPointerPreviewNodeState({ node: null });
+            assert.ok(mod.captureObjectPointerPreviewNodeState(null));
+
+            // ---- serializeImageMoveTrack ----
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+            function sortObject(v) { return v; }
+            const serialize = mod.createSerializeImageMoveTrack({ clone, sortObject });
+            assert.strictEqual(serialize(null), null);
+            const track = {
+                objectId: 'obj-1', blockId: 'b1', mode: 'resize', stage: 'active',
+                active: true, handleName: 'se', handleIndex: 4, threshold: 3,
+                originalRect: { x: 0, y: 0, width: 100, height: 80 },
+                aspectRatio: 1.25, lockAspectRatio: false,
+                currentDelta: { x: 5, y: 6 },
+                previewWidth: 120,
+            };
+            const ser = serialize(track);
+            assert.strictEqual(ser.objectId, 'obj-1');
+            assert.strictEqual(ser.mode, 'resize');
+            assert.strictEqual(ser.handleIndex, 4);
+            assert.strictEqual(ser.lockAspectRatio, false);
+            assert.deepStrictEqual(ser.currentDelta, { x: 5, y: 6 });
+            assert.strictEqual(ser.previewWidth, 120);
+            // Default-applied fields
+            assert.deepStrictEqual(ser.appliedDelta, { x: 0, y: 0 });
+            assert.strictEqual(ser.previewHeight, null);
+            // Clone, not reference
+            assert.notStrictEqual(ser.originalRect, track.originalRect);
+
+            // ---- readImageMoveTrackOriginalRect ----
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function rectFromGeometry(r) {
+                const x = r || {};
+                return { x: Number(x.x || 0), y: Number(x.y || 0), width: Number(x.width || 0), height: Number(x.height || 0) };
+            }
+            const readRect = mod.createReadImageMoveTrackOriginalRect({ asArray, rectFromGeometry });
+            // Node with bounding rect wins
+            const withNode = { nodes: [{ getBoundingClientRect() { return { x: 10, y: 20, width: 30, height: 40 }; } }] };
+            assert.deepStrictEqual(readRect(withNode), { x: 10, y: 20, width: 30, height: 40 });
+            // Fallback to object offsets/size
+            const fromObject = { object: { horizontalPosition: { offset: 7 }, verticalPosition: { offset: 8 }, width: 50, height: 60 } };
+            assert.deepStrictEqual(readRect(fromObject), { x: 7, y: 8, width: 50, height: 60 });
+            // Defaults when object missing
+            const defaults = readRect({});
+            assert.strictEqual(defaults.width, 120);
+            assert.strictEqual(defaults.height, 80);
+
+            // Factory validation
+            try { mod.createSerializeImageMoveTrack({}); assert.fail('expected throw'); }
+            catch (e) { assert.ok(e instanceof TypeError); }
+            try { mod.createReadImageMoveTrackOriginalRect({}); assert.fail('expected throw'); }
+            catch (e) { assert.ok(e instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-move-track", script,
+            "objects/image-move-track.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageResizePreviewComputesGeometryAndReanchorRule()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // shouldReanchorImageObject
+            assert.strictEqual(mod.shouldReanchorImageObject({}, {}), true);
+            assert.strictEqual(mod.shouldReanchorImageObject({ fixedOnPage: true }, {}), false);
+            assert.strictEqual(mod.shouldReanchorImageObject({ FixedOnPage: true }, {}), false);
+            // lockAnchor → only on explicit drag
+            assert.strictEqual(mod.shouldReanchorImageObject({ lockAnchor: true }, {}), false);
+            assert.strictEqual(mod.shouldReanchorImageObject({ lockAnchor: true }, { explicitDrag: true }), true);
+            assert.strictEqual(mod.shouldReanchorImageObject({ LockAnchor: true }, { ExplicitDrag: true }), true);
+
+            // computeImageResizePreview
+            function normalizeImageResizeHandleName(v) { return String(v || 'se').toLowerCase(); }
+            function clampImageResizeSize(w, h) { return { width: Math.max(1, w), height: Math.max(1, h) }; }
+            function computeImageResizeFixedPoint(rect, handle) { return { x: rect.x || 0, y: rect.y || 0, handle }; }
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+            function sortObject(v) { return v; }
+
+            const compute = mod.createComputeImageResizePreview({
+                normalizeImageResizeHandleName, clampImageResizeSize, computeImageResizeFixedPoint, clone, sortObject,
+            });
+
+            const track = {
+                handleName: 'se',
+                originalRect: { x: 0, y: 0, width: 100, height: 80 },
+                originalObject: { width: 100, height: 80 },
+                lockAspectRatio: false,
+            };
+
+            // SE handle, +20/+10 → grows width/height, top-left unchanged
+            const se = compute(track, 20, 10, {});
+            assert.strictEqual(se.width, 120);
+            assert.strictEqual(se.height, 90);
+            assert.strictEqual(se.appliedDx, 0);
+            assert.strictEqual(se.appliedDy, 0);
+            assert.strictEqual(se.preserveAspectRatio, false);
+
+            // NW handle, +10/+10 → west/north shrink, top-left shifts
+            const nw = compute({ handleName: 'nw', originalRect: { x: 0, y: 0, width: 100, height: 80 }, originalObject: { width: 100, height: 80 }, lockAspectRatio: false }, 10, 10, {});
+            // west: horizontalDelta = -10 → width 90; appliedDx = originalRight(100)-90 - 0 = 10
+            assert.strictEqual(nw.width, 90);
+            assert.strictEqual(nw.appliedDx, 10);
+            assert.strictEqual(nw.height, 70);
+            assert.strictEqual(nw.appliedDy, 10);
+
+            // Edge handle 'e' only changes width (no height change)
+            const e = compute({ handleName: 'e', originalRect: { x: 0, y: 0, width: 100, height: 80 }, originalObject: { width: 100, height: 80 }, lockAspectRatio: false }, 30, 50, {});
+            assert.strictEqual(e.width, 130);
+            assert.strictEqual(e.height, 80, 'edge handle leaves height unchanged');
+
+            // Shift forces aspect ratio preservation
+            const shifted = compute(track, 40, 0, { shiftKey: true });
+            // ratio = 100/80 = 1.25; horizontalDelta(40) >= verticalDelta(0) → height = width / ratio
+            assert.strictEqual(shifted.width, 140);
+            assert.ok(Math.abs(shifted.height - 140 / 1.25) < 0.001);
+            assert.strictEqual(shifted.preserveAspectRatio, true);
+
+            // Corner handle with lockAspectRatio (default true) preserves aspect
+            const cornerLocked = compute({ handleName: 'se', originalRect: { x: 0, y: 0, width: 100, height: 80 }, originalObject: { width: 100, height: 80 } }, 40, 0, {});
+            assert.strictEqual(cornerLocked.preserveAspectRatio, true);
+
+            // fixedPoint falls back to computeImageResizeFixedPoint
+            assert.ok(se.fixedPoint && se.fixedPoint.handle === 'se');
+
+            // Factory validation
+            try { mod.createComputeImageResizePreview({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-resize-preview", script,
+            "objects/image-resize-preview.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageMoveSnapAlignsToBodyAndLineCandidates()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function rectFromAny(rect) {
+                const s = rect || {};
+                return { X: Number(s.X ?? s.x ?? 0), Y: Number(s.Y ?? s.y ?? 0), Width: Number(s.Width ?? s.width ?? 0), Height: Number(s.Height ?? s.height ?? 0) };
+            }
+
+            const snap = mod.createComputeImageMoveSnap({ rectFromAny, asArray });
+
+            const context = {
+                bodyRect: { X: 50, Y: 0, Width: 500, Height: 800 },
+                objectSize: { Width: 100, Height: 80 },
+                lines: [{ Rect: { X: 0, Y: 200, Width: 500, Height: 18 } }],
+                otherObjects: [{ Rect: { X: 300, Y: 100, Width: 50, Height: 50 } }],
+            };
+
+            // Within 5px of text-left (body.X=50) → snap
+            const left = snap({ x: 52, y: 700 }, context);
+            assert.strictEqual(left.x, 50);
+            assert.ok(left.guides.some(g => g.Kind === 'text-left'));
+
+            // Within 5px of text-right (50+500-100=450) → snap
+            const right = snap({ x: 448, y: 700 }, context);
+            assert.strictEqual(right.x, 450);
+            assert.ok(right.guides.some(g => g.Kind === 'text-right'));
+
+            // Page horizontal center: bodyX + bodyW/2 - objW/2 = 50 + 250 - 50 = 250
+            const center = snap({ x: 252, y: 700 }, context);
+            assert.strictEqual(center.x, 250);
+            assert.ok(center.guides.some(g => g.Kind === 'page-center-x'));
+
+            // object-left: otherObject.X - size.W = 300 - 100 = 200
+            const objLeft = snap({ x: 198, y: 700 }, context);
+            assert.strictEqual(objLeft.x, 200);
+            assert.ok(objLeft.guides.some(g => g.Kind === 'object-left'));
+
+            // line-top
+            const lineTop = snap({ x: 0, y: 197 }, context);
+            assert.strictEqual(lineTop.y, 200);
+            assert.ok(lineTop.guides.some(g => g.Kind === 'line-top'));
+
+            // Beyond 5px tolerance → no snap, no guides
+            const noSnap = snap({ x: 100, y: 500 }, context);
+            assert.strictEqual(noSnap.x, 100);
+            assert.strictEqual(noSnap.y, 500);
+            assert.deepStrictEqual(noSnap.guides, []);
+
+            // disableSnap short-circuits everything
+            const disabled = snap({ x: 52, y: 197 }, Object.assign({ disableSnap: true }, context));
+            assert.strictEqual(disabled.x, 52);
+            assert.strictEqual(disabled.y, 197);
+            assert.deepStrictEqual(disabled.guides, []);
+
+            // Null point → coerces to (0,0); too far from any candidate → no snap
+            const zero = snap(null, context);
+            assert.strictEqual(zero.x, 0);
+            assert.strictEqual(zero.y, 0);
+            assert.deepStrictEqual(zero.guides, []);
+
+            // Factory validation
+            try { mod.createComputeImageMoveSnap({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-move-snap", script,
+            "objects/image-move-snap.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ReadTextPositionDomContextExtractsRegionMetadata()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function normalizeDropRegionName(region) { return region || 'Body'; }
+            function normalizeTextExclusionColumnIndex(v) {
+                if (v == null || v === '') return null;
+                const n = Number(v);
+                return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+            }
+            function anchorRegionForNearestTextPosition(input) {
+                if (input && input.region === 'TableCell' && input.cellId) return 'TableCell';
+                return input ? input.region : 'Body';
+            }
+
+            const readCtx = mod.createReadTextPositionDomContext({
+                normalizeDropRegionName, normalizeTextExclusionColumnIndex, anchorRegionForNearestTextPosition,
+            });
+
+            // DOM stub: builds an element whose closest(sel) walks up a configured chain
+            function chain(specs) {
+                // specs: [{matchers: ['[data-render-region]'], attrs: {'data-render-region': 'Body'}}, ...]
+                const nodes = specs.map(spec => ({
+                    matchers: spec.matchers,
+                    attrs: spec.attrs || {},
+                    getAttribute(k) { return this.attrs[k] ?? null; },
+                }));
+                // closest walks all ancestors looking for one whose matchers contain the selector
+                const blockElement = {
+                    closest(sel) {
+                        return nodes.find(n => n.matchers.some(m => sel.indexOf(m) >= 0)) || null;
+                    },
+                };
+                // Each parent also has its own closest that walks ancestors above it
+                nodes.forEach((node, i) => {
+                    node.closest = function (sel) {
+                        return nodes.slice(i + 1).find(n => n.matchers.some(m => sel.indexOf(m) >= 0)) || null;
+                    };
+                });
+                return blockElement;
+            }
+
+            // Body paragraph on page 2
+            const body = chain([
+                { matchers: ['[data-render-region]'], attrs: { 'data-render-region': 'Body' } },
+                { matchers: ['.tm-wysiwyg-page[data-page-index]'], attrs: { 'data-page-index': '2' } },
+            ]);
+            const bodyCtx = readCtx({}, body);
+            assert.strictEqual(bodyCtx.region, 'Body');
+            assert.strictEqual(bodyCtx.anchorRegion, 'Body');
+            assert.strictEqual(bodyCtx.tableId, '');
+            assert.strictEqual(bodyCtx.cellId, '');
+            assert.strictEqual(bodyCtx.headerFooterId, '');
+            assert.strictEqual(bodyCtx.columnIndex, null);
+            assert.strictEqual(bodyCtx.pageIndex, 2);
+
+            // Header region
+            const header = chain([
+                { matchers: ['[data-render-region]'], attrs: { 'data-render-region': 'Header', 'data-hf-id': 'hf-1' } },
+                { matchers: ['.tm-wysiwyg-page[data-page-index]'], attrs: { 'data-page-index': '0' } },
+            ]);
+            const headerCtx = readCtx({}, header);
+            assert.strictEqual(headerCtx.region, 'Header');
+            assert.strictEqual(headerCtx.headerFooterId, 'hf-1');
+
+            // Inside a table cell on a page
+            const inCell = chain([
+                { matchers: ['[data-render-region]'], attrs: { 'data-render-region': 'TableCell' } },
+                { matchers: ['td[data-cell-id]', '[data-cell-id]'], attrs: { 'data-cell-id': 'c1', 'data-column-index': '3' } },
+                { matchers: ['table[data-block-id]'], attrs: { 'data-block-id': 't1' } },
+                { matchers: ['.tm-wysiwyg-page[data-page-index]'], attrs: { 'data-page-index': '5' } },
+            ]);
+            const cellCtx = readCtx({}, inCell);
+            assert.strictEqual(cellCtx.region, 'TableCell');
+            assert.strictEqual(cellCtx.anchorRegion, 'TableCell');
+            assert.strictEqual(cellCtx.tableId, 't1');
+            assert.strictEqual(cellCtx.cellId, 'c1');
+            assert.strictEqual(cellCtx.columnIndex, 3);
+            assert.strictEqual(cellCtx.pageIndex, 5);
+
+            // No page → pageIndex null
+            const noPage = chain([
+                { matchers: ['[data-render-region]'], attrs: { 'data-render-region': 'Body' } },
+            ]);
+            assert.strictEqual(readCtx({}, noPage).pageIndex, null);
+
+            // Factory validation
+            try { mod.createReadTextPositionDomContext({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-text-position-dom-context", script,
+            "render/text-position-dom-context.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_NormalizeNearestTextPositionLineBoxClampsOffsetsAndIntervals()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function asText(v) { return v == null ? '' : String(v); }
+            function sortObject(v) { return v; }
+            function findBlock(model, id) { return model.blocks.find(b => b.id === id) || null; }
+            function isEditableTextBlock(block) { return !!(block && block.type === 'paragraph'); }
+            function blockText(block) { return (block.content.runs || []).map(r => r.text || '').join(''); }
+            function rectFromGeometry(r) {
+                const s = r || {};
+                return {
+                    x: Number(s.x ?? s.X ?? 0),
+                    y: Number(s.y ?? s.Y ?? 0),
+                    width: Number(s.width ?? s.Width ?? 0),
+                    height: Number(s.height ?? s.Height ?? 0),
+                };
+            }
+            function normalizeTextExclusionColumnIndex(v) {
+                if (v == null || v === '') return null;
+                const n = Number(v);
+                return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+            }
+            function normalizeDropRegionName(r) { return r || 'Body'; }
+            function anchorRegionForNearestTextPosition(input) {
+                if (input.region === 'TableCell' && input.cellId) return 'TableCell';
+                return input.region;
+            }
+
+            const normalize = mod.createNormalizeNearestTextPositionLineBox({
+                asArray, asText, sortObject, findBlock, isEditableTextBlock, blockText,
+                rectFromGeometry, normalizeTextExclusionColumnIndex,
+                normalizeDropRegionName, anchorRegionForNearestTextPosition,
+            });
+
+            const model = { blocks: [
+                { id: 'p1', type: 'paragraph', content: { runs: [{ kind: 'text', text: 'hello world' }] } },
+                { id: 'img', type: 'image' },
+            ]};
+
+            // Non-editable block → null
+            assert.strictEqual(normalize(model, { blockId: 'img', rect: { x: 0, y: 0, width: 10, height: 10 } }, 0), null);
+
+            // Missing block → null
+            assert.strictEqual(normalize(model, { blockId: 'gone', rect: { x: 0, y: 0, width: 10, height: 10 } }, 0), null);
+
+            // Degenerate rect → null
+            assert.strictEqual(normalize(model, { blockId: 'p1', rect: { x: 0, y: 0, width: 0, height: 0 } }, 0), null);
+
+            // Basic line box: start/end clamped to text length (11), default rect width retained
+            const line = normalize(model, {
+                blockId: 'p1', start: 0, end: 99,
+                rect: { x: 0, y: 0, width: 200, height: 18 },
+            }, 0);
+            assert.strictEqual(line.blockId, 'p1');
+            assert.strictEqual(line.start, 0);
+            assert.strictEqual(line.end, 11, 'end clamped to text length');
+            assert.strictEqual(line.empty, false);
+            assert.strictEqual(line.region, 'Body');
+            assert.strictEqual(line.id, 'drop-line-0');
+            assert.strictEqual(line.lineId, 'drop-line-0');
+            assert.deepStrictEqual(line.referenceRect, line.rect);
+
+            // Empty range → empty=true
+            const empty = normalize(model, {
+                blockId: 'p1', start: 5, end: 5,
+                rect: { x: 0, y: 0, width: 100, height: 18 },
+            }, 1);
+            assert.strictEqual(empty.empty, true);
+
+            // Intervals are clamped to the line bounds
+            const intervals = normalize(model, {
+                blockId: 'p1', start: 0, end: 11,
+                rect: { x: 0, y: 0, width: 200, height: 18 },
+                availableIntervals: [
+                    { id: 'a', x: 0, y: 0, width: 100, height: 18, start: -10, end: 5 },
+                    { id: 'b', x: 100, y: 0, width: 100, height: 18, start: 6, end: 999 },
+                ],
+            }, 2);
+            assert.strictEqual(intervals.availableIntervals.length, 2);
+            assert.strictEqual(intervals.availableIntervals[0].start, 0, 'clamped to line.start');
+            assert.strictEqual(intervals.availableIntervals[0].end, 5);
+            assert.strictEqual(intervals.availableIntervals[1].end, 11, 'clamped to line.end');
+            assert.strictEqual(intervals.availableIntervals[0].empty, false);
+
+            // TableCell context
+            const cell = normalize(model, {
+                blockId: 'p1', start: 0, end: 5,
+                rect: { x: 0, y: 0, width: 100, height: 18 },
+                region: 'TableCell',
+                cellId: 'c1',
+                tableId: 't1',
+                columnIndex: 2,
+                pageIndex: 3,
+            }, 3);
+            assert.strictEqual(cell.region, 'TableCell');
+            assert.strictEqual(cell.anchorRegion, 'TableCell');
+            assert.strictEqual(cell.cellId, 'c1');
+            assert.strictEqual(cell.tableId, 't1');
+            assert.strictEqual(cell.columnIndex, 2);
+            assert.strictEqual(cell.pageIndex, 3);
+
+            // Pascal-case inputs accepted
+            const pascal = normalize(model, {
+                BlockId: 'p1', Start: 0, End: 5,
+                Rect: { X: 0, Y: 0, Width: 100, Height: 18 },
+            }, 4);
+            assert.strictEqual(pascal.blockId, 'p1');
+            assert.strictEqual(pascal.start, 0);
+            assert.strictEqual(pascal.end, 5);
+
+            // Factory validation
+            try { mod.createNormalizeNearestTextPositionLineBox({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-nearest-text-position-line-box", script,
+            "layout/nearest-text-position-line-box.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_BlockTextLineRectsApportionsCharRangesPerRect()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function blockText(block) { return (block.content.runs || []).map(r => r.text || '').join(''); }
+            function rectFromGeometry(r) {
+                const s = r || {};
+                return { x: Number(s.x || 0), y: Number(s.y || 0), width: Number(s.width || 0), height: Number(s.height || 0) };
+            }
+
+            // ownerDocument stub that returns N client rects via a Range
+            function makeBlockElement(clientRects, boundingRect) {
+                const doc = {
+                    createRange() {
+                        return {
+                            selectNodeContents() {},
+                            getClientRects() { return clientRects; },
+                            detach() {},
+                        };
+                    },
+                };
+                return {
+                    ownerDocument: doc,
+                    getBoundingClientRect() { return boundingRect; },
+                };
+            }
+
+            const fn = mod.createBlockTextLineRectsFromDom({ blockText, rectFromGeometry });
+
+            // Three rects → text apportioned across three lines
+            const block = { content: { runs: [{ kind: 'text', text: 'hello world foo' }] } }; // length 15
+            const threeLines = fn(
+                makeBlockElement(
+                    [{ x: 0, y: 0, width: 100, height: 18 }, { x: 0, y: 18, width: 100, height: 18 }, { x: 0, y: 36, width: 50, height: 18 }],
+                    { x: 0, y: 0, width: 100, height: 54 }),
+                block);
+            assert.strictEqual(threeLines.length, 3);
+            // perLine = ceil(15/3) = 5
+            assert.deepStrictEqual([threeLines[0].start, threeLines[0].end], [0, 5]);
+            assert.deepStrictEqual([threeLines[1].start, threeLines[1].end], [5, 10]);
+            assert.deepStrictEqual([threeLines[2].start, threeLines[2].end], [10, 15], 'last line caps at textLength');
+            assert.strictEqual(threeLines[0].empty, false);
+
+            // Degenerate rects filtered (width < 0.5)
+            const onlyOne = fn(
+                makeBlockElement(
+                    [{ x: 0, y: 0, width: 0.1, height: 0.1 }, { x: 0, y: 0, width: 100, height: 18 }],
+                    { x: 0, y: 0, width: 100, height: 18 }),
+                block);
+            assert.strictEqual(onlyOne.length, 1);
+            assert.strictEqual(onlyOne[0].start, 0);
+            assert.strictEqual(onlyOne[0].end, 15);
+
+            // Empty text → still produces rects but start/end are 0
+            const emptyBlock = { content: { runs: [{ kind: 'text', text: '' }] } };
+            const emptyResult = fn(
+                makeBlockElement(
+                    [{ x: 0, y: 0, width: 100, height: 18 }],
+                    { x: 0, y: 0, width: 100, height: 18 }),
+                emptyBlock);
+            assert.strictEqual(emptyResult.length, 1);
+            assert.strictEqual(emptyResult[0].start, 0);
+            assert.strictEqual(emptyResult[0].end, 0);
+            assert.strictEqual(emptyResult[0].empty, true);
+
+            // No rects at all → []
+            const noRects = fn(
+                makeBlockElement(
+                    [{ x: 0, y: 0, width: 0, height: 0 }],
+                    { x: 0, y: 0, width: 0, height: 0 }),
+                block);
+            assert.deepStrictEqual(noRects, []);
+
+            // null blockElement → []
+            assert.deepStrictEqual(fn(null, block), []);
+
+            // Element without ownerDocument but with bounding rect → fallback single rect
+            const noDocEl = {
+                ownerDocument: null,
+                getBoundingClientRect() { return { x: 5, y: 6, width: 80, height: 16 }; },
+            };
+            const fallback = fn(noDocEl, block);
+            assert.strictEqual(fallback.length, 1);
+            assert.strictEqual(fallback[0].rect.x, 5);
+            assert.strictEqual(fallback[0].end, 15);
+
+            // Range throwing → falls back to bounding rect
+            const throwingEl = {
+                ownerDocument: {
+                    createRange() {
+                        return {
+                            selectNodeContents() { throw new Error('boom'); },
+                            getClientRects() { return []; },
+                        };
+                    },
+                },
+                getBoundingClientRect() { return { x: 0, y: 0, width: 100, height: 18 }; },
+            };
+            const safe = fn(throwingEl, block);
+            assert.strictEqual(safe.length, 1);
+
+            // Factory validation
+            try { mod.createBlockTextLineRectsFromDom({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-block-text-line-rects", script,
+            "render/block-text-line-rects.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_FindNearestBodyParagraphPicksClosestBlockUnderPoint()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function makeBlock(id, rect, opts) {
+                const o = opts || {};
+                const cls = new Set(o.classes || []);
+                // Auto-derive width/height from edges when not supplied
+                const full = Object.assign({
+                    width: (rect.right || 0) - (rect.left || 0),
+                    height: (rect.bottom || 0) - (rect.top || 0),
+                }, rect);
+                return {
+                    classList: { contains: c => cls.has(c) },
+                    hasAttribute: a => Object.prototype.hasOwnProperty.call(o.attrs || {}, a),
+                    getAttribute: a => (a === 'data-block-id' ? id : ((o.attrs || {})[a] ?? null)),
+                    getBoundingClientRect: () => full,
+                };
+            }
+            function root(blocks) {
+                return { querySelectorAll: () => blocks };
+            }
+
+            // No root → ''
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(null, 0, 0), '');
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint({}, 0, 0), '');
+
+            // Single block, point inside → that block
+            const r = root([makeBlock('p1', { left: 0, top: 0, right: 100, bottom: 18 })]);
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(r, 50, 9), 'p1');
+
+            // Multiple blocks, point inside p2 → p2 wins
+            const multi = root([
+                makeBlock('p1', { left: 0, top: 0, right: 100, bottom: 18 }),
+                makeBlock('p2', { left: 0, top: 30, right: 100, bottom: 48 }),
+                makeBlock('p3', { left: 0, top: 60, right: 100, bottom: 78 }),
+            ]);
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(multi, 50, 39), 'p2');
+
+            // Point outside all → nearest by Euclidean distance to closest edge
+            // p1 right edge x=100, p2 right edge x=100, dy differs; closer to p1
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(multi, 200, 9), 'p1');
+
+            // Object-anchor block is filtered out
+            const withAnchor = root([
+                makeBlock('anchor', { left: 0, top: 0, right: 100, bottom: 18 }, { classes: ['tm-wysiwyg-object-anchor-block'] }),
+                makeBlock('p2', { left: 0, top: 30, right: 100, bottom: 48 }),
+            ]);
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(withAnchor, 50, 9), 'p2');
+
+            // data-object-anchor-id attribute also filters
+            const withAttr = root([
+                makeBlock('attr', { left: 0, top: 0, right: 100, bottom: 18 }, { attrs: { 'data-object-anchor-id': 'obj-1' } }),
+                makeBlock('p2', { left: 0, top: 30, right: 100, bottom: 48 }),
+            ]);
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(withAttr, 50, 9), 'p2');
+
+            // Zero-height block filtered
+            const flat = root([
+                makeBlock('flat', { left: 0, top: 0, right: 100, bottom: 0, height: 0 }),
+                makeBlock('p2', { left: 0, top: 30, right: 100, bottom: 48 }),
+            ]);
+            // getBoundingClientRect().height === 0 filters it
+            // Our stub returns rect.height === undefined; need to add height
+            // → re-test with explicit height === 0
+            const flatExplicit = root([{
+                ...makeBlock('flat', { left: 0, top: 0, right: 100, bottom: 0 }),
+                getBoundingClientRect() { return { left: 0, top: 0, right: 100, bottom: 0, height: 0 }; },
+            }, makeBlock('p2', { left: 0, top: 30, right: 100, bottom: 48, height: 18 })]);
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(flatExplicit, 50, 39), 'p2');
+
+            // No candidates → ''
+            assert.strictEqual(mod.findNearestBodyParagraphBlockIdFromPoint(root([]), 0, 0), '');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-find-nearest-body-paragraph", script,
+            "render/find-nearest-body-paragraph.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ObjectPointerTargetResolvesOverlayAndInfersHandle()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asText(v) { return v == null ? '' : String(v); }
+
+            // Build a tree: target element with a closest() chain.
+            // closestMap is { selector-keyword: element-to-return }.
+            function el(attrs, classList, boundingRect, closestMap) {
+                const a = attrs || {};
+                const cls = new Set(classList || []);
+                return {
+                    nodeType: 1,
+                    getAttribute(k) { return a[k] ?? null; },
+                    classList: { contains: c => cls.has(c) },
+                    closest(sel) {
+                        if (!closestMap) return null;
+                        for (const k of Object.keys(closestMap)) {
+                            if (sel.indexOf(k) >= 0) return closestMap[k];
+                        }
+                        return null;
+                    },
+                    getBoundingClientRect() { return boundingRect || { left: 0, top: 0, right: 0, bottom: 0 }; },
+                };
+            }
+            function rootContaining(allowed) {
+                return { contains: e => allowed ? allowed(e) : true };
+            }
+
+            const fn = mod.createGetObjectPointerTarget({ asText });
+
+            // Null inst/target → null
+            assert.strictEqual(fn(null, {}), null);
+            assert.strictEqual(fn({ root: rootContaining() }, null), null);
+
+            // Plain element (no overlay ancestor) → null
+            const plainTarget = el({}, [], null, {});
+            assert.strictEqual(fn({ root: rootContaining() }, plainTarget), null);
+
+            // Object overlay element ⇒ {objectId, blockId, isResize:false}
+            const overlay = el(
+                { 'data-object-id': 'obj-1', 'data-block-id': 'blk-1' },
+                ['tm-wysiwyg-object-selection-overlay'],
+                { left: 0, top: 0, right: 100, bottom: 80 });
+            const overlayTarget = el({}, [], null, {
+                '.tm-wysiwyg-object-selection-overlay[data-object-id]': overlay,
+            });
+            const inst = { root: rootContaining() };
+            const result = fn(inst, overlayTarget);
+            assert.ok(result);
+            assert.strictEqual(result.objectId, 'obj-1');
+            assert.strictEqual(result.blockId, 'blk-1');
+            assert.strictEqual(result.handleName, '');
+            assert.strictEqual(result.isResize, false);
+
+            // Explicit resize handle ancestor → handleName from data attr
+            const resizeHandle = el(
+                { 'data-resize-handle': 'se' }, [], null, {
+                '.tm-wysiwyg-object-selection-overlay[data-object-id]': overlay,
+                '.tm-wysiwyg-object-guides-overlay': null,
+            });
+            const handleTarget = el({}, [], null, {
+                '[data-resize-handle]': resizeHandle,
+                '.tm-wysiwyg-object-selection-overlay[data-object-id]': overlay,
+            });
+            const handled = fn(inst, handleTarget);
+            assert.strictEqual(handled.handleName, 'se');
+            assert.strictEqual(handled.isResize, true);
+
+            // No explicit handle but pointer near SE corner of overlay → inferred 'se'
+            const cornerTarget = el({}, [], null, {
+                '.tm-wysiwyg-object-selection-overlay[data-object-id]': overlay,
+            });
+            // overlay rect: {left:0, top:0, right:100, bottom:80}; clientX=98, clientY=78 → 'se'
+            const inferred = fn(inst, cornerTarget, { clientX: 98, clientY: 78 });
+            assert.strictEqual(inferred.handleName, 'se');
+            assert.strictEqual(inferred.isResize, true);
+
+            // Pointer near top-left → 'nw'
+            const nwInferred = fn(inst, cornerTarget, { clientX: 2, clientY: 1 });
+            assert.strictEqual(nwInferred.handleName, 'nw');
+
+            // Pointer near east edge but center vertically → 'e'
+            const eInferred = fn(inst, cornerTarget, { clientX: 98, clientY: 40 });
+            assert.strictEqual(eInferred.handleName, 'e');
+
+            // Far from any edge → no inferred handle
+            const center = fn(inst, cornerTarget, { clientX: 50, clientY: 40 });
+            assert.strictEqual(center.handleName, '');
+            assert.strictEqual(center.isResize, false);
+
+            // No data-object-id / data-render-object-id but data-block-id → objectId falls back to blockId
+            const blockOnly = el({ 'data-block-id': 'b' }, [], null);
+            const blockOnlyTarget = el({}, [], null, {
+                '.tm-wysiwyg-object-selection-overlay[data-object-id]': blockOnly,
+            });
+            const fb = fn(inst, blockOnlyTarget);
+            assert.strictEqual(fb && fb.objectId, 'b');
+            assert.strictEqual(fb.blockId, 'b');
+
+            // Completely empty attrs → null (objectId truly missing)
+            const empty = el({}, [], null);
+            const emptyTarget = el({}, [], null, {
+                '.tm-wysiwyg-object-selection-overlay[data-object-id]': empty,
+            });
+            assert.strictEqual(fn(inst, emptyTarget), null);
+
+            // Element outside root → null
+            const outsideInst = { root: rootContaining(() => false) };
+            assert.strictEqual(fn(outsideInst, plainTarget), null);
+
+            // Text-node target resolves via parentElement
+            const textNode = { nodeType: 3, parentElement: overlayTarget };
+            const textResult = fn(inst, textNode);
+            assert.ok(textResult);
+            assert.strictEqual(textResult.objectId, 'obj-1');
+
+            // Factory validation
+            try { mod.createGetObjectPointerTarget({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-object-pointer-target", script,
+            "render/object-pointer-target.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ResolveImageObjectPointerModelTargetFindsDrawing()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            const drawings = new Map([
+                ['obj-1', { blockId: 'p1', inlineIndex: 2, run: { id: 'r-1', objectId: 'obj-1' } }],
+            ]);
+            function findDrawingRunByObjectId(model, id) {
+                return drawings.get(id) || null;
+            }
+            function normalizeImageObject(run, ctx) {
+                return { objectId: run.objectId, blockId: ctx.blockId, inlineIndex: ctx.inlineIndex };
+            }
+
+            const resolve = mod.createResolveImageObjectPointerModelTarget({
+                findDrawingRunByObjectId, normalizeImageObject,
+            });
+
+            const inst = { model: {} };
+
+            // Null inst → null
+            assert.strictEqual(resolve(null, { objectId: 'obj-1' }), null);
+            // Null pointerTarget → null
+            assert.strictEqual(resolve(inst, null), null);
+            // Pointer without objectId → null
+            assert.strictEqual(resolve(inst, {}), null);
+            // Unknown object → null
+            assert.strictEqual(resolve(inst, { objectId: 'gone' }), null);
+
+            // Known object → drawing target
+            const target = resolve(inst, { objectId: 'obj-1' });
+            assert.ok(target);
+            assert.strictEqual(target.kind, 'drawing');
+            assert.strictEqual(target.objectId, 'obj-1');
+            assert.strictEqual(target.blockId, 'p1');
+            assert.strictEqual(target.object.objectId, 'obj-1');
+            assert.strictEqual(target.object.inlineIndex, 2);
+
+            // Drawing with null run still calls normalizeImageObject (with {} fallback)
+            drawings.set('obj-2', { blockId: 'p2', inlineIndex: 0, run: null });
+            const safe = resolve(inst, { objectId: 'obj-2' });
+            assert.ok(safe);
+            assert.strictEqual(safe.kind, 'drawing');
+            assert.strictEqual(safe.blockId, 'p2');
+
+            // Factory validation
+            try { mod.createResolveImageObjectPointerModelTarget({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-pointer-model-target", script,
+            "objects/image-pointer-model-target.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageTargetHelpersBuildOperationTargetAndAffectedSet()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function normalizeImageObject(run, ctx) {
+                return Object.assign({}, run, ctx, { objectId: run.objectId || 'obj' });
+            }
+            function imageObjectToLayout(obj) {
+                return { Anchor: { BlockId: obj.blockId }, Width: 100, Height: 80, source: obj };
+            }
+            function sortObject(v) { return v; }
+            function unique(arr) { return Array.from(new Set(arr || [])); }
+            function asText(v) { return v == null ? '' : String(v); }
+            function affectedParagraphsAroundObject(model, blockId) {
+                return blockId ? [blockId + '-prev', blockId, blockId + '-next'] : [];
+            }
+
+            const helpers = mod.createImageTargetHelpers({
+                normalizeImageObject, imageObjectToLayout, sortObject, unique,
+                asText, affectedParagraphsAroundObject,
+            });
+
+            // cloneImageLayoutForTarget
+            assert.strictEqual(helpers.cloneImageLayoutForTarget(null), null);
+            assert.strictEqual(helpers.cloneImageLayoutForTarget({ kind: 'unknown' }), null);
+            const drawingTarget = {
+                kind: 'drawing',
+                blockId: 'b1',
+                inlineIndex: 2,
+                run: { objectId: 'obj-1' },
+                object: {
+                    anchorRegion: 'Body', anchorHeaderFooterId: 'hf-1',
+                    anchorTableId: 't1', anchorCellId: 'c1', anchorColumnIndex: 2,
+                },
+            };
+            const layout = helpers.cloneImageLayoutForTarget(drawingTarget);
+            assert.ok(layout);
+            assert.strictEqual(layout.source.blockId, 'b1');
+
+            // imageTargetOperationTarget — prefers anchor* fields from object
+            const opTarget = helpers.imageTargetOperationTarget(drawingTarget);
+            assert.strictEqual(opTarget.blockId, 'b1');
+            assert.strictEqual(opTarget.objectId, '');
+            assert.strictEqual(opTarget.offset, 0);
+            assert.strictEqual(opTarget.region, 'Body');
+            assert.strictEqual(opTarget.headerFooterId, 'hf-1');
+            assert.strictEqual(opTarget.tableId, 't1');
+            assert.strictEqual(opTarget.cellId, 'c1');
+            assert.strictEqual(opTarget.columnIndex, 2);
+
+            // Null target → null fields
+            const nullTarget = helpers.imageTargetOperationTarget(null);
+            assert.strictEqual(nullTarget.blockId, '');
+            assert.strictEqual(nullTarget.region, null);
+            assert.strictEqual(nullTarget.columnIndex, null);
+
+            // Target without object — falls back to target-level fields
+            const flatTarget = helpers.imageTargetOperationTarget({
+                blockId: 'b2', objectId: 'o2',
+                region: 'Header', headerFooterId: 'hf-2',
+                tableId: 't2', cellId: 'c2', columnIndex: 5,
+            });
+            assert.strictEqual(flatTarget.blockId, 'b2');
+            assert.strictEqual(flatTarget.region, 'Header');
+            assert.strictEqual(flatTarget.tableId, 't2');
+            assert.strictEqual(flatTarget.columnIndex, 5);
+
+            // affectedParagraphsForImageTarget — dedup anchor block + paragraphs around
+            const affected = helpers.affectedParagraphsForImageTarget(
+                { blocks: [] },
+                { blockId: 'b1', object: { anchorBlockId: 'b-anchor' } },
+                { Anchor: { BlockId: 'b-layout-anchor' } });
+            // [b1, b-layout-anchor, b-anchor] + paragraphs around 'b1' (b1-prev, b1, b1-next)
+            assert.ok(affected.indexOf('b1') >= 0);
+            assert.ok(affected.indexOf('b-layout-anchor') >= 0);
+            assert.ok(affected.indexOf('b-anchor') >= 0);
+            assert.ok(affected.indexOf('b1-prev') >= 0);
+            assert.ok(affected.indexOf('b1-next') >= 0);
+            // b1 appears only once
+            assert.strictEqual(affected.filter(b => b === 'b1').length, 1);
+
+            // imageTargetCaption
+            assert.strictEqual(helpers.imageTargetCaption(null), '');
+            assert.strictEqual(helpers.imageTargetCaption({ kind: 'unknown' }), '');
+            assert.strictEqual(helpers.imageTargetCaption({ kind: 'drawing', run: { caption: 'hello' } }), 'hello');
+            assert.strictEqual(helpers.imageTargetCaption({ kind: 'drawing', run: { Caption: 'pascal' } }), 'pascal');
+            assert.strictEqual(helpers.imageTargetCaption({ kind: 'drawing', run: {} }), '');
+
+            // Factory validation
+            try { mod.createImageTargetHelpers({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-target-helpers", script,
+            "objects/image-target-helpers.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_InsertImagePayloadExtractsSourceBlockAndImageBody()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function read(source, Pascal, camel, fallback) {
+                if (source == null) return fallback;
+                if (source[Pascal] !== undefined) return source[Pascal];
+                if (source[camel] !== undefined) return source[camel];
+                return fallback;
+            }
+            function isDrawingRunSource(run) {
+                return !!(run && (run.kind === 'drawing' || run.Kind === 'drawing'
+                    || run.imageUrl || run.ImageUrl));
+            }
+            function compactCommandName(v) { return String(v || '').toLowerCase().replace(/[^a-z]/g, ''); }
+            function sortObject(v) { return v; }
+
+            const findDrawing = mod.createFirstDrawingRunFromSourceBlock({
+                read, asArray, isDrawingRunSource,
+            });
+
+            // No content → null
+            assert.strictEqual(findDrawing({}), null);
+            // No drawing among runs → null
+            assert.strictEqual(findDrawing({ content: { runs: [{ kind: 'text' }, { kind: 'text' }] } }), null);
+            // First drawing wins
+            const drawing = findDrawing({
+                Content: { Inlines: [
+                    { kind: 'text' }, { kind: 'drawing', objectId: 'd1' }, { kind: 'drawing', objectId: 'd2' },
+                ]},
+            });
+            assert.strictEqual(drawing.objectId, 'd1');
+
+            const payload = mod.createImagePayloadFromInsertImageCommand({
+                compactCommandName, read,
+                firstDrawingRunFromSourceBlock: findDrawing, sortObject,
+            });
+
+            // Explicit Image wins
+            const explicit = payload('insertImageUrl', { Image: { Url: 'x.png' } });
+            assert.deepStrictEqual(explicit.image, { Url: 'x.png' });
+            assert.strictEqual(explicit.sourceBlock, null);
+
+            // Source block + drawing extracted
+            const fromBlock = payload('InsertImageObject', {
+                block: { content: { runs: [{ kind: 'drawing', objectId: 'obj-1' }] } },
+            });
+            assert.strictEqual(fromBlock.image.objectId, 'obj-1');
+            assert.ok(fromBlock.sourceBlock);
+
+            // insertimageurl with no image/block → synthesized from body
+            const urlOnly = payload('insertImageUrl', { Url: 'http://x', AltText: 'desc', Caption: 'c' });
+            assert.strictEqual(urlOnly.image.Url, 'http://x');
+            assert.strictEqual(urlOnly.image.AltText, 'desc');
+            assert.strictEqual(urlOnly.image.Caption, 'c');
+
+            // Nested block.Block unwrapping
+            const nested = payload('insertImageObject', {
+                Block: { Block: { content: { runs: [{ kind: 'drawing', objectId: 'inner' }] } } },
+            });
+            assert.strictEqual(nested.image.objectId, 'inner');
+
+            // Source block with no drawing → falls back to content
+            const noDrawing = payload('insertImageObject', {
+                Block: { Content: { Runs: [{ kind: 'text', text: 'hi' }] } },
+            });
+            // Should fall back to read(sourceBlock, 'Content', 'content', sourceBlock)
+            assert.ok(noDrawing.image);
+            assert.ok(noDrawing.image.Runs);
+
+            // Unknown command + no source/image → image stays null
+            const blank = payload('something-else', {});
+            assert.strictEqual(blank.image, null);
+            assert.strictEqual(blank.sourceBlock, null);
+
+            // Factory validation
+            try { mod.createFirstDrawingRunFromSourceBlock({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createImagePayloadFromInsertImageCommand({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-insert-image-payload", script,
+            "objects/insert-image-payload.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_NormalizeImageInsertPayloadResolvesObjectIdAndMetadata()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function read(src, Pascal, camel, fallback) {
+                if (src == null) return fallback;
+                if (src[Pascal] !== undefined) return src[Pascal];
+                if (src[camel] !== undefined) return src[camel];
+                return fallback;
+            }
+            function asText(v) { return v == null ? '' : String(v); }
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+            function sortObject(v) { return v; }
+            function stableId(prefix) { return prefix + '-stable'; }
+            function firstDrawingRunFromSourceBlock(block) {
+                const runs = (block && block.content && block.content.runs) || [];
+                return runs.find(r => r && r.kind === 'drawing') || null;
+            }
+
+            const normalize = mod.createNormalizeImageInsertPayload({
+                read, firstDrawingRunFromSourceBlock, asText, stableId, clone, sortObject,
+            });
+
+            // Explicit image + objectId
+            const direct = normalize({ Image: { ObjectId: 'obj-1' }, ObjectId: 'obj-1' });
+            assert.strictEqual(direct.objectId, 'obj-1');
+            assert.deepStrictEqual(direct.image, { ObjectId: 'obj-1' });
+            assert.strictEqual(direct.sourceBlock, null);
+
+            // Source block with drawing → objectId from drawing.objectId fallback chain
+            const fromBlock = normalize({
+                Block: { content: { runs: [{ kind: 'drawing', objectId: 'd1' }] } },
+            });
+            assert.strictEqual(fromBlock.objectId, 'd1');
+            assert.ok(fromBlock.sourceBlock);
+
+            // No objectId anywhere → synthesized stable id
+            const synthesized = normalize({ Image: { Url: 'x.png' } });
+            assert.strictEqual(synthesized.objectId, 'image-object-stable');
+
+            // Metadata stamping — pulls FileName/ContentType/etc from image, op
+            const meta = normalize({
+                Image: { Url: 'x.png', FileName: 'a.png', SizeBytes: 1024 },
+                Provider: 'cdn', ProviderId: 'p-1',
+            });
+            assert.strictEqual(meta.metadata.FileName, 'a.png');
+            assert.strictEqual(meta.metadata.SizeBytes, '1024');
+            assert.strictEqual(meta.metadata.Provider, 'cdn');
+            assert.strictEqual(meta.metadata.ProviderId, 'p-1');
+
+            // Existing metadata is preserved and merged
+            const withMeta = normalize({
+                Image: { Metadata: { Tag: 'archive' }, FileName: 'b.png' },
+            });
+            assert.strictEqual(withMeta.metadata.Tag, 'archive');
+            assert.strictEqual(withMeta.metadata.FileName, 'b.png');
+
+            // Empty metadata values are skipped
+            const skipped = normalize({ Image: { FileName: '', ContentType: null } });
+            assert.strictEqual(skipped.metadata.FileName, undefined);
+            assert.strictEqual(skipped.metadata.ContentType, undefined);
+
+            // Nested block.Block unwrapping
+            const nested = normalize({
+                Block: { Block: { content: { runs: [{ kind: 'drawing', objectId: 'inner' }] } } },
+            });
+            assert.strictEqual(nested.objectId, 'inner');
+
+            // Image is always at least {}
+            const bareSynth = normalize({});
+            assert.deepStrictEqual(bareSynth.image, {});
+            assert.ok(bareSynth.objectId);
+
+            // Factory validation
+            try { mod.createNormalizeImageInsertPayload({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-insert-payload", script,
+            "objects/image-insert-payload.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ActiveImageTargetResolvesFromSelectionOrAsset()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asText(v) { return v == null ? '' : String(v); }
+            function sortObject(v) { return v; }
+
+            const drawingsByObjectId = {
+                'd1': { blockId: 'b1', inlineIndex: 0, inlineId: 'r1', run: { id: 'r1' }, object: { anchorRegion: 'Body' } },
+                'd-cell': { blockId: 'b2', inlineIndex: 0, inlineId: 'r2', run: {}, object: { anchorRegion: 'TableCell', anchorTableId: 't1', anchorCellId: 'c1', anchorColumnIndex: 2 } },
+            };
+            function findDrawingRunByObjectId(model, id) { return drawingsByObjectId[id] || null; }
+            function findDrawingRunByAsset(model, assetId, fallbackObjectId) {
+                if (assetId === 'asset-1') {
+                    return { objectId: 'd-asset', blockId: 'b3', inlineIndex: 0, inlineId: 'r3', run: {}, object: { anchorRegion: 'Body' } };
+                }
+                return null;
+            }
+
+            const fn = mod.createActiveImageTarget({
+                asText, findDrawingRunByObjectId, findDrawingRunByAsset, sortObject,
+            });
+
+            // Explicit objectId
+            const explicit = fn({ model: {}, selection: {} }, { objectId: 'd1' });
+            assert.ok(explicit);
+            assert.strictEqual(explicit.kind, 'drawing');
+            assert.strictEqual(explicit.objectId, 'd1');
+            assert.strictEqual(explicit.blockId, 'b1');
+            assert.strictEqual(explicit.region, 'Body');
+
+            // From selection.objectSelection.objectId
+            const fromSel = fn({ model: {}, selection: { objectSelection: { objectId: 'd1' } } }, null);
+            assert.strictEqual(fromSel.objectId, 'd1');
+
+            // From selection.activeObjectId
+            const fromActive = fn({ model: {}, selection: { activeObjectId: 'd1' } }, null);
+            assert.strictEqual(fromActive.objectId, 'd1');
+
+            // Anchor scope fields from object
+            const cell = fn({ model: {}, selection: {} }, { objectId: 'd-cell' });
+            assert.strictEqual(cell.region, 'TableCell');
+            assert.strictEqual(cell.tableId, 't1');
+            assert.strictEqual(cell.cellId, 'c1');
+            assert.strictEqual(cell.columnIndex, 2);
+
+            // Unknown objectId + asset present → asset lookup
+            const byAsset = fn({ model: {}, selection: {} }, { objectId: 'unknown', assetId: 'asset-1' });
+            assert.strictEqual(byAsset.kind, 'drawing');
+            assert.strictEqual(byAsset.objectId, 'd-asset');
+
+            // Unknown everywhere → null
+            assert.strictEqual(fn({ model: {}, selection: {} }, { objectId: 'gone' }), null);
+
+            // Pascal-case payload
+            const pascal = fn({ model: {}, selection: {} }, { ObjectId: 'd1' });
+            assert.strictEqual(pascal.objectId, 'd1');
+
+            // Null inst still resolves via payload.objectId — `inst.model` is passed as null,
+            // and the stub ignores it. The function defensively handles null inst.
+            const nullInst = fn(null, { objectId: 'd1' });
+            assert.ok(nullInst);
+            assert.strictEqual(nullInst.objectId, 'd1');
+
+            // Null inst + unknown objectId → null
+            assert.strictEqual(fn(null, { objectId: 'gone' }), null);
+
+            // Factory validation
+            try { mod.createActiveImageTarget({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-active-image-target", script,
+            "objects/active-image-target.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_SelectionTargetForInsertImageCommandClampsAndFallsBack()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function read(src, Pascal, camel, fallback) {
+                if (src == null) return fallback;
+                if (src[Pascal] !== undefined) return src[Pascal];
+                if (src[camel] !== undefined) return src[camel];
+                return fallback;
+            }
+            function sortObject(v) { return v; }
+            function createSelectionSnapshot(input) { return Object.assign({ region: null, blockId: null, offset: 0 }, input || {}); }
+            function firstModelSelection(model) {
+                const block = model && model.blocks && model.blocks.find(b => b.type === 'paragraph');
+                return { region: 'Body', blockId: block ? block.id : null, offset: 0 };
+            }
+            function restoreTextSelectionFromObjectSelection(snapshot) {
+                return Object.assign({}, snapshot, { isObjectSelection: false, selectionMode: 'Text', blockId: snapshot.anchorBlockId || snapshot.blockId });
+            }
+            function findBlock(model, id) {
+                return (model && model.blocks || []).find(b => b.id === id) || null;
+            }
+            function firstTextBlock(model) {
+                return (model && model.blocks || []).find(b => b.type === 'paragraph') || null;
+            }
+            function isEditableTextBlock(block) { return !!(block && block.type === 'paragraph'); }
+            function blockText(block) { return (block && block.content && block.content.runs || []).map(r => r.text || '').join(''); }
+
+            const fn = mod.createSelectionTargetForInsertImageCommand({
+                read, createSelectionSnapshot, firstModelSelection,
+                restoreTextSelectionFromObjectSelection, findBlock, firstTextBlock,
+                isEditableTextBlock, blockText, sortObject,
+            });
+
+            const model = { blocks: [
+                { id: 'p1', type: 'paragraph', content: { runs: [{ kind: 'text', text: 'hello world' }] } },
+                { id: 'p2', type: 'paragraph', content: { runs: [{ kind: 'text', text: 'foo' }] } },
+            ]};
+
+            // Current selection inside p1 → target with clamped offset
+            const inside = fn(model, {}, { blockId: 'p1', offset: 7 });
+            assert.strictEqual(inside.blockId, 'p1');
+            assert.strictEqual(inside.offset, 7);
+            assert.strictEqual(inside.region, 'Body');
+
+            // Offset beyond text length clamps to length
+            const clamped = fn(model, {}, { blockId: 'p1', offset: 999 });
+            assert.strictEqual(clamped.offset, 11);
+
+            // Object selection restores to text first
+            const obj = fn(model, {}, {
+                isObjectSelection: true,
+                anchorBlockId: 'p2', offset: 3,
+            });
+            assert.strictEqual(obj.blockId, 'p2');
+
+            // Missing block in selection → falls back to first text block, offset 0
+            const fallback = fn(model, {}, { blockId: 'gone', offset: 100 });
+            assert.strictEqual(fallback.blockId, 'p1');
+            assert.strictEqual(fallback.offset, 0);
+
+            // Body.Selection overrides currentSelection
+            const explicit = fn(model, { Selection: { blockId: 'p2', offset: 2 } }, { blockId: 'p1', offset: 5 });
+            assert.strictEqual(explicit.blockId, 'p2');
+            assert.strictEqual(explicit.offset, 2);
+
+            // TableId/cellId from body when selection has none
+            const tableCell = fn(model, { TableId: 't1', CellId: 'c1' }, { blockId: 'p1', offset: 0 });
+            assert.strictEqual(tableCell.tableId, 't1');
+            assert.strictEqual(tableCell.cellId, 'c1');
+
+            // Selection's active table wins over passive + body
+            const active = fn(
+                model, { TableId: 't-body' },
+                { blockId: 'p1', offset: 0, activeTableId: 't-active', tableId: 't-passive' });
+            assert.strictEqual(active.tableId, 't-active');
+
+            // Factory validation
+            try { mod.createSelectionTargetForInsertImageCommand({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-insert-image-selection-target", script,
+            "objects/insert-image-selection-target.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_NormalizeSearchMarkersForRenderAcceptsParallelAndObjectForms()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Parallel arrays
+            const parallel = mod.normalizeSearchMarkersForRender(
+                ['p1', 'p2', 'p3'], [0, 5, 100], [3, 4, 0]);
+            // Third entry has length 0 → start === end → dropped
+            assert.strictEqual(parallel.length, 2);
+            assert.deepStrictEqual(parallel[0], {
+                id: 'search-0',
+                targetId: 'search-0',
+                type: 'search',
+                blockId: 'p1',
+                active: false,
+                range: { startBlockId: 'p1', endBlockId: 'p1', startOffset: 0, endOffset: 3 },
+            });
+            assert.strictEqual(parallel[1].range.startOffset, 5);
+            assert.strictEqual(parallel[1].range.endOffset, 9);
+
+            // Empty blockId is dropped
+            const dropped = mod.normalizeSearchMarkersForRender(['', 'p1'], [0, 0], [5, 5]);
+            assert.strictEqual(dropped.length, 1);
+            assert.strictEqual(dropped[0].blockId, 'p1');
+
+            // Object form
+            const objects = mod.normalizeSearchMarkersForRender(
+                [
+                    { blockId: 'p1', offset: 0, length: 5, id: 'm-1', active: true },
+                    { BlockId: 'p2', Offset: 10, Length: 3 },
+                    { startBlockId: 'p3', startOffset: 4, textLength: 6, markerId: 'm-3' },
+                ], null, null);
+            assert.strictEqual(objects.length, 3);
+            assert.strictEqual(objects[0].id, 'm-1');
+            assert.strictEqual(objects[0].active, true);
+            assert.strictEqual(objects[1].blockId, 'p2');
+            assert.strictEqual(objects[1].range.endOffset, 13);
+            assert.strictEqual(objects[1].active, false);
+            assert.strictEqual(objects[2].id, 'm-3');
+            assert.strictEqual(objects[2].range.endOffset, 10);
+
+            // Negative length clamps to start (start === end → dropped)
+            const neg = mod.normalizeSearchMarkersForRender(['p1'], [0], [-5]);
+            assert.deepStrictEqual(neg, []);
+
+            // Empty input
+            assert.deepStrictEqual(mod.normalizeSearchMarkersForRender([], [], []), []);
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-search-markers", script,
+            "render/search-markers.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_TextOverlapAreaSumsTextRectIntersections()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // overlapArea
+            assert.strictEqual(mod.overlapArea({x:0,y:0,width:10,height:10}, {x:5,y:5,width:10,height:10}), 25);
+            assert.strictEqual(mod.overlapArea({x:0,y:0,width:5,height:5}, {x:5,y:0,width:5,height:5}), 0);
+            assert.strictEqual(mod.overlapArea({x:0,y:0,width:0,height:0}, {x:0,y:0,width:0,height:0}), 0);
+
+            // textOverlapArea — stub TreeWalker that yields a few text nodes
+            function textNode(value, clientRects, closestMatch) {
+                return {
+                    nodeValue: value,
+                    parentElement: {
+                        closest(sel) { return closestMatch ? {} : null; },
+                    },
+                    _rects: clientRects,
+                };
+            }
+            const NodeFilter = { SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2 };
+            function makeDoc(textNodes) {
+                let currentIndex = -1;
+                let currentNode = null;
+                return {
+                    createTreeWalker(root, what, filter) {
+                        return {
+                            currentNode: null,
+                            nextNode() {
+                                while (true) {
+                                    currentIndex++;
+                                    if (currentIndex >= textNodes.length) return null;
+                                    currentNode = textNodes[currentIndex];
+                                    if (filter.acceptNode(currentNode) === NodeFilter.FILTER_ACCEPT) {
+                                        this.currentNode = currentNode;
+                                        return currentNode;
+                                    }
+                                }
+                            },
+                            get currentNode() { return currentNode; },
+                            set currentNode(v) { currentNode = v; },
+                        };
+                    },
+                    createRange() {
+                        let node = null;
+                        return {
+                            selectNodeContents(n) { node = n; },
+                            getClientRects() { return node._rects || []; },
+                        };
+                    },
+                };
+            }
+
+            // Two text nodes, both intersect the target rect
+            const t1 = textNode('hello', [{ x: 0, y: 0, width: 100, height: 18 }]);
+            const t2 = textNode('world', [{ x: 0, y: 18, width: 100, height: 18 }]);
+            const skipped = textNode('chrome', [{ x: 0, y: 0, width: 1000, height: 1000 }], true);
+            const whitespace = textNode('   ', [{ x: 0, y: 0, width: 1000, height: 1000 }]);
+
+            const fn1 = mod.createTextOverlapArea({
+                document: makeDoc([t1, t2]), NodeFilter,
+            });
+            // rect 0..100 x 0..36 fully covers both text rects → 100*18 * 2 = 3600
+            assert.strictEqual(fn1({}, { x: 0, y: 0, width: 100, height: 36 }), 3600);
+
+            // Skipped text node (toolbar/figure ancestor) contributes 0
+            const fn2 = mod.createTextOverlapArea({
+                document: makeDoc([skipped]), NodeFilter,
+            });
+            assert.strictEqual(fn2({}, { x: 0, y: 0, width: 100, height: 100 }), 0);
+
+            // Whitespace-only text node skipped
+            const fn3 = mod.createTextOverlapArea({
+                document: makeDoc([whitespace]), NodeFilter,
+            });
+            assert.strictEqual(fn3({}, { x: 0, y: 0, width: 100, height: 100 }), 0);
+
+            // null root → 0
+            const fn4 = mod.createTextOverlapArea({
+                document: makeDoc([t1]), NodeFilter,
+            });
+            assert.strictEqual(fn4(null, { x: 0, y: 0, width: 100, height: 100 }), 0);
+
+            // No document → 0
+            const fn5 = mod.createTextOverlapArea({ document: null, NodeFilter });
+            assert.strictEqual(fn5({}, { x: 0, y: 0, width: 100, height: 100 }), 0);
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-text-overlap", script,
+            "render/text-overlap.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_WysiwygLayoutGeometryVisibilityAndUnion()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- isWysiwygLayoutElementVisible ----
+            const noWindow = mod.createIsWysiwygLayoutElementVisible({ window: null });
+            // No window → only checks bounding rect
+            assert.strictEqual(noWindow(null), false);
+            assert.strictEqual(noWindow({}), false);
+            assert.strictEqual(noWindow({ getBoundingClientRect() { return { width: 0, height: 10 }; } }), false);
+            assert.strictEqual(noWindow({ getBoundingClientRect() { return { width: 10, height: 10 }; } }), true);
+
+            // With window + getComputedStyle: visible
+            const visibleWin = {
+                getComputedStyle() { return { display: 'block', visibility: 'visible', opacity: '1' }; },
+            };
+            const withWin = mod.createIsWysiwygLayoutElementVisible({ window: visibleWin });
+            assert.strictEqual(withWin({ getBoundingClientRect() { return { width: 10, height: 10 }; } }), true);
+
+            // display:none
+            const noneWin = {
+                getComputedStyle() { return { display: 'none', visibility: 'visible', opacity: '1' }; },
+            };
+            assert.strictEqual(
+                mod.createIsWysiwygLayoutElementVisible({ window: noneWin })({
+                    getBoundingClientRect() { return { width: 10, height: 10 }; },
+                }), false);
+
+            // opacity 0
+            const transparentWin = {
+                getComputedStyle() { return { display: 'block', visibility: 'visible', opacity: '0' }; },
+            };
+            assert.strictEqual(
+                mod.createIsWysiwygLayoutElementVisible({ window: transparentWin })({
+                    getBoundingClientRect() { return { width: 10, height: 10 }; },
+                }), false);
+
+            // ---- getWysiwygRectRelativeTo ----
+            const rel = mod.getWysiwygRectRelativeTo(
+                { left: 100, top: 50, width: 30, height: 20 },
+                { left: 10, top: 5 });
+            assert.deepStrictEqual(rel, { x: 90, y: 45, width: 30, height: 20 });
+
+            // x/y as alternates to left/top
+            const xyRel = mod.getWysiwygRectRelativeTo(
+                { x: 100, y: 50, width: 30, height: 20 },
+                { x: 10, y: 5 });
+            assert.strictEqual(xyRel.x, 90);
+            assert.strictEqual(xyRel.y, 45);
+
+            // null inputs
+            assert.deepStrictEqual(
+                mod.getWysiwygRectRelativeTo(null, null),
+                { x: 0, y: 0, width: 0, height: 0 });
+
+            // ---- unionWysiwygRects ----
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            const unionFn = mod.createUnionWysiwygRects({ asArray });
+
+            // Empty → null
+            assert.strictEqual(unionFn([]), null);
+            assert.strictEqual(unionFn(null), null);
+
+            // All degenerate → null
+            assert.strictEqual(unionFn([{ x: 0, y: 0, width: 0, height: 10 }]), null);
+
+            // Two rects
+            const u = unionFn([
+                { x: 0, y: 0, width: 10, height: 10 },
+                { x: 20, y: 5, width: 10, height: 30 },
+            ]);
+            assert.deepStrictEqual(u, { x: 0, y: 0, width: 30, height: 35 });
+
+            // Single rect
+            const single = unionFn([{ x: 5, y: 6, width: 10, height: 12 }]);
+            assert.deepStrictEqual(single, { x: 5, y: 6, width: 10, height: 12 });
+
+            // Factory validation
+            try { mod.createUnionWysiwygRects({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-wysiwyg-layout-geometry", script,
+            "render/wysiwyg-layout-geometry.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_WysiwygRenderHelpersScopeSetSignatureAndPaintLayer()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // normalizeScopedBlockIdSet
+            assert.strictEqual(mod.normalizeScopedBlockIdSet([]), null);
+            assert.strictEqual(mod.normalizeScopedBlockIdSet(null), null);
+            assert.strictEqual(mod.normalizeScopedBlockIdSet(['', '', null]), null);
+            const set = mod.normalizeScopedBlockIdSet(['a', 'b', '', 'a']);
+            assert.ok(set instanceof Set);
+            assert.strictEqual(set.size, 2);
+            assert.ok(set.has('a') && set.has('b'));
+            // Non-array input → null (asArray only accepts real arrays)
+            assert.strictEqual(mod.normalizeScopedBlockIdSet('solo'), null);
+
+            // createWysiwygParagraphProjectionSignature — deterministic + jitter-rounded
+            const segments = [
+                { text: 'hello', start: 0, end: 5, rect: { x: 0, y: 0, width: 50, height: 18 } },
+                { text: 'world', start: 5, end: 10, rect: { x: 50, y: 0, width: 50, height: 18 } },
+            ];
+            const sig1 = mod.createWysiwygParagraphProjectionSignature(segments, 18, 100);
+            const sig2 = mod.createWysiwygParagraphProjectionSignature(segments, 18, 100);
+            assert.strictEqual(sig1, sig2);
+            // Sub-0.1px jitter → same signature
+            const jittered = [
+                { text: 'hello', start: 0, end: 5, rect: { x: 0.02, y: 0.01, width: 50.03, height: 18 } },
+                { text: 'world', start: 5, end: 10, rect: { x: 50, y: 0, width: 50, height: 18 } },
+            ];
+            assert.strictEqual(mod.createWysiwygParagraphProjectionSignature(jittered, 18.02, 100.01), sig1);
+            // Different text → different signature
+            const changed = [
+                { text: 'HELLO', start: 0, end: 5, rect: { x: 0, y: 0, width: 50, height: 18 } },
+                { text: 'world', start: 5, end: 10, rect: { x: 50, y: 0, width: 50, height: 18 } },
+            ];
+            assert.notStrictEqual(mod.createWysiwygParagraphProjectionSignature(changed, 18, 100), sig1);
+
+            // createObjectEntryPaintLayer
+            function drawingLayerForWrapMode(mode) {
+                if (mode === 'BehindText') return 'behind-text';
+                if (mode === 'InFrontOfText') return 'in-front-of-text';
+                if (mode === 'Inline') return 'inline';
+                return 'object';
+            }
+            const paintLayer = mod.createObjectEntryPaintLayer({ drawingLayerForWrapMode });
+            assert.strictEqual(paintLayer({ object: { wrapMode: 'Square' } }), 'object');
+            assert.strictEqual(paintLayer({ object: { WrapMode: 'BehindText' } }), 'behind-text');
+            // Default Inline when no wrap mode
+            assert.strictEqual(paintLayer({ object: {} }), 'inline');
+            assert.strictEqual(paintLayer({}), 'inline');
+
+            // Factory validation
+            try { mod.createObjectEntryPaintLayer({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-wysiwyg-render-helpers", script,
+            "render/wysiwyg-render-helpers.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_WysiwygObjectLayerRectAppliesAndResolvesGeometry()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- applyWysiwygObjectLayerRect ----
+            const styleBag = { props: {}, setProperty(k, v) { this.props[k] = v; } };
+            const node = { style: styleBag };
+            mod.applyWysiwygObjectLayerRect(node, { x: 12.345, y: 6.789, width: 40, height: 30 });
+            assert.strictEqual(styleBag.left, '12.35px');
+            assert.strictEqual(styleBag.top, '6.79px');
+            assert.strictEqual(styleBag.width, '40px');
+            assert.strictEqual(styleBag.height, '30px');
+            assert.strictEqual(styleBag.props['--tm-layout-object-width'], '40px');
+            assert.strictEqual(styleBag.props['--tm-layout-object-height'], '30px');
+            // Width/height clamp to ≥1
+            const styleBag2 = { props: {}, setProperty(k, v) { this.props[k] = v; } };
+            mod.applyWysiwygObjectLayerRect({ style: styleBag2 }, { x: 0, y: 0, width: 0, height: 0 });
+            assert.strictEqual(styleBag2.width, '1px');
+            assert.strictEqual(styleBag2.height, '1px');
+            // null node/rect → no-op (no throw)
+            mod.applyWysiwygObjectLayerRect(null, { x: 0 });
+            mod.applyWysiwygObjectLayerRect(node, null);
+
+            // ---- resolveWysiwygObjectLayerRect ----
+            function cssEscape(v) { return String(v); }
+            const resolve = mod.createResolveWysiwygObjectLayerRect({ cssEscape });
+
+            function item(attrs, style) {
+                const a = attrs || {};
+                return {
+                    getAttribute(k) { return a[k] ?? null; },
+                    style: style || {},
+                };
+            }
+            const layerRect = { left: 10, top: 20, right: 610, width: 600 };
+
+            // layout-rect position source → uses data-object-x/y directly
+            const layoutBody = { querySelector() { return null; } };
+            const layoutItem = item({
+                'data-object-id': 'o1',
+                'data-object-width': '50', 'data-object-height': '40',
+                'data-object-layer-kind': 'anchored',
+                'data-object-position-source': 'layout-rect',
+                'data-object-x': '100', 'data-object-y': '200',
+            });
+            const layoutResolved = resolve(layoutBody, layerRect, layoutItem);
+            assert.deepStrictEqual(layoutResolved, { x: 100, y: 200, width: 50, height: 40 });
+
+            // Inline kind with anchor rect
+            const anchor = { getBoundingClientRect() { return { left: 110, top: 60, width: 70 }; } };
+            const inlineBody = { querySelector(sel) { return sel.indexOf('anchor-id') >= 0 ? anchor : null; } };
+            const inlineItem = item({
+                'data-object-id': 'o2',
+                'data-object-width': '50', 'data-object-height': '40',
+                'data-object-layer-kind': 'inline',
+            });
+            const inlineResolved = resolve(inlineBody, layerRect, inlineItem);
+            // x = anchor.left - layerRect.left = 110 - 10 = 100
+            assert.strictEqual(inlineResolved.x, 100);
+            assert.strictEqual(inlineResolved.y, 40); // 60 - 20
+            assert.strictEqual(inlineResolved.width, 70); // max(50, anchor.width 70)
+
+            // fixed-on-page anchored, Left align with offset
+            const fixedBody = { querySelector() { return null; } };
+            const fixedItem = item({
+                'data-object-id': 'o3',
+                'data-object-width': '50', 'data-object-height': '40',
+                'data-object-layer-kind': 'anchored',
+                'data-fixed-on-page': 'true',
+                'data-horizontal-align': 'Left',
+                'data-horizontal-offset': '5',
+                'data-vertical-offset': '7',
+            });
+            const fixedResolved = resolve(fixedBody, layerRect, fixedItem);
+            // left = (layerRect.left) - layerRect.left + offsetX = 0 + 5 = 5
+            assert.strictEqual(fixedResolved.x, 5);
+            assert.strictEqual(fixedResolved.y, 7);
+
+            // Right align
+            const rightItem = item({
+                'data-object-id': 'o4',
+                'data-object-width': '50', 'data-object-height': '40',
+                'data-object-layer-kind': 'anchored',
+                'data-fixed-on-page': 'true',
+                'data-horizontal-align': 'Right',
+            });
+            const rightResolved = resolve(fixedBody, layerRect, rightItem);
+            // left = layerRect.right - layerRect.left - width - 0 = 610 - 10 - 50 = 550
+            assert.strictEqual(rightResolved.x, 550);
+
+            // Factory validation
+            try { mod.createResolveWysiwygObjectLayerRect({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-wysiwyg-object-layer-rect", script,
+            "render/wysiwyg-object-layer-rect.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_WysiwygObjectVisualRectUnionsImageAndCaption()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function isWysiwygLayoutElementVisible(el) { return !!(el && el._visible !== false); }
+            function getWysiwygRectRelativeTo(rect, origin) {
+                return {
+                    x: (rect.left ?? rect.x ?? 0) - (origin.left ?? origin.x ?? 0),
+                    y: (rect.top ?? rect.y ?? 0) - (origin.top ?? origin.y ?? 0),
+                    width: rect.width || 0,
+                    height: rect.height || 0,
+                };
+            }
+            function unionWysiwygRects(rects) {
+                const list = rects.filter(r => r && r.width > 0 && r.height > 0);
+                if (!list.length) return null;
+                const left = Math.min(...list.map(r => r.x));
+                const top = Math.min(...list.map(r => r.y));
+                const right = Math.max(...list.map(r => r.x + r.width));
+                const bottom = Math.max(...list.map(r => r.y + r.height));
+                return { x: left, y: top, width: right - left, height: bottom - top };
+            }
+
+            const fn = mod.createGetWysiwygObjectVisualRectRelativeTo({
+                isWysiwygLayoutElementVisible, getWysiwygRectRelativeTo, unionWysiwygRects,
+            });
+
+            const bodyRect = { left: 10, top: 20 };
+
+            // Image + caption union
+            const withCaption = {
+                querySelector(sel) {
+                    if (sel === 'img') return { _visible: true, getBoundingClientRect: () => ({ left: 30, top: 40, width: 100, height: 80 }) };
+                    if (sel === 'figcaption') return { _visible: true, getBoundingClientRect: () => ({ left: 30, top: 120, width: 100, height: 20 }) };
+                    return null;
+                },
+                getBoundingClientRect() { return { left: 30, top: 40, width: 100, height: 120 }; },
+            };
+            const union = fn(withCaption, bodyRect);
+            // image rel: x=20, y=20, 100x80; caption rel: x=20, y=100, 100x20
+            // union: x=20, y=20, width=100, height=100
+            assert.deepStrictEqual(union, { x: 20, y: 20, width: 100, height: 100 });
+
+            // Hidden image → falls back to item bounding rect
+            const hiddenImage = {
+                querySelector(sel) {
+                    if (sel === 'img') return { _visible: false, getBoundingClientRect: () => ({ left: 0, top: 0, width: 999, height: 999 }) };
+                    return null;
+                },
+                getBoundingClientRect() { return { left: 30, top: 40, width: 50, height: 60 }; },
+            };
+            const fallback = fn(hiddenImage, bodyRect);
+            assert.deepStrictEqual(fallback, { x: 20, y: 20, width: 50, height: 60 });
+
+            // No image, no caption → item rect
+            const bare = {
+                querySelector() { return null; },
+                getBoundingClientRect() { return { left: 30, top: 40, width: 40, height: 30 }; },
+            };
+            assert.deepStrictEqual(fn(bare, bodyRect), { x: 20, y: 20, width: 40, height: 30 });
+
+            // Nothing measurable → null
+            const empty = { querySelector() { return null; } };
+            assert.strictEqual(fn(empty, bodyRect), null);
+
+            // Factory validation
+            try { mod.createGetWysiwygObjectVisualRectRelativeTo({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-wysiwyg-object-visual-rect", script,
+            "render/wysiwyg-object-visual-rect.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ProjectedWysiwygLineGroupsAndRenders()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- groupProjectedWysiwygSegmentsByLine ----
+            const segments = [
+                { id: 's1', rect: { x: 50, y: 0, width: 40, height: 18 } },
+                { id: 's2', rect: { x: 0, y: 1, width: 40, height: 18 } },   // same line as s1 (within 20%)
+                { id: 's3', rect: { x: 0, y: 40, width: 40, height: 18 } },  // new line
+            ];
+            const lines = mod.groupProjectedWysiwygSegmentsByLine(segments);
+            assert.strictEqual(lines.length, 2);
+            // First line sorted left→right → s2 (x=0) then s1 (x=50)
+            assert.deepStrictEqual(lines[0].segments.map(s => s.id), ['s2', 's1']);
+            assert.strictEqual(lines[1].segments[0].id, 's3');
+            // Lines sorted top→bottom
+            assert.ok(lines[0].y < lines[1].y);
+
+            // Empty input
+            assert.deepStrictEqual(mod.groupProjectedWysiwygSegmentsByLine([]), []);
+
+            // ---- renderer ----
+            function makeStyleBag() { return { setProperty() {} }; }
+            const created = [];
+            const document = {
+                createElement(tag) {
+                    const node = {
+                        tagName: tag, className: '', attrs: {}, style: makeStyleBag(),
+                        children: [],
+                        setAttribute(k, v) { this.attrs[k] = String(v); },
+                        appendChild(c) { this.children.push(c); return c; },
+                    };
+                    created.push(node);
+                    return node;
+                },
+                createTextNode(text) { return { text }; },
+            };
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            const styleApplied = [];
+            function applySegmentStyleToElement(el, style, decorations) {
+                styleApplied.push({ style, decorations });
+            }
+
+            const renderer = mod.createProjectedWysiwygLineRenderer({
+                document, asArray, applySegmentStyleToElement,
+            });
+            assert.ok(typeof renderer.renderProjectedWysiwygLine === 'function');
+            assert.ok(typeof renderer.renderProjectedWysiwygSegment === 'function');
+
+            // renderProjectedWysiwygSegment
+            const seg = renderer.renderProjectedWysiwygSegment(
+                { id: 'sg-1', blockId: 'b1', runId: 'r1', start: 0, end: 5, text: 'hello',
+                  rect: { x: 0, y: 0, width: 50, height: 18 }, style: {}, decorations: [] },
+                18);
+            assert.strictEqual(seg.attrs['data-layout-segment-id'], 'sg-1');
+            assert.strictEqual(seg.attrs['data-model-block-id'], 'b1');
+            assert.strictEqual(seg.attrs['data-model-start'], '0');
+            assert.strictEqual(seg.attrs['data-model-end'], '5');
+            assert.strictEqual(seg.attrs['data-inline-id'], 'r1');
+            assert.strictEqual(seg.children.length, 1);
+            assert.strictEqual(seg.children[0].text, 'hello');
+            assert.strictEqual(styleApplied.length, 1);
+
+            // renderProjectedWysiwygLine — places segments with margin gaps
+            const line = renderer.renderProjectedWysiwygLine(
+                { y: 100, height: 20, segments: [
+                    { id: 'a', rect: { x: 0, y: 100, width: 40, height: 20 }, text: 'a', style: {}, decorations: [] },
+                    { id: 'b', rect: { x: 60, y: 100, width: 40, height: 20 }, text: 'b', style: {}, decorations: [] },
+                ]},
+                80, 600, 18);
+            assert.strictEqual(line.className, 'tm-wysiwyg-layout-text-line');
+            // top = (100 - 80) = 20px
+            assert.strictEqual(line.style.top, '20px');
+            // Two segment children
+            assert.strictEqual(line.children.length, 2);
+            // Second segment gap: x=60 - cursorX(40) = 20px marginLeft
+            assert.strictEqual(line.children[1].style.marginLeft, '20px');
+
+            // Factory validation
+            try { mod.createProjectedWysiwygLineRenderer({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-projected-wysiwyg-line", script,
+            "render/projected-wysiwyg-line.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_SplitProjectedSegmentsTokenizesAndMeasures()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function asText(v) { return v == null ? '' : String(v); }
+            // Each char measures 10px wide
+            function createTextMeasurementService() {
+                return { measureText(text) { return { width: (text || '').length * 10 }; } };
+            }
+
+            const fn = mod.createSplitProjectedWysiwygSegmentsForReflow({
+                createTextMeasurementService, asArray, asText,
+            });
+
+            // "hello world" → tokens: "hello", " ", "world"
+            const result = fn([
+                { id: 's1', text: 'hello world', start: 0, rect: { x: 0, y: 0, width: 110, height: 18 }, style: { fontSize: 16 } },
+            ], { fontFamily: 'Arial' });
+            assert.strictEqual(result.length, 3);
+            assert.strictEqual(result[0].text, 'hello');
+            assert.strictEqual(result[0].start, 0);
+            assert.strictEqual(result[0].end, 5);
+            assert.strictEqual(result[0].rect.width, 50); // 5 chars * 10
+            assert.strictEqual(result[1].text, ' ');
+            assert.strictEqual(result[1].start, 5);
+            assert.strictEqual(result[1].end, 6);
+            assert.strictEqual(result[2].text, 'world');
+            assert.strictEqual(result[2].start, 6);
+            assert.strictEqual(result[2].end, 11);
+            // Token ids are unique
+            assert.notStrictEqual(result[0].id, result[2].id);
+            // Style merged: fallback fontFamily + segment fontSize
+            assert.strictEqual(result[0].style.fontFamily, 'Arial');
+            assert.strictEqual(result[0].style.fontSize, 16);
+
+            // baseStart offset is honoured
+            const offset = fn([
+                { id: 's2', text: 'ab', start: 100, rect: {}, style: {} },
+            ], {});
+            assert.strictEqual(offset[0].start, 100);
+            assert.strictEqual(offset[0].end, 102);
+
+            // Empty text segments are skipped; if all empty → returns original array
+            const original = [{ id: 's3', text: '', rect: {}, style: {} }];
+            assert.strictEqual(fn(original, {}), original);
+
+            // Multiple segments concatenate tokens
+            const multi = fn([
+                { id: 'a', text: 'foo', start: 0, rect: {}, style: {} },
+                { id: 'b', text: 'bar', start: 0, rect: {}, style: {} },
+            ], {});
+            assert.strictEqual(multi.length, 2);
+            assert.strictEqual(multi[0].text, 'foo');
+            assert.strictEqual(multi[1].text, 'bar');
+
+            // Factory validation
+            try { mod.createSplitProjectedWysiwygSegmentsForReflow({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-projected-segment-split", script,
+            "render/projected-segment-split.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ResolveProjectedLineIntervalsNormalisesAndFallsBack()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+
+            // Stub getAvailableIntervals — returns intervals, optionally moved
+            function makeGetAvailableIntervals(result) {
+                return function () { return result; };
+            }
+
+            // Not moved → uses intervals at y
+            const fn1 = mod.createResolveProjectedWysiwygLineIntervals({
+                getAvailableIntervals: makeGetAvailableIntervals({
+                    moved: false,
+                    intervals: [
+                        { x: 50, width: 100 },
+                        { x: 0, width: 40 },
+                        { x: 200, width: 0.5 }, // width < 1 → dropped
+                    ],
+                }),
+                asArray,
+            });
+            const r1 = fn1(100, 18, 600, { x: 0, width: 600 }, []);
+            assert.strictEqual(r1.y, 100);
+            assert.strictEqual(r1.intervals.length, 2);
+            // sorted left→right
+            assert.strictEqual(r1.intervals[0].x, 0);
+            assert.strictEqual(r1.intervals[1].x, 50);
+            assert.strictEqual(r1.intervals[0].height, 18);
+
+            // Moved → uses movedToY + movedIntervals
+            const fn2 = mod.createResolveProjectedWysiwygLineIntervals({
+                getAvailableIntervals: makeGetAvailableIntervals({
+                    moved: true,
+                    movedToY: 150,
+                    movedIntervals: [{ x: 10, width: 80 }],
+                }),
+                asArray,
+            });
+            const r2 = fn2(100, 18, 600, { x: 0, width: 600 }, []);
+            assert.strictEqual(r2.y, 150);
+            assert.strictEqual(r2.intervals.length, 1);
+            assert.strictEqual(r2.intervals[0].x, 10);
+            assert.strictEqual(r2.intervals[0].y, 150);
+
+            // No surviving intervals → full body width fallback
+            const fn3 = mod.createResolveProjectedWysiwygLineIntervals({
+                getAvailableIntervals: makeGetAvailableIntervals({ moved: false, intervals: [] }),
+                asArray,
+            });
+            const r3 = fn3(100, 18, 600, { x: 0, width: 600 }, []);
+            assert.strictEqual(r3.intervals.length, 1);
+            assert.strictEqual(r3.intervals[0].x, 0);
+            assert.strictEqual(r3.intervals[0].width, 600);
+            assert.strictEqual(r3.intervals[0].id, 'projected-interval-0');
+
+            // Negative x clamps to 0
+            const fn4 = mod.createResolveProjectedWysiwygLineIntervals({
+                getAvailableIntervals: makeGetAvailableIntervals({
+                    moved: false, intervals: [{ x: -50, width: 100 }],
+                }),
+                asArray,
+            });
+            assert.strictEqual(fn4(0, 18, 600, {}, []).intervals[0].x, 0);
+
+            // Factory validation
+            try { mod.createResolveProjectedWysiwygLineIntervals({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-projected-line-intervals", script,
+            "render/projected-line-intervals.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ProjectedParagraphStateRestoreAndShouldProject()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // ---- restoreWysiwygProjectedParagraph ----
+            function projectedEl() {
+                const attrs = { 'data-wysiwyg-projected-layout': 'true' };
+                const removed = [];
+                const classRemoved = [];
+                return {
+                    __tmWysiwygOriginalHtml: '<span>orig</span>',
+                    innerHTML: '<projected/>',
+                    classList: { remove(c) { classRemoved.push(c); } },
+                    style: {},
+                    getAttribute(k) { return attrs[k] ?? null; },
+                    removeAttribute(k) { delete attrs[k]; removed.push(k); },
+                    _attrs: attrs, _removed: removed, _classRemoved: classRemoved,
+                };
+            }
+            const el = projectedEl();
+            assert.strictEqual(mod.restoreWysiwygProjectedParagraph(el), true);
+            assert.strictEqual(el.innerHTML, '<span>orig</span>');
+            assert.ok(el._classRemoved.indexOf('tm-wysiwyg-block--projected-layout') >= 0);
+            assert.ok(el._removed.indexOf('data-wysiwyg-projected-layout') >= 0);
+            assert.strictEqual(el.style.position, '');
+
+            // Not projected → false
+            const notProjected = {
+                getAttribute() { return null; },
+            };
+            assert.strictEqual(mod.restoreWysiwygProjectedParagraph(notProjected), false);
+            assert.strictEqual(mod.restoreWysiwygProjectedParagraph(null), false);
+
+            // ---- shouldProjectWysiwygParagraph ----
+            function blockText(block) { return (block.content.runs || []).map(r => r.text || '').join(''); }
+            const fn = mod.createShouldProjectWysiwygParagraph({ blockText });
+
+            function paraEl(matchSelector) {
+                return { querySelector(sel) { return matchSelector ? {} : null; } };
+            }
+            const block = { type: 'paragraph', content: { runs: [{ kind: 'text', text: 'hello' }] } };
+
+            // Non-empty paragraph, no markers → true
+            assert.strictEqual(fn(paraEl(false), block), true);
+            // Empty text → false
+            assert.strictEqual(fn(paraEl(false), { type: 'paragraph', content: { runs: [{ kind: 'text', text: '   ' }] } }), false);
+            // Non-paragraph block → false
+            assert.strictEqual(fn(paraEl(false), { type: 'image', content: { runs: [] } }), false);
+            // Has markers → false
+            assert.strictEqual(fn(paraEl(true), block), false);
+            // null inputs → false
+            assert.strictEqual(fn(null, block), false);
+            assert.strictEqual(fn(paraEl(false), null), false);
+
+            // Factory validation
+            try { mod.createShouldProjectWysiwygParagraph({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-projected-paragraph-state", script,
+            "render/projected-paragraph-state.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ReflowProjectedSegmentsFlowsAroundIntervals()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function asText(v) { return v == null ? '' : String(v); }
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+
+            // Single full-width interval per line, lines step by lineHeight
+            function resolveProjectedWysiwygLineIntervals(y, lineHeight, bodyWidth) {
+                return { y, intervals: [{ id: 'i', x: 0, y, width: bodyWidth, height: lineHeight }] };
+            }
+
+            const reflow = mod.createReflowProjectedWysiwygSegments({
+                asArray, asText, clone, resolveProjectedWysiwygLineIntervals,
+            });
+
+            // Two words that fit on one 200px line
+            const result = reflow([
+                { text: 'foo', start: 0, rect: { width: 50 } },
+                { text: ' ', start: 3, rect: { width: 10 } },
+                { text: 'bar', start: 4, rect: { width: 50 } },
+            ], 100, 18, 200, { x: 0, width: 200 }, []);
+            assert.strictEqual(result.segments.length, 3);
+            assert.strictEqual(result.segments[0].rect.x, 0);
+            assert.strictEqual(result.segments[0].rect.y, 100);
+            assert.strictEqual(result.segments[1].rect.x, 50); // after 'foo'
+            assert.strictEqual(result.segments[2].rect.x, 60); // after 'foo '+space
+            assert.strictEqual(result.lines.length, 1);
+
+            // Leading whitespace on a line is dropped
+            const leadingSpace = reflow([
+                { text: ' ', start: 0, rect: { width: 10 } },
+                { text: 'word', start: 1, rect: { width: 40 } },
+            ], 0, 18, 200, { x: 0, width: 200 }, []);
+            // First space dropped (no content yet) → only 'word' emitted
+            assert.strictEqual(leadingSpace.segments.length, 1);
+            assert.strictEqual(leadingSpace.segments[0].text, 'word');
+            assert.strictEqual(leadingSpace.segments[0].rect.x, 0);
+
+            // Word wider than interval breaks to next line
+            const wrap = reflow([
+                { text: 'aaaa', start: 0, rect: { width: 80 } },
+                { text: 'bbbb', start: 4, rect: { width: 80 } },
+                { text: 'cccc', start: 8, rect: { width: 80 } },
+            ], 0, 20, 100, { x: 0, width: 100 }, []);
+            // Each 80px word needs its own line (interval is 100px; 2nd would be at x=80, 80+80>100)
+            assert.strictEqual(wrap.lines.length, 3);
+            assert.strictEqual(wrap.segments[0].rect.y, 0);
+            assert.strictEqual(wrap.segments[1].rect.y, 20);
+            assert.strictEqual(wrap.segments[2].rect.y, 40);
+
+            // Empty input
+            const empty = reflow([], 0, 18, 200, { x: 0, width: 200 }, []);
+            assert.deepStrictEqual(empty.segments, []);
+            assert.deepStrictEqual(empty.lines, []);
+
+            // Factory validation
+            try { mod.createReflowProjectedWysiwygSegments({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-projected-segment-reflow", script,
+            "render/projected-segment-reflow.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ProjectParagraphAroundExclusionsOrchestratesProjection()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+
+            // DOM stub
+            function makeEl(tag) {
+                return {
+                    tagName: tag, className: '', attrs: {}, style: {}, children: [],
+                    __tmWysiwygOriginalHtml: undefined, innerHTML: '<orig/>',
+                    classList: { add(c) { this._added = c; }, remove() {} },
+                    getAttribute(k) { return this.attrs[k] ?? null; },
+                    setAttribute(k, v) { this.attrs[k] = String(v); },
+                    removeAttribute(k) { delete this.attrs[k]; },
+                    replaceChildren() { this.children = []; },
+                    appendChild(c) { this.children.push(c); return c; },
+                };
+            }
+            const document = { createElement: makeEl };
+            const win = { getComputedStyle() { return { fontSize: '16px', lineHeight: '20px', fontFamily: 'Arial', fontWeight: '400', fontStyle: 'normal' }; } };
+
+            // Layout engine yields two text segments
+            function createParagraphLayoutEngine() {
+                return {
+                    layoutParagraph() {
+                        return {
+                            segments: [
+                                { text: 'hello', start: 0, rect: { x: 0, y: 0, width: 50, height: 20 } },
+                                { text: 'world', start: 5, rect: { x: 50, y: 0, width: 50, height: 20 } },
+                            ],
+                            lines: [{ id: 'ln-0', rect: { x: 0, y: 0, width: 200, height: 20 } }],
+                        };
+                    },
+                };
+            }
+            function createTextMeasurementService() { return { measureText(t) { return { width: (t||'').length * 10 }; } }; }
+            function getAvailableIntervals(y, h, frame, exclusions, minWidth) {
+                return { moved: false, intervals: [{ x: 0, y, width: 200, height: h }] };
+            }
+            function splitProjectedWysiwygSegmentsForReflow(segments) { return segments; }
+            function reflowProjectedWysiwygSegments(segments, top, lh, width) {
+                return {
+                    segments: segments.map(s => Object.assign({}, s, { rect: { x: s.rect.x, y: top, width: s.rect.width, height: lh } })),
+                    lines: [{ id: 'pl-0', rect: { x: 0, y: top, width, height: lh } }],
+                };
+            }
+            let restoreCalls = 0;
+            function restoreWysiwygProjectedParagraph() { restoreCalls++; return false; }
+            let sigCounter = 0;
+            function createWysiwygParagraphProjectionSignature() { return 'sig-' + (sigCounter); }
+            function groupProjectedWysiwygSegmentsByLine(segments) { return [{ y: 0, segments }]; }
+            function renderProjectedWysiwygLine() { return makeEl('span'); }
+
+            const project = mod.createProjectWysiwygParagraphAroundExclusions({
+                window: win, document, asArray, clone,
+                createParagraphLayoutEngine, createTextMeasurementService, getAvailableIntervals,
+                splitProjectedWysiwygSegmentsForReflow, reflowProjectedWysiwygSegments,
+                restoreWysiwygProjectedParagraph, createWysiwygParagraphProjectionSignature,
+                groupProjectedWysiwygSegmentsByLine, renderProjectedWysiwygLine,
+            });
+
+            const paragraph = makeEl('p');
+            const block = { type: 'paragraph', content: { runs: [{ kind: 'text', text: 'hello world' }] } };
+            const changed = project(paragraph, block, 0, 200, [], []);
+            assert.strictEqual(changed, true);
+            assert.strictEqual(paragraph.attrs['data-wysiwyg-projected-layout'], 'true');
+            assert.strictEqual(paragraph.attrs['data-wysiwyg-layout-signature'], 'sig-0');
+            // Original HTML captured before rewrite
+            assert.strictEqual(paragraph.__tmWysiwygOriginalHtml, '<orig/>');
+            // Children: 1 line marker + 1 projected line
+            assert.strictEqual(paragraph.children.length, 2);
+
+            // Same signature → no rewrite (returns false)
+            const again = project(paragraph, block, 0, 200, [], []);
+            assert.strictEqual(again, false);
+
+            // Empty segments → restore path
+            function emptyEngine() { return { layoutParagraph() { return { segments: [], lines: [] }; } }; }
+            const projectEmpty = mod.createProjectWysiwygParagraphAroundExclusions({
+                window: win, document, asArray, clone,
+                createParagraphLayoutEngine: emptyEngine, createTextMeasurementService, getAvailableIntervals,
+                splitProjectedWysiwygSegmentsForReflow, reflowProjectedWysiwygSegments,
+                restoreWysiwygProjectedParagraph, createWysiwygParagraphProjectionSignature,
+                groupProjectedWysiwygSegmentsByLine, renderProjectedWysiwygLine,
+            });
+            const before = restoreCalls;
+            projectEmpty(makeEl('p'), block, 0, 200, [], []);
+            assert.strictEqual(restoreCalls, before + 1);
+
+            // Factory validation
+            try { mod.createProjectWysiwygParagraphAroundExclusions({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-project-paragraph-around-exclusions", script,
+            "render/project-paragraph-around-exclusions.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_CollectWysiwygDomTextExclusionsBuildsFromObjectLayer()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function isWysiwygLayoutElementVisible(el) { return !!(el && el._visible !== false); }
+            function normalizeWrapModeName(v) { return v || 'Inline'; }
+            function wrapModeCreatesTextExclusion(mode) {
+                return mode === 'Square' || mode === 'Tight' || mode === 'TopBottom' || mode === 'Through';
+            }
+            function normalizeWrapSideName(v) { return v || 'BothSides'; }
+            function getWysiwygObjectVisualRectRelativeTo(item) {
+                return item._rect || { x: 0, y: 0, width: 100, height: 80 };
+            }
+            function createTextExclusion(object, frame) {
+                if (object.wrapMode === 'NoExclusion') return null;
+                return { objectId: object.objectId, rect: object.rect, wrapMode: object.wrapMode };
+            }
+
+            const fn = mod.createCollectWysiwygDomTextExclusions({
+                isWysiwygLayoutElementVisible, normalizeWrapModeName, wrapModeCreatesTextExclusion,
+                getWysiwygObjectVisualRectRelativeTo, normalizeWrapSideName, createTextExclusion,
+            });
+
+            function item(attrs, visible, rect) {
+                const a = attrs || {};
+                return {
+                    _visible: visible !== false,
+                    _rect: rect,
+                    getAttribute(k) { return a[k] ?? null; },
+                };
+            }
+
+            // body.querySelectorAll returns our items
+            function body(items) {
+                return { querySelectorAll() { return items; } };
+            }
+
+            // Square object → exclusion produced
+            const squareItem = item({
+                'data-object-id': 'o1',
+                'data-anchor-block-id': 'b1',
+                'data-wrap-mode': 'Square',
+                'data-wrap-side': 'Left',
+                'data-distance-left': '5',
+            }, true, { x: 10, y: 20, width: 50, height: 40 });
+            const result = fn(body([squareItem]), { left: 0, top: 0 }, { x: 0, y: 0, width: 600, height: 800 });
+            assert.strictEqual(result.length, 1);
+            assert.strictEqual(result[0].objectId, 'o1');
+            assert.strictEqual(result[0].anchorBlockId, 'b1');
+            assert.strictEqual(result[0].objectElement, squareItem);
+
+            // Hidden item skipped
+            const hidden = item({ 'data-object-id': 'h', 'data-wrap-mode': 'Square' }, false, { x: 0, y: 0, width: 50, height: 50 });
+            assert.strictEqual(fn(body([hidden]), {}, {}).length, 0);
+
+            // Inline kind skipped
+            const inline = item({ 'data-object-id': 'i', 'data-object-layer-kind': 'inline', 'data-wrap-mode': 'Square' }, true, { x: 0, y: 0, width: 50, height: 50 });
+            assert.strictEqual(fn(body([inline]), {}, {}).length, 0);
+
+            // Wrap mode without exclusion skipped (Inline default)
+            const noExcl = item({ 'data-object-id': 'n', 'data-wrap-mode': 'Inline' }, true, { x: 0, y: 0, width: 50, height: 50 });
+            assert.strictEqual(fn(body([noExcl]), {}, {}).length, 0);
+
+            // Degenerate rect skipped
+            const degenerate = item({ 'data-object-id': 'd', 'data-wrap-mode': 'Square' }, true, { x: 0, y: 0, width: 0, height: 0 });
+            assert.strictEqual(fn(body([degenerate]), {}, {}).length, 0);
+
+            // createTextExclusion returning null skipped
+            const nullExcl = item({ 'data-object-id': 'x', 'data-wrap-mode': 'NoExclusion' }, true, { x: 0, y: 0, width: 50, height: 50 });
+            // NoExclusion isn't a wrapModeCreatesTextExclusion → already skipped earlier; use Square but make createTextExclusion return null via wrapMode override
+            assert.strictEqual(fn(body([nullExcl]), {}, {}).length, 0);
+
+            // Factory validation
+            try { mod.createCollectWysiwygDomTextExclusions({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-wysiwyg-dom-text-exclusions", script,
+            "render/wysiwyg-dom-text-exclusions.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_MarkerReadersResolveCommentAndRevisionFields()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // readCommentId
+            assert.strictEqual(mod.readCommentId({ id: 'c1' }), 'c1');
+            assert.strictEqual(mod.readCommentId({ Id: 'c2' }), 'c2');
+            assert.strictEqual(mod.readCommentId(null), '');
+
+            // readCommentStatus
+            assert.strictEqual(mod.readCommentStatus({ status: 1 }), 'resolved');
+            assert.strictEqual(mod.readCommentStatus({ status: 'Resolved' }), 'resolved');
+            assert.strictEqual(mod.readCommentStatus({ Status: 'resolved-by-user' }), 'resolved');
+            assert.strictEqual(mod.readCommentStatus({ status: 'Open' }), 'open');
+            assert.strictEqual(mod.readCommentStatus({}), 'open');
+
+            // commentById
+            const model = { comments: [{ id: 'a' }, { Id: 'b' }] };
+            assert.strictEqual(mod.commentById(model, 'b').Id, 'b');
+            assert.strictEqual(mod.commentById(model, 'missing'), null);
+            assert.strictEqual(mod.commentById({}, 'a'), null);
+
+            // createRevisionReaders
+            function normalizeRevisionStatus(v) {
+                const t = String(v || 'Pending');
+                if (t.toLowerCase().indexOf('accept') >= 0) return 'Accepted';
+                if (t.toLowerCase().indexOf('reject') >= 0) return 'Rejected';
+                return 'Pending';
+            }
+            function normalizeRevisionType(v) {
+                const t = String(v || 'Insertion');
+                if (t === 'Deletion') return 'Deletion';
+                if (t === 'FormatChange' || t === 'Formatting') return 'FormatChange';
+                return 'Insertion';
+            }
+            const readers = mod.createRevisionReaders({ normalizeRevisionStatus, normalizeRevisionType });
+
+            assert.strictEqual(readers.readRevisionStatus({ status: 'accepted' }), 'Accepted');
+            assert.strictEqual(readers.readRevisionStatus({ Action: 'reject' }), 'Rejected');
+            assert.strictEqual(readers.readRevisionStatus({}), 'Pending');
+
+            assert.strictEqual(readers.readRevisionTypeName({ type: 'Deletion' }), 'Deletion');
+            assert.strictEqual(readers.readRevisionTypeName({ Type: 'FormatChange' }), 'FormatChange');
+            assert.strictEqual(readers.readRevisionTypeName({}), 'Insertion');
+
+            // readRevisionMarkerType
+            assert.strictEqual(readers.readRevisionMarkerType({ type: 'Deletion' }), 'revisionDeletion');
+            assert.strictEqual(readers.readRevisionMarkerType({ type: 'FormatChange' }), 'revisionFormat');
+            assert.strictEqual(readers.readRevisionMarkerType({ type: 'Insertion' }), 'revisionInsertion');
+            assert.strictEqual(readers.readRevisionMarkerType({}), 'revisionInsertion');
+
+            // Factory validation
+            try { mod.createRevisionReaders({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-marker-readers", script,
+            "core/marker-readers.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_AnchorRangesResolveCommentAndRevisionRanges()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function asText(v) { return v == null ? '' : String(v); }
+            function findBlock(model, id) { return (model.blocks || []).find(b => b.id === id) || null; }
+            function blockText(block) {
+                return (block && block.content && block.content.runs || []).map(r => r.text || '').join('');
+            }
+            function resolveInlineRunDisplayText(run) { return run && run.text || ''; }
+
+            const ranges = mod.createAnchorRanges({
+                asArray, asText, findBlock, blockText, resolveInlineRunDisplayText,
+            });
+
+            const model = { blocks: [
+                { id: 'p1', content: { runs: [{ text: 'hello' }, { text: ' world' }] } }, // length 11
+            ]};
+
+            // blockOffsetFromInlineIndex: inline index 1 + offset 2 → 5 (hello) + 2 = 7
+            assert.strictEqual(ranges.blockOffsetFromInlineIndex(model.blocks[0], 1, 2), 7);
+            // index 0, offset 3 → 3
+            assert.strictEqual(ranges.blockOffsetFromInlineIndex(model.blocks[0], 0, 3), 3);
+
+            // rangeFromCommentAnchor — flat offsets
+            const flat = ranges.rangeFromCommentAnchor(model, {
+                anchor: { blockId: 'p1', startOffset: 2, endOffset: 8 },
+            });
+            assert.deepStrictEqual(flat, { startBlockId: 'p1', endBlockId: 'p1', startOffset: 2, endOffset: 8 });
+
+            // rangeFromCommentAnchor — inline indices
+            const inline = ranges.rangeFromCommentAnchor(model, {
+                anchor: { StartBlockId: 'p1', StartInlineIndex: 1, StartOffset: 0, EndInlineIndex: 1, EndOffset: 6 },
+            });
+            // start = 5 + 0 = 5; end = 5 + 6 = 11
+            assert.strictEqual(inline.startOffset, 5);
+            assert.strictEqual(inline.endOffset, 11);
+
+            // Offsets clamped to text length
+            const clamped = ranges.rangeFromCommentAnchor(model, {
+                anchor: { blockId: 'p1', startOffset: 3, endOffset: 999 },
+            });
+            assert.strictEqual(clamped.endOffset, 11);
+
+            // Empty range extends to length
+            const empty = ranges.rangeFromCommentAnchor(model, {
+                anchor: { blockId: 'p1', startOffset: 2, endOffset: 2 },
+            });
+            assert.strictEqual(empty.endOffset, 11);
+
+            // No blockId → null
+            assert.strictEqual(ranges.rangeFromCommentAnchor(model, { anchor: {} }), null);
+            assert.strictEqual(ranges.rangeFromCommentAnchor(model, {}), null);
+
+            // rangeFromRevision — uses range/affectedRange
+            const rev = ranges.rangeFromRevision(model, {
+                affectedRange: { blockId: 'p1', start: 1, end: 4 },
+            });
+            assert.deepStrictEqual(rev, { startBlockId: 'p1', endBlockId: 'p1', startOffset: 1, endOffset: 4 });
+
+            // Revision with inline index
+            const revInline = ranges.rangeFromRevision(model, {
+                Range: { StartBlockId: 'p1', StartInlineIndex: 1, StartOffset: 1, end: 11 },
+            });
+            assert.strictEqual(revInline.startOffset, 6); // 5 + 1
+
+            assert.strictEqual(ranges.rangeFromRevision(model, {}), null);
+
+            // Factory validation
+            try { mod.createAnchorRanges({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-anchor-ranges", script,
+            "core/anchor-ranges.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_InlineMarkerRangesAccumulatePerIdAcrossRegions()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function resolveInlineRunDisplayText(run) { return (run && run.text) || ''; }
+            function readCommentIdsFromRun(run) { return asArray(run && run.commentIds); }
+            function readRevisionIdsFromRun(run) { return run && run.revisionId ? [run.revisionId] : []; }
+
+            const collectors = mod.createInlineMarkerRanges({
+                asArray, resolveInlineRunDisplayText, readCommentIdsFromRun, readRevisionIdsFromRun,
+            });
+            assert.ok(typeof collectors.collectInlineCommentRanges === 'function');
+            assert.ok(typeof collectors.collectInlineRevisionRanges === 'function');
+
+            // Body paragraph: "hello world" with comment c1 on 'hello', c1 again on ' world'
+            const model = {
+                body: { blocks: [{
+                    id: 'p1', type: 'paragraph',
+                    content: { runs: [
+                        { text: 'hello', commentIds: ['c1'] },
+                        { text: ' world', commentIds: ['c1'] },
+                        { text: '!', commentIds: ['c2'] },
+                    ]},
+                }]},
+            };
+            const comments = collectors.collectInlineCommentRanges(model);
+            // c1 spans both runs → 0..11
+            assert.deepStrictEqual(comments.c1, { startBlockId: 'p1', endBlockId: 'p1', startOffset: 0, endOffset: 11 });
+            // c2 only on '!' → 11..12
+            assert.deepStrictEqual(comments.c2, { startBlockId: 'p1', endBlockId: 'p1', startOffset: 11, endOffset: 12 });
+
+            // Revisions
+            const revModel = {
+                body: { blocks: [{
+                    id: 'p1', type: 'paragraph',
+                    content: { runs: [
+                        { text: 'abc', revisionId: 'r1' },
+                        { text: 'def' },
+                        { text: 'ghi', revisionId: 'r1' },
+                    ]},
+                }]},
+            };
+            const revs = collectors.collectInlineRevisionRanges(revModel);
+            // r1 spans 0..3 and 6..9 → widened to 0..9
+            assert.deepStrictEqual(revs.r1, { startBlockId: 'p1', endBlockId: 'p1', startOffset: 0, endOffset: 9 });
+
+            // Table cells are recursed
+            const tableModel = {
+                body: { blocks: [{
+                    type: 'table',
+                    content: { rows: [{ cells: [{ blocks: [{
+                        id: 'cell-p', type: 'paragraph',
+                        content: { runs: [{ text: 'xy', commentIds: ['tc'] }] },
+                    }]}]}]},
+                }]},
+            };
+            const tableComments = collectors.collectInlineCommentRanges(tableModel);
+            assert.deepStrictEqual(tableComments.tc, { startBlockId: 'cell-p', endBlockId: 'cell-p', startOffset: 0, endOffset: 2 });
+
+            // Headers + footers scanned
+            const hfModel = {
+                body: { blocks: [] },
+                headers: [{ blocks: [{ id: 'h1', type: 'paragraph', content: { runs: [{ text: 'hdr', commentIds: ['hc'] }] } }] }],
+                footers: [{ blocks: [{ id: 'f1', type: 'paragraph', content: { runs: [{ text: 'ftr', commentIds: ['fc'] }] } }] }],
+            };
+            const hf = collectors.collectInlineCommentRanges(hfModel);
+            assert.ok(hf.hc && hf.hc.startBlockId === 'h1');
+            assert.ok(hf.fc && hf.fc.startBlockId === 'f1');
+
+            // Empty model → {}
+            assert.deepStrictEqual(collectors.collectInlineCommentRanges({}), {});
+
+            // Factory validation
+            try { mod.createInlineMarkerRanges({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-inline-marker-ranges", script,
+            "core/inline-marker-ranges.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_RuntimeMarkerBuildersEmitCommentAndRevisionMarkers()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function asText(v) { return v == null ? '' : String(v); }
+            function sortObject(v) { return v; }
+            function collectInlineCommentRanges(model) { return model._commentRanges || {}; }
+            function collectInlineRevisionRanges(model) { return model._revisionRanges || {}; }
+            function readCommentId(c) { return c && c.id || ''; }
+            function readCommentStatus(c) { return c && c.status === 1 ? 'resolved' : 'open'; }
+            function rangeFromCommentAnchor(model, c) { return c && c.anchorRange || null; }
+            function normalizeRevision(r) { return Object.assign({ id: '', status: 'Pending', type: 'Insertion', payload: {} }, r || {}); }
+            function readRevisionStatus(r) { return r.status || 'Pending'; }
+            function rangeFromRevision(model, r) { return r && r.fallbackRange || null; }
+            function readRevisionMarkerType(r) {
+                if (r.type === 'Deletion') return 'revisionDeletion';
+                if (r.type === 'FormatChange') return 'revisionFormat';
+                return 'revisionInsertion';
+            }
+
+            const builders = mod.createRuntimeMarkerBuilders({
+                asArray, asText, sortObject, collectInlineCommentRanges, collectInlineRevisionRanges,
+                readCommentId, readCommentStatus, rangeFromCommentAnchor, normalizeRevision,
+                readRevisionStatus, rangeFromRevision, readRevisionMarkerType,
+            });
+
+            // Comments — inline range preferred
+            const commentModel = {
+                comments: [
+                    { id: 'c1', status: 0 },
+                    { id: 'c2', status: 1, anchorRange: { startBlockId: 'p2', startOffset: 0, endOffset: 5 } },
+                    { id: '' },  // no id → skipped
+                    { id: 'c3' }, // no range → skipped
+                ],
+                _commentRanges: { c1: { startBlockId: 'p1', startOffset: 2, endOffset: 8 } },
+            };
+            const comments = builders.buildRuntimeCommentMarkers(commentModel);
+            assert.strictEqual(comments.length, 2);
+            assert.strictEqual(comments[0].id, 'comment:c1');
+            assert.strictEqual(comments[0].blockId, 'p1');
+            assert.strictEqual(comments[0].isResolved, false);
+            assert.strictEqual(comments[0].priority, 60);
+            assert.strictEqual(comments[1].id, 'comment:c2');
+            assert.strictEqual(comments[1].isResolved, true);
+
+            // Revisions — only Pending with resolvable range
+            const revModel = {
+                revisions: [
+                    { id: 'r1', status: 'Pending', type: 'Insertion', payloadJson: 'added' },
+                    { id: 'r2', status: 'Accepted', type: 'Insertion' }, // not pending → skipped
+                    { id: 'r3', status: 'Pending', type: 'Deletion', payload: { text: 'removed' }, fallbackRange: { startBlockId: 'p1', startOffset: 0, endOffset: 7 } },
+                ],
+                _revisionRanges: { r1: { startBlockId: 'p1', startOffset: 0, endOffset: 5 } },
+            };
+            const revs = builders.buildRuntimeRevisionMarkers(revModel);
+            assert.strictEqual(revs.length, 2);
+            assert.strictEqual(revs[0].id, 'revision:r1');
+            assert.strictEqual(revs[0].type, 'revisionInsertion');
+            assert.strictEqual(revs[0].insertedText, 'added');
+            assert.strictEqual(revs[0].originalText, '');
+            assert.strictEqual(revs[0].priority, 50);
+            // Deletion carries originalText from payload.text
+            assert.strictEqual(revs[1].id, 'revision:r3');
+            assert.strictEqual(revs[1].type, 'revisionDeletion');
+            assert.strictEqual(revs[1].originalText, 'removed');
+            assert.strictEqual(revs[1].insertedText, '');
+
+            // Empty model → []
+            assert.deepStrictEqual(builders.buildRuntimeCommentMarkers({}), []);
+            assert.deepStrictEqual(builders.buildRuntimeRevisionMarkers({}), []);
+
+            // Factory validation
+            try { mod.createRuntimeMarkerBuilders({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-runtime-markers", script,
+            "core/runtime-markers.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_TestProjectionsMapBlockTypeAndRuns()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // blockTypeForTest — numeric enums
+            assert.strictEqual(mod.blockTypeForTest({ Type: 5 }), 'image');
+            assert.strictEqual(mod.blockTypeForTest({ Type: 4 }), 'table');
+            assert.strictEqual(mod.blockTypeForTest({ Type: 6 }), 'pageBreak');
+            assert.strictEqual(mod.blockTypeForTest({ Type: 0 }), 'paragraph');
+            // String types
+            assert.strictEqual(mod.blockTypeForTest({ type: 'Image' }), 'image');
+            assert.strictEqual(mod.blockTypeForTest({ type: 'table' }), 'table');
+            assert.strictEqual(mod.blockTypeForTest({ type: 'PageBreak' }), 'pageBreak');
+            assert.strictEqual(mod.blockTypeForTest({ type: 'paragraph' }), 'paragraph');
+            assert.strictEqual(mod.blockTypeForTest({}), 'paragraph');
+            assert.strictEqual(mod.blockTypeForTest(null), 'paragraph');
+
+            // paragraphRunsForTest — running offsets
+            const runs = mod.paragraphRunsForTest({
+                id: 'p1',
+                content: { runs: [{ id: 'r1', text: 'hello' }, { id: 'r2', text: ' world' }] },
+            });
+            assert.strictEqual(runs.length, 2);
+            assert.deepStrictEqual([runs[0].Start, runs[0].End], [0, 5]);
+            assert.deepStrictEqual([runs[1].Start, runs[1].End], [5, 11]);
+            assert.strictEqual(runs[0].Id, 'r1');
+
+            // Pascal-case content + Inlines
+            const pascal = mod.paragraphRunsForTest({
+                Id: 'p2',
+                Content: { Inlines: [{ Id: 'i1', Text: 'abc', Marks: [{ type: 'bold' }] }] },
+            });
+            assert.strictEqual(pascal[0].Text, 'abc');
+            assert.strictEqual(pascal[0].Marks.length, 1);
+
+            // Empty block → synthesized empty run
+            const empty = mod.paragraphRunsForTest({ id: 'p3', content: { runs: [] } });
+            assert.strictEqual(empty.length, 1);
+            assert.strictEqual(empty[0].Text, '');
+            assert.strictEqual(empty[0].Id, 'p3-empty');
+
+            // Text fallback chain (FallbackText / Key)
+            const fallback = mod.paragraphRunsForTest({
+                id: 'p4',
+                content: { runs: [{ id: 'r', fallbackText: 'fb' }, { id: 'r2', key: 'kk' }] },
+            });
+            assert.strictEqual(fallback[0].Text, 'fb');
+            assert.strictEqual(fallback[1].Text, 'kk');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-test-projections", script,
+            "core/test-projections.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_MarkerStoreQueriesTransformsAndRenders()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : (v == null ? [] : [v]); }
+            function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+
+            const create = mod.createMarkerStoreFactory({ asArray, clone });
+
+            const store = create([
+                { id: 'm1', type: 'comment', status: 'open', priority: 60, range: { startBlockId: 'p1', endBlockId: 'p1', startOffset: 0, endOffset: 5 } },
+                { id: 'm2', type: 'revisionDeletion', priority: 50, range: { startBlockId: 'p1', endBlockId: 'p1', startOffset: 3, endOffset: 8 } },
+                { id: 'm3', type: 'comment', priority: 70, range: { startBlockId: 'p2', endBlockId: 'p2', startOffset: 0, endOffset: 2 } },
+            ]);
+
+            // Sorted by priority desc
+            assert.deepStrictEqual(store.all.map(m => m.id), ['m3', 'm1', 'm2']);
+
+            // byType
+            assert.deepStrictEqual(store.byType('comment').map(m => m.id), ['m3', 'm1']);
+            // byBlock
+            assert.deepStrictEqual(store.byBlock('p1').map(m => m.id), ['m1', 'm2']);
+
+            // overlapping
+            const over = store.overlapping({ startBlockId: 'p1', endBlockId: 'p1', startOffset: 4, endOffset: 6 });
+            assert.deepStrictEqual(over.map(m => m.id).sort(), ['m1', 'm2']);
+            // No overlap
+            assert.strictEqual(store.overlapping({ startBlockId: 'p1', endBlockId: 'p1', startOffset: 20, endOffset: 25 }).length, 0);
+
+            // transformText — insert 3 chars at offset 0 in p1 shifts both ranges
+            const after = store.transformText('p1', 0, 3, false);
+            const m1 = after.find(m => m.id === 'm1');
+            assert.strictEqual(m1.range.startOffset, 3);
+            assert.strictEqual(m1.range.endOffset, 8);
+            // store.all reflects the transform
+            assert.strictEqual(store.all.find(m => m.id === 'm1').range.startOffset, 3);
+
+            // delete shrinks
+            store.transformText('p1', 0, 3, true);
+            assert.strictEqual(store.all.find(m => m.id === 'm1').range.startOffset, 0);
+
+            // renderClasses
+            const classes = store.renderClasses();
+            const c1 = classes.find(c => c.id === 'm1');
+            assert.ok(c1.className.includes('tm-wysiwyg-marker--comment'));
+            assert.ok(c1.className.includes('tm-document-inline--comment-anchor--open'));
+            const c2 = classes.find(c => c.id === 'm2');
+            assert.ok(c2.className.includes('tm-wysiwyg-marker--revision-delete'));
+
+            // remove
+            assert.strictEqual(store.remove('m2'), true);
+            assert.strictEqual(store.all.find(m => m.id === 'm2'), undefined);
+            assert.strictEqual(store.remove('nonexistent'), false);
+
+            // Factory validation
+            try { mod.createMarkerStoreFactory({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-marker-store", script,
+            "core/marker-store.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ReviewDisplayModeClassNormalisesAndApplies()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // normalizeReviewDisplayModeClass
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass('AllMarkup'), 'tm-wysiwyg-host--review-all-markup');
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass('Simple Markup'), 'tm-wysiwyg-host--review-simple-markup');
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass('no-markup'), 'tm-wysiwyg-host--review-no-markup');
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass('Original'), 'tm-wysiwyg-host--review-original');
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass('weird'), 'tm-wysiwyg-host--review-all-markup');
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass(null), 'tm-wysiwyg-host--review-all-markup');
+            // Separators normalized away
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass('simple_markup'), 'tm-wysiwyg-host--review-simple-markup');
+            assert.strictEqual(mod.normalizeReviewDisplayModeClass('NO.MARKUP'), 'tm-wysiwyg-host--review-no-markup');
+
+            // applyReviewDisplayModeClass
+            function makeRoot() {
+                const set = new Set(['tm-wysiwyg-host--review-all-markup', 'keep-me']);
+                return {
+                    classList: {
+                        _set: set,
+                        add(c) { set.add(c); },
+                        remove(c) { set.delete(c); },
+                        has(c) { return set.has(c); },
+                    },
+                };
+            }
+            const root = makeRoot();
+            mod.applyReviewDisplayModeClass(root, 'Simple Markup');
+            assert.strictEqual(root.classList.has('tm-wysiwyg-host--review-simple-markup'), true);
+            assert.strictEqual(root.classList.has('tm-wysiwyg-host--review-all-markup'), false);
+            assert.strictEqual(root.classList.has('keep-me'), true);
+
+            // Switching modes removes the previous
+            mod.applyReviewDisplayModeClass(root, 'no-markup');
+            assert.strictEqual(root.classList.has('tm-wysiwyg-host--review-no-markup'), true);
+            assert.strictEqual(root.classList.has('tm-wysiwyg-host--review-simple-markup'), false);
+
+            // null root → no-op (no throw)
+            mod.applyReviewDisplayModeClass(null, 'AllMarkup');
+            mod.applyReviewDisplayModeClass({}, 'AllMarkup');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-review-display-mode", script,
+            "render/review-display-mode.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_HeaderFooterRegionResolvesByScopeAndPage()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // normalizeHeaderFooterScope
+            assert.strictEqual(mod.normalizeHeaderFooterScope('First Page'), 'FirstPage');
+            assert.strictEqual(mod.normalizeHeaderFooterScope('firstPage'), 'FirstPage');
+            assert.strictEqual(mod.normalizeHeaderFooterScope('Even Page'), 'EvenPage');
+            assert.strictEqual(mod.normalizeHeaderFooterScope('evenpage'), 'EvenPage');
+            assert.strictEqual(mod.normalizeHeaderFooterScope('Primary'), 'Primary');
+            assert.strictEqual(mod.normalizeHeaderFooterScope('whatever'), 'Primary');
+            assert.strictEqual(mod.normalizeHeaderFooterScope(null), 'Primary');
+            assert.strictEqual(mod.normalizeHeaderFooterScope(''), 'Primary');
+
+            // No headers → null
+            assert.strictEqual(mod.resolveHeaderFooterRegion({}, 'header', 1), null);
+            assert.strictEqual(mod.resolveHeaderFooterRegion({ headers: [] }, 'header', 1), null);
+
+            const model = {
+                headers: [
+                    { id: 'h-first', scope: 'first', text: 'first' },
+                    { id: 'h-even', scope: 'evenPage', text: 'even' },
+                    { id: 'h-primary', scope: 'Primary', text: 'primary' },
+                ],
+                footers: [
+                    { id: 'f-primary', scope: 'Primary', text: 'footer-primary' },
+                ],
+            };
+
+            // Page 1 → FirstPage scope
+            assert.strictEqual(mod.resolveHeaderFooterRegion(model, 'header', 1).id, 'h-first');
+            // Page 2 → EvenPage scope
+            assert.strictEqual(mod.resolveHeaderFooterRegion(model, 'header', 2).id, 'h-even');
+            // Page 3 → Primary scope
+            assert.strictEqual(mod.resolveHeaderFooterRegion(model, 'header', 3).id, 'h-primary');
+            // Page 4 → EvenPage scope (even)
+            assert.strictEqual(mod.resolveHeaderFooterRegion(model, 'header', 4).id, 'h-even');
+
+            // Missing scope → falls back to Primary
+            const noEven = { headers: [
+                { id: 'h-p', scope: 'Primary', text: 'p' },
+                { id: 'h-first', scope: 'first', text: 'f' },
+            ] };
+            assert.strictEqual(mod.resolveHeaderFooterRegion(noEven, 'header', 2).id, 'h-p');
+
+            // Missing Primary too → first available
+            const onlyFirst = { headers: [{ id: 'h-x', scope: 'first', text: 'x' }] };
+            assert.strictEqual(mod.resolveHeaderFooterRegion(onlyFirst, 'header', 3).id, 'h-x');
+
+            // type=footer uses model.footers
+            assert.strictEqual(mod.resolveHeaderFooterRegion(model, 'footer', 1).id, 'f-primary');
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-header-footer-region", script,
+            "render/header-footer-region.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_InlineStyleSanitiseGuardsColorFontAndTextHtml()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // isSafeInlineCssColor — hex
+            assert.strictEqual(mod.isSafeInlineCssColor('#abc'), true);
+            assert.strictEqual(mod.isSafeInlineCssColor('#ff00aa'), true);
+            assert.strictEqual(mod.isSafeInlineCssColor('#ff00aa80'), true);
+            assert.strictEqual(mod.isSafeInlineCssColor('#zz'), false);
+            // rgb/rgba/hsl/hsla
+            assert.strictEqual(mod.isSafeInlineCssColor('rgb(0, 0, 0)'), true);
+            assert.strictEqual(mod.isSafeInlineCssColor('rgba(1,2,3,0.5)'), true);
+            assert.strictEqual(mod.isSafeInlineCssColor('hsl(120, 50%, 50%)'), true);
+            // keyword
+            assert.strictEqual(mod.isSafeInlineCssColor('red'), true);
+            assert.strictEqual(mod.isSafeInlineCssColor('dodger-blue'), true);
+            // rejected: empty, suspicious, too long
+            assert.strictEqual(mod.isSafeInlineCssColor(''), false);
+            assert.strictEqual(mod.isSafeInlineCssColor('   '), false);
+            assert.strictEqual(mod.isSafeInlineCssColor('url(http://x)'), false);
+            assert.strictEqual(mod.isSafeInlineCssColor('expression(alert(1))'), false);
+            assert.strictEqual(mod.isSafeInlineCssColor('a'.repeat(40)), false);
+            assert.strictEqual(mod.isSafeInlineCssColor(null), false);
+
+            // isSafeInlineFontFamily
+            assert.strictEqual(mod.isSafeInlineFontFamily('Arial, sans-serif'), true);
+            assert.strictEqual(mod.isSafeInlineFontFamily('"Times New Roman"'), true);
+            assert.strictEqual(mod.isSafeInlineFontFamily('Georgia'), true);
+            assert.strictEqual(mod.isSafeInlineFontFamily(''), false);
+            assert.strictEqual(mod.isSafeInlineFontFamily(null), false);
+            assert.strictEqual(mod.isSafeInlineFontFamily('url(evil)'), false);
+            assert.strictEqual(mod.isSafeInlineFontFamily('a'.repeat(161)), false);
+
+            // normalizeInlineFontSize
+            assert.strictEqual(mod.normalizeInlineFontSize('12'), '12pt');
+            assert.strictEqual(mod.normalizeInlineFontSize('12.5'), '12.5pt');
+            assert.strictEqual(mod.normalizeInlineFontSize('14px'), '14px');
+            assert.strictEqual(mod.normalizeInlineFontSize('1.2rem'), '1.2rem');
+            assert.strictEqual(mod.normalizeInlineFontSize('120%'), '120%');
+            assert.strictEqual(mod.normalizeInlineFontSize('  12pt  '), '12pt');
+            // rejected
+            assert.strictEqual(mod.normalizeInlineFontSize(''), '');
+            assert.strictEqual(mod.normalizeInlineFontSize('xx-large'), '');
+            assert.strictEqual(mod.normalizeInlineFontSize('12 px'), '');
+            assert.strictEqual(mod.normalizeInlineFontSize('-5'), '');
+
+            // createRenderInlineTextHtml — single line just escapes
+            function escapeHtml(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+            const render = mod.createRenderInlineTextHtml({ escapeHtml });
+            assert.strictEqual(render('hello'), 'hello');
+            assert.strictEqual(render('a<b>c'), 'a&lt;b&gt;c');
+            // \\n becomes a <br data-inline-break>
+            assert.strictEqual(
+                render('a\nb'),
+                'a<br data-inline-break="true">b');
+            // Trailing newline → adds caret placeholder
+            assert.strictEqual(
+                render('a\n'),
+                'a<br data-inline-break="true"><br data-caret-placeholder="true" aria-hidden="true">');
+            // Leading newline only emits the break (no leading text)
+            assert.strictEqual(
+                render('\nb'),
+                '<br data-inline-break="true">b');
+            // Multiple newlines
+            assert.ok(render('a\nb\nc').includes('<br data-inline-break="true">'));
+            // null safe
+            assert.strictEqual(render(null), '');
+            assert.strictEqual(render(undefined), '');
+
+            // Factory validation
+            try { mod.createRenderInlineTextHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-inline-style-sanitise", script,
+            "render/inline-style-sanitise.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_RenderFormattedInlineHtmlAppliesMarksToSpan()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function markType(m) { return String((m && (m.type || m.Type)) || '').toLowerCase(); }
+            function markValue(m) { return m && (m.value !== undefined ? m.value : m.Value); }
+            function isSafeInlineFontFamily(v) { return !!v && /^[\w\s"',.-]+$/.test(v); }
+            function normalizeInlineFontSize(v) {
+                const t = String(v || '').trim();
+                if (/^\d+(\.\d+)?$/.test(t)) return t + 'pt';
+                if (/^\d+(\.\d+)?(px|pt|rem|em|%)$/i.test(t)) return t;
+                return '';
+            }
+            function isSafeInlineCssColor(v) {
+                const t = String(v || '').trim();
+                return !!t && (/^#[0-9a-f]{3,8}$/i.test(t) || /^[a-z][a-z0-9-]*$/i.test(t));
+            }
+            function escapeHtml(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+            function renderInlineTextHtml(text) { return escapeHtml(String(text || '')); }
+            function asArray(v) { return Array.isArray(v) ? v : []; }
+            function asText(v) { return v == null ? '' : String(v); }
+            function unique(arr) { return Array.from(new Set(arr)); }
+
+            const render = mod.createRenderFormattedInlineHtml({
+                markType, markValue, isSafeInlineFontFamily, normalizeInlineFontSize,
+                isSafeInlineCssColor, escapeHtml, renderInlineTextHtml,
+                asArray, asText, unique,
+            });
+
+            // No marks → unwrapped content
+            assert.strictEqual(render({ marks: [] }, 'hello'), 'hello');
+            assert.strictEqual(render(null, 'plain'), 'plain');
+
+            // Bold mark → adds the bold class
+            const bold = render({ id: 'r1', marks: [{ type: 'bold' }] }, 'hi');
+            assert.ok(bold.startsWith('<span '));
+            assert.ok(bold.includes('tm-document-inline--bold'));
+            assert.ok(bold.includes('data-inline-id="r1"'));
+            assert.ok(bold.endsWith('>hi</span>'));
+
+            // Italic + underline + strike compose; text-decoration aggregated
+            const combo = render({ marks: [
+                { type: 'italic' }, { type: 'underline' }, { type: 'strike' },
+            ] }, 'X');
+            assert.ok(combo.includes('tm-document-inline--italic'));
+            assert.ok(combo.includes('tm-document-inline--underline'));
+            assert.ok(combo.includes('tm-document-inline--strikethrough'));
+            assert.ok(combo.includes('text-decoration-line:underline line-through'));
+
+            // Superscript adds vertical-align + font-size styles
+            const sup = render({ marks: [{ type: 'superscript' }] }, '2');
+            assert.ok(sup.includes('tm-document-inline--superscript'));
+            assert.ok(sup.includes('vertical-align:super'));
+            assert.ok(sup.includes('font-size:0.8em'));
+
+            // Safe font-family applied
+            const ff = render({ marks: [{ type: 'fontfamily', value: 'Arial' }] }, 'a');
+            assert.ok(ff.includes('font-family:Arial'));
+
+            // Unsafe font-family dropped → no wrapper
+            const unsafeFf = render({ marks: [{ type: 'fontfamily', value: 'url(x)' }] }, 'a');
+            assert.strictEqual(unsafeFf, 'a');
+
+            // Font-size normalised
+            const fsz = render({ marks: [{ type: 'fontsize', value: '14' }] }, 'a');
+            assert.ok(fsz.includes('font-size:14pt'));
+
+            // text-color + highlight
+            const colors = render({ marks: [
+                { type: 'textcolor', value: '#ff0000' },
+                { type: 'highlight', value: 'yellow' },
+            ] }, 'c');
+            assert.ok(colors.includes('color:#ff0000'));
+            assert.ok(colors.includes('background-color:yellow'));
+
+            // Unsafe color dropped (no expression)
+            const noColor = render({ marks: [
+                { type: 'textcolor', value: 'expression(1)' },
+            ] }, 'x');
+            assert.strictEqual(noColor, 'x');
+
+            // Link mark reads href from mark.href
+            const link = render({ id: 'r2', marks: [
+                { type: 'link', href: 'https://example.com' },
+            ] }, 'go');
+            assert.ok(link.includes('tm-document-inline--link'));
+            assert.ok(link.includes('data-href="https://example.com"'));
+
+            // Link mark falls back to mark.value
+            const linkVal = render({ marks: [
+                { type: 'link', value: 'https://fallback' },
+            ] }, 'go');
+            assert.ok(linkVal.includes('data-href="https://fallback"'));
+
+            // innerHtml param bypasses renderInlineTextHtml
+            const inner = render({ marks: [{ type: 'bold' }] }, '', '<em>nested</em>');
+            assert.ok(inner.includes('>nested</em></span>'));
+
+            // Pascal-case marks
+            const pascal = render({ Marks: [{ Type: 'BOLD' }] }, 'p');
+            assert.ok(pascal.includes('tm-document-inline--bold'));
+
+            // Factory validation
+            try { mod.createRenderFormattedInlineHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-render-formatted-inline-html", script,
+            "render/inline-formatted-html.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_MarkerSpanHtmlBuildsCommentRevisionAndSearchSpans()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function escapeHtml(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            function asText(v) { return v == null ? '' : String(v); }
+
+            // comment span — basic + active + resolved
+            const renderComment = mod.createRenderCommentSpanHtml({ escapeHtml, asText });
+            const basic = renderComment({}, 'c-1', 'hi');
+            assert.ok(basic.startsWith('<span '));
+            assert.ok(basic.includes('data-testid="document-comment-marker"'));
+            assert.ok(basic.includes('data-comment-id="c-1"'));
+            assert.ok(basic.includes('data-marker-id="comment:c-1"'));
+            assert.ok(basic.includes('data-comment-status="open"'));
+            assert.ok(basic.includes('aria-current="false"'));
+            assert.ok(basic.endsWith('>hi</span>'));
+
+            const active = renderComment({ activeCommentId: 'c-1' }, 'c-1', 'x');
+            assert.ok(active.includes('--selected'));
+            assert.ok(active.includes('aria-current="true"'));
+
+            const resolved = renderComment({}, 'c-2', 'r', 'resolved');
+            assert.ok(resolved.includes('--resolved'));
+            assert.ok(resolved.includes('data-comment-status="resolved"'));
+
+            // Custom innerHtml param bypasses text escape
+            const inner = renderComment({}, 'c-3', '', 'open', '<em>x</em>');
+            assert.ok(inner.endsWith('<em>x</em></span>'));
+
+            // revision span — needs revisionById + readRevisionMarkerType stubs
+            function revisionById(model, id) {
+                return (model && model.revisions || []).find(r => r.id === id) || null;
+            }
+            function readRevisionMarkerType(revision) {
+                if (!revision) return 'revisionInsertion';
+                if (revision.type === 'Deletion') return 'revisionDeletion';
+                if (revision.type === 'FormatChange') return 'revisionFormat';
+                return 'revisionInsertion';
+            }
+            const renderRevision = mod.createRenderRevisionSpanHtml({
+                revisionById, readRevisionMarkerType, escapeHtml, asText,
+            });
+            const inst = { model: { revisions: [
+                { id: 'r1', type: 'Insertion' },
+                { id: 'r2', type: 'Deletion' },
+                { id: 'r3', type: 'FormatChange' },
+            ] } };
+            const insRev = renderRevision(inst, 'r1', 'hi');
+            assert.ok(insRev.includes('tm-document-inline--revision-insert'));
+            assert.ok(insRev.includes('data-testid="document-revision-marker"'));
+            assert.ok(insRev.includes('data-testid="document-wysiwyg-revision-insert"'));
+            assert.ok(insRev.includes('data-revision-id="r1"'));
+
+            const delRev = renderRevision(inst, 'r2', 'gone');
+            assert.ok(delRev.includes('tm-document-inline--revision-delete'));
+            assert.ok(delRev.includes('document-wysiwyg-revision-delete'));
+
+            const fmtRev = renderRevision(inst, 'r3', 'fmt');
+            assert.ok(fmtRev.includes('tm-document-inline--revision-format'));
+            assert.ok(fmtRev.includes('document-wysiwyg-revision-format'));
+
+            // active revision toggles --selected class
+            const activeRev = renderRevision(
+                Object.assign({}, inst, { activeRevisionId: 'r1' }),
+                'r1', 'hi');
+            assert.ok(activeRev.includes('tm-wysiwyg-revision--selected'));
+            assert.ok(activeRev.includes('aria-current="true"'));
+
+            // Explicit marker.type overrides revision lookup
+            const fmtFromMarker = renderRevision(inst, 'r1', 'x',
+                { type: 'revisionFormat' });
+            assert.ok(fmtFromMarker.includes('tm-document-inline--revision-format'));
+
+            // search span
+            const renderSearch = mod.createRenderSearchSpanHtml({ escapeHtml, asText });
+            const searchHit = renderSearch({}, { id: 'sm-1' }, 'match');
+            assert.ok(searchHit.startsWith('<span '));
+            assert.ok(searchHit.includes('data-marker-id="search:sm-1"'));
+            assert.ok(searchHit.includes('data-search-marker-id="sm-1"'));
+            assert.ok(searchHit.includes('aria-current="false"'));
+            assert.ok(searchHit.endsWith('>match</span>'));
+
+            const activeSearch = renderSearch({}, { id: 'sm-2', active: true }, 'm');
+            assert.ok(activeSearch.includes('tm-wysiwyg-search-match--active'));
+            assert.ok(activeSearch.includes('aria-current="true"'));
+
+            // Falls back to 'search' id when marker has no id
+            const fallbackId = renderSearch({}, {}, 'x');
+            assert.ok(fallbackId.includes('data-marker-id="search:search"'));
+
+            // Pascal-case marker properties
+            const pascal = renderSearch({}, { Id: 'sp-1', Active: true }, 'p');
+            assert.ok(pascal.includes('data-marker-id="search:sp-1"'));
+            assert.ok(pascal.includes('aria-current="true"'));
+
+            // Factory validation
+            try { mod.createRenderCommentSpanHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createRenderRevisionSpanHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createRenderSearchSpanHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-marker-span-html", script,
+            "render/marker-span-html.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_InlineDrawingHelpersSelectionAndTestMarker()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // inlineDrawingIsSelected — empty / null inputs → false
+            assert.strictEqual(mod.inlineDrawingIsSelected(null, null, null, null), false);
+            assert.strictEqual(mod.inlineDrawingIsSelected({}, {}, {}, {}), false);
+
+            // No object id anywhere → false
+            assert.strictEqual(
+                mod.inlineDrawingIsSelected(
+                    { selection: { activeObjectId: 'obj-1' } },
+                    null, {}, {}),
+                false);
+
+            // Object id matches active object id → true
+            assert.strictEqual(
+                mod.inlineDrawingIsSelected(
+                    { selection: { activeObjectId: 'obj-1' } },
+                    null, null, { objectId: 'obj-1' }),
+                true);
+
+            // Pascal-case run.ObjectId works
+            assert.strictEqual(
+                mod.inlineDrawingIsSelected(
+                    { selection: { activeObjectId: 'obj-2' } },
+                    null, { ObjectId: 'obj-2' }, null),
+                true);
+
+            // Mismatching ids → false
+            assert.strictEqual(
+                mod.inlineDrawingIsSelected(
+                    { selection: { activeObjectId: 'obj-1' } },
+                    null, null, { objectId: 'obj-different' }),
+                false);
+
+            // Fallback selection paths: objectId or objectSelection.objectId
+            assert.strictEqual(
+                mod.inlineDrawingIsSelected(
+                    { selection: { objectId: 'obj-3' } },
+                    null, null, { objectId: 'obj-3' }),
+                true);
+            assert.strictEqual(
+                mod.inlineDrawingIsSelected(
+                    { selection: { objectSelection: { objectId: 'obj-4' } } },
+                    null, null, { objectId: 'obj-4' }),
+                true);
+
+            // renderDrawingObjectTestMarkerHtml
+            function escapeHtml(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            function asText(v) { return v == null ? '' : String(v); }
+
+            const render = mod.createRenderDrawingObjectTestMarkerHtml({ escapeHtml, asText });
+
+            // Empty / null id returns empty string
+            assert.strictEqual(render(null), '');
+            assert.strictEqual(render(''), '');
+            assert.strictEqual(render(undefined), '');
+
+            // Real id emits the sr-only marker
+            const html = render('obj-1');
+            assert.ok(html.includes('tm-document-wysiwyg-host__sr-only'));
+            assert.ok(html.includes('data-testid="document-wysiwyg-drawing-object-obj-1"'));
+            assert.ok(html.includes('aria-hidden="true"'));
+            assert.ok(html.endsWith('></span>'));
+
+            // HTML-unsafe id is escaped in the testid
+            const unsafe = render('obj"&"id');
+            assert.ok(unsafe.includes('document-wysiwyg-drawing-object-obj&quot;&amp;&quot;id'));
+
+            // Factory validation
+            try {
+                mod.createRenderDrawingObjectTestMarkerHtml({});
+                assert.fail('expected throw');
+            } catch (err) {
+                assert.ok(err instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-inline-drawing-helpers", script,
+            "render/inline-drawing-helpers.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ObjectAriaHtmlBuildsSelectionResizeAndFocusAttrs()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function escapeHtml(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            // renderObjectSelectionDescriptionAttribute
+            function activeObjectStatusId(inst) { return inst && inst.statusId || ''; }
+            const renderDescr = mod.createRenderObjectSelectionDescriptionAttribute({
+                escapeHtml, activeObjectStatusId,
+            });
+            assert.strictEqual(renderDescr({ statusId: 'st-1' }, false), '');
+            assert.strictEqual(renderDescr({ statusId: 'st-1' }, true), ' aria-describedby="st-1"');
+            // Empty id still emits the attribute pointing at empty string
+            assert.strictEqual(renderDescr({}, true), ' aria-describedby=""');
+            // HTML-unsafe id is escaped
+            assert.ok(renderDescr({ statusId: 'a"&b' }, true).includes('a&quot;&amp;b'));
+
+            // renderObjectResizeHandleHtml
+            function objectResizeHandleAriaLabel(inst, name) {
+                return 'Resize image ' + name;
+            }
+            const renderResize = mod.createRenderObjectResizeHandleHtml({
+                escapeHtml, objectResizeHandleAriaLabel,
+            });
+            // Unselected → aria-hidden
+            const hidden = renderResize({}, 'se', false);
+            assert.ok(hidden.includes('aria-hidden="true"'));
+            assert.ok(hidden.includes('data-resize-handle="se"'));
+            assert.ok(hidden.includes('data-testid="document-wysiwyg-object-resize-handle-se"'));
+            assert.ok(hidden.includes('tm-wysiwyg-object-resize-handle--se'));
+            assert.ok(!hidden.includes('role="button"'));
+
+            // Selected → role=button + aria-label
+            const visible = renderResize({}, 'nw', true);
+            assert.ok(visible.includes('role="button"'));
+            assert.ok(visible.includes('tabindex="-1"'));
+            assert.ok(visible.includes('aria-label="Resize image nw"'));
+            assert.ok(!visible.includes('aria-hidden'));
+
+            // renderObjectFocusPolicyAttributes
+            function createObjectFocusPolicy(selected) {
+                return selected
+                    ? { focusPolicy: 'selected', selected: true }
+                    : { focusPolicy: 'inactive', selected: false };
+            }
+            const renderFocus = mod.createRenderObjectFocusPolicyAttributes({
+                escapeHtml, createObjectFocusPolicy,
+            });
+            const inactive = renderFocus(false);
+            assert.ok(inactive.includes('data-object-focus-policy="inactive"'));
+            assert.ok(inactive.includes('aria-selected="false"'));
+            assert.ok(!inactive.includes('data-object-selected'));
+
+            const active = renderFocus(true);
+            assert.ok(active.includes('data-object-focus-policy="selected"'));
+            assert.ok(active.includes('aria-selected="true"'));
+            assert.ok(active.includes('data-object-selected="true"'));
+
+            // Factory validation
+            try { mod.createRenderObjectSelectionDescriptionAttribute({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createRenderObjectResizeHandleHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createRenderObjectFocusPolicyAttributes({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            // renderObjectRotationHandleHtml — static span, no injected deps
+            const rotSel = mod.renderObjectRotationHandleHtml(true);
+            assert.ok(rotSel.includes('class="tm-wysiwyg-object-rotation-handle"'));
+            assert.ok(rotSel.includes('data-testid="document-wysiwyg-object-rotation-handle"'));
+            assert.ok(rotSel.includes('role="button"'));
+            assert.ok(rotSel.includes('tabindex="-1"'));
+            assert.ok(rotSel.includes('aria-label="Rotate image"'));
+            const rotUnsel = mod.renderObjectRotationHandleHtml(false);
+            assert.ok(rotUnsel.includes('aria-hidden="true"'));
+            assert.ok(!rotUnsel.includes('role="button"'));
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-object-aria-html", script,
+            "render/object-aria-html.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageLayoutBubbleBuildsWrapAndAnchorButtons()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function escapeHtml(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+
+            const renderButton = mod.createRenderImageLayoutBubbleButton({ escapeHtml });
+
+            // Basic inactive button
+            const button = renderButton('tid-1', 'cmd-x', 'Bold', false);
+            assert.ok(button.startsWith('<button type="button" '));
+            assert.ok(button.includes('data-testid="tid-1"'));
+            assert.ok(button.includes('data-command="cmd-x"'));
+            assert.ok(button.includes('aria-label="Bold"'));
+            assert.ok(button.includes('aria-pressed="false"'));
+            assert.ok(!button.includes('tm-wysiwyg-layout-bubble__button--active'));
+            assert.ok(button.endsWith('>Bold</button>'));
+
+            // Active button + custom aria-label + extra data attrs
+            const active = renderButton('tid-2', 'cmd', 'Wrap', true, {
+                'aria-label': 'Wrap text around image',
+                'data-wrap-mode': 'Square',
+            });
+            assert.ok(active.includes('tm-wysiwyg-layout-bubble__button--active'));
+            assert.ok(active.includes('aria-pressed="true"'));
+            assert.ok(active.includes('aria-label="Wrap text around image"'));
+            assert.ok(active.includes('data-wrap-mode="Square"'));
+
+            // ariaLabel camelCase also accepted
+            const camel = renderButton('tid-3', 'c', 'L', false, { ariaLabel: 'Custom' });
+            assert.ok(camel.includes('aria-label="Custom"'));
+
+            // Attribute values escape HTML
+            const unsafe = renderButton('tid', 'c', 'L', false, { 'data-x': 'a"b' });
+            assert.ok(unsafe.includes('data-x="a&quot;b"'));
+
+            // Caller's attributes object is not mutated (button consumes a copy)
+            const attrs = { 'aria-label': 'X', 'data-y': '1' };
+            renderButton('t', 'c', 'L', false, attrs);
+            assert.strictEqual(attrs['aria-label'], 'X', 'caller attributes preserved');
+
+            // renderImageLayoutBubbleHtml — wires button factory + normalizer
+            function normalizeWrapModeName(v) {
+                if (!v) return 'Inline';
+                const t = String(v);
+                if (t === 'Square' || t === 'Tight' || t === 'TopBottom'
+                    || t === 'BehindText' || t === 'InFrontOfText' || t === 'Inline') return t;
+                return 'Inline';
+            }
+            const renderBubble = mod.createRenderImageLayoutBubbleHtml({
+                normalizeWrapModeName,
+                renderImageLayoutBubbleButton: renderButton,
+            });
+
+            const inline = renderBubble({ wrapMode: 'Inline', moveWithText: true });
+            assert.ok(inline.startsWith('<span class="tm-wysiwyg-layout-bubble" '));
+            assert.ok(inline.includes('data-testid="document-wysiwyg-object-layout-bubble"'));
+            assert.ok(inline.includes('role="toolbar"'));
+            assert.ok(inline.includes('aria-label="Image layout options"'));
+            // Inline is active, wrap is not
+            assert.ok(inline.includes('data-testid="document-wysiwyg-layout-bubble-inline"'));
+            assert.ok(inline.includes('data-wrap-mode="Inline"'));
+
+            // Wrap mode = Square activates the Wrap button
+            const wrap = renderBubble({ wrapMode: 'Square' });
+            // Find the wrap button's segment
+            const wrapStart = wrap.indexOf('data-testid="document-wysiwyg-layout-bubble-wrap"');
+            assert.ok(wrapStart > 0);
+            // The wrap button should contain aria-pressed=true
+            const wrapButton = wrap.slice(wrap.lastIndexOf('<button', wrapStart),
+                wrap.indexOf('</button>', wrapStart));
+            assert.ok(wrapButton.includes('aria-pressed="true"'));
+            assert.ok(wrapButton.includes('tm-wysiwyg-layout-bubble__button--active'));
+
+            // fixedOnPage = true → Fix active, Move inactive
+            const fixed = renderBubble({ wrapMode: 'Inline', fixedOnPage: true });
+            const fixStart = fixed.indexOf('data-testid="document-wysiwyg-layout-bubble-fix-position"');
+            const fixButton = fixed.slice(fixed.lastIndexOf('<button', fixStart),
+                fixed.indexOf('</button>', fixStart));
+            assert.ok(fixButton.includes('aria-pressed="true"'));
+            const moveStart = fixed.indexOf('data-testid="document-wysiwyg-layout-bubble-move-with-text"');
+            const moveButton = fixed.slice(fixed.lastIndexOf('<button', moveStart),
+                fixed.indexOf('</button>', moveStart));
+            assert.ok(moveButton.includes('aria-pressed="false"'));
+
+            // null object → defaults to Inline + Move-with-text
+            const defaults = renderBubble(null);
+            // Inline button should be active
+            const inlineStart = defaults.indexOf('data-testid="document-wysiwyg-layout-bubble-inline"');
+            const inlineButton = defaults.slice(defaults.lastIndexOf('<button', inlineStart),
+                defaults.indexOf('</button>', inlineStart));
+            assert.ok(inlineButton.includes('aria-pressed="true"'));
+
+            // Factory validation
+            try { mod.createRenderImageLayoutBubbleButton({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createRenderImageLayoutBubbleHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-layout-bubble", script,
+            "render/image-layout-bubble.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_DrawingFigureStyleBuildsInlineAndAnchoredCss()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function rectFromGeometry(rect) {
+                const s = rect || {};
+                return {
+                    x: Number(s.x || 0),
+                    y: Number(s.y || 0),
+                    width: Number(s.width || 0),
+                    height: Number(s.height || 0),
+                };
+            }
+
+            // explicitObjectLayerRect
+            const explicit = mod.createExplicitObjectLayerRect({ rectFromGeometry });
+            assert.strictEqual(explicit(null), null);
+            assert.strictEqual(explicit({}), null);
+            // {0,0,0,0} placeholder → null
+            assert.strictEqual(
+                explicit({ rect: { x: 0, y: 0, width: 0, height: 0 } }),
+                null);
+            // Valid rect comes through
+            assert.deepStrictEqual(
+                explicit({ rect: { x: 10, y: 20, width: 100, height: 50 } }),
+                { x: 10, y: 20, width: 100, height: 50 });
+            // Pascal-case Rect / LayoutRect / ObjectRect accepted
+            assert.deepStrictEqual(
+                explicit({ Rect: { x: 1, y: 2, width: 3, height: 4 } }),
+                { x: 1, y: 2, width: 3, height: 4 });
+            assert.deepStrictEqual(
+                explicit({ layoutRect: { x: 5, y: 6, width: 7, height: 8 } }),
+                { x: 5, y: 6, width: 7, height: 8 });
+
+            // objectLayerRectFromObject
+            const fromObject = mod.createObjectLayerRectFromObject({ rectFromGeometry });
+            // Fallback when no explicit rect
+            const fallback = fromObject({ width: 200, height: 100 });
+            assert.strictEqual(fallback.x, 0);
+            assert.strictEqual(fallback.y, 0);
+            assert.strictEqual(fallback.width, 200);
+            assert.strictEqual(fallback.height, 100);
+            assert.strictEqual(fallback.explicit, false);
+            // Explicit rect carries through with explicit=true
+            const carried = fromObject({
+                rect: { x: 10, y: 20, width: 80, height: 60 },
+            });
+            assert.strictEqual(carried.x, 10);
+            assert.strictEqual(carried.width, 80);
+            assert.strictEqual(carried.explicit, true);
+            // Default fallback dims 120 / 80 when nothing supplied
+            const defaults = fromObject({});
+            assert.strictEqual(defaults.width, 120);
+            assert.strictEqual(defaults.height, 80);
+
+            // renderDrawingFigureStyle
+            const renderFig = mod.createRenderDrawingFigureStyle({
+                objectLayerRectFromObject: fromObject,
+            });
+            const anchoredStyle = renderFig({
+                width: 100, height: 80,
+                rect: { x: 50, y: 60, width: 100, height: 80 },
+            });
+            assert.ok(anchoredStyle.includes('--tm-layout-object-width:100px'));
+            assert.ok(anchoredStyle.includes('width:100px'));
+            assert.ok(anchoredStyle.includes('height:80px'));
+            assert.ok(anchoredStyle.includes('position:absolute'));
+            assert.ok(anchoredStyle.includes('left:50px'));
+            assert.ok(anchoredStyle.includes('top:60px'));
+            assert.ok(anchoredStyle.includes('max-width:none'));
+
+            // Inline object → inline-block, no absolute positioning
+            const inlineStyle = renderFig({
+                width: 60, height: 40, isInline: true,
+            });
+            assert.ok(inlineStyle.includes('display:inline-block'));
+            assert.ok(inlineStyle.includes('vertical-align:baseline'));
+            assert.ok(!inlineStyle.includes('position:absolute'));
+            assert.ok(!inlineStyle.includes('max-width:none'));
+
+            // estimateInlineDrawingCaptionReserveHeight
+            assert.strictEqual(
+                mod.estimateInlineDrawingCaptionReserveHeight(null, 100), 0);
+            assert.strictEqual(
+                mod.estimateInlineDrawingCaptionReserveHeight({}, 100), 0);
+            assert.strictEqual(
+                mod.estimateInlineDrawingCaptionReserveHeight({ caption: '   ' }, 100), 0);
+
+            // Short caption → 1 line: marginTop(4) + lineHeight(15) = 19
+            const shortCap = mod.estimateInlineDrawingCaptionReserveHeight(
+                { caption: 'Short' }, 200);
+            assert.strictEqual(shortCap, 19);
+
+            // Very long caption capped at 6 lines: 4 + 6*15 = 94
+            const longCap = mod.estimateInlineDrawingCaptionReserveHeight(
+                { caption: 'x'.repeat(5000) }, 100);
+            assert.strictEqual(longCap, 94);
+
+            // renderDrawingAnchorReservationStyle
+            const renderRes = mod.createRenderDrawingAnchorReservationStyle({
+                estimateInlineDrawingCaptionReserveHeight: mod.estimateInlineDrawingCaptionReserveHeight,
+            });
+            // Inline reservation carries width + height
+            const inlineRes = renderRes({ width: 120, height: 80, caption: 'cap' }, true);
+            assert.ok(inlineRes.includes('--tm-wysiwyg-drawing-anchor-width:120px'));
+            assert.ok(inlineRes.includes('display:inline-block'));
+            assert.ok(inlineRes.includes('width:120px'));
+            // Height includes caption reserve (80 + 19)
+            assert.ok(inlineRes.includes('height:99px'));
+
+            // Anchored reservation collapses to 0×0 hidden
+            const anchoredRes = renderRes({ width: 120, height: 80 }, false);
+            assert.ok(anchoredRes.includes('width:0px'));
+            assert.ok(anchoredRes.includes('height:0px'));
+            assert.ok(anchoredRes.includes('visibility:hidden'));
+            assert.ok(anchoredRes.includes('pointer-events:none'));
+
+            // Factory validation
+            try { mod.createExplicitObjectLayerRect({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createObjectLayerRectFromObject({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createRenderDrawingFigureStyle({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createRenderDrawingAnchorReservationStyle({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-drawing-figure-style", script,
+            "render/drawing-figure-style.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_ImageFigureClassesComposesWrapAndAlignment()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function normalizeWrapModeName(v) {
+                const t = String(v || '');
+                if (t === 'Inline' || t === 'Square' || t === 'Tight'
+                    || t === 'TopBottom' || t === 'BehindText'
+                    || t === 'InFrontOfText') return t;
+                return 'Inline';
+            }
+
+            const render = mod.createRenderImageFigureClasses({ normalizeWrapModeName });
+
+            // Defaults — Inline wrap + left position + not selected
+            const def = render(false, {});
+            assert.ok(def.includes('tm-wysiwyg-block'));
+            assert.ok(def.includes('tm-wysiwyg-image'));
+            assert.ok(def.includes('tm-wysiwyg-image--wrap-inline'));
+            assert.ok(def.includes('tm-wysiwyg-image--position-left'));
+            assert.ok(!def.includes('--selected'));
+
+            // null object is safe
+            assert.ok(render(false, null).includes('tm-wysiwyg-image--wrap-inline'));
+
+            // TopBottom → top-bottom modifier
+            const tb = render(false, { wrapMode: 'TopBottom' });
+            assert.ok(tb.includes('tm-wysiwyg-image--wrap-top-bottom'));
+
+            // BehindText / InFrontOfText hyphenated
+            assert.ok(render(false, { wrapMode: 'BehindText' })
+                .includes('tm-wysiwyg-image--wrap-behind-text'));
+            assert.ok(render(false, { wrapMode: 'InFrontOfText' })
+                .includes('tm-wysiwyg-image--wrap-in-front-of-text'));
+
+            // Square + Tight → lowercase verbatim
+            assert.ok(render(false, { wrapMode: 'Square' })
+                .includes('tm-wysiwyg-image--wrap-square'));
+            assert.ok(render(false, { wrapMode: 'Tight' })
+                .includes('tm-wysiwyg-image--wrap-tight'));
+
+            // Alignment: right
+            const right = render(false, { horizontalPosition: { align: 'Right' } });
+            assert.ok(right.includes('tm-wysiwyg-image--position-right'));
+            assert.ok(!right.includes('--position-left'));
+
+            // Alignment: end → right
+            assert.ok(render(false, { horizontalPosition: { align: 'end' } })
+                .includes('tm-wysiwyg-image--position-right'));
+
+            // Alignment: center / middle → center
+            assert.ok(render(false, { horizontalPosition: { align: 'Center' } })
+                .includes('tm-wysiwyg-image--position-center'));
+            assert.ok(render(false, { horizontalPosition: { align: 'middle' } })
+                .includes('tm-wysiwyg-image--position-center'));
+
+            // Selected adds both --selected classes
+            const sel = render(true, {});
+            assert.ok(sel.includes('tm-wysiwyg-image--selected'));
+            assert.ok(sel.includes('tm-wysiwyg-object--selected'));
+
+            // Factory validation
+            try {
+                mod.createRenderImageFigureClasses({});
+                assert.fail('expected throw');
+            } catch (err) {
+                assert.ok(err instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-image-figure-classes", script,
+            "render/image-figure-classes.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_DomTextPointWalksSegmentsAndClampsOffset()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Stub document.createTreeWalker — DFS over text descendants
+            function makeDoc() {
+                return {
+                    createTreeWalker(root, _what, filter) {
+                        const accepted = [];
+                        const stack = [root];
+                        while (stack.length) {
+                            const node = stack.shift();
+                            if (!node) continue;
+                            if (node.nodeType === 3) {
+                                const verdict = filter.acceptNode(node);
+                                if (verdict === 1) accepted.push(node);
+                                continue;
+                            }
+                            for (let i = (node.childNodes || []).length - 1; i >= 0; i--) {
+                                stack.unshift(node.childNodes[i]);
+                            }
+                        }
+                        let i = 0;
+                        return { nextNode() { return accepted[i++] || null; } };
+                    },
+                };
+            }
+            const NodeFilter = { SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2 };
+
+            const firstText = mod.createFirstTextPointInElement({ document: makeDoc(), NodeFilter });
+
+            // null / undefined element → null
+            assert.strictEqual(firstText(null, 0), null);
+            assert.strictEqual(firstText(undefined, 5), null);
+
+            // Direct text node → returned with clamped offset
+            const textNode = { nodeType: 3, nodeValue: 'hello' };
+            const direct = firstText(textNode, 3);
+            assert.strictEqual(direct.node, textNode);
+            assert.strictEqual(direct.offset, 3);
+            const directOverflow = firstText(textNode, 99);
+            assert.strictEqual(directOverflow.offset, 5);
+
+            // Element node → walks to first text descendant
+            const childText = { nodeType: 3, nodeValue: 'inner' };
+            const wrapper = { nodeType: 1, childNodes: [childText] };
+            const wrapped = firstText(wrapper, 2);
+            assert.strictEqual(wrapped.node, childText);
+            assert.strictEqual(wrapped.offset, 2);
+
+            // Element with no text descendants → null
+            const emptyEl = { nodeType: 1, childNodes: [] };
+            assert.strictEqual(firstText(emptyEl, 0), null);
+
+            // projectedDomTextPointAtBlockOffset
+            const point = mod.createProjectedDomTextPointAtBlockOffset({
+                firstTextPointInElement: firstText,
+            });
+
+            // null block / missing querySelectorAll → null
+            assert.strictEqual(point(null, 0), null);
+            assert.strictEqual(point({}, 0), null);
+
+            // Block with no projected segments → null
+            const empty = { querySelectorAll() { return []; } };
+            assert.strictEqual(point(empty, 5), null);
+
+            // Three projected segments: [0..5], [6..10], [12..18]
+            function makeSegment(start, end, content) {
+                const t = { nodeType: 3, nodeValue: content };
+                return {
+                    nodeType: 1,
+                    childNodes: [t],
+                    getAttribute(name) {
+                        if (name === 'data-model-start') return String(start);
+                        if (name === 'data-model-end') return String(end);
+                        return null;
+                    },
+                };
+            }
+            const segments = [
+                makeSegment(0, 5, 'hello'),
+                makeSegment(6, 10, 'foo!'),
+                makeSegment(12, 18, 'world!'),
+            ];
+            const block = {
+                querySelectorAll(selector) {
+                    assert.ok(selector.includes('tm-wysiwyg-layout-segment--projected'));
+                    return segments;
+                },
+            };
+
+            // Offset within segment 0 → first text point in that segment (offset 3)
+            const inFirst = point(block, 3);
+            assert.strictEqual(inFirst.node.nodeValue, 'hello');
+            assert.strictEqual(inFirst.offset, 3);
+
+            // Offset within segment 2 → "world!" with local offset 14-12=2
+            const inThird = point(block, 14);
+            assert.strictEqual(inThird.node.nodeValue, 'world!');
+            assert.strictEqual(inThird.offset, 2);
+
+            // Offset in gap between segments (offset=11): no containing segment.
+            // Closest preceding segment is [6,10] → end of "foo!" (offset 4)
+            const gap = point(block, 11);
+            assert.strictEqual(gap.node.nodeValue, 'foo!');
+            assert.strictEqual(gap.offset, 4);
+
+            // Offset before all segments (offset=-1 clamped to 0) → still in first segment
+            const beforeAll = point(block, 0);
+            assert.strictEqual(beforeAll.node.nodeValue, 'hello');
+
+            // Offset after all segments (offset=99) → end of last segment
+            const afterAll = point(block, 99);
+            assert.strictEqual(afterAll.node.nodeValue, 'world!');
+            // last segment is [12,18] → end-start = 6, the local offset of the end point
+            assert.strictEqual(afterAll.offset, 6);
+
+            // Block with degenerate segment [5,5] is skipped on containment but still
+            // considered for before/after fallbacks
+            const blockWithDegenerate = {
+                querySelectorAll() { return [makeSegment(5, 5, 'edge')]; },
+            };
+            const onlyDegenerate = point(blockWithDegenerate, 10);
+            // [5,5].end <= 10 so it's a 'before' candidate → end-start=0
+            assert.strictEqual(onlyDegenerate.node.nodeValue, 'edge');
+            assert.strictEqual(onlyDegenerate.offset, 0);
+
+            // Factory validation
+            try { mod.createFirstTextPointInElement({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+            try { mod.createProjectedDomTextPointAtBlockOffset({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-dom-text-point", script,
+            "render/dom-text-point.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_FindLayoutObjectForRenderRequiresAuthoritativeLayout()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            // Null layout → null
+            assert.strictEqual(mod.findLayoutObjectForRender(null, 'obj-1', 'blk-1'), null);
+            assert.strictEqual(mod.findLayoutObjectForRender({}, 'obj-1', 'blk-1'), null);
+
+            // Non-authoritative layout (legacy snapshot) → null even when objects match
+            const legacy = {
+                objects: [{ objectId: 'obj-1', blockId: 'blk-1' }],
+                debug: { source: 'snapshot' },
+            };
+            assert.strictEqual(mod.findLayoutObjectForRender(legacy, 'obj-1', 'blk-1'), null);
+
+            // Authoritative via pageMetrics — match by objectId
+            const layoutPm = {
+                pageMetrics: { pages: [] },
+                objects: [
+                    { objectId: 'obj-1', blockId: 'blk-x', rect: { x: 1 } },
+                    { id: 'obj-2', blockId: 'blk-2' },
+                ],
+            };
+            assert.strictEqual(
+                mod.findLayoutObjectForRender(layoutPm, 'obj-1').objectId, 'obj-1');
+            // Pascal-case ObjectId match
+            const layoutPascal = {
+                PageMetrics: {},
+                objects: [{ ObjectId: 'obj-9', BlockId: 'blk-9' }],
+            };
+            assert.strictEqual(
+                mod.findLayoutObjectForRender(layoutPascal, 'obj-9').ObjectId, 'obj-9');
+
+            // Authoritative via debug.source starting with 'paragraph-layout'
+            const layoutDbg = {
+                objects: [{ id: 'obj-3', blockId: 'blk-3' }],
+                debug: { source: 'paragraph-layout-engine' },
+            };
+            assert.strictEqual(
+                mod.findLayoutObjectForRender(layoutDbg, 'obj-3').id, 'obj-3');
+
+            // Pascal-case debug.Source also accepted
+            const layoutDbgP = {
+                objects: [{ id: 'obj-4' }],
+                debug: { Source: 'paragraph-layout-engine' },
+            };
+            assert.strictEqual(
+                mod.findLayoutObjectForRender(layoutDbgP, 'obj-4').id, 'obj-4');
+
+            // No match → null
+            assert.strictEqual(
+                mod.findLayoutObjectForRender(layoutPm, 'missing'), null);
+
+            // Header / footer regions also walked
+            const layoutHf = {
+                pageMetrics: {},
+                objects: [],
+                headerFooterRegions: [
+                    { objects: [{ objectId: 'hf-1', blockId: 'hf-blk' }] },
+                    { objects: null },
+                ],
+            };
+            assert.strictEqual(
+                mod.findLayoutObjectForRender(layoutHf, 'hf-1').objectId, 'hf-1');
+
+            // (anchorBlockId, objectId) pair disambiguates: when the searched id is
+            // empty but blockId matches anchorBlockId and candidateObjectId also
+            // matches (i.e. both empty), the first such item is returned.
+            const layoutAnchor = {
+                pageMetrics: {},
+                objects: [
+                    { anchorBlockId: 'blk-7', objectId: '' },
+                ],
+            };
+            assert.ok(mod.findLayoutObjectForRender(layoutAnchor, '', 'blk-7'));
+
+            // No object array → null
+            assert.strictEqual(
+                mod.findLayoutObjectForRender(
+                    { pageMetrics: {} }, 'obj-1', 'blk-1'),
+                null);
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-find-layout-object-for-render", script,
+            "render/find-layout-object-for-render.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_CollectWysiwygPageObjectEntriesWalksDrawingRuns()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function isDrawingRunSource(run) {
+                return !!(run && run.objectId);
+            }
+            const callLog = [];
+            function createWysiwygObjectRenderEntry(inst, block, run, inlineIndex, sourceKind) {
+                callLog.push({ blockId: block && block.id, inlineIndex, sourceKind });
+                if (run && run.skip === true) return null;
+                return {
+                    blockId: block.id, runIndex: inlineIndex, runId: run && run.id, sourceKind,
+                };
+            }
+
+            const collect = mod.createCollectWysiwygPageObjectEntries({
+                isDrawingRunSource, createWysiwygObjectRenderEntry,
+            });
+
+            // Empty / null blocks → []
+            assert.deepStrictEqual(collect({}, null), []);
+            assert.deepStrictEqual(collect({}, []), []);
+
+            // Skips null block, non-paragraph block, runs without drawing kind
+            const blocks = [
+                null,
+                { type: 'table', content: { runs: [{ kind: 'drawing' }] } },
+                {
+                    id: 'p1', type: 'paragraph',
+                    content: { runs: [
+                        { kind: 'text', text: 'hello' },
+                        { kind: 'drawing', id: 'r1' },
+                        { kind: 'drawing', id: 'r2', skip: true },
+                        { id: 'r3', objectId: 'obj-3' }, // identified via isDrawingRunSource
+                    ] },
+                },
+                { id: 'p2', type: 'paragraph', content: { runs: null } },
+            ];
+            const entries = collect({ instId: 'i' }, blocks);
+            assert.strictEqual(entries.length, 2);
+            // First entry is from the kind:drawing run at inlineIndex=1
+            assert.strictEqual(entries[0].blockId, 'p1');
+            assert.strictEqual(entries[0].runIndex, 1);
+            assert.strictEqual(entries[0].runId, 'r1');
+            assert.strictEqual(entries[0].sourceKind, 'drawing-run');
+            // Second entry from isDrawingRunSource match at inlineIndex=3
+            assert.strictEqual(entries[1].runIndex, 3);
+            assert.strictEqual(entries[1].runId, 'r3');
+
+            // factory called once per matching run (including the skipped one which
+            // returned null)
+            assert.strictEqual(callLog.length, 3);
+            assert.deepStrictEqual(callLog[0],
+                { blockId: 'p1', inlineIndex: 1, sourceKind: 'drawing-run' });
+            assert.deepStrictEqual(callLog[1],
+                { blockId: 'p1', inlineIndex: 2, sourceKind: 'drawing-run' });
+            assert.deepStrictEqual(callLog[2],
+                { blockId: 'p1', inlineIndex: 3, sourceKind: 'drawing-run' });
+
+            // Factory validation
+            try {
+                mod.createCollectWysiwygPageObjectEntries({});
+                assert.fail('expected throw');
+            } catch (err) {
+                assert.ok(err instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-collect-wysiwyg-page-objects", script,
+            "render/collect-wysiwyg-page-objects.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_WysiwygObjectRenderEntryAssemblesRecord()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function normalizeImageObject(source, ctx) {
+                return {
+                    objectId: source.objectId || '',
+                    blockId: ctx && ctx.blockId,
+                    anchorInlineIndex: ctx && ctx.inlineIndex,
+                    width: source.width || 100,
+                    height: source.height || 80,
+                };
+            }
+            const layoutLookups = [];
+            function findLayoutObjectForRender(layout, objectId, blockId) {
+                layoutLookups.push({ objectId, blockId });
+                if (objectId === 'obj-with-layout') {
+                    return { rect: { x: 50, y: 60, width: 100, height: 80 }, pageIndex: 3 };
+                }
+                return null;
+            }
+            function rectFromGeometry(r) {
+                const s = r || {};
+                return { x: Number(s.x || 0), y: Number(s.y || 0),
+                    width: Number(s.width || 0), height: Number(s.height || 0) };
+            }
+            function inlineDrawingIsSelected(inst, block, source, object) {
+                return inst && inst.activeObjectId && inst.activeObjectId === object.objectId;
+            }
+            function asText(v) { return v == null ? '' : String(v); }
+            function sortObject(o) { return o; }
+
+            const create = mod.createWysiwygObjectRenderEntryFactory({
+                normalizeImageObject, findLayoutObjectForRender, rectFromGeometry,
+                inlineDrawingIsSelected, asText, sortObject,
+            });
+
+            // Inline drawing run with explicit objectId
+            const entry = create(
+                {},
+                { id: 'blk-1' },
+                { id: 'r-1', objectId: 'obj-1' },
+                2,
+                'drawing-run');
+            assert.ok(entry);
+            assert.strictEqual(entry.sourceKind, 'drawing-run');
+            assert.strictEqual(entry.blockId, 'blk-1');
+            assert.strictEqual(entry.runId, 'r-1');
+            assert.strictEqual(entry.inlineIndex, 2);
+            assert.strictEqual(entry.objectId, 'obj-1');
+            assert.strictEqual(entry.selected, false);
+
+            // sourceKind defaults to 'drawing-run' when omitted
+            const def = create({}, { id: 'b' }, { objectId: 'o' }, 0);
+            assert.strictEqual(def.sourceKind, 'drawing-run');
+
+            // Falls back to block id when no source has an object id (and block has an id)
+            const blockFallback = create({}, { id: 'blk-only' }, {}, 0);
+            assert.ok(blockFallback);
+            assert.strictEqual(blockFallback.objectId, 'blk-only');
+
+            // No object id anywhere → null
+            const empty = create({}, {}, {}, 0);
+            assert.strictEqual(empty, null);
+
+            // selected resolves through inlineDrawingIsSelected
+            const selectedEntry = create(
+                { activeObjectId: 'obj-1' },
+                { id: 'b' },
+                { objectId: 'obj-1' },
+                0);
+            assert.strictEqual(selectedEntry.selected, true);
+
+            // Authoritative layout rect overrides; pageIndex carried through
+            const layoutEntry = create(
+                { layout: {} },
+                { id: 'b' },
+                { objectId: 'obj-with-layout' },
+                0);
+            assert.strictEqual(layoutEntry.object.rect.x, 50);
+            assert.strictEqual(layoutEntry.object.rect.y, 60);
+            assert.strictEqual(layoutEntry.object.pageIndex, 3);
+
+            // run.id wins over source.id over objectId for runId
+            const runIdSource = create({}, { id: 'b' }, { id: 'run-explicit', objectId: 'o' }, 0);
+            assert.strictEqual(runIdSource.runId, 'run-explicit');
+            const runIdFromObject = create({}, { id: 'b' }, { objectId: 'fallback-id' }, 0);
+            assert.strictEqual(runIdFromObject.runId, 'fallback-id');
+
+            // inlineIndex falls back to object.anchorInlineIndex when missing
+            const idxFallback = create({}, { id: 'b' }, { objectId: 'o' }, null);
+            assert.strictEqual(idxFallback.inlineIndex, null === idxFallback.inlineIndex ? null : idxFallback.inlineIndex);
+
+            // Factory validation
+            try {
+                mod.createWysiwygObjectRenderEntryFactory({});
+                assert.fail('expected throw');
+            } catch (err) {
+                assert.ok(err instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-wysiwyg-object-render-entry", script,
+            "render/wysiwyg-object-render-entry.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_SyncWysiwygObjectLayerPositionsRepositionsItemsAndOverlays()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function cssEscape(v) { return String(v); }
+            const resolveCalls = [];
+            function resolveWysiwygObjectLayerRect(body, layerRect, item) {
+                resolveCalls.push(item.getAttribute('data-object-id'));
+                return { x: 5, y: 6, width: 100, height: 80 };
+            }
+            const applyCalls = [];
+            function applyWysiwygObjectLayerRect(node, rect) {
+                applyCalls.push({ node: node.tag, rect });
+            }
+
+            const sync = mod.createSyncWysiwygObjectLayerPositions({
+                resolveWysiwygObjectLayerRect, applyWysiwygObjectLayerRect, cssEscape,
+            });
+
+            // No-op when root has no querySelectorAll
+            sync(null);
+            sync({});
+            assert.strictEqual(resolveCalls.length, 0);
+
+            // Build a minimal DOM stub
+            function el(tag, attrs, matches) {
+                const a = attrs || {};
+                return {
+                    tag,
+                    _matches: matches || {},
+                    getAttribute(k) { return Object.prototype.hasOwnProperty.call(a, k) ? a[k] : null; },
+                    getBoundingClientRect() { return { left: 0, top: 0, width: 500, height: 400 }; },
+                    querySelectorAll(sel) { return this._matches[sel] || []; },
+                };
+            }
+
+            const overlay = el('overlay', { 'data-object-id': 'obj-1' });
+            const item = el('item', { 'data-object-id': 'obj-1' });
+            const layer = el('layer', {}, {
+                '.tm-wysiwyg-object-layer-item[data-object-id]': [item],
+            });
+            const body = el('body', {}, {
+                '.tm-wysiwyg-page__layer--behind-text, .tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--in-front-of-text': [layer],
+            });
+            // body needs to resolve overlays query — match any selector containing 'overlay'
+            body.querySelectorAll = function (sel) {
+                if (sel.includes('--layout')) return [];
+                if (sel.includes('object-layer-item')) return [item];
+                if (sel.includes('selection-overlay') || sel.includes('guides-overlay')) return [overlay];
+                if (sel.includes('page__layer')) return [layer];
+                return [];
+            };
+            // layer.querySelectorAll for items
+            layer.querySelectorAll = function (sel) {
+                if (sel.includes('object-layer-item')) return [item];
+                return [];
+            };
+            const root = {
+                querySelectorAll(sel) {
+                    if (sel.includes('page__body--layout')) return [body];
+                    return [];
+                },
+            };
+
+            sync(root);
+
+            // resolve called once for the item
+            assert.deepStrictEqual(resolveCalls, ['obj-1']);
+            // apply called for the item AND the overlay (2 total)
+            assert.strictEqual(applyCalls.length, 2);
+            assert.strictEqual(applyCalls[0].node, 'item');
+            assert.strictEqual(applyCalls[0].rect.x, 5);
+            assert.strictEqual(applyCalls[1].node, 'overlay');
+
+            // Items without object-id are skipped
+            const blankItem = el('item2', {});
+            const layer2 = el('layer2', {});
+            layer2.querySelectorAll = function () { return [blankItem]; };
+            const body2 = el('body2', {});
+            body2.querySelectorAll = function (sel) {
+                if (sel.includes('page__layer')) return [layer2];
+                return [];
+            };
+            const root2 = {
+                querySelectorAll(sel) {
+                    return sel.includes('page__body--layout') ? [body2] : [];
+                },
+            };
+            resolveCalls.length = 0;
+            sync(root2);
+            assert.strictEqual(resolveCalls.length, 0, 'blank object-id item is skipped');
+
+            // Factory validation
+            try {
+                mod.createSyncWysiwygObjectLayerPositions({});
+                assert.fail('expected throw');
+            } catch (err) {
+                assert.ok(err instanceof TypeError);
+            }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-sync-wysiwyg-object-layer-positions", script,
+            "render/sync-wysiwyg-object-layer-positions.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_RenderEngineTableHtmlBuildsGridMarkup()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function escapeHtml(v) {
+                return String(v == null ? '' : v)
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            function asArray(v) { return Array.isArray(v) ? v : []; }
+            function textFromRuns(runs) {
+                return asArray(runs).map(r => r.text || '').join('');
+            }
+
+            const render = mod.createRenderEngineTableHtml({ escapeHtml, asArray, textFromRuns });
+
+            // Empty table
+            const empty = render({ id: 't1', content: { rows: [] } });
+            assert.ok(empty.startsWith('<table class="tm-wysiwyg-block tm-wysiwyg-table" data-block-id="t1"'));
+            assert.ok(empty.includes('role="table"'));
+            assert.ok(empty.endsWith('</tbody></table>'));
+
+            // Full table with cells + paragraph children + styles
+            const table = render({
+                id: 'tbl',
+                content: {
+                    rows: [
+                        {
+                            id: 'row-1',
+                            cells: [
+                                {
+                                    id: 'c1',
+                                    colSpan: 2,
+                                    rowSpan: 1,
+                                    style: { background: '#eee', border: '1px solid', padding: 4 },
+                                    blocks: [
+                                        { id: 'p1', type: 'paragraph', content: { runs: [{ text: 'Hello' }] } },
+                                        { id: 'img', type: 'image' },
+                                    ],
+                                },
+                                { id: 'c2', blocks: [] },
+                            ],
+                        },
+                    ],
+                },
+            });
+            assert.ok(table.includes('<tr data-row-id="row-1" role="row">'));
+            assert.ok(table.includes('data-cell-id="c1"'));
+            assert.ok(table.includes('data-column-index="0"'));
+            assert.ok(table.includes('colspan="2"'));
+            assert.ok(table.includes('rowspan="1"'));
+            assert.ok(table.includes('role="gridcell"'));
+            assert.ok(table.includes('aria-label="Table cell 1"'));
+            assert.ok(table.includes('background:#eee'));
+            assert.ok(table.includes('border:1px solid'));
+            assert.ok(table.includes('padding:4px'));
+            // Paragraph child rendered, image child skipped
+            assert.ok(table.includes('<p class="tm-wysiwyg-block" data-block-id="p1">Hello</p>'));
+            assert.ok(!table.includes('data-block-id="img"'));
+            // Second cell has index 1 and no style attribute
+            assert.ok(table.includes('data-cell-id="c2"'));
+            assert.ok(table.includes('data-column-index="1"'));
+            assert.ok(table.includes('aria-label="Table cell 2"'));
+
+            // HTML-unsafe content escaped
+            const unsafe = render({
+                id: 'x',
+                content: { rows: [{ id: 'r', cells: [
+                    { id: 'c', blocks: [{ id: 'p', type: 'paragraph', content: { runs: [{ text: '<script>' }] } }] },
+                ] }] },
+            });
+            assert.ok(unsafe.includes('&lt;script&gt;'));
+            assert.ok(!unsafe.includes('<script>'));
+
+            // Default colspan/rowspan 1
+            const defaults = render({
+                id: 'd',
+                content: { rows: [{ id: 'r', cells: [{ id: 'c', blocks: [] }] }] },
+            });
+            assert.ok(defaults.includes('colspan="1"'));
+            assert.ok(defaults.includes('rowspan="1"'));
+
+            // Factory validation
+            try { mod.createRenderEngineTableHtml({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-engine-table-html", script,
+            "render/engine-table-html.mjs");
+    }
+
+    [Fact]
+    public async Task PhaseD2_MarkersForBlockFiltersCommentRevisionSearch()
+    {
+        if (!PerformanceScenarioRunner.IsNodeAvailable()) return;
+
+        var script = """
+            const moduleUrl = require('url').pathToFileURL(process.argv[2]).href;
+            const mod = await import(moduleUrl);
+            const assert = require('assert');
+
+            function asArray(v) { return Array.isArray(v) ? v : []; }
+            let refreshCount = 0;
+            function refreshRuntimeMarkerStore(inst) {
+                refreshCount++;
+                if (inst) {
+                    inst.markerStore = {
+                        _all: inst._markers || [],
+                        byType(type) { return this._all.filter(m => m.type === type); },
+                        get all() { return this._all; },
+                    };
+                }
+            }
+
+            const helpers = mod.createMarkersForBlock({ refreshRuntimeMarkerStore, asArray });
+            assert.ok(typeof helpers.commentMarkersForBlock === 'function');
+            assert.ok(typeof helpers.revisionMarkersForBlock === 'function');
+            assert.ok(typeof helpers.searchMarkersForBlock === 'function');
+
+            // Lazy refresh when no markerStore
+            const inst = {
+                _markers: [
+                    { type: 'comment', targetId: 'c1', range: { startBlockId: 'b1', endBlockId: 'b1' } },
+                    { type: 'comment', targetId: 'c2', range: { startBlockId: 'b2', endBlockId: 'b3' } },
+                    { type: 'revisionInsertion', targetId: 'r1', range: { startBlockId: 'b1', endBlockId: 'b9' } },
+                    { type: 'revisionDeletion', targetId: 'r2', range: { startBlockId: 'b5', endBlockId: 'b5' } },
+                    { type: 'other', range: { startBlockId: 'b1' } },
+                ],
+                searchMarkers: [
+                    { id: 's1', range: { startBlockId: 'b1', endBlockId: 'b1' } },
+                    { id: 's2', blockId: 'b1' },
+                    { id: 's3', range: { startBlockId: 'b2' } },
+                ],
+            };
+
+            const comments = helpers.commentMarkersForBlock(inst, 'b1');
+            assert.strictEqual(refreshCount, 1, 'store lazily refreshed once');
+            assert.strictEqual(comments.length, 1);
+            assert.strictEqual(comments[0].targetId, 'c1');
+
+            // endBlockId match counts too
+            const commentsB3 = helpers.commentMarkersForBlock(inst, 'b3');
+            assert.strictEqual(commentsB3.length, 1);
+            assert.strictEqual(commentsB3[0].targetId, 'c2');
+
+            // revision markers only include type starting with 'revision'
+            const revisions = helpers.revisionMarkersForBlock(inst, 'b1');
+            assert.strictEqual(revisions.length, 1);
+            assert.strictEqual(revisions[0].targetId, 'r1');
+            // the 'other' marker is excluded even though it starts in b1
+
+            // search markers: range start/end OR marker.blockId
+            const search = helpers.searchMarkersForBlock(inst, 'b1');
+            assert.strictEqual(search.length, 2);
+            assert.deepStrictEqual(search.map(m => m.id), ['s1', 's2']);
+
+            // No matches → empty array
+            assert.deepStrictEqual(helpers.commentMarkersForBlock(inst, 'nope'), []);
+            assert.deepStrictEqual(helpers.searchMarkersForBlock({ searchMarkers: null }, 'b1'), []);
+
+            // Factory validation
+            try { mod.createMarkersForBlock({}); assert.fail('expected throw'); }
+            catch (err) { assert.ok(err instanceof TypeError); }
+
+            console.log('OK');
+            """;
+        await RunNodeScriptAsync("phase-d-markers-for-block", script,
+            "render/markers-for-block.mjs");
+    }
+
 
     private static async Task RunNodeScriptAsync(
         string scenario,

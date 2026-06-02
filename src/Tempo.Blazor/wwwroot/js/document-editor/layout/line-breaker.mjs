@@ -8,6 +8,7 @@
 //   { breakParagraph(paragraph, opts), getMeasurementStats() }
 
 import { asArray, clone, sortObject } from '../core/helpers.mjs';
+import { baseDirection } from './bidi.mjs';
 
 export function createLineBreakerModule(options) {
     const opts = options || {};
@@ -62,9 +63,15 @@ export function createLineBreakerModule(options) {
             const lines = [];
             const segments = [];
             const caretStops = [];
-            const rawAlignment = (paragraph && (paragraph.alignment ?? paragraph.Alignment))
-                ?? merged.alignment ?? merged.Alignment ?? 'left';
-            const alignment = normalizeParagraphAlignment(rawAlignment);
+            const paragraphAlignment = paragraph && (paragraph.alignment ?? paragraph.Alignment);
+            const rawAlignment = paragraphAlignment ?? merged.alignment ?? merged.Alignment ?? 'left';
+            let alignment = normalizeParagraphAlignment(rawAlignment);
+            // R.5.16 — an RTL paragraph that didn't set its OWN alignment defaults to right-aligned
+            // (matches Word / Google Docs: RTL text starts at the right margin). An inherited/default
+            // 'left' does not count as explicit.
+            if (paragraphAlignment == null && alignment === 'left' && baseDirection(paragraphData.text) === 'rtl') {
+                alignment = 'right';
+            }
             let y = normalizedOptions.y;
             let current = createLineDraft(0, firstRanges, y);
             let nextSegmentId = 0;
@@ -97,14 +104,34 @@ export function createLineBreakerModule(options) {
 
             function addCaretStopsForSegment(segment) {
                 const length = Math.max(1, segment.end - segment.start);
+                // R.5.16 — caret x per offset from the SHAPED prefix advance (font + Arabic
+                // cursive joining aware) rather than linear interpolation, which wrongly assumes
+                // every glyph is the same width. measureText shapes each prefix, so the caret
+                // tracks real advances for proportional fonts and Arabic/RTL alike. Falls back to
+                // interpolation when the segment text / measurement service isn't available.
+                const text = typeof segment.text === 'string' ? segment.text : '';
+                const style = segment.style || {};
+                const baseX = segment.rect.x;
+                const totalW = segment.rect.width;
+                const canMeasure = text.length === length && service && typeof service.measureText === 'function';
                 for (let i = segment.start; i <= segment.end; i++) {
-                    const ratio = (i - segment.start) / length;
+                    const k = i - segment.start;
+                    let x;
+                    if (k <= 0) {
+                        x = baseX;
+                    } else if (k >= length) {
+                        x = baseX + totalW;
+                    } else if (canMeasure) {
+                        x = baseX + Math.min(totalW, service.measureText(text.slice(0, k), style).width);
+                    } else {
+                        x = baseX + totalW * (k / length);
+                    }
                     const stop = {
                         blockId: paragraph && (paragraph.id || paragraph.Id) || 'paragraph',
                         offset: i,
                         rangeIndex: segment.rangeIndex || 0,
                         rect: {
-                            x: segment.rect.x + segment.rect.width * ratio,
+                            x: x,
                             y: segment.rect.y,
                             width: 1,
                             height: segment.rect.height,
@@ -247,6 +274,16 @@ export function createLineBreakerModule(options) {
                     caretStops.forEach(function (stop) {
                         if (stop.lineId === line.id && Number(stop.rangeIndex || 0) === Number(key)) {
                             stop.rect.x += shift;
+                        }
+                    });
+                    // R.5.16 fix — materializeLineDraft applies the alignment shift only to its
+                    // THROWAWAY (sortObject-cloned) ranges, so the offset never reached the real
+                    // rendered segments. `current.segments` holds this line's live segment refs (the
+                    // same objects pushed to the global `segments` array), tagged with rangeIndex.
+                    current.segments.forEach(function (segment) {
+                        if (Number(segment.rangeIndex || 0) === Number(key)) {
+                            if (segment.rect) segment.rect.x += shift;
+                            if (segment.objectRect) segment.objectRect.x += shift;
                         }
                     });
                 });

@@ -136,6 +136,40 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     /// <summary>Offline draft behavior for the editor. Defaults to disabled.</summary>
     [Parameter] public DocumentEditorOfflineMode OfflineMode { get; set; } = DocumentEditorOfflineMode.Disabled;
 
+    /// <summary>
+    /// Selects the rendering/editing engine (R.4/R.5 cutover feature flag). As of the R.5
+    /// cutover the default is <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/> — the
+    /// model-owned engine reached hosted-interop parity (toolbar/save/undo/comments/
+    /// collaboration/a11y all wired + E2E-verified). Pass
+    /// <see cref="DocumentEditorRenderEngine.Legacy"/> to opt back into the contenteditable
+    /// engine (it is still present and selectable until legacy is removed after soak +
+    /// approval). The flip is reversible — just change this default. See
+    /// <c>planning/r5-core-engine-parity-and-cutover-backlog.md</c>.
+    /// </summary>
+    [Parameter] public DocumentEditorRenderEngine RenderEngine { get; set; } = DocumentEditorRenderEngine.CoreEnginePreview;
+
+    /// <summary>
+    /// The engine actually in effect. Until the core engine reaches hosted-interop parity
+    /// (the R.4.8 cutover gate), <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/>
+    /// resolves to <see cref="DocumentEditorRenderEngine.Legacy"/> so requesting the
+    /// preview can never leave the editor non-functional.
+    /// </summary>
+    internal DocumentEditorRenderEngine EffectiveRenderEngine =>
+        DocumentEditorRenderEngineFlag.Resolve(RenderEngine, CoreEngineHostedInteropReady);
+
+    /// <summary>
+    /// Whether the core engine is wired into the editor's render path well enough to honor
+    /// an explicit <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/> request: it
+    /// renders the document (positioned-DOM), accepts keyboard/IME editing, and round-trips
+    /// the model back to C# (verified by the <c>R49</c> WASM bridge E2E). It is still a
+    /// PREVIEW — toolbar command routing, autosave, collaboration, and advanced features are
+    /// not yet wired through the new engine, so it must not become the default until full
+    /// parity (the R.4.8 finale; see <c>planning/r48-cutover-plan.md</c>). The default
+    /// remains <see cref="DocumentEditorRenderEngine.Legacy"/>, so nothing changes unless a
+    /// host explicitly opts in.
+    /// </summary>
+    internal const bool CoreEngineHostedInteropReady = true;
+
     /// <summary>Optional offline draft store used when <see cref="OfflineMode"/> is enabled.</summary>
     [Parameter] public IDocumentOfflineStore? OfflineStore { get; set; }
 
@@ -184,6 +218,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private DocumentEditorDocument? _document;
     private TmDocumentEditorToolbar? _toolbar;
     private TmDocumentWysiwygHost? _wysiwygHost;
+    private TmDocumentCoreEngineHost? _coreHost; // R.4.8 — used when RenderEngine == CoreEnginePreview
+    private bool _coreCanUndo;                   // R.4.8 — core host undo/redo state, synced into EffectiveUndoState
+    private bool _coreCanRedo;
+    private bool _coreImageDialogOpen;           // R.4.8 — minimal image-URL dialog for the core engine
+    private string _coreImageUrl = string.Empty;
+    private TmDocumentCoreEngineHost.CoreObjectSelection? _coreSelectedObject; // R.4.8 — engine image selection
+    private ImageBlockContent? _coreActiveImage;  // R.4.8 — drives the inspector in core mode
+    private string _coreBlockStyle = "Normal";    // R.4.8 — block-style picker value (core engine)
+    private TmDocumentCoreEngineHost.CoreContextMenuRequest? _coreContextMenu; // R.5.23 — right-click menu
     private DocumentEditorSelectionState _selection = new();
     private DocumentEditorSelectionContext _selectionContext = DocumentEditorSelectionContext.Empty;
     private string? _activeImageInspectorBlockId;
@@ -548,8 +591,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private WysiwygUndoState EffectiveUndoState => new()
     {
-        CanUndo = _wysiwygUndoState.CanUndo || _commandStack.CanUndo,
-        CanRedo = _wysiwygUndoState.CanRedo || _commandStack.CanRedo,
+        CanUndo = _wysiwygUndoState.CanUndo || _commandStack.CanUndo || _coreCanUndo,
+        CanRedo = _wysiwygUndoState.CanRedo || _commandStack.CanRedo || _coreCanRedo,
         UndoDepth = _wysiwygUndoState.UndoDepth + (_commandStack.CanUndo ? 1 : 0),
         RedoDepth = _wysiwygUndoState.RedoDepth + (_commandStack.CanRedo ? 1 : 0),
         NextUndoDescription = _wysiwygUndoState.CanUndo
@@ -951,7 +994,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var saveUndoEpoch = _wysiwygUndoState.Epoch;
         var saveDirtyEpoch = _wysiwygDirtyState.DirtyEpoch;
 
-        if (_wysiwygHost is not null)
+        if (UsingCoreEngine)
+        {
+            // R.4.8 — pull the live model from the core engine and persist it.
+            var coreDoc = await _coreHost!.RequestDocumentAsync();
+            documentToSave = CreateProviderBoundarySnapshot(coreDoc ?? documentToSave);
+            _document = documentToSave;
+            _currentDocument = documentToSave;
+        }
+        else if (_wysiwygHost is not null)
         {
             var undoState = await _wysiwygHost.RequestUndoStateAsync();
             if (undoState is not null)
@@ -1046,6 +1097,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                         _wysiwygDirtyState = dirtyState;
                         _isDirty = dirtyState.IsDirty;
                     }
+                }
+                else if (saveIsCurrent && UsingCoreEngine)
+                {
+                    // R.4.8 — baseline the core engine's dirty tracking at the saved version.
+                    await _coreHost!.MarkSavedAsync();
+                    _isDirty = await _coreHost.IsDirtyAsync();
+                    _coreCanUndo = await _coreHost.CanUndoAsync();
+                    _coreCanRedo = await _coreHost.CanRedoAsync();
                 }
 
                 _saveMessage = trigger == DocumentEditorSaveTrigger.AutoSave
@@ -1404,6 +1463,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private async Task<DocumentEditorDocument> GetCurrentDocumentForProviderExportAsync()
     {
         var documentToExport = _currentDocument ?? _document ?? DocumentEditorDocument.Empty();
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            // R.5.21 — pull the live model from the core engine so DOCX/ODT/PDF exports reflect
+            // unsaved edits (tables/images/text round-trip via CoreEngineModelConverter).
+            var coreDoc = await _coreHost.RequestDocumentAsync();
+            documentToExport = CreateProviderBoundarySnapshot(coreDoc ?? documentToExport);
+            _document = documentToExport;
+            _currentDocument = documentToExport;
+            return documentToExport;
+        }
         if (_wysiwygHost is not null)
         {
             var jsSnapshot = await _wysiwygHost.RequestSnapshotAsync();
@@ -1508,21 +1577,100 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
+        // R.4.8 — the legacy image dialog lives inside the legacy JS host; the core engine
+        // gets a small Blazor URL dialog that routes the chosen image into engine.insertImage.
+        if (UsingCoreEngine)
+        {
+            _coreImageUrl = string.Empty;
+            _coreImageDialogOpen = true;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         if (_wysiwygHost is not null)
         {
             await _wysiwygHost.OpenImageDialogAsync();
         }
     }
 
+    // R.4.8 — inserts the composed image URL into the core engine (floating drawing with
+    // wrapping + resize handles from R.4.6d). The engine anchors it at its live caret.
+    private async Task InsertCoreImageAsync()
+    {
+        if (_coreHost is null || string.IsNullOrWhiteSpace(_coreImageUrl))
+        {
+            return;
+        }
+
+        var url = _coreImageUrl.Trim();
+        await _coreHost.ExecCommandAsync("insertImage", new { url, width = 240, height = 160 });
+        _coreImageDialogOpen = false;
+        _coreImageUrl = string.Empty;
+        await SyncCoreEngineStateAsync();
+    }
+
+    private void CancelCoreImageDialog()
+    {
+        _coreImageDialogOpen = false;
+        _coreImageUrl = string.Empty;
+    }
+
+    // R.4.8 — uploads an image into the core engine by reading the picked file client-side as
+    // a data URL (the preview engine needs no ImageProvider) and routing it to insertImage.
+    private async Task HandleCoreImageFileAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null || _coreHost is null)
+        {
+            return;
+        }
+
+        const long maxBytes = 8 * 1024 * 1024;
+        if (file.Size <= 0 || file.Size > maxBytes)
+        {
+            return;
+        }
+
+        string dataUrl;
+        await using (var stream = file.OpenReadStream(maxBytes))
+        using (var buffer = new MemoryStream())
+        {
+            await stream.CopyToAsync(buffer);
+            var contentType = string.IsNullOrWhiteSpace(file.ContentType) ? "image/png" : file.ContentType;
+            dataUrl = $"data:{contentType};base64,{Convert.ToBase64String(buffer.ToArray())}";
+        }
+
+        await _coreHost.ExecCommandAsync("insertImage", new { url = dataUrl, width = 240, height = 160 });
+        _coreImageDialogOpen = false;
+        _coreImageUrl = string.Empty;
+        await SyncCoreEngineStateAsync();
+    }
+
     private async Task InsertImageAssetAsync()
     {
-        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Image) || _wysiwygHost is null)
+        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Image))
         {
             return;
         }
 
         var asset = ImageAssetOptions.FirstOrDefault();
-        if (asset is not null)
+        if (asset is null)
+        {
+            return;
+        }
+
+        // R.4.8 — the core engine inserts the asset's URL directly (no legacy host).
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(asset.Url))
+            {
+                await _coreHost.ExecCommandAsync("insertImage", new { url = asset.Url, width = 240, height = 160 });
+                await SyncCoreEngineStateAsync();
+            }
+            return;
+        }
+
+        if (_wysiwygHost is not null)
         {
             await _wysiwygHost.InsertImageAssetAsync(asset);
         }
@@ -1538,13 +1686,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await _wysiwygHost.ExecuteRuntimeCommandAsync(command, payload);
     }
 
-    private Task SetActiveImageAltTextFromPanelAsync(string altText) =>
-        ExecuteImageRuntimeCommandAsync("setImageAltText", new
+    private async Task SetActiveImageAltTextFromPanelAsync(string altText)
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.SetObjectAltTextAsync(altText ?? string.Empty);
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImageAltText", new
         {
             AltText = altText,
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
     private Task SetActiveImageDecorativeFromPanelAsync(bool isDecorative) =>
         ExecuteImageRuntimeCommandAsync("setImageDecorative", new
@@ -1554,20 +1711,40 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             BlockId = ActiveImageInspectorBlockId
         });
 
-    private Task ToggleActiveImageCaptionFromPanelAsync() =>
-        ExecuteImageRuntimeCommandAsync("toggleImageCaption", new
+    private async Task ToggleActiveImageCaptionFromPanelAsync()
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            // Toggle: clear an existing caption, otherwise add a default one.
+            var current = _coreActiveImage?.Caption ?? string.Empty;
+            await _coreHost.SetObjectCaptionAsync(string.IsNullOrEmpty(current) ? "Caption" : string.Empty);
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("toggleImageCaption", new
         {
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
-    private Task SetActiveImageCaptionFromPanelAsync(string caption) =>
-        ExecuteImageRuntimeCommandAsync("setImageCaption", new
+    private async Task SetActiveImageCaptionFromPanelAsync(string caption)
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.SetObjectCaptionAsync(caption ?? string.Empty);
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImageCaption", new
         {
             Caption = caption,
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
     private Task SetActiveImageUrlFromPanelAsync(string? imageUrl) =>
         ExecuteImageRuntimeCommandAsync("setImageUrl", new
@@ -1577,24 +1754,116 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             BlockId = ActiveImageInspectorBlockId
         });
 
-    private Task SetActiveImageWrapModeFromPanelAsync(DocumentWrapMode wrapMode) =>
-        ExecuteImageRuntimeCommandAsync("setImageWrapMode", new
+    private async Task SetActiveImageWrapModeFromPanelAsync(DocumentWrapMode wrapMode)
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.SetObjectWrapModeAsync(EngineWrapMode(wrapMode));
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImageWrapMode", new
         {
             WrapMode = wrapMode.ToString(),
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
-    private Task SetActiveImageAlignmentFromPanelAsync(DocumentImageAlignment alignment) =>
-        ExecuteImageRuntimeCommandAsync("setImagePosition", new
+    // R.4.8 — paragraph (block) style picker. The core engine applies a named style
+    // (Normal/Title/Heading1-6 → setParagraphStyle); the legacy host has no named-style
+    // command, so the picker is only shown for the core engine preview.
+    private async Task ApplyBlockStyleAsync(string styleName)
+    {
+        if (string.IsNullOrEmpty(styleName))
+        {
+            return;
+        }
+
+        if (await RouteToCoreEngineAsync(styleName))
+        {
+            _coreBlockStyle = styleName;
+            return;
+        }
+    }
+
+    // R.4.8 — JS→.NET: the engine selected/deselected an image; drive the inspector panel.
+    private async Task HandleCoreObjectSelectedAsync(TmDocumentCoreEngineHost.CoreObjectSelection? selection)
+    {
+        _coreSelectedObject = selection;
+        if (selection is null || string.IsNullOrEmpty(selection.ObjectId))
+        {
+            _coreActiveImage = null;
+        }
+        else
+        {
+            _coreActiveImage = new ImageBlockContent
+            {
+                Url = selection.Url,
+                AltText = selection.AltText ?? string.Empty,
+                Caption = selection.Caption ?? string.Empty,
+                Layout = new DocumentObjectLayout
+                {
+                    Wrap = new DocumentObjectWrap { Mode = ParseEngineWrapMode(selection.WrapMode) },
+                    Transform = new DocumentObjectTransform { Width = selection.Width, Height = selection.Height },
+                    Position = new DocumentObjectPosition { X = selection.X, Y = selection.Y },
+                },
+            };
+            OpenSidePanel(DocumentSidePanelTab.Properties);
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static DocumentWrapMode ParseEngineWrapMode(string? mode) => (mode ?? "inline").ToLowerInvariant() switch
+    {
+        "square" => DocumentWrapMode.Square,
+        "tight" => DocumentWrapMode.Tight,
+        "through" => DocumentWrapMode.Through,
+        "topandbottom" => DocumentWrapMode.TopBottom,
+        "behindtext" => DocumentWrapMode.BehindText,
+        "infrontoftext" => DocumentWrapMode.InFrontOfText,
+        _ => DocumentWrapMode.Inline,
+    };
+
+    private static string EngineWrapMode(DocumentWrapMode mode) => mode switch
+    {
+        DocumentWrapMode.Square => "square",
+        DocumentWrapMode.Tight => "tight",
+        DocumentWrapMode.Through => "through",
+        DocumentWrapMode.TopBottom => "topAndBottom",
+        DocumentWrapMode.BehindText => "behindText",
+        DocumentWrapMode.InFrontOfText => "inFrontOfText",
+        _ => "inline",
+    };
+
+    private async Task SetActiveImageAlignmentFromPanelAsync(DocumentImageAlignment alignment)
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.SetObjectAlignmentAsync(ToHorizontalPosition(alignment).ToString());
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImagePosition", new
         {
             HorizontalPosition = ToHorizontalPosition(alignment).ToString(),
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
-    private Task SetActiveImageSizeFromPanelAsync(DocumentImageSize size) =>
-        ExecuteImageRuntimeCommandAsync("setImageSize", new
+    private async Task SetActiveImageSizeFromPanelAsync(DocumentImageSize size)
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.SetObjectSizeAsync(size.Width ?? 0, size.Height ?? 0);
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImageSize", new
         {
             Width = size.Width,
             Height = size.Height,
@@ -1602,9 +1871,45 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
-    private Task SetActiveImagePositionFromPanelAsync(DocumentObjectPosition position) =>
-        ExecuteImageRuntimeCommandAsync("setImageObjectPosition", new
+    // R.5.3 — autosave for the core engine. The engine fires OnModelChanged (debounced in JS by
+    // CoreChangeDebounceMs) after the user stops editing; we mark the document dirty (so the
+    // before-unload guard + manual save reflect it) and, when autosave is enabled, persist.
+    private int CoreChangeDebounceMs =>
+        AutoSaveInterval is { } interval && interval > TimeSpan.Zero
+            ? (int)Math.Clamp(interval.TotalMilliseconds, 250, 10000)
+            : 800;
+
+    private async Task HandleCoreModelChangedAsync()
+    {
+        if (_disposed || !UsingCoreEngine)
+        {
+            return;
+        }
+        _isDirty = true;
+        _autosave.RegisterLocalChange();
+        SyncAutosavePendingAction();
+        await UpdateBeforeUnloadGuardAsync();
+        await InvokeAsync(StateHasChanged);
+
+        if (AutoSaveInterval is { } interval && interval > TimeSpan.Zero && !_isSaving && CanEditDocument)
+        {
+            // The JS side already debounced; persist now (SaveCoreAsync pulls the live model).
+            await SaveAsync(DocumentEditorSaveTrigger.AutoSave);
+        }
+    }
+
+    private async Task SetActiveImagePositionFromPanelAsync(DocumentObjectPosition position)
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.SetObjectPositionAsync(position.X, position.Y);
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImageObjectPosition", new
         {
             X = position.X,
             Y = position.Y,
@@ -1615,6 +1920,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
     private Task SetActiveImageLockAnchorFromPanelAsync(bool lockAnchor) =>
         ExecuteImageRuntimeCommandAsync("setImageAnchorMode", new
@@ -1624,21 +1930,39 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             BlockId = ActiveImageInspectorBlockId
         });
 
-    private Task BringActiveImageForwardFromPanelAsync() =>
-        ExecuteImageRuntimeCommandAsync("setImageZOrder", new
+    private async Task BringActiveImageForwardFromPanelAsync()
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.BringObjectForwardAsync();
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImageZOrder", new
         {
             Direction = "Forward",
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
-    private Task SendActiveImageBackwardFromPanelAsync() =>
-        ExecuteImageRuntimeCommandAsync("setImageZOrder", new
+    private async Task SendActiveImageBackwardFromPanelAsync()
+    {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.SendObjectBackwardAsync();
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
+        await ExecuteImageRuntimeCommandAsync("setImageZOrder", new
         {
             Direction = "Backward",
             ObjectId = ActiveImageInspectorObjectId,
             BlockId = ActiveImageInspectorBlockId
         });
+    }
 
     private Task SetActiveTablePropertiesFromPanelAsync(TableLayoutContent layout) =>
         _wysiwygHost is null
@@ -1698,6 +2022,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         if (!IsFeatureEnabled(DocumentEditorFeatureNames.Table))
         {
+            return;
+        }
+
+        if (UsingCoreEngine)
+        {
+            await _coreHost!.ExecCommandAsync("insertTable", new { rows, cols = columns });
+            await SyncCoreEngineStateAsync();
             return;
         }
 
@@ -4638,10 +4969,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return InvokeAsync(StateHasChanged);
     }
 
-    private Task OpenCommentsPanelAsync()
+    private async Task OpenCommentsPanelAsync()
     {
         OpenSidePanel(DocumentSidePanelTab.Comments, manual: true);
-        return InvokeAsync(StateHasChanged);
+        // R.5.12 — the engine owns its comments; refresh the rail from the engine when opening.
+        if (UsingCoreEngine)
+        {
+            await SyncCoreEngineCommentsAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private Task OpenRevisionsPanelAsync()
@@ -4866,6 +5203,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task CreateCommentAsync(DocumentCommentCreateRequest request)
     {
+        // R.4.8 — in the core engine the comment is stored in the engine model (not the
+        // provider): route the composed text to the engine, which highlights the range.
+        if (UsingCoreEngine)
+        {
+            await CreateCommentInCoreEngineAsync(request);
+            return;
+        }
+
         if (Provider is null || _document is null || !CanUseComments || _isSubmittingComment)
         {
             return;
@@ -4926,8 +5271,101 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
     }
 
+    // R.4.8 — comment compose routed to the core engine. The engine owns comment storage
+    // (model.comments + anchor mark highlight) and undo; the provider is bypassed for now.
+    private async Task CreateCommentInCoreEngineAsync(DocumentCommentCreateRequest request)
+    {
+        if (_coreHost is null || _isSubmittingComment)
+        {
+            return;
+        }
+
+        _isSubmittingComment = true;
+        _commentMessage = null;
+        try
+        {
+            var created = await _coreHost.AddCommentAsync(request.Text, Author?.DisplayName);
+            if (created)
+            {
+                await SyncCoreEngineCommentsAsync();
+                _commentComposerOpen = false;
+                _draftCommentAnchor = null;
+                _commentMessage = Loc["TmDocumentEditor_CommentCreated"];
+                await SyncCoreEngineStateAsync();
+            }
+            else
+            {
+                // No selection range to anchor to (engine.addComment needs a non-collapsed selection).
+                _commentMessage = Loc["TmDocumentEditor_CommentCreateFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _commentMessage = Loc["TmDocumentEditor_CommentCreateFailed"];
+        }
+        finally
+        {
+            _isSubmittingComment = false;
+            if (!_disposed)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    // R.5.12 — pulls the engine's comments into the rail's model (root entry + reply thread +
+    // anchor text + resolved status) so the comments sidebar reflects engine-owned comments.
+    private async Task SyncCoreEngineCommentsAsync()
+    {
+        if (_coreHost is null)
+        {
+            return;
+        }
+
+        var core = await _coreHost.GetCommentsAsync();
+        _comments = core.Select(c =>
+        {
+            var entries = new List<DocumentCommentEntry>
+            {
+                new()
+                {
+                    Author = new DocumentEditorAuthor { DisplayName = c.Author ?? "You" },
+                    Text = c.Text ?? string.Empty,
+                },
+            };
+            foreach (var reply in c.Replies)
+            {
+                entries.Add(new DocumentCommentEntry
+                {
+                    Author = new DocumentEditorAuthor { DisplayName = reply.Author ?? "You" },
+                    Text = reply.Text ?? string.Empty,
+                });
+            }
+
+            return new DocumentComment
+            {
+                Id = string.IsNullOrEmpty(c.Id) ? Guid.NewGuid().ToString("N") : c.Id!,
+                Anchor = new DocumentCommentAnchor
+                {
+                    Type = DocumentCommentAnchorType.TextRange,
+                    BlockId = c.AnchorBlockId,
+                    StartOffset = c.AnchorOffset,
+                },
+                Status = c.Resolved ? DocumentCommentStatus.Resolved : DocumentCommentStatus.Open,
+                Entries = entries,
+            };
+        }).ToList();
+    }
+
     private async Task ReplyToCommentAsync(DocumentEditorCommentReplyRequest request)
     {
+        // R.5.12 — the core engine owns its comment threads; route the reply to the engine.
+        if (UsingCoreEngine)
+        {
+            await ReplyToCoreEngineCommentAsync(request);
+            return;
+        }
+
         if (Provider is null || _document is null || !CanUseComments || _isSubmittingComment)
         {
             return;
@@ -5007,8 +5445,128 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
     }
 
+    // R.5.12 — engine-owned reply/resolve/reopen/delete + navigation for the core engine.
+    private async Task ReplyToCoreEngineCommentAsync(DocumentEditorCommentReplyRequest request)
+    {
+        if (_coreHost is null || !CanUseComments || _isSubmittingComment)
+        {
+            return;
+        }
+
+        _isSubmittingComment = true;
+        _commentMessage = null;
+        try
+        {
+            var ok = await _coreHost.ReplyToCommentAsync(request.CommentId, request.Text, Author?.DisplayName);
+            if (ok)
+            {
+                await SyncCoreEngineCommentsAsync();
+                _selectedCommentId = request.CommentId;
+                _commentMessage = Loc["TmDocumentEditor_CommentReplyAdded"];
+            }
+            else
+            {
+                _commentMessage = Loc["TmDocumentEditor_CommentReplyFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _commentMessage = Loc["TmDocumentEditor_CommentReplyFailed"];
+        }
+        finally
+        {
+            _isSubmittingComment = false;
+            if (!_disposed)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task ResolveOrReopenCoreEngineCommentAsync(string commentId, bool resolve)
+    {
+        if (_coreHost is null || !CanResolveComments || _isSubmittingComment)
+        {
+            return;
+        }
+
+        _isSubmittingComment = true;
+        try
+        {
+            var ok = resolve
+                ? await _coreHost.ResolveCommentAsync(commentId)
+                : await _coreHost.ReopenCommentAsync(commentId);
+            if (ok)
+            {
+                await SyncCoreEngineCommentsAsync();
+                _selectedCommentId = commentId;
+                _commentMessage = Loc[resolve ? "TmDocumentEditor_CommentResolvedMessage" : "TmDocumentEditor_CommentReopenedMessage"];
+            }
+        }
+        catch (Exception)
+        {
+            _commentMessage = Loc[resolve ? "TmDocumentEditor_CommentResolveFailed" : "TmDocumentEditor_CommentReopenFailed"];
+        }
+        finally
+        {
+            _isSubmittingComment = false;
+            if (!_disposed)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task DeleteCoreEngineCommentAsync(string commentId)
+    {
+        if (_coreHost is null || !CanDeleteOwnComments || _isSubmittingComment)
+        {
+            return;
+        }
+
+        _isSubmittingComment = true;
+        _commentMessage = null;
+        try
+        {
+            var ok = await _coreHost.RemoveCommentAsync(commentId);
+            if (ok)
+            {
+                await SyncCoreEngineCommentsAsync();
+                if (_selectedCommentId == commentId)
+                {
+                    _selectedCommentId = null;
+                }
+
+                _commentMessage = Loc["TmDocumentEditor_CommentDeleted"];
+            }
+            else
+            {
+                _commentMessage = Loc["TmDocumentEditor_CommentDeleteFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _commentMessage = Loc["TmDocumentEditor_CommentDeleteFailed"];
+        }
+        finally
+        {
+            _isSubmittingComment = false;
+            if (!_disposed)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
     private async Task ResolveCommentAsync(string commentId)
     {
+        // R.5.12 — route to the engine when the core engine owns the comment store.
+        if (UsingCoreEngine)
+        {
+            await ResolveOrReopenCoreEngineCommentAsync(commentId, resolve: true);
+            return;
+        }
+
         if (Provider is null || !CanResolveComments || _isSubmittingComment)
         {
             return;
@@ -5045,6 +5603,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task ReopenCommentAsync(string commentId)
     {
+        // R.5.12 — route to the engine when the core engine owns the comment store.
+        if (UsingCoreEngine)
+        {
+            await ResolveOrReopenCoreEngineCommentAsync(commentId, resolve: false);
+            return;
+        }
+
         if (Provider is null || !CanResolveComments || _isSubmittingComment)
         {
             return;
@@ -5081,6 +5646,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task DeleteCommentAsync(string commentId)
     {
+        // R.5.12 — route to the engine when the core engine owns the comment store.
+        if (UsingCoreEngine)
+        {
+            await DeleteCoreEngineCommentAsync(commentId);
+            return;
+        }
+
         if (Provider is null || _document is null || !CanDeleteOwnComments || _isSubmittingComment)
         {
             return;
@@ -5169,7 +5741,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _selectedCommentId = commentId;
         _selection.ActiveCommentId = commentId;
         OpenSidePanel(DocumentSidePanelTab.Comments);
-        if (_wysiwygHost is not null)
+        // R.5.12 — in the core engine, selecting a comment navigates the caret to its anchor.
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.GoToCommentAsync(commentId);
+        }
+        else if (_wysiwygHost is not null)
         {
             await _wysiwygHost.ScrollToCommentAsync(commentId);
         }
@@ -5191,6 +5768,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         if (_trackChangesEnabled)
         {
             OpenSidePanel(DocumentSidePanelTab.Revisions);
+        }
+
+        if (UsingCoreEngine)
+        {
+            await _coreHost!.ExecCommandAsync("trackChanges", _trackChangesEnabled);
         }
 
         await InvokeAsync(StateHasChanged);
@@ -5506,6 +6088,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
+        if (await RouteToCoreEngineAsync("undo"))
+        {
+            return;
+        }
+
         ClearPendingParagraphFormattingOverrides();
         if (_wysiwygHost is not null && _wysiwygUndoState.CanUndo)
         {
@@ -5555,6 +6142,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private async Task RedoAsync()
     {
         if (EffectiveReadOnly)
+        {
+            return;
+        }
+
+        if (await RouteToCoreEngineAsync("redo"))
         {
             return;
         }
@@ -5923,9 +6515,136 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await InvokeAsync(StateHasChanged);
     }
 
+    // R.4.8 step 3b — when the core engine preview hosts the editor, toolbar commands route
+    // to it (its host owns the model/undo/dirty) instead of the absent legacy wysiwyg host.
+    private bool UsingCoreEngine => EffectiveRenderEngine == DocumentEditorRenderEngine.CoreEnginePreview && _coreHost is not null;
+
+    private async Task<bool> RouteToCoreEngineAsync(string command, object? argument = null)
+    {
+        if (!UsingCoreEngine)
+        {
+            return false;
+        }
+        await _coreHost!.ExecCommandAsync(command, argument);
+        await SyncCoreEngineStateAsync();
+        return true;
+    }
+
+    // R.5.23 — the engine raised a right-click; show the core context menu at the pointer.
+    private Task HandleCoreContextMenuAsync(TmDocumentCoreEngineHost.CoreContextMenuRequest request)
+    {
+        _coreContextMenu = request;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private string CoreContextMenuStyle()
+        => _coreContextMenu is null
+            ? string.Empty
+            : FormattableString.Invariant($"position: fixed; left: {_coreContextMenu.X}px; top: {_coreContextMenu.Y}px;");
+
+    private void CloseCoreContextMenu() => _coreContextMenu = null;
+
+    // Runs a core-engine command from the context menu, then dismisses it.
+    private async Task RunCoreContextCommandAsync(string command)
+    {
+        CloseCoreContextMenu();
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.ExecCommandAsync(command);
+            await SyncCoreEngineStateAsync();
+        }
+
+        await _coreHost!.FocusAsync();
+    }
+
+    private async Task BeginCoreContextCommentAsync()
+    {
+        CloseCoreContextMenu();
+        await BeginCommentFromToolbarAsync();
+    }
+
+    private async Task AddCoreContextLinkAsync()
+    {
+        CloseCoreContextMenu();
+        await ApplyLinkAsync("https://example.com");
+    }
+
+    // R.5.23c — replace the misspelled word under the pointer with the chosen suggestion.
+    private async Task ApplyCoreSpellSuggestionAsync(string suggestion)
+    {
+        var misspelling = _coreContextMenu?.Info.Misspelling;
+        CloseCoreContextMenu();
+        if (misspelling is null || _coreHost is null || string.IsNullOrEmpty(misspelling.BlockId))
+        {
+            return;
+        }
+
+        await _coreHost.ExecCommandAsync("replacerange", new
+        {
+            blockId = misspelling.BlockId,
+            start = misspelling.Start,
+            end = misspelling.End,
+            text = suggestion,
+        });
+        await SyncCoreEngineStateAsync();
+        await _coreHost.FocusAsync();
+    }
+
+    private async Task SyncCoreEngineStateAsync()
+    {
+        if (_coreHost is null)
+        {
+            return;
+        }
+        _isDirty = await _coreHost.IsDirtyAsync();
+        _coreCanUndo = await _coreHost.CanUndoAsync();
+        _coreCanRedo = await _coreHost.CanRedoAsync();
+
+        // Reflect the engine's active formatting in the toolbar (after a command). Live
+        // read-back on caret moves needs a JS→.NET selection event (follow-up).
+        var fmt = await _coreHost.GetFormattingStateAsync();
+        if (fmt is not null)
+        {
+            _formattingState.Bold = fmt.Bold ? WysiwygFormattingValue.Active : WysiwygFormattingValue.Inactive;
+            _formattingState.Italic = fmt.Italic ? WysiwygFormattingValue.Active : WysiwygFormattingValue.Inactive;
+            _formattingState.Underline = fmt.Underline ? WysiwygFormattingValue.Active : WysiwygFormattingValue.Inactive;
+            _formattingState.Strikethrough = fmt.Strikethrough ? WysiwygFormattingValue.Active : WysiwygFormattingValue.Inactive;
+            _formattingState.ParagraphAlignment = fmt.Alignment switch
+            {
+                "center" => DocumentTextAlignment.Center,
+                "right" => DocumentTextAlignment.Right,
+                "justify" => DocumentTextAlignment.Justify,
+                _ => DocumentTextAlignment.Left,
+            };
+            _formattingState.ParagraphAlignmentMixed = false;
+            _formattingState.IsBulletList = fmt.BulletList;
+            _formattingState.IsNumberedList = fmt.NumberedList;
+            _formattingState.ListMixed = false;
+            if (!string.IsNullOrEmpty(fmt.ParagraphStyle))
+            {
+                _coreBlockStyle = fmt.ParagraphStyle;
+            }
+        }
+
+        await RefreshCommandRegistryAsync();
+        StateHasChanged();
+    }
+
     private async Task ToggleInlineMarkAsync(InlineMarkType markType)
     {
         if (EffectiveReadOnly)
+        {
+            return;
+        }
+
+        if (await RouteToCoreEngineAsync(markType switch
+        {
+            InlineMarkType.Bold => "bold",
+            InlineMarkType.Italic => "italic",
+            InlineMarkType.Underline => "underline",
+            InlineMarkType.Strikethrough => "strikethrough",
+            _ => "bold",
+        }))
         {
             return;
         }
@@ -5959,12 +6678,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task ApplyFontFamilyAsync(string cssFamily)
     {
-        if (_wysiwygHost is null || EffectiveReadOnly || string.IsNullOrWhiteSpace(cssFamily))
+        if (EffectiveReadOnly || string.IsNullOrWhiteSpace(cssFamily))
         {
             return;
         }
 
         if (!_fontFamilies.Any(font => string.Equals(font.CssFamily, cssFamily, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        if (await RouteToCoreEngineAsync("fontfamily", cssFamily))
+        {
+            return;
+        }
+
+        if (_wysiwygHost is null)
         {
             return;
         }
@@ -5984,7 +6713,17 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task ApplyFontSizeAsync(double sizePt)
     {
-        if (_wysiwygHost is null || EffectiveReadOnly || sizePt is < 6 or > 96)
+        if (EffectiveReadOnly || sizePt is < 6 or > 96)
+        {
+            return;
+        }
+
+        if (await RouteToCoreEngineAsync("fontsize", FormattableString.Invariant($"{sizePt:0.##}pt")))
+        {
+            return;
+        }
+
+        if (_wysiwygHost is null)
         {
             return;
         }
@@ -6002,23 +6741,40 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await RefreshFormattingStateFromRuntimeAsync(selection);
     }
 
-    private Task ApplyTextColorAsync(string color)
+    private async Task ApplyTextColorAsync(string color)
     {
-        return ApplyColorMarkAsync(InlineMarkType.TextColor, color);
+        if (UsingCoreEngine)
+        {
+            await RouteToCoreEngineAsync("textcolor", color);
+            return;
+        }
+        await ApplyColorMarkAsync(InlineMarkType.TextColor, color);
     }
 
-    private Task ApplyHighlightColorAsync(string color)
+    private async Task ApplyHighlightColorAsync(string color)
     {
+        if (UsingCoreEngine)
+        {
+            await RouteToCoreEngineAsync("highlight", string.IsNullOrWhiteSpace(color) ? null : color);
+            return;
+        }
         if (string.IsNullOrWhiteSpace(color))
         {
-            return ClearColorMarkAsync(InlineMarkType.Highlight);
+            await ClearColorMarkAsync(InlineMarkType.Highlight);
+            return;
         }
-
-        return ApplyColorMarkAsync(InlineMarkType.Highlight, color);
+        await ApplyColorMarkAsync(InlineMarkType.Highlight, color);
     }
 
     private async Task ApplyParagraphAlignmentAsync(DocumentTextAlignment alignment)
     {
+        if (await RouteToCoreEngineAsync("align", alignment.ToString().ToLowerInvariant()))
+        {
+            _formattingState.ParagraphAlignment = alignment;
+            _formattingState.ParagraphAlignmentMixed = false;
+            return;
+        }
+
         var selection = await ResolveParagraphCommandSelectionAsync();
         _pendingParagraphAlignment = alignment;
         _pendingParagraphAlignmentBlockId = selection?.AnchorBlockId;
@@ -6162,14 +6918,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return ExecuteParagraphCommandAsync("decreaseIndent");
     }
 
-    private Task ToggleBulletListAsync()
+    private async Task ToggleBulletListAsync()
     {
-        return ExecuteParagraphCommandAsync("toggleBulletList");
+        if (await RouteToCoreEngineAsync("bulletList"))
+        {
+            return;
+        }
+        await ExecuteParagraphCommandAsync("toggleBulletList");
     }
 
-    private Task ToggleNumberedListAsync()
+    private async Task ToggleNumberedListAsync()
     {
-        return ExecuteParagraphCommandAsync("toggleNumberedList");
+        if (await RouteToCoreEngineAsync("numberedList"))
+        {
+            return;
+        }
+        await ExecuteParagraphCommandAsync("toggleNumberedList");
     }
 
     private async Task ApplyParagraphPropertiesAsync(DocumentParagraphPropertiesPatch properties)
@@ -6397,7 +7161,17 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task ApplyLinkAsync(WysiwygLinkPayload payload)
     {
-        if (_wysiwygHost is null || EffectiveReadOnly)
+        if (EffectiveReadOnly)
+        {
+            return;
+        }
+
+        if (await RouteToCoreEngineAsync("link", payload?.Href))
+        {
+            return;
+        }
+
+        if (_wysiwygHost is null)
         {
             return;
         }
@@ -6426,7 +7200,17 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task RemoveLinkAsync()
     {
-        if (_wysiwygHost is null || EffectiveReadOnly)
+        if (EffectiveReadOnly)
+        {
+            return;
+        }
+
+        if (await RouteToCoreEngineAsync("removelink"))
+        {
+            return;
+        }
+
+        if (_wysiwygHost is null)
         {
             return;
         }
@@ -6616,6 +7400,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         _findPanelOpen = false;
         _floatingLayerStack.Remove(FloatingLayerId.FindPanel);
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.ExecCommandAsync("clearFind");
+        }
         await ClearSearchMarkersAsync();
         await InvokeAsync(StateHasChanged);
         await FocusDocumentAsync();
@@ -6639,8 +7427,41 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await _wysiwygHost.ScrollToSearchResultAsync(result.BlockId, result.BlockTextOffset, result.Length);
     }
 
+    // R.4.8 — the find panel's query changed; the core engine runs its own search + highlights
+    // all matches (R.4.6h-2). Empty query clears the highlight.
+    private async Task HandleFindSearchRequestedAsync(DocumentSearchQuery query)
+    {
+        if (!UsingCoreEngine || _coreHost is null) return;
+
+        if (string.IsNullOrEmpty(query.Text))
+        {
+            await _coreHost.ExecCommandAsync("clearFind");
+            return;
+        }
+
+        await _coreHost.ExecCommandAsync("find", new
+        {
+            query = query.Text,
+            options = new { caseSensitive = query.CaseSensitive, wholeWord = query.WholeWord },
+        });
+    }
+
+    // R.4.8 — next(+1)/previous(-1) moves the core engine's current highlight.
+    private async Task HandleFindNavigateAsync(int direction)
+    {
+        if (!UsingCoreEngine || _coreHost is null) return;
+        await _coreHost.ExecCommandAsync(direction < 0 ? "findPrev" : "findNext");
+    }
+
     private async Task HandleFindReplaceOneRequestedAsync(DocumentFindReplaceRequest request)
     {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.ExecCommandAsync("replaceCurrent", new { replacement = request.Replacement });
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
         if (_wysiwygHost is null || request.ActiveResult is null) return;
 
         await _wysiwygHost.ExecuteRuntimeCommandAsync("replaceOne", new
@@ -6660,6 +7481,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task HandleFindReplaceAllRequestedAsync(DocumentFindReplaceRequest request)
     {
+        if (UsingCoreEngine && _coreHost is not null)
+        {
+            await _coreHost.ExecCommandAsync("replaceall", new
+            {
+                query = request.Query.Text,
+                replacement = request.Replacement,
+                options = new { caseSensitive = request.Query.CaseSensitive, wholeWord = request.Query.WholeWord },
+            });
+            await SyncCoreEngineStateAsync();
+            return;
+        }
+
         if (_wysiwygHost is null) return;
 
         await _wysiwygHost.ExecuteRuntimeCommandAsync("replaceAll", new

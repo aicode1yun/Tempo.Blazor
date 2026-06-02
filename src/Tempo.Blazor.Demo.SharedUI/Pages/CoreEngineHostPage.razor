@@ -1,0 +1,69 @@
+@page "/core-engine-host"
+@using Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+<h1>Core engine host (R.4.8 preview)</h1>
+<p>Renders the new model-owned engine inside Blazor via <code>TmDocumentCoreEngineHost</code>.</p>
+
+<div style="display:flex; gap:8px; margin:8px 0;">
+    <button data-testid="cmd-bold" @onclick="BoldAsync">Bold</button>
+    <button data-testid="cmd-roundtrip" @onclick="RoundTripAsync">Round-trip → C#</button>
+    <button data-testid="cmd-focus" @onclick="FocusAsync">Focus</button>
+</div>
+
+<div data-testid="roundtrip-output">@_roundTripText</div>
+<div data-testid="dirty-state">@_dirty.ToString().ToLowerInvariant()</div>
+
+<div style="border:1px solid #ccc; padding:8px; position:relative; min-height:320px;">
+    <TmDocumentCoreEngineHost @ref="_host" Document="_document" AriaLabel="Core engine demo" />
+</div>
+
+@code {
+    private TmDocumentCoreEngineHost? _host;
+    private DocumentEditorDocument _document = BuildSampleDocument();
+    private string _roundTripText = string.Empty;
+    private bool _dirty;
+
+    private static DocumentEditorDocument BuildSampleDocument()
+    {
+        var doc = new DocumentEditorDocument { DocumentId = "core-host-demo" };
+        doc.Blocks =
+        [
+            new DocumentBlock
+            {
+                Id = "h1",
+                Type = DocumentBlockType.Heading,
+                Content = new HeadingBlockContent { Level = 1, Inlines = [new TextRun { Id = "h1-r", Text = "Bridge Demo" }] },
+            },
+            new DocumentBlock
+            {
+                Id = "p1",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent { Inlines = [new TextRun { Id = "p1-r", Text = "Hello world" }] },
+            },
+        ];
+        return doc;
+    }
+
+    private async Task BoldAsync()
+    {
+        if (_host is not null) await _host.ExecCommandAsync("bold");
+    }
+
+    private async Task FocusAsync()
+    {
+        if (_host is not null) await _host.FocusAsync();
+    }
+
+    private async Task RoundTripAsync()
+    {
+        if (_host is null) return;
+        var doc = await _host.RequestDocumentAsync();
+        _dirty = await _host.IsDirtyAsync();
+        var firstParagraph = doc?.Blocks.FirstOrDefault(b => b.Id == "p1");
+        _roundTripText = firstParagraph?.Content is ParagraphBlockContent p
+            ? string.Concat(p.Inlines.OfType<TextRun>().Select(r => r.Text))
+            : string.Empty;
+        StateHasChanged();
+    }
+}

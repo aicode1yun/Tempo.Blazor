@@ -22,7 +22,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -37,7 +37,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -57,7 +57,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -78,7 +78,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -97,7 +97,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -118,7 +118,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = provider.SeedContractDocument("doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.AutoSaveInterval, TimeSpan.FromMilliseconds(20)));
@@ -153,7 +153,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -169,7 +169,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -260,7 +260,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -283,7 +283,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -605,7 +605,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                 .Add(p => p.Provider, provider));
 
@@ -669,7 +669,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -687,7 +687,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -903,7 +903,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 ActiveRegion = "Body"
             });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -987,7 +987,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1050,7 +1050,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             StableSelectionToken = "phase-6-selection-token"
         };
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1120,7 +1120,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 ActiveRegion = "Body"
             });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1187,7 +1187,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 ActiveRegion = "Body"
             });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1231,7 +1231,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1264,7 +1264,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1339,7 +1339,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = domSnapshot }, DocumentEditorJson.Options));
 
         DocumentEditorSaveRequest? captured = null;
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase17")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.OnSaveRequested, request => captured = request));
@@ -1462,7 +1462,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = runtimeDocument }, DocumentEditorJson.Options));
 
         DocumentEditorSaveRequest? captured = null;
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase16")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.OnSaveRequested, request => captured = request));
@@ -1519,7 +1519,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         var pdfProvider = new CapturingPdfExportProvider();
         var formatProvider = new CapturingDocumentFormatProvider();
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase17")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.PdfExportProvider, pdfProvider)
@@ -1566,7 +1566,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = Clone(document) }, DocumentEditorJson.Options));
 
         var pdfProvider = new CapturingPdfExportProvider();
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, document.DocumentId)
                       .Add(p => p.Provider, provider)
                       .Add(p => p.PdfExportProvider, pdfProvider));
@@ -1620,7 +1620,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         var pdfProvider = new CapturingPdfExportProvider();
         var formatProvider = new CapturingDocumentFormatProvider();
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase17")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.PdfExportProvider, pdfProvider)
@@ -1664,7 +1664,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = runtimeDocument }, DocumentEditorJson.Options));
 
         DocumentEditorSaveRequest? capturedSave = null;
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.OnSaveRequested, request => capturedSave = request));
@@ -1708,7 +1708,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1776,7 +1776,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         }, DocumentEditorJson.Options);
         JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true).SetResult(snapshotJson);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1819,7 +1819,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = "Imported runtime reload" }] }
         });
         var formatProvider = new CapturingDocumentFormatProvider { ImportedDocument = imported };
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.FormatProvider, formatProvider));
@@ -1850,7 +1850,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1886,7 +1886,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1941,7 +1941,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -1985,7 +1985,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = false
         };
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2039,7 +2039,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = false
         };
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2087,7 +2087,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2120,7 +2120,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2167,7 +2167,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = true
         };
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2222,7 +2222,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = false
         };
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2279,7 +2279,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = provider.SeedContractDocument("doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2317,7 +2317,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Render_MissingProviderShowsError()
     {
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1"));
 
         cut.Find(".tm-document-editor__error").TextContent.Should().Contain("provider");
@@ -2332,7 +2332,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var paragraph = seeded.Blocks.First(block => block.Content is ParagraphBlockContent);
         var inline = ((ParagraphBlockContent)paragraph.Content).Inlines.OfType<TextRun>().First();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2375,7 +2375,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         });
         JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true).SetResult(snapshotJson);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2398,7 +2398,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2437,7 +2437,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
         const string revisionId = "revision-live-insert";
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2488,7 +2488,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2552,7 +2552,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2587,7 +2587,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2622,7 +2622,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2669,7 +2669,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var (paragraph, inline) = GetFirstPlainParagraphTextRun(seeded);
         var selectedText = inline.Text[..4];
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2714,7 +2714,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstPlainParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
@@ -2753,7 +2753,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -2771,7 +2771,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.ReadOnly, true));
@@ -2793,7 +2793,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
         var collaborationProvider = new InMemoryDocumentCollaborationProvider();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, collaborationProvider)
@@ -2848,7 +2848,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
         var collaborationProvider = new InMemoryDocumentCollaborationProvider();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, collaborationProvider)
@@ -2903,7 +2903,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
         var collaborationProvider = new InMemoryDocumentCollaborationProvider();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, collaborationProvider)
@@ -2944,7 +2944,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = provider.SeedContractDocument("doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, new ThrowingReconnectCollaborationProvider())
@@ -2981,7 +2981,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -3006,7 +3006,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -3033,7 +3033,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.ShowDebugTools, true));
@@ -3065,7 +3065,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var paragraph = seeded.Blocks.First(block => block.Content is ParagraphBlockContent);
         var inline = ((ParagraphBlockContent)paragraph.Content).Inlines.OfType<TextRun>().First();
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TokenProvider, new TestTokenProvider()));
@@ -3111,7 +3111,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = true
         };
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -3748,7 +3748,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+        var cut = RenderDocumentEditorLegacy(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -3885,7 +3885,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider));
 
@@ -3903,7 +3903,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));
@@ -3926,7 +3926,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));
@@ -3950,7 +3950,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));
@@ -3974,7 +3974,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         JSInterop.Setup<string>("tmDocumentEditorDebug.getRuntimeStateJson", _ => true).SetResult("{}");
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = RenderDocumentEditorLegacy(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));

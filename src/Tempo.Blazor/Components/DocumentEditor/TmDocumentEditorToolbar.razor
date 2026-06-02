@@ -201,6 +201,26 @@
         @if (_activeRibbonTab == DocumentRibbonTab.Home)
         {
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupFormatting"]">
+                @if (ShowBlockStyle)
+                {
+                    @* R.4.8 — paragraph (block) style picker for the core engine. *@
+                    <label class="tm-document-editor__ribbon-select tm-document-editor__ribbon-select--compact" title="Paragraph style">
+                        <span>Style</span>
+                        <select value="@(string.IsNullOrEmpty(CurrentBlockStyle) ? "Normal" : CurrentBlockStyle)"
+                                @onchange="HandleBlockStyleChangedAsync"
+                                data-command="blockStyle"
+                                data-testid="document-block-style">
+                            <option value="Normal">Normal</option>
+                            <option value="Title">Title</option>
+                            <option value="Heading1">@Loc["TmDocumentEditor_Heading1"]</option>
+                            <option value="Heading2">@Loc["TmDocumentEditor_Heading2"]</option>
+                            <option value="Heading3">@Loc["TmDocumentEditor_Heading3"]</option>
+                            <option value="Heading4">@Loc["TmDocumentEditor_Heading4"]</option>
+                            <option value="Heading5">@Loc["TmDocumentEditor_Heading5"]</option>
+                            <option value="Heading6">@Loc["TmDocumentEditor_Heading6"]</option>
+                        </select>
+                    </label>
+                }
                 <label class="tm-document-editor__ribbon-select" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontFamily"]))">
                     <TmIcon Name="type" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_FontFamily"]</span>
@@ -503,6 +523,8 @@
                         aria-label="@Loc["TmDocumentEditor_BulletedList"]"
                         aria-pressed="@GetListAriaPressed(BulletListActive, isBullet: true)"
                         @onclick='() => ExecuteToolbarCommandAsync("bulletList", HandleToggleBulletListAsync)'
+                        @onpointerdown:preventDefault="true"
+                        @onmousedown:preventDefault="true"
                         data-command="bulletList"
                         data-testid="document-bullet-list">
                     <TmIcon Name="list" Size="IconSize.Sm" />
@@ -515,6 +537,8 @@
                         aria-label="@Loc["TmDocumentEditor_NumberedList"]"
                         aria-pressed="@GetListAriaPressed(NumberedListActive, isBullet: false)"
                         @onclick='() => ExecuteToolbarCommandAsync("numberedList", HandleToggleNumberedListAsync)'
+                        @onpointerdown:preventDefault="true"
+                        @onmousedown:preventDefault="true"
                         data-command="numberedList"
                         data-testid="document-numbered-list">
                     <TmIcon Name="list" Size="IconSize.Sm" />
@@ -2069,6 +2093,24 @@
 
     /// <summary>Whether provider-backed image asset browsing is available.</summary>
     [Parameter] public bool CanBrowseImageAssets { get; set; }
+
+    /// <summary>R.4.8 — show the paragraph (block) style picker (core engine preview).</summary>
+    [Parameter] public bool ShowBlockStyle { get; set; }
+
+    /// <summary>R.4.8 — current paragraph style name (Normal/Title/Heading1…) for the picker.</summary>
+    [Parameter] public string? CurrentBlockStyle { get; set; }
+
+    /// <summary>R.4.8 — raised when the block-style picker changes (style name).</summary>
+    [Parameter] public EventCallback<string> OnBlockStyleChanged { get; set; }
+
+    private async Task HandleBlockStyleChangedAsync(ChangeEventArgs args)
+    {
+        var style = args.Value?.ToString();
+        if (!string.IsNullOrEmpty(style))
+        {
+            await OnBlockStyleChanged.InvokeAsync(style);
+        }
+    }
 
     /// <summary>Raised when URL image insertion is requested from the split menu.</summary>
     [Parameter] public EventCallback OnInsertImageUrl { get; set; }

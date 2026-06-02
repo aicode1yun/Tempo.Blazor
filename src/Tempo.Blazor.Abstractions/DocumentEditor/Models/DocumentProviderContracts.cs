@@ -168,6 +168,49 @@ public enum DocumentEditorOfflineMode
     Enabled
 }
 
+/// <summary>
+/// Selects which rendering/editing engine <c>TmDocumentEditor</c> uses. Feature flag for
+/// the R.4 core-rewrite cutover (see <c>planning/r48-cutover-plan.md</c>).
+/// </summary>
+public enum DocumentEditorRenderEngine
+{
+    /// <summary>
+    /// The shipping contenteditable-based WYSIWYG engine (default). Stable; the only
+    /// engine wired into the hosted component's full interop (save/undo/dirty/snapshot/
+    /// toolbar/collaboration).
+    /// </summary>
+    Legacy,
+
+    /// <summary>
+    /// The new model-owned, positioned-DOM core engine (R.4.0–R.4.7). Verified standalone
+    /// via the core-engine harness + Playwright gates, but NOT yet wired into the hosted
+    /// component's C# interop — selecting it today falls back to <see cref="Legacy"/>
+    /// rendering (preview flag only). Becomes the default at cutover once it reaches full
+    /// parity (full E2E suite green on it + perf ≥ legacy).
+    /// </summary>
+    CoreEnginePreview
+}
+
+/// <summary>
+/// Resolves the requested <see cref="DocumentEditorRenderEngine"/> to the engine that may
+/// actually run. The R.4.8 cutover guard: until the core engine is wired into the hosted
+/// component's C# interop, <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/> falls
+/// back to <see cref="DocumentEditorRenderEngine.Legacy"/> so the flag can never leave the
+/// editor non-functional.
+/// </summary>
+public static class DocumentEditorRenderEngineFlag
+{
+    /// <summary>
+    /// The effective engine: <paramref name="requested"/> unless it is
+    /// <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/> and the hosted interop is
+    /// not yet ready, in which case <see cref="DocumentEditorRenderEngine.Legacy"/>.
+    /// </summary>
+    public static DocumentEditorRenderEngine Resolve(DocumentEditorRenderEngine requested, bool hostedInteropReady)
+        => requested == DocumentEditorRenderEngine.CoreEnginePreview && !hostedInteropReady
+            ? DocumentEditorRenderEngine.Legacy
+            : requested;
+}
+
 /// <summary>Host-controlled permissions for <c>TmDocumentEditor</c>.</summary>
 public class DocumentEditorPermissions
 {

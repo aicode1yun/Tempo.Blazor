@@ -47,6 +47,26 @@ export function createRenderSnapshot(model, layout, selection, options) {
     const modelVersion = Number(rawModelVersion) || 1;
     const layoutVersionValue = Number(rawLayoutVersion) || 1;
     const selectionVersion = Number(rawSelectionVersion) || 1;
+    // R.4.9.3b — incremental path: skip the O(total segments) flatten + checksum. The atomic
+    // renderer never reads `segments`/`checksum`; it diffs per block (B1/B2) on its own, so a
+    // cheap monotonic fingerprint is sufficient. This keeps the per-keystroke snapshot O(1).
+    if (opts.cheap === true) {
+        // Plain by-reference object — NO `sortObject` (it deep-clones the whole layout+model = O(N),
+        // the actual per-keystroke bottleneck). The renderer reads layout/model/selection read-only.
+        return {
+            ok: true,
+            modelVersion,
+            layoutVersion: layoutVersionValue,
+            selectionVersion,
+            affectedScopes,
+            checksum: '',
+            fingerprint: 'inc-' + modelVersion + '-' + selectionVersion + '-' + (opts.dirtyBlockId || ''),
+            model,
+            layout,
+            selection: selection || null,
+            debug: { blockCount: blocks.length, incremental: true },
+        };
+    }
     const fingerprintSource = {
         documentId: model && model.documentId,
         modelVersion,

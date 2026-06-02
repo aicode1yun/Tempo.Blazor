@@ -1,5 +1,7 @@
 ﻿using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Components.DocumentEditor;
+using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.Localization;
 using Tempo.Blazor.Services;
 
@@ -25,6 +27,21 @@ public abstract class LocalizationTestBase : TestContext
         JSInterop.SetupVoid("tmColorPicker.registerEscape", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmColorPicker.unregister", _ => true).SetVoidResult();
     }
+
+    /// <summary>
+    /// Renders <see cref="TmDocumentEditor"/> pinned to the LEGACY engine. After the R.5 cutover
+    /// the component defaults to <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/>, which
+    /// needs a real browser (positioned-DOM via JS interop) and cannot render in bUnit. These
+    /// component tests exercise the legacy engine's C#/markup behaviour, so they pin Legacy; the
+    /// core engine is covered by the Playwright E2E suites. (Removed together with legacy.)
+    /// </summary>
+    protected IRenderedComponent<TmDocumentEditor> RenderDocumentEditorLegacy(
+        Action<ComponentParameterCollectionBuilder<TmDocumentEditor>> configure)
+        => RenderComponent<TmDocumentEditor>(parameters =>
+        {
+            parameters.Add(p => p.RenderEngine, DocumentEditorRenderEngine.Legacy);
+            configure(parameters);
+        });
 
     /// <summary>Registers a Czech localizer for this test context.</summary>
     protected void UseCzechLocalization()
@@ -1450,6 +1467,7 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDocumentEditor_StatusBarLabel"] = "Document status",
         ["TmDocumentEditor_TextContextMenuLabel"] = "Text context menu",
         ["TmDocumentEditor_TableContextMenuLabel"] = "Table context menu",
+        ["TmDocumentEditor_ContextMenuLabel"] = "Context menu",
         ["TmDocumentEditor_UntitledDocument"] = "Untitled document",
         ["TmDocumentEditor_StatusLoaded"] = "Loaded",
         ["TmDocumentEditor_EmptyDocument"] = "This document is empty",
@@ -3346,6 +3364,7 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDocumentEditor_StatusBarLabel"] = "Stav dokumentu",
         ["TmDocumentEditor_TextContextMenuLabel"] = "Kontextové menu textu",
         ["TmDocumentEditor_TableContextMenuLabel"] = "Kontextové menu tabulky",
+        ["TmDocumentEditor_ContextMenuLabel"] = "Kontextové menu",
         ["TmDocumentEditor_UntitledDocument"] = "Nepojmenovaný dokument",
         ["TmDocumentEditor_StatusLoaded"] = "Načteno",
         ["TmDocumentEditor_EmptyDocument"] = "Tento dokument je prázdný",

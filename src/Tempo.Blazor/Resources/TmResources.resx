@@ -2879,6 +2879,7 @@
   <data name="TmDocumentEditor_StatusBarLabel"         xml:space="preserve"><value>Document status</value></data>
   <data name="TmDocumentEditor_TextContextMenuLabel"   xml:space="preserve"><value>Text context menu</value></data>
   <data name="TmDocumentEditor_TableContextMenuLabel"  xml:space="preserve"><value>Table context menu</value></data>
+  <data name="TmDocumentEditor_ContextMenuLabel"  xml:space="preserve"><value>Context menu</value></data>
   <data name="TmDocumentEditor_UntitledDocument"       xml:space="preserve"><value>Untitled document</value></data>
   <data name="TmDocumentEditor_StatusLoaded"           xml:space="preserve"><value>Loaded</value></data>
   <data name="TmDocumentEditor_EmptyDocument"          xml:space="preserve"><value>This document is empty</value></data>

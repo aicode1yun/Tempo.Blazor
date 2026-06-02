@@ -2366,6 +2366,7 @@
   <data name="TmDocumentEditor_DebugDocumentJsonTitle" xml:space="preserve"><value>JSON du document</value></data>
   <data name="TmDocumentEditor_DebugCanonicalDocument" xml:space="preserve"><value>Document canonique</value></data>
   <data name="TmDocumentEditor_DebugRuntimeState" xml:space="preserve"><value>État runtime</value></data>
+  <data name="TmDocumentEditor_DebugDocxDrawingMetadata" xml:space="preserve"><value>Métadonnées DrawingML DOCX</value></data>
   <data name="TmDocumentEditor_DebugRuntimeRecovery" xml:space="preserve"><value>Récupération runtime</value></data>
   <data name="TmDocumentEditor_DebugClipboardHtmlTitle" xml:space="preserve"><value>HTML du presse-papiers</value></data>
   <data name="TmDocumentEditor_DebugClipboardRawHtml" xml:space="preserve"><value>HTML brut</value></data>
@@ -2420,6 +2421,7 @@
   <data name="TmDocumentEditor_StatusBarLabel"         xml:space="preserve"><value>État du document</value></data>
   <data name="TmDocumentEditor_TextContextMenuLabel"   xml:space="preserve"><value>Menu contextuel du texte</value></data>
   <data name="TmDocumentEditor_TableContextMenuLabel"  xml:space="preserve"><value>Menu contextuel du tableau</value></data>
+  <data name="TmDocumentEditor_ContextMenuLabel"  xml:space="preserve"><value>Menu contextuel</value></data>
   <data name="TmDocumentEditor_UntitledDocument"       xml:space="preserve"><value>Document sans titre</value></data>
   <data name="TmDocumentEditor_StatusLoaded"           xml:space="preserve"><value>Chargé</value></data>
   <data name="TmDocumentEditor_EmptyDocument"          xml:space="preserve"><value>Ce document est vide</value></data>
