@@ -713,12 +713,56 @@
   <data name="TmDiagramProperties_Layer" xml:space="preserve"><value>Vrstva</value></data>
   <data name="TmDiagramProperties_ReplaceShape" xml:space="preserve"><value>Nahradit tvar</value></data>
   <data name="TmDiagramProperties_ReplaceShapeSearch" xml:space="preserve"><value>Hledat tvary...</value></data>
+  <data name="DiagramStencilSet_Relationships" xml:space="preserve"><value>Vztahy</value></data>
+  <data name="DiagramStencilPalette_RelationshipsGeneral" xml:space="preserve"><value>Obecné vztahy</value></data>
+  <data name="DiagramStencil_RelationshipAssociation" xml:space="preserve"><value>Asociace</value></data>
+  <data name="DiagramStencil_RelationshipDependency" xml:space="preserve"><value>Závislost</value></data>
+  <data name="DiagramStencilSet_Uml25" xml:space="preserve"><value>UML 2.5</value></data>
+  <data name="DiagramStencilPalette_Uml25Class" xml:space="preserve"><value>Třídy</value></data>
+  <data name="DiagramStencilPalette_Uml25UseCase" xml:space="preserve"><value>Případy užití</value></data>
+  <data name="DiagramStencilPalette_Uml25Activity" xml:space="preserve"><value>Aktivity</value></data>
+  <data name="DiagramStencilPalette_Uml25Sequence" xml:space="preserve"><value>Sekvence</value></data>
+  <data name="DiagramStencilPalette_Uml25Deployment" xml:space="preserve"><value>Nasazení</value></data>
+  <data name="DiagramStencilPalette_Uml25Relationships" xml:space="preserve"><value>Vztahy</value></data>
+  <data name="DiagramStencil_Uml25Class" xml:space="preserve"><value>Třída</value></data>
+  <data name="DiagramStencil_Uml25AbstractClass" xml:space="preserve"><value>Abstraktní třída</value></data>
+  <data name="DiagramStencil_Uml25Interface" xml:space="preserve"><value>Rozhraní</value></data>
+  <data name="DiagramStencil_Uml25Package" xml:space="preserve"><value>Balíček</value></data>
+  <data name="DiagramStencil_Uml25Enumeration" xml:space="preserve"><value>Výčet</value></data>
+  <data name="DiagramStencil_Uml25Actor" xml:space="preserve"><value>Aktér</value></data>
+  <data name="DiagramStencil_Uml25UseCase" xml:space="preserve"><value>Případ užití</value></data>
+  <data name="DiagramStencil_Uml25SystemBoundary" xml:space="preserve"><value>Hranice systému</value></data>
+  <data name="DiagramStencil_Uml25Note" xml:space="preserve"><value>Poznámka</value></data>
+  <data name="DiagramStencil_Uml25ActivityInitial" xml:space="preserve"><value>Počáteční uzel</value></data>
+  <data name="DiagramStencil_Uml25ActivityFinal" xml:space="preserve"><value>Koncový uzel</value></data>
+  <data name="DiagramStencil_Uml25ActivityAction" xml:space="preserve"><value>Akce</value></data>
+  <data name="DiagramStencil_Uml25ActivityDecision" xml:space="preserve"><value>Rozhodnutí</value></data>
+  <data name="DiagramStencil_Uml25ActivityForkJoin" xml:space="preserve"><value>Rozdělení / spojení</value></data>
+  <data name="DiagramStencil_Uml25ActivityObjectNode" xml:space="preserve"><value>Objektový uzel</value></data>
+  <data name="DiagramStencil_Uml25SequenceLifeline" xml:space="preserve"><value>Životní linie</value></data>
+  <data name="DiagramStencil_Uml25SequenceActivation" xml:space="preserve"><value>Aktivace</value></data>
+  <data name="DiagramStencil_Uml25SequenceCombinedFragment" xml:space="preserve"><value>Kombinovaný fragment</value></data>
+  <data name="DiagramStencil_Uml25SequenceMessage" xml:space="preserve"><value>Zpráva</value></data>
+  <data name="DiagramStencil_Uml25Component" xml:space="preserve"><value>Komponenta</value></data>
+  <data name="DiagramStencil_Uml25DeploymentNode" xml:space="preserve"><value>Uzel</value></data>
+  <data name="DiagramStencil_Uml25Artifact" xml:space="preserve"><value>Artefakt</value></data>
+  <data name="DiagramStencil_Uml25DeploymentSpec" xml:space="preserve"><value>Specifikace nasazení</value></data>
+  <data name="DiagramStencil_Uml25Association" xml:space="preserve"><value>Asociace</value></data>
+  <data name="DiagramStencil_Uml25DirectedAssociation" xml:space="preserve"><value>Směrovaná asociace</value></data>
+  <data name="DiagramStencil_Uml25Dependency" xml:space="preserve"><value>Závislost</value></data>
+  <data name="DiagramStencil_Uml25Generalization" xml:space="preserve"><value>Generalizace</value></data>
+  <data name="DiagramStencil_Uml25Realization" xml:space="preserve"><value>Realizace</value></data>
+  <data name="DiagramStencil_Uml25Aggregation" xml:space="preserve"><value>Agregace</value></data>
+  <data name="DiagramStencil_Uml25Composition" xml:space="preserve"><value>Kompozice</value></data>
 
   <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
   <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Přepnout panel nástrojů</value></data>
   <data name="TmDiagramToolbox_Title" xml:space="preserve"><value>Panel nástrojů</value></data>
   <data name="TmDiagramToolbox_SearchPlaceholder" xml:space="preserve"><value>Hledat šablony...</value></data>
+  <data name="TmDiagramToolbox_SearchAriaLabel" xml:space="preserve"><value>Hledat diagramové šablony</value></data>
   <data name="TmDiagramToolbox_NoResults" xml:space="preserve"><value>Žádné šablony nenalezeny</value></data>
+  <data name="TmDiagramToolbox_DragStencil" xml:space="preserve"><value>Přetáhněte {0} na plátno</value></data>
+  <data name="TmDiagramToolbox_InsertStencil" xml:space="preserve"><value>Vložit {0} na plátno</value></data>
 
   <!-- ═══════════════ TmDiagramPropertiesPanel ═══════════════ -->
   <data name="TmDiagramProperties_Toggle" xml:space="preserve"><value>Přepnout vlastnosti</value></data>
@@ -774,6 +818,32 @@
   <data name="TmDiagramEditor_DiagramHistory" xml:space="preserve"><value>Historie</value></data>
   <data name="TmDiagramEditor_LoadError" xml:space="preserve"><value>Načtení diagramu selhalo</value></data>
   <data name="TmDiagramEditor_VersionLabel" xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmDiagramDemo_PageTitle" xml:space="preserve"><value>Editor diagramů</value></data>
+  <data name="TmDiagramDemo_PageDescription" xml:space="preserve"><value>Deklarativní editor diagramů se stencil uzly, SVG hranami a hybridním HTML/SVG vykreslováním. Přetáhněte stencily z toolboxu, propojte porty a exportujte diagram jako JSON.</value></data>
+  <data name="TmDiagramDemo_InteractiveEditor" xml:space="preserve"><value>Interaktivní editor</value></data>
+  <data name="TmDiagramDemo_InteractiveDescription" xml:space="preserve"><value>Canvas níže je předvyplněný UML Class stencilem. Tažením z portu vytvoříte hrany.</value></data>
+  <data name="TmDiagramDemo_LoadUmlSample" xml:space="preserve"><value>Načíst UML ukázku</value></data>
+  <data name="TmDiagramDemo_LoadGroupedSample" xml:space="preserve"><value>Načíst skupinovou ukázku</value></data>
+  <data name="TmDiagramDemo_NewDocument" xml:space="preserve"><value>Nový dokument</value></data>
+  <data name="TmDiagramDemo_Nodes" xml:space="preserve"><value>Uzly</value></data>
+  <data name="TmDiagramDemo_Edges" xml:space="preserve"><value>Hrany</value></data>
+  <data name="TmDiagramDemo_Title" xml:space="preserve"><value>Název</value></data>
+  <data name="TmDiagramDemo_Id" xml:space="preserve"><value>ID</value></data>
+  <data name="TmDiagramDemo_UntitledDiagram" xml:space="preserve"><value>Nepojmenovaný diagram</value></data>
+  <data name="TmDiagramDemo_GroupedBoundsSample" xml:space="preserve"><value>Ukázka skupinových hranic</value></data>
+  <data name="TmDiagramDemo_UmlSampleTitle" xml:space="preserve"><value>UML diagram tříd</value></data>
+  <data name="TmDiagramDemo_CustomerClass" xml:space="preserve"><value>Zákazník</value></data>
+  <data name="TmDiagramDemo_CustomerAttributeId" xml:space="preserve"><value>- id: Guid</value></data>
+  <data name="TmDiagramDemo_CustomerAttributeName" xml:space="preserve"><value>- jméno: string</value></data>
+  <data name="TmDiagramDemo_CustomerAttributeEmail" xml:space="preserve"><value>- email: string</value></data>
+  <data name="TmDiagramDemo_CustomerMethodSave" xml:space="preserve"><value>+ Uložit(): void</value></data>
+  <data name="TmDiagramDemo_CustomerMethodLoad" xml:space="preserve"><value>+ Načíst(): void</value></data>
+  <data name="TmDiagramDemo_OrderClass" xml:space="preserve"><value>Objednávka</value></data>
+  <data name="TmDiagramDemo_OrderAttributeId" xml:space="preserve"><value>- id: Guid</value></data>
+  <data name="TmDiagramDemo_OrderAttributeTotal" xml:space="preserve"><value>- celkem: decimal</value></data>
+  <data name="TmDiagramDemo_OrderMethodPlace" xml:space="preserve"><value>+ Vytvořit(): void</value></data>
+  <data name="TmDiagramDemo_OrderMethodCancel" xml:space="preserve"><value>+ Zrušit(): void</value></data>
+  <data name="TmDiagramDemo_UmlMultiplicity" xml:space="preserve"><value>1..*</value></data>
 
   <data name="TmDiagramProperties_StartArrow" xml:space="preserve"><value>Šipka začátku</value></data>
   <data name="TmDiagramProperties_EndArrow" xml:space="preserve"><value>Šipka konce</value></data>
@@ -811,6 +881,8 @@
   <data name="TmDiagramProperties_Arrowhead_ERZeroToMany" xml:space="preserve"><value>ER Nula k mnoha</value></data>
   <data name="TmDiagramProperties_FillArrow" xml:space="preserve"><value>Vyplnit</value></data>
   <data name="TmDiagramProperties_EdgePreset" xml:space="preserve"><value>Předvolba</value></data>
+  <data name="TmDiagramProperties_EdgeTemplate" xml:space="preserve"><value>Šablona vztahu</value></data>
+  <data name="TmDiagramProperties_EdgeTemplate_Custom" xml:space="preserve"><value>Vlastní</value></data>
   <data name="TmDiagramProperties_Preset_Custom" xml:space="preserve"><value>Vlastní</value></data>
   <data name="TmDiagramProperties_Preset_ArrowRight" xml:space="preserve"><value>→ Šipka</value></data>
   <data name="TmDiagramProperties_Preset_Line" xml:space="preserve"><value>─ Čára</value></data>
@@ -884,6 +956,26 @@
   <data name="TmDiagramProperties_VerticalAlign_Middle" xml:space="preserve"><value>Střed</value></data>
   <data name="TmDiagramProperties_VerticalAlign_Bottom" xml:space="preserve"><value>Dole</value></data>
   <data name="TmDiagram_EnableMathJax" xml:space="preserve"><value>MathJax</value></data>
+  <data name="TmDiagramProperties_Data_Label" xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmDiagramProperties_Data_Name" xml:space="preserve"><value>Název</value></data>
+  <data name="TmDiagramProperties_Data_Stereotype" xml:space="preserve"><value>Stereotyp</value></data>
+  <data name="TmDiagramProperties_Data_Attributes" xml:space="preserve"><value>Atributy</value></data>
+  <data name="TmDiagramProperties_Data_Operations" xml:space="preserve"><value>Operace</value></data>
+  <data name="TmDiagramProperties_Data_Literals" xml:space="preserve"><value>Literály</value></data>
+  <data name="TmDiagramProperties_Data_Guard" xml:space="preserve"><value>Podmínka</value></data>
+  <data name="TmDiagramProperties_Data_Operator" xml:space="preserve"><value>Operátor</value></data>
+  <data name="TmDiagramProperties_Data_Swimlane" xml:space="preserve"><value>Swimlane</value></data>
+  <data name="TmDiagramProperties_Formatting" xml:space="preserve"><value>Formátování</value></data>
+  <data name="TmDiagramProperties_PositionX" xml:space="preserve"><value>X</value></data>
+  <data name="TmDiagramProperties_PositionY" xml:space="preserve"><value>Y</value></data>
+  <data name="TmDiagramProperties_SizeWidth" xml:space="preserve"><value>Š</value></data>
+  <data name="TmDiagramProperties_SizeHeight" xml:space="preserve"><value>V</value></data>
+  <data name="TmDiagramProperties_Order" xml:space="preserve"><value>Pořadí</value></data>
+  <data name="TmDiagramProperties_Grouping" xml:space="preserve"><value>Seskupení</value></data>
+  <data name="TmDiagramProperties_Collapse" xml:space="preserve"><value>Sbalit</value></data>
+  <data name="TmDiagramProperties_Expand" xml:space="preserve"><value>Rozbalit</value></data>
+  <data name="TmDiagramProperties_Lock" xml:space="preserve"><value>Zamknout</value></data>
+  <data name="TmDiagramProperties_Unlock" xml:space="preserve"><value>Odemknout</value></data>
   <data name="TmDiagramProperties_BringToFront" xml:space="preserve"><value>Dopředu</value></data>
   <data name="TmDiagramProperties_SendToBack" xml:space="preserve"><value>Dozadu</value></data>
   <data name="TmDiagramProperties_Group" xml:space="preserve"><value>Seskupit</value></data>
@@ -971,6 +1063,8 @@
   <data name="TmDiagramProperties_RemoveColumn" xml:space="preserve"><value>Odebrat sloupec</value></data>
   <data name="TmDiagramProperties_RowHeights" xml:space="preserve"><value>Výšky řádků</value></data>
   <data name="TmDiagramProperties_ColumnWidths" xml:space="preserve"><value>Šířky sloupců</value></data>
+  <data name="TmDiagramProperties_RowNumber" xml:space="preserve"><value>Řádek {0}</value></data>
+  <data name="TmDiagramProperties_ColumnNumber" xml:space="preserve"><value>Sloupec {0}</value></data>
   <data name="TmDiagramProperties_Table" xml:space="preserve"><value>Tabulka</value></data>
   <data name="TmDiagramProperties_TableCellSelection" xml:space="preserve"><value>Výběr buněk</value></data>
   <data name="TmDiagramProperties_MergeCells" xml:space="preserve"><value>Sloučit buňky</value></data>
@@ -3767,4 +3861,141 @@
   <data name="TmSpreadsheet_PasteSpecial_Transpose" xml:space="preserve"><value>Transponovat</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="DiagramStencilSet_Bpmn2" xml:space="preserve"><value>BPMN 2.0</value></data>
+  <data name="DiagramStencilPalette_Bpmn2General" xml:space="preserve"><value>Obecné</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Tasks" xml:space="preserve"><value>Úlohy</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Events" xml:space="preserve"><value>Události</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Gateways" xml:space="preserve"><value>Brány</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Swimlanes" xml:space="preserve"><value>Pooly a lane</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Relationships" xml:space="preserve"><value>Toky</value></data>
+  <data name="DiagramStencil_Bpmn2DataObject" xml:space="preserve"><value>Datový objekt</value></data>
+  <data name="DiagramStencil_Bpmn2DataStore" xml:space="preserve"><value>Datové úložiště</value></data>
+  <data name="DiagramStencil_Bpmn2Task" xml:space="preserve"><value>Úloha</value></data>
+  <data name="DiagramStencil_Bpmn2UserTask" xml:space="preserve"><value>Uživatelská úloha</value></data>
+  <data name="DiagramStencil_Bpmn2ServiceTask" xml:space="preserve"><value>Servisní úloha</value></data>
+  <data name="DiagramStencil_Bpmn2ManualTask" xml:space="preserve"><value>Ruční úloha</value></data>
+  <data name="DiagramStencil_Bpmn2ScriptTask" xml:space="preserve"><value>Skriptovací úloha</value></data>
+  <data name="DiagramStencil_Bpmn2BusinessRuleTask" xml:space="preserve"><value>Business rule úloha</value></data>
+  <data name="DiagramStencil_Bpmn2SendTask" xml:space="preserve"><value>Odesílací úloha</value></data>
+  <data name="DiagramStencil_Bpmn2ReceiveTask" xml:space="preserve"><value>Přijímací úloha</value></data>
+  <data name="DiagramStencil_Bpmn2Subprocess" xml:space="preserve"><value>Subproces</value></data>
+  <data name="DiagramStencil_Bpmn2CollapsedSubprocess" xml:space="preserve"><value>Sbalený subproces</value></data>
+  <data name="DiagramStencil_Bpmn2StartEvent" xml:space="preserve"><value>Start událost</value></data>
+  <data name="DiagramStencil_Bpmn2IntermediateEvent" xml:space="preserve"><value>Mezilehlá událost</value></data>
+  <data name="DiagramStencil_Bpmn2EndEvent" xml:space="preserve"><value>Koncová událost</value></data>
+  <data name="DiagramStencil_Bpmn2MessageEvent" xml:space="preserve"><value>Zprávová událost</value></data>
+  <data name="DiagramStencil_Bpmn2TimerEvent" xml:space="preserve"><value>Časovač</value></data>
+  <data name="DiagramStencil_Bpmn2ErrorEvent" xml:space="preserve"><value>Chybová událost</value></data>
+  <data name="DiagramStencil_Bpmn2SignalEvent" xml:space="preserve"><value>Signálová událost</value></data>
+  <data name="DiagramStencil_Bpmn2TerminateEvent" xml:space="preserve"><value>Terminační událost</value></data>
+  <data name="DiagramStencil_Bpmn2NonInterruptingEvent" xml:space="preserve"><value>Nepřerušující událost</value></data>
+  <data name="DiagramStencil_Bpmn2ExclusiveGateway" xml:space="preserve"><value>Exkluzivní brána</value></data>
+  <data name="DiagramStencil_Bpmn2ParallelGateway" xml:space="preserve"><value>Paralelní brána</value></data>
+  <data name="DiagramStencil_Bpmn2InclusiveGateway" xml:space="preserve"><value>Inkluzivní brána</value></data>
+  <data name="DiagramStencil_Bpmn2EventBasedGateway" xml:space="preserve"><value>Event-based brána</value></data>
+  <data name="DiagramStencil_Bpmn2ComplexGateway" xml:space="preserve"><value>Komplexní brána</value></data>
+  <data name="DiagramStencil_Bpmn2Pool" xml:space="preserve"><value>Pool</value></data>
+  <data name="DiagramStencil_Bpmn2Lane" xml:space="preserve"><value>Lane</value></data>
+  <data name="DiagramStencil_Bpmn2SequenceFlow" xml:space="preserve"><value>Sekvenční tok</value></data>
+  <data name="DiagramStencil_Bpmn2ConditionalFlow" xml:space="preserve"><value>Podmíněný tok</value></data>
+  <data name="DiagramStencil_Bpmn2DefaultFlow" xml:space="preserve"><value>Výchozí tok</value></data>
+  <data name="DiagramStencil_Bpmn2MessageFlow" xml:space="preserve"><value>Zprávový tok</value></data>
+  <data name="DiagramStencil_Bpmn2Association" xml:space="preserve"><value>Asociace</value></data>
+  <data name="DiagramStencil_Bpmn2DataAssociation" xml:space="preserve"><value>Datová asociace</value></data>
+  <data name="DiagramStencilSet_Archimate3" xml:space="preserve"><value>ArchiMate 3.2</value></data>
+  <data name="DiagramStencilPalette_Archimate3Business" xml:space="preserve"><value>Business</value></data>
+  <data name="DiagramStencilPalette_Archimate3Application" xml:space="preserve"><value>Aplikace</value></data>
+  <data name="DiagramStencilPalette_Archimate3Technology" xml:space="preserve"><value>Technologie</value></data>
+  <data name="DiagramStencilPalette_Archimate3Motivation" xml:space="preserve"><value>Motivace</value></data>
+  <data name="DiagramStencilPalette_Archimate3Strategy" xml:space="preserve"><value>Strategie</value></data>
+  <data name="DiagramStencilPalette_Archimate3Relationships" xml:space="preserve"><value>Vztahy</value></data>
+  <data name="DiagramStencil_Archimate3BusinessActor" xml:space="preserve"><value>Business aktér</value></data>
+  <data name="DiagramStencil_Archimate3BusinessRole" xml:space="preserve"><value>Business role</value></data>
+  <data name="DiagramStencil_Archimate3BusinessProcess" xml:space="preserve"><value>Business proces</value></data>
+  <data name="DiagramStencil_Archimate3BusinessFunction" xml:space="preserve"><value>Business funkce</value></data>
+  <data name="DiagramStencil_Archimate3BusinessService" xml:space="preserve"><value>Business služba</value></data>
+  <data name="DiagramStencil_Archimate3BusinessObject" xml:space="preserve"><value>Business objekt</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationComponent" xml:space="preserve"><value>Aplikační komponenta</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationInterface" xml:space="preserve"><value>Aplikační rozhraní</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationFunction" xml:space="preserve"><value>Aplikační funkce</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationProcess" xml:space="preserve"><value>Aplikační proces</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationService" xml:space="preserve"><value>Aplikační služba</value></data>
+  <data name="DiagramStencil_Archimate3DataObject" xml:space="preserve"><value>Datový objekt</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyNode" xml:space="preserve"><value>Technologický uzel</value></data>
+  <data name="DiagramStencil_Archimate3Device" xml:space="preserve"><value>Zařízení</value></data>
+  <data name="DiagramStencil_Archimate3SystemSoftware" xml:space="preserve"><value>Systémový software</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyInterface" xml:space="preserve"><value>Technologické rozhraní</value></data>
+  <data name="DiagramStencil_Archimate3Path" xml:space="preserve"><value>Cesta</value></data>
+  <data name="DiagramStencil_Archimate3Artifact" xml:space="preserve"><value>Artefakt</value></data>
+  <data name="DiagramStencil_Archimate3Stakeholder" xml:space="preserve"><value>Stakeholder</value></data>
+  <data name="DiagramStencil_Archimate3Driver" xml:space="preserve"><value>Driver</value></data>
+  <data name="DiagramStencil_Archimate3Assessment" xml:space="preserve"><value>Hodnocení</value></data>
+  <data name="DiagramStencil_Archimate3Goal" xml:space="preserve"><value>Cíl</value></data>
+  <data name="DiagramStencil_Archimate3Outcome" xml:space="preserve"><value>Výsledek</value></data>
+  <data name="DiagramStencil_Archimate3Principle" xml:space="preserve"><value>Princip</value></data>
+  <data name="DiagramStencil_Archimate3Requirement" xml:space="preserve"><value>Požadavek</value></data>
+  <data name="DiagramStencil_Archimate3Constraint" xml:space="preserve"><value>Omezení</value></data>
+  <data name="DiagramStencil_Archimate3Resource" xml:space="preserve"><value>Zdroj</value></data>
+  <data name="DiagramStencil_Archimate3Capability" xml:space="preserve"><value>Schopnost</value></data>
+  <data name="DiagramStencil_Archimate3ValueStream" xml:space="preserve"><value>Value stream</value></data>
+  <data name="DiagramStencil_Archimate3Association" xml:space="preserve"><value>Asociace</value></data>
+  <data name="DiagramStencil_Archimate3Triggering" xml:space="preserve"><value>Spouštění</value></data>
+  <data name="DiagramStencil_Archimate3Flow" xml:space="preserve"><value>Tok</value></data>
+  <data name="DiagramStencil_Archimate3Access" xml:space="preserve"><value>Přístup</value></data>
+  <data name="DiagramStencil_Archimate3Serving" xml:space="preserve"><value>Serving</value></data>
+  <data name="DiagramStencil_Archimate3Realization" xml:space="preserve"><value>Realizace</value></data>
+  <data name="DiagramStencil_Archimate3Assignment" xml:space="preserve"><value>Přiřazení</value></data>
+  <data name="DiagramStencil_Archimate3Aggregation" xml:space="preserve"><value>Agregace</value></data>
+  <data name="DiagramStencil_Archimate3Composition" xml:space="preserve"><value>Kompozice</value></data>
+  <data name="DiagramStencil_Archimate3Specialization" xml:space="preserve"><value>Specializace</value></data>
+  <data name="DiagramStencil_Archimate3Influence" xml:space="preserve"><value>Vliv</value></data>
+  <data name="DiagramStencilSet_TempoFlowchart" xml:space="preserve"><value>Tempo Flowchart</value></data>
+  <data name="DiagramStencilSet_TempoErd" xml:space="preserve"><value>Tempo ERD</value></data>
+  <data name="DiagramStencilSet_C4" xml:space="preserve"><value>C4 model</value></data>
+  <data name="DiagramStencilSet_CloudArchitecture" xml:space="preserve"><value>Cloud architektura</value></data>
+  <data name="DiagramStencilSet_Kubernetes" xml:space="preserve"><value>Kubernetes</value></data>
+  <data name="DiagramStencilPalette_TempoFlowchartCore" xml:space="preserve"><value>Základní flowchart</value></data>
+  <data name="DiagramStencilPalette_TempoErdCore" xml:space="preserve"><value>Základní ERD</value></data>
+  <data name="DiagramStencilPalette_C4SoftwareSystems" xml:space="preserve"><value>Softwarové systémy</value></data>
+  <data name="DiagramStencilPalette_C4Containers" xml:space="preserve"><value>Kontejnery</value></data>
+  <data name="DiagramStencilPalette_C4Relationships" xml:space="preserve"><value>Vztahy</value></data>
+  <data name="DiagramStencilPalette_CloudCompute" xml:space="preserve"><value>Compute</value></data>
+  <data name="DiagramStencilPalette_CloudNetwork" xml:space="preserve"><value>Síť</value></data>
+  <data name="DiagramStencilPalette_CloudData" xml:space="preserve"><value>Data</value></data>
+  <data name="DiagramStencilPalette_KubernetesWorkloads" xml:space="preserve"><value>Workloads</value></data>
+  <data name="DiagramStencilPalette_KubernetesNetwork" xml:space="preserve"><value>Síť</value></data>
+  <data name="DiagramStencilPalette_KubernetesStorage" xml:space="preserve"><value>Úložiště</value></data>
+  <data name="DiagramStencil_TempoFlowchartProcess" xml:space="preserve"><value>Proces</value></data>
+  <data name="DiagramStencil_TempoFlowchartDecision" xml:space="preserve"><value>Rozhodnutí</value></data>
+  <data name="DiagramStencil_TempoFlowchartTerminator" xml:space="preserve"><value>Terminátor</value></data>
+  <data name="DiagramStencil_TempoFlowchartData" xml:space="preserve"><value>Data</value></data>
+  <data name="DiagramStencil_TempoFlowchartDocument" xml:space="preserve"><value>Dokument</value></data>
+  <data name="DiagramStencil_TempoFlowchartOffpage" xml:space="preserve"><value>Off-page konektor</value></data>
+  <data name="DiagramStencil_TempoErdEntity" xml:space="preserve"><value>Entita</value></data>
+  <data name="DiagramStencil_TempoErdWeakEntity" xml:space="preserve"><value>Slabá entita</value></data>
+  <data name="DiagramStencil_TempoErdRelationship" xml:space="preserve"><value>Vztah</value></data>
+  <data name="DiagramStencil_TempoErdIdentifyingRelationship" xml:space="preserve"><value>Identifikující vztah</value></data>
+  <data name="DiagramStencil_TempoErdAttribute" xml:space="preserve"><value>Atribut</value></data>
+  <data name="DiagramStencil_TempoErdKeyAttribute" xml:space="preserve"><value>Klíčový atribut</value></data>
+  <data name="DiagramStencil_C4Person" xml:space="preserve"><value>Osoba</value></data>
+  <data name="DiagramStencil_C4SoftwareSystem" xml:space="preserve"><value>Softwarový systém</value></data>
+  <data name="DiagramStencil_C4Container" xml:space="preserve"><value>Kontejner</value></data>
+  <data name="DiagramStencil_C4Component" xml:space="preserve"><value>Komponenta</value></data>
+  <data name="DiagramStencil_C4Database" xml:space="preserve"><value>Databáze</value></data>
+  <data name="DiagramStencil_C4Relationship" xml:space="preserve"><value>Vztah</value></data>
+  <data name="DiagramStencil_CloudCompute" xml:space="preserve"><value>Compute</value></data>
+  <data name="DiagramStencil_CloudServerless" xml:space="preserve"><value>Serverless funkce</value></data>
+  <data name="DiagramStencil_CloudLoadBalancer" xml:space="preserve"><value>Load balancer</value></data>
+  <data name="DiagramStencil_CloudVpc" xml:space="preserve"><value>Síťová hranice</value></data>
+  <data name="DiagramStencil_CloudDatabase" xml:space="preserve"><value>Databáze</value></data>
+  <data name="DiagramStencil_CloudQueue" xml:space="preserve"><value>Fronta</value></data>
+  <data name="DiagramStencil_CloudObjectStorage" xml:space="preserve"><value>Objektové úložiště</value></data>
+  <data name="DiagramStencil_KubernetesCluster" xml:space="preserve"><value>Cluster</value></data>
+  <data name="DiagramStencil_KubernetesNamespace" xml:space="preserve"><value>Namespace</value></data>
+  <data name="DiagramStencil_KubernetesPod" xml:space="preserve"><value>Pod</value></data>
+  <data name="DiagramStencil_KubernetesDeployment" xml:space="preserve"><value>Deployment</value></data>
+  <data name="DiagramStencil_KubernetesService" xml:space="preserve"><value>Service</value></data>
+  <data name="DiagramStencil_KubernetesIngress" xml:space="preserve"><value>Ingress</value></data>
+  <data name="DiagramStencil_KubernetesConfig" xml:space="preserve"><value>Config</value></data>
+  <data name="DiagramStencil_KubernetesPersistentVolume" xml:space="preserve"><value>Persistent volume</value></data>
 </root>

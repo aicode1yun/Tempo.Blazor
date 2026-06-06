@@ -18,6 +18,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
         var sets = new List<DiagramStencilSet>
         {
             GeneralSet(),
+            RelationshipsSet(),
             UmlSet(),
             BpmnSet(),
             SwimlaneSet(),
@@ -42,6 +43,11 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
         {
             foreach (var stencil in set.Stencils)
             {
+                MarkAsTempoOriginal(stencil);
+
+                if (stencil.Kind != DiagramStencilKind.Node)
+                    continue;
+
                 if (noCornerRadiusShapes.Contains(stencil.Layout.BackgroundShape))
                     stencil.Layout.SupportsCornerRadius = false;
 
@@ -51,6 +57,12 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
         }
 
         return sets;
+    }
+
+    private static void MarkAsTempoOriginal(DiagramStencil stencil)
+    {
+        stencil.Origin = DiagramStencilOrigin.TempoOriginal;
+        stencil.ExternalAssetSourceId = null;
     }
 
     private static DiagramStencilSet GeneralSet()
@@ -449,6 +461,72 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                         ]
                     },
                     DefaultData = new() { ["label"] = "Hexagon" }
+                }
+            ]
+        };
+    }
+
+    private static DiagramStencilSet RelationshipsSet()
+    {
+        return new DiagramStencilSet
+        {
+            Id = "relationships",
+            Name = "Relationships",
+            NameResourceKey = "DiagramStencilSet_Relationships",
+            Stencils =
+            [
+                new()
+                {
+                    Id = "relationships.association",
+                    Name = "Association",
+                    NameResourceKey = "DiagramStencil_RelationshipAssociation",
+                    Category = "Relationships",
+                    SetId = "relationships",
+                    SetNameResourceKey = "DiagramStencilSet_Relationships",
+                    PaletteId = "relationships.general",
+                    PaletteNameResourceKey = "DiagramStencilPalette_RelationshipsGeneral",
+                    PaletteOrder = 0,
+                    Order = 0,
+                    Kind = DiagramStencilKind.Edge,
+                    IconSvg = "<path d='M4 16 H28' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'/>",
+                    Keywords = ["connector", "relation", "line"],
+                    EdgeDefaults = new()
+                    {
+                        Routing = "straight",
+                        ConnectorType = "association",
+                        Shape = "connector",
+                        StartArrow = "none",
+                        EndArrow = "none"
+                    }
+                },
+                new()
+                {
+                    Id = "relationships.dependency",
+                    Name = "Dependency",
+                    NameResourceKey = "DiagramStencil_RelationshipDependency",
+                    Category = "Relationships",
+                    SetId = "relationships",
+                    SetNameResourceKey = "DiagramStencilSet_Relationships",
+                    PaletteId = "relationships.general",
+                    PaletteNameResourceKey = "DiagramStencilPalette_RelationshipsGeneral",
+                    PaletteOrder = 0,
+                    Order = 1,
+                    Kind = DiagramStencilKind.Edge,
+                    IconSvg = "<path d='M4 16 H27' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-dasharray='4 3'/><path d='M23 11 L28 16 L23 21' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/>",
+                    Keywords = ["connector", "relation", "dashed", "uml"],
+                    EdgeDefaults = new()
+                    {
+                        Routing = "orthogonal",
+                        ConnectorType = "dependency",
+                        Shape = "connector",
+                        StartArrow = "none",
+                        EndArrow = "open",
+                        EndArrowFill = false,
+                        Style = new DiagramStyle
+                        {
+                            StrokeDashPattern = "dashed"
+                        }
+                    }
                 }
             ]
         };

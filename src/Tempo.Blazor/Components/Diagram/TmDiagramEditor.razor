@@ -7,7 +7,8 @@
 
 <CascadingValue Value="ActiveCommandStack" IsFixed="false">
 
-<div class="tm-diagram-editor @Class @(ReadOnly ? "tm-diagram-editor--readonly" : "")">
+<div class="tm-diagram-editor @Class @(ReadOnly ? "tm-diagram-editor--readonly" : "")"
+     data-testid="diagram-editor">
 
     @* ── Page tabs ────────────────────────────────────────────────────────── *@
     <div class="tm-diagram-editor__page-tabs"
@@ -433,6 +434,7 @@
         {
             <div class="tm-diagram-editor__toolbox-wrap">
                 <TmDiagramToolbox StencilDragStart="OnToolboxDragStart"
+                                  StencilKeyboardInsert="HandleQuickInsert"
                                   Class="tm-diagram-editor__toolbox" />
             </div>
         }

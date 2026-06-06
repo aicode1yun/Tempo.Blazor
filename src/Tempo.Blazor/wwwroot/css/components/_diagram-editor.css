@@ -506,6 +506,7 @@
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+    color: var(--tm-diagram-node-text, #111827);
     user-select: none;
     pointer-events: auto;
 }
@@ -540,6 +541,15 @@
  * single source of truth for fill/stroke in F3.E. */
 .tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__svg-bg {
     display: none !important;
+}
+
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="archimate3."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="tempo-flowchart."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="tempo-erd."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="c4."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="cloud."] .tm-diagram-node__svg-bg,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape[data-stencil-id^="kubernetes."] .tm-diagram-node__svg-bg {
+    display: block !important;
 }
 
 /* ── Selection outline ──────────────────────────────────────────────────────
@@ -838,10 +848,17 @@ rect.tm-diagram-selection-outline {
     flex-shrink: 0;
 }
 
-/* UML class nodes: list sections should not scroll or stretch — auto-height handles sizing */
-.tm-diagram-node__shape[data-stencil-id^="uml."] .tm-diagram-node__section--grow {
+/* UML class nodes: list sections should not scroll or stretch - auto-height handles sizing */
+.tm-diagram-node__shape[data-stencil-id^="uml."] .tm-diagram-node__section--grow,
+.tm-diagram-node__shape[data-stencil-id^="uml25."] .tm-diagram-node__section--grow {
     flex: 0 0 auto;
     overflow: visible;
+}
+
+.tm-diagram-node__shape[data-stencil-id^="uml25."] .tm-diagram-node__list-item {
+    min-height: 1.35em;
+    line-height: 1.3;
+    padding: 2px 0;
 }
 
 .tm-diagram-node__icon {
@@ -1398,11 +1415,33 @@ rect.tm-diagram-resize-handle {
     width: 100%;
 }
 
+.tm-diagram-toolbox__search input:focus-visible {
+    outline: 2px solid var(--tm-color-primary, #2563eb);
+    outline-offset: 2px;
+}
+
 .tm-diagram-toolbox__no-results {
     padding: var(--tm-space-4, 16px);
     text-align: center;
     font-size: var(--tm-font-size-sm, 14px);
     color: var(--tm-color-text-muted, #6b7280);
+}
+
+.tm-diagram-toolbox__library {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-1, 4px);
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-toolbox__library-header {
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--tm-space-2, 8px);
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 700;
+    color: var(--tm-color-text, #111827);
 }
 
 .tm-diagram-toolbox__category {
@@ -1418,7 +1457,7 @@ rect.tm-diagram-resize-handle {
     font-size: var(--tm-font-size-xs, 12px);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0;
     color: var(--tm-color-text-muted, #6b7280);
     background: transparent;
     border: none;
@@ -1428,6 +1467,12 @@ rect.tm-diagram-resize-handle {
 }
 
 .tm-diagram-toolbox__category-header:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-toolbox__category-header:focus-visible {
+    outline: 2px solid var(--tm-color-primary, #2563eb);
+    outline-offset: 2px;
     background: var(--tm-color-surface-hover, #f3f4f6);
 }
 
@@ -1453,8 +1498,18 @@ rect.tm-diagram-resize-handle {
     background: var(--tm-color-surface-hover, #f3f4f6);
 }
 
+.tm-diagram-toolbox__item:focus-visible {
+    outline: 2px solid var(--tm-color-primary, #2563eb);
+    outline-offset: 2px;
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
 .tm-diagram-toolbox__item:active {
     cursor: grabbing;
+}
+
+.tm-diagram-toolbox__item--edge .tm-diagram-toolbox__label {
+    color: var(--tm-color-text);
 }
 
 .tm-diagram-toolbox__preview {
@@ -1473,9 +1528,75 @@ rect.tm-diagram-resize-handle {
     display: block;
 }
 
+.tm-diagram-toolbox__edge-preview {
+    color: var(--tm-color-primary);
+}
+
 .tm-diagram-toolbox__label {
     font-size: var(--tm-font-size-sm, 14px);
     color: var(--tm-color-text, #111827);
+}
+
+@media (max-width: 640px) {
+    .tm-diagram-editor__body {
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .tm-diagram-editor__toolbox-wrap {
+        width: 100%;
+        max-height: 280px;
+        border-right: none;
+        border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+        overflow-y: auto;
+    }
+
+    .tm-diagram-editor__right-stack {
+        display: none;
+    }
+
+    .tm-diagram-editor__canvas-wrap {
+        flex: 1 1 auto;
+        min-height: 320px;
+    }
+
+    .tm-diagram-toolbox__inner {
+        padding: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__title {
+        margin-bottom: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__search {
+        margin-bottom: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__library {
+        margin-bottom: var(--tm-space-2, 8px);
+    }
+
+    .tm-diagram-toolbox__library-header {
+        padding: 0;
+    }
+
+    .tm-diagram-toolbox__category-body {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+        gap: var(--tm-space-1, 4px);
+        padding-left: 0;
+    }
+
+    .tm-diagram-toolbox__item {
+        min-width: 0;
+    }
+
+    .tm-diagram-toolbox__label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -2336,7 +2457,7 @@ line.tm-diagram-rotate-handle-stem {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    max-height: 60vh;
+    max-height: 70vh;
 }
 
 .tm-diagram-template-gallery__header {
@@ -2394,7 +2515,7 @@ line.tm-diagram-rotate-handle-stem {
 
 .tm-diagram-template-gallery__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 12px;
 }
 
@@ -2408,7 +2529,8 @@ line.tm-diagram-rotate-handle-stem {
 /* ── Template card ────────────────────────────────────────────────────────── */
 .tm-diagram-template-card {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    min-height: 96px;
     background: var(--tm-color-surface, #ffffff);
     border: 1px solid var(--tm-color-border, #e5e7eb);
     border-radius: var(--tm-radius-md, 6px);
@@ -2429,7 +2551,8 @@ line.tm-diagram-rotate-handle-stem {
 }
 
 .tm-diagram-template-card__thumb {
-    aspect-ratio: 4 / 3;
+    width: 112px;
+    min-width: 112px;
     background: var(--tm-color-surface-elevated, #f9fafb);
     display: flex;
     align-items: center;
@@ -2457,19 +2580,21 @@ line.tm-diagram-rotate-handle-stem {
 }
 
 .tm-diagram-template-card__info {
-    padding: 8px 10px;
+    min-width: 0;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content: center;
+    gap: 6px;
 }
 
 .tm-diagram-template-card__name {
     font-size: var(--tm-font-size-sm, 14px);
-    font-weight: 500;
+    line-height: 1.3;
+    font-weight: 600;
     color: var(--tm-color-text, #111827);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .tm-diagram-template-card__tags {

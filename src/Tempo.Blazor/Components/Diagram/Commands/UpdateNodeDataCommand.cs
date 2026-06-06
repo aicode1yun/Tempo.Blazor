@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Tempo.Blazor.Components.Diagram.Models;
 
 namespace Tempo.Blazor.Components.Diagram.Commands;
@@ -40,8 +39,20 @@ public sealed class UpdateNodeDataCommand : IDiagramCommand
     }
 
     private static Dictionary<string, object> DeepCopy(Dictionary<string, object> source)
+        => source.ToDictionary(pair => pair.Key, pair => CopyValue(pair.Value));
+
+    private static object CopyValue(object? value)
     {
-        var json = JsonSerializer.Serialize(source);
-        return JsonSerializer.Deserialize<Dictionary<string, object>>(json) ?? [];
+        return value switch
+        {
+            null => null!,
+            string text => text,
+            string[] values => values.ToArray(),
+            IEnumerable<string> values => values.ToArray(),
+            Dictionary<string, object> map => DeepCopy(map),
+            IReadOnlyDictionary<string, object> map => map.ToDictionary(pair => pair.Key, pair => CopyValue(pair.Value)),
+            IEnumerable<object> values => values.Select(CopyValue).ToArray(),
+            _ => value
+        };
     }
 }
