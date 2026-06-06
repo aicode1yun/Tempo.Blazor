@@ -65,8 +65,14 @@ public sealed class SwimlaneLayoutService
         if (child.SwimlaneRow < 0 || child.SwimlaneColumn < 0) return;
 
         var (cx, cy, cw, ch) = GetCellBounds(swimlane, child.SwimlaneRow, child.SwimlaneColumn);
-        child.X = cx + 10;
-        child.Y = cy + 10;
+        const double margin = 10;
+        var minX = cx + margin;
+        var minY = cy + margin;
+        var maxX = Math.Max(minX, cx + cw - child.W - margin);
+        var maxY = Math.Max(minY, cy + ch - child.H - margin);
+
+        child.X = Clamp(child.X, minX, maxX);
+        child.Y = Clamp(child.Y, minY, maxY);
     }
 
     /// <summary>Updates swimlane dimensions so that all rows and columns fit their defined sizes.</summary>
@@ -139,5 +145,12 @@ public sealed class SwimlaneLayoutService
         if (explicitSizes.Count > index && index >= 0)
             return explicitSizes[index];
         return count > 0 ? totalSize / count : 0;
+    }
+
+    private static double Clamp(double value, double min, double max)
+    {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
     }
 }

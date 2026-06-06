@@ -121,6 +121,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private string? _activeLayerId;
 
     private string _toolMode = "select";
+    private string? _activeEdgeStencilId;
 
     private bool _showRulers;
     private double _rulerViewportX;
@@ -1730,9 +1731,14 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     // ── Toolbox drag activation ──────────────────────────────────────────────
 
-    private void OnToolboxDragStart(string stencilId)
+    private async Task OnToolboxDragStart(string stencilId)
     {
-        // Toolbox handles the HTML5 dragstart; this is just a hook if needed
+        var stencil = StencilRegistry.GetStencil(stencilId);
+        if (stencil?.Kind == DiagramStencilKind.Edge)
+        {
+            _activeEdgeStencilId = stencil.Id;
+            await SetToolMode("edge");
+        }
     }
 
     private async Task OnToolboxDrop((string StencilId, double X, double Y) drop)
@@ -1740,6 +1746,13 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         if (_document is null || ReadOnly) return;
 
         var stencil = StencilRegistry.GetStencil(drop.StencilId);
+        if (stencil?.Kind == DiagramStencilKind.Edge)
+        {
+            _activeEdgeStencilId = stencil.Id;
+            await SetToolMode("edge");
+            return;
+        }
+
         var w = stencil?.DefaultWidth ?? 120;
         var h = stencil?.DefaultHeight ?? 60;
         var x = Math.Round(drop.X / GridSize) * GridSize;
@@ -1835,6 +1848,10 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         // look-and-feel carries across newly drawn edges until the user
         // explicitly edits one through the properties panel.
         _document.LastUsedEdgeStyle?.ApplyTo(edge);
+        if (_activeEdgeStencilId is not null && StencilRegistry.GetStencil(_activeEdgeStencilId) is { Kind: DiagramStencilKind.Edge } edgeStencil)
+        {
+            DiagramEdgeStencilFactory.ApplyDefaults(edge, edgeStencil);
+        }
 
         // ── Source terminal ──────────────────────────────────────────────────
         // Either attached to a node (with optional port / constraint / side) or

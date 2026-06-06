@@ -27,7 +27,7 @@
                     @foreach (var section in SelectedStencil.Layout.Sections.Where(s => s.DataKey is not null && (s.Type == "text" || s.Type == "list")))
                     {
                         <div class="tm-diagram-properties__field">
-                            <label>@Capitalize(section.DataKey!)</label>
+                            <label>@GetDataSectionLabel(section.DataKey!)</label>
                             @if (section.Type == "list")
                             {
                                 <textarea class="tm-text-input"
@@ -119,7 +119,7 @@
                                     {
                                         <button type="button"
                                                 class="tm-diagram-replace-shape__item"
-                                                title="@stencil.Name"
+                                            title="@GetStencilDisplayName(stencil)"
                                                 @onclick="() => OnReplaceShape(stencil.Id)">
                                             @if (!string.IsNullOrEmpty(stencil.IconSvg))
                                             {
@@ -135,7 +135,7 @@
                                                           stroke="var(--tm-color-text)" stroke-width="2" />
                                                 </svg>
                                             }
-                                            <span>@stencil.Name</span>
+                                            <span>@GetStencilDisplayName(stencil)</span>
                                         </button>
                                     }
                                 </div>
@@ -180,15 +180,15 @@
                 </div>
 
                 <div class="tm-diagram-properties__field">
-                    <label>Formatting</label>
+                    <label>@Loc["TmDiagramProperties_Formatting"]</label>
                     <div class="tm-diagram-properties__segmented">
-                        <button type="button" class="tm-diagram-properties__segmented-btn @(GetNodeBold() ? "tm-diagram-properties__segmented-btn--active" : "")" @onclick="() => OnNodeBoldChanged(!GetNodeBold())" title="Bold">
+                        <button type="button" class="tm-diagram-properties__segmented-btn @(GetNodeBold() ? "tm-diagram-properties__segmented-btn--active" : "")" @onclick="() => OnNodeBoldChanged(!GetNodeBold())" title="@Loc["TmDiagramProperties_Bold"]">
                             <TmIcon Name="@IconNames.Bold" Size="IconSize.Sm" />
                         </button>
-                        <button type="button" class="tm-diagram-properties__segmented-btn @(GetNodeItalic() ? "tm-diagram-properties__segmented-btn--active" : "")" @onclick="() => OnNodeItalicChanged(!GetNodeItalic())" title="Italic">
+                        <button type="button" class="tm-diagram-properties__segmented-btn @(GetNodeItalic() ? "tm-diagram-properties__segmented-btn--active" : "")" @onclick="() => OnNodeItalicChanged(!GetNodeItalic())" title="@Loc["TmDiagramProperties_Italic"]">
                             <TmIcon Name="@IconNames.Italic" Size="IconSize.Sm" />
                         </button>
-                        <button type="button" class="tm-diagram-properties__segmented-btn @(GetNodeUnderline() ? "tm-diagram-properties__segmented-btn--active" : "")" @onclick="() => OnNodeUnderlineChanged(!GetNodeUnderline())" title="Underline">
+                        <button type="button" class="tm-diagram-properties__segmented-btn @(GetNodeUnderline() ? "tm-diagram-properties__segmented-btn--active" : "")" @onclick="() => OnNodeUnderlineChanged(!GetNodeUnderline())" title="@Loc["TmDiagramProperties_Underline"]">
                             <TmIcon Name="@IconNames.Underline" Size="IconSize.Sm" />
                         </button>
                     </div>
@@ -199,22 +199,22 @@
             <TmSection Title="@Loc["TmDiagramProperties_Arrange"]" Icon="@IconNames.Maximize2" Collapsible="true" Collapsed="@(!IsSectionExpanded("arrange"))" CollapsedChanged="OnArrangeCollapsedChanged">
                 <div class="tm-diagram-properties__row">
                     <div class="tm-diagram-properties__field">
-                        <label>X</label>
+                        <label>@Loc["TmDiagramProperties_PositionX"]</label>
                         <input class="tm-text-input" type="number" step="1" value="@N(FirstSelectedNode?.X ?? 0)" @onchange="e => OnNodeXChanged(e.Value?.ToString())" />
                     </div>
                     <div class="tm-diagram-properties__field">
-                        <label>Y</label>
+                        <label>@Loc["TmDiagramProperties_PositionY"]</label>
                         <input class="tm-text-input" type="number" step="1" value="@N(FirstSelectedNode?.Y ?? 0)" @onchange="e => OnNodeYChanged(e.Value?.ToString())" />
                     </div>
                 </div>
 
                 <div class="tm-diagram-properties__row">
                     <div class="tm-diagram-properties__field">
-                        <label>W</label>
+                        <label>@Loc["TmDiagramProperties_SizeWidth"]</label>
                         <input class="tm-text-input" type="number" step="1" min="20" value="@N(FirstSelectedNode?.W ?? 0)" @onchange="e => OnNodeWChanged(e.Value?.ToString())" />
                     </div>
                     <div class="tm-diagram-properties__field">
-                        <label>H</label>
+                        <label>@Loc["TmDiagramProperties_SizeHeight"]</label>
                         <input class="tm-text-input" type="number" step="1" min="20" value="@N(FirstSelectedNode?.H ?? 0)" @onchange="e => OnNodeHChanged(e.Value?.ToString())" />
                     </div>
                 </div>
@@ -235,7 +235,7 @@
                 </div>
 
                 <div class="tm-diagram-properties__field">
-                    <label>Order</label>
+                    <label>@Loc["TmDiagramProperties_Order"]</label>
                     <div class="tm-diagram-properties__action-grid-2">
                         <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.ArrowUp" OnClick="OnBringToFront">@Loc["TmDiagramProperties_BringToFront"]</TmButton>
                         <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.ArrowDown" OnClick="OnSendToBack">@Loc["TmDiagramProperties_SendToBack"]</TmButton>
@@ -245,7 +245,7 @@
                 @if (CanGroup || CanUngroup)
                 {
                     <div class="tm-diagram-properties__field">
-                        <label>Grouping</label>
+                        <label>@Loc["TmDiagramProperties_Grouping"]</label>
                         <div class="tm-diagram-properties__action-grid-2">
                             @if (CanGroup)
                             {
@@ -262,9 +262,9 @@
                 @if (IsSingleNode && FirstSelectedNode is { IsCollapsible: true })
                 {
                     <div class="tm-diagram-properties__field">
-                        <label>Collapse</label>
+                        <label>@Loc["TmDiagramProperties_Collapse"]</label>
                         <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@(FirstSelectedNode.Collapsed ? IconNames.Plus : IconNames.Minus)" OnClick="OnToggleCollapse">
-                            @(FirstSelectedNode.Collapsed ? "Expand" : "Collapse")
+                            @(FirstSelectedNode.Collapsed ? Loc["TmDiagramProperties_Expand"] : Loc["TmDiagramProperties_Collapse"])
                         </TmButton>
                     </div>
                 }
@@ -272,9 +272,9 @@
                 @if (IsSingleNode)
                 {
                     <div class="tm-diagram-properties__field">
-                        <label>Lock</label>
+                        <label>@Loc["TmDiagramProperties_Lock"]</label>
                         <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@(IsNodeLocked(FirstSelectedNode) ? IconNames.Unlock : IconNames.Lock)" OnClick="OnToggleLock">
-                            @(IsNodeLocked(FirstSelectedNode) ? "Unlock" : "Lock")
+                            @(IsNodeLocked(FirstSelectedNode) ? Loc["TmDiagramProperties_Unlock"] : Loc["TmDiagramProperties_Lock"])
                         </TmButton>
                     </div>
                 }
@@ -340,7 +340,7 @@
                             {
                                 var idx = i;
                                 <div class="tm-diagram-properties__row">
-                                    <span>Row @(idx + 1)</span>
+                                    <span>@Loc["TmDiagramProperties_RowNumber", idx + 1]</span>
                                     <input class="tm-text-input" type="number" step="1" min="20"
                                            value="@N(GetSwimlaneRowSize(idx))"
                                            @onchange="e => OnSwimlaneRowSizeChanged(idx, e.Value?.ToString())" />
@@ -356,7 +356,7 @@
                             {
                                 var idx = i;
                                 <div class="tm-diagram-properties__row">
-                                    <span>Col @(idx + 1)</span>
+                                    <span>@Loc["TmDiagramProperties_ColumnNumber", idx + 1]</span>
                                     <input class="tm-text-input" type="number" step="1" min="20"
                                            value="@N(GetSwimlaneColumnSize(idx))"
                                            @onchange="e => OnSwimlaneColumnSizeChanged(idx, e.Value?.ToString())" />
@@ -460,6 +460,11 @@
                 <div class="tm-diagram-properties__field">
                     <label>@Loc["TmDiagramProperties_EdgePreset"]</label>
                     <TmSelect TValue="string" Value="@GetEdgePreset()" ValueChanged="OnEdgePresetChanged" Options="@_edgePresetOptions" />
+                </div>
+
+                <div class="tm-diagram-properties__field" data-edge-template-selector>
+                    <label>@Loc["TmDiagramProperties_EdgeTemplate"]</label>
+                    <TmSelect TValue="string" Value="@GetEdgeTemplate()" ValueChanged="OnEdgeTemplateChanged" Options="@_edgeTemplateOptions" />
                 </div>
 
                 <div class="tm-diagram-properties__field">
@@ -577,11 +582,11 @@
                         </div>
                         <div class="tm-diagram-properties__row">
                             <div class="tm-diagram-properties__field">
-                                <label>X</label>
+                                <label>@Loc["TmDiagramProperties_PositionX"]</label>
                                 <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeSourceConstraintX())" @onchange="OnEdgeSourceConstraintXChanged" />
                             </div>
                             <div class="tm-diagram-properties__field">
-                                <label>Y</label>
+                                <label>@Loc["TmDiagramProperties_PositionY"]</label>
                                 <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeSourceConstraintY())" @onchange="OnEdgeSourceConstraintYChanged" />
                             </div>
                         </div>
@@ -597,11 +602,11 @@
                         </div>
                         <div class="tm-diagram-properties__row">
                             <div class="tm-diagram-properties__field">
-                                <label>X</label>
+                                <label>@Loc["TmDiagramProperties_PositionX"]</label>
                                 <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeTargetConstraintX())" @onchange="OnEdgeTargetConstraintXChanged" />
                             </div>
                             <div class="tm-diagram-properties__field">
-                                <label>Y</label>
+                                <label>@Loc["TmDiagramProperties_PositionY"]</label>
                                 <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeTargetConstraintY())" @onchange="OnEdgeTargetConstraintYChanged" />
                             </div>
                         </div>
@@ -680,11 +685,11 @@
                 </div>
                 <div class="tm-diagram-properties__row">
                     <div class="tm-diagram-properties__field">
-                        <label>W</label>
+                        <label>@Loc["TmDiagramProperties_SizeWidth"]</label>
                         <input class="tm-text-input" type="number" step="1" min="100" value="@((int)(Document?.Width ?? 3000))" @onchange="OnPageWidthChanged" />
                     </div>
                     <div class="tm-diagram-properties__field">
-                        <label>H</label>
+                        <label>@Loc["TmDiagramProperties_SizeHeight"]</label>
                         <input class="tm-text-input" type="number" step="1" min="100" value="@((int)(Document?.Height ?? 2000))" @onchange="OnPageHeightChanged" />
                     </div>
                 </div>

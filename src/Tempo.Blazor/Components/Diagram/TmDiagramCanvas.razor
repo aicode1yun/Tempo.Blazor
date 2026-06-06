@@ -5,6 +5,7 @@
 @using Tempo.Blazor.Components.Diagram.Commands
 
 <div class="tm-diagram-canvas @Class @(IsOnlyEdgeSelected() ? "tm-diagram-canvas--edge-selected" : null)"
+     data-testid="diagram-canvas"
      tabindex="0"
      @ref="_containerRef"
      @onmousemove="OnCanvasMouseMove"

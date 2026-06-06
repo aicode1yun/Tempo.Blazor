@@ -97,7 +97,11 @@ public static class ServiceCollectionExtensions
             new WireframeSchemaRegistry(sp.GetServices<IWireframeSchemaSource>()));
 
         // ── Diagram editor ────────────────────────────────────────────────────
-        services.TryAddSingleton<IDiagramStencilProvider, BuiltInDiagramStencilProvider>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, BuiltInDiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, Uml25DiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, Bpmn2DiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, Archimate3DiagramStencilProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramStencilProvider, ExtendedDiagramStencilProvider>());
         services.TryAddSingleton<DiagramStencilRegistry>(sp =>
         {
             var registry = new DiagramStencilRegistry();
@@ -107,7 +111,8 @@ public static class ServiceCollectionExtensions
             return registry;
         });
 
-        services.TryAddSingleton<IDiagramTemplateProvider, BuiltInDiagramTemplateProvider>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramTemplateProvider, BuiltInDiagramTemplateProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDiagramTemplateProvider, ExtendedDiagramTemplateProvider>());
         services.TryAddSingleton<DiagramTemplateRegistry>(sp =>
         {
             var registry = new DiagramTemplateRegistry();
@@ -172,6 +177,21 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<T>();
         services.AddSingleton<IDiagramStencilProvider>(sp => sp.GetRequiredService<T>());
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a JSON-backed diagram stencil provider with optional lazy-loaded libraries.
+    /// </summary>
+    /// <param name="services">Service collection to configure.</param>
+    /// <param name="sources">JSON stencil library sources.</param>
+    /// <param name="priority">Provider priority. Higher values override lower-priority stencil ids.</param>
+    public static IServiceCollection AddJsonDiagramStencilProvider(
+        this IServiceCollection services,
+        IEnumerable<JsonDiagramStencilLibrarySource> sources,
+        int priority = 50)
+    {
+        services.AddSingleton<IDiagramStencilProvider>(new JsonDiagramStencilProvider(sources, priority));
         return services;
     }
 

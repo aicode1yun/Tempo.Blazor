@@ -1448,6 +1448,32 @@
   <data name="TmDiagramEditor_ShowMinimap" xml:space="preserve"><value>Afficher la mini-carte</value></data>
   <data name="TmDiagramEditor_HideMinimap" xml:space="preserve"><value>Masquer la mini-carte</value></data>
   <data name="TmDiagramEditor_ToggleMinimap" xml:space="preserve"><value>Basculer la mini-carte</value></data>
+  <data name="TmDiagramDemo_PageTitle" xml:space="preserve"><value>Éditeur de diagrammes</value></data>
+  <data name="TmDiagramDemo_PageDescription" xml:space="preserve"><value>Éditeur de diagrammes déclaratif avec nœuds basés sur des stencils, arêtes SVG et rendu hybride HTML/SVG. Faites glisser des stencils depuis la boîte à outils, connectez les ports et exportez en JSON.</value></data>
+  <data name="TmDiagramDemo_InteractiveEditor" xml:space="preserve"><value>Éditeur interactif</value></data>
+  <data name="TmDiagramDemo_InteractiveDescription" xml:space="preserve"><value>Le canevas ci-dessous est préchargé avec un stencil de classe UML. Faites glisser depuis un port pour créer des arêtes.</value></data>
+  <data name="TmDiagramDemo_LoadUmlSample" xml:space="preserve"><value>Charger l'exemple UML</value></data>
+  <data name="TmDiagramDemo_LoadGroupedSample" xml:space="preserve"><value>Charger l'exemple groupé</value></data>
+  <data name="TmDiagramDemo_NewDocument" xml:space="preserve"><value>Nouveau document</value></data>
+  <data name="TmDiagramDemo_Nodes" xml:space="preserve"><value>Nœuds</value></data>
+  <data name="TmDiagramDemo_Edges" xml:space="preserve"><value>Arêtes</value></data>
+  <data name="TmDiagramDemo_Title" xml:space="preserve"><value>Titre</value></data>
+  <data name="TmDiagramDemo_Id" xml:space="preserve"><value>ID</value></data>
+  <data name="TmDiagramDemo_UntitledDiagram" xml:space="preserve"><value>Diagramme sans titre</value></data>
+  <data name="TmDiagramDemo_GroupedBoundsSample" xml:space="preserve"><value>Exemple de limites groupées</value></data>
+  <data name="TmDiagramDemo_UmlSampleTitle" xml:space="preserve"><value>Diagramme de classes UML</value></data>
+  <data name="TmDiagramDemo_CustomerClass" xml:space="preserve"><value>Client</value></data>
+  <data name="TmDiagramDemo_CustomerAttributeId" xml:space="preserve"><value>- id: Guid</value></data>
+  <data name="TmDiagramDemo_CustomerAttributeName" xml:space="preserve"><value>- nom: string</value></data>
+  <data name="TmDiagramDemo_CustomerAttributeEmail" xml:space="preserve"><value>- email: string</value></data>
+  <data name="TmDiagramDemo_CustomerMethodSave" xml:space="preserve"><value>+ Enregistrer(): void</value></data>
+  <data name="TmDiagramDemo_CustomerMethodLoad" xml:space="preserve"><value>+ Charger(): void</value></data>
+  <data name="TmDiagramDemo_OrderClass" xml:space="preserve"><value>Commande</value></data>
+  <data name="TmDiagramDemo_OrderAttributeId" xml:space="preserve"><value>- id: Guid</value></data>
+  <data name="TmDiagramDemo_OrderAttributeTotal" xml:space="preserve"><value>- total: decimal</value></data>
+  <data name="TmDiagramDemo_OrderMethodPlace" xml:space="preserve"><value>+ Placer(): void</value></data>
+  <data name="TmDiagramDemo_OrderMethodCancel" xml:space="preserve"><value>+ Annuler(): void</value></data>
+  <data name="TmDiagramDemo_UmlMultiplicity" xml:space="preserve"><value>1..*</value></data>
   <data name="TmDiagramMinimap_Title" xml:space="preserve"><value>Mini-carte</value></data>
   <data name="TmDiagramMinimap_Empty" xml:space="preserve"><value>Aucun diagramme à afficher</value></data>
   <data name="TmDiagramLayers_Title" xml:space="preserve"><value>Calques</value></data>
@@ -1461,12 +1487,56 @@
   <data name="TmDiagramLayers_AssignToLayer" xml:space="preserve"><value>Assigner au calque</value></data>
   <data name="TmDiagramLayers_Layer" xml:space="preserve"><value>Calque</value></data>
   <data name="TmDiagramProperties_Layer" xml:space="preserve"><value>Calque</value></data>
+  <data name="DiagramStencilSet_Relationships" xml:space="preserve"><value>Relations</value></data>
+  <data name="DiagramStencilPalette_RelationshipsGeneral" xml:space="preserve"><value>Relations générales</value></data>
+  <data name="DiagramStencil_RelationshipAssociation" xml:space="preserve"><value>Association</value></data>
+  <data name="DiagramStencil_RelationshipDependency" xml:space="preserve"><value>Dépendance</value></data>
+  <data name="DiagramStencilSet_Uml25" xml:space="preserve"><value>UML 2.5</value></data>
+  <data name="DiagramStencilPalette_Uml25Class" xml:space="preserve"><value>Classe</value></data>
+  <data name="DiagramStencilPalette_Uml25UseCase" xml:space="preserve"><value>Cas d'utilisation</value></data>
+  <data name="DiagramStencilPalette_Uml25Activity" xml:space="preserve"><value>Activité</value></data>
+  <data name="DiagramStencilPalette_Uml25Sequence" xml:space="preserve"><value>Séquence</value></data>
+  <data name="DiagramStencilPalette_Uml25Deployment" xml:space="preserve"><value>Déploiement</value></data>
+  <data name="DiagramStencilPalette_Uml25Relationships" xml:space="preserve"><value>Relations</value></data>
+  <data name="DiagramStencil_Uml25Class" xml:space="preserve"><value>Classe</value></data>
+  <data name="DiagramStencil_Uml25AbstractClass" xml:space="preserve"><value>Classe abstraite</value></data>
+  <data name="DiagramStencil_Uml25Interface" xml:space="preserve"><value>Interface</value></data>
+  <data name="DiagramStencil_Uml25Package" xml:space="preserve"><value>Paquet</value></data>
+  <data name="DiagramStencil_Uml25Enumeration" xml:space="preserve"><value>Énumération</value></data>
+  <data name="DiagramStencil_Uml25Actor" xml:space="preserve"><value>Acteur</value></data>
+  <data name="DiagramStencil_Uml25UseCase" xml:space="preserve"><value>Cas d'utilisation</value></data>
+  <data name="DiagramStencil_Uml25SystemBoundary" xml:space="preserve"><value>Limite du système</value></data>
+  <data name="DiagramStencil_Uml25Note" xml:space="preserve"><value>Note</value></data>
+  <data name="DiagramStencil_Uml25ActivityInitial" xml:space="preserve"><value>Nœud initial</value></data>
+  <data name="DiagramStencil_Uml25ActivityFinal" xml:space="preserve"><value>Nœud final</value></data>
+  <data name="DiagramStencil_Uml25ActivityAction" xml:space="preserve"><value>Action</value></data>
+  <data name="DiagramStencil_Uml25ActivityDecision" xml:space="preserve"><value>Décision</value></data>
+  <data name="DiagramStencil_Uml25ActivityForkJoin" xml:space="preserve"><value>Fourche / jonction</value></data>
+  <data name="DiagramStencil_Uml25ActivityObjectNode" xml:space="preserve"><value>Nœud objet</value></data>
+  <data name="DiagramStencil_Uml25SequenceLifeline" xml:space="preserve"><value>Ligne de vie</value></data>
+  <data name="DiagramStencil_Uml25SequenceActivation" xml:space="preserve"><value>Activation</value></data>
+  <data name="DiagramStencil_Uml25SequenceCombinedFragment" xml:space="preserve"><value>Fragment combiné</value></data>
+  <data name="DiagramStencil_Uml25SequenceMessage" xml:space="preserve"><value>Message</value></data>
+  <data name="DiagramStencil_Uml25Component" xml:space="preserve"><value>Composant</value></data>
+  <data name="DiagramStencil_Uml25DeploymentNode" xml:space="preserve"><value>Nœud</value></data>
+  <data name="DiagramStencil_Uml25Artifact" xml:space="preserve"><value>Artefact</value></data>
+  <data name="DiagramStencil_Uml25DeploymentSpec" xml:space="preserve"><value>Spécification de déploiement</value></data>
+  <data name="DiagramStencil_Uml25Association" xml:space="preserve"><value>Association</value></data>
+  <data name="DiagramStencil_Uml25DirectedAssociation" xml:space="preserve"><value>Association dirigée</value></data>
+  <data name="DiagramStencil_Uml25Dependency" xml:space="preserve"><value>Dépendance</value></data>
+  <data name="DiagramStencil_Uml25Generalization" xml:space="preserve"><value>Généralisation</value></data>
+  <data name="DiagramStencil_Uml25Realization" xml:space="preserve"><value>Réalisation</value></data>
+  <data name="DiagramStencil_Uml25Aggregation" xml:space="preserve"><value>Agrégation</value></data>
+  <data name="DiagramStencil_Uml25Composition" xml:space="preserve"><value>Composition</value></data>
 
   <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
   <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Basculer la boîte à outils</value></data>
   <data name="TmDiagramToolbox_Title" xml:space="preserve"><value>Boîte à outils</value></data>
   <data name="TmDiagramToolbox_SearchPlaceholder" xml:space="preserve"><value>Rechercher des pochoirs...</value></data>
+  <data name="TmDiagramToolbox_SearchAriaLabel" xml:space="preserve"><value>Rechercher des pochoirs de diagramme</value></data>
   <data name="TmDiagramToolbox_NoResults" xml:space="preserve"><value>Aucun pochoir trouvé</value></data>
+  <data name="TmDiagramToolbox_DragStencil" xml:space="preserve"><value>Glisser {0} sur le canevas</value></data>
+  <data name="TmDiagramToolbox_InsertStencil" xml:space="preserve"><value>Insérer {0} sur le canevas</value></data>
 
   <!-- ═══════════════ TmDiagramPropertiesPanel ═══════════════ -->
   <data name="TmDiagramProperties_Toggle" xml:space="preserve"><value>Basculer les propriétés</value></data>
@@ -1475,6 +1545,33 @@
   <data name="TmDiagramProperties_EdgeTitle" xml:space="preserve"><value>Arête</value></data>
   <data name="TmDiagramProperties_Label" xml:space="preserve"><value>Libellé</value></data>
   <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Style</value></data>
+  <data name="TmDiagramProperties_Data_Label" xml:space="preserve"><value>Libellé</value></data>
+  <data name="TmDiagramProperties_Data_Name" xml:space="preserve"><value>Nom</value></data>
+  <data name="TmDiagramProperties_Data_Stereotype" xml:space="preserve"><value>Stéréotype</value></data>
+  <data name="TmDiagramProperties_Data_Attributes" xml:space="preserve"><value>Attributs</value></data>
+  <data name="TmDiagramProperties_Data_Operations" xml:space="preserve"><value>Opérations</value></data>
+  <data name="TmDiagramProperties_Data_Literals" xml:space="preserve"><value>Littéraux</value></data>
+  <data name="TmDiagramProperties_Data_Guard" xml:space="preserve"><value>Garde</value></data>
+  <data name="TmDiagramProperties_Data_Operator" xml:space="preserve"><value>Opérateur</value></data>
+  <data name="TmDiagramProperties_Data_Swimlane" xml:space="preserve"><value>Couloir</value></data>
+  <data name="TmDiagramProperties_Formatting" xml:space="preserve"><value>Mise en forme</value></data>
+  <data name="TmDiagramProperties_Bold" xml:space="preserve"><value>Gras</value></data>
+  <data name="TmDiagramProperties_Italic" xml:space="preserve"><value>Italique</value></data>
+  <data name="TmDiagramProperties_Underline" xml:space="preserve"><value>Souligné</value></data>
+  <data name="TmDiagramProperties_PositionX" xml:space="preserve"><value>X</value></data>
+  <data name="TmDiagramProperties_PositionY" xml:space="preserve"><value>Y</value></data>
+  <data name="TmDiagramProperties_SizeWidth" xml:space="preserve"><value>L</value></data>
+  <data name="TmDiagramProperties_SizeHeight" xml:space="preserve"><value>H</value></data>
+  <data name="TmDiagramProperties_Order" xml:space="preserve"><value>Ordre</value></data>
+  <data name="TmDiagramProperties_Grouping" xml:space="preserve"><value>Groupement</value></data>
+  <data name="TmDiagramProperties_Collapse" xml:space="preserve"><value>Réduire</value></data>
+  <data name="TmDiagramProperties_Expand" xml:space="preserve"><value>Développer</value></data>
+  <data name="TmDiagramProperties_Lock" xml:space="preserve"><value>Verrouiller</value></data>
+  <data name="TmDiagramProperties_Unlock" xml:space="preserve"><value>Déverrouiller</value></data>
+  <data name="TmDiagramProperties_RowNumber" xml:space="preserve"><value>Ligne {0}</value></data>
+  <data name="TmDiagramProperties_ColumnNumber" xml:space="preserve"><value>Colonne {0}</value></data>
+  <data name="TmDiagramProperties_EdgeTemplate" xml:space="preserve"><value>Modèle de relation</value></data>
+  <data name="TmDiagramProperties_EdgeTemplate_Custom" xml:space="preserve"><value>Personnalisé</value></data>
   <data name="TmDiagramProperties_ZIndex" xml:space="preserve"><value>Plan</value></data>
   <data name="TmDiagramProperties_Empty" xml:space="preserve"><value>Aucune sélection</value></data>
   <data name="TmDiagramProperties_ReadOnly" xml:space="preserve"><value>Mode lecture seule</value></data>
@@ -3128,6 +3225,143 @@
   <data name="TmSpreadsheet_PasteSpecial_Transpose" xml:space="preserve"><value>Transposer</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="DiagramStencilSet_Bpmn2" xml:space="preserve"><value>BPMN 2.0</value></data>
+  <data name="DiagramStencilPalette_Bpmn2General" xml:space="preserve"><value>Général</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Tasks" xml:space="preserve"><value>Tâches</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Events" xml:space="preserve"><value>Événements</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Gateways" xml:space="preserve"><value>Passerelles</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Swimlanes" xml:space="preserve"><value>Pools et couloirs</value></data>
+  <data name="DiagramStencilPalette_Bpmn2Relationships" xml:space="preserve"><value>Flux</value></data>
+  <data name="DiagramStencil_Bpmn2DataObject" xml:space="preserve"><value>Objet de données</value></data>
+  <data name="DiagramStencil_Bpmn2DataStore" xml:space="preserve"><value>Magasin de données</value></data>
+  <data name="DiagramStencil_Bpmn2Task" xml:space="preserve"><value>Tâche</value></data>
+  <data name="DiagramStencil_Bpmn2UserTask" xml:space="preserve"><value>Tâche utilisateur</value></data>
+  <data name="DiagramStencil_Bpmn2ServiceTask" xml:space="preserve"><value>Tâche de service</value></data>
+  <data name="DiagramStencil_Bpmn2ManualTask" xml:space="preserve"><value>Tâche manuelle</value></data>
+  <data name="DiagramStencil_Bpmn2ScriptTask" xml:space="preserve"><value>Tâche de script</value></data>
+  <data name="DiagramStencil_Bpmn2BusinessRuleTask" xml:space="preserve"><value>Tâche de règle métier</value></data>
+  <data name="DiagramStencil_Bpmn2SendTask" xml:space="preserve"><value>Tâche d'envoi</value></data>
+  <data name="DiagramStencil_Bpmn2ReceiveTask" xml:space="preserve"><value>Tâche de réception</value></data>
+  <data name="DiagramStencil_Bpmn2Subprocess" xml:space="preserve"><value>Sous-processus</value></data>
+  <data name="DiagramStencil_Bpmn2CollapsedSubprocess" xml:space="preserve"><value>Sous-processus réduit</value></data>
+  <data name="DiagramStencil_Bpmn2StartEvent" xml:space="preserve"><value>Événement de début</value></data>
+  <data name="DiagramStencil_Bpmn2IntermediateEvent" xml:space="preserve"><value>Événement intermédiaire</value></data>
+  <data name="DiagramStencil_Bpmn2EndEvent" xml:space="preserve"><value>Événement de fin</value></data>
+  <data name="DiagramStencil_Bpmn2MessageEvent" xml:space="preserve"><value>Événement de message</value></data>
+  <data name="DiagramStencil_Bpmn2TimerEvent" xml:space="preserve"><value>Événement minuteur</value></data>
+  <data name="DiagramStencil_Bpmn2ErrorEvent" xml:space="preserve"><value>Événement d'erreur</value></data>
+  <data name="DiagramStencil_Bpmn2SignalEvent" xml:space="preserve"><value>Événement de signal</value></data>
+  <data name="DiagramStencil_Bpmn2TerminateEvent" xml:space="preserve"><value>Événement de terminaison</value></data>
+  <data name="DiagramStencil_Bpmn2NonInterruptingEvent" xml:space="preserve"><value>Événement non interruptif</value></data>
+  <data name="DiagramStencil_Bpmn2ExclusiveGateway" xml:space="preserve"><value>Passerelle exclusive</value></data>
+  <data name="DiagramStencil_Bpmn2ParallelGateway" xml:space="preserve"><value>Passerelle parallèle</value></data>
+  <data name="DiagramStencil_Bpmn2InclusiveGateway" xml:space="preserve"><value>Passerelle inclusive</value></data>
+  <data name="DiagramStencil_Bpmn2EventBasedGateway" xml:space="preserve"><value>Passerelle événementielle</value></data>
+  <data name="DiagramStencil_Bpmn2ComplexGateway" xml:space="preserve"><value>Passerelle complexe</value></data>
+  <data name="DiagramStencil_Bpmn2Pool" xml:space="preserve"><value>Pool</value></data>
+  <data name="DiagramStencil_Bpmn2Lane" xml:space="preserve"><value>Couloir</value></data>
+  <data name="DiagramStencil_Bpmn2SequenceFlow" xml:space="preserve"><value>Flux de séquence</value></data>
+  <data name="DiagramStencil_Bpmn2ConditionalFlow" xml:space="preserve"><value>Flux conditionnel</value></data>
+  <data name="DiagramStencil_Bpmn2DefaultFlow" xml:space="preserve"><value>Flux par défaut</value></data>
+  <data name="DiagramStencil_Bpmn2MessageFlow" xml:space="preserve"><value>Flux de message</value></data>
+  <data name="DiagramStencil_Bpmn2Association" xml:space="preserve"><value>Association</value></data>
+  <data name="DiagramStencil_Bpmn2DataAssociation" xml:space="preserve"><value>Association de données</value></data>
+  <data name="DiagramStencilSet_Archimate3" xml:space="preserve"><value>ArchiMate 3.2</value></data>
+  <data name="DiagramStencilPalette_Archimate3Business" xml:space="preserve"><value>Métier</value></data>
+  <data name="DiagramStencilPalette_Archimate3Application" xml:space="preserve"><value>Application</value></data>
+  <data name="DiagramStencilPalette_Archimate3Technology" xml:space="preserve"><value>Technologie</value></data>
+  <data name="DiagramStencilPalette_Archimate3Motivation" xml:space="preserve"><value>Motivation</value></data>
+  <data name="DiagramStencilPalette_Archimate3Strategy" xml:space="preserve"><value>Stratégie</value></data>
+  <data name="DiagramStencilPalette_Archimate3Relationships" xml:space="preserve"><value>Relations</value></data>
+  <data name="DiagramStencil_Archimate3BusinessActor" xml:space="preserve"><value>Acteur métier</value></data>
+  <data name="DiagramStencil_Archimate3BusinessRole" xml:space="preserve"><value>Rôle métier</value></data>
+  <data name="DiagramStencil_Archimate3BusinessProcess" xml:space="preserve"><value>Processus métier</value></data>
+  <data name="DiagramStencil_Archimate3BusinessFunction" xml:space="preserve"><value>Fonction métier</value></data>
+  <data name="DiagramStencil_Archimate3BusinessService" xml:space="preserve"><value>Service métier</value></data>
+  <data name="DiagramStencil_Archimate3BusinessObject" xml:space="preserve"><value>Objet métier</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationComponent" xml:space="preserve"><value>Composant applicatif</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationInterface" xml:space="preserve"><value>Interface applicative</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationFunction" xml:space="preserve"><value>Fonction applicative</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationProcess" xml:space="preserve"><value>Processus applicatif</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationService" xml:space="preserve"><value>Service applicatif</value></data>
+  <data name="DiagramStencil_Archimate3DataObject" xml:space="preserve"><value>Objet de données</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyNode" xml:space="preserve"><value>Nœud</value></data>
+  <data name="DiagramStencil_Archimate3Device" xml:space="preserve"><value>Appareil</value></data>
+  <data name="DiagramStencil_Archimate3SystemSoftware" xml:space="preserve"><value>Logiciel système</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyInterface" xml:space="preserve"><value>Interface technologique</value></data>
+  <data name="DiagramStencil_Archimate3Path" xml:space="preserve"><value>Chemin</value></data>
+  <data name="DiagramStencil_Archimate3Artifact" xml:space="preserve"><value>Artefact</value></data>
+  <data name="DiagramStencil_Archimate3Stakeholder" xml:space="preserve"><value>Partie prenante</value></data>
+  <data name="DiagramStencil_Archimate3Driver" xml:space="preserve"><value>Facteur</value></data>
+  <data name="DiagramStencil_Archimate3Assessment" xml:space="preserve"><value>Évaluation</value></data>
+  <data name="DiagramStencil_Archimate3Goal" xml:space="preserve"><value>Objectif</value></data>
+  <data name="DiagramStencil_Archimate3Outcome" xml:space="preserve"><value>Résultat</value></data>
+  <data name="DiagramStencil_Archimate3Principle" xml:space="preserve"><value>Principe</value></data>
+  <data name="DiagramStencil_Archimate3Requirement" xml:space="preserve"><value>Exigence</value></data>
+  <data name="DiagramStencil_Archimate3Constraint" xml:space="preserve"><value>Contrainte</value></data>
+  <data name="DiagramStencil_Archimate3Resource" xml:space="preserve"><value>Ressource</value></data>
+  <data name="DiagramStencil_Archimate3Capability" xml:space="preserve"><value>Capacité</value></data>
+  <data name="DiagramStencil_Archimate3ValueStream" xml:space="preserve"><value>Flux de valeur</value></data>
+  <data name="DiagramStencil_Archimate3Association" xml:space="preserve"><value>Association</value></data>
+  <data name="DiagramStencil_Archimate3Triggering" xml:space="preserve"><value>Déclenchement</value></data>
+  <data name="DiagramStencil_Archimate3Flow" xml:space="preserve"><value>Flux</value></data>
+  <data name="DiagramStencil_Archimate3Access" xml:space="preserve"><value>Accès</value></data>
+  <data name="DiagramStencil_Archimate3Serving" xml:space="preserve"><value>Service rendu</value></data>
+  <data name="DiagramStencil_Archimate3Realization" xml:space="preserve"><value>Réalisation</value></data>
+  <data name="DiagramStencil_Archimate3Assignment" xml:space="preserve"><value>Affectation</value></data>
+  <data name="DiagramStencil_Archimate3Aggregation" xml:space="preserve"><value>Agrégation</value></data>
+  <data name="DiagramStencil_Archimate3Composition" xml:space="preserve"><value>Composition</value></data>
+  <data name="DiagramStencil_Archimate3Specialization" xml:space="preserve"><value>Spécialisation</value></data>
+  <data name="DiagramStencil_Archimate3Influence" xml:space="preserve"><value>Influence</value></data>
+  <data name="DiagramStencilSet_TempoFlowchart" xml:space="preserve"><value>Tempo Flowchart</value></data>
+  <data name="DiagramStencilSet_TempoErd" xml:space="preserve"><value>Tempo ERD</value></data>
+  <data name="DiagramStencilSet_C4" xml:space="preserve"><value>Modèle C4</value></data>
+  <data name="DiagramStencilSet_CloudArchitecture" xml:space="preserve"><value>Architecture cloud</value></data>
+  <data name="DiagramStencilSet_Kubernetes" xml:space="preserve"><value>Kubernetes</value></data>
+  <data name="DiagramStencilPalette_TempoFlowchartCore" xml:space="preserve"><value>Flowchart de base</value></data>
+  <data name="DiagramStencilPalette_TempoErdCore" xml:space="preserve"><value>ERD de base</value></data>
+  <data name="DiagramStencilPalette_C4SoftwareSystems" xml:space="preserve"><value>Systèmes logiciels</value></data>
+  <data name="DiagramStencilPalette_C4Containers" xml:space="preserve"><value>Conteneurs</value></data>
+  <data name="DiagramStencilPalette_C4Relationships" xml:space="preserve"><value>Relations</value></data>
+  <data name="DiagramStencilPalette_CloudCompute" xml:space="preserve"><value>Calcul</value></data>
+  <data name="DiagramStencilPalette_CloudNetwork" xml:space="preserve"><value>Réseau</value></data>
+  <data name="DiagramStencilPalette_CloudData" xml:space="preserve"><value>Données</value></data>
+  <data name="DiagramStencilPalette_KubernetesWorkloads" xml:space="preserve"><value>Charges de travail</value></data>
+  <data name="DiagramStencilPalette_KubernetesNetwork" xml:space="preserve"><value>Réseau</value></data>
+  <data name="DiagramStencilPalette_KubernetesStorage" xml:space="preserve"><value>Stockage</value></data>
+  <data name="DiagramStencil_TempoFlowchartProcess" xml:space="preserve"><value>Processus</value></data>
+  <data name="DiagramStencil_TempoFlowchartDecision" xml:space="preserve"><value>Décision</value></data>
+  <data name="DiagramStencil_TempoFlowchartTerminator" xml:space="preserve"><value>Terminateur</value></data>
+  <data name="DiagramStencil_TempoFlowchartData" xml:space="preserve"><value>Données</value></data>
+  <data name="DiagramStencil_TempoFlowchartDocument" xml:space="preserve"><value>Document</value></data>
+  <data name="DiagramStencil_TempoFlowchartOffpage" xml:space="preserve"><value>Connecteur hors page</value></data>
+  <data name="DiagramStencil_TempoErdEntity" xml:space="preserve"><value>Entité</value></data>
+  <data name="DiagramStencil_TempoErdWeakEntity" xml:space="preserve"><value>Entité faible</value></data>
+  <data name="DiagramStencil_TempoErdRelationship" xml:space="preserve"><value>Relation</value></data>
+  <data name="DiagramStencil_TempoErdIdentifyingRelationship" xml:space="preserve"><value>Relation identifiante</value></data>
+  <data name="DiagramStencil_TempoErdAttribute" xml:space="preserve"><value>Attribut</value></data>
+  <data name="DiagramStencil_TempoErdKeyAttribute" xml:space="preserve"><value>Attribut clé</value></data>
+  <data name="DiagramStencil_C4Person" xml:space="preserve"><value>Personne</value></data>
+  <data name="DiagramStencil_C4SoftwareSystem" xml:space="preserve"><value>Système logiciel</value></data>
+  <data name="DiagramStencil_C4Container" xml:space="preserve"><value>Conteneur</value></data>
+  <data name="DiagramStencil_C4Component" xml:space="preserve"><value>Composant</value></data>
+  <data name="DiagramStencil_C4Database" xml:space="preserve"><value>Base de données</value></data>
+  <data name="DiagramStencil_C4Relationship" xml:space="preserve"><value>Relation</value></data>
+  <data name="DiagramStencil_CloudCompute" xml:space="preserve"><value>Calcul</value></data>
+  <data name="DiagramStencil_CloudServerless" xml:space="preserve"><value>Fonction serverless</value></data>
+  <data name="DiagramStencil_CloudLoadBalancer" xml:space="preserve"><value>Équilibreur de charge</value></data>
+  <data name="DiagramStencil_CloudVpc" xml:space="preserve"><value>Limite réseau</value></data>
+  <data name="DiagramStencil_CloudDatabase" xml:space="preserve"><value>Base de données</value></data>
+  <data name="DiagramStencil_CloudQueue" xml:space="preserve"><value>File</value></data>
+  <data name="DiagramStencil_CloudObjectStorage" xml:space="preserve"><value>Stockage objet</value></data>
+  <data name="DiagramStencil_KubernetesCluster" xml:space="preserve"><value>Cluster</value></data>
+  <data name="DiagramStencil_KubernetesNamespace" xml:space="preserve"><value>Namespace</value></data>
+  <data name="DiagramStencil_KubernetesPod" xml:space="preserve"><value>Pod</value></data>
+  <data name="DiagramStencil_KubernetesDeployment" xml:space="preserve"><value>Deployment</value></data>
+  <data name="DiagramStencil_KubernetesService" xml:space="preserve"><value>Service</value></data>
+  <data name="DiagramStencil_KubernetesIngress" xml:space="preserve"><value>Ingress</value></data>
+  <data name="DiagramStencil_KubernetesConfig" xml:space="preserve"><value>Config</value></data>
+  <data name="DiagramStencil_KubernetesPersistentVolume" xml:space="preserve"><value>Volume persistant</value></data>
 
   <!-- ═══════════════ Name Manager ═══════════════ -->
   <data name="TmSpreadsheet_Names_Title" xml:space="preserve"><value>Gestionnaire de noms</value></data>

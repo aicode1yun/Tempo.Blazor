@@ -32,6 +32,46 @@ dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integratio
 builder.Services.AddTempoBlazor();
 ```
 
+### Custom Diagram Stencils
+
+Register custom diagram stencils after `AddTempoBlazor()`. Keep provider output as your own data and mark built-in application stencils with `DiagramStencilOrigin.TempoOriginal`.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Tempo.Blazor.Components.Diagram.Models;
+using Tempo.Blazor.Components.Diagram.Stencils;
+
+builder.Services.AddTempoBlazor();
+builder.Services.TryAddEnumerable(
+    ServiceDescriptor.Singleton<IDiagramStencilProvider, MyStencilProvider>());
+
+public sealed class MyStencilProvider : IDiagramStencilProvider
+{
+    public int Priority => 100;
+
+    public IEnumerable<DiagramStencilSet> GetStencilSets()
+    {
+        yield return new DiagramStencilSet
+        {
+            Id = "my-stencils",
+            NameResourceKey = "DiagramStencilSet_MyStencils",
+            Stencils =
+            [
+                new DiagramStencil
+                {
+                    Id = "my-stencils.service",
+                    NameResourceKey = "DiagramStencil_MyService",
+                    Category = "Application",
+                    Kind = DiagramStencilKind.Node,
+                    Origin = DiagramStencilOrigin.TempoOriginal
+                }
+            ]
+        };
+    }
+}
+```
+
 ### 2. Add CSS
 
 ```html
