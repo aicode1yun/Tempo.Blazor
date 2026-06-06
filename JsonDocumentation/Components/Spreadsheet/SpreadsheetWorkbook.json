@@ -23,6 +23,12 @@
       "type": "SpreadsheetSheet?",
       "isRequired": false,
       "description": "The currently active sheet, or null if no sheets exist."
+    },
+    {
+      "name": "NamedRanges",
+      "type": "List<SpreadsheetNamedRange>",
+      "isRequired": false,
+      "description": "Named ranges defined in this workbook (workbook or sheet scope)."
     }
   ],
   "examples": [

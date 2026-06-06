@@ -120,7 +120,16 @@
     "tm-spreadsheet-context-menu__item",
     "tm-spreadsheet-merge-dialog",
     "tm-spreadsheet-color-picker",
-    "tm-spreadsheet-number-format-tool"
+    "tm-spreadsheet-number-format-tool",
+    "tm-spreadsheet-hyperlink",
+    "tm-spreadsheet-hyperlink__backdrop",
+    "tm-spreadsheet-hyperlink__body",
+    "tm-spreadsheet-hyperlink__actions",
+    "tm-spreadsheet-name-manager",
+    "tm-spreadsheet-name-manager__table",
+    "tm-spreadsheet-name-manager__actions",
+    "tm-spreadsheet-name-edit",
+    "tm-spreadsheet-name-edit__field"
   ],
   "usedAbstractions": [
     {
@@ -147,6 +156,16 @@
       "name": "SpreadsheetRange",
       "description": "Cell range for selection and merge operations (e.g. A1:B10)",
       "usedIn": "Selection, MergeCellsCommand"
+    },
+    {
+      "name": "SpreadsheetNamedRange",
+      "description": "Named range with workbook or sheet scope for use in formulas",
+      "usedIn": "SpreadsheetWorkbook.NamedRanges"
+    },
+    {
+      "name": "SpreadsheetHyperlink",
+      "description": "Structured hyperlink supporting web, email, internal ref, and named range",
+      "usedIn": "SpreadsheetCell.Hyperlink"
     }
   ],
   "examples": [

@@ -4298,6 +4298,24 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         setTimeout(() => finalizeInlineEditorCleanup(root), 0);
     }
 
+    function handleHyperlinkClick(root, hyperlink) {
+        if (!hyperlink) return;
+        const kind = hyperlink.kind ?? hyperlink.Kind ?? 0;
+        const target = hyperlink.target ?? hyperlink.Target ?? "";
+        if (!target) return;
+
+        // 0 = Web, 1 = Email, 2 = InternalRef, 3 = NamedRange
+        if (kind === 0 || kind === "Web") {
+            window.open(target, "_blank");
+        } else if (kind === 1 || kind === "Email") {
+            const subject = hyperlink.emailSubject ?? hyperlink.EmailSubject ?? "";
+            const uri = subject ? "mailto:" + encodeURIComponent(target) + "?subject=" + encodeURIComponent(subject) : "mailto:" + encodeURIComponent(target);
+            window.location.href = uri;
+        } else if (kind === 2 || kind === "InternalRef" || kind === 3 || kind === "NamedRange") {
+            invokeDotNet(root, "HandleHyperlinkClick", [kind, target], true).catch(() => {});
+        }
+    }
+
     function finalizeInlineEditorCleanup(root) {
         const s = getState(root);
         if (!s) return;
@@ -5144,6 +5162,14 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             const p = toContentPoint(root, ev);
             const hit = hitCell(root, p);
             if (hit) {
+                const cell = findCell(getState(root)?.model, hit.row, hit.col);
+                const hyperlink = read(cell, "Hyperlink", null);
+                if (hyperlink && (ev.ctrlKey || ev.metaKey)) {
+                    ev.preventDefault();
+                    handleHyperlinkClick(root, hyperlink);
+                    return;
+                }
+
                 if (isFormulaPointMode(root) && s.editor) {
                     if (isFormulaEditorSelfHit(root, hit)) {
                         ignoreFormulaEditorSelfHit(root);
@@ -7356,17 +7382,18 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
         const horizontalAlignValue = read(style, "HorizontalAlign", "left");
         const verticalAlignValue = read(style, "VerticalAlign", "bottom");
+        const hasHyperlink = !!read(cell, "Hyperlink", null);
         const paint = {
             backgroundColor: read(style, "BackgroundColor", null),
-            foreColor: read(style, "ForeColor", null) || palette.text,
+            foreColor: hasHyperlink ? "#2563EB" : (read(style, "ForeColor", null) || palette.text),
             horizontalAlignValue,
             verticalAlignValue,
             horizontalAlign: horizontalAlign(horizontalAlignValue),
             verticalBaseline: verticalBaseline(verticalAlignValue),
-            underline: !!read(style, "Underline", false),
+            underline: !!read(style, "Underline", false) || hasHyperlink,
             doubleUnderline: !!read(style, "DoubleUnderline", false),
             strikeThrough: !!read(style, "StrikeThrough", false),
-            hyperlink: !!read(cell, "Hyperlink", null)
+            hyperlink: hasHyperlink
         };
 
         if (cache) {

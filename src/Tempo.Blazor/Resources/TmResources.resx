@@ -3828,4 +3828,52 @@
   <data name="TmSpreadsheet_PasteSpecial_Transpose" xml:space="preserve"><value>Transpose</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- ═══════════════ Name Manager ═══════════════ -->
+  <data name="TmSpreadsheet_Names_Title" xml:space="preserve"><value>Name Manager</value></data>
+  <data name="TmSpreadsheet_Names_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="TmSpreadsheet_Names_Value" xml:space="preserve"><value>Value</value></data>
+  <data name="TmSpreadsheet_Names_RefersTo" xml:space="preserve"><value>Refers to</value></data>
+  <data name="TmSpreadsheet_Names_Scope" xml:space="preserve"><value>Scope</value></data>
+  <data name="TmSpreadsheet_Names_ScopeWorkbook" xml:space="preserve"><value>Workbook</value></data>
+  <data name="TmSpreadsheet_Names_ScopeSheet" xml:space="preserve"><value>Sheet</value></data>
+  <data name="TmSpreadsheet_Names_Comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="TmSpreadsheet_Names_New" xml:space="preserve"><value>New</value></data>
+  <data name="TmSpreadsheet_Names_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="TmSpreadsheet_Names_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="TmSpreadsheet_Names_FilterPlaceholder" xml:space="preserve"><value>Filter names...</value></data>
+  <data name="TmSpreadsheet_Names_NoResults" xml:space="preserve"><value>No named ranges found</value></data>
+  <data name="TmSpreadsheet_Names_ConfirmDelete" xml:space="preserve"><value>Are you sure you want to delete the named range '{0}'?</value></data>
+
+  <!-- ═══════════════ Named Range Edit ═══════════════ -->
+  <data name="TmSpreadsheet_NamesEdit_Title" xml:space="preserve"><value>Edit Name</value></data>
+  <data name="TmSpreadsheet_NamesEdit_TitleNew" xml:space="preserve"><value>New Name</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="TmSpreadsheet_NamesEdit_RefersTo" xml:space="preserve"><value>Refers to</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Scope" xml:space="preserve"><value>Scope</value></data>
+  <data name="TmSpreadsheet_NamesEdit_ScopeWorkbook" xml:space="preserve"><value>Workbook</value></data>
+  <data name="TmSpreadsheet_NamesEdit_ScopeSheet" xml:space="preserve"><value>Sheet</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Sheet" xml:space="preserve"><value>Sheet</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmSpreadsheet_NamesEdit_NameRequired" xml:space="preserve"><value>Name is required</value></data>
+  <data name="TmSpreadsheet_NamesEdit_RefersToRequired" xml:space="preserve"><value>Reference is required</value></data>
+  <data name="TmSpreadsheet_NamesEdit_InvalidName" xml:space="preserve"><value>The name is not valid</value></data>
+
+  <!-- ═══════════════ Hyperlink Dialog ═══════════════ -->
+  <data name="TmSpreadsheet_Hyperlink_Title" xml:space="preserve"><value>Hyperlink</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Type" xml:space="preserve"><value>Link type</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeWeb" xml:space="preserve"><value>Web page</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeEmail" xml:space="preserve"><value>E-mail</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeInternal" xml:space="preserve"><value>Place in this workbook</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeNamedRange" xml:space="preserve"><value>Named range</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Target" xml:space="preserve"><value>Address</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Display" xml:space="preserve"><value>Display text</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Tooltip" xml:space="preserve"><value>Tooltip</value></data>
+  <data name="TmSpreadsheet_Hyperlink_EmailSubject" xml:space="preserve"><value>Subject</value></data>
+  <data name="TmSpreadsheet_Hyperlink_SelectRange" xml:space="preserve"><value>Select range</value></data>
+  <data name="TmSpreadsheet_Hyperlink_SelectNamedRange" xml:space="preserve"><value>Select named range</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Save" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Cancel" xml:space="preserve"><value>Cancel</value></data>
 </root>

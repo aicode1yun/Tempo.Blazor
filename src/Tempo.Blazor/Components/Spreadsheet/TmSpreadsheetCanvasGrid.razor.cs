@@ -93,6 +93,9 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     /// <summary>Called when the active cell changes.</summary>
     [Parameter] public EventCallback<string?> ActiveCellChanged { get; set; }
 
+    /// <summary>Called when the user Ctrl+clicks a hyperlink in a cell.</summary>
+    [Parameter] public EventCallback<SpreadsheetHyperlink> OnHyperlinkClick { get; set; }
+
     /// <summary>Called when a cell value is committed after editing.</summary>
     [Parameter] public EventCallback<(string CellRef, string? Value)> CellValueCommitted { get; set; }
 
@@ -779,7 +782,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             SelectionEnd = IsSelectionEndCell(row, col),
             FormulaRefColorIndex = hasCell ? GetFormulaRefColorIndex(cellRef) : -1,
             ImageUrl = hasCell ? cell?.ImageUrl : null,
-            Hyperlink = hasCell ? cell?.Hyperlink : null,
+            Hyperlink = hasCell ? cell?.Hyperlink?.GetUri() : null,
             Style = style is not null ? BuildCanvasStyle(style, cell) : null,
             Validation = validationData
         };
@@ -1061,6 +1064,17 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             return Task.CompletedTask;
 
         return OnCellReferenceRequested.InvokeAsync(referenceText);
+    }
+
+    [JSInvokable]
+    public Task HandleHyperlinkClick(int kind, string target)
+    {
+        var hyperlink = new SpreadsheetHyperlink
+        {
+            Kind = (SpreadsheetHyperlinkKind)kind,
+            Target = target
+        };
+        return OnHyperlinkClick.InvokeAsync(hyperlink);
     }
 
     [JSInvokable]
@@ -1616,7 +1630,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
                     SelectionEnd = IsSelectionEndCell(rowIndex, colIndex),
                     FormulaRefColorIndex = GetFormulaRefColorIndex(cellRef),
                     ImageUrl = cell?.ImageUrl,
-                    Hyperlink = cell?.Hyperlink,
+                    Hyperlink = cell?.Hyperlink?.GetUri(),
                     Filter = BuildFilterButtonPayload(sheet, rowIndex, colIndex),
                     Style = BuildCanvasStyle(cell?.Style, cell)
                 };
@@ -1685,7 +1699,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         cell?.Value is not null
         || !string.IsNullOrEmpty(cell?.DisplayValue)
         || !string.IsNullOrEmpty(cell?.Formula)
-        || !string.IsNullOrEmpty(cell?.Hyperlink)
+        || cell?.Hyperlink is not null
         || !string.IsNullOrEmpty(cell?.ImageUrl)
         || style.Bold
         || style.Italic

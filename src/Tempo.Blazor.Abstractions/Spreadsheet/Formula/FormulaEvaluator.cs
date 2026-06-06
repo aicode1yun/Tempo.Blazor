@@ -1,4 +1,5 @@
 using System.Globalization;
+using Tempo.Blazor.Components.Spreadsheet.Models;
 
 namespace Tempo.Blazor.Components.Spreadsheet.Formula;
 
@@ -24,6 +25,7 @@ public sealed class FormulaEvaluator
             BooleanNode b => b.Value,
             CellRefNode c => context.ResolveCellRef(c.Ref),
             RangeRefNode r => context.ResolveRangeRef(r.StartRef, r.EndRef),
+            NamedRangeRefNode n => ResolveNamedRange(n, context),
             UnaryOpNode u => EvaluateUnary(u, context),
             BinaryOpNode b => EvaluateBinary(b, context),
             FunctionCallNode f => EvaluateFunction(f, context),
@@ -85,6 +87,11 @@ public sealed class FormulaEvaluator
         "ROW", "COLUMN", "ROWS", "COLUMNS", "INDEX", "OFFSET", "INDIRECT", "ADDRESS", "AREAS", "VLOOKUP", "HLOOKUP", "MATCH"
     };
 
+    private static readonly HashSet<string> _errorHandlingFunctions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "IFERROR", "ISERROR", "ISERR", "ISBLANK", "ISNUMBER", "ISTEXT", "ISLOGICAL", "ISEVEN", "ISODD"
+    };
+
     private object? EvaluateFunction(FunctionCallNode node, FormulaContext context)
     {
         var args = new List<object?>();
@@ -119,6 +126,13 @@ public sealed class FormulaEvaluator
             }
         }
 
+        if (!_errorHandlingFunctions.Contains(node.Name))
+        {
+            var firstError = args.OfType<FormulaError>().FirstOrDefault();
+            if (firstError is not null)
+                return firstError;
+        }
+
         try
         {
             return _registry.Invoke(node.Name, context, args);
@@ -127,6 +141,68 @@ public sealed class FormulaEvaluator
         {
             return new FormulaError("#NAME?");
         }
+    }
+
+    private static object? ResolveNamedRange(NamedRangeRefNode node, FormulaContext context)
+    {
+        var refersTo = context.ResolveNamedRange(node.Name);
+        if (string.IsNullOrWhiteSpace(refersTo))
+            return new FormulaError("#NAME?");
+
+        // Strip leading '=' if present (named ranges may store formulas)
+        var target = refersTo.StartsWith('=') ? refersTo[1..] : refersTo;
+
+        // Split off an optional sheet qualifier (Sheet1!A1:A3 or 'My Sheet'!A1).
+        var (sheetName, body) = ParseSheetQualifiedRef(target);
+        var sheet = context.Sheet;
+        if (sheetName is not null)
+        {
+            var qualified = context.Workbook?.Sheets
+                .FirstOrDefault(s => string.Equals(s.Name, sheetName, StringComparison.OrdinalIgnoreCase));
+            if (qualified is null)
+                return new FormulaError("#NAME?");
+            sheet = qualified;
+        }
+
+        // Try to parse the body as a single cell or range (covers both A1 and A1:B10).
+        try
+        {
+            var range = SpreadsheetRange.Parse(body);
+
+            // Single cell → return its raw value (preserves text/bool, not just numbers).
+            if (range.RowCount == 1 && range.ColumnCount == 1)
+            {
+                var cellRef = $"{SpreadsheetRange.ColumnIndexToLetters(range.StartCol)}{range.StartRow + 1}";
+                return sheet.Cells.TryGetValue(cellRef, out var cell) ? cell.Value : 0d;
+            }
+
+            // Multi-cell range → sum the numeric values on the resolved sheet.
+            double sum = 0;
+            foreach (var cellRef in range.CellRefs)
+                if (sheet.Cells.TryGetValue(cellRef, out var cell))
+                    sum += ToDouble(cell.Value);
+            return sum;
+        }
+        catch { /* not an A1 reference */ }
+
+        // Try to parse as a numeric constant.
+        if (double.TryParse(body, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var constant))
+            return constant;
+
+        return new FormulaError("#NAME?");
+    }
+
+    private static (string? SheetName, string CellRef) ParseSheetQualifiedRef(string target)
+    {
+        var exclamationIndex = target.IndexOf('!');
+        if (exclamationIndex < 0)
+            return (null, target);
+
+        var sheetName = target[..exclamationIndex].Trim();
+        if (sheetName.StartsWith('\'') && sheetName.EndsWith('\''))
+            sheetName = sheetName[1..^1];
+
+        return (sheetName, target[(exclamationIndex + 1)..]);
     }
 
     private static double ToDouble(object? value)

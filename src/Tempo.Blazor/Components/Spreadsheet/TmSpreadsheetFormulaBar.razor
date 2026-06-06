@@ -2,10 +2,14 @@
 @using Tempo.Blazor.Components.Spreadsheet.Models
 
 <div class="tm-spreadsheet-formula-bar" @ref="_rootRef">
-    <div class="tm-spreadsheet-formula-bar__ref"
-         title="@Loc["TmSpreadsheet_CellReference"]">
-        @(ActiveCellRef ?? "")
-    </div>
+    <input class="tm-spreadsheet-formula-bar__ref"
+           type="text"
+           title="@Loc["TmSpreadsheet_CellReference"]"
+           aria-label="@Loc["TmSpreadsheet_CellReference"]"
+           value="@_nameBoxValue"
+           @oninput="OnNameBoxInput"
+           @onkeydown="HandleNameBoxKeyDown"
+           @onblur="OnNameBoxBlur" />
     <div class="tm-spreadsheet-formula-bar__editor">
         @if (EditorIsEditing && CurrentSession.IsFormula)
         {

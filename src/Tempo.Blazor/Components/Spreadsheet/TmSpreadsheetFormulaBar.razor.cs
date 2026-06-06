@@ -13,6 +13,7 @@ public partial class TmSpreadsheetFormulaBar
     private ElementReference _rootRef;
     private ElementReference _inputRef;
     private string? _editValue;
+    private string? _nameBoxValue;
     private bool _shouldFocusAfterRender;
     private readonly string _functionHintId = $"tm-spreadsheet-formula-hint-{Guid.NewGuid():N}";
     private int _renderedSelectionStart;
@@ -98,11 +99,15 @@ public partial class TmSpreadsheetFormulaBar
     /// <summary>Called after a commit when spreadsheet-like navigation should move the active cell.</summary>
     [Parameter] public EventCallback<(int RowDelta, int ColDelta)> OnCommitNavigationRequested { get; set; }
 
+    /// <summary>Called when the user enters a cell reference or named range in the name box and presses Enter.</summary>
+    [Parameter] public EventCallback<string> OnNavigateToRef { get; set; }
+
     /// <summary>Called when the current formula session should move into the inline grid editor.</summary>
     [Parameter] public EventCallback OnTransferToInlineEditorRequested { get; set; }
 
     protected override void OnParametersSet()
     {
+        _nameBoxValue = ActiveCellRef;
         if (IsEditing && !_suppressExternalEditing)
         {
             _localIsEditing = true;
@@ -250,6 +255,26 @@ public partial class TmSpreadsheetFormulaBar
         {
             _ = StartEdit();
         }
+    }
+
+    private void OnNameBoxInput(ChangeEventArgs e) => _nameBoxValue = e.Value?.ToString();
+
+    private async Task HandleNameBoxKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_nameBoxValue))
+        {
+            await OnNavigateToRef.InvokeAsync(_nameBoxValue.Trim());
+        }
+        else if (e.Key == "Escape")
+        {
+            _nameBoxValue = ActiveCellRef;
+            StateHasChanged();
+        }
+    }
+
+    private void OnNameBoxBlur()
+    {
+        _nameBoxValue = ActiveCellRef;
     }
 
     private async Task CommitAsync()

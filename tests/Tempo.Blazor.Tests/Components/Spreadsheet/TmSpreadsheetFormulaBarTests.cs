@@ -15,7 +15,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
             .Add(p => p.ActiveCellRef, "B2")
             .Add(p => p.DisplayValue, "Hello"));
 
-        cut.Find(".tm-spreadsheet-formula-bar__ref").TextContent.Trim().Should().Be("B2");
+        cut.Find(".tm-spreadsheet-formula-bar__ref").GetAttribute("value").Should().Be("B2");
         cut.Find(".tm-spreadsheet-formula-bar__display").TextContent.Trim().Should().Be("Hello");
     }
 
@@ -169,5 +169,35 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
             .GetAttribute("value")
             .Should()
             .Be("=SUM(C1:C3)");
+    }
+
+    [Fact]
+    public void NameBox_Enter_NavigatesToRef()
+    {
+        string? navigated = null;
+        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+            .Add(p => p.ActiveCellRef, "A1")
+            .Add(p => p.DisplayValue, "Test")
+            .Add(p => p.OnNavigateToRef, EventCallback.Factory.Create<string>(this, v => navigated = v)));
+
+        var nameBox = cut.Find(".tm-spreadsheet-formula-bar__ref");
+        nameBox.Input("B5");
+        nameBox.KeyDown("Enter");
+
+        navigated.Should().Be("B5");
+    }
+
+    [Fact]
+    public void NameBox_Escape_RevertsToActiveCellRef()
+    {
+        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+            .Add(p => p.ActiveCellRef, "C3")
+            .Add(p => p.DisplayValue, "Test"));
+
+        var nameBox = cut.Find(".tm-spreadsheet-formula-bar__ref");
+        nameBox.Input("Z99");
+        nameBox.KeyDown("Escape");
+
+        nameBox.GetAttribute("value").Should().Be("C3");
     }
 }

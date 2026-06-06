@@ -26,6 +26,7 @@ public enum TokenType
     Identifier,
     CellRef,
     RangeRef,
+    NamedRange,
 
     Plus,
     Minus,

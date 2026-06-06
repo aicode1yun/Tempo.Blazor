@@ -42,6 +42,12 @@
       "isRequired": false,
       "default": "false",
       "description": "Whether the cell is read-only."
+    },
+    {
+      "name": "Hyperlink",
+      "type": "SpreadsheetHyperlink?",
+      "isRequired": false,
+      "description": "Optional hyperlink attached to the cell."
     }
   ]
 }

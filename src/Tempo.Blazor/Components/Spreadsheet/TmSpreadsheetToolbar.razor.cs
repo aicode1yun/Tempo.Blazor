@@ -138,6 +138,9 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Called when the Clear Validation Circles button is clicked.</summary>
     [Parameter] public EventCallback OnClearValidationCircles { get; set; }
 
+    /// <summary>Called when the Name Manager button is clicked.</summary>
+    [Parameter] public EventCallback OnNameManager { get; set; }
+
     /// <summary>Custom tools to inject into the toolbar.</summary>
     [Parameter] public List<SpreadsheetCustomTool>? CustomTools { get; set; }
 

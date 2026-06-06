@@ -1,0 +1,46 @@
+{
+  "itemName": "SpreadsheetHyperlink",
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents a hyperlink attached to a spreadsheet cell. Supports web URLs, email links, internal cell references, and named ranges.",
+  "properties": [
+    {
+      "name": "Kind",
+      "type": "SpreadsheetHyperlinkKind",
+      "isRequired": false,
+      "default": "Web",
+      "description": "The kind of hyperlink: Web, Email, InternalRef, or NamedRange."
+    },
+    {
+      "name": "Target",
+      "type": "string",
+      "isRequired": true,
+      "description": "The hyperlink target. URL for Web, email address for Email, A1 ref for InternalRef, range name for NamedRange."
+    },
+    {
+      "name": "Display",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional display text shown in the cell instead of the target."
+    },
+    {
+      "name": "Tooltip",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional tooltip shown on hover."
+    },
+    {
+      "name": "EmailSubject",
+      "type": "string?",
+      "isRequired": false,
+      "description": "For Email hyperlinks, an optional subject line."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Create a web hyperlink",
+      "code": "cell.Hyperlink = new SpreadsheetHyperlink\n{\n    Kind = SpreadsheetHyperlinkKind.Web,\n    Target = \"https://example.com\",\n    Display = \"Click here\"\n};"
+    }
+  ]
+}

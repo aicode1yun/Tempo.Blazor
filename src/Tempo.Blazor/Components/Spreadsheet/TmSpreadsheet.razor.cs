@@ -25,16 +25,18 @@ public partial class TmSpreadsheet
     private SpreadsheetCommandManager? _commandManager;
     private bool _isFormulaBarEditing;
     private string? _formulaBarEditValue;
-    private bool _showInsertLinkDialog;
+    private bool _showHyperlinkDialog;
     private bool _showInsertImageDialog;
     private bool _showFormatCellsDialog;
+    private bool _showNameManagerDialog;
+    private bool _showNamedRangeEditDialog;
     private SpreadsheetCellStyle _formatCellsStyle = new();
     private SpreadsheetCellStyle? _formatPainterStyle;
     private bool _formatPainterActive;
     private bool _formatPainterSticky;
-    private string? _insertLinkUrl;
-    private string? _insertLinkText;
     private string? _insertImageUrl;
+    private SpreadsheetHyperlink? _editHyperlink;
+    private SpreadsheetNamedRange? _editNamedRange;
     [Inject] private IJSRuntime JS { get; set; } = null!;
     private System.Threading.CancellationTokenSource? _onChangeDebounceCts;
     private int _formulaOriginSheetIndex = -1;
@@ -621,6 +623,89 @@ public partial class TmSpreadsheet
         _formulaReferencePickingGuardActive = false;
         CanvasJsEngineGrid?.SetExternalFormulaSessionGuard(false, null);
         StateHasChanged();
+    }
+
+    private async Task OnNameBoxNavigate(string refText)
+    {
+        if (_workbook.ActiveSheet is null || _grid is null) return;
+
+        var targetRef = refText.Trim();
+        if (string.IsNullOrEmpty(targetRef)) return;
+
+        // Try named range first (sheet-scope takes precedence, then workbook)
+        var namedRange = _workbook.NamedRanges
+            .FirstOrDefault(n => string.Equals(n.Name, targetRef, StringComparison.OrdinalIgnoreCase)
+                              && n.Scope == NamedRangeScope.Sheet
+                              && n.SheetIndex == _workbook.ActiveSheetIndex)
+            ?? _workbook.NamedRanges
+            .FirstOrDefault(n => string.Equals(n.Name, targetRef, StringComparison.OrdinalIgnoreCase)
+                              && n.Scope == NamedRangeScope.Workbook);
+
+        if (namedRange is not null)
+        {
+            var refersTo = namedRange.RefersTo.TrimStart('=').Replace("$", "");
+            // Extract A1 part from sheet-qualified refs like "Sheet1!A1" or "'Sheet 1'!A1:B2"
+            var bangIndex = refersTo.IndexOf('!');
+            if (bangIndex >= 0)
+                refersTo = refersTo[(bangIndex + 1)..];
+            targetRef = refersTo;
+        }
+
+        // Try to parse as a single cell ref or range
+        try
+        {
+            var range = SpreadsheetRange.Parse(targetRef);
+            targetRef = $"{SpreadsheetRange.ColumnIndexToLetters(range.StartCol)}{range.StartRow + 1}";
+        }
+        catch
+        {
+            // If it doesn't parse as a range, leave it as-is and let the grid handle it
+        }
+
+        await _grid.NavigateToCellAsync(targetRef);
+    }
+
+    private async Task OnGridHyperlinkClick(SpreadsheetHyperlink hyperlink)
+    {
+        if (_workbook.ActiveSheet is null) return;
+
+        if (hyperlink.Kind == SpreadsheetHyperlinkKind.Web)
+        {
+            await JS.InvokeVoidAsync("open", hyperlink.Target, "_blank");
+        }
+        else if (hyperlink.Kind == SpreadsheetHyperlinkKind.Email)
+        {
+            var uri = hyperlink.GetUri();
+            await JS.InvokeVoidAsync("open", uri, "_self");
+        }
+        else if (hyperlink.Kind == SpreadsheetHyperlinkKind.InternalRef || hyperlink.Kind == SpreadsheetHyperlinkKind.NamedRange)
+        {
+            var target = hyperlink.Target;
+            // Handle sheet-qualified refs like "Sheet1!A10"
+            var bangIndex = target.IndexOf('!');
+            if (bangIndex >= 0)
+            {
+                var sheetName = target[..bangIndex].Trim().Trim('\'');
+                var sheetIndex = _workbook.Sheets.FindIndex(s => string.Equals(s.Name, sheetName, StringComparison.OrdinalIgnoreCase));
+                if (sheetIndex >= 0 && _grid is not null)
+                {
+                    if (_workbook.ActiveSheetIndex != sheetIndex)
+                    {
+                        _workbook.ActiveSheetIndex = sheetIndex;
+                        _commandManager = _workbook.ActiveSheet is not null
+                            ? new SpreadsheetCommandManager(_workbook.ActiveSheet)
+                            : null;
+                    }
+                    var cellRef = target[(bangIndex + 1)..].Replace("$", "");
+                    await _grid.NavigateToCellAsync(cellRef);
+                }
+            }
+            else
+            {
+                if (_grid is not null)
+                    await _grid.NavigateToCellAsync(target.Replace("$", ""));
+            }
+        }
     }
 
     private async Task ApplyValueToActiveCellAsync(string? value)
@@ -1235,28 +1320,27 @@ public partial class TmSpreadsheet
     // ── Insert / View ──
     private void ShowInsertLinkDialog()
     {
-        _insertLinkUrl = null;
-        _insertLinkText = null;
-        _showInsertLinkDialog = true;
+        _editHyperlink = _workbook.ActiveSheet?.ActiveCellRef is { } cref
+            && _workbook.ActiveSheet.Cells.TryGetValue(cref, out var c)
+            && c.Hyperlink is not null
+                ? c.Hyperlink.Clone()
+                : null;
+        _showHyperlinkDialog = true;
     }
 
-    private void OnLinkUrlInput(ChangeEventArgs e) => _insertLinkUrl = e.Value?.ToString();
-    private void OnLinkTextInput(ChangeEventArgs e) => _insertLinkText = e.Value?.ToString();
-    private void OnImageUrlInput(ChangeEventArgs e) => _insertImageUrl = e.Value?.ToString();
-
-    private async Task ApplyInsertLink()
+    private async Task OnHyperlinkSave(SpreadsheetHyperlink link)
     {
-        if (_workbook.ActiveSheet is null || string.IsNullOrWhiteSpace(_insertLinkUrl)) return;
+        if (_workbook.ActiveSheet is null) return;
         var cellRef = _workbook.ActiveSheet.ActiveCellRef ?? "A1";
-        var cell = _workbook.ActiveSheet.Cells.GetValueOrDefault(cellRef) ?? new SpreadsheetCell();
-        cell.Hyperlink = _insertLinkUrl.Trim();
-        cell.Value = string.IsNullOrWhiteSpace(_insertLinkText) ? _insertLinkUrl.Trim() : _insertLinkText.Trim();
-        _workbook.ActiveSheet.Cells[cellRef] = cell;
+        var cmd = new SetHyperlinkCommand(_workbook.ActiveSheet, cellRef, link);
+        _commandManager?.Execute(cmd);
         InvalidateRenderedCells(new[] { cellRef });
         await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
-        _showInsertLinkDialog = false;
+        _showHyperlinkDialog = false;
         StateHasChanged();
     }
+
+    private void OnImageUrlInput(ChangeEventArgs e) => _insertImageUrl = e.Value?.ToString();
 
     private void ShowInsertImageDialog()
     {
@@ -1274,6 +1358,44 @@ public partial class TmSpreadsheet
         InvalidateRenderedCells(new[] { cellRef });
         await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
         _showInsertImageDialog = false;
+        StateHasChanged();
+    }
+
+    // ── Name Manager ──
+    private void ShowNameManagerDialog() => _showNameManagerDialog = true;
+
+    private void OnNameManagerNew()
+    {
+        _editNamedRange = null;
+        _showNamedRangeEditDialog = true;
+    }
+
+    private void OnNameManagerEdit(SpreadsheetNamedRange range)
+    {
+        _editNamedRange = range;
+        _showNamedRangeEditDialog = true;
+    }
+
+    private void OnNameManagerDelete(SpreadsheetNamedRange range)
+    {
+        var cmd = new DeleteNamedRangeCommand(_workbook, range);
+        _commandManager?.Execute(cmd);
+        StateHasChanged();
+    }
+
+    private void OnNamedRangeEditSave(SpreadsheetNamedRange range)
+    {
+        if (_editNamedRange is null)
+        {
+            var cmd = new AddNamedRangeCommand(_workbook, range);
+            _commandManager?.Execute(cmd);
+        }
+        else
+        {
+            var cmd = new EditNamedRangeCommand(_workbook, _editNamedRange, range.Name, range.RefersTo, range.Scope, range.SheetIndex, range.Comment);
+            _commandManager?.Execute(cmd);
+        }
+        _showNamedRangeEditDialog = false;
         StateHasChanged();
     }
 

@@ -162,11 +162,110 @@ public static class XlsxImporter
                 }
             }
 
+            // Hyperlinks
+            var hyperlinks = worksheet.Elements<Hyperlinks>().FirstOrDefault();
+            if (hyperlinks is not null)
+            {
+                foreach (var hl in hyperlinks.Elements<Hyperlink>())
+                {
+                    try
+                    {
+                        var cellRef = hl.Reference?.Value ?? string.Empty;
+                        if (string.IsNullOrEmpty(cellRef)) continue;
+
+                        var link = new SpreadsheetHyperlink();
+                        if (hl.Location?.Value is { Length: > 0 } loc)
+                        {
+                            link.Kind = SpreadsheetHyperlinkKind.InternalRef;
+                            link.Target = loc;
+                        }
+                        else if (hl.Id?.Value is { Length: > 0 } relId)
+                        {
+                            var rel = worksheetPart.HyperlinkRelationships.FirstOrDefault(r => r.Id == relId);
+                            if (rel?.Uri?.ToString() is { Length: > 0 } uri)
+                            {
+                                if (uri.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    link.Kind = SpreadsheetHyperlinkKind.Email;
+                                    link.Target = uri[7..];
+                                    if (link.Target.Contains('?'))
+                                    {
+                                        var parts = link.Target.Split('?');
+                                        link.Target = Uri.UnescapeDataString(parts[0]);
+                                        var qs = parts[1];
+                                        if (qs.StartsWith("subject="))
+                                            link.Display = Uri.UnescapeDataString(qs[8..]);
+                                    }
+                                }
+                                else
+                                {
+                                    link.Kind = SpreadsheetHyperlinkKind.Web;
+                                    link.Target = uri;
+                                }
+                            }
+                        }
+
+                        // Don't overwrite a Display already derived from a mailto subject with a null/empty xlsx value.
+                        if (hl.Display?.Value is { Length: > 0 } display)
+                            link.Display = display;
+                        link.Tooltip = hl.Tooltip?.Value;
+
+                        if (!string.IsNullOrEmpty(link.Target))
+                        {
+                            if (!ss.Cells.TryGetValue(cellRef, out var cell))
+                                cell = new SpreadsheetCell();
+                            cell.Hyperlink = link;
+                            ss.Cells[cellRef] = cell;
+                        }
+                    }
+                    catch { /* ignore malformed hyperlinks */ }
+                }
+            }
+
             workbook.Sheets.Add(ss);
         }
 
         if (workbook.Sheets.Count == 0)
             workbook.AddSheet("Sheet1");
+
+        for (int i = 0; i < workbook.Sheets.Count; i++)
+        {
+            workbook.Sheets[i].Workbook = workbook;
+            workbook.Sheets[i].SheetIndexInWorkbook = i;
+        }
+
+        // Defined names (named ranges)
+        var definedNames = workbookPart.Workbook.DefinedNames;
+        if (definedNames is not null)
+        {
+            foreach (var dn in definedNames.Elements<DefinedName>())
+            {
+                try
+                {
+                    var name = dn.Name?.Value ?? string.Empty;
+                    var refersTo = dn.Text ?? string.Empty;
+                    if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(refersTo)) continue;
+
+                    var scope = NamedRangeScope.Workbook;
+                    int? sheetIndex = null;
+                    if (dn.LocalSheetId?.Value is { } localIdU && (int)localIdU >= 0 && (int)localIdU < workbook.Sheets.Count)
+                    {
+                        scope = NamedRangeScope.Sheet;
+                        sheetIndex = (int)localIdU;
+                    }
+
+                    workbook.NamedRanges.Add(new SpreadsheetNamedRange
+                    {
+                        Name = name,
+                        RefersTo = refersTo,
+                        Scope = scope,
+                        SheetIndex = sheetIndex,
+                        Comment = dn.Comment?.Value
+                    });
+                }
+                catch { /* ignore malformed defined names */ }
+            }
+        }
 
         return workbook;
     }

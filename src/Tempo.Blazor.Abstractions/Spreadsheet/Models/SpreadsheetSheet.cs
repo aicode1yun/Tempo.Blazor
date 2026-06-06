@@ -53,6 +53,12 @@ public sealed class SpreadsheetSheet
     /// <summary>The auto-filter applied to this sheet, or null when none is active.</summary>
     public SpreadsheetAutoFilter? AutoFilter { get; set; }
 
+    /// <summary>The workbook that owns this sheet, if any.</summary>
+    public SpreadsheetWorkbook? Workbook { get; set; }
+
+    /// <summary>The zero-based index of this sheet within its workbook.</summary>
+    public int SheetIndexInWorkbook { get; set; }
+
     /// <summary>Data validation rules defined on this sheet.</summary>
     public List<SpreadsheetDataValidation> DataValidations { get; set; } = new();
 
@@ -106,7 +112,7 @@ public sealed class SpreadsheetSheet
         try
         {
             _engine ??= new FormulaEngine();
-            var result = _engine.Evaluate(cell.Formula, this);
+            var result = _engine.Evaluate(cell.Formula, this, Workbook, SheetIndexInWorkbook);
             cell.Value = result;
             cell.DisplayValue = null; // Let the grid formatter handle display formatting
         }

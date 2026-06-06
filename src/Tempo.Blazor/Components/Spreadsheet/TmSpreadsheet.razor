@@ -60,6 +60,7 @@
                           ShowGridLines="ShowGridLines"
                           OnInsertLink="ShowInsertLinkDialog"
                           OnInsertImage="ShowInsertImageDialog"
+                          OnNameManager="ShowNameManagerDialog"
                           OnMergeCells="ToggleMergeCells"
                           OnToggleGridLines="ToggleGridLines"
                           OnBorderPresetChanged="ApplyBorderPreset"
@@ -92,7 +93,8 @@
                              OnEditCancelled="@OnFormulaBarCancelled"
                              OnValueChanged="@OnFormulaBarValueChanged"
                              OnTabPressed="@OnFormulaBarTabPressed"
-                             OnTransferToInlineEditorRequested="@OnFormulaBarTransferToInlineEditorRequested" />
+                             OnTransferToInlineEditorRequested="@OnFormulaBarTransferToInlineEditorRequested"
+                             OnNavigateToRef="@OnNameBoxNavigate" />
     }
 
         <TmSpreadsheetCanvasGrid @ref="_grid"
@@ -104,6 +106,7 @@
                                  ExternalFormulaSessionActive="@(IsFormulaBarPointSessionActive || _formulaReferencePickingGuardActive || (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null))"
                                  ExternalFormulaOriginCellRef="@((_formulaReferencePickingGuardActive || IsFormulaBarPointSessionActive) ? _formulaOriginCellRef : null)"
                                  ActiveCellChanged="OnGridActiveCellChanged"
+                                 OnHyperlinkClick="OnGridHyperlinkClick"
                                  CellValueCommitted="OnGridCellValueCommitted"
                                  CellValuesCommittedBatch="OnGridCellValuesCommittedBatch"
                                  OnCopyRequested="Copy"
@@ -172,23 +175,29 @@
                                         OnClose="CloseFindReplace" />
     }
 
-    @if (_showInsertLinkDialog)
+    @if (_showHyperlinkDialog)
     {
-        <div class="tm-spreadsheet-dialog-backdrop" @onclick="() => _showInsertLinkDialog = false">
-            <div class="tm-spreadsheet-dialog" @onclick:stopPropagation>
-                <h3 class="tm-spreadsheet-dialog__title">@Loc["TmSpreadsheet_InsertLink"]</h3>
-                <div class="tm-spreadsheet-dialog__body">
-                    <label class="tm-spreadsheet-dialog__label">@Loc["TmSpreadsheet_LinkUrl"]</label>
-                    <input class="tm-spreadsheet-dialog__input" value="@_insertLinkUrl" @oninput="OnLinkUrlInput" placeholder="https://..." />
-                    <label class="tm-spreadsheet-dialog__label">@Loc["TmSpreadsheet_LinkText"]</label>
-                    <input class="tm-spreadsheet-dialog__input" value="@_insertLinkText" @oninput="OnLinkTextInput" placeholder="@Loc["TmSpreadsheet_LinkTextPlaceholder"]" />
-                </div>
-                <div class="tm-spreadsheet-dialog__actions">
-                    <TmButton Variant="ButtonVariant.Secondary" OnClick="() => _showInsertLinkDialog = false">@Loc["Tm_Cancel"]</TmButton>
-                    <TmButton OnClick="ApplyInsertLink">@Loc["Tm_Apply"]</TmButton>
-                </div>
-            </div>
-        </div>
+        <TmSpreadsheetHyperlinkDialog Workbook="_workbook"
+                                      Hyperlink="_editHyperlink"
+                                      OnSave="OnHyperlinkSave"
+                                      OnCancel="() => _showHyperlinkDialog = false" />
+    }
+
+    @if (_showNameManagerDialog)
+    {
+        <TmSpreadsheetNameManagerDialog Workbook="_workbook"
+                                        OnNew="OnNameManagerNew"
+                                        OnEdit="OnNameManagerEdit"
+                                        OnDelete="OnNameManagerDelete"
+                                        OnClose="() => _showNameManagerDialog = false" />
+    }
+
+    @if (_showNamedRangeEditDialog)
+    {
+        <TmSpreadsheetNamedRangeEditDialog Workbook="_workbook"
+                                           Range="_editNamedRange"
+                                           OnSave="OnNamedRangeEditSave"
+                                           OnCancel="() => _showNamedRangeEditDialog = false" />
     }
 
     @if (_showInsertImageDialog)

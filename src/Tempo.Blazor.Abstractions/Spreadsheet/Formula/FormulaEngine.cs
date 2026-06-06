@@ -23,6 +23,13 @@ public sealed class FormulaEngine
 
     /// <summary>Evaluates a formula string against the given sheet.</summary>
     public object? Evaluate(string formula, SpreadsheetSheet sheet)
+        => Evaluate(formula, sheet, null, 0);
+
+    /// <summary>
+    /// Evaluates a formula string against the given sheet with access to the workbook
+    /// for named range resolution.
+    /// </summary>
+    public object? Evaluate(string formula, SpreadsheetSheet sheet, SpreadsheetWorkbook? workbook, int sheetIndex)
     {
         if (string.IsNullOrWhiteSpace(formula))
             return null;
@@ -30,7 +37,7 @@ public sealed class FormulaEngine
         var tokens = FormulaLexer.Tokenize(formula);
         var parser = new FormulaParser(tokens);
         var ast = parser.Parse();
-        var context = new FormulaContext(sheet);
+        var context = new FormulaContext(sheet, workbook, sheetIndex);
         return _evaluator.Evaluate(ast, context);
     }
 

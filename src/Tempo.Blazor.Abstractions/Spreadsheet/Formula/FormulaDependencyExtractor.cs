@@ -3,7 +3,7 @@
 namespace Tempo.Blazor.Components.Spreadsheet.Formula;
 
 /// <summary>
-/// Extracts cell references from a formula string for dependency tracking.
+/// Extracts cell references and named ranges from a formula string for dependency tracking.
 /// </summary>
 public static class FormulaDependencyExtractor
 {
@@ -36,5 +36,30 @@ public static class FormulaDependencyExtractor
             // If lexing fails, return empty set
         }
         return refs;
+    }
+
+    /// <summary>Returns all unique named range identifiers found in the formula.</summary>
+    public static HashSet<string> ExtractNamedRanges(string formula)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var tokens = FormulaLexer.Tokenize(formula);
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var token = tokens[i];
+                if (token.Type == TokenType.Identifier)
+                {
+                    // It's a named range unless it's a function call
+                    if (i + 1 >= tokens.Count || tokens[i + 1].Type != TokenType.LParen)
+                        names.Add(token.Value);
+                }
+            }
+        }
+        catch
+        {
+            // If lexing fails, return empty set
+        }
+        return names;
     }
 }

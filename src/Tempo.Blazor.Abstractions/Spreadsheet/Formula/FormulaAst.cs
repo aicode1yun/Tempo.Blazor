@@ -69,6 +69,13 @@ public sealed class BinaryOpNode : FormulaNode
     }
 }
 
+/// <summary>A named range reference like Sales or TaxRate.</summary>
+public sealed class NamedRangeRefNode : FormulaNode
+{
+    public string Name { get; }
+    public NamedRangeRefNode(string name) => Name = name;
+}
+
 /// <summary>A function call like SUM(A1:A10).</summary>
 public sealed class FunctionCallNode : FormulaNode
 {

@@ -137,7 +137,7 @@ public sealed class FormulaParser
                     return new RangeRefNode(parts[0], parts[1]);
                 }
             case TokenType.Identifier:
-                return ParseFunctionCall();
+                return ParseIdentifierOrFunctionCall();
             case TokenType.LParen:
                 {
                     Advance();
@@ -150,9 +150,16 @@ public sealed class FormulaParser
         }
     }
 
-    private FormulaNode ParseFunctionCall()
+    private FormulaNode ParseIdentifierOrFunctionCall()
     {
         var name = Advance().Value;
+
+        // Named range reference (no opening parenthesis)
+        if (Current.Type != TokenType.LParen)
+        {
+            return new NamedRangeRefNode(name);
+        }
+
         Expect(TokenType.LParen, $"Expected '(' after function name {name}.");
 
         var args = new List<FormulaNode>();

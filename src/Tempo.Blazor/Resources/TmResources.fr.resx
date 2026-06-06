@@ -3128,4 +3128,52 @@
   <data name="TmSpreadsheet_PasteSpecial_Transpose" xml:space="preserve"><value>Transposer</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Cancel" xml:space="preserve"><value>Annuler</value></data>
+
+  <!-- ═══════════════ Name Manager ═══════════════ -->
+  <data name="TmSpreadsheet_Names_Title" xml:space="preserve"><value>Gestionnaire de noms</value></data>
+  <data name="TmSpreadsheet_Names_Name" xml:space="preserve"><value>Nom</value></data>
+  <data name="TmSpreadsheet_Names_Value" xml:space="preserve"><value>Valeur</value></data>
+  <data name="TmSpreadsheet_Names_RefersTo" xml:space="preserve"><value>Fait référence à</value></data>
+  <data name="TmSpreadsheet_Names_Scope" xml:space="preserve"><value>Portée</value></data>
+  <data name="TmSpreadsheet_Names_ScopeWorkbook" xml:space="preserve"><value>Classeur</value></data>
+  <data name="TmSpreadsheet_Names_ScopeSheet" xml:space="preserve"><value>Feuille</value></data>
+  <data name="TmSpreadsheet_Names_Comment" xml:space="preserve"><value>Commentaire</value></data>
+  <data name="TmSpreadsheet_Names_New" xml:space="preserve"><value>Nouveau</value></data>
+  <data name="TmSpreadsheet_Names_Edit" xml:space="preserve"><value>Modifier</value></data>
+  <data name="TmSpreadsheet_Names_Delete" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmSpreadsheet_Names_FilterPlaceholder" xml:space="preserve"><value>Filtrer les noms...</value></data>
+  <data name="TmSpreadsheet_Names_NoResults" xml:space="preserve"><value>Aucun nom défini</value></data>
+  <data name="TmSpreadsheet_Names_ConfirmDelete" xml:space="preserve"><value>Voulez-vous vraiment supprimer le nom '{0}' ?</value></data>
+
+  <!-- ═══════════════ Named Range Edit ═══════════════ -->
+  <data name="TmSpreadsheet_NamesEdit_Title" xml:space="preserve"><value>Modifier le nom</value></data>
+  <data name="TmSpreadsheet_NamesEdit_TitleNew" xml:space="preserve"><value>Nouveau nom</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Name" xml:space="preserve"><value>Nom</value></data>
+  <data name="TmSpreadsheet_NamesEdit_RefersTo" xml:space="preserve"><value>Fait référence à</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Scope" xml:space="preserve"><value>Portée</value></data>
+  <data name="TmSpreadsheet_NamesEdit_ScopeWorkbook" xml:space="preserve"><value>Classeur</value></data>
+  <data name="TmSpreadsheet_NamesEdit_ScopeSheet" xml:space="preserve"><value>Feuille</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Sheet" xml:space="preserve"><value>Feuille</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Comment" xml:space="preserve"><value>Commentaire</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Save" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmSpreadsheet_NamesEdit_NameRequired" xml:space="preserve"><value>Le nom est obligatoire</value></data>
+  <data name="TmSpreadsheet_NamesEdit_RefersToRequired" xml:space="preserve"><value>La référence est obligatoire</value></data>
+  <data name="TmSpreadsheet_NamesEdit_InvalidName" xml:space="preserve"><value>Le nom n'est pas valide</value></data>
+
+  <!-- ═══════════════ Hyperlink Dialog ═══════════════ -->
+  <data name="TmSpreadsheet_Hyperlink_Title" xml:space="preserve"><value>Hyperlien</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Type" xml:space="preserve"><value>Type de lien</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeWeb" xml:space="preserve"><value>Page Web</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeEmail" xml:space="preserve"><value>E-mail</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeInternal" xml:space="preserve"><value>Emplacement dans ce classeur</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeNamedRange" xml:space="preserve"><value>Nom défini</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Target" xml:space="preserve"><value>Adresse</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Display" xml:space="preserve"><value>Texte affiché</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Tooltip" xml:space="preserve"><value>Infobulle</value></data>
+  <data name="TmSpreadsheet_Hyperlink_EmailSubject" xml:space="preserve"><value>Objet</value></data>
+  <data name="TmSpreadsheet_Hyperlink_SelectRange" xml:space="preserve"><value>Sélectionner la plage</value></data>
+  <data name="TmSpreadsheet_Hyperlink_SelectNamedRange" xml:space="preserve"><value>Sélectionner le nom</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Save" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Cancel" xml:space="preserve"><value>Annuler</value></data>
 </root>

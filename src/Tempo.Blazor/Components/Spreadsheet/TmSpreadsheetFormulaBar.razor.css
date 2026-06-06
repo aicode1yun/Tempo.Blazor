@@ -14,6 +14,7 @@
     justify-content: center;
     width: 64px;
     height: 24px;
+    padding: 0 var(--tm-space-1);
     background: var(--tm-color-surface);
     border: 1px solid var(--tm-color-border);
     border-radius: var(--tm-radius-sm);
@@ -21,8 +22,16 @@
     font-size: var(--tm-text-xs);
     font-weight: var(--tm-font-medium);
     color: var(--tm-color-text);
-    user-select: none;
+    text-align: center;
     flex-shrink: 0;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color var(--tm-transition-fast), box-shadow var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-formula-bar__ref:focus {
+    border-color: var(--tm-color-primary);
+    box-shadow: var(--tm-shadow-focus);
 }
 
 .tm-spreadsheet-formula-bar__editor {

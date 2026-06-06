@@ -402,6 +402,11 @@
                         @onclick="OnClearValidationCircles">
                     @Loc["TmSpreadsheet_Data_ClearValidationCircles"]
                 </button>
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Names_Title"]"
+                        @onclick="OnNameManager">
+                    @Loc["TmSpreadsheet_Names_Title"]
+                </button>
             </div>
 
             @RenderCustomTools("Data")

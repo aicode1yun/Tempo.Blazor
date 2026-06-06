@@ -273,6 +273,37 @@ public static class XlsxExporter
                 worksheet.Append(dvs);
             }
 
+            // Hyperlinks
+            var cellsWithLinks = sheet.Cells.Where(c => c.Value.Hyperlink is not null).ToList();
+            if (cellsWithLinks.Count > 0)
+            {
+                var hls = new Hyperlinks();
+                foreach (var (cellRef, cell) in cellsWithLinks)
+                {
+                    var hl = cell.Hyperlink!;
+                    var hyperlink = new Hyperlink { Reference = cellRef };
+
+                    if (hl.Kind == SpreadsheetHyperlinkKind.InternalRef || hl.Kind == SpreadsheetHyperlinkKind.NamedRange)
+                    {
+                        hyperlink.Location = hl.Target;
+                    }
+                    else if (hl.Kind == SpreadsheetHyperlinkKind.Web || hl.Kind == SpreadsheetHyperlinkKind.Email)
+                    {
+                        var uri = hl.GetUri();
+                        var rel = worksheetPart.AddHyperlinkRelationship(new System.Uri(uri, System.UriKind.Absolute), true);
+                        hyperlink.Id = rel.Id;
+                    }
+
+                    if (!string.IsNullOrEmpty(hl.Display))
+                        hyperlink.Display = hl.Display;
+                    if (!string.IsNullOrEmpty(hl.Tooltip))
+                        hyperlink.Tooltip = hl.Tooltip;
+
+                    hls.Append(hyperlink);
+                }
+                worksheet.Append(hls);
+            }
+
             worksheetPart.Worksheet = worksheet;
 
             sheetsElement.Append(new Sheet
@@ -284,7 +315,29 @@ public static class XlsxExporter
             sheetId++;
         }
 
+        // Per OOXML schema (CT_Workbook), <sheets> must precede <definedNames>.
         workbookPart.Workbook.Append(sheetsElement);
+
+        // Defined names (named ranges)
+        if (workbook.NamedRanges.Count > 0)
+        {
+            var definedNames = new DefinedNames();
+            foreach (var nr in workbook.NamedRanges)
+            {
+                var dn = new DefinedName
+                {
+                    Name = nr.Name,
+                    Text = nr.RefersTo
+                };
+                if (nr.Scope == NamedRangeScope.Sheet && nr.SheetIndex.HasValue)
+                    dn.LocalSheetId = (uint)nr.SheetIndex.Value;
+                if (!string.IsNullOrEmpty(nr.Comment))
+                    dn.Comment = nr.Comment;
+                definedNames.Append(dn);
+            }
+            workbookPart.Workbook.Append(definedNames);
+        }
+
         workbookPart.Workbook.Save();
 
         sstPart.SharedStringTable.Save();

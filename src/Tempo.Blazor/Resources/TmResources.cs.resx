@@ -3767,4 +3767,52 @@
   <data name="TmSpreadsheet_PasteSpecial_Transpose" xml:space="preserve"><value>Transponovat</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_PasteSpecial_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+
+  <!-- ═══════════════ Name Manager ═══════════════ -->
+  <data name="TmSpreadsheet_Names_Title" xml:space="preserve"><value>Správce názvů</value></data>
+  <data name="TmSpreadsheet_Names_Name" xml:space="preserve"><value>Název</value></data>
+  <data name="TmSpreadsheet_Names_Value" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="TmSpreadsheet_Names_RefersTo" xml:space="preserve"><value>Odkazuje na</value></data>
+  <data name="TmSpreadsheet_Names_Scope" xml:space="preserve"><value>Rozsah</value></data>
+  <data name="TmSpreadsheet_Names_ScopeWorkbook" xml:space="preserve"><value>Sešit</value></data>
+  <data name="TmSpreadsheet_Names_ScopeSheet" xml:space="preserve"><value>List</value></data>
+  <data name="TmSpreadsheet_Names_Comment" xml:space="preserve"><value>Komentář</value></data>
+  <data name="TmSpreadsheet_Names_New" xml:space="preserve"><value>Nový</value></data>
+  <data name="TmSpreadsheet_Names_Edit" xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmSpreadsheet_Names_Delete" xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmSpreadsheet_Names_FilterPlaceholder" xml:space="preserve"><value>Filtrovat názvy...</value></data>
+  <data name="TmSpreadsheet_Names_NoResults" xml:space="preserve"><value>Žádné pojmenované rozsahy</value></data>
+  <data name="TmSpreadsheet_Names_ConfirmDelete" xml:space="preserve"><value>Opravdu chcete smazat pojmenovaný rozsah '{0}'?</value></data>
+
+  <!-- ═══════════════ Named Range Edit ═══════════════ -->
+  <data name="TmSpreadsheet_NamesEdit_Title" xml:space="preserve"><value>Upravit název</value></data>
+  <data name="TmSpreadsheet_NamesEdit_TitleNew" xml:space="preserve"><value>Nový název</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Name" xml:space="preserve"><value>Název</value></data>
+  <data name="TmSpreadsheet_NamesEdit_RefersTo" xml:space="preserve"><value>Odkazuje na</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Scope" xml:space="preserve"><value>Rozsah</value></data>
+  <data name="TmSpreadsheet_NamesEdit_ScopeWorkbook" xml:space="preserve"><value>Sešit</value></data>
+  <data name="TmSpreadsheet_NamesEdit_ScopeSheet" xml:space="preserve"><value>List</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Sheet" xml:space="preserve"><value>List</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Comment" xml:space="preserve"><value>Komentář</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Save" xml:space="preserve"><value>Uložit</value></data>
+  <data name="TmSpreadsheet_NamesEdit_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmSpreadsheet_NamesEdit_NameRequired" xml:space="preserve"><value>Název je povinný</value></data>
+  <data name="TmSpreadsheet_NamesEdit_RefersToRequired" xml:space="preserve"><value>Odkaz je povinný</value></data>
+  <data name="TmSpreadsheet_NamesEdit_InvalidName" xml:space="preserve"><value>Název není platný</value></data>
+
+  <!-- ═══════════════ Hyperlink Dialog ═══════════════ -->
+  <data name="TmSpreadsheet_Hyperlink_Title" xml:space="preserve"><value>Hypertextový odkaz</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Type" xml:space="preserve"><value>Typ odkazu</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeWeb" xml:space="preserve"><value>Webová stránka</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeEmail" xml:space="preserve"><value>E-mail</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeInternal" xml:space="preserve"><value>Místo v sešitu</value></data>
+  <data name="TmSpreadsheet_Hyperlink_TypeNamedRange" xml:space="preserve"><value>Pojmenovaný rozsah</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Target" xml:space="preserve"><value>Adresa</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Display" xml:space="preserve"><value>Zobrazený text</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Tooltip" xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmSpreadsheet_Hyperlink_EmailSubject" xml:space="preserve"><value>Předmět</value></data>
+  <data name="TmSpreadsheet_Hyperlink_SelectRange" xml:space="preserve"><value>Vybrat rozsah</value></data>
+  <data name="TmSpreadsheet_Hyperlink_SelectNamedRange" xml:space="preserve"><value>Vybrat pojmenovaný rozsah</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Save" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Hyperlink_Cancel" xml:space="preserve"><value>Zrušit</value></data>
 </root>

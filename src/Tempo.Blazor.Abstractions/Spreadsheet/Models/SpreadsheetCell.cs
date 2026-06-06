@@ -29,8 +29,8 @@ public sealed class SpreadsheetCell
     /// <summary>An image URL or base64 data to render inside the cell.</summary>
     public string? ImageUrl { get; set; }
 
-    /// <summary>A hyperlink URL associated with this cell.</summary>
-    public string? Hyperlink { get; set; }
+    /// <summary>A structured hyperlink attached to this cell.</summary>
+    public SpreadsheetHyperlink? Hyperlink { get; set; }
 
     /// <summary>The data validation rule that applies to this cell (shared reference from the sheet).</summary>
     public SpreadsheetDataValidation? Validation { get; set; }
@@ -45,7 +45,7 @@ public sealed class SpreadsheetCell
         DataType = DataType,
         IsReadOnly = IsReadOnly,
         ImageUrl = ImageUrl,
-        Hyperlink = Hyperlink,
+        Hyperlink = Hyperlink?.Clone(),
         Validation = Validation  // shallow copy — shared validation object
     };
 }

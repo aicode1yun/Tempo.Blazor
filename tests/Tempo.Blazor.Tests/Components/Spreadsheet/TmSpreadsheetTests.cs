@@ -269,12 +269,12 @@ public class TmSpreadsheetTests : LocalizationTestBase
             .First(b => b.GetAttribute("title") == "Insert link");
         linkBtn.Click();
 
-        cut.FindAll(".tm-spreadsheet-dialog").Count.Should().Be(1);
+        cut.FindAll(".tm-spreadsheet-hyperlink").Count.Should().Be(1);
 
         var cancelBtn = cut.FindAll("button").First(b => b.TextContent.Contains("Cancel"));
         cancelBtn.Click();
 
-        cut.FindAll(".tm-spreadsheet-dialog").Count.Should().Be(0);
+        cut.FindAll(".tm-spreadsheet-hyperlink").Count.Should().Be(0);
     }
 
     [Fact]
