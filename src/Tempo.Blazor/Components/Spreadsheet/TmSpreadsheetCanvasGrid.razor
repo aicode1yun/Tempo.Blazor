@@ -39,20 +39,6 @@ else
         <div class="tm-spreadsheet-canvas-grid__size"
              style="width:@TotalScrollableWidthPx;height:@TotalScrollableHeightPx;"></div>
 
-        @if (IsEditing && !UseJsEngine && !IsReadonly)
-        {
-            <input class="tm-spreadsheet-canvas-grid__editor"
-                   type="text"
-                   value="@_editValue"
-                   style="@GetEditorStyle()"
-                   @ref="_editInput"
-                   @oninput="OnEditInput"
-                   @onkeydown="HandleEditKeyDown"
-                   @onkeydown:stopPropagation="true"
-                   @onblur="OnEditBlur"
-                   @onclick:stopPropagation />
-        }
-
         <div id="@ActiveCellDomId"
              class="tm-sr-only"
              role="gridcell"

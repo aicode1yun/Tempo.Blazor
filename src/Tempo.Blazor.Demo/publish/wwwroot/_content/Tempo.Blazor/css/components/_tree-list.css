@@ -1,0 +1,153 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmTreeList — Hierarchical Data Table
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-tree-list-wrapper {
+  display: flex;
+  flex-direction: column;
+  background: var(--tm-bg-surface);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-lg);
+  overflow: auto;
+}
+
+.tm-tree-list {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-color-text);
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.tm-tree-list thead {
+  background: var(--tm-bg-muted);
+  border-bottom: 1px solid var(--tm-border-color);
+}
+
+.tm-tree-list th {
+  padding: var(--tm-space-2) var(--tm-space-3);
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--tm-color-text-secondary);
+}
+
+.tm-tree-list-header-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-1);
+}
+
+/* ── Cells ──────────────────────────────────────────────────── */
+.tm-tree-list-cell {
+  padding: var(--tm-space-2) var(--tm-space-3);
+  border-bottom: 1px solid var(--tm-border-color);
+  vertical-align: middle;
+}
+
+.tm-tree-list-cell--expand {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+
+.tm-tree-list-cell--empty {
+  text-align: center;
+  color: var(--tm-color-text-secondary);
+  padding: var(--tm-space-8);
+}
+
+.tm-tree-list-cell--center { text-align: center; }
+.tm-tree-list-cell--right { text-align: right; }
+
+/* ── Expand toggle ──────────────────────────────────────────── */
+.tm-tree-list-expand {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+}
+
+.tm-tree-list-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--tm-color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--tm-radius-sm);
+  transition: background var(--tm-transition-fast);
+}
+
+.tm-tree-list-toggle:hover {
+  background: var(--tm-bg-muted);
+  color: var(--tm-color-text);
+}
+
+.tm-tree-list-toggle:focus-visible {
+  outline: 2px solid var(--tm-color-primary);
+  outline-offset: 2px;
+}
+
+/* ── Rows ───────────────────────────────────────────────────── */
+.tm-tree-list-row {
+  transition: background var(--tm-transition-fast);
+}
+
+.tm-tree-list-row:hover {
+  background: var(--tm-bg-muted);
+}
+
+.tm-tree-list-row--selected {
+  background: var(--tm-color-primary-subtle);
+}
+
+.tm-tree-list-row--selected:hover {
+  background: var(--tm-color-primary-subtle);
+}
+
+.tm-tree-list-row--parent {
+  font-weight: 500;
+}
+
+/* ── Inline editing ─────────────────────────────────────────── */
+.tm-tree-list-row--editing {
+  background: var(--tm-color-primary-subtle);
+}
+
+.tm-tree-list-cell--editing {
+  padding: 0;
+}
+
+.tm-tree-list-edit-cell {
+  padding: var(--tm-space-2) var(--tm-space-3);
+  outline: none;
+}
+
+.tm-tree-list-edit-cell:focus-visible {
+  outline: 2px solid var(--tm-color-primary);
+  outline-offset: -2px;
+}
+
+.tm-tree-list-edit-input {
+  width: 100%;
+  padding: var(--tm-space-1) var(--tm-space-2);
+  border: 1px solid var(--tm-color-primary);
+  border-radius: var(--tm-radius-sm);
+  background: var(--tm-bg-surface);
+  color: var(--tm-color-text);
+  font: inherit;
+}
+
+.tm-tree-list-edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--tm-color-primary-subtle);
+}
+
+/* ── Pagination wrapper ─────────────────────────────────────── */
+.tm-tree-list-wrapper .tm-pagination {
+  border-top: 1px solid var(--tm-border-color);
+}

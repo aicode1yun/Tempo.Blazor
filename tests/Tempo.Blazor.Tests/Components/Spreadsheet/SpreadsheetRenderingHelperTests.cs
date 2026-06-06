@@ -24,6 +24,40 @@ public class SpreadsheetRenderingHelperTests
     }
 
     [Fact]
+    public void Geometry_Zoom_ScalesDimensionsAndHitTest()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 10, ColumnCount = 10 };
+        var geometry = new SpreadsheetGridGeometry();
+
+        geometry.Update(sheet, 20, 64, zoom: 1.5);
+
+        geometry.Zoom.Should().Be(1.5);
+        geometry.GetRowHeight(0).Should().Be(30);
+        geometry.GetColumnWidth(0).Should().Be(96);
+        geometry.GetCumulativeColumnWidth(2).Should().Be(192);
+
+        // A point at the zoomed offset for column 2 (2 * 96 + a bit) maps to column 2.
+        var hit = geometry.HitTest(200, 65);
+        hit.Col.Should().Be(2);
+        hit.Row.Should().Be(2);
+    }
+
+    [Fact]
+    public void Geometry_Zoom_PreservesHiddenAndCustomSizes()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 3, ColumnCount = 3 };
+        sheet.Rows[1] = new SpreadsheetRow { Index = 1, Height = 40 };
+        sheet.Columns[2] = new SpreadsheetColumn { Index = 2, IsHidden = true };
+        var geometry = new SpreadsheetGridGeometry();
+
+        geometry.Update(sheet, 20, 64, zoom: 2.0);
+
+        geometry.GetRowHeight(1).Should().Be(80);   // custom 40 * 2
+        geometry.GetColumnWidth(2).Should().Be(0);   // hidden stays 0
+        geometry.GetColumnWidth(0).Should().Be(128); // default 64 * 2
+    }
+
+    [Fact]
     public void Geometry_HitTest_MapsContentOffsetsToCell()
     {
         var sheet = new SpreadsheetSheet { RowCount = 10, ColumnCount = 10 };

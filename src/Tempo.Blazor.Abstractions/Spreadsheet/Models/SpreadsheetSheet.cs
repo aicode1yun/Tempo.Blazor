@@ -1,4 +1,5 @@
-﻿using Tempo.Blazor.Components.Spreadsheet.Formula;
+﻿using Tempo.Blazor.Components.Spreadsheet.Data;
+using Tempo.Blazor.Components.Spreadsheet.Formula;
 
 namespace Tempo.Blazor.Components.Spreadsheet.Models;
 
@@ -48,6 +49,12 @@ public sealed class SpreadsheetSheet
 
     /// <summary>The number of columns to freeze on the left (0 = none).</summary>
     public int FreezeColumnCount { get; set; }
+
+    /// <summary>The auto-filter applied to this sheet, or null when none is active.</summary>
+    public SpreadsheetAutoFilter? AutoFilter { get; set; }
+
+    /// <summary>Data validation rules defined on this sheet.</summary>
+    public List<SpreadsheetDataValidation> DataValidations { get; set; } = new();
 
     /// <summary>Retrieves or creates a cell at the given A1 reference.</summary>
     public SpreadsheetCell GetOrCreateCell(string cellRef)
@@ -204,7 +211,9 @@ public sealed class SpreadsheetSheet
             FreezeColumnCount = FreezeColumnCount,
             Rows = Rows.ToDictionary(r => r.Key, r => new SpreadsheetRow { Index = r.Value.Index, Height = r.Value.Height, IsHidden = r.Value.IsHidden }),
             Columns = Columns.ToDictionary(c => c.Key, c => new SpreadsheetColumn { Index = c.Value.Index, Width = c.Value.Width, IsHidden = c.Value.IsHidden }),
-            MergedCells = MergedCells.Select(m => new SpreadsheetRange(m.StartRow, m.StartCol, m.EndRow, m.EndCol)).ToList()
+            MergedCells = MergedCells.Select(m => new SpreadsheetRange(m.StartRow, m.StartCol, m.EndRow, m.EndCol)).ToList(),
+            AutoFilter = AutoFilter?.Clone(),
+            DataValidations = DataValidations.Select(dv => dv.DeepClone()).ToList()
         };
 
         foreach (var kv in Cells)

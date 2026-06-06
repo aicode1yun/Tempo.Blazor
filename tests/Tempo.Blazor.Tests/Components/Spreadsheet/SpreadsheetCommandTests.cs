@@ -4,6 +4,7 @@ using Tempo.Blazor.Components.Spreadsheet.Models;
 
 namespace Tempo.Blazor.Tests.Components.Spreadsheet;
 
+[Collection("SpreadsheetClipboard")]
 public class SpreadsheetCommandTests
 {
     // ── CommandManager ──

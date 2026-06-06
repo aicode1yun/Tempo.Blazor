@@ -8,6 +8,12 @@ public enum SpreadsheetDataType
     /// <summary>A numeric value.</summary>
     Number,
 
+    /// <summary>A percentage value, stored as a fraction (e.g. 0.5 for 50%).</summary>
+    Percentage,
+
+    /// <summary>A currency value, stored as a number.</summary>
+    Currency,
+
     /// <summary>A text string.</summary>
     Text,
 

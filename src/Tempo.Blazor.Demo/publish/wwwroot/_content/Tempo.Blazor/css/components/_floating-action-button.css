@@ -1,0 +1,111 @@
+.tm-fab {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: var(--tm-z-index-fixed, 1030);
+}
+
+.tm-fab--bottomright {
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+.tm-fab--bottomleft {
+  bottom: 1.5rem;
+  left: 1.5rem;
+}
+
+.tm-fab--topright {
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.tm-fab--topleft {
+  top: 1.5rem;
+  left: 1.5rem;
+}
+
+.tm-fab__main {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background-color: var(--tm-color-primary);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--tm-shadow-lg);
+  transition: background-color var(--tm-transition-fast), transform var(--tm-transition-fast);
+}
+
+.tm-fab__main:hover {
+  background-color: var(--tm-color-primary-hover);
+  transform: scale(1.05);
+}
+
+.tm-fab__main:active {
+  transform: scale(0.95);
+}
+
+.tm-fab__main:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tm-fab__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.tm-fab__menu {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.tm-fab--open .tm-fab__menu {
+  display: flex;
+}
+
+.tm-fab__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--tm-bg-surface);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  color: var(--tm-text-primary);
+  font-size: var(--tm-font-size-sm);
+  cursor: pointer;
+  box-shadow: var(--tm-shadow-md);
+  white-space: nowrap;
+  transition: background-color var(--tm-transition-fast);
+}
+
+.tm-fab__item:hover {
+  background-color: var(--tm-bg-muted);
+}
+
+.tm-fab__item--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tm-fab__item-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Dark mode */
+[data-theme="dark"] .tm-fab__item,
+.tm-dark .tm-fab__item {
+  background-color: var(--tm-bg-surface);
+  border-color: var(--tm-border-color);
+  color: var(--tm-text-primary);
+}

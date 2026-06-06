@@ -2937,4 +2937,195 @@
   <data name="TmDocumentEditor_HeaderDistance"         xml:space="preserve"><value>Distance de l'en-tête</value></data>
   <data name="TmDocumentEditor_FooterDistance"         xml:space="preserve"><value>Distance du pied de page</value></data>
 
+  <!-- Phase 2 : barre d'état, zoom, rechercher/remplacer -->
+  <data name="TmSpreadsheet_Status_Sum" xml:space="preserve"><value>Somme</value></data>
+  <data name="TmSpreadsheet_Status_Average" xml:space="preserve"><value>Moyenne</value></data>
+  <data name="TmSpreadsheet_Status_Count" xml:space="preserve"><value>Nombre</value></data>
+  <data name="TmSpreadsheet_Status_CountNumbers" xml:space="preserve"><value>Nombre (numérique)</value></data>
+  <data name="TmSpreadsheet_Status_Min" xml:space="preserve"><value>Min</value></data>
+  <data name="TmSpreadsheet_Status_Max" xml:space="preserve"><value>Max</value></data>
+  <data name="TmSpreadsheet_Status_Ready" xml:space="preserve"><value>Prêt</value></data>
+  <data name="TmSpreadsheet_Zoom" xml:space="preserve"><value>Zoom</value></data>
+  <data name="TmSpreadsheet_ZoomIn" xml:space="preserve"><value>Zoom avant</value></data>
+  <data name="TmSpreadsheet_ZoomOut" xml:space="preserve"><value>Zoom arrière</value></data>
+  <data name="TmSpreadsheet_ZoomReset" xml:space="preserve"><value>Réinitialiser le zoom à 100 %</value></data>
+  <data name="TmSpreadsheet_Find_Title" xml:space="preserve"><value>Rechercher et remplacer</value></data>
+  <data name="TmSpreadsheet_Find_Query" xml:space="preserve"><value>Rechercher</value></data>
+  <data name="TmSpreadsheet_Find_ReplaceWith" xml:space="preserve"><value>Remplacer par</value></data>
+  <data name="TmSpreadsheet_Find_MatchCase" xml:space="preserve"><value>Respecter la casse</value></data>
+  <data name="TmSpreadsheet_Find_WholeCell" xml:space="preserve"><value>Cellule entière</value></data>
+  <data name="TmSpreadsheet_Find_InFormulas" xml:space="preserve"><value>Rechercher dans les formules</value></data>
+  <data name="TmSpreadsheet_Find_WorkbookScope" xml:space="preserve"><value>Rechercher dans tout le classeur</value></data>
+  <data name="TmSpreadsheet_Find_FindNext" xml:space="preserve"><value>Suivant</value></data>
+  <data name="TmSpreadsheet_Find_FindPrevious" xml:space="preserve"><value>Précédent</value></data>
+  <data name="TmSpreadsheet_Find_Replace" xml:space="preserve"><value>Remplacer</value></data>
+  <data name="TmSpreadsheet_Find_ReplaceAll" xml:space="preserve"><value>Remplacer tout</value></data>
+  <data name="TmSpreadsheet_Find_NoMatches" xml:space="preserve"><value>Aucun résultat</value></data>
+  <data name="TmSpreadsheet_Find_ReplacedCount" xml:space="preserve"><value>{0} remplacement(s) effectué(s)</value></data>
+  <data name="TmSpreadsheet_Find_MatchCounter" xml:space="preserve"><value>{0} sur {1}</value></data>
+  <data name="TmSpreadsheet_TabData" xml:space="preserve"><value>Données</value></data>
+  <data name="TmSpreadsheet_Data_Filter" xml:space="preserve"><value>Filtre</value></data>
+  <data name="TmSpreadsheet_Data_SortAsc" xml:space="preserve"><value>Trier croissant</value></data>
+  <data name="TmSpreadsheet_Data_SortDesc" xml:space="preserve"><value>Trier décroissant</value></data>
+  <data name="TmSpreadsheet_Data_CustomSort" xml:space="preserve"><value>Tri personnalisé…</value></data>
+  <data name="TmSpreadsheet_Data_ClearFilter" xml:space="preserve"><value>Effacer le filtre</value></data>
+  <data name="TmSpreadsheet_Filter_SortAsc" xml:space="preserve"><value>Trier A → Z</value></data>
+  <data name="TmSpreadsheet_Filter_SortDesc" xml:space="preserve"><value>Trier Z → A</value></data>
+  <data name="TmSpreadsheet_Filter_SearchPlaceholder" xml:space="preserve"><value>Rechercher</value></data>
+  <data name="TmSpreadsheet_Filter_SelectAll" xml:space="preserve"><value>(Tout sélectionner)</value></data>
+  <data name="TmSpreadsheet_Filter_Blanks" xml:space="preserve"><value>(Vides)</value></data>
+  <data name="TmSpreadsheet_Filter_TextFilters" xml:space="preserve"><value>Filtres textuels</value></data>
+  <data name="TmSpreadsheet_Filter_NumberFilters" xml:space="preserve"><value>Filtres numériques</value></data>
+  <data name="TmSpreadsheet_Filter_DateFilters" xml:space="preserve"><value>Filtres de date</value></data>
+  <data name="TmSpreadsheet_Filter_ClearFilter" xml:space="preserve"><value>Effacer le filtre</value></data>
+  <data name="TmSpreadsheet_Filter_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Filter_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmSpreadsheet_Filter_NoMatches" xml:space="preserve"><value>Aucune correspondance</value></data>
+  <data name="TmSpreadsheet_Filter_ButtonTitle" xml:space="preserve"><value>Filtrer et trier</value></data>
+  <data name="TmSpreadsheet_CustomFilter_Title" xml:space="preserve"><value>Filtre personnalisé</value></data>
+  <data name="TmSpreadsheet_CustomFilter_And" xml:space="preserve"><value>Et</value></data>
+  <data name="TmSpreadsheet_CustomFilter_Or" xml:space="preserve"><value>Ou</value></data>
+  <data name="TmSpreadsheet_CustomFilter_Value" xml:space="preserve"><value>Valeur</value></data>
+  <data name="TmSpreadsheet_FilterOp_Contains" xml:space="preserve"><value>Contient</value></data>
+  <data name="TmSpreadsheet_FilterOp_NotContains" xml:space="preserve"><value>Ne contient pas</value></data>
+  <data name="TmSpreadsheet_FilterOp_BeginsWith" xml:space="preserve"><value>Commence par</value></data>
+  <data name="TmSpreadsheet_FilterOp_EndsWith" xml:space="preserve"><value>Se termine par</value></data>
+  <data name="TmSpreadsheet_FilterOp_Equals" xml:space="preserve"><value>Égal à</value></data>
+  <data name="TmSpreadsheet_FilterOp_NotEquals" xml:space="preserve"><value>Différent de</value></data>
+  <data name="TmSpreadsheet_FilterOp_GreaterThan" xml:space="preserve"><value>Supérieur à</value></data>
+  <data name="TmSpreadsheet_FilterOp_GreaterThanOrEqual" xml:space="preserve"><value>Supérieur ou égal</value></data>
+  <data name="TmSpreadsheet_FilterOp_LessThan" xml:space="preserve"><value>Inférieur à</value></data>
+  <data name="TmSpreadsheet_FilterOp_LessThanOrEqual" xml:space="preserve"><value>Inférieur ou égal</value></data>
+  <data name="TmSpreadsheet_FilterOp_Between" xml:space="preserve"><value>Entre</value></data>
+  <data name="TmSpreadsheet_FilterOp_NotBetween" xml:space="preserve"><value>Pas entre</value></data>
+  <data name="TmSpreadsheet_FilterOp_Top10" xml:space="preserve"><value>Top 10</value></data>
+  <data name="TmSpreadsheet_FilterOp_AboveAverage" xml:space="preserve"><value>Au-dessus de la moyenne</value></data>
+  <data name="TmSpreadsheet_FilterOp_BelowAverage" xml:space="preserve"><value>En dessous de la moyenne</value></data>
+  <data name="TmSpreadsheet_FilterOp_Today" xml:space="preserve"><value>Aujourd'hui</value></data>
+  <data name="TmSpreadsheet_FilterOp_ThisMonth" xml:space="preserve"><value>Ce mois-ci</value></data>
+  <data name="TmSpreadsheet_FilterOp_ThisYear" xml:space="preserve"><value>Cette année</value></data>
+  <data name="TmSpreadsheet_Sort_Title" xml:space="preserve"><value>Trier</value></data>
+  <data name="TmSpreadsheet_Sort_AddLevel" xml:space="preserve"><value>Ajouter un niveau</value></data>
+  <data name="TmSpreadsheet_Sort_DeleteLevel" xml:space="preserve"><value>Supprimer le niveau</value></data>
+  <data name="TmSpreadsheet_Sort_Column" xml:space="preserve"><value>Colonne</value></data>
+  <data name="TmSpreadsheet_Sort_SortOn" xml:space="preserve"><value>Trier sur</value></data>
+  <data name="TmSpreadsheet_Sort_Order" xml:space="preserve"><value>Ordre</value></data>
+  <data name="TmSpreadsheet_Sort_OnValue" xml:space="preserve"><value>Valeurs</value></data>
+  <data name="TmSpreadsheet_Sort_OnCellColor" xml:space="preserve"><value>Couleur de cellule</value></data>
+  <data name="TmSpreadsheet_Sort_OnFontColor" xml:space="preserve"><value>Couleur de police</value></data>
+  <data name="TmSpreadsheet_Sort_AtoZ" xml:space="preserve"><value>A → Z</value></data>
+  <data name="TmSpreadsheet_Sort_ZtoA" xml:space="preserve"><value>Z → A</value></data>
+  <data name="TmSpreadsheet_Sort_SortBy" xml:space="preserve"><value>Trier par</value></data>
+  <data name="TmSpreadsheet_Sort_ThenBy" xml:space="preserve"><value>Puis par</value></data>
+  <data name="TmSpreadsheet_Sort_HasHeader" xml:space="preserve"><value>Mes données ont des en-têtes</value></data>
+  <data name="TmSpreadsheet_Sort_CaseSensitive" xml:space="preserve"><value>Respecter la casse</value></data>
+  <data name="TmSpreadsheet_Sort_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Sort_Cancel" xml:space="preserve"><value>Annuler</value></data>
+
+  <data name="TmSpreadsheet_Data_RemoveDuplicates" xml:space="preserve"><value>Supprimer les doublons</value></data>
+  <data name="TmSpreadsheet_Data_TextToColumns" xml:space="preserve"><value>Convertir le texte en colonnes</value></data>
+  <data name="TmSpreadsheet_Data_PasteSpecial" xml:space="preserve"><value>Collage spécial</value></data>
+  <data name="TmSpreadsheet_Data_DataValidation" xml:space="preserve"><value>Validation des données...</value></data>
+  <data name="TmSpreadsheet_Data_CircleInvalidData" xml:space="preserve"><value>Entourer les données non valides</value></data>
+  <data name="TmSpreadsheet_Data_ClearValidationCircles" xml:space="preserve"><value>Effacer les cercles de validation</value></data>
+
+  <data name="TmSpreadsheet_Validation_TabSettings" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="TmSpreadsheet_Validation_TabInputMessage" xml:space="preserve"><value>Message de saisie</value></data>
+  <data name="TmSpreadsheet_Validation_TabErrorAlert" xml:space="preserve"><value>Alerte d'erreur</value></data>
+  <data name="TmSpreadsheet_Validation_AllowLabel" xml:space="preserve"><value>Autoriser</value></data>
+  <data name="TmSpreadsheet_Validation_DataLabel" xml:space="preserve"><value>Données</value></data>
+  <data name="TmSpreadsheet_Validation_SourceLabel" xml:space="preserve"><value>Source</value></data>
+  <data name="TmSpreadsheet_Validation_ValueLabel" xml:space="preserve"><value>Valeur</value></data>
+  <data name="TmSpreadsheet_Validation_MinimumLabel" xml:space="preserve"><value>Minimum</value></data>
+  <data name="TmSpreadsheet_Validation_MaximumLabel" xml:space="preserve"><value>Maximum</value></data>
+  <data name="TmSpreadsheet_Validation_AllowBlank" xml:space="preserve"><value>Ignorer les cellules vides</value></data>
+  <data name="TmSpreadsheet_Validation_ShowDropDown" xml:space="preserve"><value>Liste déroulante dans la cellule</value></data>
+  <data name="TmSpreadsheet_Validation_ShowInputMessage" xml:space="preserve"><value>Afficher le message de saisie à la sélection de la cellule</value></data>
+  <data name="TmSpreadsheet_Validation_ShowErrorAlert" xml:space="preserve"><value>Afficher l'alerte d'erreur après la saisie de données non valides</value></data>
+  <data name="TmSpreadsheet_Validation_TitleLabel" xml:space="preserve"><value>Titre</value></data>
+  <data name="TmSpreadsheet_Validation_MessageLabel" xml:space="preserve"><value>Message de saisie</value></data>
+  <data name="TmSpreadsheet_Validation_StyleLabel" xml:space="preserve"><value>Style</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Any" xml:space="preserve"><value>Toute valeur</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Whole" xml:space="preserve"><value>Nombre entier</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Decimal" xml:space="preserve"><value>Décimal</value></data>
+  <data name="TmSpreadsheet_Validation_Type_List" xml:space="preserve"><value>Liste</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Time" xml:space="preserve"><value>Heure</value></data>
+  <data name="TmSpreadsheet_Validation_Type_TextLength" xml:space="preserve"><value>Longueur du texte</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Custom" xml:space="preserve"><value>Personnalisé</value></data>
+  <data name="TmSpreadsheet_Validation_Op_Between" xml:space="preserve"><value>compris entre</value></data>
+  <data name="TmSpreadsheet_Validation_Op_NotBetween" xml:space="preserve"><value>non compris entre</value></data>
+  <data name="TmSpreadsheet_Validation_Op_Equal" xml:space="preserve"><value>égal à</value></data>
+  <data name="TmSpreadsheet_Validation_Op_NotEqual" xml:space="preserve"><value>différent de</value></data>
+  <data name="TmSpreadsheet_Validation_Op_GreaterThan" xml:space="preserve"><value>supérieur à</value></data>
+  <data name="TmSpreadsheet_Validation_Op_LessThan" xml:space="preserve"><value>inférieur à</value></data>
+  <data name="TmSpreadsheet_Validation_Op_GreaterOrEqual" xml:space="preserve"><value>supérieur ou égal à</value></data>
+  <data name="TmSpreadsheet_Validation_Op_LessOrEqual" xml:space="preserve"><value>inférieur ou égal à</value></data>
+  <data name="TmSpreadsheet_Validation_Style_Stop" xml:space="preserve"><value>Arrêt</value></data>
+  <data name="TmSpreadsheet_Validation_Style_Warning" xml:space="preserve"><value>Avertissement</value></data>
+  <data name="TmSpreadsheet_Validation_Style_Information" xml:space="preserve"><value>Informations</value></data>
+  <data name="TmSpreadsheet_Validation_DefaultErrorTitle" xml:space="preserve"><value>Valeur incorrecte</value></data>
+  <data name="TmSpreadsheet_Validation_DefaultErrorMessage" xml:space="preserve"><value>La valeur saisie n'est pas valide.</value></data>
+
+  <data name="TmSpreadsheet_Dedup_Title" xml:space="preserve"><value>Supprimer les doublons</value></data>
+  <data name="TmSpreadsheet_Dedup_Hint" xml:space="preserve"><value>Sélectionnez les colonnes à vérifier pour les doublons.</value></data>
+  <data name="TmSpreadsheet_Dedup_HasHeader" xml:space="preserve"><value>Mes données ont des en-têtes</value></data>
+  <data name="TmSpreadsheet_Dedup_CaseSensitive" xml:space="preserve"><value>Respecter la casse</value></data>
+  <data name="TmSpreadsheet_Dedup_Columns" xml:space="preserve"><value>Colonnes</value></data>
+  <data name="TmSpreadsheet_Dedup_SelectAll" xml:space="preserve"><value>Tout sélectionner</value></data>
+  <data name="TmSpreadsheet_Dedup_DeselectAll" xml:space="preserve"><value>Tout désélectionner</value></data>
+  <data name="TmSpreadsheet_Dedup_ColumnLabel" xml:space="preserve"><value>Colonne {0}</value></data>
+  <data name="TmSpreadsheet_Dedup_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Dedup_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmSpreadsheet_Dedup_ResultNone" xml:space="preserve"><value>Aucun doublon trouvé.</value></data>
+  <data name="TmSpreadsheet_Dedup_Result" xml:space="preserve"><value>{0} doublons supprimés ; {1} valeurs uniques conservées.</value></data>
+
+  <data name="TmSpreadsheet_TextToColumns_Title" xml:space="preserve"><value>Convertir le texte en colonnes</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step1Title" xml:space="preserve"><value>Choisissez comment vos données sont divisées</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Delimited" xml:space="preserve"><value>Délimité</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimitedHint" xml:space="preserve"><value>Des caractères comme des virgules ou des tabulations séparent chaque champ.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FixedWidth" xml:space="preserve"><value>Largeur fixe</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FixedWidthHint" xml:space="preserve"><value>Les champs sont alignés en colonnes séparées par des espaces.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step2DelimTitle" xml:space="preserve"><value>Séparateurs</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimTab" xml:space="preserve"><value>Tabulation</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimSemicolon" xml:space="preserve"><value>Point-virgule</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimComma" xml:space="preserve"><value>Virgule</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimSpace" xml:space="preserve"><value>Espace</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimOther" xml:space="preserve"><value>Autre :</value></data>
+  <data name="TmSpreadsheet_TextToColumns_TextQualifier" xml:space="preserve"><value>Identificateur de texte</value></data>
+  <data name="TmSpreadsheet_TextToColumns_QualifierNone" xml:space="preserve"><value>(aucun)</value></data>
+  <data name="TmSpreadsheet_TextToColumns_TreatConsecutive" xml:space="preserve"><value>Considérer les séparateurs consécutifs comme un seul</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step2FixedTitle" xml:space="preserve"><value>Définir les largeurs de champ</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FixedHint" xml:space="preserve"><value>Saisissez les positions de caractères où les colonnes se divisent.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_BreakPositions" xml:space="preserve"><value>Positions de rupture</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step3Title" xml:space="preserve"><value>Format des données de colonne</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Column" xml:space="preserve"><value>Colonne</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FormatGeneral" xml:space="preserve"><value>Standard</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FormatText" xml:space="preserve"><value>Texte</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FormatSkip" xml:space="preserve"><value>Ignorer la colonne</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Preview" xml:space="preserve"><value>Aperçu</value></data>
+  <data name="TmSpreadsheet_TextToColumns_OverwriteWarning" xml:space="preserve"><value>Les données existantes à droite seront écrasées.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Back" xml:space="preserve"><value>Précédent</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Next" xml:space="preserve"><value>Suivant</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Finish" xml:space="preserve"><value>Terminer</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Cancel" xml:space="preserve"><value>Annuler</value></data>
+
+  <data name="TmSpreadsheet_PasteSpecial_Title" xml:space="preserve"><value>Collage spécial</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Paste" xml:space="preserve"><value>Coller</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_All" xml:space="preserve"><value>Tout</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Values" xml:space="preserve"><value>Valeurs</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Formulas" xml:space="preserve"><value>Formules</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Formats" xml:space="preserve"><value>Formats</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_ValuesAndFormats" xml:space="preserve"><value>Valeurs et formats</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_WithoutBorders" xml:space="preserve"><value>Tout sauf les bordures</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Operation" xml:space="preserve"><value>Opération</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpNone" xml:space="preserve"><value>Aucune</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpAdd" xml:space="preserve"><value>Addition</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpSubtract" xml:space="preserve"><value>Soustraction</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpMultiply" xml:space="preserve"><value>Multiplication</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpDivide" xml:space="preserve"><value>Division</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_SkipBlanks" xml:space="preserve"><value>Ignorer les cellules vides</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Transpose" xml:space="preserve"><value>Transposer</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Cancel" xml:space="preserve"><value>Annuler</value></data>
 </root>

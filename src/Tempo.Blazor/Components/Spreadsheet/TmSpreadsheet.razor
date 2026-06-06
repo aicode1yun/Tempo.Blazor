@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.Spreadsheet
 @using Tempo.Blazor.Components.Spreadsheet.Models
 @using Tempo.Blazor.Components.Spreadsheet.Enums
+@using Tempo.Blazor.Components.Spreadsheet.Dialogs
 
 <div class="tm-spreadsheet @Class"
      style="width: @(Width ?? "100%"); height: @(Height ?? "600px");"
@@ -64,7 +65,18 @@
                           OnBorderPresetChanged="ApplyBorderPreset"
                           OnOpenBorderDialog="ShowFormatCellsDialogOnBorderTab"
                           OnFormatPainterClick="OnFormatPainterButtonClick"
-                          OnFormatPainterDoubleClick="OnFormatPainterButtonDoubleClick" />
+                          OnFormatPainterDoubleClick="OnFormatPainterButtonDoubleClick"
+                          IsFilterActive="IsAutoFilterActive"
+                          OnToggleFilter="ToggleAutoFilter"
+                          OnSortAscending="SortSelectionAscending"
+                          OnSortDescending="SortSelectionDescending"
+                          OnCustomSort="OpenSortDialog"
+                          OnRemoveDuplicates="OpenRemoveDuplicatesDialog"
+                          OnTextToColumns="OpenTextToColumnsDialog"
+                          OnPasteSpecial="OpenPasteSpecialDialog"
+                          OnDataValidation="OpenDataValidationDialog"
+                          OnCircleInvalidData="() => _ = CircleInvalidData()"
+                          OnClearValidationCircles="() => _ = ClearValidationCircles()" />
 
     <InputFile id="tm-spreadsheet-file-input"
                OnChange="HandleFileSelected"
@@ -83,22 +95,20 @@
                              OnTransferToInlineEditorRequested="@OnFormulaBarTransferToInlineEditorRequested" />
     }
 
-    @if (RenderMode != SpreadsheetRenderMode.Dom)
-    {
         <TmSpreadsheetCanvasGrid @ref="_grid"
                                  Sheet="_workbook.ActiveSheet"
                                  RowHeight="RowHeight"
                                  ColumnWidth="ColumnWidth"
-                                 UseJsEngine="@UseCanvasJsEngine"
+                                 Zoom="Zoom"
                                  IsReadonly="@(Mode == SpreadsheetMode.Embedded)"
                                  ExternalFormulaSessionActive="@(IsFormulaBarPointSessionActive || _formulaReferencePickingGuardActive || (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null))"
                                  ExternalFormulaOriginCellRef="@((_formulaReferencePickingGuardActive || IsFormulaBarPointSessionActive) ? _formulaOriginCellRef : null)"
-                                 ExternalFormulaEditValue="@(UseCanvasJsEngine ? null : (IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null))"
                                  ActiveCellChanged="OnGridActiveCellChanged"
                                  CellValueCommitted="OnGridCellValueCommitted"
                                  CellValuesCommittedBatch="OnGridCellValuesCommittedBatch"
                                  OnCopyRequested="Copy"
                                  OnPasteRequested="Paste"
+                                 OnPasteSpecialRequested="OpenPasteSpecialDialog"
                                  OnCutRequested="Cut"
                                  OnInsertRowRequested="InsertRow"
                                  OnDeleteRowRequested="DeleteRow"
@@ -127,49 +137,13 @@
                                  OnFormatPainterActivateRequested="ActivateFormatPainterFromContextMenu"
                                  OnClearFormattingRequested="ClearFormatting"
                                  OnClearContentRequested="ClearContent"
-                                 OnClearAllRequested="ClearAll" />
-    }
-    else
-    {
-        <TmSpreadsheetGrid @ref="_grid"
-                           Sheet="_workbook.ActiveSheet"
-                           RowHeight="RowHeight"
-                           ColumnWidth="ColumnWidth"
-                           ExternalFormulaEditValue="@(IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null)"
-                           ActiveCellChanged="OnGridActiveCellChanged"
-                           CellValueCommitted="OnGridCellValueCommitted"
-                           OnCopyRequested="Copy"
-                           OnPasteRequested="Paste"
-                           OnCutRequested="Cut"
-                           OnInsertRowRequested="InsertRow"
-                           OnDeleteRowRequested="DeleteRow"
-                           OnInsertColumnRequested="InsertColumn"
-                           OnDeleteColumnRequested="DeleteColumn"
-                           OnDeleteRequested="DeleteSelection"
-                           OnUndoRequested="Undo"
-                           OnRedoRequested="Redo"
-                           OnBoldToggleRequested="ToggleBold"
-                           OnItalicToggleRequested="ToggleItalic"
-                           OnUnderlineToggleRequested="ToggleUnderline"
-                           OnSelectAllRequested="GridSelectAll"
-                           OnCellEdit="OnGridCellEdit"
-                           OnCellReferenceRequested="OnGridCellReferenceRequested"
-                           OnColumnResizeRequested="OnColumnResizeRequested"
-                           OnRowResizeRequested="OnRowResizeRequested"
-                           OnFormatCellsRequested="ShowFormatCellsDialog"
-                           OnStrikeThroughToggleRequested="ToggleStrikeThrough"
-                           IsFormatPainterActive="_formatPainterActive"
-                           OnFormatPainterApply="OnFormatPainterApply"
-                           OnFormatPainterCancel="DeactivateFormatPainter"
-                           OnHideRowsRequested="HideRows"
-                           OnUnhideRowsRequested="UnhideRows"
-                           OnHideColumnsRequested="HideColumns"
-                           OnUnhideColumnsRequested="UnhideColumns"
-                           OnFormatPainterActivateRequested="ActivateFormatPainterFromContextMenu"
-                           OnClearFormattingRequested="ClearFormatting"
-                           OnClearContentRequested="ClearContent"
-                           OnClearAllRequested="ClearAll" />
-    }
+                                 OnClearAllRequested="ClearAll"
+                                 OnZoomStep="OnZoomStep"
+                                 OnZoomResetRequested="ResetZoom"
+                                 OnFindRequested="OpenFind"
+                                 OnReplaceRequested="OpenReplace"
+                                 FilterButtonClicked="OnFilterButtonClicked"
+                                 ValidationDropButtonClicked="OnValidationDropButtonClicked" />
 
     <TmSpreadsheetSheetTabs Sheets="_workbook.Sheets"
                             ActiveIndex="_workbook.ActiveSheetIndex"
@@ -180,6 +154,23 @@
                             OnAddSheetRequested="AddNewSheet"
                             OnDeleteSheetRequested="DeleteSheet"
                             OnRenameSheetRequested="RenameSheet" />
+
+    <TmSpreadsheetStatusBar Aggregation="StatusAggregation"
+                            Zoom="Zoom"
+                            OnZoomChanged="OnZoomChanged" />
+
+    @if (_showFindReplace)
+    {
+        <TmSpreadsheetFindReplaceDialog InitialOptions="_searchOptions"
+                                        MatchIndex="SearchMatchIndex"
+                                        MatchCount="SearchMatchCount"
+                                        OnSearchRequested="OnSearchRequested"
+                                        OnFindNext="FindNextHit"
+                                        OnFindPrevious="FindPreviousHit"
+                                        OnReplaceRequested="ReplaceCurrentHit"
+                                        OnReplaceAllRequested="ReplaceAllHits"
+                                        OnClose="CloseFindReplace" />
+    }
 
     @if (_showInsertLinkDialog)
     {
@@ -222,5 +213,115 @@
         <TmSpreadsheetFormatCellsDialog Style="_formatCellsStyle"
                                         OnApply="OnFormatCellsApply"
                                         OnClose="() => _showFormatCellsDialog = false" />
+    }
+
+    @if (_filterDropdownColumn is { } filterCol && _workbook.ActiveSheet?.AutoFilter is { } filterDef)
+    {
+        <Tempo.Blazor.Components.Spreadsheet.Data.TmSpreadsheetFilterDropdown
+            Sheet="_workbook.ActiveSheet"
+            Filter="filterDef"
+            ColumnIndex="filterCol"
+            X="_filterDropdownX"
+            Y="_filterDropdownY"
+            OnSortAscending="SortColumnAscending"
+            OnSortDescending="SortColumnDescending"
+            OnApply="ApplyColumnFilter"
+            OnOpenCustomFilter="OpenCustomFilterDialog"
+            OnClose="CloseFilterDropdown" />
+    }
+
+    @if (_showCustomFilterDialog && _customFilterColumn is { } customCol)
+    {
+        <TmSpreadsheetCustomFilterDialog ColumnIndex="customCol"
+                                         Kind="_customFilterKind"
+                                         OnApply="ApplyColumnFilter"
+                                         OnClose="() => _showCustomFilterDialog = false" />
+    }
+
+    @if (_showSortDialog && _sortDialogRange is { } sortRange)
+    {
+        <TmSpreadsheetSortDialog Range="sortRange"
+                                 OnApply="ApplySortSpec"
+                                 OnClose="() => _showSortDialog = false" />
+    }
+
+    @if (_showRemoveDuplicatesDialog && _dedupRange is { } dedupRange)
+    {
+        <TmSpreadsheetRemoveDuplicatesDialog Range="dedupRange"
+                                             HeaderLabels="_dedupHeaderLabels"
+                                             OnApply="ApplyRemoveDuplicates"
+                                             OnClose="() => _showRemoveDuplicatesDialog = false" />
+    }
+
+    @if (_showTextToColumnsDialog)
+    {
+        <TmSpreadsheetTextToColumnsDialog SourceRows="_t2cSourceRows"
+                                          OnApply="ApplyTextToColumns"
+                                          OnClose="() => _showTextToColumnsDialog = false" />
+    }
+
+    @if (_showPasteSpecialDialog)
+    {
+        <TmSpreadsheetSpecialPasteDialog OnApply="ApplyPasteSpecial"
+                                         OnClose="() => _showPasteSpecialDialog = false" />
+    }
+
+    @if (_showValidationDialog && _pendingValidation is not null)
+    {
+        <TmSpreadsheetDataValidationDialog Validation="_pendingValidation"
+                                           OnSave="ApplyDataValidation"
+                                           OnClose="CloseValidationDialog" />
+    }
+
+    @if (_showValidationDropdown)
+    {
+        <div class="tm-spreadsheet-dialog-backdrop tm-spreadsheet-dialog-backdrop--transparent" @onclick="CloseValidationDropdown">
+            <div class="tm-spreadsheet-vd" style="left: @(_validationDropdownX)px; top: @(_validationDropdownY)px;" @onclick:stopPropagation>
+                @foreach (var item in _validationDropdownItems)
+                {
+                    var capturedItem = item;
+                    <button class="tm-spreadsheet-vd__item" @onclick="() => _ = CommitValidationDropdownSelection(capturedItem)">
+                        @capturedItem
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    @if (_showValidationError)
+    {
+        <div class="tm-spreadsheet-dialog-backdrop" @onclick="DismissValidationError">
+            <div class="tm-spreadsheet-alert" @onclick:stopPropagation>
+                <h4 class="tm-spreadsheet-alert__title">@_validationErrorTitle</h4>
+                <p class="tm-spreadsheet-alert__message">@_validationErrorMessage</p>
+                <div class="tm-spreadsheet-alert__actions">
+                    <TmButton OnClick="DismissValidationError">@Loc["Tm_Confirm"]</TmButton>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_showValidationConfirm)
+    {
+        <div class="tm-spreadsheet-dialog-backdrop" @onclick="DismissValidationConfirm">
+            <div class="tm-spreadsheet-alert" @onclick:stopPropagation>
+                <h4 class="tm-spreadsheet-alert__title">@_validationConfirmTitle</h4>
+                <p class="tm-spreadsheet-alert__message">@_validationConfirmMessage</p>
+                <div class="tm-spreadsheet-alert__actions">
+                    <TmButton Variant="ButtonVariant.Secondary" OnClick="DismissValidationConfirm">@Loc["Tm_Cancel"]</TmButton>
+                    <TmButton OnClick="ConfirmValidationWarning">@Loc["Tm_Yes"]</TmButton>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_dataToolMessage is not null)
+    {
+        <div class="tm-spreadsheet__datatool-toast" role="status">
+            <span>@_dataToolMessage</span>
+            <button type="button" class="tm-spreadsheet__datatool-toast-close" title="@Loc["Tm_Close"]" aria-label="@Loc["Tm_Close"]" @onclick="DismissDataToolMessage">
+                <TmIcon Name="close" />
+            </button>
+        </div>
     }
 </div>

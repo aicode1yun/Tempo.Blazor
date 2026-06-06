@@ -44,6 +44,7 @@ public static partial class SpreadsheetNumberFormatter
     {
         if (value is null) return string.Empty;
         if (value is string s) return s;
+        if (value is bool bv) return bv ? "TRUE" : "FALSE";
         if (value is DateTime dt) return dt.ToString("g", CultureInfo.CurrentCulture);
         if (value is double d) return d.ToString("G", CultureInfo.InvariantCulture);
         if (value is decimal dec) return dec.ToString("G", CultureInfo.InvariantCulture);
@@ -71,36 +72,103 @@ public static partial class SpreadsheetNumberFormatter
         if (!TryGetDateTime(value, out var dt))
             return value?.ToString() ?? string.Empty;
 
-        // Map Excel format tokens to .NET format tokens.
-        // Use placeholders for longer patterns so shorter replaces don't interfere.
-        var netFormat = fmt
-            .Replace("yyyy", "{{YYYY}}")
-            .Replace("yy", "{{YY}}")
-            .Replace("mmmm", "{{MMMM}}")
-            .Replace("mmm", "{{MMM}}")
-            .Replace("dddd", "{{DDDD}}")
-            .Replace("ddd", "{{DDD}}")
-            .Replace("dd", "{{DD}}")
-            .Replace("d", "%d")
-            .Replace("HH", "{{HH}}")
-            .Replace("hh", "{{hh}}")
-            .Replace("mm", "{{mm}}")
-            .Replace("ss", "{{SS}}")
-            .Replace("s", "%s")
-            .Replace("AM/PM", "tt", StringComparison.OrdinalIgnoreCase)
-            .Replace("{{YYYY}}", "yyyy")
-            .Replace("{{YY}}", "yy")
-            .Replace("{{MMMM}}", "MMMM")
-            .Replace("{{MMM}}", "MMM")
-            .Replace("{{DDDD}}", "dddd")
-            .Replace("{{DDD}}", "ddd")
-            .Replace("{{DD}}", "dd")
-            .Replace("{{HH}}", "HH")
-            .Replace("{{hh}}", "hh")
-            .Replace("{{mm}}", "mm")
-            .Replace("{{SS}}", "ss");
+        return dt.ToString(ConvertExcelDateFormat(fmt), CultureInfo.CurrentCulture);
+    }
 
-        return dt.ToString(netFormat, CultureInfo.CurrentCulture);
+    /// <summary>
+    /// Converts an Excel-style date/time format string into a .NET custom format, correctly
+    /// disambiguating the <c>m</c>/<c>mm</c> token between <b>month</b> and <b>minute</b>:
+    /// it is a minute when the nearest preceding time token is an hour (<c>h</c>) or the nearest
+    /// following token is a second (<c>s</c>); otherwise it is a month. Excel's lowercase <c>h</c>
+    /// renders as 24-hour unless an AM/PM token is present.
+    /// </summary>
+    private static string ConvertExcelDateFormat(string fmt)
+    {
+        var hasAmPm = fmt.Contains("AM/PM", StringComparison.OrdinalIgnoreCase)
+                      || fmt.Contains("A/P", StringComparison.OrdinalIgnoreCase);
+        var sb = new StringBuilder(fmt.Length + 4);
+        var i = 0;
+        while (i < fmt.Length)
+        {
+            if (IsAmPmAt(fmt, i, out var ampmLen))
+            {
+                sb.Append("tt");
+                i += ampmLen;
+                continue;
+            }
+
+            var c = fmt[i];
+            var lower = char.ToLowerInvariant(c);
+            if (lower is 'd' or 'm' or 'y' or 'h' or 's')
+            {
+                var j = i;
+                while (j < fmt.Length && fmt[j] == c)
+                    j++;
+                sb.Append(MapDateToken(lower, j - i, fmt, i, j, hasAmPm));
+                i = j;
+            }
+            else
+            {
+                sb.Append(c);
+                i++;
+            }
+        }
+        return sb.ToString();
+    }
+
+    private static string MapDateToken(char lower, int len, string fmt, int start, int end, bool hasAmPm)
+    {
+        switch (lower)
+        {
+            case 'y':
+                return len >= 4 ? "yyyy" : "yy";
+            case 'd':
+                return len switch { >= 4 => "dddd", 3 => "ddd", 2 => "dd", _ => "%d" };
+            case 'h':
+                var h = hasAmPm ? "h" : "H";
+                return len >= 2 ? h + h : "%" + h;
+            case 's':
+                return len >= 2 ? "ss" : "%s";
+            case 'm':
+                if (IsMinuteContext(fmt, start, end))
+                    return len >= 2 ? "mm" : "%m";
+                return len switch { >= 4 => "MMMM", 3 => "MMM", 2 => "MM", _ => "%M" };
+            default:
+                return fmt.Substring(start, len);
+        }
+    }
+
+    private static bool IsMinuteContext(string fmt, int start, int end)
+    {
+        for (var k = start - 1; k >= 0; k--)
+        {
+            var ch = char.ToLowerInvariant(fmt[k]);
+            if (ch == 'h') return true;
+            if (ch is 'd' or 'm' or 'y' or 's' || char.IsLetter(fmt[k])) break;
+        }
+        for (var k = end; k < fmt.Length; k++)
+        {
+            var ch = char.ToLowerInvariant(fmt[k]);
+            if (ch == 's') return true;
+            if (ch is 'd' or 'm' or 'y' or 'h' || char.IsLetter(fmt[k])) break;
+        }
+        return false;
+    }
+
+    private static bool IsAmPmAt(string fmt, int i, out int len)
+    {
+        len = 0;
+        if (i + 5 <= fmt.Length && string.Equals(fmt.Substring(i, 5), "AM/PM", StringComparison.OrdinalIgnoreCase))
+        {
+            len = 5;
+            return true;
+        }
+        if (i + 3 <= fmt.Length && string.Equals(fmt.Substring(i, 3), "A/P", StringComparison.OrdinalIgnoreCase))
+        {
+            len = 3;
+            return true;
+        }
+        return false;
     }
 
     private static bool TryGetDateTime(object? value, out DateTime dt)

@@ -1,0 +1,97 @@
+.tm-spreadsheet-custom-filter__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.32);
+}
+
+.tm-spreadsheet-custom-filter {
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    background: var(--tm-color-surface, #fff);
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.28);
+    padding: 16px;
+    font-size: 13px;
+    color: var(--tm-color-text, #0f172a);
+}
+
+.tm-spreadsheet-custom-filter__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.tm-spreadsheet-custom-filter__title {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.tm-spreadsheet-custom-filter__close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--tm-color-text-muted, #64748b);
+}
+
+.tm-spreadsheet-custom-filter__row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.tm-spreadsheet-custom-filter__op {
+    flex: 0 0 45%;
+    padding: 6px 8px;
+    border: 1px solid var(--tm-color-border, #cbd5e1);
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.tm-spreadsheet-custom-filter__value {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid var(--tm-color-border, #cbd5e1);
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.tm-spreadsheet-custom-filter__join {
+    display: flex;
+    gap: 24px;
+    margin: 8px 0;
+}
+
+.tm-spreadsheet-custom-filter__join label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.tm-spreadsheet-custom-filter__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tm-spreadsheet-custom-filter__btn {
+    padding: 7px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--tm-color-border, #cbd5e1);
+    background: var(--tm-color-surface, #fff);
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.tm-spreadsheet-custom-filter__btn--ok {
+    background: var(--tm-color-primary, #2563eb);
+    border-color: var(--tm-color-primary, #2563eb);
+    color: #fff;
+}

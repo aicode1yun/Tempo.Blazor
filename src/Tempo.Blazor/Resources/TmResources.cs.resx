@@ -1948,6 +1948,32 @@
   <data name="TmSpreadsheet_ClearFormatting" xml:space="preserve"><value>Vymazat formátování</value></data>
   <data name="TmSpreadsheet_ClearContent" xml:space="preserve"><value>Vymazat obsah</value></data>
   <data name="TmSpreadsheet_ClearAll" xml:space="preserve"><value>Vymazat vše</value></data>
+  <!-- Fáze 2: stavový řádek, zoom, najít/nahradit -->
+  <data name="TmSpreadsheet_Status_Sum" xml:space="preserve"><value>Součet</value></data>
+  <data name="TmSpreadsheet_Status_Average" xml:space="preserve"><value>Průměr</value></data>
+  <data name="TmSpreadsheet_Status_Count" xml:space="preserve"><value>Počet</value></data>
+  <data name="TmSpreadsheet_Status_CountNumbers" xml:space="preserve"><value>Počet čísel</value></data>
+  <data name="TmSpreadsheet_Status_Min" xml:space="preserve"><value>Min</value></data>
+  <data name="TmSpreadsheet_Status_Max" xml:space="preserve"><value>Max</value></data>
+  <data name="TmSpreadsheet_Status_Ready" xml:space="preserve"><value>Připraveno</value></data>
+  <data name="TmSpreadsheet_Zoom" xml:space="preserve"><value>Přiblížení</value></data>
+  <data name="TmSpreadsheet_ZoomIn" xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmSpreadsheet_ZoomOut" xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmSpreadsheet_ZoomReset" xml:space="preserve"><value>Obnovit přiblížení na 100 %</value></data>
+  <data name="TmSpreadsheet_Find_Title" xml:space="preserve"><value>Najít a nahradit</value></data>
+  <data name="TmSpreadsheet_Find_Query" xml:space="preserve"><value>Najít</value></data>
+  <data name="TmSpreadsheet_Find_ReplaceWith" xml:space="preserve"><value>Nahradit za</value></data>
+  <data name="TmSpreadsheet_Find_MatchCase" xml:space="preserve"><value>Rozlišovat velikost písmen</value></data>
+  <data name="TmSpreadsheet_Find_WholeCell" xml:space="preserve"><value>Shoda celé buňky</value></data>
+  <data name="TmSpreadsheet_Find_InFormulas" xml:space="preserve"><value>Hledat ve vzorcích</value></data>
+  <data name="TmSpreadsheet_Find_WorkbookScope" xml:space="preserve"><value>Hledat v celém sešitu</value></data>
+  <data name="TmSpreadsheet_Find_FindNext" xml:space="preserve"><value>Najít další</value></data>
+  <data name="TmSpreadsheet_Find_FindPrevious" xml:space="preserve"><value>Najít předchozí</value></data>
+  <data name="TmSpreadsheet_Find_Replace" xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmSpreadsheet_Find_ReplaceAll" xml:space="preserve"><value>Nahradit vše</value></data>
+  <data name="TmSpreadsheet_Find_NoMatches" xml:space="preserve"><value>Žádné výsledky</value></data>
+  <data name="TmSpreadsheet_Find_ReplacedCount" xml:space="preserve"><value>Provedeno {0} nahrazení</value></data>
+  <data name="TmSpreadsheet_Find_MatchCounter" xml:space="preserve"><value>{0} z {1}</value></data>
   <data name="TmTreeList_ExpandColumn" xml:space="preserve"><value> </value></data>
   <data name="TmTreeList_NoData" xml:space="preserve"><value>Žádná data</value></data>
   <data name="TmTreeList_Expand" xml:space="preserve"><value>Rozbalit</value></data>
@@ -3576,4 +3602,169 @@
   <data name="TmGantt_NotifyOnMentionPush" xml:space="preserve"><value>Push při zmínce</value></data>
   <data name="TmGantt_NotifyOnDeadlinePush" xml:space="preserve"><value>Push při termínu</value></data>
 
+  <data name="TmSpreadsheet_TabData" xml:space="preserve"><value>Data</value></data>
+  <data name="TmSpreadsheet_Data_Filter" xml:space="preserve"><value>Filtr</value></data>
+  <data name="TmSpreadsheet_Data_SortAsc" xml:space="preserve"><value>Seřadit vzestupně</value></data>
+  <data name="TmSpreadsheet_Data_SortDesc" xml:space="preserve"><value>Seřadit sestupně</value></data>
+  <data name="TmSpreadsheet_Data_CustomSort" xml:space="preserve"><value>Vlastní řazení…</value></data>
+  <data name="TmSpreadsheet_Data_ClearFilter" xml:space="preserve"><value>Vymazat filtr</value></data>
+  <data name="TmSpreadsheet_Filter_SortAsc" xml:space="preserve"><value>Seřadit A → Z</value></data>
+  <data name="TmSpreadsheet_Filter_SortDesc" xml:space="preserve"><value>Seřadit Z → A</value></data>
+  <data name="TmSpreadsheet_Filter_SearchPlaceholder" xml:space="preserve"><value>Hledat</value></data>
+  <data name="TmSpreadsheet_Filter_SelectAll" xml:space="preserve"><value>(Vybrat vše)</value></data>
+  <data name="TmSpreadsheet_Filter_Blanks" xml:space="preserve"><value>(Prázdné)</value></data>
+  <data name="TmSpreadsheet_Filter_TextFilters" xml:space="preserve"><value>Filtry textu</value></data>
+  <data name="TmSpreadsheet_Filter_NumberFilters" xml:space="preserve"><value>Filtry čísel</value></data>
+  <data name="TmSpreadsheet_Filter_DateFilters" xml:space="preserve"><value>Filtry data</value></data>
+  <data name="TmSpreadsheet_Filter_ClearFilter" xml:space="preserve"><value>Vymazat filtr</value></data>
+  <data name="TmSpreadsheet_Filter_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Filter_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmSpreadsheet_Filter_NoMatches" xml:space="preserve"><value>Žádné shody</value></data>
+  <data name="TmSpreadsheet_Filter_ButtonTitle" xml:space="preserve"><value>Filtr a řazení</value></data>
+  <data name="TmSpreadsheet_CustomFilter_Title" xml:space="preserve"><value>Vlastní filtr</value></data>
+  <data name="TmSpreadsheet_CustomFilter_And" xml:space="preserve"><value>A</value></data>
+  <data name="TmSpreadsheet_CustomFilter_Or" xml:space="preserve"><value>Nebo</value></data>
+  <data name="TmSpreadsheet_CustomFilter_Value" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="TmSpreadsheet_FilterOp_Contains" xml:space="preserve"><value>Obsahuje</value></data>
+  <data name="TmSpreadsheet_FilterOp_NotContains" xml:space="preserve"><value>Neobsahuje</value></data>
+  <data name="TmSpreadsheet_FilterOp_BeginsWith" xml:space="preserve"><value>Začíná na</value></data>
+  <data name="TmSpreadsheet_FilterOp_EndsWith" xml:space="preserve"><value>Končí na</value></data>
+  <data name="TmSpreadsheet_FilterOp_Equals" xml:space="preserve"><value>Rovná se</value></data>
+  <data name="TmSpreadsheet_FilterOp_NotEquals" xml:space="preserve"><value>Nerovná se</value></data>
+  <data name="TmSpreadsheet_FilterOp_GreaterThan" xml:space="preserve"><value>Větší než</value></data>
+  <data name="TmSpreadsheet_FilterOp_GreaterThanOrEqual" xml:space="preserve"><value>Větší nebo rovno</value></data>
+  <data name="TmSpreadsheet_FilterOp_LessThan" xml:space="preserve"><value>Menší než</value></data>
+  <data name="TmSpreadsheet_FilterOp_LessThanOrEqual" xml:space="preserve"><value>Menší nebo rovno</value></data>
+  <data name="TmSpreadsheet_FilterOp_Between" xml:space="preserve"><value>Mezi</value></data>
+  <data name="TmSpreadsheet_FilterOp_NotBetween" xml:space="preserve"><value>Není mezi</value></data>
+  <data name="TmSpreadsheet_FilterOp_Top10" xml:space="preserve"><value>Prvních 10</value></data>
+  <data name="TmSpreadsheet_FilterOp_AboveAverage" xml:space="preserve"><value>Nad průměrem</value></data>
+  <data name="TmSpreadsheet_FilterOp_BelowAverage" xml:space="preserve"><value>Pod průměrem</value></data>
+  <data name="TmSpreadsheet_FilterOp_Today" xml:space="preserve"><value>Dnes</value></data>
+  <data name="TmSpreadsheet_FilterOp_ThisMonth" xml:space="preserve"><value>Tento měsíc</value></data>
+  <data name="TmSpreadsheet_FilterOp_ThisYear" xml:space="preserve"><value>Tento rok</value></data>
+  <data name="TmSpreadsheet_Sort_Title" xml:space="preserve"><value>Seřadit</value></data>
+  <data name="TmSpreadsheet_Sort_AddLevel" xml:space="preserve"><value>Přidat úroveň</value></data>
+  <data name="TmSpreadsheet_Sort_DeleteLevel" xml:space="preserve"><value>Odebrat úroveň</value></data>
+  <data name="TmSpreadsheet_Sort_Column" xml:space="preserve"><value>Sloupec</value></data>
+  <data name="TmSpreadsheet_Sort_SortOn" xml:space="preserve"><value>Řadit podle</value></data>
+  <data name="TmSpreadsheet_Sort_Order" xml:space="preserve"><value>Pořadí</value></data>
+  <data name="TmSpreadsheet_Sort_OnValue" xml:space="preserve"><value>Hodnoty</value></data>
+  <data name="TmSpreadsheet_Sort_OnCellColor" xml:space="preserve"><value>Barva buňky</value></data>
+  <data name="TmSpreadsheet_Sort_OnFontColor" xml:space="preserve"><value>Barva písma</value></data>
+  <data name="TmSpreadsheet_Sort_AtoZ" xml:space="preserve"><value>A → Z</value></data>
+  <data name="TmSpreadsheet_Sort_ZtoA" xml:space="preserve"><value>Z → A</value></data>
+  <data name="TmSpreadsheet_Sort_SortBy" xml:space="preserve"><value>Seřadit podle</value></data>
+  <data name="TmSpreadsheet_Sort_ThenBy" xml:space="preserve"><value>Potom podle</value></data>
+  <data name="TmSpreadsheet_Sort_HasHeader" xml:space="preserve"><value>Moje data mají záhlaví</value></data>
+  <data name="TmSpreadsheet_Sort_CaseSensitive" xml:space="preserve"><value>Rozlišovat velikost</value></data>
+  <data name="TmSpreadsheet_Sort_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Sort_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+
+  <data name="TmSpreadsheet_Data_RemoveDuplicates" xml:space="preserve"><value>Odebrat duplicity</value></data>
+  <data name="TmSpreadsheet_Data_TextToColumns" xml:space="preserve"><value>Text do sloupců</value></data>
+  <data name="TmSpreadsheet_Data_PasteSpecial" xml:space="preserve"><value>Vložit jinak</value></data>
+  <data name="TmSpreadsheet_Data_DataValidation" xml:space="preserve"><value>Ověření dat...</value></data>
+  <data name="TmSpreadsheet_Data_CircleInvalidData" xml:space="preserve"><value>Zakroužkovat neplatná data</value></data>
+  <data name="TmSpreadsheet_Data_ClearValidationCircles" xml:space="preserve"><value>Vymazat kroužky ověření</value></data>
+
+  <data name="TmSpreadsheet_Validation_TabSettings" xml:space="preserve"><value>Nastavení</value></data>
+  <data name="TmSpreadsheet_Validation_TabInputMessage" xml:space="preserve"><value>Vstupní zpráva</value></data>
+  <data name="TmSpreadsheet_Validation_TabErrorAlert" xml:space="preserve"><value>Chybová výstraha</value></data>
+  <data name="TmSpreadsheet_Validation_AllowLabel" xml:space="preserve"><value>Povolit</value></data>
+  <data name="TmSpreadsheet_Validation_DataLabel" xml:space="preserve"><value>Data</value></data>
+  <data name="TmSpreadsheet_Validation_SourceLabel" xml:space="preserve"><value>Zdroj</value></data>
+  <data name="TmSpreadsheet_Validation_ValueLabel" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="TmSpreadsheet_Validation_MinimumLabel" xml:space="preserve"><value>Minimum</value></data>
+  <data name="TmSpreadsheet_Validation_MaximumLabel" xml:space="preserve"><value>Maximum</value></data>
+  <data name="TmSpreadsheet_Validation_AllowBlank" xml:space="preserve"><value>Ignorovat prázdné buňky</value></data>
+  <data name="TmSpreadsheet_Validation_ShowDropDown" xml:space="preserve"><value>Rozevírací seznam v buňce</value></data>
+  <data name="TmSpreadsheet_Validation_ShowInputMessage" xml:space="preserve"><value>Zobrazit vstupní zprávu při výběru buňky</value></data>
+  <data name="TmSpreadsheet_Validation_ShowErrorAlert" xml:space="preserve"><value>Zobrazit chybovou výstrahu po zadání neplatných dat</value></data>
+  <data name="TmSpreadsheet_Validation_TitleLabel" xml:space="preserve"><value>Nadpis</value></data>
+  <data name="TmSpreadsheet_Validation_MessageLabel" xml:space="preserve"><value>Vstupní zpráva</value></data>
+  <data name="TmSpreadsheet_Validation_StyleLabel" xml:space="preserve"><value>Styl</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Any" xml:space="preserve"><value>Libovolná hodnota</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Whole" xml:space="preserve"><value>Celé číslo</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Decimal" xml:space="preserve"><value>Desetinné číslo</value></data>
+  <data name="TmSpreadsheet_Validation_Type_List" xml:space="preserve"><value>Seznam</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Time" xml:space="preserve"><value>Čas</value></data>
+  <data name="TmSpreadsheet_Validation_Type_TextLength" xml:space="preserve"><value>Délka textu</value></data>
+  <data name="TmSpreadsheet_Validation_Type_Custom" xml:space="preserve"><value>Vlastní</value></data>
+  <data name="TmSpreadsheet_Validation_Op_Between" xml:space="preserve"><value>mezi</value></data>
+  <data name="TmSpreadsheet_Validation_Op_NotBetween" xml:space="preserve"><value>není mezi</value></data>
+  <data name="TmSpreadsheet_Validation_Op_Equal" xml:space="preserve"><value>rovno</value></data>
+  <data name="TmSpreadsheet_Validation_Op_NotEqual" xml:space="preserve"><value>různé od</value></data>
+  <data name="TmSpreadsheet_Validation_Op_GreaterThan" xml:space="preserve"><value>větší než</value></data>
+  <data name="TmSpreadsheet_Validation_Op_LessThan" xml:space="preserve"><value>menší než</value></data>
+  <data name="TmSpreadsheet_Validation_Op_GreaterOrEqual" xml:space="preserve"><value>větší nebo rovno</value></data>
+  <data name="TmSpreadsheet_Validation_Op_LessOrEqual" xml:space="preserve"><value>menší nebo rovno</value></data>
+  <data name="TmSpreadsheet_Validation_Style_Stop" xml:space="preserve"><value>Zastavit</value></data>
+  <data name="TmSpreadsheet_Validation_Style_Warning" xml:space="preserve"><value>Upozornění</value></data>
+  <data name="TmSpreadsheet_Validation_Style_Information" xml:space="preserve"><value>Informace</value></data>
+  <data name="TmSpreadsheet_Validation_DefaultErrorTitle" xml:space="preserve"><value>Neplatná hodnota</value></data>
+  <data name="TmSpreadsheet_Validation_DefaultErrorMessage" xml:space="preserve"><value>Zadaná hodnota není platná.</value></data>
+
+  <data name="TmSpreadsheet_Dedup_Title" xml:space="preserve"><value>Odebrat duplicity</value></data>
+  <data name="TmSpreadsheet_Dedup_Hint" xml:space="preserve"><value>Vyberte sloupce, podle kterých se hledají duplicitní hodnoty.</value></data>
+  <data name="TmSpreadsheet_Dedup_HasHeader" xml:space="preserve"><value>Moje data mají záhlaví</value></data>
+  <data name="TmSpreadsheet_Dedup_CaseSensitive" xml:space="preserve"><value>Rozlišovat velikost písmen</value></data>
+  <data name="TmSpreadsheet_Dedup_Columns" xml:space="preserve"><value>Sloupce</value></data>
+  <data name="TmSpreadsheet_Dedup_SelectAll" xml:space="preserve"><value>Vybrat vše</value></data>
+  <data name="TmSpreadsheet_Dedup_DeselectAll" xml:space="preserve"><value>Zrušit výběr</value></data>
+  <data name="TmSpreadsheet_Dedup_ColumnLabel" xml:space="preserve"><value>Sloupec {0}</value></data>
+  <data name="TmSpreadsheet_Dedup_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_Dedup_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmSpreadsheet_Dedup_ResultNone" xml:space="preserve"><value>Nebyly nalezeny žádné duplicity.</value></data>
+  <data name="TmSpreadsheet_Dedup_Result" xml:space="preserve"><value>Odstraněno {0} duplicit, ponecháno {1} unikátních hodnot.</value></data>
+
+  <data name="TmSpreadsheet_TextToColumns_Title" xml:space="preserve"><value>Text do sloupců</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step1Title" xml:space="preserve"><value>Zvolte, jak jsou vaše data rozdělena</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Delimited" xml:space="preserve"><value>Oddělené</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimitedHint" xml:space="preserve"><value>Pole oddělují znaky jako čárka nebo tabulátor.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FixedWidth" xml:space="preserve"><value>Pevná šířka</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FixedWidthHint" xml:space="preserve"><value>Pole jsou zarovnána do sloupců s mezerami mezi nimi.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step2DelimTitle" xml:space="preserve"><value>Oddělovače</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimTab" xml:space="preserve"><value>Tabulátor</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimSemicolon" xml:space="preserve"><value>Středník</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimComma" xml:space="preserve"><value>Čárka</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimSpace" xml:space="preserve"><value>Mezera</value></data>
+  <data name="TmSpreadsheet_TextToColumns_DelimOther" xml:space="preserve"><value>Jiný:</value></data>
+  <data name="TmSpreadsheet_TextToColumns_TextQualifier" xml:space="preserve"><value>Kvalifikátor textu</value></data>
+  <data name="TmSpreadsheet_TextToColumns_QualifierNone" xml:space="preserve"><value>(žádný)</value></data>
+  <data name="TmSpreadsheet_TextToColumns_TreatConsecutive" xml:space="preserve"><value>Po sobě jdoucí oddělovače brát jako jeden</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step2FixedTitle" xml:space="preserve"><value>Nastavte šířky polí</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FixedHint" xml:space="preserve"><value>Zadejte pozice znaků, kde se sloupce dělí.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_BreakPositions" xml:space="preserve"><value>Pozice zlomů</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Step3Title" xml:space="preserve"><value>Formát dat sloupců</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Column" xml:space="preserve"><value>Sloupec</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FormatGeneral" xml:space="preserve"><value>Obecný</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FormatText" xml:space="preserve"><value>Text</value></data>
+  <data name="TmSpreadsheet_TextToColumns_FormatSkip" xml:space="preserve"><value>Přeskočit sloupec</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Preview" xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmSpreadsheet_TextToColumns_OverwriteWarning" xml:space="preserve"><value>Stávající data vpravo budou přepsána.</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Back" xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Next" xml:space="preserve"><value>Další</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Finish" xml:space="preserve"><value>Dokončit</value></data>
+  <data name="TmSpreadsheet_TextToColumns_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+
+  <data name="TmSpreadsheet_PasteSpecial_Title" xml:space="preserve"><value>Vložit jinak</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Paste" xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_All" xml:space="preserve"><value>Vše</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Values" xml:space="preserve"><value>Hodnoty</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Formulas" xml:space="preserve"><value>Vzorce</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Formats" xml:space="preserve"><value>Formáty</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_ValuesAndFormats" xml:space="preserve"><value>Hodnoty a formáty</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_WithoutBorders" xml:space="preserve"><value>Vše kromě ohraničení</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Operation" xml:space="preserve"><value>Operace</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpNone" xml:space="preserve"><value>Žádná</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpAdd" xml:space="preserve"><value>Sčítání</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpSubtract" xml:space="preserve"><value>Odčítání</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpMultiply" xml:space="preserve"><value>Násobení</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_OpDivide" xml:space="preserve"><value>Dělení</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_SkipBlanks" xml:space="preserve"><value>Přeskočit prázdné</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Transpose" xml:space="preserve"><value>Transponovat</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="TmSpreadsheet_PasteSpecial_Cancel" xml:space="preserve"><value>Zrušit</value></data>
 </root>

@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 using System.Globalization;
 using Tempo.Blazor.Components.Spreadsheet.Commands;
+using Tempo.Blazor.Components.Spreadsheet.Data;
 using Tempo.Blazor.Components.Spreadsheet.Enums;
+using Tempo.Blazor.Components.Spreadsheet.Format;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.Components.Spreadsheet.Rendering;
 using Tempo.Blazor.Components.Spreadsheet.Xlsx;
@@ -83,9 +85,6 @@ public partial class TmSpreadsheet
     /// <summary>The default column width in pixels. Defaults to 64.</summary>
     [Parameter] public double ColumnWidth { get; set; } = 64;
 
-    /// <summary>Renderer used for the spreadsheet grid surface. Defaults to DOM for full compatibility.</summary>
-    [Parameter] public SpreadsheetRenderMode RenderMode { get; set; } = SpreadsheetRenderMode.Dom;
-
     /// <summary>
     /// Pre-populates the spreadsheet with an existing workbook on first render.
     /// Subsequent parameter changes are ignored — use <see cref="Workbook"/> to read the current state after editing.
@@ -104,8 +103,7 @@ public partial class TmSpreadsheet
     /// <summary>Gets the underlying workbook for programmatic access.</summary>
     public SpreadsheetWorkbook Workbook => _workbook;
 
-    private bool UseCanvasJsEngine => RenderMode == SpreadsheetRenderMode.CanvasJsEngine;
-    private TmSpreadsheetCanvasGrid? CanvasJsEngineGrid => UseCanvasJsEngine ? _grid as TmSpreadsheetCanvasGrid : null;
+    private TmSpreadsheetCanvasGrid? CanvasJsEngineGrid => _grid as TmSpreadsheetCanvasGrid;
 
     // ── Toolbar state ──
     private bool CanUndo => _commandManager?.CanUndo ?? false;
@@ -191,6 +189,11 @@ public partial class TmSpreadsheet
         CanvasJsEngineGrid?.RequestFullRender();
     }
 
+    private void InvalidateCanvasGeometry()
+    {
+        CanvasJsEngineGrid?.InvalidateGeometry();
+    }
+
     private Task SyncCanvasJsEngineCellsAsync(IEnumerable<string> cellRefs)
     {
         var grid = CanvasJsEngineGrid;
@@ -234,8 +237,9 @@ public partial class TmSpreadsheet
         var cellRef = _workbook.ActiveSheet?.ActiveCellRef;
         if (cellRef is null) return null;
         var cell = _workbook.ActiveSheet?.Cells.GetValueOrDefault(cellRef);
-        if (cell?.Formula is not null) return cell.Formula;
-        return cell?.Value?.ToString();
+        if (cell is null) return null;
+        var text = SpreadsheetCellEditText.GetEditText(cell, CultureInfo.CurrentCulture);
+        return string.IsNullOrEmpty(text) ? null : text;
     }
 
     protected override void OnParametersSet()
@@ -382,6 +386,22 @@ public partial class TmSpreadsheet
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Parses raw cell input through <see cref="SpreadsheetValueParser"/> and builds a typed
+    /// <see cref="SetCellValueCommand"/> (carrying value + data type + implied number format, or a
+    /// formula). Returns the command plus the resolved new value/formula for change notifications.
+    /// </summary>
+    private static (SetCellValueCommand Command, object? NewValue, string? NewFormula) BuildCommit(
+        SpreadsheetSheet sheet, string cellRef, string rawValue)
+    {
+        var parsed = SpreadsheetValueParser.Parse(rawValue, CultureInfo.CurrentCulture);
+        if (parsed.Formula is not null)
+            return (new SetCellValueCommand(sheet, cellRef, null, parsed.Formula), null, parsed.Formula);
+
+        return (new SetCellValueCommand(sheet, cellRef, parsed.Value, null,
+            dataType: parsed.Type, impliedNumberFormat: parsed.ImpliedNumberFormat), parsed.Value, null);
+    }
+
     private async Task OnGridCellValueCommitted((string CellRef, string? Value) args)
     {
         if (_commandManager is null || args.Value is null) return;
@@ -397,19 +417,35 @@ public partial class TmSpreadsheet
 
         if (targetSheet is null) return;
         var previous = targetSheet.Cells.GetValueOrDefault(targetCellRef);
-        var cmd = new SetCellValueCommand(
-            targetSheet,
-            targetCellRef,
-            args.Value.StartsWith('=') ? null : args.Value,
-            args.Value.StartsWith('=') ? args.Value : null);
+        var (cmd, newValue, newFormula) = BuildCommit(targetSheet, targetCellRef, args.Value);
+
+        // Validate before commit — formulas bypass validation (parsed at eval time)
+        if (newFormula is null)
+        {
+            var sheet = targetSheet;
+            var cellRef = targetCellRef;
+            var proceed = CheckValidationBeforeCommit(sheet, cellRef, newValue, async () =>
+            {
+                _commandManager!.Execute(cmd);
+                _ = OnChange.InvokeAsync(new SpreadsheetChangeEventArgs(
+                    sheet, cellRef, previous?.Value, newValue, previous?.Formula, newFormula));
+                InvalidateRenderedCells(new[] { cellRef });
+                if (ReferenceEquals(sheet, _workbook.ActiveSheet))
+                    await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
+                if (!_isFormulaBarEditing) _formulaBarEditValue = null;
+                StateHasChanged();
+            });
+            if (!proceed) return;
+        }
+
         _commandManager.Execute(cmd);
         _ = OnChange.InvokeAsync(new SpreadsheetChangeEventArgs(
             targetSheet,
             targetCellRef,
             previous?.Value,
-            args.Value.StartsWith('=') ? null : args.Value,
+            newValue,
             previous?.Formula,
-            args.Value.StartsWith('=') ? args.Value : null));
+            newFormula));
         InvalidateRenderedCells(new[] { targetCellRef });
         if (ReferenceEquals(targetSheet, _workbook.ActiveSheet))
             await SyncCanvasJsEngineCellsAsync(new[] { targetCellRef });
@@ -427,6 +463,7 @@ public partial class TmSpreadsheet
 
         var targetSheet = _workbook.ActiveSheet;
         var refs = new List<string>(commits.Count);
+        var rejectedRefs = new List<string>();
         var previousByRef = new Dictionary<string, SpreadsheetCell?>(StringComparer.OrdinalIgnoreCase);
         var batch = new BatchCommand();
 
@@ -435,17 +472,51 @@ public partial class TmSpreadsheet
             var row = Math.Clamp(commit.Row, 0, targetSheet.RowCount - 1);
             var col = Math.Clamp(commit.Col, 0, targetSheet.ColumnCount - 1);
             var cellRef = SpreadsheetSelectionState.ToCellRef(row, col);
-            refs.Add(cellRef);
             if (!previousByRef.ContainsKey(cellRef))
                 previousByRef[cellRef] = targetSheet.Cells.GetValueOrDefault(cellRef)?.Clone();
 
             var value = commit.Value ?? string.Empty;
-            batch.Add(new SetCellValueCommand(
-                targetSheet,
-                cellRef,
-                value.StartsWith('=') ? null : value,
-                value.StartsWith('=') ? value : null));
+            var (cmd, newValue, newFormula) = BuildCommit(targetSheet, cellRef, value);
+
+            // Validate before commit — formulas bypass validation (checked at eval time)
+            if (newFormula is null)
+            {
+                var localSheet = targetSheet;
+                var localRef = cellRef;
+                var localCmd = cmd;
+                var localNewValue = newValue;
+                var localPrev = previousByRef.GetValueOrDefault(cellRef);
+                var proceed = CheckValidationBeforeCommit(localSheet, localRef, localNewValue, async () =>
+                {
+                    _commandManager!.Execute(localCmd);
+                    _ = OnChange.InvokeAsync(new SpreadsheetChangeEventArgs(
+                        localSheet, localRef, localPrev?.Value, localNewValue, localPrev?.Formula, null));
+                    InvalidateRenderedCells(new[] { localRef });
+                    if (ReferenceEquals(localSheet, _workbook.ActiveSheet))
+                        await SyncCanvasJsEngineCellsAsync(new[] { localRef });
+                    StateHasChanged();
+                });
+                if (!proceed)
+                {
+                    rejectedRefs.Add(cellRef);
+                    continue;
+                }
+            }
+
+            refs.Add(cellRef);
+            batch.Add(cmd);
         }
+
+        // Sync rejected cells back so the canvas JS reverts to the actual C# value
+        if (rejectedRefs.Count > 0)
+        {
+            InvalidateRenderedCells(rejectedRefs);
+            if (ReferenceEquals(targetSheet, _workbook.ActiveSheet))
+                await SyncCanvasJsEngineCellsAsync(rejectedRefs);
+        }
+
+        if (refs.Count == 0)
+            return;
 
         _commandManager.Execute(batch);
         InvalidateRenderedCells(refs);
@@ -565,11 +636,7 @@ public partial class TmSpreadsheet
             : _workbook.ActiveSheet?.ActiveCellRef;
         if (targetSheet is null || cellRef is null) return;
 
-        var cmd = new SetCellValueCommand(
-            targetSheet,
-            cellRef,
-            value.StartsWith('=') ? null : value,
-            value.StartsWith('=') ? value : null);
+        var cmd = BuildCommit(targetSheet, cellRef, value).Command;
         _commandManager.Execute(cmd);
         InvalidateRenderedCells(new[] { cellRef });
         if (ReferenceEquals(targetSheet, _workbook.ActiveSheet))
@@ -1291,10 +1358,10 @@ public partial class TmSpreadsheet
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         var previous = _workbook.ActiveSheet.Cells.GetValueOrDefault(cellRef);
-        var cmd = new SetCellValueCommand(_workbook.ActiveSheet, cellRef, value?.ToString(), null);
+        var (cmd, newValue, newFormula) = BuildCommit(_workbook.ActiveSheet, cellRef, value?.ToString() ?? string.Empty);
         _commandManager.Execute(cmd);
         _ = OnChange.InvokeAsync(new SpreadsheetChangeEventArgs(
-            _workbook.ActiveSheet, cellRef, previous?.Value, value, previous?.Formula, null));
+            _workbook.ActiveSheet, cellRef, previous?.Value, newValue, previous?.Formula, newFormula));
         _ = SyncCanvasJsEngineCellsAsync(new[] { cellRef });
         _ = InvokeAsync(StateHasChanged);
     }

@@ -2,6 +2,7 @@ using System.Globalization;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using Tempo.Blazor.Components.Spreadsheet.Data;
 using Tempo.Blazor.Components.Spreadsheet.Enums;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 
@@ -119,6 +120,48 @@ public static class XlsxImporter
                 }
             }
 
+            // Auto-filter definition
+            var autoFilter = worksheet.Elements<AutoFilter>().FirstOrDefault();
+            if (autoFilter?.Reference?.Value is { } filterRef)
+            {
+                try
+                {
+                    ss.AutoFilter = new SpreadsheetAutoFilter(SpreadsheetRange.Parse(filterRef));
+                }
+                catch { /* ignore invalid filter refs */ }
+            }
+
+            // Data validation rules
+            var dataValidations = worksheet.Elements<DataValidations>().FirstOrDefault();
+            if (dataValidations is not null)
+            {
+                foreach (var dv in dataValidations.Elements<DataValidation>())
+                {
+                    try
+                    {
+                        var sqRef = dv.SequenceOfReferences?.InnerText ?? dv.GetAttribute("sqref", "").Value;
+                        if (string.IsNullOrEmpty(sqRef)) continue;
+                        var range = SpreadsheetRange.Parse(sqRef.Split(' ')[0]);
+                        var rule = new SpreadsheetDataValidation
+                        {
+                            Range = range,
+                            Type = ParseValidationType(dv.Type?.Value),
+                            Operator = ParseValidationOperator(dv.Operator?.Value),
+                            Formula1 = dv.Formula1?.Text,
+                            Formula2 = dv.Formula2?.Text,
+                            AllowBlank = dv.AllowBlank?.Value ?? false,
+                            ShowDropDown = !(dv.ShowDropDown?.Value ?? false)
+                        };
+                        if (dv.PromptTitle?.Value is { Length: > 0 } ptitle || dv.Prompt?.Value is { Length: > 0 } pmsg)
+                            rule = rule with { InputMessage = new SpreadsheetInputMessage { Title = dv.PromptTitle?.Value, Message = dv.Prompt?.Value } };
+                        if (dv.Error?.Value is { Length: > 0 } || dv.ErrorTitle?.Value is { Length: > 0 })
+                            rule = rule with { ErrorAlert = new SpreadsheetValidationErrorAlert { Style = ParseErrorStyle(dv.ErrorStyle?.Value), Title = dv.ErrorTitle?.Value, Message = dv.Error?.Value } };
+                        ss.DataValidations.Add(rule);
+                    }
+                    catch { /* ignore malformed rules */ }
+                }
+            }
+
             workbook.Sheets.Add(ss);
         }
 
@@ -144,6 +187,38 @@ public static class XlsxImporter
         if (dataType == CellValues.Date && double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var od))
             return DateTime.FromOADate(od);
         return raw;
+    }
+
+    private static SpreadsheetValidationType ParseValidationType(DataValidationValues? v)
+    {
+        if (v == DataValidationValues.Whole) return SpreadsheetValidationType.Whole;
+        if (v == DataValidationValues.Decimal) return SpreadsheetValidationType.Decimal;
+        if (v == DataValidationValues.List) return SpreadsheetValidationType.List;
+        if (v == DataValidationValues.Date) return SpreadsheetValidationType.Date;
+        if (v == DataValidationValues.Time) return SpreadsheetValidationType.Time;
+        if (v == DataValidationValues.TextLength) return SpreadsheetValidationType.TextLength;
+        if (v == DataValidationValues.Custom) return SpreadsheetValidationType.Custom;
+        return SpreadsheetValidationType.Any;
+    }
+
+    private static SpreadsheetValidationOperator ParseValidationOperator(DataValidationOperatorValues? v)
+    {
+        if (v == DataValidationOperatorValues.Between) return SpreadsheetValidationOperator.Between;
+        if (v == DataValidationOperatorValues.NotBetween) return SpreadsheetValidationOperator.NotBetween;
+        if (v == DataValidationOperatorValues.Equal) return SpreadsheetValidationOperator.Equal;
+        if (v == DataValidationOperatorValues.NotEqual) return SpreadsheetValidationOperator.NotEqual;
+        if (v == DataValidationOperatorValues.GreaterThan) return SpreadsheetValidationOperator.GreaterThan;
+        if (v == DataValidationOperatorValues.LessThan) return SpreadsheetValidationOperator.LessThan;
+        if (v == DataValidationOperatorValues.GreaterThanOrEqual) return SpreadsheetValidationOperator.GreaterOrEqual;
+        if (v == DataValidationOperatorValues.LessThanOrEqual) return SpreadsheetValidationOperator.LessOrEqual;
+        return SpreadsheetValidationOperator.Between;
+    }
+
+    private static SpreadsheetValidationErrorStyle ParseErrorStyle(DataValidationErrorStyleValues? v)
+    {
+        if (v == DataValidationErrorStyleValues.Warning) return SpreadsheetValidationErrorStyle.Warning;
+        if (v == DataValidationErrorStyleValues.Information) return SpreadsheetValidationErrorStyle.Information;
+        return SpreadsheetValidationErrorStyle.Stop;
     }
 
     private static SpreadsheetDataType InferDataType(CellValues? dataType)

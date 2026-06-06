@@ -305,11 +305,12 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     {
         var cut = RenderComponent<TmSpreadsheetToolbar>();
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
-        tabs.Count.Should().Be(4);
+        tabs.Count.Should().Be(5);
         tabs[0].TextContent.Should().Contain("Home");
         tabs[1].TextContent.Should().Contain("Insert");
-        tabs[2].TextContent.Should().Contain("View");
-        tabs[3].TextContent.Should().Contain("File");
+        tabs[2].TextContent.Should().Contain("Data");
+        tabs[3].TextContent.Should().Contain("View");
+        tabs[4].TextContent.Should().Contain("File");
     }
 
     [Fact]
@@ -367,7 +368,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
             .Add(p => p.OnMergeCells, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
-        tabs[2].Click(); // View tab
+        tabs[3].Click(); // View tab
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
             .First(b => b.GetAttribute("title") == "Merge cells");
@@ -384,7 +385,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
             .Add(p => p.OnToggleGridLines, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
-        tabs[2].Click(); // View tab
+        tabs[3].Click(); // View tab
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
             .First(b => b.GetAttribute("title") == "Grid lines");
@@ -401,7 +402,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
             .Add(p => p.OnOpen, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
-        tabs[3].Click(); // File tab
+        tabs[4].Click(); // File tab
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
             .First(b => b.GetAttribute("title") == "Open file");
@@ -418,7 +419,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
             .Add(p => p.OnDownload, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
-        tabs[3].Click(); // File tab
+        tabs[4].Click(); // File tab
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
             .First(b => b.GetAttribute("title") == "Download");

@@ -843,16 +843,21 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         for (const frame of frames || []) {
             const index = read(frame, indexName, -1);
             const size = Number(read(frame, sizeName, 0)) || 0;
-            if (index < 0 || size <= 0) continue;
+            if (index < 0) continue;
+            // A size of 0 means a hidden row/column: record it (so the layout collapses it) but keep
+            // it out of the default-size average. Negative sizes are ignored.
+            if (size < 0) continue;
             if (sizeMap.get(index) !== size) {
                 sizeMap.set(index, size);
                 changed = true;
             }
-            sizeTotal += size;
-            sizeCount += 1;
-            if (axis === "column") {
-                const label = read(frame, labelName, "");
-                if (label && labelMap.get(index) !== label) labelMap.set(index, label);
+            if (size > 0) {
+                sizeTotal += size;
+                sizeCount += 1;
+                if (axis === "column") {
+                    const label = read(frame, labelName, "");
+                    if (label && labelMap.get(index) !== label) labelMap.set(index, label);
+                }
             }
         }
 
@@ -971,7 +976,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function buildAxisOffsets(count, defaultSize, sizeMap) {
         const offsets = new Float64Array(Math.max(0, count) + 1);
         for (let i = 0; i < count; i++) {
-            offsets[i + 1] = offsets[i] + (sizeMap.get(i) || defaultSize);
+            // A stored size of 0 is a hidden row/column and must collapse — do not fall back to the
+            // default via `||`, which would treat the meaningful 0 as "unset".
+            const sz = sizeMap.get(i);
+            offsets[i + 1] = offsets[i] + (sz === undefined ? defaultSize : sz);
         }
         return offsets;
     }
@@ -2581,8 +2589,13 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 if (cell) {
                     if (metrics) metrics.cellStoreHitCount += 1;
                     const next = { ...cell };
-                    const width = read(cell, "Width", read(columnFrame, "Width", 0));
-                    const height = read(cell, "Height", read(rowFrame, "Height", 0));
+                    // A collapsed (hidden) row/column frame is authoritative: force the cell to 0 so a
+                    // stale cell-store entry left behind by a now-hidden row does not keep rendering at
+                    // its old size. For visible frames keep the cell's own size (preserves merged cells).
+                    const frameWidth = read(columnFrame, "Width", 0);
+                    const frameHeight = read(rowFrame, "Height", 0);
+                    const width = frameWidth === 0 ? 0 : read(cell, "Width", frameWidth);
+                    const height = frameHeight === 0 ? 0 : read(cell, "Height", frameHeight);
                     write(next, "Row", row);
                     write(next, "Col", col);
                     write(next, "Left", read(columnFrame, "Left", 0));
@@ -3154,7 +3167,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const shortcutKey = key.length === 1 ? key.toLowerCase() : key;
         const isShortcut = ev.ctrlKey || ev.metaKey;
         const isShortcutCommand = isShortcut && (
-            ["c", "v", "x", "z", "y", "b", "i", "u", "a", "1", "5"].includes(shortcutKey) ||
+            ["c", "v", "x", "z", "y", "b", "i", "u", "a", "1", "5", "f", "h", "0"].includes(shortcutKey) ||
             key === "Home" ||
             key === "End"
         );
@@ -3163,7 +3176,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (!isShortcutCommand && !isEditCommand && !isTextCommand) return false;
 
         if (isJsEngine(root) && isShortcut && ["c", "x", "v"].includes(shortcutKey)) {
-            return false;
+            // Ctrl+Shift+V (Paste Special) must reach .NET; plain copy/cut/paste use the native
+            // clipboard events (onCopy/onCut/onPaste) instead.
+            if (!(shortcutKey === "v" && ev.shiftKey)) {
+                return false;
+            }
         }
 
         ev.preventDefault();
@@ -4716,7 +4733,15 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             notifyViewport(root, false);
         };
         const onWheel = ev => {
-            if (ev.ctrlKey || !s.model) return;
+            if (!s.model) return;
+
+            // Ctrl + wheel zooms the grid; the zoom factor itself lives in .NET state.
+            if (ev.ctrlKey || ev.metaKey) {
+                ev.preventDefault();
+                const direction = ev.deltaY < 0 ? 1 : -1;
+                invokeDotNet(root, "OnCanvasZoomDelta", [direction], true);
+                return;
+            }
 
             const delta = normalizeWheelDelta(ev, root);
             if (!delta.dx && !delta.dy) return;
@@ -4962,6 +4987,30 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             if (resizeHit) {
                 onPointerDown(ev);
                 return;
+            }
+
+            if (s.model && !isFormulaPointMode(root) && !isFormatPainterActive(root)) {
+                const filterBtn = hitFilterButton(root, ev);
+                if (filterBtn) {
+                    // Do not bump the local revision here: the filter dropdown applies through a
+                    // C# command whose frame would otherwise be treated as stale and dropped.
+                    invokeDotNet(root, "CanvasFilterButtonClicked", [filterBtn.col, ev.clientX, ev.clientY], false);
+                    s.suppressClick = true;
+                    setPossibleDrag(root, null);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    return;
+                }
+
+                const validationDropBtn = hitValidationDropButton(root, ev);
+                if (validationDropBtn) {
+                    invokeDotNet(root, "CanvasValidationDropButtonClicked", [validationDropBtn.row, validationDropBtn.col, ev.clientX, ev.clientY], false);
+                    s.suppressClick = true;
+                    setPossibleDrag(root, null);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    return;
+                }
             }
 
             if (s.model && !isFormulaPointMode(root) && !isFormatPainterActive(root) && hitAutoFillHandle(root, ev)) {
@@ -5482,6 +5531,13 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 window.tmSpreadsheetCanvas.render(root, s.canvas, model);
                 return null;
             }
+            case "setValidationCircles": {
+                const s = getState(root);
+                if (!s) return null;
+                s.validationCircleRefs = read(payload, "Refs", []) ?? [];
+                requestCanvasRedraw(root, "set-validation-circles", "full");
+                return null;
+            }
             default:
                 return null;
         }
@@ -5574,6 +5630,29 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             height: root.clientHeight || 0
         });
         requestCanvasRedraw(root, "clear-formula-reference-highlights", "selection");
+    };
+
+    window.tmSpreadsheetCanvas.setSearchHighlights = function (root, payload) {
+        const s = getState(root);
+        if (!s) return;
+        const cells = (payload && payload.cells) || [];
+        const set = new Set();
+        for (const ref of cells) {
+            const parsed = parseCellRef(ref);
+            if (parsed) set.add(`${parsed.row}|${parsed.col}`);
+        }
+        const active = payload && payload.active ? parseCellRef(payload.active) : null;
+        s.searchHighlights = { set, active: active ? `${active.row}|${active.col}` : null };
+        addDirtyRect(root, "selection", { x: 0, y: 0, width: root.clientWidth || 0, height: root.clientHeight || 0 });
+        requestCanvasRedraw(root, "set-search-highlights", "selection");
+    };
+
+    window.tmSpreadsheetCanvas.clearSearchHighlights = function (root) {
+        const s = getState(root);
+        if (!s) return;
+        s.searchHighlights = null;
+        addDirtyRect(root, "selection", { x: 0, y: 0, width: root.clientWidth || 0, height: root.clientHeight || 0 });
+        requestCanvasRedraw(root, "clear-search-highlights", "selection");
     };
 
     window.tmSpreadsheetCanvas.openEditorAtActive = function (root) {
@@ -6577,12 +6656,217 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             drawBorders(ctx, root, style, x, y, w, h, palette);
         }
 
+        drawFilterButtons(ctx, root, model, palette, cells);
+        drawValidationDropButtons(ctx, root, model, palette, cells);
+        drawValidationCircles(ctx, root, model, palette);
+
         const drawMs = performance.now() - drawStarted;
         if (debugMetrics) {
             debugMetrics.lastDrawCellsMs += drawMs;
             debugMetrics.drawCellsTotalMs += drawMs;
         }
         return metrics;
+    }
+
+    function filterButtonRect(x, y, w, h) {
+        const size = Math.min(16, Math.max(11, h - 4), Math.max(0, w - 2));
+        return { x: x + w - size - 1, y: y + (h - size) / 2, w: size, h: size };
+    }
+
+    function drawFilterButtons(ctx, root, model, palette, cells) {
+        const s = getState(root);
+        if (!s) return;
+        s.filterButtons = [];
+
+        const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
+        const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const width = root.clientWidth;
+        const height = root.clientHeight;
+        const scrollLeft = read(model, "ScrollLeft", 0);
+        const scrollTop = read(model, "ScrollTop", 0);
+        const freezeRows = read(model, "FreezeRowCount", 0);
+        const freezeCols = read(model, "FreezeColumnCount", 0);
+
+        for (const cell of cells) {
+            const filter = read(cell, "Filter", null);
+            if (!filter) continue;
+
+            const row = read(cell, "Row", 0);
+            const col = read(cell, "Col", 0);
+            const frozenCol = col < freezeCols;
+            const frozenRow = row < freezeRows;
+            const x = rowHeaderWidth + read(cell, "Left", 0) - (frozenCol ? 0 : scrollLeft);
+            const y = columnHeaderHeight + read(cell, "Top", 0) - (frozenRow ? 0 : scrollTop);
+            const w = read(cell, "Width", 0);
+            const h = read(cell, "Height", 0);
+            if (w <= 0 || h <= 0) continue;
+            if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > width || y > height) continue;
+
+            const btn = filterButtonRect(x, y, w, h);
+            if (btn.w <= 0 || btn.x < rowHeaderWidth || btn.y < columnHeaderHeight) continue;
+
+            const active = !!read(filter, "Active", false);
+            ctx.save();
+            ctx.fillStyle = active ? palette.primary : palette.elevated;
+            ctx.strokeStyle = active ? palette.primary : palette.border;
+            ctx.lineWidth = 1;
+            ctx.fillRect(btn.x + 0.5, btn.y + 0.5, btn.w - 1, btn.h - 1);
+            ctx.strokeRect(btn.x + 0.5, btn.y + 0.5, btn.w - 1, btn.h - 1);
+
+            // funnel glyph (triangle pointing down)
+            ctx.fillStyle = active ? "#ffffff" : palette.muted;
+            const cx = btn.x + btn.w / 2;
+            const cy = btn.y + btn.h / 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 3, cy - 2.5);
+            ctx.lineTo(cx + 3, cy - 2.5);
+            ctx.lineTo(cx + 1, cy + 0.5);
+            ctx.lineTo(cx + 1, cy + 2.5);
+            ctx.lineTo(cx - 1, cy + 2.5);
+            ctx.lineTo(cx - 1, cy + 0.5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            s.filterButtons.push({ col, x: btn.x, y: btn.y, w: btn.w, h: btn.h, active });
+        }
+    }
+
+    function hitFilterButton(root, ev) {
+        const s = getState(root);
+        const buttons = s?.filterButtons;
+        if (!buttons || buttons.length === 0) return null;
+        const rect = root.getBoundingClientRect();
+        const lx = ev.clientX - rect.left;
+        const ly = ev.clientY - rect.top;
+        for (const b of buttons) {
+            if (lx >= b.x && lx <= b.x + b.w && ly >= b.y && ly <= b.y + b.h) return b;
+        }
+        return null;
+    }
+
+    function validationDropButtonRect(x, y, w, h) {
+        const size = Math.min(16, Math.max(11, h - 4), Math.max(0, w - 2));
+        return { x: x + w - size - 1, y: y + (h - size) / 2, w: size, h: size };
+    }
+
+    function drawValidationDropButtons(ctx, root, model, palette, cells) {
+        const s = getState(root);
+        if (!s) return;
+        s.validationDropButtons = [];
+        if (!cells || cells.length === 0) return;
+
+        const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
+        const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const width = root.clientWidth;
+        const height = root.clientHeight;
+        const scrollLeft = read(model, "ScrollLeft", 0);
+        const scrollTop = read(model, "ScrollTop", 0);
+        const freezeRows = read(model, "FreezeRowCount", 0);
+        const freezeCols = read(model, "FreezeColumnCount", 0);
+
+        for (const cell of cells) {
+            const validation = read(cell, "Validation", null);
+            if (!validation) continue;
+            if (read(validation, "Type", "") !== "List") continue;
+            if (!read(validation, "ShowDropDown", true)) continue;
+
+            const row = read(cell, "Row", 0);
+            const col = read(cell, "Col", 0);
+            const frozenCol = col < freezeCols;
+            const frozenRow = row < freezeRows;
+            const x = rowHeaderWidth + read(cell, "Left", 0) - (frozenCol ? 0 : scrollLeft);
+            const y = columnHeaderHeight + read(cell, "Top", 0) - (frozenRow ? 0 : scrollTop);
+            const w = read(cell, "Width", 0);
+            const h = read(cell, "Height", 0);
+            if (w <= 8 || h <= 4) continue;
+            if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > width || y > height) continue;
+
+            const btn = validationDropButtonRect(x, y, w, h);
+            if (btn.w <= 0 || btn.x < rowHeaderWidth || btn.y < columnHeaderHeight) continue;
+            s.validationDropButtons.push({ row, col, x: btn.x, y: btn.y, w: btn.w, h: btn.h });
+
+            ctx.save();
+            ctx.fillStyle = palette.elevated ?? "#f5f5f5";
+            ctx.strokeStyle = palette.border ?? "#bbb";
+            ctx.lineWidth = 1;
+            ctx.fillRect(btn.x + 0.5, btn.y + 0.5, btn.w - 1, btn.h - 1);
+            ctx.strokeRect(btn.x + 0.5, btn.y + 0.5, btn.w - 1, btn.h - 1);
+
+            // Down-arrow glyph
+            ctx.fillStyle = palette.muted ?? "#666";
+            const cx = btn.x + btn.w / 2;
+            const cy = btn.y + btn.h / 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 3, cy - 1.5);
+            ctx.lineTo(cx + 3, cy - 1.5);
+            ctx.lineTo(cx, cy + 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function hitValidationDropButton(root, ev) {
+        const s = getState(root);
+        const buttons = s?.validationDropButtons;
+        if (!buttons || buttons.length === 0) return null;
+        const rect = root.getBoundingClientRect();
+        const lx = ev.clientX - rect.left;
+        const ly = ev.clientY - rect.top;
+        for (const b of buttons) {
+            if (lx >= b.x && lx <= b.x + b.w && ly >= b.y && ly <= b.y + b.h) return b;
+        }
+        return null;
+    }
+
+    function drawValidationCircles(ctx, root, model, palette) {
+        const s = getState(root);
+        if (!s) return;
+        const refs = s.validationCircleRefs;
+        if (!refs || refs.length === 0) return;
+
+        const layout = getLayoutState(root);
+        if (!layout) return;
+
+        const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
+        const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const scrollLeft = read(model, "ScrollLeft", 0);
+        const scrollTop = read(model, "ScrollTop", 0);
+        const freezeRows = read(model, "FreezeRowCount", 0);
+        const freezeCols = read(model, "FreezeColumnCount", 0);
+        const canvasWidth = root.clientWidth;
+        const canvasHeight = root.clientHeight;
+
+        ctx.save();
+        ctx.strokeStyle = "#e53935";
+        ctx.lineWidth = 2;
+
+        for (const ref of refs) {
+            const parsed = parseCellRef(ref);
+            if (!parsed) continue;
+            const { row, col } = parsed;
+            const frozen = row < freezeRows;
+            const frozenCol = col < freezeCols;
+            const rowFrame = createRowFrame(layout, row, scrollTop, frozen);
+            const colFrame = createColumnFrame(layout, col, scrollLeft, frozenCol);
+            const x = colFrame.x;
+            const y = rowFrame.y;
+            const w = colFrame.width;
+            const h = rowFrame.height;
+            if (w <= 0 || h <= 0) continue;
+            if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > canvasWidth || y > canvasHeight) continue;
+
+            const cx = x + w / 2;
+            const cy = y + h / 2;
+            const rx = w / 2 + 2;
+            const ry = h / 2 + 2;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        ctx.restore();
     }
 
     function drawSelection(ctx, root, model, palette, width, height) {
@@ -6734,6 +7018,34 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 setContextFillStyle(ctx, palette.surface, metrics);
                 ctx.fillText(label, 4 + labelWidth / 2, labelY);
             }
+        }
+
+        const searchHighlights = getState(root)?.searchHighlights;
+        if (searchHighlights && searchHighlights.set && searchHighlights.set.size > 0) {
+            for (const rowFrame of rows) {
+                const row = read(rowFrame, "Index", -1);
+                for (const colFrame of columns) {
+                    const col = read(colFrame, "Index", -1);
+                    const key = `${row}|${col}`;
+                    if (!searchHighlights.set.has(key)) continue;
+                    const frozenCol = col < freezeCols;
+                    const frozenRow = row < freezeRows;
+                    const x = read(colFrame, "x", rowHeaderWidth + read(colFrame, "Left", 0) - (frozenCol ? 0 : scrollLeft));
+                    const y = read(rowFrame, "y", columnHeaderHeight + read(rowFrame, "Top", 0) - (frozenRow ? 0 : scrollTop));
+                    const w = read(colFrame, "Width", 0);
+                    const h = read(rowFrame, "Height", 0);
+                    if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > width || y > height || w <= 0 || h <= 0) continue;
+                    const isActive = searchHighlights.active === key;
+                    setContextFillStyle(ctx, isActive ? "rgba(245, 158, 11, 0.45)" : "rgba(250, 204, 21, 0.30)", metrics);
+                    ctx.fillRect(x, y, w, h);
+                    if (isActive) {
+                        setContextStrokeStyle(ctx, "rgb(217, 119, 6)", metrics);
+                        setContextLineWidth(ctx, 2, metrics);
+                        ctx.strokeRect(Math.floor(x) + 1, Math.floor(y) + 1, Math.max(0, w - 2), Math.max(0, h - 2));
+                    }
+                }
+            }
+            resetContextState(ctx);
         }
 
         const formulaReferenceCells = getFormulaReferenceCells(root, model);
@@ -6912,7 +7224,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
 
         const font = getCanvasFont(root, style);
-        const fontSize = Number(read(style, "FontSize", 10)) || 10;
+        const fontSize = (Number(read(style, "FontSize", 10)) || 10) * getRenderZoom(root);
         setContextFont(ctx, font, debugMetrics);
         setContextFillStyle(ctx, paint.foreColor || palette.text, debugMetrics);
         setContextTextBaseline(ctx, paint.verticalBaseline, debugMetrics);
@@ -6989,12 +7301,20 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return value;
     }
 
+    function getRenderZoom(root) {
+        const s = getState(root);
+        const zoom = Number(read(s?.model, "Zoom", 1)) || 1;
+        return zoom > 0 ? zoom : 1;
+    }
+
     function getCanvasFont(root, style) {
+        const zoom = getRenderZoom(root);
         const key = [
             read(style, "FontFamily", null) || "",
             read(style, "FontSize", 10),
             read(style, "Bold", false) ? 1 : 0,
-            read(style, "Italic", false) ? 1 : 0
+            read(style, "Italic", false) ? 1 : 0,
+            zoom
         ].join("|");
         const s = getState(root);
         const cache = s?.fontStringCache;
@@ -7003,7 +7323,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             if (cached) return cached;
         }
 
-        const fontSize = Number(read(style, "FontSize", 10)) || 10;
+        const fontSize = (Number(read(style, "FontSize", 10)) || 10) * zoom;
         const fontFamily = read(style, "FontFamily", null) || defaultCellFontFamily;
         const weight = read(style, "Bold", false) ? "700" : "400";
         const italic = read(style, "Italic", false) ? "italic " : "";

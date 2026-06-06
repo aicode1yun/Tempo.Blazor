@@ -105,6 +105,39 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Whether grid lines are currently visible.</summary>
     [Parameter] public bool ShowGridLines { get; set; } = true;
 
+    /// <summary>Whether the auto-filter is currently enabled on the active sheet.</summary>
+    [Parameter] public bool IsFilterActive { get; set; }
+
+    /// <summary>Called when the Filter toggle button is clicked.</summary>
+    [Parameter] public EventCallback OnToggleFilter { get; set; }
+
+    /// <summary>Called when the Sort Ascending button is clicked.</summary>
+    [Parameter] public EventCallback OnSortAscending { get; set; }
+
+    /// <summary>Called when the Sort Descending button is clicked.</summary>
+    [Parameter] public EventCallback OnSortDescending { get; set; }
+
+    /// <summary>Called when the Custom Sort button is clicked.</summary>
+    [Parameter] public EventCallback OnCustomSort { get; set; }
+
+    /// <summary>Called when the Remove Duplicates button is clicked.</summary>
+    [Parameter] public EventCallback OnRemoveDuplicates { get; set; }
+
+    /// <summary>Called when the Text to Columns button is clicked.</summary>
+    [Parameter] public EventCallback OnTextToColumns { get; set; }
+
+    /// <summary>Called when the Paste Special button is clicked.</summary>
+    [Parameter] public EventCallback OnPasteSpecial { get; set; }
+
+    /// <summary>Called when the Data Validation dialog button is clicked.</summary>
+    [Parameter] public EventCallback OnDataValidation { get; set; }
+
+    /// <summary>Called when the Circle Invalid Data button is clicked.</summary>
+    [Parameter] public EventCallback OnCircleInvalidData { get; set; }
+
+    /// <summary>Called when the Clear Validation Circles button is clicked.</summary>
+    [Parameter] public EventCallback OnClearValidationCircles { get; set; }
+
     /// <summary>Custom tools to inject into the toolbar.</summary>
     [Parameter] public List<SpreadsheetCustomTool>? CustomTools { get; set; }
 

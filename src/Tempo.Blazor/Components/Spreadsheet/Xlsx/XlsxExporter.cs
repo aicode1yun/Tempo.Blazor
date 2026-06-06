@@ -2,6 +2,7 @@ using System.Globalization;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using Tempo.Blazor.Components.Spreadsheet.Data;
 using Tempo.Blazor.Components.Spreadsheet.Enums;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 
@@ -221,6 +222,12 @@ public static class XlsxExporter
 
             worksheet.Append(sheetData);
 
+            // Auto-filter definition (must precede mergeCells per the CT_Worksheet schema).
+            if (sheet.AutoFilter is not null)
+            {
+                worksheet.Append(new AutoFilter { Reference = sheet.AutoFilter.Range.ToString() });
+            }
+
             // Merged cells
             if (sheet.MergedCells.Count > 0)
             {
@@ -230,6 +237,40 @@ public static class XlsxExporter
                     mergeCells.Append(new MergeCell { Reference = range.ToString() });
                 }
                 worksheet.Append(mergeCells);
+            }
+
+            // Data validation rules
+            if (sheet.DataValidations.Count > 0)
+            {
+                var dvs = new DataValidations();
+                foreach (var rule in sheet.DataValidations)
+                {
+                    var dv = new DataValidation
+                    {
+                        SequenceOfReferences = new ListValue<StringValue> { InnerText = rule.Range.ToString() },
+                        Type = ExportValidationType(rule.Type),
+                        Operator = ExportValidationOperator(rule.Operator),
+                        AllowBlank = rule.AllowBlank ? true : null,
+                        ShowDropDown = rule.ShowDropDown ? null : (bool?)true
+                    };
+                    if (rule.Formula1 is not null) dv.Append(new Formula1 { Text = rule.Formula1 });
+                    if (rule.Formula2 is not null) dv.Append(new Formula2 { Text = rule.Formula2 });
+                    if (rule.InputMessage is not null)
+                    {
+                        dv.ShowInputMessage = true;
+                        if (rule.InputMessage.Title is not null) dv.PromptTitle = rule.InputMessage.Title;
+                        if (rule.InputMessage.Message is not null) dv.Prompt = rule.InputMessage.Message;
+                    }
+                    if (rule.ErrorAlert is not null)
+                    {
+                        dv.ShowErrorMessage = true;
+                        dv.ErrorStyle = ExportErrorStyle(rule.ErrorAlert.Style);
+                        if (rule.ErrorAlert.Title is not null) dv.ErrorTitle = rule.ErrorAlert.Title;
+                        if (rule.ErrorAlert.Message is not null) dv.Error = rule.ErrorAlert.Message;
+                    }
+                    dvs.Append(dv);
+                }
+                worksheet.Append(dvs);
             }
 
             worksheetPart.Worksheet = worksheet;
@@ -370,4 +411,35 @@ public static class XlsxExporter
         "m/d/yy h:mm" => 22,
         _ => null
     };
+
+    private static DataValidationValues ExportValidationType(SpreadsheetValidationType t)
+    {
+        if (t == SpreadsheetValidationType.Whole) return DataValidationValues.Whole;
+        if (t == SpreadsheetValidationType.Decimal) return DataValidationValues.Decimal;
+        if (t == SpreadsheetValidationType.List) return DataValidationValues.List;
+        if (t == SpreadsheetValidationType.Date) return DataValidationValues.Date;
+        if (t == SpreadsheetValidationType.Time) return DataValidationValues.Time;
+        if (t == SpreadsheetValidationType.TextLength) return DataValidationValues.TextLength;
+        if (t == SpreadsheetValidationType.Custom) return DataValidationValues.Custom;
+        return DataValidationValues.None;
+    }
+
+    private static DataValidationOperatorValues ExportValidationOperator(SpreadsheetValidationOperator op)
+    {
+        if (op == SpreadsheetValidationOperator.NotBetween) return DataValidationOperatorValues.NotBetween;
+        if (op == SpreadsheetValidationOperator.Equal) return DataValidationOperatorValues.Equal;
+        if (op == SpreadsheetValidationOperator.NotEqual) return DataValidationOperatorValues.NotEqual;
+        if (op == SpreadsheetValidationOperator.GreaterThan) return DataValidationOperatorValues.GreaterThan;
+        if (op == SpreadsheetValidationOperator.LessThan) return DataValidationOperatorValues.LessThan;
+        if (op == SpreadsheetValidationOperator.GreaterOrEqual) return DataValidationOperatorValues.GreaterThanOrEqual;
+        if (op == SpreadsheetValidationOperator.LessOrEqual) return DataValidationOperatorValues.LessThanOrEqual;
+        return DataValidationOperatorValues.Between;
+    }
+
+    private static DataValidationErrorStyleValues ExportErrorStyle(SpreadsheetValidationErrorStyle s)
+    {
+        if (s == SpreadsheetValidationErrorStyle.Warning) return DataValidationErrorStyleValues.Warning;
+        if (s == SpreadsheetValidationErrorStyle.Information) return DataValidationErrorStyleValues.Information;
+        return DataValidationErrorStyleValues.Stop;
+    }
 }

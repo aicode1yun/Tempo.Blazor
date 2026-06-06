@@ -5,7 +5,7 @@ using System.Globalization;
 namespace Tempo.Blazor.E2E;
 
 [TestClass]
-public class SpreadsheetE2ETests : WasmTestBase
+public partial class SpreadsheetE2ETests : WasmTestBase
 {
     [TestMethod]
     public async Task ArrowNavigation_ScrollsGridVertically()

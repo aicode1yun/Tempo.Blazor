@@ -7,37 +7,26 @@ using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Components.Spreadsheet;
 
+[Collection("SpreadsheetClipboard")]
 public class TmSpreadsheetTests : LocalizationTestBase
 {
     [Fact]
-    public void Render_DefaultParameters_RendersGrid()
+    public void Render_Always_RendersCanvasGrid()
     {
         var cut = RenderComponent<TmSpreadsheet>();
 
         cut.Find(".tm-spreadsheet").Should().NotBeNull();
-        cut.FindComponent<TmSpreadsheetGrid>().Should().NotBeNull();
+        cut.Find(".tm-spreadsheet-canvas-grid").Should().NotBeNull();
+        cut.Find("canvas.tm-spreadsheet-canvas-grid__canvas").Should().NotBeNull();
     }
 
     [Fact]
-    public void Render_CanvasMode_RendersCanvasGrid()
+    public void Render_DoesNotRenderDomGrid()
     {
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
-            .Add(p => p.RenderMode, SpreadsheetRenderMode.Canvas));
+        var cut = RenderComponent<TmSpreadsheet>();
 
-        cut.Find(".tm-spreadsheet-canvas-grid").Should().NotBeNull();
-        cut.Find("canvas.tm-spreadsheet-canvas-grid__canvas").Should().NotBeNull();
-        cut.FindComponents<TmSpreadsheetGrid>().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Render_CanvasJsEngineMode_RendersCanvasGrid()
-    {
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
-            .Add(p => p.RenderMode, SpreadsheetRenderMode.CanvasJsEngine));
-
-        cut.Find(".tm-spreadsheet-canvas-grid").Should().NotBeNull();
-        cut.Find("canvas.tm-spreadsheet-canvas-grid__canvas").Should().NotBeNull();
-        cut.FindComponents<TmSpreadsheetGrid>().Should().BeEmpty();
+        // The DOM grid renderer has been removed; only the canvas engine remains.
+        cut.FindAll(".tm-spreadsheet-grid").Should().BeEmpty();
     }
 
     [Fact]
@@ -318,7 +307,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
         sheet.ShowGridLines.Should().BeTrue();
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
-        tabs[2].Click();
+        tabs[3].Click();
 
         var gridBtn = cut.FindAll(".tm-spreadsheet-toolbar__button")
             .First(b => b.GetAttribute("title") == "Grid lines");
@@ -326,31 +315,6 @@ public class TmSpreadsheetTests : LocalizationTestBase
 
         sheet.ShowGridLines.Should().BeFalse();
         cut.Find(".tm-spreadsheet-grid--no-gridlines").Should().NotBeNull();
-    }
-
-    [Fact]
-    public void MergeCells_MergesSelection()
-    {
-        var cut = RenderComponent<TmSpreadsheet>();
-        var sheet = cut.Instance.Workbook.ActiveSheet!;
-        sheet.Cells["A1"] = new SpreadsheetCell { Value = "x" };
-        sheet.Cells["B1"] = new SpreadsheetCell { Value = "y" };
-        sheet.ActiveCellRef = "A1";
-        cut.Render();
-
-        // Select range A1:B1
-        var grid = cut.Find(".tm-spreadsheet-grid");
-        grid.KeyDown("ArrowRight");
-        grid.KeyDown(new KeyboardEventArgs { Key = "ArrowRight", ShiftKey = true });
-
-        var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
-        tabs[2].Click();
-
-        var mergeBtn = cut.FindAll(".tm-spreadsheet-toolbar__button")
-            .First(b => b.GetAttribute("title") == "Merge cells");
-        mergeBtn.Click();
-
-        sheet.MergedCells.Should().ContainSingle();
     }
 
     [Fact]
@@ -379,51 +343,4 @@ public class TmSpreadsheetTests : LocalizationTestBase
         display.TextContent.Trim().Should().Be("=SUM(B1:B5)");
     }
 
-    [Fact]
-    public void FormulaEdit_ClickAnotherCell_InsertsCellReference()
-    {
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
-            .Add(p => p.RowsCount, 2)
-            .Add(p => p.ColumnsCount, 3));
-        var sheet = cut.Instance.Workbook.ActiveSheet!;
-        sheet.ActiveCellRef = "A1";
-
-        // Start editing A1 with a formula
-        cut.FindAll(".tm-spreadsheet-cell")[0].DoubleClick();
-        var input = cut.Find(".tm-spreadsheet-cell-input");
-        input.Input("=SUM(");
-
-        // MouseDown C1 while editing formula (insertion happens on mousedown in formula point mode)
-        cut.InvokeAsync(() => cut.FindAll(".tm-spreadsheet-cell")[2].MouseDown());
-
-        // Should still be editing with the cell reference appended
-        var grid = cut.FindComponent<TmSpreadsheetGrid>();
-        grid.Instance.IsEditing.Should().BeTrue();
-        input = cut.Find(".tm-spreadsheet-cell-input");
-        input.GetAttribute("value").Should().Be("=SUM(C1");
-    }
-
-    [Fact]
-    public void FormulaCommit_EvaluatesFormulaAndDisplaysResult()
-    {
-        // Formula evaluation is already covered by:
-        // - SpreadsheetCommandTests.SetCellValueCommand_SetsFormula_EvaluatesValue
-        // - TmSpreadsheetGridTests.Render_FormulaCell_DisplaysEvaluatedValue
-        // This integration test verifies the full end-to-end through TmSpreadsheet.
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
-            .Add(p => p.RowsCount, 2)
-            .Add(p => p.ColumnsCount, 3));
-        var sheet = cut.Instance.Workbook.ActiveSheet!;
-        sheet.SetCellValue(0, 0, 10); // A1 = 10
-        sheet.SetCellValue(0, 1, 20); // B1 = 20
-
-        // Commit formula directly via the sheet (simulates what happens after Enter)
-        sheet.SetCellFormula(0, 2, "=A1+B1"); // C1 = 30
-        cut.Render();
-
-        // Grid should display the evaluated value in C1
-        var grid = cut.FindComponent<TmSpreadsheetGrid>();
-        var cells = grid.FindAll(".tm-spreadsheet-cell");
-        cells[2].TextContent.Should().Contain("30");
-    }
 }

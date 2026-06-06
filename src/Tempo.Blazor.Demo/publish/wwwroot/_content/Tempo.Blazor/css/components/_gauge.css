@@ -1,0 +1,87 @@
+/* ── TmGauge ─────────────────────────────────────────────────────────── */
+
+.tm-gauge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+
+.tm-gauge svg {
+    display: block;
+    overflow: visible;
+}
+
+.tm-gauge__track {
+    transition: stroke 0.2s ease;
+}
+
+.tm-gauge__fill {
+    transition: stroke-dashoffset 0.6s ease, width 0.6s ease;
+}
+
+.tm-gauge__range {
+    transition: opacity 0.2s ease;
+}
+
+.tm-gauge__pointer {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+}
+
+.tm-gauge__value {
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+    fill: var(--tm-color-neutral-900, #111827);
+}
+
+.tm-gauge__axis-label {
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+    fill: var(--tm-color-neutral-500, #6b7280);
+}
+
+/* ── Animation ───────────────────────────────────────────────────────── */
+
+.tm-gauge--animated .tm-gauge__fill {
+    animation: tm-gauge-fill-in 0.8s ease both;
+}
+
+.tm-gauge--animated .tm-gauge__pointer {
+    animation: tm-gauge-fade-in 0.6s ease both;
+    animation-delay: 0.4s;
+}
+
+.tm-gauge--animated .tm-gauge__value {
+    animation: tm-gauge-fade-in 0.5s ease both;
+    animation-delay: 0.3s;
+}
+
+@keyframes tm-gauge-fill-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes tm-gauge-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────── */
+
+[data-theme="dark"] .tm-gauge__value,
+.tm-dark .tm-gauge__value {
+    fill: var(--tm-color-neutral-100, #f3f4f6);
+}
+
+[data-theme="dark"] .tm-gauge__axis-label,
+.tm-dark .tm-gauge__axis-label {
+    fill: var(--tm-color-neutral-400, #9ca3af);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-gauge--animated .tm-gauge__fill,
+    .tm-gauge--animated .tm-gauge__pointer,
+    .tm-gauge--animated .tm-gauge__value {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}

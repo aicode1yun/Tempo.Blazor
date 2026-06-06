@@ -332,6 +332,82 @@
         </div>
     }
 
+    <!-- Data Tab -->
+    @if (ActiveTab == "Data")
+    {
+        <div class="tm-spreadsheet-toolbar__tab-content">
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsFilterActive)"
+                        title="@Loc["TmSpreadsheet_Data_Filter"]"
+                        @onclick="OnToggleFilter">
+                    <TmIcon Name="filter" />
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Data_SortAsc"]"
+                        @onclick="OnSortAscending">
+                    <TmIcon Name="arrow-up" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Data_SortDesc"]"
+                        @onclick="OnSortDescending">
+                    <TmIcon Name="arrow-down" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Data_CustomSort"]"
+                        @onclick="OnCustomSort">
+                    @Loc["TmSpreadsheet_Data_CustomSort"]
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Data_RemoveDuplicates"]"
+                        @onclick="OnRemoveDuplicates">
+                    @Loc["TmSpreadsheet_Data_RemoveDuplicates"]
+                </button>
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Data_TextToColumns"]"
+                        @onclick="OnTextToColumns">
+                    @Loc["TmSpreadsheet_Data_TextToColumns"]
+                </button>
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Data_PasteSpecial"]"
+                        @onclick="OnPasteSpecial">
+                    @Loc["TmSpreadsheet_Data_PasteSpecial"]
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Data_DataValidation"]"
+                        @onclick="OnDataValidation">
+                    @Loc["TmSpreadsheet_Data_DataValidation"]
+                </button>
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Data_CircleInvalidData"]"
+                        @onclick="OnCircleInvalidData">
+                    @Loc["TmSpreadsheet_Data_CircleInvalidData"]
+                </button>
+                <button class="tm-spreadsheet-toolbar__button tm-spreadsheet-toolbar__button--text"
+                        title="@Loc["TmSpreadsheet_Data_ClearValidationCircles"]"
+                        @onclick="OnClearValidationCircles">
+                    @Loc["TmSpreadsheet_Data_ClearValidationCircles"]
+                </button>
+            </div>
+
+            @RenderCustomTools("Data")
+        </div>
+    }
+
     <!-- View Tab -->
     @if (ActiveTab == "View")
     {
@@ -376,7 +452,7 @@
 </div>
 
 @code {
-    private readonly string[] _tabs = ["Home", "Insert", "View", "File"];
+    private readonly string[] _tabs = ["Home", "Insert", "Data", "View", "File"];
 
     private RenderFragment RenderCustomTools(string tab)
     {

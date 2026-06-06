@@ -1,3 +1,4 @@
+using Tempo.Blazor.Components.Spreadsheet.Data;
 using Tempo.Blazor.Components.Spreadsheet.Enums;
 
 namespace Tempo.Blazor.Components.Spreadsheet.Models;
@@ -31,6 +32,9 @@ public sealed class SpreadsheetCell
     /// <summary>A hyperlink URL associated with this cell.</summary>
     public string? Hyperlink { get; set; }
 
+    /// <summary>The data validation rule that applies to this cell (shared reference from the sheet).</summary>
+    public SpreadsheetDataValidation? Validation { get; set; }
+
     /// <summary>Creates a deep copy of this cell including style.</summary>
     public SpreadsheetCell Clone() => new()
     {
@@ -41,6 +45,7 @@ public sealed class SpreadsheetCell
         DataType = DataType,
         IsReadOnly = IsReadOnly,
         ImageUrl = ImageUrl,
-        Hyperlink = Hyperlink
+        Hyperlink = Hyperlink,
+        Validation = Validation  // shallow copy — shared validation object
     };
 }

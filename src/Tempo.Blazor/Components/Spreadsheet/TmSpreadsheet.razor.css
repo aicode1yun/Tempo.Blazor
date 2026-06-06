@@ -1,8 +1,40 @@
 .tm-spreadsheet {
+    position: relative;
     display: flex;
     flex-direction: column;
     background: var(--tm-color-surface);
     border: 1px solid var(--tm-color-border);
     border-radius: var(--tm-radius-md);
     overflow: hidden;
+}
+
+.tm-spreadsheet__datatool-toast {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px 8px 16px;
+    background: var(--tm-color-text, #0f172a);
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.32);
+    font-size: 13px;
+    max-width: calc(100% - 32px);
+}
+
+.tm-spreadsheet__datatool-toast-close {
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+.tm-spreadsheet__datatool-toast-close:hover {
+    color: #fff;
 }

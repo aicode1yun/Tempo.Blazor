@@ -1,0 +1,2604 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   TmDiagramEditor — Canvas, Toolbar, Toolbox, Properties Panel
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Root editor shell ────────────────────────────────────────────────────── */
+.tm-diagram-editor {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-lg, 8px);
+    overflow: hidden;
+}
+
+/* ── Page tabs ────────────────────────────────────────────────────────────── */
+.tm-diagram-editor__page-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 2px 8px 0;
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+
+.tm-diagram-editor__page-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text-muted, #6b7280);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: var(--tm-radius-md, 6px) var(--tm-radius-md, 6px) 0 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 120ms, color 120ms;
+    min-width: 80px;
+    max-width: 180px;
+}
+
+.tm-diagram-editor__page-tab:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    color: var(--tm-color-text, #111827);
+}
+
+.tm-diagram-editor__page-tab--drag-over {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+    border-color: var(--tm-color-primary, #3b82f6);
+    box-shadow: inset 0 0 0 1px var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-editor__page-tab--active {
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-text, #111827);
+    border-color: var(--tm-color-border, #e5e7eb);
+    margin-bottom: -1px;
+    padding-bottom: 7px;
+}
+
+.tm-diagram-editor__page-tab-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-diagram-editor__page-tab-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--tm-color-primary, #3b82f6);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tm-diagram-editor__page-tab-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--tm-color-text-muted, #6b7280);
+    background: transparent;
+    border: none;
+    border-radius: var(--tm-radius-sm, 4px);
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 120ms, background 120ms;
+}
+
+.tm-diagram-editor__page-tab:hover .tm-diagram-editor__page-tab-close,
+.tm-diagram-editor__page-tab--active .tm-diagram-editor__page-tab-close {
+    opacity: 1;
+}
+
+.tm-diagram-editor__page-tab-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--tm-color-danger, #ef4444);
+}
+
+.tm-diagram-editor__page-tab-input {
+    width: 100%;
+    min-width: 60px;
+    padding: 2px 4px;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-primary, #3b82f6);
+    border-radius: var(--tm-radius-sm, 4px);
+    outline: none;
+}
+
+.tm-diagram-editor__page-tab-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--tm-color-text-muted, #6b7280);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    transition: background 120ms, color 120ms;
+    margin-bottom: 2px;
+}
+
+.tm-diagram-editor__page-tab-add:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    color: var(--tm-color-text, #111827);
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+.tm-diagram-editor__toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2, 8px);
+    padding: var(--tm-space-2, 8px) var(--tm-space-3, 12px);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.tm-diagram-editor__toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 8px);
+    min-height: 28px;
+}
+
+.tm-diagram-editor__title {
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 500;
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    padding: 4px 10px;
+    min-width: 120px;
+    max-width: 200px;
+    transition: border-color 120ms, box-shadow 120ms;
+}
+
+.tm-diagram-editor__title:hover,
+.tm-diagram-editor__title:focus {
+    border-color: var(--tm-color-primary, #3b82f6);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--tm-color-primary-subtle, #dbeafe);
+}
+
+.tm-diagram-insert-dropdown-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+/* ── Toolbar Button Groups ───────────────────────────────────────────────── */
+.tm-diagram-editor__toolbar-group {
+    display: inline-flex;
+    align-items: center;
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.tm-diagram-editor__toolbar-group .tm-toolbar-btn {
+    border-radius: 0;
+    border-right: 1px solid var(--tm-color-border, #e5e7eb);
+    background: transparent;
+    color: var(--tm-color-text-muted, #6b7280);
+    transition: background 120ms, color 120ms;
+}
+
+.tm-diagram-editor__toolbar-group .tm-toolbar-btn:last-child {
+    border-right: none;
+}
+
+.tm-diagram-editor__toolbar-group .tm-toolbar-btn:hover:not(:disabled) {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    color: var(--tm-color-text, #111827);
+}
+
+.tm-diagram-editor__toolbar-group .tm-toolbar-btn--active {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+    color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-editor__toolbar-group .tm-toolbar-btn--active:hover:not(:disabled) {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+    color: var(--tm-color-primary, #2563eb);
+}
+
+/* Toolbar dropdown inside group */
+.tm-diagram-editor__toolbar-group .tm-dropdown-wrapper {
+    border-right: 1px solid var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-editor__toolbar-group .tm-dropdown-wrapper:last-child {
+    border-right: none;
+}
+
+.tm-diagram-editor__toolbar-group .tm-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--tm-space-1) var(--tm-space-2);
+    font-size: var(--tm-font-size-sm, 13px);
+    line-height: 1;
+    color: var(--tm-color-text-muted, #6b7280);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 120ms, color 120ms;
+    white-space: nowrap;
+}
+
+.tm-diagram-editor__toolbar-group .tm-dropdown-trigger:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    color: var(--tm-color-text, #111827);
+}
+
+.tm-diagram-editor__toolbar-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--tm-color-border, #e5e7eb);
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+.tm-diagram-editor__toolbar-spacer {
+    flex: 1;
+}
+
+.tm-diagram-editor__zoom-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 600;
+    color: var(--tm-color-text-muted, #6b7280);
+    min-width: 44px;
+    user-select: none;
+}
+
+.tm-diagram-editor__unit-select {
+    height: 28px;
+    padding: 0 var(--tm-space-2, 8px);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius, 6px);
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-text, #111827);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ── Body (toolbox + canvas + props) ─────────────────────────────────────── */
+.tm-diagram-editor__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ── Toolbox ──────────────────────────────────────────────────────────────── */
+.tm-diagram-editor__toolbox-wrap {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--tm-color-border, #e5e7eb);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    overflow-y: auto;
+}
+
+.tm-diagram-editor__toolbox {
+    padding: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-editor__toolbox-category {
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--tm-color-text-muted, #6b7280);
+    margin: var(--tm-space-3, 12px) 0 var(--tm-space-2, 8px);
+}
+
+.tm-diagram-editor__toolbox-item {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 8px);
+    padding: var(--tm-space-2, 8px);
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: grab;
+    user-select: none;
+    transition: background 120ms;
+}
+
+.tm-diagram-editor__toolbox-item:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-editor__toolbox-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tm-color-text-muted, #6b7280);
+}
+
+.tm-diagram-editor__toolbox-label {
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+}
+
+/* ── Canvas wrap ──────────────────────────────────────────────────────────── */
+.tm-diagram-editor__canvas-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    background: var(--tm-color-surface, #ffffff);
+    overflow: hidden;
+}
+
+.tm-diagram-editor__canvas {
+    position: absolute;
+    inset: 0;
+}
+
+/* ── Rulers ──────────────────────────────────────────────────────────────── */
+.tm-diagram-editor__ruler-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border-right: 1px solid var(--tm-color-border, #e5e7eb);
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+    z-index: 5;
+}
+
+.tm-diagram-editor__ruler-h {
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 0;
+    height: 24px;
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+    z-index: 5;
+}
+
+.tm-diagram-editor__ruler-v {
+    position: absolute;
+    top: 24px;
+    left: 0;
+    bottom: 0;
+    width: 24px;
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border-right: 1px solid var(--tm-color-border, #e5e7eb);
+    z-index: 5;
+}
+
+.tm-diagram-ruler {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.tm-diagram-ruler__tick {
+    stroke: var(--tm-color-text-muted, #6b7280);
+    stroke-width: 1;
+}
+
+.tm-diagram-ruler__tick--major {
+    stroke: var(--tm-color-text, #111827);
+    stroke-width: 1.5;
+}
+
+.tm-diagram-ruler__tick--half {
+    stroke: var(--tm-color-text-muted, #6b7280);
+    stroke-width: 1.2;
+}
+
+.tm-diagram-ruler__tick--sub {
+    stroke: var(--tm-color-text-muted, #6b7280);
+    stroke-width: 0.75;
+    opacity: 0.7;
+}
+
+.tm-diagram-ruler__text {
+    font-size: 9px;
+    fill: var(--tm-color-text-muted, #6b7280);
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+    user-select: none;
+}
+
+.tm-diagram-ruler--vertical .tm-diagram-ruler__text {
+    writing-mode: tb;
+    text-orientation: mixed;
+}
+
+.tm-diagram-ruler__crosshair {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1;
+    pointer-events: none;
+}
+
+/* ── SVG layer ────────────────────────────────────────────────────────────── */
+.tm-diagram-canvas__svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* ── SVG pane pointer-events rules (4-pane model) ────────────────────────── */
+/* Panes live inside the unified <svg> (see TmDiagramCanvas.razor).
+   * bg-pane: background / grid / model-level group bounds (no interaction)
+   * scene-pane: edges + nodes foreignObject (interactive content)
+   * overlay-pane: selection outlines, drop-target highlights (visual only)
+   * decorator-pane: resize/rotate/connect handles, waypoints (interactive) */
+.tm-diagram-bg-pane { pointer-events: none; }
+.tm-diagram-scene-pane { pointer-events: auto; }
+.tm-diagram-overlay-pane { pointer-events: none; }
+.tm-diagram-decorator-pane { pointer-events: auto; }
+
+/* F6 — model-level group bounds. Rendered from Razor directly out of
+ * Document.Nodes grouped by GroupId as an SVG <rect> in .tm-diagram-bg-pane.
+ * No JS imperative path, no HTML div variant (the pre-F6 code lived in
+ * .tm-diagram-canvas__overlay as a CSS-positioned div; that path is gone).
+ * Purely decorative — pointer-events: none so drag/click fall through to the
+ * nodes underneath. */
+.tm-diagram-group-bounds {
+    fill: none;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* ── HTML overlay (nodes foreignObject content) ──────────────────────────── */
+/* After F2, .tm-diagram-canvas__overlay + .tm-diagram-transform-layer live
+   Post-F3 each node is its own SVG <g class="tm-diagram-node"> with a
+   shape-sized <foreignObject class="tm-diagram-node__fo"> wrapping a single
+   <div class="tm-diagram-node__body"> that hosts the rich HTML content
+   (stencil sections, ports, connection points, handles). Because every
+   foreignObject is sized to the node itself, empty canvas areas are no
+   longer covered by HTML, so edge hit-paths and decorator handles under
+   empty space are hit-tested natively by the SVG — no more global
+   pointer-events plumbing is required. */
+.tm-diagram-node__fo {
+    overflow: visible;
+    /* Chromium's SVG hit-testing returns <foreignObject> as the hit target
+       even when later SVG siblings (circle.tm-diagram-port) are painted on
+       top of it. Explicitly disabling pointer-events on the foreignObject
+       lets the port circles receive mousedown correctly; HTML children
+       (labels, table cells, inputs) opt back in via .tm-diagram-node__body
+       below. */
+    pointer-events: none;
+}
+
+.tm-diagram-node__body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    user-select: none;
+    pointer-events: auto;
+}
+
+/* ── F3.E — native SVG shape primitive ────────────────────────────────────
+ * Simple stencils (rectangle, rounded, ellipse, diamond, triangle, hexagon,
+ * parallelogram) emit a native SVG primitive (<rect>, <ellipse>, <polygon>)
+ * *behind* the node's <foreignObject>. The SVG element provides the visual
+ * fill + stroke; the HTML .tm-diagram-node__shape div inside the foreignObject
+ * then only lays out content (labels, sections, ports). We mark the body with
+ * data-native-shape="true" so the HTML shape's background/border are hidden,
+ * preventing double-painting. */
+.tm-diagram-node__shape-bg {
+    pointer-events: none;
+}
+
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    clip-path: none !important;
+}
+
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape::before,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape::after {
+    display: none !important;
+}
+
+/* When a native SVG primitive is drawn, the inline <svg class="tm-diagram-node__svg-bg">
+ * fallback (rendered by TmDiagramStencilShape for BackgroundShape legacy paths)
+ * would double-paint the background. Hide it — the native primitive is the
+ * single source of truth for fill/stroke in F3.E. */
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__svg-bg {
+    display: none !important;
+}
+
+/* ── Selection outline ──────────────────────────────────────────────────────
+ * Post-F3 the selection outline is an SVG <rect> injected into overlay-pane.
+ * It uses stroke instead of border and SVG drop-shadow filter instead of
+ * box-shadow. */
+rect.tm-diagram-selection-outline {
+    fill: none;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 2;
+    rx: 4;
+    ry: 4;
+    pointer-events: none;
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.45));
+}
+
+/* ── Rubber band ─────────────────────────────────────────────────────────── */
+.tm-diagram-rubber {
+    position: absolute;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px dashed var(--tm-color-primary, #3b82f6);
+    pointer-events: none;
+}
+
+/* ── Node styling ─────────────────────────────────────────────────────────── */
+/* Post-F3 `.tm-diagram-node` is an SVG <g> element. Position/rotation live in
+ * its `transform` attribute (translate + rotate around the node centre). The
+ * `cursor` property is valid on SVG and is inherited into the inner HTML body,
+ * so drag affordance still works over the node shape and labels. */
+.tm-diagram-node {
+    cursor: move;
+}
+
+/* Edge-tool cursor hints (Phase 3.6):
+ * - Over empty canvas the container cursor is already `crosshair` via JS.
+ * - Over a node body give the user a `pointer` cursor so it is visible the
+ *   click will attach the new edge to that node. */
+.tm-diagram-canvas--edge-mode .tm-diagram-node {
+    cursor: pointer;
+}
+.tm-diagram-canvas--edge-mode .tm-diagram-port,
+.tm-diagram-canvas--edge-mode .tm-diagram-connection-point {
+    cursor: crosshair;
+}
+
+/* Phase 3.9: subtle open-circle marker at floating edge terminals.
+ * Invisible by default; revealed when the user hovers the edge's interactive
+ * group so they can tell the endpoint is not attached to anything. */
+.tm-diagram-edge-floating-marker {
+    fill: transparent;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    stroke-dasharray: 2 2;
+    opacity: 0;
+    transition: opacity 120ms ease-in-out;
+    pointer-events: none;
+}
+.tm-diagram-edge-group:hover .tm-diagram-edge-floating-marker {
+    opacity: 0.75;
+}
+
+/* F6.4 — drop-target / outline-connect hints. Decision (Apr 2026): keep as a
+ * CSS class toggled on the node's outer <g class="tm-diagram-node"> with the
+ * style cascading to the inner `.tm-diagram-node__body` (inside foreignObject).
+ * Not migrated to a separate SVG <rect> in overlay-pane because:
+ *   - The CSS-outline approach already animates with the node transform (no
+ *     extra JS sync during drag required, unlike the selection outline).
+ *   - `outline-offset` + `border-radius` give a pixel-perfect inset match to
+ *     the node's rounded corners that a separate SVG <rect> would have to
+ *     measure per-stencil to match.
+ *   - JS classList.add/remove stays a single line; no <rect> lifecycle.
+ * The modifier class still lives on the `.tm-diagram-node` <g> so JS
+ * `classList.add/remove` can keep targeting the node itself — `outline` on
+ * SVG elements is patchy across browsers, so the body <div> does the paint. */
+.tm-diagram-node--drop-target .tm-diagram-node__body {
+    outline: 2px solid var(--tm-color-primary, #3b82f6);
+    outline-offset: 2px;
+    border-radius: var(--tm-radius-sm, 4px);
+}
+
+.tm-diagram-node--outline-connect .tm-diagram-node__body {
+    outline: 2px dashed var(--tm-color-success, #10b981);
+    outline-offset: 3px;
+    border-radius: var(--tm-radius-sm, 4px);
+}
+
+.tm-diagram-node__shape {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.tm-diagram-node__link-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    color: var(--tm-color-primary, #3b82f6);
+    background: var(--tm-color-surface, #ffffff);
+    border-radius: var(--tm-radius-sm, 4px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    pointer-events: none;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tm-diagram-node__link-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+.tm-diagram-node__content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tm-diagram-node__section {
+    flex-shrink: 0;
+}
+
+.tm-diagram-node__section--grow {
+    flex: 1;
+    overflow: auto;
+}
+
+.tm-diagram-node__divider {
+    height: 1px;
+    background: var(--tm-color-border, #e5e7eb);
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.tm-diagram-node__shape[data-shape="ellipse"] .tm-diagram-node__content,
+.tm-diagram-node__shape[data-shape="diamond"] .tm-diagram-node__content,
+.tm-diagram-node__shape[data-shape="document"] .tm-diagram-node__content {
+    justify-content: center;
+}
+
+.tm-diagram-node__shape[data-shape="ellipse"] .tm-diagram-node__text,
+.tm-diagram-node__shape[data-shape="diamond"] .tm-diagram-node__text,
+.tm-diagram-node__shape[data-shape="document"] .tm-diagram-node__text {
+    text-align: center;
+}
+
+.tm-diagram-node__shape[data-shape="package"] {
+    border-radius: 0;
+}
+
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__content {
+    flex-direction: row;
+}
+
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__divider {
+    width: 1px;
+    height: 100%;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__section:first-child {
+    width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.03);
+    flex-shrink: 0;
+}
+
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__section:last-child {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Swimlanes ───────────────────────────────────────────────────────────── */
+.tm-diagram-node__swimlane {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.tm-diagram-node__swimlane--horizontal {
+    flex-direction: column;
+}
+
+.tm-diagram-node__swimlane--horizontal .tm-diagram-node__swimlane-row {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-node__swimlane--horizontal .tm-diagram-node__swimlane-row:last-child {
+    border-bottom: none;
+}
+
+.tm-diagram-node__swimlane--horizontal .tm-diagram-node__swimlane-header {
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.03);
+    border-right: 1px solid var(--tm-color-border, #e5e7eb);
+    flex-shrink: 0;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    padding: 4px 0;
+}
+
+.tm-diagram-node__swimlane--horizontal .tm-diagram-node__swimlane-cell {
+    flex: 1;
+    min-width: 0;
+}
+
+.tm-diagram-node__swimlane--vertical {
+    flex-direction: row;
+}
+
+.tm-diagram-node__swimlane--vertical .tm-diagram-node__swimlane-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-node__swimlane--vertical .tm-diagram-node__swimlane-col:last-child {
+    border-right: none;
+}
+
+.tm-diagram-node__swimlane--vertical .tm-diagram-node__swimlane-header {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+    flex-shrink: 0;
+    padding: 0 4px;
+}
+
+.tm-diagram-node__swimlane--vertical .tm-diagram-node__swimlane-cell {
+    flex: 1;
+    min-height: 0;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+.tm-diagram-node__table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    box-sizing: border-box;
+}
+
+.tm-diagram-node__table-row {
+    height: auto;
+}
+
+.tm-diagram-node__table-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--tm-color-text, #111827);
+    box-sizing: border-box;
+}
+
+.tm-diagram-node__table-cell .tm-diagram-node__inline-input {
+    width: 100%;
+    height: 100%;
+    min-height: unset;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.tm-diagram-node__shape[data-shape="table"] {
+    background: var(--stencil-fill, #ffffff);
+    border: 1px solid var(--stencil-stroke, #111827);
+}
+
+.tm-diagram-node__section--icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* UML class nodes: list sections should not scroll or stretch — auto-height handles sizing */
+.tm-diagram-node__shape[data-stencil-id^="uml."] .tm-diagram-node__section--grow {
+    flex: 0 0 auto;
+    overflow: visible;
+}
+
+.tm-diagram-node__icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.tm-diagram-node__text {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.tm-diagram-node__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tm-diagram-node__list-item {
+    margin: 0;
+    padding: 1px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.tm-diagram-node__inline-input,
+.tm-diagram-node__inline-textarea {
+    border: 1px solid var(--tm-color-primary, #3b82f6);
+    border-radius: 2px;
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-text, #111827);
+    font: inherit;
+    outline: none;
+    padding: 0 2px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.tm-diagram-node__inline-input:focus,
+.tm-diagram-node__inline-textarea:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* ── Collapse button ─────────────────────────────────────────────────────── */
+.tm-diagram-node__collapse-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-sm, 4px);
+    cursor: pointer;
+    z-index: 20;
+    transition: background 120ms, border-color 120ms;
+}
+
+.tm-diagram-node__collapse-btn:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    border-color: var(--tm-color-border-strong, #d1d5db);
+}
+
+.tm-diagram-editor--readonly .tm-diagram-node__collapse-btn {
+    display: none;
+}
+
+/* ── Search highlight ────────────────────────────────────────────────────── */
+.tm-diagram-node.tm-diagram-search-match .tm-diagram-node__body {
+    outline: 2px solid var(--tm-color-primary, #3b82f6);
+    outline-offset: 2px;
+    animation: tm-diagram-search-pulse 1.5s ease-in-out infinite;
+}
+
+path.tm-diagram-edge-path.tm-diagram-search-match {
+    stroke: var(--tm-color-primary, #3b82f6);    
+    animation: tm-diagram-search-pulse-svg 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 4px var(--tm-color-primary, #3b82f6));
+}
+
+@keyframes tm-diagram-search-pulse {
+    0%, 100% { outline-color: var(--tm-color-primary, #3b82f6); outline-offset: 2px; }
+    50% { outline-color: var(--tm-color-success, #10b981); outline-offset: 4px; }
+}
+
+@keyframes tm-diagram-search-pulse-svg {
+    0%, 100% { stroke: var(--tm-color-primary, #3b82f6); filter: drop-shadow(0 0 2px var(--tm-color-primary, #3b82f6)); }
+    50% { stroke: var(--tm-color-success, #10b981); filter: drop-shadow(0 0 6px var(--tm-color-success, #10b981)); }
+}
+
+/* ── Port styling ─────────────────────────────────────────────────────────── */
+/* Post-F3 ports are SVG <circle> elements directly inside the node's <g>
+ * (rendered after the <foreignObject>) so Chromium's SVG hit-testing can
+ * reliably route pointer events to them; HTML ports inside <foreignObject>
+ * do NOT receive mousedown in Chromium even with pointer-events:none on the
+ * foreignObject. Styling therefore uses SVG presentation attributes
+ * (fill/stroke) instead of CSS background/border. */
+circle.tm-diagram-port {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    cursor: crosshair;
+    opacity: 0;
+    transition: opacity 120ms, r 120ms;
+}
+
+/* Ports visible on node hover, selected node, or during edge drawing.
+ * Post-F3 the node is an SVG <g class="tm-diagram-node">; the port <circle>
+ * is a direct child of that <g>. `:hover` on an SVG <g> fires when the
+ * cursor is over any of its shapes, so the same selectors still work. */
+.tm-diagram-node:hover circle.tm-diagram-port,
+.tm-diagram-node--selected circle.tm-diagram-port,
+.tm-diagram-canvas--edge-drawing circle.tm-diagram-port {
+    opacity: 1;
+}
+
+circle.tm-diagram-port:hover {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 6;
+}
+
+/* ── Edge drawing ─────────────────────────────────────────────────────────── */
+.tm-diagram-edge-draw-path {
+    fill: none;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 2;
+    pointer-events: none;
+}
+
+circle.tm-diagram-port.tm-diagram-port--active {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 6.5;
+}
+
+circle.tm-diagram-port.tm-diagram-port--target {
+    fill: var(--tm-color-success, #10b981);
+    stroke: var(--tm-color-success, #10b981);
+    r: 7.5;
+}
+
+/* ── Connection points (draw.io style fixed constraint points) ──────────────
+ * Also SVG <circle> post-F3 for the same hit-testing reason as ports. */
+circle.tm-diagram-connection-point {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    cursor: crosshair;
+    opacity: 0;
+    transition: opacity 120ms, r 120ms;
+}
+
+.tm-diagram-node:hover circle.tm-diagram-connection-point,
+.tm-diagram-node--selected circle.tm-diagram-connection-point,
+.tm-diagram-canvas--edge-drawing circle.tm-diagram-connection-point {
+    opacity: 1;
+}
+
+circle.tm-diagram-connection-point:hover {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 5;
+}
+
+circle.tm-diagram-connection-point.tm-diagram-connection-point--active {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 5.5;
+    filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5));
+}
+
+/* ── Edge path ────────────────────────────────────────────────────────────── */
+.tm-diagram-edge-path {
+    fill: none;
+    pointer-events: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+/* Arrowheads are purely decorative. They're drawn at the edge terminals —
+ * which, for edges attached to a node's port, land exactly on that port's
+ * position. Letting them capture pointer events would block port clicks for
+ * drawing new edges or reconnecting existing ones. The edge itself is
+ * selected via `.tm-diagram-edge-hit-path` (a wide transparent hit target). */
+.tm-diagram-arrowhead {
+    pointer-events: none;
+}
+
+.tm-diagram-edge-hit-path {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 18;
+    pointer-events: stroke;
+    cursor: pointer;
+}
+
+.tm-diagram-edge-path--selected {
+    stroke: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-edge-path--selected-outline {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 4px;
+    stroke-dasharray: 4, 4;
+    stroke-linecap: round;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.tm-diagram-edge-cardinality {
+    font-size: 12px;
+    font-family: var(--tm-font-sans, sans-serif);
+    fill: var(--tm-color-text, #111827);
+    pointer-events: none;
+    user-select: none;
+}
+
+.tm-diagram-edge-handle {
+    fill: var(--tm-color-primary, #3b82f6);
+    stroke: #ffffff;
+    stroke-width: 2;
+    cursor: crosshair;
+    pointer-events: all;
+}
+
+.tm-diagram-edge-handle--jetty {
+    pointer-events: all;
+    cursor: move;
+    fill: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-edge-handle--dangling {
+    pointer-events: all;
+    cursor: move;
+    fill: var(--tm-color-primary, #3b82f6);
+    stroke: #ffffff;
+    stroke-width: 2;
+}
+
+.tm-diagram-edge--target .tm-diagram-edge-path {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 3;
+    filter: drop-shadow(0 0 4px var(--tm-color-primary, #3b82f6));
+}
+
+.tm-diagram-edge-toolbar {
+    display: flex;
+    gap: 2px;
+    background: var(--tm-surface-elevated, #ffffff);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: 6px;
+    padding: 3px;
+    box-shadow: var(--tm-shadow-md, 0 4px 6px -1px rgba(0,0,0,0.1));
+    pointer-events: none;
+}
+
+/* When the user has ONLY an edge selected, the small connection-points that
+   live on nodes are visual noise and (because the overlay layer sits above
+   the SVG) can actually intercept clicks destined for the inline edge
+   toolbar rendered inside <foreignObject>. Hide them while an edge is
+   selected — users can still start a new edge from a node by clicking on
+   empty canvas first or by switching to the edge tool. */
+.tm-diagram-canvas--edge-selected .tm-diagram-connection-point {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.tm-diagram-edge-toolbar button {
+    pointer-events: auto;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--tm-text-primary, #374151);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.tm-diagram-edge-toolbar button:hover {
+    background: var(--tm-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-edge-toolbar button:active {
+    background: var(--tm-surface-active, #e5e7eb);
+}
+
+.tm-diagram-edge-routing-picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px;
+}
+
+.tm-diagram-routing-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--tm-text-primary, #374151);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.tm-diagram-routing-preview:hover {
+    background: var(--tm-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-routing-preview--selected {
+    border-color: var(--tm-color-primary, #3b82f6);
+    background: var(--tm-color-primary-subtle, #eff6ff);
+}
+
+.tm-diagram-edge-virtual-bend {
+    pointer-events: all;
+    cursor: crosshair;
+    fill: var(--tm-color-primary, #3b82f6);
+    opacity: 0.2;
+    transition: opacity 0.15s ease;
+}
+
+.tm-diagram-edge-virtual-bend:hover {
+    opacity: 0.8;
+}
+
+.tm-diagram-edge-segment-handle {
+    pointer-events: all;
+    fill: var(--tm-color-primary, #3b82f6);
+    opacity: 0.25;
+    transition: opacity 0.15s ease;
+}
+
+.tm-diagram-edge-segment-handle:hover {
+    opacity: 0.9;
+}
+
+.tm-diagram-hover-connect {
+    transition: transform 0.12s, background 0.12s;
+}
+.tm-diagram-hover-connect:hover {
+    background: var(--tm-color-primary, #3b82f6) !important;
+    transform: scale(1.15);
+}
+.tm-diagram-hover-connect:hover span {
+    color: #fff !important;
+}
+
+.tm-diagram-math {
+    color: inherit;
+    fill: currentColor;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tm-diagram-math svg {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+}
+
+.tm-diagram-distance-label {
+    fill: var(--tm-color-primary, #3b82f6);
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+    font-weight: 500;
+    pointer-events: none;
+    user-select: none;
+}
+
+.tm-diagram-edge-label-group {
+    cursor: text;
+    pointer-events: all;
+}
+
+.tm-diagram-edge-label {
+    font-size: 12px;
+    fill: var(--tm-color-text, #111827);
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+    pointer-events: none;
+    user-select: none;
+}
+
+.tm-diagram-edge-label-input {
+    width: 100%;
+    height: 100%;
+    font-size: 12px;
+    padding: 2px 6px;
+    border: 1px solid var(--tm-color-primary, #3b82f6);
+    border-radius: 4px;
+    background: var(--tm-color-surface-elevated, #ffffff);
+    color: var(--tm-color-text, #111827);
+    outline: none;
+    text-align: center;
+}
+
+/* ── Right column (properties + layers + minimap) ───────────────────────── */
+.tm-diagram-editor__right-stack {
+    display: flex;
+    flex-direction: column;
+    width: 280px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--tm-color-border, #e5e7eb);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+}
+
+.tm-diagram-editor__right-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.tm-diagram-editor__props-wrap {
+    flex-shrink: 0;
+}
+
+.tm-diagram-editor__layers-wrap {
+    flex: 1;
+    min-height: 0;
+    border-top: 1px solid var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-editor__minimap-wrap {
+    flex-shrink: 0;
+    border-top: 1px solid var(--tm-color-border, #e5e7eb);
+    max-height: 200px;
+    background: var(--tm-color-surface-elevated, #f9fafb);
+}
+
+/* ── Properties panel ────────────────────────────────────────────────────── */
+.tm-diagram-editor__props-wrap {
+    background: var(--tm-color-surface-elevated, #f9fafb);
+}
+
+.tm-diagram-editor__props {
+    padding: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-editor__props-title {
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 600;
+    color: var(--tm-color-text, #111827);
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-editor__props-group {
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-editor__props-label {
+    display: block;
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 500;
+    color: var(--tm-color-text-muted, #6b7280);
+    margin-bottom: 4px;
+}
+
+.tm-diagram-editor__props-input {
+    width: 100%;
+    padding: 4px 8px;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    box-sizing: border-box;
+}
+
+.tm-diagram-editor__props-input:focus {
+    outline: none;
+    border-color: var(--tm-color-primary, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.tm-diagram-editor__props-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* ── Resize handles ──────────────────────────────────────────────────────── *
+ * Post-F5 handles are SVG <rect> in the decorator-pane, positioned in node-local
+ * coordinates on a <g class="tm-diagram-node-handles"> that mirrors the node's
+ * translate()+rotate() transform. SVG presentation attributes instead of CSS
+ * background/border. Cursor hint is applied inline per handle (direction
+ * depends on the handle role). */
+rect.tm-diagram-resize-handle {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    rx: 2;
+    ry: 2;
+    pointer-events: auto;
+}
+
+/* ── Read-only mode ──────────────────────────────────────────────────────── */
+.tm-diagram-editor--readonly .tm-diagram-node {
+    cursor: default;
+}
+
+.tm-diagram-editor--readonly .tm-diagram-port {
+    display: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TmDiagramToolbox internal styles
+   ════════════════════════════════════════════════════════════════════════════ */
+.tm-diagram-toolbox {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tm-diagram-toolbox__toggle {
+    display: none;
+}
+
+.tm-diagram-toolbox__inner {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-toolbox__title {
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 600;
+    color: var(--tm-color-text, #111827);
+    margin: 0 0 var(--tm-space-3, 12px);
+}
+
+.tm-diagram-toolbox__search {
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-toolbox__search .tm-search-input {
+    width: 100%;
+}
+
+.tm-diagram-toolbox__no-results {
+    padding: var(--tm-space-4, 16px);
+    text-align: center;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text-muted, #6b7280);
+}
+
+.tm-diagram-toolbox__category {
+    margin-bottom: var(--tm-space-2, 8px);
+}
+
+.tm-diagram-toolbox__category-header {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-1, 4px);
+    width: 100%;
+    padding: var(--tm-space-1, 4px) var(--tm-space-2, 8px);
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--tm-color-text-muted, #6b7280);
+    background: transparent;
+    border: none;
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    text-align: left;
+}
+
+.tm-diagram-toolbox__category-header:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-toolbox__category-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-left: var(--tm-space-1, 4px);
+}
+
+.tm-diagram-toolbox__item {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 8px);
+    padding: var(--tm-space-2, 8px);
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: grab;
+    user-select: none;
+    transition: background 120ms;
+}
+
+.tm-diagram-toolbox__item:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-toolbox__item:active {
+    cursor: grabbing;
+}
+
+.tm-diagram-toolbox__preview {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tm-color-text-muted, #6b7280);
+}
+
+.tm-diagram-toolbox__preview svg {
+    width: 32px;
+    height: 32px;
+    display: block;
+}
+
+.tm-diagram-toolbox__label {
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TmDiagramLayersPanel internal styles
+   ════════════════════════════════════════════════════════════════════════════ */
+.tm-diagram-layers {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+}
+
+.tm-diagram-layers__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--tm-space-3, 12px);
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-layers__title {
+    margin: 0;
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 600;
+}
+
+.tm-diagram-layers__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--tm-color-text-muted, #6b7280);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+}
+
+.tm-diagram-layers__icon-btn:hover:not(:disabled) {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    color: var(--tm-color-text, #111827);
+}
+
+.tm-diagram-layers__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--tm-space-2, 8px);
+}
+
+.tm-diagram-layers__item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    user-select: none;
+    transition: background 120ms;
+}
+
+.tm-diagram-layers__item:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-layers__item--active {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+}
+
+.tm-diagram-layers__item--active:hover {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+}
+
+.tm-diagram-layers__visibility,
+.tm-diagram-layers__lock,
+.tm-diagram-layers__delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--tm-color-text-muted, #6b7280);
+    background: transparent;
+    border: none;
+    border-radius: var(--tm-radius-sm, 4px);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.tm-diagram-layers__visibility:hover:not(:disabled),
+.tm-diagram-layers__lock:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.tm-diagram-layers__delete {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 120ms;
+}
+
+.tm-diagram-layers__item:hover .tm-diagram-layers__delete {
+    opacity: 1;
+}
+
+.tm-diagram-layers__delete:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--tm-color-danger, #ef4444);
+}
+
+.tm-diagram-layers__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 4px;
+    border-radius: var(--tm-radius-sm, 4px);
+}
+
+.tm-diagram-layers__name-input {
+    flex: 1;
+    min-width: 0;
+    padding: 2px 4px;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-primary, #3b82f6);
+    border-radius: var(--tm-radius-sm, 4px);
+    outline: none;
+}
+
+.tm-diagram-layers__selected-section {
+    padding: var(--tm-space-3, 12px);
+    border-top: 1px solid var(--tm-color-border, #e5e7eb);
+    background: var(--tm-color-surface, #ffffff);
+}
+
+.tm-diagram-layers__label {
+    display: block;
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 500;
+    color: var(--tm-color-text-muted, #6b7280);
+    margin-bottom: 4px;
+}
+
+.tm-diagram-layers__select {
+    width: 100%;
+    padding: 4px 8px;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    box-sizing: border-box;
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-layers__select:focus {
+    outline: none;
+    border-color: var(--tm-color-primary, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.tm-diagram-layers__actions {
+    display: flex;
+    gap: var(--tm-space-2, 8px);
+}
+
+.tm-diagram-layers__action-btn {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 500;
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    transition: background 120ms, border-color 120ms;
+}
+
+.tm-diagram-layers__action-btn:hover:not(:disabled) {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    border-color: var(--tm-color-border-strong, #d1d5db);
+}
+
+.tm-diagram-layers__action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TmDiagramMinimap internal styles
+   ════════════════════════════════════════════════════════════════════════════ */
+.tm-diagram-minimap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--tm-space-2, 8px);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+}
+
+.tm-diagram-minimap__title {
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 600;
+    color: var(--tm-color-text-muted, #6b7280);
+    margin-bottom: var(--tm-space-1, 4px);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.tm-diagram-minimap__svg {
+    display: block;
+    border-radius: var(--tm-radius-sm, 4px);
+    background: var(--tm-color-surface, #ffffff);
+    box-shadow: inset 0 0 0 1px var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-minimap__viewport {
+    pointer-events: all;
+}
+
+.tm-diagram-minimap__empty {
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text-muted, #6b7280);
+    padding: var(--tm-space-2, 8px);
+    text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TmDiagramPropertiesPanel internal styles
+   ════════════════════════════════════════════════════════════════════════════ */
+.tm-diagram-properties {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tm-diagram-properties__toggle {
+    display: none;
+}
+
+.tm-diagram-properties__inner {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-properties__title {
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 600;
+    color: var(--tm-color-text, #111827);
+    margin: 0 0 var(--tm-space-3, 12px);
+}
+
+/* ── Property Cards (using TmSection) ─────────────────────────────────────── */
+.tm-diagram-properties .tm-section {
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 8px);
+    margin-bottom: var(--tm-space-3, 12px);
+    overflow: hidden;
+    transition: box-shadow 150ms ease;
+}
+
+.tm-diagram-properties .tm-section:hover {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.tm-diagram-properties .tm-section-header {
+    padding: 10px 12px;
+    font-size: var(--tm-font-size-sm, 13px);
+    font-weight: 600;
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border-bottom: 1px solid transparent;
+    transition: background 120ms, border-color 120ms;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tm-diagram-properties .tm-section--collapsible .tm-section-header {
+    border-bottom-color: var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-properties .tm-section--collapsed .tm-section-header {
+    border-bottom-color: transparent;
+}
+
+.tm-diagram-properties .tm-section-header:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-properties .tm-section-header-icon {
+    color: var(--tm-color-text-muted, #6b7280);
+    margin-right: 6px;
+}
+
+.tm-diagram-properties .tm-section-title {
+    font-size: var(--tm-font-size-sm, 13px);
+    font-weight: 600;
+}
+
+.tm-diagram-properties .tm-section-chevron {
+    color: var(--tm-color-text-muted, #6b7280);
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.tm-diagram-properties .tm-section--collapsed .tm-section-chevron {
+    transform: rotate(-90deg);
+}
+
+.tm-diagram-properties .tm-section-content {
+    padding: var(--tm-space-3, 12px);
+}
+
+/* ── Property Fields ──────────────────────────────────────────────────────── */
+.tm-diagram-properties__field {
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-properties__field label {
+    display: block;
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 500;
+    color: var(--tm-color-text-muted, #6b7280);
+    margin-bottom: 4px;
+}
+
+.tm-diagram-properties__field .tm-text-input {
+    width: 100%;
+}
+
+.tm-diagram-properties__row {
+    display: flex;
+    gap: var(--tm-space-2, 8px);
+}
+
+.tm-diagram-properties__row > .tm-diagram-properties__field {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.tm-diagram-properties__arrow-fill {
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+
+.tm-diagram-properties__arrow-fill .tm-checkbox__label {
+    font-size: var(--tm-font-size-xs, 12px);
+}
+
+.tm-diagram-properties__empty {
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text-muted, #6b7280);
+    margin: 0;
+}
+
+/* ── Color Swatches ───────────────────────────────────────────────────────── */
+.tm-diagram-properties__color-swatch {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--tm-color-border, #e5e7eb);
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 120ms, border-color 120ms;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+.tm-diagram-properties__color-swatch:hover {
+    transform: scale(1.1);
+    border-color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-properties__color-swatch input[type="color"] {
+    position: absolute;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    padding: 0;
+    margin: 0;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+}
+
+/* ── Segmented Button Group ───────────────────────────────────────────────── */
+.tm-diagram-properties__segmented {
+    display: inline-flex;
+    background: var(--tm-color-surface-elevated, #f3f4f6);
+    border-radius: var(--tm-radius-md, 6px);
+    padding: 2px;
+    gap: 2px;
+}
+
+.tm-diagram-properties__segmented-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    font-size: var(--tm-font-size-sm, 13px);
+    color: var(--tm-color-text-muted, #6b7280);
+    background: transparent;
+    border: none;
+    border-radius: var(--tm-radius-sm, 4px);
+    cursor: pointer;
+    transition: background 120ms, color 120ms;
+    min-width: 32px;
+}
+
+.tm-diagram-properties__segmented-btn:hover {
+    background: rgba(255,255,255,0.6);
+    color: var(--tm-color-text, #111827);
+}
+
+.tm-diagram-properties__segmented-btn--active {
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-primary, #3b82f6);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    font-weight: 600;
+}
+
+.tm-diagram-properties__segmented-btn--active:hover {
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-primary, #2563eb);
+}
+
+/* ── Action Grid (Align, Distribute, Layout) ──────────────────────────────── */
+.tm-diagram-properties__action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--tm-space-2, 8px);
+}
+
+.tm-diagram-properties__action-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--tm-space-2, 8px);
+}
+
+.tm-diagram-properties__action-grid-2 .tm-btn {
+    padding: 0 var(--tm-space-2, 8px);
+    font-size: var(--tm-font-size-xs, 12px);
+    gap: 4px;
+}
+
+.tm-diagram-properties__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px;
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text-muted, #6b7280);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    transition: background 120ms, color 120ms, border-color 120ms;
+}
+
+.tm-diagram-properties__action-btn:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+    border-color: var(--tm-color-border-strong, #d1d5db);
+    color: var(--tm-color-text, #111827);
+}
+
+.tm-diagram-properties__action-btn .tm-icon {
+    color: currentColor;
+}
+
+/* ── Context menu ─────────────────────────────────────────────────────────── */
+.tm-diagram-editor__context-menu {
+    background: var(--tm-color-surface-elevated, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    min-width: 140px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    padding: 4px 0;
+    pointer-events: auto;
+}
+
+.tm-diagram-editor__context-item {
+    display: block;
+    width: 100%;
+    padding: 6px 12px;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tm-diagram-editor__context-item:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-editor__context-item--danger {
+    color: var(--tm-color-danger, #ef4444);
+}
+
+.tm-diagram-editor__context-item--danger:hover {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.tm-diagram-editor__context-sep {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-editor__context-heading {
+    display: block;
+    padding: 4px 12px 2px;
+    font-size: var(--tm-font-size-xs, 12px);
+    font-weight: 600;
+    color: var(--tm-color-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tm-diagram-editor__context-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tm-diagram-editor__context-item:disabled:hover {
+    background: transparent;
+}
+
+.tm-diagram-node__table-cell--selected {
+    /* Inset ring is clipped-safe (overflow:hidden on td and parents won't cut it).
+       Box-shadow wins over inline border/background-color because it layers on top. */
+    box-shadow: inset 0 0 0 2px var(--tm-color-primary, #3b82f6);
+    position: relative;
+    z-index: 1;
+}
+
+.tm-diagram-node__table-cell--selected::after {
+    /* Subtle tint so the selected cell is readable even when a background-color
+       is set via inline style. */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--tm-color-primary, #3b82f6);
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+.tm-diagram-node__table-cell--context-target {
+    /* Marks the cell that a right-click / context menu will operate on. */
+    box-shadow: inset 0 0 0 2px var(--tm-color-warning, #f59e0b);
+    position: relative;
+    z-index: 1;
+}
+/* Append to existing file */
+
+/* ── Rotate handle ─────────────────────────────────────────────────────── *
+ * Post-F5 — <circle class="tm-diagram-rotate-handle"> with a <line
+ * class="tm-diagram-rotate-handle-stem"> beneath it connecting the node's top
+ * edge. Both are native SVG in the decorator-pane's per-node <g>, so they
+ * inherit the node's rotation automatically. */
+circle.tm-diagram-rotate-handle {
+    fill: #fff;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    cursor: grab;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+    pointer-events: auto;
+}
+circle.tm-diagram-rotate-handle:active {
+    cursor: grabbing;
+}
+line.tm-diagram-rotate-handle-stem {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1;
+    pointer-events: none;
+}
+
+/* ── Quick-connect arrows ──────────────────────────────────────────────── *
+ * Post-F5 — positioning is handled on the <foreignObject class="tm-diagram-
+ * connect-arrow-wrap"> via SVG x/y/width/height attributes (so it rotates with
+ * the node). The HTML <button> inside just fills the foreignObject; we keep
+ * it as HTML for a11y (real button semantics, keyboard focus, screen readers)
+ * — same approach as draw.io's mxConnectionHandler. */
+.tm-diagram-connect-arrow-wrap {
+    overflow: visible;
+}
+.tm-diagram-connect-arrow {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1.5px solid var(--tm-color-primary, #3b82f6);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    transition: transform 0.12s, background 0.12s;
+}
+.tm-diagram-connect-arrow:hover {
+    background: var(--tm-color-primary, #3b82f6);
+    transform: scale(1.15);
+}
+.tm-diagram-connect-arrow:hover .tm-diagram-connect-arrow__icon {
+    color: #fff;
+}
+.tm-diagram-connect-arrow__icon {
+    font-size: 12px;
+    line-height: 1;
+    color: var(--tm-color-primary, #3b82f6);
+    pointer-events: none;
+}
+
+/* Rotate the "+" glyph to suggest the direction. Actual button placement is
+ * done by the wrapping <foreignObject> x/y attributes. */
+.tm-diagram-connect-arrow--n .tm-diagram-connect-arrow__icon { transform: rotate(-90deg); }
+.tm-diagram-connect-arrow--e .tm-diagram-connect-arrow__icon { transform: rotate(0deg); }
+.tm-diagram-connect-arrow--s .tm-diagram-connect-arrow__icon { transform: rotate(90deg); }
+.tm-diagram-connect-arrow--w .tm-diagram-connect-arrow__icon { transform: rotate(180deg); }
+
+/* ── Connect modal stencil grid ────────────────────────────────────────── */
+.tm-diagram-connect-modal__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 4px;
+}
+@media (max-width: 480px) {
+    .tm-diagram-connect-modal__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.tm-diagram-connect-modal__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+}
+.tm-diagram-connect-modal__item:hover {
+    border-color: var(--tm-color-primary, #3b82f6);
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-connect-modal__icon {
+    width: 32px;
+    height: 32px;
+    color: var(--tm-color-text-muted, #6b7280);
+}
+.tm-diagram-connect-modal__item:hover .tm-diagram-connect-modal__icon {
+    color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-connect-modal__label {
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text, #111827);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ── Property Panel collapsible sections ───────────────────────────────── */
+.tm-diagram-properties__section--collapsible {
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-properties__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 500;
+    color: var(--tm-color-text, #111827);
+    cursor: pointer;
+}
+
+.tm-diagram-properties__section-header:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-properties__section-body {
+    padding: 0 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tm-diagram-properties__slider {
+    width: 100%;
+    accent-color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-properties__color-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tm-diagram-properties__color {
+    width: 44px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    background: var(--tm-color-surface, #ffffff);
+    cursor: pointer;
+}
+
+.tm-diagram-properties__toggles {
+    display: flex;
+    gap: 6px;
+}
+
+.tm-diagram-properties__toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-text, #111827);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.tm-diagram-properties__toggle-btn:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-properties__toggle-btn--active {
+    border-color: var(--tm-color-primary, #3b82f6);
+    background: var(--tm-color-primary-subtle, #dbeafe);
+    color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-properties__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tm-diagram-properties__align-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.tm-diagram-properties__mixed {
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text-muted, #6b7280);
+    font-style: italic;
+}
+
+.tm-diagram-properties__table-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 6px;
+}
+
+.tm-diagram-properties__table-grid-row {
+    display: flex;
+    gap: 2px;
+}
+
+.tm-diagram-properties__table-grid-cell {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 2px;
+    font-size: 10px;
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-text, #111827);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.tm-diagram-properties__table-grid-cell:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-properties__table-grid-cell--selected {
+    background: var(--tm-color-primary, #3b82f6);
+    color: #ffffff;
+    border-color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-properties__hint {
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text-muted, #6b7280);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .tm-diagram-properties__color {
+    background: var(--tm-color-surface-elevated, #1f2937);
+    border-color: var(--tm-color-border-strong, #374151);
+}
+
+[data-theme="dark"] .tm-diagram-properties__toggle-btn {
+    background: var(--tm-color-surface-elevated, #1f2937);
+    border-color: var(--tm-color-border-strong, #374151);
+    color: var(--tm-color-text, #f3f4f6);
+}
+
+[data-theme="dark"] .tm-diagram-properties__toggle-btn--active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--tm-color-primary, #3b82f6);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TmDiagramTemplateGallery & TmDiagramTemplateCard
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.tm-diagram-template-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 60vh;
+}
+
+.tm-diagram-template-gallery__header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tm-diagram-template-gallery__search {
+    width: 100%;
+}
+
+.tm-diagram-template-gallery__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tm-diagram-template-gallery__filter {
+    padding: 4px 12px;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text, #111827);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    transition: background 120ms, border-color 120ms;
+}
+
+.tm-diagram-template-gallery__filter:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-template-gallery__filter--active {
+    background: var(--tm-color-primary, #3b82f6);
+    border-color: var(--tm-color-primary, #3b82f6);
+    color: #ffffff;
+}
+
+.tm-diagram-template-gallery__body {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tm-diagram-template-gallery__section-title {
+    margin: 0 0 8px;
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 600;
+    color: var(--tm-color-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.tm-diagram-template-gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.tm-diagram-template-gallery__empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--tm-color-text-muted, #6b7280);
+    font-size: var(--tm-font-size-sm, 14px);
+}
+
+/* ── Template card ────────────────────────────────────────────────────────── */
+.tm-diagram-template-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 120ms, border-color 120ms, transform 120ms;
+}
+
+.tm-diagram-template-card:hover {
+    border-color: var(--tm-color-primary, #3b82f6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.tm-diagram-template-card--selected {
+    border-color: var(--tm-color-primary, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.tm-diagram-template-card__thumb {
+    aspect-ratio: 4 / 3;
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.tm-diagram-template-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tm-diagram-template-card__placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--tm-radius-md, 6px);
+    background: var(--tm-color-border, #e5e7eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--tm-color-text-muted, #6b7280);
+}
+
+.tm-diagram-template-card__info {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tm-diagram-template-card__name {
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 500;
+    color: var(--tm-color-text, #111827);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tm-diagram-template-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.tm-diagram-template-card__tag {
+    font-size: 11px;
+    color: var(--tm-color-text-muted, #6b7280);
+    background: var(--tm-color-surface-elevated, #f9fafb);
+    padding: 2px 6px;
+    border-radius: var(--tm-radius-sm, 4px);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .tm-diagram-template-card {
+    background: var(--tm-color-surface-elevated, #1f2937);
+    border-color: var(--tm-color-border-strong, #374151);
+}
+
+[data-theme="dark"] .tm-diagram-template-card__thumb {
+    background: var(--tm-color-surface, #111827);
+}
+
+[data-theme="dark"] .tm-diagram-template-card__placeholder {
+    background: var(--tm-color-border-strong, #374151);
+    color: var(--tm-color-text-muted, #9ca3af);
+}
+
+[data-theme="dark"] .tm-diagram-template-card__name {
+    color: var(--tm-color-text, #f3f4f6);
+}
+
+[data-theme="dark"] .tm-diagram-template-card__tag {
+    background: var(--tm-color-surface, #111827);
+    color: var(--tm-color-text-muted, #9ca3af);
+}
+
+[data-theme="dark"] .tm-diagram-template-gallery__filter {
+    background: var(--tm-color-surface-elevated, #1f2937);
+    border-color: var(--tm-color-border-strong, #374151);
+    color: var(--tm-color-text, #f3f4f6);
+}
+
+[data-theme="dark"] .tm-diagram-template-gallery__filter:hover {
+    background: var(--tm-color-surface-hover, #374151);
+}
+
+/* ── Table Inserter ─────────────────────────────────────────────────────── */
+
+.tm-diagram-table-inserter-popover {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 1000;
+    background: var(--tm-color-surface-elevated, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 8px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+    padding: 12px;
+}
+
+.tm-diagram-table-inserter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.tm-diagram-table-inserter__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tm-color-text, #1f2937);
+    margin: 0;
+}
+
+.tm-diagram-table-inserter__grid {
+    display: grid;
+    grid-template-columns: repeat(10, 16px);
+    grid-template-rows: repeat(8, 16px);
+    gap: 2px;
+}
+
+.tm-diagram-table-inserter__cell {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: 2px;
+    background: var(--tm-color-surface, #ffffff);
+    cursor: pointer;
+    transition: background 0.1s ease, border-color 0.1s ease;
+}
+
+.tm-diagram-table-inserter__cell:hover,
+.tm-diagram-table-inserter__cell--highlighted {
+    background: var(--tm-color-primary, #3b82f6);
+    border-color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-table-inserter__dims {
+    font-size: 12px;
+    color: var(--tm-color-text-muted, #6b7280);
+    min-height: 18px;
+}
+
+/* Dark mode */
+[data-theme="dark"] .tm-diagram-table-inserter-popover {
+    background: var(--tm-color-surface-elevated, #1f2937);
+    border-color: var(--tm-color-border-strong, #374151);
+}
+
+[data-theme="dark"] .tm-diagram-table-inserter__title {
+    color: var(--tm-color-text, #f3f4f6);
+}
+
+[data-theme="dark"] .tm-diagram-table-inserter__cell {
+    background: var(--tm-color-surface, #111827);
+    border-color: var(--tm-color-border-strong, #374151);
+}
+
+[data-theme="dark"] .tm-diagram-table-inserter__cell:hover,
+[data-theme="dark"] .tm-diagram-table-inserter__cell--highlighted {
+    background: var(--tm-color-primary, #60a5fa);
+    border-color: var(--tm-color-primary, #60a5fa);
+}
+
+[data-theme="dark"] .tm-diagram-table-inserter__dims {
+    color: var(--tm-color-text-muted, #9ca3af);
+}

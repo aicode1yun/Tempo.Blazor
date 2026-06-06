@@ -10,6 +10,7 @@ internal sealed class SpreadsheetGridGeometry
     private SpreadsheetSheet? _sheet;
     private double _defaultRowHeight;
     private double _defaultColumnWidth;
+    private double _zoom = 1.0;
     private int _rowsHash;
     private int _columnsHash;
     private double[] _rowHeights = [];
@@ -35,8 +36,11 @@ internal sealed class SpreadsheetGridGeometry
     /// <summary>Total sheet content height without the column header gutter.</summary>
     public double ContentHeight => _rowOffsets.Length == 0 ? 0 : _rowOffsets[^1];
 
-    /// <summary>Ensures geometry arrays are up to date for the given sheet and defaults.</summary>
-    public void Update(SpreadsheetSheet? sheet, double defaultRowHeight, double defaultColumnWidth)
+    /// <summary>The current zoom factor applied to all dimensions (1.0 = 100%).</summary>
+    public double Zoom => _zoom;
+
+    /// <summary>Ensures geometry arrays are up to date for the given sheet, defaults and zoom.</summary>
+    public void Update(SpreadsheetSheet? sheet, double defaultRowHeight, double defaultColumnWidth, double zoom = 1.0)
     {
         if (sheet is null)
         {
@@ -44,11 +48,13 @@ internal sealed class SpreadsheetGridGeometry
             return;
         }
 
+        zoom = zoom <= 0 ? 1.0 : zoom;
         var rowsHash = ComputeRowsHash(sheet);
         var columnsHash = ComputeColumnsHash(sheet);
         if (ReferenceEquals(_sheet, sheet)
             && Math.Abs(_defaultRowHeight - defaultRowHeight) < double.Epsilon
             && Math.Abs(_defaultColumnWidth - defaultColumnWidth) < double.Epsilon
+            && Math.Abs(_zoom - zoom) < double.Epsilon
             && _rowHeights.Length == sheet.RowCount
             && _columnWidths.Length == sheet.ColumnCount
             && _rowsHash == rowsHash
@@ -60,6 +66,7 @@ internal sealed class SpreadsheetGridGeometry
         _sheet = sheet;
         _defaultRowHeight = defaultRowHeight;
         _defaultColumnWidth = defaultColumnWidth;
+        _zoom = zoom;
         _rowsHash = rowsHash;
         _columnsHash = columnsHash;
 
@@ -67,7 +74,7 @@ internal sealed class SpreadsheetGridGeometry
         _rowOffsets = new double[sheet.RowCount + 1];
         for (var row = 0; row < sheet.RowCount; row++)
         {
-            _rowHeights[row] = GetConfiguredRowHeight(sheet, row, defaultRowHeight);
+            _rowHeights[row] = GetConfiguredRowHeight(sheet, row, defaultRowHeight) * zoom;
             _rowOffsets[row + 1] = _rowOffsets[row] + _rowHeights[row];
         }
 
@@ -75,7 +82,7 @@ internal sealed class SpreadsheetGridGeometry
         _columnOffsets = new double[sheet.ColumnCount + 1];
         for (var col = 0; col < sheet.ColumnCount; col++)
         {
-            _columnWidths[col] = GetConfiguredColumnWidth(sheet, col, defaultColumnWidth);
+            _columnWidths[col] = GetConfiguredColumnWidth(sheet, col, defaultColumnWidth) * zoom;
             _columnOffsets[col + 1] = _columnOffsets[col] + _columnWidths[col];
         }
     }
@@ -84,6 +91,7 @@ internal sealed class SpreadsheetGridGeometry
     public void Clear()
     {
         _sheet = null;
+        _zoom = 1.0;
         _rowsHash = 0;
         _columnsHash = 0;
         _rowHeights = [];
@@ -92,13 +100,13 @@ internal sealed class SpreadsheetGridGeometry
         _columnOffsets = [];
     }
 
-    /// <summary>Gets the effective row height.</summary>
+    /// <summary>Gets the effective (zoomed) row height.</summary>
     public double GetRowHeight(int row) =>
-        (uint)row < (uint)_rowHeights.Length ? _rowHeights[row] : _defaultRowHeight;
+        (uint)row < (uint)_rowHeights.Length ? _rowHeights[row] : _defaultRowHeight * _zoom;
 
-    /// <summary>Gets the effective column width.</summary>
+    /// <summary>Gets the effective (zoomed) column width.</summary>
     public double GetColumnWidth(int col) =>
-        (uint)col < (uint)_columnWidths.Length ? _columnWidths[col] : _defaultColumnWidth;
+        (uint)col < (uint)_columnWidths.Length ? _columnWidths[col] : _defaultColumnWidth * _zoom;
 
     /// <summary>Gets cumulative row height before the given row.</summary>
     public double GetCumulativeRowHeight(int upToRow) => GetOffset(_rowOffsets, upToRow);

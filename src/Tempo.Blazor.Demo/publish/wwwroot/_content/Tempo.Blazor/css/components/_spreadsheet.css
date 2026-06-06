@@ -1,0 +1,890 @@
+/* ═══════════════════════════════════════════════════════════════
+   Spreadsheet — TmSpreadsheet, TmSpreadsheetGrid
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-spreadsheet {
+    display: flex;
+    flex-direction: column;
+    background: var(--tm-color-surface);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    overflow: hidden;
+}
+
+/* ── Grid ── */
+.tm-spreadsheet-grid {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    overflow: auto;
+    font-family: var(--tm-font-mono, ui-monospace, monospace);
+    font-size: var(--tm-text-xs);
+    outline: none;
+}
+
+.tm-spreadsheet-grid:focus {
+    outline: none;
+}
+
+.tm-spreadsheet-canvas-grid {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: auto;
+    background: var(--tm-color-surface);
+    font-family: var(--tm-font-mono, ui-monospace, monospace);
+    font-size: var(--tm-text-xs);
+    outline: none;
+}
+
+.tm-spreadsheet-canvas-grid:focus {
+    outline: none;
+}
+
+.tm-spreadsheet-canvas-grid__layer {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: block;
+    pointer-events: none;
+}
+
+.tm-spreadsheet-canvas-grid__canvas {
+    position: absolute;
+    inset: 0 auto auto 0;
+    display: block;
+    pointer-events: none;
+}
+
+.tm-spreadsheet-canvas-grid__canvas--content {
+    z-index: 1;
+}
+
+.tm-spreadsheet-canvas-grid__canvas--headers {
+    z-index: 2;
+}
+
+.tm-spreadsheet-canvas-grid__canvas--selection {
+    z-index: 3;
+}
+
+.tm-spreadsheet-canvas-grid__size {
+    position: absolute;
+    inset: 0 auto auto 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.tm-spreadsheet-canvas-grid__editor {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    border: 2px solid var(--tm-color-primary);
+    outline: none;
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0 var(--tm-space-1);
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestions,
+.tm-spreadsheet-canvas-grid__formula-hint {
+    position: absolute;
+    z-index: var(--tm-z-popover, 900);
+    min-width: 220px;
+    pointer-events: auto;
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 220px;
+    overflow: auto;
+    padding: 4px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--tm-space-3);
+    width: 100%;
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 0;
+    border-radius: var(--tm-radius-sm);
+    background: transparent;
+    color: var(--tm-color-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion:hover,
+.tm-spreadsheet-canvas-grid__formula-suggestion--selected {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion-name {
+    font-weight: var(--tm-font-semibold);
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion-signature {
+    color: var(--tm-color-text-muted);
+    font-size: 11px;
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--tm-space-2);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface-elevated);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint-name {
+    font-weight: var(--tm-font-semibold);
+    color: var(--tm-color-text);
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint-signature,
+.tm-spreadsheet-canvas-grid__formula-hint-summary {
+    color: var(--tm-color-text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint-arg--active {
+    color: var(--tm-color-primary);
+    font-weight: var(--tm-font-semibold);
+}
+
+.tm-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.tm-spreadsheet-grid--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tm-color-text-muted);
+    min-height: 200px;
+}
+
+.tm-spreadsheet-grid--no-gridlines .tm-spreadsheet-cell {
+    border-right: none;
+    border-bottom: none;
+}
+
+/* ── Column Headers ── */
+.tm-spreadsheet-col-headers {
+    display: flex;
+    flex-direction: row;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.tm-spreadsheet-corner {
+    width: 40px;
+    height: 20px;
+    background: var(--tm-color-surface-elevated);
+    border-right: 1px solid var(--tm-color-border);
+    border-bottom: 1px solid var(--tm-color-border);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-corner:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+/* ── Headers ── */
+.tm-spreadsheet-header-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tm-color-surface-elevated);
+    border-right: 1px solid var(--tm-color-border);
+    border-bottom: 1px solid var(--tm-color-border);
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-text-xs);
+    font-weight: var(--tm-font-medium);
+    user-select: none;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    transition: background var(--tm-transition-fast), color var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-header-cell:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-spreadsheet-header-cell--selected {
+    background: var(--tm-color-primary-subtle);
+    color: var(--tm-color-primary);
+}
+
+.tm-spreadsheet-header-cell--hidden-above {
+    border-top: 2px double var(--tm-color-text-muted);
+}
+
+.tm-spreadsheet-header-cell--hidden-before {
+    border-left: 2px double var(--tm-color-text-muted);
+}
+
+.tm-spreadsheet-row-header {
+    width: 40px;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+/* ── Body / Rows ── */
+.tm-spreadsheet-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.tm-spreadsheet-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.tm-spreadsheet-row--hidden {
+    overflow: hidden;
+}
+
+.tm-spreadsheet-column-spacer {
+    flex-shrink: 0;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+/* ── Cells ── */
+.tm-spreadsheet-cell {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--tm-space-1);
+    border-right: 1px solid var(--tm-color-border-subtle);
+    border-bottom: 1px solid var(--tm-color-border-subtle);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: cell;
+    box-sizing: border-box;
+    position: relative;
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-cell:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-spreadsheet-cell--active {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: -2px;
+    background: var(--tm-color-surface);
+    z-index: 1;
+}
+
+.tm-spreadsheet-cell--selected {
+    background: var(--tm-color-primary-subtle);
+}
+
+.tm-spreadsheet-cell--merged-hidden {
+    display: none;
+}
+
+/* ── Freeze Panes ── */
+.tm-spreadsheet-cell[style*="position: sticky"] {
+    background: var(--tm-color-surface);
+}
+
+/* ── Cell Link ── */
+.tm-spreadsheet-cell-link {
+    color: var(--tm-color-primary);
+    text-decoration: underline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-spreadsheet-cell-link:hover {
+    color: var(--tm-color-primary-hover);
+}
+
+/* ── Column / Row Resize Handles ── */
+.tm-spreadsheet-col-resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 5;
+    background: transparent;
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-col-resizer:hover {
+    background: var(--tm-color-primary);
+    opacity: 0.5;
+}
+
+.tm-spreadsheet-row-resizer {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 4px;
+    cursor: row-resize;
+    z-index: 5;
+    background: transparent;
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-row-resizer:hover {
+    background: var(--tm-color-primary);
+    opacity: 0.5;
+}
+
+/* ── Resize Dialog ── */
+.tm-spreadsheet-resize-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--tm-bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--tm-z-modal);
+}
+
+.tm-spreadsheet-resize-dialog {
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    box-shadow: var(--tm-shadow-lg);
+    padding: var(--tm-space-3);
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}
+
+.tm-spreadsheet-resize-dialog__label {
+    font-size: var(--tm-text-sm);
+    font-weight: var(--tm-font-medium);
+    color: var(--tm-color-text);
+}
+
+.tm-spreadsheet-resize-dialog__input {
+    padding: 5px 8px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-size: var(--tm-text-sm);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tm-spreadsheet-resize-dialog__input:focus {
+    border-color: var(--tm-color-primary);
+    box-shadow: var(--tm-shadow-focus);
+}
+
+.tm-spreadsheet-resize-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+}
+
+.tm-spreadsheet-resize-dialog__btn {
+    padding: 4px 12px;
+    border-radius: var(--tm-radius-sm);
+    border: 1px solid var(--tm-color-border);
+    font-size: var(--tm-text-sm);
+    cursor: pointer;
+    background: var(--tm-color-surface-elevated);
+    color: var(--tm-color-text);
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-resize-dialog__btn:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-spreadsheet-resize-dialog__btn--ok {
+    background: var(--tm-color-primary);
+    color: var(--tm-color-on-primary, #fff);
+    border-color: var(--tm-color-primary);
+}
+
+.tm-spreadsheet-resize-dialog__btn--ok:hover {
+    background: var(--tm-color-primary-hover);
+    border-color: var(--tm-color-primary-hover);
+}
+
+/* ── AutoFill Handle ── */
+.tm-spreadsheet-autofill-handle {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 6px;
+    height: 6px;
+    background: var(--tm-color-primary);
+    border: 1px solid var(--tm-color-surface);
+    cursor: crosshair;
+    z-index: 4;
+    border-radius: var(--tm-radius-sm);
+    transition: transform var(--tm-transition-fast), background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-autofill-handle:hover {
+    background: var(--tm-color-primary-hover);
+    transform: scale(1.2);
+}
+
+/* ── Cell Input (inline edit) ── */
+.tm-spreadsheet-cell-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0 2px;
+    margin: 0;
+}
+
+/* ── Context Menu ── */
+.tm-spreadsheet-context-menu {
+    position: fixed;
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    box-shadow: var(--tm-shadow-lg);
+    z-index: var(--tm-z-dropdown);
+    min-width: 160px;
+    padding: 4px 0;
+}
+
+.tm-spreadsheet-context-menu__item {
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text);
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-context-menu__item:hover {
+    background: var(--tm-color-primary-subtle);
+}
+
+.tm-spreadsheet-context-menu__divider {
+    height: 1px;
+    background: var(--tm-color-border);
+    margin: 4px 0;
+}
+
+/* ── Dialog ── */
+.tm-spreadsheet-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--tm-bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--tm-z-modal);
+    padding: var(--tm-space-4);
+}
+
+.tm-spreadsheet-dialog {
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-lg);
+    box-shadow: var(--tm-shadow-xl);
+    min-width: min(360px, 100%);
+    max-width: 100%;
+    padding: var(--tm-space-4);
+}
+
+.tm-spreadsheet-dialog__title {
+    margin: 0 0 var(--tm-space-3);
+    font-size: var(--tm-text-lg);
+    font-weight: var(--tm-font-weight-semibold);
+    color: var(--tm-color-text);
+}
+
+.tm-spreadsheet-dialog__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-3);
+    margin-bottom: var(--tm-space-4);
+}
+
+.tm-spreadsheet-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+}
+
+.tm-spreadsheet-dialog__label {
+    font-size: var(--tm-text-sm);
+    font-weight: var(--tm-font-medium);
+    color: var(--tm-color-text);
+}
+
+.tm-spreadsheet-dialog__input {
+    padding: 6px 10px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-size: var(--tm-text-sm);
+    outline: none;
+    transition: border-color var(--tm-transition-fast), box-shadow var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-dialog__input:focus {
+    border-color: var(--tm-color-primary);
+    box-shadow: var(--tm-shadow-focus);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .tm-spreadsheet-grid {
+        font-size: var(--tm-font-size-xs);
+    }
+
+    .tm-spreadsheet-header-cell {
+        font-size: var(--tm-font-size-xs);
+    }
+
+    .tm-spreadsheet-dialog {
+        min-width: 100%;
+    }
+}
+
+/* ── Formula-point mode ── */
+
+/* Crosshair cursor on all cells while building a formula */
+.tm-spreadsheet-grid--formula-point .tm-spreadsheet-cell {
+    cursor: crosshair;
+}
+
+/* Six highlight colours for referenced cells / ranges */
+.tm-spreadsheet-cell--formula-ref-0 { outline: 2px solid #1e8fe0; outline-offset: -1px; background: rgba(30, 143, 224, 0.08); }
+.tm-spreadsheet-cell--formula-ref-1 { outline: 2px solid #e04030; outline-offset: -1px; background: rgba(224, 64, 48, 0.08); }
+.tm-spreadsheet-cell--formula-ref-2 { outline: 2px solid #20a040; outline-offset: -1px; background: rgba(32, 160, 64, 0.08); }
+.tm-spreadsheet-cell--formula-ref-3 { outline: 2px solid #a040c0; outline-offset: -1px; background: rgba(160, 64, 192, 0.08); }
+.tm-spreadsheet-cell--formula-ref-4 { outline: 2px solid #e08020; outline-offset: -1px; background: rgba(224, 128, 32, 0.08); }
+.tm-spreadsheet-cell--formula-ref-5 { outline: 2px solid #208080; outline-offset: -1px; background: rgba(32, 128, 128, 0.08); }
+
+/* ── Format Cells Dialog ── */
+
+.tm-fcd {
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-lg);
+    box-shadow: var(--tm-shadow-xl);
+    width: min(640px, 100%);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tm-fcd__header {
+    padding: var(--tm-space-4) var(--tm-space-4) 0;
+}
+
+.tm-fcd__title {
+    margin: 0 0 var(--tm-space-2);
+    font-size: var(--tm-text-lg);
+    font-weight: var(--tm-font-weight-semibold);
+    color: var(--tm-color-text);
+}
+
+.tm-fcd__tabs {
+    display: flex;
+    border-bottom: 1px solid var(--tm-color-border);
+    padding: 0 var(--tm-space-4);
+    gap: var(--tm-space-1);
+}
+
+.tm-fcd__tab {
+    padding: var(--tm-space-2) var(--tm-space-3);
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color var(--tm-transition-fast), border-color var(--tm-transition-fast);
+}
+
+.tm-fcd__tab:hover {
+    color: var(--tm-color-text);
+}
+
+.tm-fcd__tab--active {
+    color: var(--tm-color-primary);
+    border-bottom-color: var(--tm-color-primary);
+    font-weight: var(--tm-font-weight-medium);
+}
+
+.tm-fcd__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--tm-space-4);
+    min-height: 240px;
+}
+
+.tm-fcd__preview-section {
+    padding: 0 var(--tm-space-4) var(--tm-space-3);
+    border-top: 1px solid var(--tm-color-border);
+}
+
+.tm-fcd__preview-label {
+    font-size: var(--tm-text-xs);
+    color: var(--tm-color-text-muted);
+    margin-bottom: var(--tm-space-1);
+    margin-top: var(--tm-space-2);
+}
+
+.tm-fcd__preview {
+    height: 40px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--tm-space-3);
+    background: var(--tm-color-surface);
+    overflow: hidden;
+}
+
+.tm-fcd__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-3) var(--tm-space-4);
+    border-top: 1px solid var(--tm-color-border);
+}
+
+/* Form layout */
+.tm-fcd__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-3);
+}
+
+.tm-fcd__two-col {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: var(--tm-space-4);
+}
+
+.tm-fcd__col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}
+
+.tm-fcd__field-row {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    flex-wrap: wrap;
+}
+
+.tm-fcd__field-label {
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text);
+    min-width: 120px;
+}
+
+.tm-fcd__check-label {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    font-size: var(--tm-text-sm);
+    cursor: pointer;
+}
+
+.tm-fcd__info {
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text-muted);
+    margin: 0;
+}
+
+.tm-fcd__input {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-size: var(--tm-text-sm);
+    outline: none;
+    min-width: 0;
+}
+
+.tm-fcd__input:focus {
+    border-color: var(--tm-color-primary);
+    box-shadow: var(--tm-shadow-focus);
+}
+
+.tm-fcd__input--sm {
+    max-width: 80px;
+    flex: none;
+}
+
+.tm-fcd__listbox {
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    overflow-y: auto;
+    flex: 1;
+    max-height: 200px;
+}
+
+.tm-fcd__listbox--sm {
+    max-height: 120px;
+}
+
+.tm-fcd__listbox-item {
+    padding: var(--tm-space-1) var(--tm-space-2);
+    font-size: var(--tm-text-sm);
+    cursor: pointer;
+    color: var(--tm-color-text);
+}
+
+.tm-fcd__listbox-item:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-fcd__listbox-item--selected {
+    background: var(--tm-color-primary);
+    color: white;
+}
+
+.tm-fcd__btn-group {
+    display: flex;
+    gap: var(--tm-space-1);
+    flex-wrap: wrap;
+}
+
+.tm-fcd__btn {
+    padding: 4px 10px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-size: var(--tm-text-sm);
+    cursor: pointer;
+    min-width: 32px;
+    text-align: center;
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-fcd__btn:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-fcd__btn--active {
+    background: var(--tm-color-primary);
+    color: white;
+    border-color: var(--tm-color-primary);
+}
+
+.tm-fcd__color-row {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+}
+
+.tm-fcd__color-input {
+    width: 40px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    cursor: pointer;
+}
+
+.tm-fcd__color-hex {
+    font-size: var(--tm-text-xs);
+    color: var(--tm-color-text-muted);
+}
+
+.tm-fcd__color-palette {
+    display: grid;
+    grid-template-columns: repeat(10, 24px);
+    gap: 2px;
+}
+
+.tm-fcd__palette-cell {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: 2px;
+    cursor: pointer;
+    padding: 0;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tm-fcd__palette-cell:hover {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: 1px;
+}
+
+.tm-fcd__palette-cell--selected {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: 1px;
+}
+
+.tm-fcd__palette-cell--transparent {
+    background: repeating-linear-gradient(
+        45deg,
+        #ccc 0px,
+        #ccc 3px,
+        white 3px,
+        white 6px
+    );
+}
+
+.tm-fcd__border-edges {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}

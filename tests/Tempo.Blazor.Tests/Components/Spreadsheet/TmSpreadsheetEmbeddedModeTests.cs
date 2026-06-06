@@ -17,8 +17,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     public void EmbeddedMode_HidesToolbar()
     {
         var cut = RenderComponent<TmSpreadsheet>(p => p
-            .Add(x => x.Mode, SpreadsheetMode.Embedded)
-            .Add(x => x.RenderMode, SpreadsheetRenderMode.CanvasJsEngine));
+            .Add(x => x.Mode, SpreadsheetMode.Embedded));
 
         cut.FindAll(".tm-spreadsheet-toolbar").Should().BeEmpty();
     }
@@ -29,8 +28,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     public void EmbeddedMode_HidesFormulaBar()
     {
         var cut = RenderComponent<TmSpreadsheet>(p => p
-            .Add(x => x.Mode, SpreadsheetMode.Embedded)
-            .Add(x => x.RenderMode, SpreadsheetRenderMode.CanvasJsEngine));
+            .Add(x => x.Mode, SpreadsheetMode.Embedded));
 
         cut.FindAll(".tm-spreadsheet-formula-bar").Should().BeEmpty();
     }
@@ -63,8 +61,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     public void EmbeddedMode_CanvasGrid_HasReadonlyAttribute()
     {
         var cut = RenderComponent<TmSpreadsheet>(p => p
-            .Add(x => x.Mode, SpreadsheetMode.Embedded)
-            .Add(x => x.RenderMode, SpreadsheetRenderMode.CanvasJsEngine));
+            .Add(x => x.Mode, SpreadsheetMode.Embedded));
 
         var grid = cut.Find(".tm-spreadsheet-canvas-grid");
         grid.GetAttribute("data-readonly").Should().Be("true");

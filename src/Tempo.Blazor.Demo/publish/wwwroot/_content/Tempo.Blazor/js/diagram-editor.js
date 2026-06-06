@@ -1,0 +1,4315 @@
+// Tempo Diagram Editor – Hybrid SVG + HTML canvas engine
+// Pan, zoom, drag, touch, multi-select, keyboard shortcuts
+window.tmDiagramEditor = {
+
+    instances: new Map(),
+
+    // ── MathJax support ──────────────────────────────────────────────────────
+
+    mathJaxReady: false,
+
+    loadMathJax: function () {
+        if (this.mathJaxReady) return Promise.resolve();
+        if (typeof window.MathJax === 'undefined') return Promise.resolve();
+        const self = this;
+        return new Promise(function (resolve) {
+            const check = function () {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    self.mathJaxReady = true;
+                    resolve();
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
+    },
+
+    typesetMath: function (container, nodeId) {
+        const self = this;
+        return this.loadMathJax().then(function () {
+            const inst = self.instances.get(container.id);
+            if (!inst || !inst.dotNetRef) return;
+
+            const selector = nodeId
+                ? '[data-node-id="' + nodeId + '"] .tm-diagram-math'
+                : '.tm-diagram-math';
+            const elements = container.querySelectorAll(selector);
+            if (elements.length === 0) return;
+
+            return window.MathJax.typesetPromise(Array.from(elements)).then(function () {
+                elements.forEach(function (el) {
+                    const svg = el.querySelector('svg');
+                    if (svg) {
+                        const nid = el.closest('[data-node-id]')?.getAttribute('data-node-id');
+                        if (nid) {
+                            const serializer = new XMLSerializer();
+                            const svgString = serializer.serializeToString(svg);
+                            inst.dotNetRef.invokeMethodAsync('OnMathSvgCached', nid, svgString);
+                        }
+                    }
+                });
+            });
+        });
+    },
+
+    // ── Init / Destroy ────────────────────────────────────────────────────────
+
+    init: function (container, dotNetRef, options) {
+        const id = container.id || 'tmd-' + Math.random().toString(36).substr(2, 9);
+        container.id = id;
+
+        const svg = container.querySelector('.tm-diagram-canvas__svg');
+        if (!svg) throw new Error('TmDiagramCanvas requires an SVG element with class tm-diagram-canvas__svg');
+
+        // F2 — 4-pane SVG structure (see planning/DIAGRAM_UNIFIED_SVG_PLAN.md §5.1).
+        // The panes are rendered by Blazor as direct <g> children of the SVG and
+        // live inside the same coordinate system, so no per-pane transform is
+        // needed.
+        const bgPane = svg.querySelector('.tm-diagram-bg-pane');
+        const scenePane = svg.querySelector('.tm-diagram-scene-pane');
+        const overlayPane = svg.querySelector('.tm-diagram-overlay-pane');
+        const decoratorPane = svg.querySelector('.tm-diagram-decorator-pane');
+
+        const opts = options || {};
+        const inst = {
+            container: container,
+            svg: svg,
+            bgPane: bgPane,
+            scenePane: scenePane,
+            overlayPane: overlayPane,
+            decoratorPane: decoratorPane,
+            dotNetRef: dotNetRef,
+
+            readOnly: !!opts.readOnly,
+            gridSize: opts.gridSize || 8,
+            showGrid: opts.showGrid !== false,
+            canvasW: opts.canvasWidth || 3000,
+            canvasH: opts.canvasHeight || 2000,
+            activeGroupId: opts.activeGroupId || null,
+
+            // drag node state
+            isDragging: false,
+            dragNodeIds: [],
+            dragStartScreen: null,
+            dragStartPositions: {},
+
+            // pan state
+            isPanning: false,
+            panStartScreen: null,
+            viewBoxStart: null,
+
+            // rubber-band selection
+            isRubberBand: false,
+            rubberStartDoc: null,
+            rubberEl: null,
+
+            // tool mode
+            toolMode: 'select',
+            spaceHeld: false,
+
+            // selection
+            selectedIds: new Set(),
+
+            // scale tracker
+            scale: 1.0,
+
+                // edge drawing
+                isDrawingEdge: false,
+                drawSource: null,
+                drawTempPath: null,
+
+                // pending free-line draw (empty canvas mousedown in edge mode
+                // that has not yet escalated to an active drag). Cleared on
+                // escalation, mouseup, ESC, or right-click.
+                isPendingEdgeDraw: false,
+                pendingEdgeStart: null,
+
+                // polyline draw (phase 2 — click-to-click). Active only when
+                // the user clicked (no drag) on empty canvas while in edge
+                // mode, or when a second empty-canvas click is made while
+                // isDrawingEdge is already true. Each entry in
+                // polylinePoints is an intermediate waypoint in document
+                // coords: {x, y}. The source terminal is stored in
+                // inst.drawSource (same shape as phase 1).
+                isDrawingPolyline: false,
+                polylinePoints: [],
+                polylineCommittedAt: 0,
+
+            // jetty drag
+            isDraggingJetty: false,
+            dragJettyEdgeId: null,
+            dragJettyType: null,
+            dragJettySide: null,
+            dragJettyNodeId: null,
+            dragJettyStartDoc: null,
+
+            // whole-edge drag
+            isDraggingWholeEdge: false,
+            dragWholeEdgeId: null,
+            dragWholeEdgeStartDoc: null,
+            dragWholeEdgeDeltaDoc: { x: 0, y: 0 },
+
+            // pinch zoom
+            pinchStartDist: 0,
+            pinchStartScale: 1,
+            pinchMidDoc: null,
+            pinchViewBoxStart: null,
+
+            // long press
+            longPressTimer: null,
+            longPressStart: null,
+            longPressNodeId: null,
+
+            // magnetic guidelines
+            guideLines: [],
+        };
+
+        this.instances.set(id, inst);
+        this._attachEvents(inst);
+
+        // Auto-fit the content into the visible canvas on first initialization.
+        // Without this, the default viewBox (e.g. 0 0 3000 2000) is much larger
+        // than the container, making the effective scale much smaller than 1.0
+        // (so edge strokes render sub-pixel thin and appear invisible), while
+        // the Blazor toolbar still displays "100 %". Auto-fit keeps the initial
+        // rendering aligned with the reported zoom level.
+        if (opts.autoFit !== false) {
+            try { this.fitToView(inst.container, (opts.padding != null) ? opts.padding : 40); }
+            catch (_e) { /* fitToView already falls back gracefully */ }
+        }
+
+        // Report both viewport and the real scale so Blazor's zoom label is
+        // correct from the very first render (init previously only sent the
+        // viewport and left the scale at its Blazor-side default of 1.0).
+        const vb = this._getViewBox(inst);
+        if (dotNetRef) {
+            dotNetRef.invokeMethodAsync('OnViewportChanged', vb.x, vb.y, vb.w, vb.h);
+            dotNetRef.invokeMethodAsync('OnZoomChanged', inst.scale);
+        }
+        return id;
+    },
+
+    destroy: function (container) {
+        const id = container.id;
+        const inst = this.instances.get(id);
+        if (!inst) return;
+
+        this._detachEvents(inst);
+        if (inst.rubberEl) inst.rubberEl.remove();
+        this._clearSelectionOutlines(inst);
+
+        if (inst.dotNetRef && typeof inst.dotNetRef.dispose === 'function') {
+            inst.dotNetRef.dispose();
+        }
+
+        inst.svg = null;
+        inst.bgPane = null;
+        inst.scenePane = null;
+        inst.overlayPane = null;
+        inst.decoratorPane = null;
+        inst.scenePane = null;
+        inst.dotNetRef = null;
+        this.instances.delete(id);
+    },
+
+    // ── Tool mode ─────────────────────────────────────────────────────────────
+
+    setToolMode: function (container, mode) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        this._applyToolMode(inst, mode);
+    },
+
+    // Central tool-mode assignment helper. Keeps `inst.toolMode`, the
+    // container cursor, and the `--edge-mode` / `--pan-mode` CSS classes
+    // consistent so styling hooks (e.g. node pointer-cursor in edge mode)
+    // stay in sync regardless of which code path flipped the mode.
+    _applyToolMode: function (inst, mode) {
+        if (!inst || !inst.container) return;
+        inst.toolMode = mode;
+        inst.container.style.cursor = mode === 'pan' ? 'grab' : (mode === 'edge' ? 'crosshair' : '');
+        inst.container.classList.toggle('tm-diagram-canvas--edge-mode', mode === 'edge');
+        inst.container.classList.toggle('tm-diagram-canvas--pan-mode', mode === 'pan');
+    },
+
+    // ── Canvas size update ────────────────────────────────────────────────────
+
+    updateCanvasSize: function (container, w, h) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.canvasW = w;
+        inst.canvasH = h;
+    },
+
+    // ── Event attachment ──────────────────────────────────────────────────────
+
+    _attachEvents: function (inst) {
+        inst._onMouseDown = (e) => this._onMouseDown(e, inst);
+        inst._onMouseMove = (e) => this._onMouseMove(e, inst);
+        inst._onMouseUp = (e) => this._onMouseUp(e, inst);
+        inst._onWheel = (e) => this._onWheel(e, inst);
+        inst._onKeyDown = (e) => this._onKeyDown(e, inst);
+        inst._onKeyUp = (e) => this._onKeyUp(e, inst);
+        inst._onTouchStart = (e) => this._onTouchStart(e, inst);
+        inst._onTouchMove = (e) => this._onTouchMove(e, inst);
+        inst._onTouchEnd = (e) => this._onTouchEnd(e, inst);
+        inst._onDrop = (e) => this._onDrop(e, inst);
+        inst._onDragOver = (e) => { e.preventDefault(); };
+        inst._onContextMenu = (e) => this._onContextMenu(e, inst);
+        inst._onDblClick = (e) => this._onDblClick(e, inst);
+
+        inst.container.addEventListener('mousedown', inst._onMouseDown);
+        inst.container.addEventListener('wheel', inst._onWheel, { passive: false });
+        inst.container.addEventListener('touchstart', inst._onTouchStart, { passive: false });
+        inst.container.addEventListener('touchmove', inst._onTouchMove, { passive: false });
+        inst.container.addEventListener('touchend', inst._onTouchEnd);
+        inst.container.addEventListener('touchcancel', inst._onTouchEnd);
+        inst.container.addEventListener('drop', inst._onDrop);
+        inst.container.addEventListener('dragover', inst._onDragOver);
+        inst.container.addEventListener('contextmenu', inst._onContextMenu);
+        inst.container.addEventListener('dblclick', inst._onDblClick);
+        document.addEventListener('mousemove', inst._onMouseMove, true);
+        document.addEventListener('mouseup', inst._onMouseUp, true);
+        document.addEventListener('keydown', inst._onKeyDown);
+        document.addEventListener('keyup', inst._onKeyUp);
+    },
+
+    _detachEvents: function (inst) {
+        inst.container.removeEventListener('mousedown', inst._onMouseDown);
+        inst.container.removeEventListener('wheel', inst._onWheel);
+        inst.container.removeEventListener('touchstart', inst._onTouchStart);
+        inst.container.removeEventListener('touchmove', inst._onTouchMove);
+        inst.container.removeEventListener('touchend', inst._onTouchEnd);
+        inst.container.removeEventListener('touchcancel', inst._onTouchEnd);
+        inst.container.removeEventListener('drop', inst._onDrop);
+        inst.container.removeEventListener('dragover', inst._onDragOver);
+        inst.container.removeEventListener('contextmenu', inst._onContextMenu);
+        if (inst._onDblClick) inst.container.removeEventListener('dblclick', inst._onDblClick);
+        document.removeEventListener('mousemove', inst._onMouseMove, true);
+        document.removeEventListener('mouseup', inst._onMouseUp, true);
+        document.removeEventListener('keydown', inst._onKeyDown);
+        document.removeEventListener('keyup', inst._onKeyUp);
+    },
+
+    _onDrop: function (e, inst) {
+        e.preventDefault();
+        if (inst.readOnly) return;
+        const stencilId = window.__tmDiagramDragStencil;
+        if (!stencilId) return;
+
+        const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+
+        inst.dotNetRef.invokeMethodAsync('OnDropFromToolbox', stencilId, docPt.x, docPt.y);
+        window.__tmDiagramDragStencil = null;
+    },
+
+    _onContextMenu: function (e, inst) {
+        if (inst.readOnly || !inst.dotNetRef) return;
+
+        // If clicking on the custom context menu itself, close it and prevent native menu
+        if (e.target.closest('.tm-diagram-editor__context-menu')) {
+            e.preventDefault();
+            inst.dotNetRef.invokeMethodAsync('CloseContextMenu');
+            return;
+        }
+
+        e.preventDefault();
+
+        // No need to call CloseContextMenu here — OnNodeContextMenu/OnEdgeContextMenu/OnCanvasContextMenu
+        // will set _contextMenuOpen = true and openContextMenu will replace the old menu and listeners.
+
+        const labelGroupEl = e.target.closest('.tm-diagram-edge-label-group');
+        if (labelGroupEl) {
+            const labelHandle = labelGroupEl.querySelector('[data-label-handle]');
+            const edgeId = labelHandle ? labelHandle.getAttribute('data-edge-id') : null;
+            if (edgeId) {
+                inst.dotNetRef.invokeMethodAsync('OnEdgeContextMenu', edgeId, e.clientX, e.clientY);
+                return;
+            }
+        }
+
+        const tableCellEl = e.target.closest('.tm-diagram-node__table-cell');
+        const nodeEl = e.target.closest('.tm-diagram-node');
+        const edgeEl = e.target.closest('.tm-diagram-edge-hit-path');
+
+        if (tableCellEl && nodeEl) {
+            const nodeId = nodeEl.getAttribute('data-node-id');
+            const row = parseInt(tableCellEl.getAttribute('data-row'), 10);
+            const col = parseInt(tableCellEl.getAttribute('data-col'), 10);
+            if (nodeId && !isNaN(row) && !isNaN(col)) {
+                inst.dotNetRef.invokeMethodAsync('OnTableCellContextMenu', nodeId, row, col, e.clientX, e.clientY);
+            }
+        } else if (nodeEl) {
+            const nodeId = nodeEl.getAttribute('data-node-id');
+            if (nodeId) {
+                inst.dotNetRef.invokeMethodAsync('OnNodeContextMenu', nodeId, e.clientX, e.clientY);
+            }
+        } else if (edgeEl) {
+            const edgeId = edgeEl.getAttribute('data-edge-id');
+            if (edgeId) {
+                inst.dotNetRef.invokeMethodAsync('OnEdgeContextMenu', edgeId, e.clientX, e.clientY);
+            }
+        } else {
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.dotNetRef.invokeMethodAsync('OnCanvasContextMenu', docPt.x, docPt.y, e.clientX, e.clientY);
+        }
+    },
+
+    // ── Coordinate helpers ────────────────────────────────────────────────────
+
+    _getViewBox: function (inst) {
+        const vb = inst.svg.viewBox.baseVal;
+        return { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+    },
+
+    _setViewBox: function (inst, x, y, w, h) {
+        inst.svg.setAttribute('viewBox', x + ' ' + y + ' ' + w + ' ' + h);
+        // After F2 the HTML nodes live inside a <foreignObject> in the scene
+        // pane, so they share the SVG's viewBox. inst.scale tracks the effective
+        // screen-to-doc ratio (still derived from the SVG's rendered width) for
+        // callers that want "zoom level" independent of getScreenCTM.
+        inst.scale = Math.max(inst.svg.getBoundingClientRect().width, 1) / w;
+        // Keep the Blazor-side `_viewBox` string in sync so any subsequent
+        // parent re-render (which would otherwise reset the viewBox attribute
+        // from stale Blazor state) preserves the current view. Without this,
+        // changes like fitToView/zoomTo would be lost whenever OnParametersSet
+        // re-computes _viewBox from the document dimensions.
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnViewBoxChanged', x, y, w, h);
+    },
+
+    _snap: function (inst, v) {
+        const g = inst.gridSize;
+        return g > 0 ? Math.round(v / g) * g : v;
+    },
+
+    _screenToDoc: function (inst, clientX, clientY) {
+        const pt = inst.svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const ctm = inst.svg.getScreenCTM();
+        if (!ctm) return { x: 0, y: 0 };
+        const r = pt.matrixTransform(ctm.inverse());
+        return { x: r.x, y: r.y };
+    },
+
+    // ── Node lookup helpers ───────────────────────────────────────────────────
+
+    _nodeEl: function (inst, id) {
+        if (!inst.scenePane) return null;
+        return inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + id + '"]');
+    },
+
+    // Post-F3 node position/rotation live in the SVG `transform` attribute on
+    // the `<g class="tm-diagram-node">`. The stored format is:
+    //   translate(X,Y) rotate(θ cx cy)
+    // where (cx, cy) is the node centre (W/2, H/2) so the rotation pivot
+    // stays at the node's centre regardless of X/Y. The parsers below cover
+    // both F3's canonical format and any legacy single-part transforms.
+    _parseNodeTransform: function (el) {
+        const t = el ? (el.getAttribute('transform') || '') : '';
+        const tm = t.match(/translate\(\s*([-\d.e+]+)\s*[,\s]\s*([-\d.e+]+)\s*\)/);
+        const rm = t.match(/rotate\(\s*([-\d.e+]+)(?:\s*[,\s]\s*([-\d.e+]+)\s*[,\s]\s*([-\d.e+]+))?\s*\)/);
+        return {
+            x: tm ? parseFloat(tm[1]) : 0,
+            y: tm ? parseFloat(tm[2]) : 0,
+            rot: rm ? parseFloat(rm[1]) : 0,
+            cx: (rm && rm[2] !== undefined) ? parseFloat(rm[2]) : null,
+            cy: (rm && rm[3] !== undefined) ? parseFloat(rm[3]) : null,
+        };
+    },
+
+    _buildNodeTransform: function (x, y, rot, w, h) {
+        let t = 'translate(' + x + ',' + y + ')';
+        if (rot) {
+            const cx = (w != null ? w : 0) / 2;
+            const cy = (h != null ? h : 0) / 2;
+            t += ' rotate(' + rot + ' ' + cx + ' ' + cy + ')';
+        }
+        return t;
+    },
+
+    _nodeRect: function (inst, id) {
+        const el = this._nodeEl(inst, id);
+        if (!el) return null;
+        const p = this._parseNodeTransform(el);
+        const dw = parseFloat(el.getAttribute('data-w') || '0');
+        const dh = parseFloat(el.getAttribute('data-h') || '0');
+        return { x: p.x, y: p.y, w: dw, h: dh };
+    },
+
+    _getNodeRotation: function (el) {
+        return this._parseNodeTransform(el).rot;
+    },
+
+    _setNodeTranslate: function (inst, id, x, y) {
+        const el = this._nodeEl(inst, id);
+        if (!el) return;
+        const rot = this._getNodeRotation(el);
+        const w = parseFloat(el.getAttribute('data-w') || '0');
+        const h = parseFloat(el.getAttribute('data-h') || '0');
+        el.setAttribute('transform', this._buildNodeTransform(x, y, rot, w, h));
+    },
+
+    _isNodeInActiveGroup: function (inst, nodeEl) {
+        if (!nodeEl) return false;
+        const parentGroupId = nodeEl.getAttribute('data-parent-group-id') || null;
+        if (!inst.activeGroupId) return !parentGroupId;
+        return parentGroupId === inst.activeGroupId;
+    },
+
+    _clampChildPosition: function (inst, childId, x, y) {
+        const childEl = this._nodeEl(inst, childId);
+        const parentId = childEl ? childEl.getAttribute('data-parent-id') : null;
+        if (!parentId || inst.dragNodeIds.includes(parentId)) return { x, y };
+        const parentRect = this._nodeRect(inst, parentId);
+        const childRect = this._nodeRect(inst, childId);
+        if (!parentRect || !childRect) return { x, y };
+        const padding = 4;
+        const minX = parentRect.x + padding;
+        const minY = parentRect.y + padding;
+        const maxX = parentRect.x + parentRect.w - childRect.w - padding;
+        const maxY = parentRect.y + parentRect.h - childRect.h - padding;
+        let cx = Math.max(minX, Math.min(x, maxX));
+        let cy = Math.max(minY, Math.min(y, maxY));
+
+        // Also clamp to parent group bounds
+        const groupId = childEl ? childEl.getAttribute('data-parent-group-id') : null;
+        if (groupId) {
+            const groupRect = this._nodeRect(inst, groupId);
+            if (groupRect && childRect && !inst.dragNodeIds.includes(groupId)) {
+                const gMinX = groupRect.x + padding;
+                const gMinY = groupRect.y + padding;
+                const gMaxX = groupRect.x + groupRect.w - childRect.w - padding;
+                const gMaxY = groupRect.y + groupRect.h - childRect.h - padding;
+                cx = Math.max(gMinX, Math.min(cx, gMaxX));
+                cy = Math.max(gMinY, Math.min(cy, gMaxY));
+            }
+        }
+        return { x: cx, y: cy };
+    },
+
+    _includeGroupNodes: function (inst, ids) {
+        const allIds = new Set(ids);
+        const groupIds = new Set();
+        ids.forEach(nid => {
+            const el = this._nodeEl(inst, nid);
+            if (!el) return;
+            // If selected node is a group container, find its children by parent-group-id
+            if (el.getAttribute('data-stencil-id') === 'general.group') {
+                groupIds.add(nid);
+            }
+            // Also check if the node itself is a member of a group
+            const gid = el.getAttribute('data-group-id');
+            if (gid) groupIds.add(gid);
+        });
+        if (groupIds.size > 0 && inst.scenePane) {
+            inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
+                const nid = el.getAttribute('data-node-id');
+                if (!nid || allIds.has(nid)) return;
+                const parentGroupId = el.getAttribute('data-parent-group-id') || null;
+                const groupId = el.getAttribute('data-group-id') || null;
+                // Include if this node belongs to any selected group
+                if (parentGroupId && groupIds.has(parentGroupId)) {
+                    allIds.add(nid);
+                }
+                // Also include by legacy group-id matching
+                else if (groupId && groupIds.has(groupId)) {
+                    const pgid = el.getAttribute('data-parent-group-id') || null;
+                    const isVisible = !inst.activeGroupId
+                        ? !pgid || pgid === groupId
+                        : pgid === inst.activeGroupId;
+                    if (isVisible) allIds.add(nid);
+                }
+            });
+        }
+        return [...allIds];
+    },
+
+    // ── Group bounds ─────────────────────────────────────────────────────────
+    //
+    // F6: No JS imperative group-bounds (no scenePane.appendChild div/rect).
+    // Razor emits <rect class="tm-diagram-group-bounds"> in .tm-diagram-bg-pane
+    // from Document.Nodes — model → view. Bounds update when Blazor re-renders
+    // after drag/resize commit; during live drag they stay at last committed
+    // geometry (less visual noise than a constantly resizing dashed frame).
+
+    // ── Hit-path helper (HTML overlay may block SVG hit-path, use elementFromPoint fallback)
+    _findHitPath: function (e) {
+        let el = e.target.closest('.tm-diagram-edge-hit-path');
+        if (el) return el;
+        if (typeof document.elementsFromPoint === 'function') {
+            const all = document.elementsFromPoint(e.clientX, e.clientY);
+            for (let i = 0; i < all.length; i++) {
+                if (all[i].classList && all[i].classList.contains('tm-diagram-edge-hit-path')) {
+                    return all[i];
+                }
+            }
+        }
+        return null;
+    },
+
+    // ── Mouse down ───────────────────────────────────────────────────────────
+
+    _onMouseDown: function (e, inst) {
+        if (inst.readOnly && e.button !== 1) return;
+
+        // Ignore when interacting with inline edit inputs or edge toolbars
+        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea, .tm-diagram-edge-label-input, .tm-diagram-edge-toolbar')) {
+            return;
+        }
+
+        inst.container.focus({ preventScroll: true });
+
+        // Middle mouse OR Space held OR pan mode => pan
+        const wantPan = e.button === 1 || inst.spaceHeld || inst.toolMode === 'pan';
+        if (wantPan) {
+            e.preventDefault();
+            inst.isPanning = true;
+            inst.panStartScreen = { x: e.clientX, y: e.clientY };
+            inst.viewBoxStart = this._getViewBox(inst);
+            inst.container.style.cursor = 'grabbing';
+            return;
+        }
+
+        const isRightClick = e.button === 2;
+        if (e.button !== 0 && !isRightClick) return;
+
+        // Any right-click aborts a pending free-line draw (mirrors the
+        // classic "right-click to cancel drawing" UX from draw.io / Visio).
+        if (isRightClick && inst.isPendingEdgeDraw) {
+            inst.isPendingEdgeDraw = false;
+            inst.pendingEdgeStart = null;
+        }
+
+        // Polyline draw in progress: intercept before any other handler so
+        // clicks only add waypoints / commit the edge. Right-click discards
+        // the whole draft.
+        if (inst.isDrawingPolyline) {
+            if (isRightClick) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._cancelEdgeDraw(inst);
+                return;
+            }
+            if (e.button === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._onPolylineMouseDown(e, inst);
+                return;
+            }
+        }
+
+        // Right-click on edge or label -> select edge
+        if (isRightClick) {
+            const edgeEl = this._findHitPath(e);
+            if (edgeEl) {
+                const edgeId = edgeEl.getAttribute('data-edge-id');
+                if (edgeId) {
+                    if (e.ctrlKey || e.metaKey) {
+                        if (inst.selectedIds.has(edgeId)) inst.selectedIds.delete(edgeId);
+                        else inst.selectedIds.add(edgeId);
+                    } else {
+                        inst.selectedIds = new Set([edgeId]);
+                        this._updateSelection(inst);
+                    }
+                    inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [...inst.selectedIds]);
+                    return;
+                }
+            }
+            const labelGroupEl = e.target.closest('.tm-diagram-edge-label-group');
+            if (labelGroupEl) {
+                const labelHandle = labelGroupEl.querySelector('[data-label-handle]');
+                const edgeId = labelHandle ? labelHandle.getAttribute('data-edge-id') : null;
+                if (edgeId) {
+                    inst.selectedIds = new Set([edgeId]);
+                    this._updateSelection(inst);
+                    inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [edgeId]);
+                    return;
+                }
+            }
+        }
+
+        // Edge label handle clicked?
+        const labelHitEl = e.target.closest('[data-label-handle="true"]');
+        if (labelHitEl && !inst.readOnly) {
+            e.preventDefault();
+            e.stopPropagation();
+            inst.isDraggingEdgeLabel = true;
+            inst.dragEdgeLabelId = labelHitEl.getAttribute('data-edge-id');
+            inst.dragEdgeLabelStart = { x: e.clientX, y: e.clientY };
+            const g = labelHitEl.closest('.tm-diagram-edge-label-group');
+            if (g) {
+                inst.dragEdgeLabelStartT = parseFloat(g.getAttribute('data-label-t')) || 0.5;
+                inst.dragEdgeLabelStartOx = parseFloat(g.getAttribute('data-label-ox')) || 0;
+                inst.dragEdgeLabelStartOy = parseFloat(g.getAttribute('data-label-oy')) || 0;
+            }
+            return;
+        }
+
+        // Edge virtual bend clicked?
+        const virtualBendEl = e.target.closest('.tm-diagram-edge-virtual-bend');
+        if (virtualBendEl && !inst.readOnly) {
+            e.preventDefault();
+            e.stopPropagation();
+            const edgeId = virtualBendEl.getAttribute('data-edge-id');
+            const segmentIndex = parseInt(virtualBendEl.getAttribute('data-segment-index'), 10);
+            const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            (async () => {
+                const newIndex = await inst.dotNetRef.invokeMethodAsync('OnVirtualBendInsert', edgeId, segmentIndex, pt.x, pt.y);
+                inst.isDraggingWaypoint = true;
+                inst.dragWaypointEdgeId = edgeId;
+                inst.dragWaypointIndex = newIndex;
+                inst.dragWaypointStartScreen = { x: e.clientX, y: e.clientY };
+                inst.dragWaypointStartDoc = pt;
+            })();
+            return;
+        }
+
+        // Edge waypoint / jetty handle clicked?
+        const handleEl = e.target.closest('.tm-diagram-edge-handle');
+        if (handleEl && !inst.readOnly) {
+            const isWaypoint = handleEl.getAttribute('data-waypoint') === 'true';
+            if (isWaypoint) {
+                e.preventDefault();
+                e.stopPropagation();
+                inst.isDraggingWaypoint = true;
+                inst.dragWaypointEdgeId = handleEl.getAttribute('data-edge-id');
+                inst.dragWaypointIndex = parseInt(handleEl.getAttribute('data-handle-index'), 10) - 1;
+                inst.dragWaypointStartScreen = { x: e.clientX, y: e.clientY };
+                const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                inst.dragWaypointStartDoc = pt;
+                return;
+            }
+            const jettyType = handleEl.getAttribute('data-jetty');
+            if (jettyType) {
+                const jettyNodeId = handleEl.getAttribute('data-node-id');
+                const jettyNodeEl = jettyNodeId ? this._nodeEl(inst, jettyNodeId) : null;
+                if (jettyNodeEl && jettyNodeEl.getAttribute('data-locked') === 'true') return;
+                e.preventDefault();
+                e.stopPropagation();
+                inst.isDraggingJetty = true;
+                inst.dragJettyEdgeId = handleEl.getAttribute('data-edge-id');
+                inst.dragJettyType = jettyType;
+                inst.dragJettySide = handleEl.getAttribute('data-jetty-side');
+                inst.dragJettyNodeId = jettyNodeId;
+                const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                inst.dragJettyStartDoc = pt;
+                return;
+            }
+            const danglingType = handleEl.getAttribute('data-dangling');
+            if (danglingType) {
+                e.preventDefault();
+                e.stopPropagation();
+                inst.isDraggingDangling = true;
+                inst.dragDanglingEdgeId = handleEl.getAttribute('data-edge-id');
+                inst.dragDanglingType = danglingType;
+                const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                inst.dragDanglingStartDoc = pt;
+                inst.dragDanglingStartScreen = { x: e.clientX, y: e.clientY };
+                return;
+            }
+        }
+
+        // Segment handle clicked? (orthogonal edge segment drag)
+        const segmentHandleEl = e.target.closest('.tm-diagram-edge-segment-handle');
+        if (segmentHandleEl && !inst.readOnly) {
+            e.preventDefault();
+            e.stopPropagation();
+            const edgeId = segmentHandleEl.getAttribute('data-edge-id');
+            const segmentIndex = parseInt(segmentHandleEl.getAttribute('data-segment-index'), 10);
+            const handles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-handle-index'), 10) - parseInt(b.getAttribute('data-handle-index'), 10);
+                });
+            if (handles.length >= segmentIndex + 2) {
+                const x1 = parseFloat(handles[segmentIndex].getAttribute('cx'));
+                const y1 = parseFloat(handles[segmentIndex].getAttribute('cy'));
+                const x2 = parseFloat(handles[segmentIndex + 1].getAttribute('cx'));
+                const y2 = parseFloat(handles[segmentIndex + 1].getAttribute('cy'));
+                const isVertical = Math.abs(x1 - x2) < 0.5;
+                const isHorizontal = Math.abs(y1 - y2) < 0.5;
+                inst.isDraggingSegment = true;
+                inst.dragSegmentEdgeId = edgeId;
+                inst.dragSegmentIndex = segmentIndex;
+                inst.dragSegmentIsVertical = isVertical;
+                inst.dragSegmentIsHorizontal = isHorizontal;
+                inst.dragSegmentStartScreen = { x: e.clientX, y: e.clientY };
+                inst.dragSegmentHandlePositions = handles.map(function (h) {
+                    return {
+                        x: parseFloat(h.getAttribute('cx')),
+                        y: parseFloat(h.getAttribute('cy'))
+                    };
+                });
+                inst.container.style.cursor = isVertical ? 'col-resize' : 'row-resize';
+            }
+            return;
+        }
+
+        // Left-click on edge hit-path? -> start whole-edge drag
+        if (!isRightClick && !inst.readOnly) {
+            const edgeHitEl = this._findHitPath(e);
+            if (edgeHitEl) {
+                const edgeId = edgeHitEl.getAttribute('data-edge-id');
+                if (edgeId) {
+                    if (!inst.selectedIds.has(edgeId)) {
+                        inst.selectedIds = new Set([edgeId]);
+                        this._updateSelection(inst);
+                        inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [...inst.selectedIds]);
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    inst.isDraggingWholeEdge = true;
+                    inst.dragWholeEdgeId = edgeId;
+                    const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                    inst.dragWholeEdgeStartDoc = pt;
+                    inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
+                    // Cache edge endpoint positions for guideline snapping
+                    const pathEl = inst.svg.querySelector('.tm-diagram-edge-hit-path[data-edge-id="' + edgeId + '"]');
+                    if (pathEl) {
+                        const len = pathEl.getTotalLength();
+                        const p1 = pathEl.getPointAtLength(0);
+                        const p2 = pathEl.getPointAtLength(len);
+                        inst.dragWholeEdgeStartPts = { source: { x: p1.x, y: p1.y }, target: { x: p2.x, y: p2.y } };
+                    } else {
+                        inst.dragWholeEdgeStartPts = null;
+                    }
+                    inst.container.style.cursor = 'grabbing';
+                    return;
+                }
+            }
+        }
+
+        // Port clicked? -> start edge drawing (skip if node is locked)
+        const portEl = e.target.closest('.tm-diagram-port');
+        if (portEl && !inst.readOnly) {
+            const nodeEl = portEl.closest('[data-node-id]');
+            if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (nodeEl) {
+                this._startEdgeDraw(inst, nodeEl.getAttribute('data-node-id'), portEl.getAttribute('data-port-id'), e.clientX, e.clientY);
+            }
+            return;
+        }
+
+        // Connection point clicked? -> start edge drawing with fixed constraint
+        const cpEl = e.target.closest('.tm-diagram-connection-point');
+        if (cpEl && !inst.readOnly) {
+            const nodeEl = cpEl.closest('[data-node-id]');
+            if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (nodeEl) {
+                const rx = parseFloat(cpEl.getAttribute('data-cp-rx'));
+                const ry = parseFloat(cpEl.getAttribute('data-cp-ry'));
+                const perimeter = cpEl.getAttribute('data-cp-perimeter') === 'true';
+                this._startEdgeDraw(inst, nodeEl.getAttribute('data-node-id'), null, e.clientX, e.clientY, null, 0.5, rx, ry, perimeter);
+            }
+            return;
+        }
+
+        // Resize / rotate / connect clicked? -> let Blazor handle it (do NOT stopPropagation,
+        // otherwise Blazor's document-level event delegation never receives the event)
+        if (e.target.closest('.tm-diagram-resize-handle, .tm-diagram-rotate-handle, .tm-diagram-connect-arrow')) {
+            return;
+        }
+
+        // Link clicked? (on a node with data-link)
+        const linkEl = e.target.closest('[data-link]');
+        if (linkEl && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            const link = linkEl.getAttribute('data-link');
+            const nodeId = linkEl.getAttribute('data-node-id');
+            if (link && nodeId && inst.dotNetRef) {
+                e.preventDefault();
+                e.stopPropagation();
+                inst.dotNetRef.invokeMethodAsync('OnNodeLinkClicked', nodeId, link);
+                return;
+            }
+        }
+
+        // Node clicked?
+        const nodeEl = e.target.closest('[data-node-id]');
+        if (nodeEl && this._isNodeInActiveGroup(inst, nodeEl)) {
+            e.preventDefault();
+            const id = nodeEl.getAttribute('data-node-id');
+            const isLocked = nodeEl.getAttribute('data-locked') === 'true';
+
+            // ── Drill-in for table cells (draw.io pattern) ───────────────────
+            // If the mousedown landed on a <td> of an ALREADY-selected table and
+            // we're not in a special tool mode, enter a "pending cell click"
+            // state. On mouseup without meaningful movement this becomes a cell
+            // sub-select; on meaningful movement it escalates to a normal node
+            // drag so large tables remain movable.
+            if (!isRightClick && !inst.readOnly && inst.toolMode !== 'edge' && inst.selectedIds.has(id)) {
+                const cellEl = e.target.closest('.tm-diagram-node__table-cell');
+                if (cellEl) {
+                    const row = parseInt(cellEl.getAttribute('data-row'), 10);
+                    const col = parseInt(cellEl.getAttribute('data-col'), 10);
+                    if (!isNaN(row) && !isNaN(col)) {
+                        inst.pendingTableCellClick = {
+                            nodeId: id,
+                            row: row,
+                            col: col,
+                            ctrlKey: !!(e.ctrlKey || e.metaKey),
+                            startScreenX: e.clientX,
+                            startScreenY: e.clientY
+                        };
+                        return;
+                    }
+                }
+            }
+
+            if (e.ctrlKey || e.metaKey) {
+                if (inst.selectedIds.has(id)) inst.selectedIds.delete(id);
+                else inst.selectedIds.add(id);
+                this._updateSelection(inst);
+                inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [...inst.selectedIds]);
+                return;
+            }
+
+            if (inst.toolMode === 'edge' && !inst.readOnly) {
+                const rect = this._nodeRect(inst, id);
+                if (rect) {
+                    const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+                    const dx = docPt.x - (rect.x + rect.w / 2);
+                    const dy = docPt.y - (rect.y + rect.h / 2);
+                    const adx = Math.abs(dx);
+                    const ady = Math.abs(dy);
+                    let side = null;
+                    let offset = 0.5;
+                    if (rect.w > 0 && rect.h > 0 && (adx > 0 || ady > 0)) {
+                        if (adx / rect.w > ady / rect.h) {
+                            side = dx > 0 ? 'right' : 'left';
+                            offset = Math.max(0, Math.min(1, (docPt.y - rect.y) / rect.h));
+                        } else {
+                            side = dy > 0 ? 'bottom' : 'top';
+                            offset = Math.max(0, Math.min(1, (docPt.x - rect.x) / rect.w));
+                        }
+                    }
+                    this._startEdgeDraw(inst, id, null, e.clientX, e.clientY, side, offset);
+                }
+                e.preventDefault();
+                return;
+            }
+
+            if (!inst.selectedIds.has(id)) {
+                inst.selectedIds = new Set([id]);
+                this._updateSelection(inst);
+                inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [id]);
+            }
+
+            if (isLocked || inst.readOnly) return;
+            if (isRightClick) return;
+
+            inst.isDragging = true;
+            inst.dragNodeIds = [...inst.selectedIds];
+
+            // Include children of selected nodes
+            const allIds = new Set(inst.dragNodeIds);
+            inst.dragNodeIds.forEach(nid => {
+                if (inst.scenePane) {
+                    inst.scenePane.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
+                        const cid = childEl.getAttribute('data-node-id');
+                        if (cid && this._isNodeInActiveGroup(inst, childEl)) allIds.add(cid);
+                    });
+                }
+            });
+            inst.dragNodeIds = [...allIds];
+
+            // Include group nodes
+            inst.dragNodeIds = this._includeGroupNodes(inst, inst.dragNodeIds);
+
+            inst.dragStartScreen = { x: e.clientX, y: e.clientY };
+            inst.dragStartPositions = {};
+            inst.dragNodeIds.forEach(nid => {
+                const r = this._nodeRect(inst, nid);
+                if (r) inst.dragStartPositions[nid] = { x: r.x, y: r.y, w: r.w, h: r.h };
+            });
+            inst.dotNetRef.invokeMethodAsync('OnDragStarted', inst.dragNodeIds);
+            inst.container.style.cursor = 'grabbing';
+            return;
+        }
+
+        // Edge tool on empty canvas: start a *pending* free-line draw. The
+        // actual `_startEdgeDraw` is deferred until the pointer moves past
+        // DRAG_ESCALATE_PX (see _onMouseMove) so a simple click on empty
+        // canvas still behaves as "cancel / back to select" like before.
+        if (inst.toolMode === 'edge' && !isRightClick) {
+            e.preventDefault();
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.isPendingEdgeDraw = true;
+            inst.pendingEdgeStart = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                docX: docPt.x,
+                docY: docPt.y
+            };
+            return;
+        }
+        if (inst.toolMode === 'edge') {
+            // Right-click in edge mode: revert to select.
+            this._applyToolMode(inst, 'select');
+            if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+            return;
+        }
+
+        // Empty canvas: rubber-band selection (or clear selection on right-click)
+        if (isRightClick) {
+            if (inst.selectedIds.size > 0) {
+                inst.selectedIds.clear();
+                this._updateSelection(inst);
+                inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', []);
+            }
+            return;
+        }
+        e.preventDefault();
+        const rect = inst.container.getBoundingClientRect();
+        const screenPt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        inst.isRubberBand = true;
+        inst.rubberStartScreen = screenPt;
+        inst.rubberEl = this._createRubberEl(inst, screenPt.x, screenPt.y);
+
+        if (!e.shiftKey && inst.selectedIds.size > 0) {
+            inst.selectedIds.clear();
+            this._updateSelection(inst);
+            inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', []);
+        }
+    },
+
+    // ── Mouse move ───────────────────────────────────────────────────────────
+
+    _onMouseMove: function (e, inst) {
+        // Escalate a pending table-cell click into a node drag once the pointer
+        // has moved past a small threshold (so a tiny jitter does not cancel
+        // the sub-select while a deliberate drag still moves the whole table).
+        if (inst.pendingTableCellClick) {
+            const p = inst.pendingTableCellClick;
+            const dx = Math.abs(e.clientX - p.startScreenX);
+            const dy = Math.abs(e.clientY - p.startScreenY);
+            const DRAG_ESCALATE_PX = 4;
+            if (dx > DRAG_ESCALATE_PX || dy > DRAG_ESCALATE_PX) {
+                inst.pendingTableCellClick = null;
+                this._beginNodeDragFromCell(inst, p.nodeId, p.startScreenX, p.startScreenY);
+                // fall through so the current delta is also applied this frame
+            } else {
+                return;
+            }
+        }
+
+        // Escalate a pending free-line draw into an actual edge draw once the
+        // pointer has moved past DRAG_ESCALATE_PX. This keeps a plain click
+        // on empty canvas (no movement) as a no-op (and mouseup will then
+        // revert to select mode).
+        if (inst.isPendingEdgeDraw && inst.pendingEdgeStart) {
+            const p = inst.pendingEdgeStart;
+            const dx = Math.abs(e.clientX - p.clientX);
+            const dy = Math.abs(e.clientY - p.clientY);
+            const DRAG_ESCALATE_PX = 4;
+            if (dx > DRAG_ESCALATE_PX || dy > DRAG_ESCALATE_PX) {
+                inst.isPendingEdgeDraw = false;
+                inst.pendingEdgeStart = null;
+                // Start the draw anchored at the original mousedown point so
+                // the temp path does not visually "jump" from the cursor.
+                this._startEdgeDraw(inst, null, null, p.clientX, p.clientY);
+                this._updateEdgeDraw(inst, e.clientX, e.clientY);
+                return;
+            }
+        }
+
+        if (inst.isDrawingEdge) {
+            // Remember the latest cursor position so Enter can commit at it.
+            inst.lastPointerClient = { x: e.clientX, y: e.clientY };
+            this._updateEdgeDraw(inst, e.clientX, e.clientY);
+            return;
+        }
+
+        if (inst.isDraggingWaypoint) {
+            let pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            if (inst.gridSize > 0 && !e.altKey) {
+                pt = {
+                    x: Math.round(pt.x / inst.gridSize) * inst.gridSize,
+                    y: Math.round(pt.y / inst.gridSize) * inst.gridSize
+                };
+            }
+            const guides = this._computeSnapGuidesForPoint(inst, pt.x, pt.y);
+            if (guides.x) pt.x += guides.x.delta;
+            if (guides.y) pt.y += guides.y.delta;
+            this._drawGuideLines(inst, guides);
+            this._updateWaypointVisuals(inst, inst.dragWaypointEdgeId, inst.dragWaypointIndex, pt.x, pt.y);
+            return;
+        }
+
+        if (inst.isDraggingSegment) {
+            const dxScreen = e.clientX - inst.dragSegmentStartScreen.x;
+            const dyScreen = e.clientY - inst.dragSegmentStartScreen.y;
+            const dxDoc = dxScreen / inst.scale;
+            const dyDoc = dyScreen / inst.scale;
+
+            const positions = inst.dragSegmentHandlePositions.map(function (p) { return { x: p.x, y: p.y }; });
+            const idx = inst.dragSegmentIndex;
+
+            if (inst.dragSegmentIsVertical) {
+                positions[idx].x += dxDoc;
+                positions[idx + 1].x += dxDoc;
+            } else if (inst.dragSegmentIsHorizontal) {
+                positions[idx].y += dyDoc;
+                positions[idx + 1].y += dyDoc;
+            }
+
+            const edgeId = inst.dragSegmentEdgeId;
+            const handles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-handle-index'), 10) - parseInt(b.getAttribute('data-handle-index'), 10);
+                });
+            for (let i = 0; i < handles.length && i < positions.length; i++) {
+                handles[i].setAttribute('cx', positions[i].x);
+                handles[i].setAttribute('cy', positions[i].y);
+            }
+
+            // Also move segment handles
+            const segHandles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-segment-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-segment-index'), 10) - parseInt(b.getAttribute('data-segment-index'), 10);
+                });
+            for (let i = 0; i < segHandles.length && i < positions.length - 1; i++) {
+                const mx = (positions[i].x + positions[i + 1].x) / 2;
+                const my = (positions[i].y + positions[i + 1].y) / 2;
+                segHandles[i].setAttribute('cx', mx);
+                segHandles[i].setAttribute('cy', my);
+            }
+
+            let d = 'M ' + positions[0].x + ' ' + positions[0].y;
+            for (let i = 1; i < positions.length; i++) {
+                d += ' L ' + positions[i].x + ' ' + positions[i].y;
+            }
+            const hitPath = inst.svg.querySelector('path.tm-diagram-edge-hit-path[data-edge-id="' + edgeId + '"]');
+            const visPath = inst.svg.querySelector('path.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]');
+            if (hitPath) hitPath.setAttribute('d', d);
+            if (visPath) visPath.setAttribute('d', d);
+
+            return;
+        }
+
+        if (inst.isDraggingDangling) {
+            let pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            if (inst.gridSize > 0 && !e.altKey) {
+                pt = {
+                    x: Math.round(pt.x / inst.gridSize) * inst.gridSize,
+                    y: Math.round(pt.y / inst.gridSize) * inst.gridSize
+                };
+            }
+            const guides = this._computeSnapGuidesForPoint(inst, pt.x, pt.y);
+            if (guides.x) pt.x += guides.x.delta;
+            if (guides.y) pt.y += guides.y.delta;
+            this._drawGuideLines(inst, guides);
+            this._updateDanglingVisuals(inst, inst.dragDanglingEdgeId, inst.dragDanglingType, pt.x, pt.y);
+
+            // Detect hover over node for reconnect (use elementsFromPoint because the dangling SVG handle blocks elementFromPoint)
+            const els = document.elementsFromPoint(e.clientX, e.clientY);
+            let nodeEl = null;
+            for (let i = 0; i < els.length; i++) {
+                const candidate = els[i].closest('[data-node-id]');
+                if (candidate) {
+                    nodeEl = candidate;
+                    break;
+                }
+            }
+            if (nodeEl) {
+                const hoverNodeId = nodeEl.getAttribute('data-node-id');
+                if (inst.dragDanglingHoverNodeId !== hoverNodeId) {
+                    // Clear previous highlight and timer
+                    if (inst.dragDanglingHoverNodeId) {
+                        const prev = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                        if (prev) {
+                            prev.classList.remove('tm-diagram-node--drop-target');
+                            prev.classList.remove('tm-diagram-node--outline-connect');
+                        }
+                    }
+                    if (inst.danglingOutlineTimer) {
+                        clearTimeout(inst.danglingOutlineTimer);
+                        inst.danglingOutlineTimer = null;
+                    }
+                    inst.danglingOutlineConnect = false;
+                    inst.dragDanglingHoverNodeId = hoverNodeId;
+                    nodeEl.classList.add('tm-diagram-node--drop-target');
+                    // Start 2s timer for outline connect
+                    inst.danglingOutlineTimer = setTimeout(function () {
+                        if (inst.dragDanglingHoverNodeId === hoverNodeId) {
+                            const stillNode = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + hoverNodeId + '"]');
+                            if (stillNode) stillNode.classList.add('tm-diagram-node--outline-connect');
+                            inst.danglingOutlineConnect = true;
+                        }
+                    }, 2000);
+                }
+            } else if (inst.dragDanglingHoverNodeId) {
+                const prev = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                if (prev) {
+                    prev.classList.remove('tm-diagram-node--drop-target');
+                    prev.classList.remove('tm-diagram-node--outline-connect');
+                }
+                if (inst.danglingOutlineTimer) {
+                    clearTimeout(inst.danglingOutlineTimer);
+                    inst.danglingOutlineTimer = null;
+                }
+                inst.danglingOutlineConnect = false;
+                inst.dragDanglingHoverNodeId = null;
+            }
+            return;
+        }
+
+        if (inst.isDraggingJetty && inst.dragJettyEdgeId) {
+            const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            const nodeRect = this._nodeRect(inst, inst.dragJettyNodeId);
+            if (nodeRect) {
+                const side = inst.dragJettySide;
+                let newSpacing = 0;
+                if (side === 'left') newSpacing = nodeRect.x - pt.x;
+                else if (side === 'right') newSpacing = pt.x - (nodeRect.x + nodeRect.w);
+                else if (side === 'top') newSpacing = nodeRect.y - pt.y;
+                else if (side === 'bottom') newSpacing = pt.y - (nodeRect.y + nodeRect.h);
+                newSpacing = Math.max(0, Math.round(newSpacing));
+                const sourceSpacing = inst.dragJettyType === 'source' ? newSpacing : null;
+                const targetSpacing = inst.dragJettyType === 'target' ? newSpacing : null;
+                inst.dotNetRef.invokeMethodAsync('OnEdgeSpacingChanged', inst.dragJettyEdgeId, sourceSpacing, targetSpacing);
+            }
+            return;
+        }
+
+        if (inst.isDraggingEdgeLabel && inst.dragEdgeLabelId) {
+            const edgeId = inst.dragEdgeLabelId;
+            const g = inst.svg.querySelector('g.tm-diagram-edge-label-group[data-edge-id="' + edgeId + '"]');
+            if (g) {
+                const dxScreen = e.clientX - inst.dragEdgeLabelStart.x;
+                const dyScreen = e.clientY - inst.dragEdgeLabelStart.y;
+                const dxDoc = dxScreen / inst.scale;
+                const dyDoc = dyScreen / inst.scale;
+                const newOx = (inst.dragEdgeLabelStartOx || 0) + dxDoc;
+                const newOy = (inst.dragEdgeLabelStartOy || 0) + dyDoc;
+                g.setAttribute('transform', 'translate(' + newOx + ' ' + newOy + ')');
+            }
+            return;
+        }
+
+        if (inst.isDraggingWholeEdge && inst.dragWholeEdgeId) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            let pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            if (inst.gridSize > 0 && !e.altKey) {
+                pt = {
+                    x: Math.round(pt.x / inst.gridSize) * inst.gridSize,
+                    y: Math.round(pt.y / inst.gridSize) * inst.gridSize
+                };
+            }
+            // Compute delta
+            let dx = pt.x - inst.dragWholeEdgeStartDoc.x;
+            let dy = pt.y - inst.dragWholeEdgeStartDoc.y;
+            // Snap guidelines using bounding box of both endpoints (like node-drag snapping)
+            if (inst.dragWholeEdgeStartPts) {
+                const sPt = { x: inst.dragWholeEdgeStartPts.source.x + dx, y: inst.dragWholeEdgeStartPts.source.y + dy };
+                const tPt = { x: inst.dragWholeEdgeStartPts.target.x + dx, y: inst.dragWholeEdgeStartPts.target.y + dy };
+                const minX = Math.min(sPt.x, tPt.x);
+                const minY = Math.min(sPt.y, tPt.y);
+                const maxX = Math.max(sPt.x, tPt.x);
+                const maxY = Math.max(sPt.y, tPt.y);
+                const fakeId = '__edge__';
+                const fakeStart = { x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
+                const guides = this._computeSnapGuides(inst, [fakeId], { [fakeId]: fakeStart }, 0, 0);
+                if (guides.x) { dx += guides.x.delta; pt.x += guides.x.delta; }
+                if (guides.y) { dy += guides.y.delta; pt.y += guides.y.delta; }
+                this._drawGuideLines(inst, guides);
+            } else {
+                this._drawGuideLines(inst, { x: null, y: null });
+            }
+            inst.dragWholeEdgeDeltaDoc = { x: dx, y: dy };
+            const group = inst.svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + inst.dragWholeEdgeId + '"]');
+            if (group) {
+                group.setAttribute('transform', 'translate(' + dx + ' ' + dy + ')');
+            }
+            return;
+        }
+
+        if (inst.isDragging && inst.dragNodeIds.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dxScreen = e.clientX - inst.dragStartScreen.x;
+            const dyScreen = e.clientY - inst.dragStartScreen.y;
+
+            let dxDoc = dxScreen / inst.scale;
+            let dyDoc = dyScreen / inst.scale;
+
+            const guides = this._computeSnapGuides(inst, inst.dragNodeIds, inst.dragStartPositions, dxDoc, dyDoc);
+            if (guides.x !== null) dxDoc += guides.x.delta;
+            if (guides.y !== null) dyDoc += guides.y.delta;
+            this._drawGuideLines(inst, guides);
+
+            inst.dragNodeIds.forEach(id => {
+                const start = inst.dragStartPositions[id];
+                if (!start) return;
+                let nx = start.x + dxDoc;
+                let ny = start.y + dyDoc;
+                const clamped = this._clampChildPosition(inst, id, nx, ny);
+                this._setNodeTranslate(inst, id, clamped.x, clamped.y);
+            });
+            this._updateSelectionTransforms(inst);
+            return;
+        }
+
+        if (inst.isRubberBand && inst.rubberEl) {
+            const rect = inst.container.getBoundingClientRect();
+            const cur = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            const rx = Math.min(cur.x, inst.rubberStartScreen.x);
+            const ry = Math.min(cur.y, inst.rubberStartScreen.y);
+            const rw = Math.abs(cur.x - inst.rubberStartScreen.x);
+            const rh = Math.abs(cur.y - inst.rubberStartScreen.y);
+            inst.rubberEl.style.left = rx + 'px';
+            inst.rubberEl.style.top = ry + 'px';
+            inst.rubberEl.style.width = rw + 'px';
+            inst.rubberEl.style.height = rh + 'px';
+            return;
+        }
+
+        if (inst.isPanning && inst.panStartScreen) {
+            const vb = inst.viewBoxStart;
+            const dxScreen = e.clientX - inst.panStartScreen.x;
+            const dyScreen = e.clientY - inst.panStartScreen.y;
+            const dxDoc = dxScreen / inst.scale;
+            const dyDoc = dyScreen / inst.scale;
+            this._setViewBox(inst, vb.x - dxDoc, vb.y - dyDoc, vb.w, vb.h);
+        }
+
+        // Ruler cursor (skip during drag/pan/rubber-band to avoid Blazor re-render fighting with JS direct DOM updates)
+        if (inst.dotNetRef && !inst.isDragging && !inst.isPanning && !inst.isRubberBand && !inst.isDrawingEdge && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel && !inst.isDraggingWholeEdge) {
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.dotNetRef.invokeMethodAsync('OnRulerCursorMoved', docPt.x, docPt.y);
+        }
+
+        // Connection hover icons — disabled, ports now appear on hover via CSS
+        // if (!inst.readOnly && !inst.isDrawingEdge && !inst.isDragging && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel && !inst.isPanning && !inst.isRubberBand) {
+        //     this._updateConnectHoverIcons(inst, e.clientX, e.clientY);
+        // }
+    },
+
+    // ── Drill-in drag escalation ─────────────────────────────────────────────
+
+    /// Initialises a normal node drag starting from the screen position captured
+    /// when the user first pressed mouse down on a cell of an already-selected
+    /// table. Mirrors the drag-setup block from _onMouseDown.
+    _beginNodeDragFromCell: function (inst, nodeId, startScreenX, startScreenY) {
+        if (inst.readOnly) return;
+        const nodeEl = inst.scenePane ? inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + nodeId + '"]') : null;
+        if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
+        if (!inst.selectedIds.has(nodeId)) return;
+
+        inst.isDragging = true;
+        inst.dragNodeIds = [...inst.selectedIds];
+
+        const allIds = new Set(inst.dragNodeIds);
+        inst.dragNodeIds.forEach(nid => {
+            if (inst.scenePane) {
+                inst.scenePane.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
+                    const cid = childEl.getAttribute('data-node-id');
+                    if (cid && this._isNodeInActiveGroup(inst, childEl)) allIds.add(cid);
+                });
+            }
+        });
+        inst.dragNodeIds = [...allIds];
+        inst.dragNodeIds = this._includeGroupNodes(inst, inst.dragNodeIds);
+
+        inst.dragStartScreen = { x: startScreenX, y: startScreenY };
+        inst.dragStartPositions = {};
+        inst.dragNodeIds.forEach(nid => {
+            const r = this._nodeRect(inst, nid);
+            if (r) inst.dragStartPositions[nid] = { x: r.x, y: r.y, w: r.w, h: r.h };
+        });
+        inst.dotNetRef.invokeMethodAsync('OnDragStarted', inst.dragNodeIds);
+        inst.container.style.cursor = 'grabbing';
+    },
+
+    // ── Double-click on table cells (start edit) ─────────────────────────────
+
+    _onDblClick: function (e, inst) {
+        if (inst.readOnly) return;
+
+        // Finish a polyline draft on double-click over empty canvas. Both
+        // mousedowns of the dblclick pair already appended a waypoint at ~
+        // this position — pop up to two colocated waypoints so the commit
+        // does not leave redundant zero-length segments, then commit with
+        // the cursor as a floating target terminal.
+        if (inst.isDrawingPolyline) {
+            e.preventDefault();
+            e.stopPropagation();
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            const threshDoc = 12 / (inst.scale || 1);
+            let popped = 0;
+            while (inst.polylinePoints.length > 0 && popped < 2) {
+                const last = inst.polylinePoints[inst.polylinePoints.length - 1];
+                if (Math.abs(last.x - docPt.x) < threshDoc && Math.abs(last.y - docPt.y) < threshDoc) {
+                    inst.polylinePoints.pop();
+                    popped++;
+                } else {
+                    break;
+                }
+            }
+            this._commitPolyline(inst, { kind: 'floating', x: docPt.x, y: docPt.y });
+            return;
+        }
+
+        // Swallow the native dblclick that immediately follows a polyline
+        // commit — otherwise the table-cell / edge-label dbl-click handlers
+        // on the same element would fire and e.g. open an inline editor.
+        if (inst.polylineCommittedAt && (Date.now() - inst.polylineCommittedAt) < 500) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        // Don't fight with an already-active inline editor.
+        const tag = e.target && e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+        const cellEl = e.target.closest ? e.target.closest('.tm-diagram-node__table-cell') : null;
+        if (!cellEl) return;
+
+        const nodeEl = cellEl.closest('[data-node-id]');
+        if (!nodeEl || !this._isNodeInActiveGroup(inst, nodeEl)) return;
+        if (nodeEl.getAttribute('data-locked') === 'true') return;
+
+        const nodeId = nodeEl.getAttribute('data-node-id');
+        const row = parseInt(cellEl.getAttribute('data-row'), 10);
+        const col = parseInt(cellEl.getAttribute('data-col'), 10);
+        if (isNaN(row) || isNaN(col)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const ref = window.tmDiagramStencilShape && window.tmDiagramStencilShape.getRef(nodeId);
+        if (!ref) return;
+        ref.invokeMethodAsync('StartTableCellEditFromJs', row, col);
+    },
+
+    // ── Mouse up ─────────────────────────────────────────────────────────────
+
+    _onMouseUp: function (e, inst) {
+        // Pending free-line draw that never escalated (user just *clicked*
+        // on empty canvas in edge mode — no drag). In phase 2 this promotes
+        // to a click-to-click polyline draw anchored at that point. The
+        // gesture is ended by ESC, right-click, Enter, double-click on
+        // empty canvas, or a mousedown on a node / port / edge.
+        if (inst.isPendingEdgeDraw) {
+            const p = inst.pendingEdgeStart;
+            inst.isPendingEdgeDraw = false;
+            inst.pendingEdgeStart = null;
+            if (p && inst.toolMode === 'edge') {
+                this._startPolylineDraw(inst, p.clientX, p.clientY);
+            }
+            return;
+        }
+
+        // Mouseup while already drawing a polyline is a no-op: the polyline
+        // gesture is driven by mousedown (add waypoint / commit on node) and
+        // keyboard (Enter / ESC) rather than by mouseup.
+        if (inst.isDrawingPolyline) {
+            return;
+        }
+
+        // Pending table-cell click that never escalated into a drag → fire the
+        // cell sub-select up to Blazor. Ctrl held = multi-select toggle.
+        if (inst.pendingTableCellClick) {
+            const p = inst.pendingTableCellClick;
+            inst.pendingTableCellClick = null;
+            if (inst.dotNetRef) {
+                inst.dotNetRef.invokeMethodAsync('OnTableCellLeftClick', p.nodeId, p.row, p.col, !!p.ctrlKey);
+            }
+            return;
+        }
+
+        if (inst.isDrawingEdge) {
+            // When the source is floating (free-line from empty canvas) pass
+            // the doc-space source point so the backend can create an edge
+            // with SourcePoint instead of a source node/port. Floating
+            // coordinates are grid-snapped when `gridSize > 0` so free
+            // endpoints line up with the grid just like node positions do.
+            const floatingSource = !inst.drawSource.nodeId;
+            const srcPtX = floatingSource ? this._snap(inst, inst.drawSource.x) : null;
+            const srcPtY = floatingSource ? this._snap(inst, inst.drawSource.y) : null;
+
+            // Edge-to-edge connection takes priority
+            if (inst.drawHoverEdgeId && inst.drawHoverEdgeT !== null) {
+                inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                    inst.drawSource.nodeId, inst.drawSource.portId,
+                    null, null,
+                    inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                    inst.drawHoverEdgeId, inst.drawHoverEdgeT,
+                    inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                    null, null, null,
+                    null, null,
+                    srcPtX, srcPtY,
+                    null);
+                this._cancelEdgeDraw(inst);
+                return;
+            }
+            // Use elementFromPoint because e.target may hit SVG grid/path instead of HTML port overlay
+            const hitEl = document.elementFromPoint(e.clientX, e.clientY);
+            let portEl = hitEl ? hitEl.closest('.tm-diagram-port') : null;
+            // Phase 3.2 smart-snap to port — if the cursor isn't directly on
+            // a port but _is_ over a node, pull the target onto the closest
+            // port within the same threshold used by `_updateEdgeDraw`
+            // (15 / scale in doc units). This mirrors the preview behavior
+            // so what the user sees during drag is what they get on release.
+            let smartSnapNodeEl = null;
+            if (!portEl) {
+                const nodeUnderCursor = hitEl ? hitEl.closest('[data-node-id]') : null;
+                if (nodeUnderCursor) {
+                    const nId = nodeUnderCursor.getAttribute('data-node-id');
+                    const upDoc = this._screenToDoc(inst, e.clientX, e.clientY);
+                    const nearest = this._findNearestPortOnNode(inst, nId, upDoc.x, upDoc.y, 15 / Math.max(inst.scale, 0.01));
+                    if (nearest && nearest.portEl) {
+                        portEl = nearest.portEl;
+                        smartSnapNodeEl = nodeUnderCursor;
+                    }
+                }
+            }
+            if (portEl) {
+                const nodeEl = portEl.closest('[data-node-id]') || smartSnapNodeEl;
+                if (nodeEl) {
+                    const targetNodeId = nodeEl.getAttribute('data-node-id');
+                    const targetPortId = portEl.getAttribute('data-port-id');
+                    console.log('[EdgeDraw] Port connect -> nodeId=' + targetNodeId + ' portId=' + targetPortId);
+                    // Allow self-connections (loop edges)
+                    inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                        inst.drawSource.nodeId, inst.drawSource.portId,
+                        targetNodeId, targetPortId,
+                        inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                        null, 0.5,
+                        inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                        null, null, null,
+                        null, null,
+                        srcPtX, srcPtY,
+                        null);
+                    this._cancelEdgeDraw(inst);
+                    return;
+                }
+            }
+            const cpEl = hitEl ? hitEl.closest('.tm-diagram-connection-point') : null;
+            if (cpEl) {
+                const nodeEl = cpEl.closest('[data-node-id]');
+                if (nodeEl) {
+                    const targetNodeId = nodeEl.getAttribute('data-node-id');
+                    const targetRx = parseFloat(cpEl.getAttribute('data-cp-rx'));
+                    const targetRy = parseFloat(cpEl.getAttribute('data-cp-ry'));
+                    const targetPerimeter = cpEl.getAttribute('data-cp-perimeter') === 'true';
+
+                    inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                        inst.drawSource.nodeId, inst.drawSource.portId,
+                        targetNodeId, null,
+                        inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                        null, 0.5,
+                        inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                        targetRx, targetRy, targetPerimeter,
+                        null, null,
+                        srcPtX, srcPtY,
+                        null);
+                    this._cancelEdgeDraw(inst);
+                    return;
+                }
+            }
+            // Dangling edge: drop on empty canvas
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            const tgtX = this._snap(inst, docPt.x);
+            const tgtY = this._snap(inst, docPt.y);
+            console.log('[EdgeDraw] Dangling -> pt=' + tgtX + ',' + tgtY);
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                inst.drawSource.nodeId, inst.drawSource.portId,
+                null, null,
+                inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                null, 0.5,
+                inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                null, null, null,
+                tgtX, tgtY,
+                srcPtX, srcPtY,
+                null);
+            this._cancelEdgeDraw(inst);
+            return;
+        }
+
+        if (inst.isDraggingWaypoint) {
+            const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.dotNetRef.invokeMethodAsync('OnEdgeWaypointMoved',
+                inst.dragWaypointEdgeId, inst.dragWaypointIndex, pt.x, pt.y);
+            inst.isDraggingWaypoint = false;
+            inst.dragWaypointEdgeId = null;
+            inst.dragWaypointIndex = null;
+            inst.dragWaypointStartScreen = null;
+            inst.dragWaypointStartDoc = null;
+            this._clearGuideLines(inst);
+            return;
+        }
+
+        if (inst.isDraggingSegment) {
+            const edgeId = inst.dragSegmentEdgeId;
+            const handles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-handle-index'), 10) - parseInt(b.getAttribute('data-handle-index'), 10);
+                });
+            const positions = [];
+            for (let i = 0; i < handles.length; i++) {
+                positions.push({
+                    x: parseFloat(handles[i].getAttribute('cx')),
+                    y: parseFloat(handles[i].getAttribute('cy'))
+                });
+            }
+            // Extract waypoints (exclude first and last which are terminals)
+            const waypoints = [];
+            for (let i = 1; i < positions.length - 1; i++) {
+                waypoints.push({ x: positions[i].x, y: positions[i].y });
+            }
+            // Simplify collinear orthogonal waypoints
+            const simplified = this._simplifyEdgeWaypoints(waypoints);
+            inst.dotNetRef.invokeMethodAsync('OnEdgeSegmentDragged', edgeId, simplified);
+            inst.isDraggingSegment = false;
+            inst.dragSegmentEdgeId = null;
+            inst.dragSegmentIndex = null;
+            inst.dragSegmentIsVertical = false;
+            inst.dragSegmentIsHorizontal = false;
+            inst.dragSegmentStartScreen = null;
+            inst.dragSegmentHandlePositions = null;
+            inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+            return;
+        }
+
+        if (inst.isDraggingDangling) {
+            if (inst.dragDanglingHoverNodeId) {
+                const nodeEl = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                if (nodeEl) {
+                    nodeEl.classList.remove('tm-diagram-node--drop-target');
+                    nodeEl.classList.remove('tm-diagram-node--outline-connect');
+                }
+                if (inst.danglingOutlineConnect) {
+                    // Outline connect: compute constraint from drop position relative to node bounds
+                    const rect = this._nodeRect(inst, inst.dragDanglingHoverNodeId);
+                    const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                    let relX = rect.w > 0 ? Math.max(0, Math.min(1, (pt.x - rect.x) / rect.w)) : 0.5;
+                    let relY = rect.h > 0 ? Math.max(0, Math.min(1, (pt.y - rect.y) / rect.h)) : 0.5;
+                    inst.dotNetRef.invokeMethodAsync('OnEdgeTerminalOutlineConnected', inst.dragDanglingEdgeId, inst.dragDanglingType, inst.dragDanglingHoverNodeId, relX, relY);
+                } else {
+                    // Find closest port under cursor (elementsFromPoint because dangling SVG handle blocks elementFromPoint)
+                    const els = document.elementsFromPoint(e.clientX, e.clientY);
+                    let portEl = null;
+                    for (let i = 0; i < els.length; i++) {
+                        const candidate = els[i].closest('.tm-diagram-port');
+                        if (candidate) {
+                            portEl = candidate;
+                            break;
+                        }
+                    }
+                    const portId = portEl ? portEl.getAttribute('data-port-id') : null;
+                    inst.dotNetRef.invokeMethodAsync('OnEdgeTerminalReconnected', inst.dragDanglingEdgeId, inst.dragDanglingType, inst.dragDanglingHoverNodeId, portId);
+                }
+                inst.dragDanglingHoverNodeId = null;
+            } else {
+                const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                inst.dotNetRef.invokeMethodAsync('OnDanglingTerminalMoved', inst.dragDanglingEdgeId, inst.dragDanglingType, pt.x, pt.y);
+            }
+            if (inst.danglingOutlineTimer) {
+                clearTimeout(inst.danglingOutlineTimer);
+                inst.danglingOutlineTimer = null;
+            }
+            inst.danglingOutlineConnect = false;
+            inst.isDraggingDangling = false;
+            inst.dragDanglingEdgeId = null;
+            inst.dragDanglingType = null;
+            inst.dragDanglingStartDoc = null;
+            inst.dragDanglingStartScreen = null;
+            this._clearGuideLines(inst);
+            return;
+        }
+
+        if (inst.isDraggingJetty) {
+            inst.isDraggingJetty = false;
+            inst.dragJettyEdgeId = null;
+            inst.dragJettyType = null;
+            inst.dragJettySide = null;
+            inst.dragJettyNodeId = null;
+            inst.dragJettyStartDoc = null;
+            this._clearGuideLines(inst);
+            return;
+        }
+
+        if (inst.isDraggingEdgeLabel) {
+            const edgeId = inst.dragEdgeLabelId;
+            if (edgeId) {
+                const g = inst.svg.querySelector('g.tm-diagram-edge-label-group[data-edge-id="' + edgeId + '"]');
+                const pathEl = inst.svg.querySelector('.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]') || inst.svg.querySelector('path[data-edge-id="' + edgeId + '"]');
+                if (g && pathEl) {
+                    const dxScreen = e.clientX - inst.dragEdgeLabelStart.x;
+                    const dyScreen = e.clientY - inst.dragEdgeLabelStart.y;
+                    const dxDoc = dxScreen / inst.scale;
+                    const dyDoc = dyScreen / inst.scale;
+                    const newOx = (inst.dragEdgeLabelStartOx || 0) + dxDoc;
+                    const newOy = (inst.dragEdgeLabelStartOy || 0) + dyDoc;
+
+                    // Compute new T from current absolute label position
+                    const len = pathEl.getTotalLength();
+                    const startT = inst.dragEdgeLabelStartT || 0.5;
+                    const basePt = pathEl.getPointAtLength(startT * len);
+                    const labelX = basePt.x + newOx;
+                    const labelY = basePt.y + newOy;
+
+                    let bestT = 0;
+                    let bestDist = Infinity;
+                    const samples = 50;
+                    for (let i = 0; i <= samples; i++) {
+                        const t = i / samples;
+                        const p = pathEl.getPointAtLength(t * len);
+                        const dx = p.x - labelX;
+                        const dy = p.y - labelY;
+                        const d = dx * dx + dy * dy;
+                        if (d < bestDist) {
+                            bestDist = d;
+                            bestT = t;
+                        }
+                    }
+                    const closest = pathEl.getPointAtLength(bestT * len);
+                    const finalOx = labelX - closest.x;
+                    const finalOy = labelY - closest.y;
+
+                    inst.dotNetRef.invokeMethodAsync('OnEdgeLabelMoved', edgeId, bestT, finalOx, finalOy);
+                }
+            }
+            inst.isDraggingEdgeLabel = false;
+            inst.dragEdgeLabelId = null;
+            inst.dragEdgeLabelStart = null;
+            inst.dragEdgeLabelStartT = null;
+            inst.dragEdgeLabelStartOx = null;
+            inst.dragEdgeLabelStartOy = null;
+            return;
+        }
+
+        if (inst.isDraggingWholeEdge) {
+            const edgeId = inst.dragWholeEdgeId;
+            const dx = inst.dragWholeEdgeDeltaDoc.x;
+            const dy = inst.dragWholeEdgeDeltaDoc.y;
+            const group = inst.svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+            if (group) {
+                group.removeAttribute('transform');
+            }
+            if (edgeId && (dx !== 0 || dy !== 0)) {
+                inst.dotNetRef.invokeMethodAsync('OnWholeEdgeDragged', edgeId, dx, dy);
+            }
+            inst.isDraggingWholeEdge = false;
+            inst.dragWholeEdgeId = null;
+            inst.dragWholeEdgeStartDoc = null;
+            inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
+            inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+            this._clearGuideLines(inst);
+            return;
+        }
+
+        if (inst.isDragging) {
+            const moves = inst.dragNodeIds.map(id => {
+                const r = this._nodeRect(inst, id);
+                if (!r) return null;
+                const sx = this._snap(inst, r.x);
+                const sy = this._snap(inst, r.y);
+                this._setNodeTranslate(inst, id, sx, sy);
+                return { id, x: sx, y: sy };
+            }).filter(Boolean);
+            inst.isDragging = false;
+            inst.dragNodeIds = [];
+            inst.dragStartScreen = null;
+            inst.dragStartPositions = {};
+            inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+            this._clearGuideLines(inst);
+
+            if (moves.length === 1) {
+                inst.dotNetRef.invokeMethodAsync('OnElementMoved', moves[0].id, moves[0].x, moves[0].y);
+            } else if (moves.length > 1) {
+                inst.dotNetRef.invokeMethodAsync('OnElementsMoved', moves);
+            }
+            return;
+        }
+
+        if (inst.isRubberBand) {
+            const rubber = inst.rubberEl;
+            inst.isRubberBand = false;
+            inst.rubberStartScreen = null;
+            inst.rubberEl = null;
+
+            if (rubber) {
+                const rect = inst.container.getBoundingClientRect();
+                const leftScreen = parseFloat(rubber.style.left);
+                const topScreen = parseFloat(rubber.style.top);
+                const widthScreen = parseFloat(rubber.style.width);
+                const heightScreen = parseFloat(rubber.style.height);
+                rubber.remove();
+
+                if (widthScreen > 4 && heightScreen > 4) {
+                    const docTopLeft = this._screenToDoc(inst, rect.left + leftScreen, rect.top + topScreen);
+                    const docBottomRight = this._screenToDoc(inst, rect.left + leftScreen + widthScreen, rect.top + topScreen + heightScreen);
+                    const left = Math.min(docTopLeft.x, docBottomRight.x);
+                    const top = Math.min(docTopLeft.y, docBottomRight.y);
+                    const width = Math.abs(docBottomRight.x - docTopLeft.x);
+                    const height = Math.abs(docBottomRight.y - docTopLeft.y);
+
+                    const hits = [];
+                    if (inst.scenePane) {
+                        inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
+                            if (!this._isNodeInActiveGroup(inst, el)) return;
+                            const id = el.getAttribute('data-node-id');
+                            const r = this._nodeRect(inst, id);
+                            if (!r) return;
+                            if (r.x >= left && r.y >= top && r.x + r.w <= left + width && r.y + r.h <= top + height) {
+                                hits.push(id);
+                            }
+                        });
+                    }
+                    // Rubber-band edge selection: sample points along each edge path
+                    inst.svg.querySelectorAll('path.tm-diagram-edge-hit-path[data-edge-id]').forEach(function (pathEl) {
+                        const edgeId = pathEl.getAttribute('data-edge-id');
+                        if (!edgeId) return;
+                        var pathLen = pathEl.getTotalLength();
+                        if (pathLen === 0) return;
+                        var samples = Math.max(3, Math.floor(pathLen / 8));
+                        for (var s = 0; s <= samples; s++) {
+                            var samplePt = pathEl.getPointAtLength(pathLen * s / samples);
+                            if (samplePt.x >= left && samplePt.x <= left + width && samplePt.y >= top && samplePt.y <= top + height) {
+                                hits.push(edgeId);
+                                break;
+                            }
+                        }
+                    });
+                    if (hits.length > 0) {
+                        inst.selectedIds = new Set(hits);
+                        this._updateSelection(inst);
+                        inst.dotNetRef.invokeMethodAsync('OnMultiSelect', hits);
+                    }
+                }
+            }
+            return;
+        }
+
+        if (inst.isPanning) {
+            inst.isPanning = false;
+            inst.panStartScreen = null;
+            inst.viewBoxStart = null;
+            inst.container.style.cursor = (inst.spaceHeld || inst.toolMode === 'pan') ? 'grab' : '';
+            const vb = this._getViewBox(inst);
+            inst.dotNetRef.invokeMethodAsync('OnViewBoxChanged', vb.x, vb.y, vb.w, vb.h);
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', vb.x, vb.y, vb.w, vb.h);
+        }
+    },
+
+    // ── Wheel zoom ───────────────────────────────────────────────────────────
+
+    _onWheel: function (e, inst) {
+        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea, .tm-diagram-edge-label-input')) {
+            return;
+        }
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 1.1 : 0.9;
+        const vb = this._getViewBox(inst);
+        const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+
+        const newW = vb.w * factor;
+        const newH = vb.h * factor;
+
+        const svgRect = inst.svg.getBoundingClientRect();
+        const newScale = svgRect.width / newW;
+        if (newScale < 0.15 || newScale > 5.0) return;
+
+        const newX = pt.x - (pt.x - vb.x) * factor;
+        const newY = pt.y - (pt.y - vb.y) * factor;
+
+        this._setViewBox(inst, newX, newY, newW, newH);
+        inst.dotNetRef.invokeMethodAsync('OnZoomChanged', newScale);
+        inst.dotNetRef.invokeMethodAsync('OnViewportChanged', newX, newY, newW, newH);
+    },
+
+    // ── Touch events ─────────────────────────────────────────────────────────
+
+    _onTouchStart: function (e, inst) {
+        if (inst.readOnly) return;
+
+        // Pinch zoom start
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            this._cancelLongPress(inst);
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const dx = t2.clientX - t1.clientX;
+            const dy = t2.clientY - t1.clientY;
+            inst.pinchStartDist = Math.sqrt(dx * dx + dy * dy);
+            inst.pinchStartScale = inst.scale;
+            inst.pinchMidDoc = this._screenToDoc(inst, (t1.clientX + t2.clientX) / 2, (t1.clientY + t2.clientY) / 2);
+            inst.pinchViewBoxStart = this._getViewBox(inst);
+            return;
+        }
+
+        if (e.touches.length !== 1) return;
+
+        const t = e.touches[0];
+        const nodeEl = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-node-id]');
+
+        if (nodeEl) {
+            e.preventDefault();
+            const id = nodeEl.getAttribute('data-node-id');
+            const isLocked = nodeEl.getAttribute('data-locked') === 'true';
+            if (!inst.selectedIds.has(id)) {
+                inst.selectedIds = new Set([id]);
+                this._updateSelection(inst);
+                inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [id]);
+            }
+
+            if (isLocked || inst.readOnly) {
+                // Cancel long press for locked nodes
+                this._cancelLongPress(inst);
+                return;
+            }
+
+            inst.isDragging = true;
+            inst.dragNodeIds = [...inst.selectedIds];
+
+            // Include children of selected nodes
+            const allIds = new Set(inst.dragNodeIds);
+            inst.dragNodeIds.forEach(nid => {
+                if (inst.scenePane) {
+                    inst.scenePane.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
+                        const cid = childEl.getAttribute('data-node-id');
+                        if (cid) allIds.add(cid);
+                    });
+                }
+            });
+            inst.dragNodeIds = [...allIds];
+
+            // Include group nodes
+            inst.dragNodeIds = this._includeGroupNodes(inst, inst.dragNodeIds);
+
+            inst.dragStartScreen = { x: t.clientX, y: t.clientY };
+            inst.dragStartPositions = {};
+            inst.dragNodeIds.forEach(nid => {
+                const r = this._nodeRect(inst, nid);
+                if (r) inst.dragStartPositions[nid] = { x: r.x, y: r.y };
+            });
+            inst.dotNetRef.invokeMethodAsync('OnDragStarted', inst.dragNodeIds);
+
+            // Long press for context menu
+            inst.longPressNodeId = id;
+            inst.longPressStart = { x: t.clientX, y: t.clientY };
+            inst.longPressTimer = setTimeout(() => {
+                if (inst.longPressNodeId && inst.dotNetRef) {
+                    inst.dotNetRef.invokeMethodAsync('OnNodeContextMenu', inst.longPressNodeId, inst.longPressStart.x, inst.longPressStart.y);
+                }
+                inst.longPressTimer = null;
+                inst.longPressNodeId = null;
+            }, 600);
+            return;
+        }
+
+        // Pan on empty canvas
+        e.preventDefault();
+        inst.isPanning = true;
+        inst.panStartScreen = { x: t.clientX, y: t.clientY };
+        inst.viewBoxStart = this._getViewBox(inst);
+    },
+
+    _onTouchMove: function (e, inst) {
+        // Pinch zoom
+        if (e.touches.length === 2 && inst.pinchStartDist > 0) {
+            e.preventDefault();
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const dx = t2.clientX - t1.clientX;
+            const dy = t2.clientY - t1.clientY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const factor = inst.pinchStartDist / dist;
+
+            const vb = inst.pinchViewBoxStart;
+            const mid = inst.pinchMidDoc;
+            if (!vb || !mid) return;
+
+            const newW = vb.w * factor;
+            const newH = vb.h * factor;
+            const svgRect = inst.svg.getBoundingClientRect();
+            const newScale = svgRect.width / newW;
+            if (newScale < 0.15 || newScale > 5.0) return;
+
+            const newX = mid.x - (mid.x - vb.x) * factor;
+            const newY = mid.y - (mid.y - vb.y) * factor;
+
+            this._setViewBox(inst, newX, newY, newW, newH);
+            if (inst.dotNetRef)
+                inst.dotNetRef.invokeMethodAsync('OnViewportChanged', newX, newY, newW, newH);
+            return;
+        }
+
+        if (e.touches.length !== 1) return;
+        const t = e.touches[0];
+
+        // Cancel long press if finger moved significantly
+        if (inst.longPressTimer && inst.longPressStart) {
+            const moveDist = Math.sqrt(Math.pow(t.clientX - inst.longPressStart.x, 2) + Math.pow(t.clientY - inst.longPressStart.y, 2));
+            if (moveDist > 10) {
+                this._cancelLongPress(inst);
+            }
+        }
+
+        if (inst.isDragging && inst.dragNodeIds.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            const dxScreen = t.clientX - inst.dragStartScreen.x;
+            const dyScreen = t.clientY - inst.dragStartScreen.y;
+            let dxDoc = dxScreen / inst.scale;
+            let dyDoc = dyScreen / inst.scale;
+
+            const guides = this._computeSnapGuides(inst, inst.dragNodeIds, inst.dragStartPositions, dxDoc, dyDoc);
+            if (guides.x !== null) dxDoc += guides.x.delta;
+            if (guides.y !== null) dyDoc += guides.y.delta;
+            this._drawGuideLines(inst, guides);
+
+            inst.dragNodeIds.forEach(id => {
+                const start = inst.dragStartPositions[id];
+                if (!start) return;
+                let nx = start.x + dxDoc;
+                let ny = start.y + dyDoc;
+                const clamped = this._clampChildPosition(inst, id, nx, ny);
+                this._setNodeTranslate(inst, id, clamped.x, clamped.y);
+            });
+            this._updateSelectionTransforms(inst);
+            return;
+        }
+
+        if (inst.isPanning && inst.panStartScreen) {
+            e.preventDefault();
+            const vb = inst.viewBoxStart;
+            const dxScreen = t.clientX - inst.panStartScreen.x;
+            const dyScreen = t.clientY - inst.panStartScreen.y;
+            const dxDoc = dxScreen / inst.scale;
+            const dyDoc = dyScreen / inst.scale;
+            this._setViewBox(inst, vb.x - dxDoc, vb.y - dyDoc, vb.w, vb.h);
+        }
+    },
+
+    _onTouchEnd: function (e, inst) {
+        this._cancelLongPress(inst);
+
+        // End pinch zoom
+        if (inst.pinchStartDist > 0 && e.touches.length < 2) {
+            inst.pinchStartDist = 0;
+            inst.pinchStartScale = 1;
+            inst.pinchMidDoc = null;
+            inst.pinchViewBoxStart = null;
+            const vb = this._getViewBox(inst);
+            if (inst.dotNetRef)
+                inst.dotNetRef.invokeMethodAsync('OnViewportChanged', vb.x, vb.y, vb.w, vb.h);
+        }
+
+        if (inst.isDragging) {
+            const moves = inst.dragNodeIds.map(id => {
+                const r = this._nodeRect(inst, id);
+                if (!r) return null;
+                const sx = this._snap(inst, r.x);
+                const sy = this._snap(inst, r.y);
+                this._setNodeTranslate(inst, id, sx, sy);
+                return { id, x: sx, y: sy };
+            }).filter(Boolean);
+
+            inst.isDragging = false;
+            inst.dragNodeIds = [];
+            inst.dragStartScreen = null;
+            inst.dragStartPositions = {};
+            this._clearGuideLines(inst);
+
+            if (moves.length === 1) {
+                inst.dotNetRef.invokeMethodAsync('OnElementMoved', moves[0].id, moves[0].x, moves[0].y);
+            } else if (moves.length > 1) {
+                inst.dotNetRef.invokeMethodAsync('OnElementsMoved', moves);
+            }
+            return;
+        }
+
+        if (inst.isPanning) {
+            inst.isPanning = false;
+            inst.panStartScreen = null;
+            inst.viewBoxStart = null;
+            const vb = this._getViewBox(inst);
+            inst.dotNetRef.invokeMethodAsync('OnViewBoxChanged', vb.x, vb.y, vb.w, vb.h);
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', vb.x, vb.y, vb.w, vb.h);
+        }
+    },
+
+    _cancelLongPress: function (inst) {
+        if (inst.longPressTimer) {
+            clearTimeout(inst.longPressTimer);
+            inst.longPressTimer = null;
+        }
+        inst.longPressStart = null;
+        inst.longPressNodeId = null;
+    },
+
+    // ── Edge drawing helpers ─────────────────────────────────────────────────
+
+    _startEdgeDraw: function (inst, nodeId, portId, clientX, clientY, side, offset, constraintRx, constraintRy, constraintPerimeter) {
+        inst.isDrawingEdge = true;
+        inst.container.classList.add('tm-diagram-canvas--edge-drawing');
+        const docPt = this._screenToDoc(inst, clientX, clientY);
+        inst.drawSource = {
+            nodeId: nodeId,
+            portId: portId,
+            side: side || null,
+            offset: offset || 0.5,
+            x: docPt.x,
+            y: docPt.y,
+            edgeId: null,
+            constraintRx: constraintRx !== undefined ? constraintRx : null,
+            constraintRy: constraintRy !== undefined ? constraintRy : null,
+            constraintPerimeter: constraintPerimeter !== undefined ? constraintPerimeter : null
+        };
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', 'tm-diagram-edge-draw-path');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#3b82f6');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('marker-end', 'url(#arrow-default)');
+        path.setAttribute('pointer-events', 'none');
+        inst.svg.appendChild(path);
+        inst.drawTempPath = path;
+
+        // Highlight source port
+        const portEl = inst.scenePane?.querySelector('.tm-diagram-port[data-port-id="' + portId + '"]');
+        if (portEl) portEl.classList.add('tm-diagram-port--active');
+
+        // Highlight source connection point
+        if (inst.drawSource.constraintRx !== null) {
+            const cpSelector = '.tm-diagram-connection-point[data-cp-rx="' + inst.drawSource.constraintRx + '"][data-cp-ry="' + inst.drawSource.constraintRy + '"]'; 
+            const cpEls = nodeId ? inst.scenePane?.querySelectorAll('[data-node-id="' + nodeId + '"] ' + cpSelector) : null;
+            if (cpEls && cpEls.length > 0) cpEls[0].classList.add('tm-diagram-connection-point--active');
+        }
+    },
+
+    _updateEdgeDraw: function (inst, clientX, clientY) {
+        if (!inst.drawTempPath || !inst.drawSource) return;
+        const docPt = this._screenToDoc(inst, clientX, clientY);
+        let endX = docPt.x;
+        let endY = docPt.y;
+
+        // Magnet snapping: find nearest node perimeter point
+        const el = document.elementFromPoint(clientX, clientY);
+        const nodeEl = el ? el.closest('[data-node-id]') : null;
+        const hoverNodeId = nodeEl ? nodeEl.getAttribute('data-node-id') : null;
+        if (nodeEl) {
+            const rect = this._nodeRect(inst, hoverNodeId);
+            if (rect) {
+                // Auto-snap to nearest port when cursor is close enough
+                // (smart-target threshold). Falls back to perimeter snap
+                // otherwise. Distance is measured in document units so
+                // the 15px screen threshold scales with zoom.
+                const snapToPort = this._findNearestPortOnNode(inst, hoverNodeId, docPt.x, docPt.y, 15 / Math.max(inst.scale, 0.01));
+                if (snapToPort) {
+                    endX = snapToPort.x;
+                    endY = snapToPort.y;
+                } else {
+                    const snap = this._snapToNodePerimeter(rect, docPt.x, docPt.y);
+                    endX = snap.x;
+                    endY = snap.y;
+                }
+            }
+        }
+
+        // Drop-target highlight — mark the node the cursor is over so the
+        // user gets draw.io-style feedback of where the edge will attach.
+        // Don't highlight the source node of a node-anchored draw.
+        const prevDrop = inst.__dropTargetNodeId || null;
+        const isOwnSource = hoverNodeId && inst.drawSource && hoverNodeId === inst.drawSource.nodeId;
+        const nextDrop = (hoverNodeId && !isOwnSource) ? hoverNodeId : null;
+        if (prevDrop && prevDrop !== nextDrop) {
+            inst.scenePane?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
+        }
+        if (nextDrop && nextDrop !== prevDrop) {
+            const target = inst.scenePane?.querySelector('g.tm-diagram-node[data-node-id="' + nextDrop + '"]');
+            if (target) target.classList.add('tm-diagram-node--drop-target');
+        }
+        inst.__dropTargetNodeId = nextDrop;
+
+        const d = this._buildDrawPathD(inst, endX, endY);
+        inst.drawTempPath.setAttribute('d', d);
+
+        // Port snapping highlight. Prefer the explicitly hovered port
+        // (cursor is directly on the port circle) but also highlight the
+        // near-miss port that `_findNearestPortOnNode` just snapped the
+        // endpoint to, so the user sees the same visual affordance whether
+        // they aim precisely or just near enough.
+        let portEl = el ? el.closest('.tm-diagram-port') : null;
+        if (!portEl && hoverNodeId) {
+            const nearest = this._findNearestPortOnNode(inst, hoverNodeId, docPt.x, docPt.y, 15 / Math.max(inst.scale, 0.01));
+            if (nearest && nearest.portEl) portEl = nearest.portEl;
+        }
+        inst.scenePane?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
+        if (portEl) {
+            const nid = portEl.closest('[data-node-id]')?.getAttribute('data-node-id');
+            const pid = portEl.getAttribute('data-port-id');
+            if (nid !== inst.drawSource.nodeId || pid !== inst.drawSource.portId) {
+                portEl.classList.add('tm-diagram-port--target');
+            }
+        }
+
+        // Edge-to-edge: detect hover over existing edge
+        let hitEl = el ? el.closest('.tm-diagram-edge-hit-path') : null;
+        if (!hitEl && el) {
+            const edgeGroup = el.closest('.tm-diagram-edge-group');
+            if (edgeGroup) {
+                hitEl = edgeGroup.querySelector('.tm-diagram-edge-hit-path');
+            }
+        }
+        // Fallback: if elementFromPoint didn't find an edge (e.g. label group or foreignObject on top),
+        // check all edges by geometric distance
+        if (!hitEl) {
+            const toleranceDoc = 20 / inst.scale;
+            let bestDist = Infinity;
+            let bestPath = null;
+            const allPaths = inst.svg.querySelectorAll('.tm-diagram-edge-hit-path');
+            for (let i = 0; i < allPaths.length; i++) {
+                const path = allPaths[i];
+                const eid = path.getAttribute('data-edge-id');
+                if (!eid || eid === inst.drawSource.edgeId) continue;
+                const closest = this._findClosestPointOnEdge(path, docPt.x, docPt.y);
+                if (closest && closest.dist < bestDist) {
+                    bestDist = closest.dist;
+                    bestPath = path;
+                }
+            }
+            if (bestPath && bestDist < toleranceDoc) {
+                hitEl = bestPath;
+            }
+        }
+        if (hitEl) {
+            const edgeId = hitEl.getAttribute('data-edge-id');
+            if (edgeId && edgeId !== inst.drawSource.edgeId) {
+                const closest = this._findClosestPointOnEdge(hitEl, docPt.x, docPt.y);
+                if (closest && closest.dist < 20 / inst.scale) { // 20px screen tolerance
+                    inst.drawHoverEdgeId = edgeId;
+                    inst.drawHoverEdgeT = closest.t;
+                    endX = closest.x;
+                    endY = closest.y;
+                    this._highlightEdgeTarget(inst, edgeId);
+                    const d2 = this._buildDrawPathD(inst, endX, endY);
+                    inst.drawTempPath.setAttribute('d', d2);
+                    return;
+                }
+            }
+        }
+        inst.drawHoverEdgeId = null;
+        inst.drawHoverEdgeT = null;
+        this._highlightEdgeTarget(inst, null);
+
+        // Nothing snapped — apply grid snap to the free floating endpoint
+        // so the preview matches what the final edge will actually use.
+        if (!hoverNodeId && inst.gridSize > 0) {
+            const gx = this._snap(inst, endX);
+            const gy = this._snap(inst, endY);
+            if (gx !== endX || gy !== endY) {
+                const d3 = this._buildDrawPathD(inst, gx, gy);
+                inst.drawTempPath.setAttribute('d', d3);
+            }
+        }
+    },
+
+    // Find the port on `nodeId` whose center is closest to the given doc
+    // point (x, y). Returns `{ x, y, portEl, portId, distDoc }` if the
+    // distance is within `maxDistDoc` document units, otherwise null.
+    // Used for smart auto-snap during edge draw (Phase 3.2): the draw
+    // endpoint and port highlight both snap even when the cursor is
+    // slightly off the port circle.
+    _findNearestPortOnNode: function (inst, nodeId, x, y, maxDistDoc) {
+        if (!nodeId || !inst.scenePane) return null;
+        const nodeEl = inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + nodeId + '"]');
+        if (!nodeEl) return null;
+        const portEls = nodeEl.querySelectorAll('.tm-diagram-port[data-port-id]');
+        if (!portEls || portEls.length === 0) return null;
+        // Map every port's screen-space center through the same _screenToDoc
+        // transform used for the cursor. In the unified SVG canvas (F2+)
+        // there is only one coordinate system (viewBox), so drift is
+        // impossible; the comment is kept as historical context.
+        let best = null;
+        let bestD2 = Infinity;
+        const maxD2 = maxDistDoc * maxDistDoc;
+        for (let i = 0; i < portEls.length; i++) {
+            const p = portEls[i];
+            const pr = p.getBoundingClientRect();
+            const pcScreen = { x: pr.left + pr.width / 2, y: pr.top + pr.height / 2 };
+            const pcDoc = this._screenToDoc(inst, pcScreen.x, pcScreen.y);
+            const dx = pcDoc.x - x;
+            const dy = pcDoc.y - y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < bestD2 && d2 <= maxD2) {
+                bestD2 = d2;
+                best = { x: pcDoc.x, y: pcDoc.y, portEl: p, portId: p.getAttribute('data-port-id'), distDoc: Math.sqrt(d2) };
+            }
+        }
+        return best;
+    },
+
+    _snapToNodePerimeter: function (rect, x, y) {
+        // Find closest point on rectangle perimeter
+        let cx = Math.max(rect.x, Math.min(x, rect.x + rect.w));
+        let cy = Math.max(rect.y, Math.min(y, rect.y + rect.h));
+        const dx = cx - x;
+        const dy = cy - y;
+        // If inside, project to nearest edge
+        if (dx === 0 && dy === 0) {
+            const dl = x - rect.x;
+            const dr = rect.x + rect.w - x;
+            const dt = y - rect.y;
+            const db = rect.y + rect.h - y;
+            const min = Math.min(dl, dr, dt, db);
+            if (min === dl) return { x: rect.x, y: y };
+            if (min === dr) return { x: rect.x + rect.w, y: y };
+            if (min === dt) return { x: x, y: rect.y };
+            return { x: x, y: rect.y + rect.h };
+        }
+        return { x: cx, y: cy };
+    },
+
+    _findClosestPointOnEdge: function (pathEl, x, y) {
+        if (!pathEl) return null;
+        try {
+            const len = pathEl.getTotalLength();
+            if (len === 0) return null;
+            let bestT = 0;
+            let bestDist = Infinity;
+            const samples = 50;
+            for (let i = 0; i <= samples; i++) {
+                const t = i / samples;
+                const pt = pathEl.getPointAtLength(t * len);
+                const dx = pt.x - x;
+                const dy = pt.y - y;
+                const d = dx * dx + dy * dy;
+                if (d < bestDist) {
+                    bestDist = d;
+                    bestT = t;
+                }
+            }
+            // Refine with binary search around bestT
+            let left = Math.max(0, bestT - 1 / samples);
+            let right = Math.min(1, bestT + 1 / samples);
+            for (let i = 0; i < 8; i++) {
+                const m1 = left + (right - left) * 0.33;
+                const m2 = left + (right - left) * 0.67;
+                const p1 = pathEl.getPointAtLength(m1 * len);
+                const p2 = pathEl.getPointAtLength(m2 * len);
+                const d1 = (p1.x - x) * (p1.x - x) + (p1.y - y) * (p1.y - y);
+                const d2 = (p2.x - x) * (p2.x - x) + (p2.y - y) * (p2.y - y);
+                if (d1 < d2) {
+                    right = m2;
+                    if (d1 < bestDist) { bestDist = d1; bestT = m1; }
+                } else {
+                    left = m1;
+                    if (d2 < bestDist) { bestDist = d2; bestT = m2; }
+                }
+            }
+            const bestPt = pathEl.getPointAtLength(bestT * len);
+            return { x: bestPt.x, y: bestPt.y, t: bestT, dist: Math.sqrt(bestDist) };
+        } catch (e) {
+            return null;
+        }
+    },
+
+    _highlightEdgeTarget: function (inst, edgeId) {
+        inst.svg?.querySelectorAll('.tm-diagram-edge--target').forEach(el => el.classList.remove('tm-diagram-edge--target'));
+        if (edgeId) {
+            const g = inst.svg?.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+            if (g) g.classList.add('tm-diagram-edge--target');
+        }
+    },
+
+    _updateConnectHoverIcons: function (inst, clientX, clientY) {
+        if (inst.isDrawingEdge || inst.isDragging || inst.isDraggingWaypoint || inst.isDraggingJetty || inst.isDraggingEdgeLabel || inst.isDraggingWholeEdge || inst.isPanning || inst.isRubberBand) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        const el = document.elementFromPoint(clientX, clientY);
+        const nodeEl = el ? el.closest('[data-node-id]') : null;
+        if (!nodeEl || !this._isNodeInActiveGroup(inst, nodeEl)) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        if (nodeEl.getAttribute('data-locked') === 'true') {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        const nodeId = nodeEl.getAttribute('data-node-id');
+        const rect = this._nodeRect(inst, nodeId);
+        if (!rect) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        const docPt = this._screenToDoc(inst, clientX, clientY);
+        const dx = Math.max(rect.x - docPt.x, 0, docPt.x - (rect.x + rect.w));
+        const dy = Math.max(rect.y - docPt.y, 0, docPt.y - (rect.y + rect.h));
+        const distPx = Math.max(dx, dy) * inst.scale;
+        if (distPx > 15) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        this._showConnectHoverIcons(inst, nodeId, rect, nodeEl);
+    },
+
+    _showConnectHoverIcons: function (inst, nodeId, rect, nodeEl) {
+        if (inst.hoverConnectNodeId === nodeId) return;
+        this._hideConnectHoverIcons(inst);
+        inst.hoverConnectNodeId = nodeId;
+        const dirs = [
+            { css: 'n', side: 'top' },
+            { css: 'e', side: 'right' },
+            { css: 's', side: 'bottom' },
+            { css: 'w', side: 'left' },
+        ];
+        dirs.forEach(d => {
+            const btn = document.createElement('div');
+            btn.className = 'tm-diagram-hover-connect tm-diagram-hover-connect--' + d.css;
+            btn.setAttribute('data-hover-side', d.side);
+            btn.style.cssText = 'position:absolute;width:16px;height:16px;border-radius:50%;background:transparent;border:1px solid #94a3b3;display:flex;align-items:center;justify-content:center;cursor:crosshair;z-index:50;pointer-events:all;';
+            if (d.css === 'n') { btn.style.top = '-8px'; btn.style.left = 'calc(50% - 8px)'; }
+            else if (d.css === 'e') { btn.style.top = 'calc(50% - 8px)'; btn.style.right = '-8px'; }
+            else if (d.css === 's') { btn.style.bottom = '-8px'; btn.style.left = 'calc(50% - 8px)'; }
+            else if (d.css === 'w') { btn.style.top = 'calc(50% - 8px)'; btn.style.left = '-8px'; }
+            btn.innerHTML = '<span style="font-size:10px;color:#94a3b3;transform:rotate(' + (d.css === 'n' ? '-90deg' : d.css === 's' ? '90deg' : d.css === 'w' ? '180deg' : '0deg') + ')">→</span>';
+            btn.onmousedown = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+                let offset = 0.5;
+                if (d.side === 'top' || d.side === 'bottom') {
+                    offset = Math.max(0, Math.min(1, (docPt.x - rect.x) / rect.w));
+                } else {
+                    offset = Math.max(0, Math.min(1, (docPt.y - rect.y) / rect.h));
+                }
+                this._startEdgeDraw(inst, nodeId, null, e.clientX, e.clientY, d.side, offset);
+            };
+            nodeEl.appendChild(btn);
+            if (!inst.hoverConnectEls) inst.hoverConnectEls = [];
+            inst.hoverConnectEls.push(btn);
+        });
+    },
+
+    _hideConnectHoverIcons: function (inst) {
+        if (inst.hoverConnectEls) {
+            inst.hoverConnectEls.forEach(el => { if (el.parentNode) el.parentNode.removeChild(el); });
+            inst.hoverConnectEls = null;
+        }
+        inst.hoverConnectNodeId = null;
+    },
+
+    _cancelEdgeDraw: function (inst) {
+        inst.isDrawingEdge = false;
+        inst.isDrawingPolyline = false;
+        inst.polylinePoints = [];
+        inst.container.classList.remove('tm-diagram-canvas--edge-drawing');
+        if (inst.drawTempPath) {
+            inst.drawTempPath.remove();
+            inst.drawTempPath = null;
+        }
+        if (inst.drawSource) {
+            const portEl = inst.scenePane?.querySelector('.tm-diagram-port[data-port-id="' + inst.drawSource.portId + '"]');
+            if (portEl) portEl.classList.remove('tm-diagram-port--active');
+            // Remove connection point active highlight
+            inst.scenePane?.querySelectorAll('.tm-diagram-connection-point--active').forEach(cp => cp.classList.remove('tm-diagram-connection-point--active'));
+            inst.drawSource = null;
+        }
+        inst.drawHoverEdgeId = null;
+        inst.drawHoverEdgeT = null;
+        this._highlightEdgeTarget(inst, null);
+        inst.scenePane?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
+        inst.scenePane?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
+        inst.__dropTargetNodeId = null;
+
+        // Return to select mode after using edge tool
+        if (inst.toolMode === 'edge') {
+            this._applyToolMode(inst, 'select');
+            if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+        }
+    },
+
+    // ── Polyline draw (phase 2) ──────────────────────────────────────────────
+
+    // Build the temp path's `d` attribute, routing through all committed
+    // polyline waypoints when one is in progress. `endX/endY` is the live
+    // cursor-side endpoint (or the snapped target endpoint).
+    _buildDrawPathD: function (inst, endX, endY) {
+        let d = 'M ' + inst.drawSource.x + ' ' + inst.drawSource.y;
+        if (inst.isDrawingPolyline && inst.polylinePoints && inst.polylinePoints.length) {
+            for (let i = 0; i < inst.polylinePoints.length; i++) {
+                const p = inst.polylinePoints[i];
+                d += ' L ' + p.x + ' ' + p.y;
+            }
+        }
+        d += ' L ' + endX + ' ' + endY;
+        return d;
+    },
+
+    // Begin a click-to-click polyline draft at the given screen point. The
+    // source is always floating (empty canvas). Subsequent left-clicks in
+    // `_onPolylineMouseDown` append waypoints or commit the edge.
+    _startPolylineDraw: function (inst, clientX, clientY) {
+        inst.isDrawingEdge = true;
+        inst.isDrawingPolyline = true;
+        inst.polylinePoints = [];
+        inst.container.classList.add('tm-diagram-canvas--edge-drawing');
+
+        const docPt = this._screenToDoc(inst, clientX, clientY);
+        inst.drawSource = {
+            nodeId: null, portId: null,
+            side: null, offset: 0.5,
+            x: docPt.x, y: docPt.y,
+            edgeId: null,
+            constraintRx: null, constraintRy: null, constraintPerimeter: null
+        };
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', 'tm-diagram-edge-draw-path');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#3b82f6');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('marker-end', 'url(#arrow-default)');
+        path.setAttribute('pointer-events', 'none');
+        path.setAttribute('stroke-dasharray', '6 4');
+        inst.svg.appendChild(path);
+        inst.drawTempPath = path;
+
+        // Seed the preview path with source → source (zero-length) so it is
+        // visible before the first mousemove event.
+        inst.drawTempPath.setAttribute('d', 'M ' + docPt.x + ' ' + docPt.y + ' L ' + docPt.x + ' ' + docPt.y);
+    },
+
+    // Handle a left mousedown while a polyline draft is active. Commits the
+    // edge if the click landed on a port / connection-point / edge; otherwise
+    // appends a waypoint. Double-click finish is handled by `_onDblClick`
+    // (the real `dblclick` DOM event) rather than `mousedown.detail` because
+    // the latter also fires on sequential clicks that happen within the OS
+    // double-click interval, which would commit a polyline prematurely.
+    _onPolylineMouseDown: function (e, inst) {
+        const hitEl = document.elementFromPoint(e.clientX, e.clientY);
+
+        // Port → attach target to node + port
+        const portEl = hitEl ? hitEl.closest('.tm-diagram-port') : null;
+        if (portEl) {
+            const nodeEl = portEl.closest('[data-node-id]');
+            if (nodeEl) {
+                this._commitPolyline(inst, {
+                    kind: 'port',
+                    nodeId: nodeEl.getAttribute('data-node-id'),
+                    portId: portEl.getAttribute('data-port-id')
+                });
+                return;
+            }
+        }
+
+        // Connection point → attach target via constraint
+        const cpEl = hitEl ? hitEl.closest('.tm-diagram-connection-point') : null;
+        if (cpEl) {
+            const nodeEl = cpEl.closest('[data-node-id]');
+            if (nodeEl) {
+                this._commitPolyline(inst, {
+                    kind: 'cp',
+                    nodeId: nodeEl.getAttribute('data-node-id'),
+                    rx: parseFloat(cpEl.getAttribute('data-cp-rx')),
+                    ry: parseFloat(cpEl.getAttribute('data-cp-ry')),
+                    perimeter: cpEl.getAttribute('data-cp-perimeter') === 'true'
+                });
+                return;
+            }
+        }
+
+        // Node body (no port) → attach to node without port
+        const nodeEl = hitEl ? hitEl.closest('[data-node-id]') : null;
+        if (nodeEl) {
+            this._commitPolyline(inst, {
+                kind: 'node',
+                nodeId: nodeEl.getAttribute('data-node-id')
+            });
+            return;
+        }
+
+        // Edge hit → attach to edge midpoint
+        const edgeHit = hitEl ? hitEl.closest('.tm-diagram-edge-hit-path') : null;
+        if (edgeHit && edgeHit.getAttribute('data-edge-id')) {
+            const edgeId = edgeHit.getAttribute('data-edge-id');
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            const closest = this._findClosestPointOnEdge(edgeHit, docPt.x, docPt.y);
+            this._commitPolyline(inst, {
+                kind: 'edge',
+                edgeId: edgeId,
+                t: closest ? closest.t : 0.5
+            });
+            return;
+        }
+
+        // Empty canvas → append waypoint and update preview.
+        const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+        inst.polylinePoints.push({ x: docPt.x, y: docPt.y });
+        this._updateEdgeDraw(inst, e.clientX, e.clientY);
+    },
+
+    // Flatten polyline waypoints and dispatch JsOnEdgeCreated with the
+    // appropriate target terminal descriptor.
+    _commitPolyline: function (inst, target) {
+        if (!inst.dotNetRef) { this._cancelEdgeDraw(inst); return; }
+
+        const waypointsXY = [];
+        for (let i = 0; i < inst.polylinePoints.length; i++) {
+            waypointsXY.push(this._snap(inst, inst.polylinePoints[i].x));
+            waypointsXY.push(this._snap(inst, inst.polylinePoints[i].y));
+        }
+
+        // Source is always floating for a polyline draft started from empty
+        // canvas; forward its doc-space coordinates, grid-snapped so free
+        // endpoints align with the grid when one is active.
+        const srcPtX = this._snap(inst, inst.drawSource.x);
+        const srcPtY = this._snap(inst, inst.drawSource.y);
+
+        if (target.kind === 'floating') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                null, null,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                null, null, null,
+                this._snap(inst, target.x), this._snap(inst, target.y),
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'port') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                target.nodeId, target.portId,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                null, null, null,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'node') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                target.nodeId, null,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                null, null, null,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'cp') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                target.nodeId, null,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                target.rx, target.ry, target.perimeter,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'edge') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                null, null,
+                null, 0.5, null, 0.5,
+                target.edgeId, target.t,
+                null, null, null,
+                null, null, null,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        }
+
+        inst.polylineCommittedAt = Date.now();
+        this._cancelEdgeDraw(inst);
+    },
+
+    // ── Keyboard shortcuts ───────────────────────────────────────────────────
+
+    _onKeyDown: function (e, inst) {
+        if (!inst.container.contains(document.activeElement) && document.activeElement !== document.body) return;
+
+        const ids = [...inst.selectedIds];
+
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            if (ids.length === 0) return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            e.preventDefault();
+            inst.selectedIds.clear();
+            this._updateSelection(inst);
+            inst.dotNetRef.invokeMethodAsync('OnDeleteSelected', ids);
+            return;
+        }
+
+        // Enter commits the current polyline draft, using the last known
+        // cursor position as a floating target terminal.
+        if (e.key === 'Enter' && inst.isDrawingPolyline) {
+            e.preventDefault();
+            const last = inst.lastPointerClient;
+            if (last) {
+                const docPt = this._screenToDoc(inst, last.x, last.y);
+                this._commitPolyline(inst, { kind: 'floating', x: docPt.x, y: docPt.y });
+            } else {
+                this._cancelEdgeDraw(inst);
+            }
+            return;
+        }
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            if (inst.isPendingEdgeDraw) {
+                inst.isPendingEdgeDraw = false;
+                inst.pendingEdgeStart = null;
+                if (inst.toolMode === 'edge') {
+                    this._applyToolMode(inst, 'select');
+                    if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+                }
+                return;
+            }
+            if (inst.isDrawingEdge) {
+                this._cancelEdgeDraw(inst);
+                return;
+            }
+            if (inst.isDraggingWaypoint && inst.dotNetRef) {
+                inst.isDraggingWaypoint = false;
+                inst.dragWaypointEdgeId = null;
+                inst.dragWaypointIndex = null;
+                inst.dragWaypointStartScreen = null;
+                inst.dragWaypointStartDoc = null;
+                inst.dotNetRef.invokeMethodAsync('OnCancelEdgeEdit');
+                return;
+            }
+            if (inst.isDraggingWholeEdge) {
+                const edgeId = inst.dragWholeEdgeId;
+                const group = inst.svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+                if (group) {
+                    group.removeAttribute('transform');
+                }
+                inst.isDraggingWholeEdge = false;
+                inst.dragWholeEdgeId = null;
+                inst.dragWholeEdgeStartDoc = null;
+                inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
+                inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+                return;
+            }
+            inst.selectedIds.clear();
+            this._updateSelection(inst);
+            inst.dotNetRef.invokeMethodAsync('OnClearSelection');
+            return;
+        }
+
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key.toLowerCase()) {
+                case 'z':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync(e.shiftKey ? 'OnRedo' : 'OnUndo');
+                    return;
+                case 'y':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnRedo');
+                    return;
+                case 'a':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnSelectAll');
+                    return;
+                case 'd':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnDuplicate', ids);
+                    return;
+                case 'c':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnCopyStyle');
+                    } else {
+                        if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnCopy', ids);
+                    }
+                    return;
+                case 'v':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        inst.dotNetRef.invokeMethodAsync('OnPasteStyle');
+                    } else {
+                        inst.dotNetRef.invokeMethodAsync('OnPaste');
+                    }
+                    return;
+                case 'f':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnShowSearch');
+                    return;
+                case 'h':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnShowReplace');
+                    return;
+                case 'b':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnToggleBold');
+                    return;
+                case 'i':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnToggleItalic');
+                    return;
+                case 'u':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnToggleUnderline');
+                    return;
+                case 'home':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnNavigateToCorner', 'top-left');
+                    return;
+                case 'end':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnNavigateToCorner', 'bottom-right');
+                    return;
+                case 'pageup':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnSwitchPage', -1);
+                    return;
+                case 'pagedown':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnSwitchPage', 1);
+                    return;
+                case 'g':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        if (ids.length === 1) {
+                            const selId = ids[0];
+                            const el = this._nodeEl(inst, selId);
+                            if (el && el.getAttribute('data-stencil-id') === 'general.group') {
+                                inst.dotNetRef.invokeMethodAsync('OnEnterGroup', selId);
+                                return;
+                            }
+                        }
+                        if (ids.length > 1) inst.dotNetRef.invokeMethodAsync('OnGroupSelected');
+                    }
+                    return;
+                case 'f':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        inst.dotNetRef.invokeMethodAsync('OnExitGroup');
+                    }
+                    return;
+                case 'l':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        inst.dotNetRef.invokeMethodAsync('OnLockSelected');
+                    }
+                    return;
+            }
+        }
+
+        // Quick-insert stencils (A,S,D,F,R)
+        if (!e.ctrlKey && !e.metaKey && !e.target.matches('input,textarea,select')) {
+            const stencilMap = {
+                'KeyA': 'general.text',
+                'KeyS': 'general.sticky-note',
+                'KeyD': 'general.rectangle',
+                'KeyF': 'general.ellipse',
+                'KeyR': 'general.rhombus'
+            };
+            if (stencilMap[e.code]) {
+                e.preventDefault();
+                inst.dotNetRef.invokeMethodAsync('OnQuickInsert', stencilMap[e.code]);
+                return;
+            }
+        }
+
+        // Space -> temporary pan mode
+        if (e.code === 'Space' && !e.target.matches('input,textarea,select')) {
+            e.preventDefault();
+            if (!inst.spaceHeld) {
+                inst.spaceHeld = true;
+                if (!inst.isPanning) inst.container.style.cursor = 'grab';
+            }
+            return;
+        }
+
+        // Tool-mode shortcuts: H → pan, V → select, L/C/E → edge.
+        // `E` was added in Phase 3 to match draw.io's edge shortcut; `L`
+        // and `C` are kept for backwards compatibility.
+        if (!e.ctrlKey && !e.metaKey && !e.target.matches('input,textarea,select')) {
+            if (e.code === 'KeyH') {
+                e.preventDefault();
+                this._applyToolMode(inst, 'pan');
+                inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'pan');
+                return;
+            }
+            if (e.code === 'KeyV') {
+                e.preventDefault();
+                this._applyToolMode(inst, 'select');
+                inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+                return;
+            }
+            if (e.code === 'KeyL' || e.code === 'KeyC' || e.code === 'KeyE') {
+                e.preventDefault();
+                this._applyToolMode(inst, 'edge');
+                inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'edge');
+                return;
+            }
+        }
+
+        // Arrow nudge
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+            if (ids.length === 0) return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            e.preventDefault();
+            const step = e.shiftKey ? 10 : 1;
+            const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+            const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+
+            // Filter to active group, skip locked nodes, and include group nodes
+            let nudgeIds = ids.filter(id => {
+                const el = this._nodeEl(inst, id);
+                if (!el || el.getAttribute('data-locked') === 'true') return false;
+                return this._isNodeInActiveGroup(inst, el);
+            });
+            nudgeIds = this._includeGroupNodes(inst, nudgeIds);
+
+            nudgeIds.forEach(id => {
+                const r = this._nodeRect(inst, id);
+                if (!r) return;
+                const clamped = this._clampChildPosition(inst, id, r.x + dx, r.y + dy);
+                this._setNodeTranslate(inst, id, clamped.x, clamped.y);
+            });
+            this._updateSelection(inst);
+
+            const moves = nudgeIds.map(id => {
+                const r = this._nodeRect(inst, id);
+                return r ? { id, x: r.x, y: r.y } : null;
+            }).filter(Boolean);
+
+            if (moves.length === 1) {
+                inst.dotNetRef.invokeMethodAsync('OnElementMoved', moves[0].id, moves[0].x, moves[0].y);
+            } else if (moves.length > 1) {
+                inst.dotNetRef.invokeMethodAsync('OnElementsMoved', moves);
+            }
+        }
+    },
+
+    _onKeyUp: function (e, inst) {
+        if (e.code === 'Space') {
+            inst.spaceHeld = false;
+            if (!inst.isPanning) {
+                inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+            }
+        }
+    },
+
+    // ── Selection outlines ───────────────────────────────────────────────────
+
+    _updateSelection: function (inst) {
+        this._clearSelectionOutlines(inst);
+        if (!inst.scenePane) return;
+
+        // Sync the .tm-diagram-node--selected modifier on the <g> so the CSS
+        // visibility rules for ports / connection points fire on selected nodes.
+        inst.scenePane.querySelectorAll('.tm-diagram-node--selected').forEach(function (el) {
+            el.classList.remove('tm-diagram-node--selected');
+        });
+
+        if (!inst.overlayPane) return;
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        inst.selectedIds.forEach(id => {
+            const nodeEl = this._nodeEl(inst, id);
+            if (nodeEl) nodeEl.classList.add('tm-diagram-node--selected');
+            const r = this._nodeRect(inst, id);
+            if (!r) return;
+            const rot = this._getNodeRotation(nodeEl);
+            // Selection outline sits in the overlay-pane as an SVG <rect> with
+            // the same translate+rotate as the node, sized 8 px larger so it
+            // visually frames the shape rather than overlapping it.
+            const rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('class', 'tm-diagram-selection-outline');
+            rect.setAttribute('x', '-4');
+            rect.setAttribute('y', '-4');
+            rect.setAttribute('width', String(r.w + 8));
+            rect.setAttribute('height', String(r.h + 8));
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('pointer-events', 'none');
+            rect.setAttribute('transform', this._buildNodeTransform(r.x, r.y, rot, r.w, r.h));
+            rect.setAttribute('data-sel-for', id);
+            inst.overlayPane.appendChild(rect);
+        });
+    },
+
+    _updateSelectionTransforms: function (inst) {
+        if (!inst.overlayPane && !inst.decoratorPane) return;
+        inst.selectedIds.forEach(id => {
+            const r = this._nodeRect(inst, id);
+            if (!r) return;
+            const nodeEl = this._nodeEl(inst, id);
+            const rot = this._getNodeRotation(nodeEl);
+            const tr = this._buildNodeTransform(r.x, r.y, rot, r.w, r.h);
+
+            if (inst.overlayPane) {
+                const outline = inst.overlayPane.querySelector('[data-sel-for="' + id + '"]');
+                if (outline) outline.setAttribute('transform', tr);
+            }
+            // F5: keep the decorator-pane per-node handles group (resize rects,
+            // rotate circle, connect-arrow foreignObjects) in sync with the
+            // live node during JS-driven drags. Blazor re-renders it after the
+            // drag commits, but during the drag we must update the DOM directly
+            // otherwise the handles would lag behind the node.
+            if (inst.decoratorPane) {
+                const handles = inst.decoratorPane.querySelector('g.tm-diagram-node-handles[data-node-id="' + id + '"]');
+                if (handles) handles.setAttribute('transform', tr);
+            }
+        });
+    },
+
+    _clearSelectionOutlines: function (inst) {
+        if (inst.overlayPane) {
+            inst.overlayPane.querySelectorAll('.tm-diagram-selection-outline').forEach(el => el.remove());
+        }
+    },
+
+    _updateWaypointVisuals: function (inst, edgeId, waypointIndex, x, y) {
+        const svg = inst.svg;
+        if (!svg) return;
+        const handleIndex = waypointIndex + 1;
+        const handle = svg.querySelector('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"][data-handle-index="' + handleIndex + '"]');
+        if (handle) {
+            handle.setAttribute('cx', x);
+            handle.setAttribute('cy', y);
+        }
+        const hitPath = svg.querySelector('path.tm-diagram-edge-hit-path[data-edge-id="' + edgeId + '"]');
+        const visPath = svg.querySelector('path.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]');
+        const handles = Array.from(svg.querySelectorAll('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"]'))
+            .sort(function (a, b) {
+                return parseInt(a.getAttribute('data-handle-index'), 10) - parseInt(b.getAttribute('data-handle-index'), 10);
+            });
+        if (handles.length > 1) {
+            let d = 'M ' + handles[0].getAttribute('cx') + ' ' + handles[0].getAttribute('cy');
+            for (let i = 1; i < handles.length; i++) {
+                d += ' L ' + handles[i].getAttribute('cx') + ' ' + handles[i].getAttribute('cy');
+            }
+            if (hitPath) hitPath.setAttribute('d', d);
+            if (visPath) visPath.setAttribute('d', d);
+        }
+    },
+
+    _updateDanglingVisuals: function (inst, edgeId, type, x, y) {
+        const svg = inst.svg;
+        if (!svg) return;
+        const handle = svg.querySelector('rect.tm-diagram-edge-handle--dangling[data-edge-id="' + edgeId + '"][data-dangling="' + type + '"]');
+        if (handle) {
+            handle.setAttribute('x', x - 4);
+            handle.setAttribute('y', y - 4);
+        }
+        const group = svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+        const hitPath = group ? group.querySelector('path.tm-diagram-edge-hit-path') : null;
+        const visPath = group ? group.querySelector('path.tm-diagram-edge-path') : null;
+        if (!hitPath || !visPath) return;
+        const d = hitPath.getAttribute('d');
+        if (!d) return;
+        if (type === 'source') {
+            const newD = d.replace(/^M\s+[\d\-.]+\s+[\d\-.]+/, 'M ' + x + ' ' + y);
+            hitPath.setAttribute('d', newD);
+            visPath.setAttribute('d', newD);
+        } else {
+            const newD = d.replace(/L\s+[\d\-.]+\s+[\d\-.]+$/, 'L ' + x + ' ' + y);
+            hitPath.setAttribute('d', newD);
+            visPath.setAttribute('d', newD);
+        }
+    },
+
+    // ── Rubber band helper ───────────────────────────────────────────────────
+
+    _createRubberEl: function (inst, x, y) {
+        const el = document.createElement('div');
+        el.className = 'tm-diagram-rubber';
+        el.style.position = 'absolute';
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.width = '0';
+        el.style.height = '0';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '10';
+        inst.container.appendChild(el);
+        return el;
+    },
+
+    // ── Obstacle-avoiding orthogonal router ─────────────────────────────────
+
+    _simplifyWaypoints: function (waypoints) {
+        if (!waypoints || waypoints.length < 3) return waypoints;
+        const result = [waypoints[0]];
+        for (let i = 1; i < waypoints.length - 1; i++) {
+            const prev = result[result.length - 1];
+            const curr = waypoints[i];
+            const next = waypoints[i + 1];
+            if ((prev[0] === curr[0] && curr[0] === next[0]) || (prev[1] === curr[1] && curr[1] === next[1])) {
+                continue;
+            }
+            result.push(curr);
+        }
+        result.push(waypoints[waypoints.length - 1]);
+        return result;
+    },
+
+    _simplifyEdgeWaypoints: function (waypoints) {
+        if (!waypoints || waypoints.length < 3) return waypoints;
+        const result = [waypoints[0]];
+        for (let i = 1; i < waypoints.length - 1; i++) {
+            const prev = result[result.length - 1];
+            const curr = waypoints[i];
+            const next = waypoints[i + 1];
+            if ((Math.abs(prev.x - curr.x) < 0.5 && Math.abs(curr.x - next.x) < 0.5) ||
+                (Math.abs(prev.y - curr.y) < 0.5 && Math.abs(curr.y - next.y) < 0.5)) {
+                continue;
+            }
+            result.push(curr);
+        }
+        result.push(waypoints[waypoints.length - 1]);
+        return result;
+    },
+
+    _computeObstacleAvoidingWaypoints: function (sx1, sy1, sx2, sy2, obstacles) {
+        if (!obstacles || obstacles.length === 0) return null;
+
+        const margin = 12;
+        const expanded = obstacles.map(function (o) {
+            return {
+                x: o.x - margin,
+                y: o.y - margin,
+                w: o.w + margin * 2,
+                h: o.h + margin * 2
+            };
+        });
+
+        const xSet = new Set();
+        const ySet = new Set();
+        xSet.add(sx1);
+        xSet.add(sx2);
+        ySet.add(sy1);
+        ySet.add(sy2);
+
+        for (let i = 0; i < expanded.length; i++) {
+            const o = expanded[i];
+            xSet.add(o.x);
+            xSet.add(o.x + o.w);
+            ySet.add(o.y);
+            ySet.add(o.y + o.h);
+        }
+
+        let xs = Array.from(xSet).sort(function (a, b) { return a - b; });
+        let ys = Array.from(ySet).sort(function (a, b) { return a - b; });
+
+        // Add midpoints between adjacent coordinates to ensure narrow channels are represented
+        const augmentedXs = [];
+        for (let i = 0; i < xs.length; i++) {
+            augmentedXs.push(xs[i]);
+            if (i < xs.length - 1 && xs[i + 1] - xs[i] > 1) {
+                augmentedXs.push((xs[i] + xs[i + 1]) / 2);
+            }
+        }
+        const augmentedYs = [];
+        for (let i = 0; i < ys.length; i++) {
+            augmentedYs.push(ys[i]);
+            if (i < ys.length - 1 && ys[i + 1] - ys[i] > 1) {
+                augmentedYs.push((ys[i] + ys[i + 1]) / 2);
+            }
+        }
+
+        xs = augmentedXs.sort(function (a, b) { return a - b; });
+        ys = augmentedYs.sort(function (a, b) { return a - b; });
+
+        const xToIdx = {};
+        const yToIdx = {};
+        for (let i = 0; i < xs.length; i++) xToIdx[xs[i]] = i;
+        for (let i = 0; i < ys.length; i++) yToIdx[ys[i]] = i;
+
+        const startX = xToIdx[sx1];
+        const startY = yToIdx[sy1];
+        const endX = xToIdx[sx2];
+        const endY = yToIdx[sy2];
+
+        function intersectsObstacle(x1, y1, x2, y2) {
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+            for (let i = 0; i < expanded.length; i++) {
+                const o = expanded[i];
+                const ox1 = o.x, oy1 = o.y, ox2 = o.x + o.w, oy2 = o.y + o.h;
+                if (maxX <= ox1 || minX >= ox2 || maxY <= oy1 || minY >= oy2) continue;
+                if (y1 === y2) {
+                    if (y1 > oy1 && y1 < oy2 && maxX > ox1 && minX < ox2) return true;
+                } else if (x1 === x2) {
+                    if (x1 > ox1 && x1 < ox2 && maxY > oy1 && minY < oy2) return true;
+                }
+            }
+            return false;
+        }
+
+        // A* with turn penalty
+        const open = [];
+        const closed = new Set();
+        const gScore = {};
+        const fScore = {};
+        const cameFrom = {};
+
+        function makeKey(x, y) { return x + ',' + y; }
+
+        function pushOpen(k, f) {
+            open.push({ k: k, f: f });
+            open.sort(function (a, b) { return a.f - b.f; });
+        }
+
+        function popOpen() {
+            return open.shift().k;
+        }
+
+        const sKey = makeKey(startX, startY);
+        gScore[sKey] = 0;
+        fScore[sKey] = Math.abs(sx2 - sx1) + Math.abs(sy2 - sy1);
+        pushOpen(sKey, fScore[sKey]);
+
+        while (open.length > 0) {
+            const current = popOpen();
+            if (current === makeKey(endX, endY)) {
+                const path = [];
+                let c = current;
+                while (c) {
+                    const parts = c.split(',');
+                    const cx = parseInt(parts[0], 10);
+                    const cy = parseInt(parts[1], 10);
+                    path.push([xs[cx], ys[cy]]);
+                    c = cameFrom[c];
+                }
+                path.reverse();
+                return this._simplifyWaypoints(path);
+            }
+
+            closed.add(current);
+
+            const parts = current.split(',');
+            const cx = parseInt(parts[0], 10);
+            const cy = parseInt(parts[1], 10);
+            const cxVal = xs[cx];
+            const cyVal = ys[cy];
+
+            const neighbors = [];
+            if (cx > 0) neighbors.push([cx - 1, cy, xs[cx - 1], cyVal]);
+            if (cx < xs.length - 1) neighbors.push([cx + 1, cy, xs[cx + 1], cyVal]);
+            if (cy > 0) neighbors.push([cx, cy - 1, cxVal, ys[cy - 1]]);
+            if (cy < ys.length - 1) neighbors.push([cx, cy + 1, cxVal, ys[cy + 1]]);
+
+            for (let i = 0; i < neighbors.length; i++) {
+                const n = neighbors[i];
+                const nx = n[0], ny = n[1], nxVal = n[2], nyVal = n[3];
+                const nKey = makeKey(nx, ny);
+                if (closed.has(nKey)) continue;
+                if (intersectsObstacle(cxVal, cyVal, nxVal, nyVal)) continue;
+
+                const moveDist = Math.abs(nxVal - cxVal) + Math.abs(nyVal - cyVal);
+                let turnPenalty = 0;
+                if (cameFrom[current]) {
+                    const cparts = cameFrom[current].split(',');
+                    const px = parseInt(cparts[0], 10);
+                    const py = parseInt(cparts[1], 10);
+                    const dx1 = cx - px;
+                    const dy1 = cy - py;
+                    const dx2 = nx - cx;
+                    const dy2 = ny - cy;
+                    if (dx1 !== dx2 || dy1 !== dy2) turnPenalty = 40;
+                }
+
+                const tentativeG = gScore[current] + moveDist + turnPenalty;
+                if (!(nKey in gScore) || tentativeG < gScore[nKey]) {
+                    cameFrom[nKey] = current;
+                    gScore[nKey] = tentativeG;
+                    fScore[nKey] = tentativeG + Math.abs(nxVal - sx2) + Math.abs(nyVal - sy2);
+                    pushOpen(nKey, fScore[nKey]);
+                }
+            }
+        }
+
+        return null;
+    },
+
+    // ── Orthogonal router ────────────────────────────────────────────────────
+
+    _computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing, srcBounds, tgtBounds, obstacles) {
+        routing = (routing || 'orthogonal').toLowerCase();
+        sourceSpacing = sourceSpacing || 0;
+        targetSpacing = targetSpacing || 0;
+
+        let s1 = (side1 || '').toLowerCase();
+        let s2 = (side2 || '').toLowerCase();
+
+        // Swimlane-aware routing: force entry direction based on swimlane orientation
+        if (srcBounds && srcBounds.isSwimlane) {
+            if (srcBounds.isHorizontal) {
+                // Force left/right exit for horizontal swimlane
+                if (s1 !== 'left' && s1 !== 'right') s1 = x1 < x2 ? 'right' : 'left';
+            } else {
+                // Force top/bottom exit for vertical swimlane
+                if (s1 !== 'top' && s1 !== 'bottom') s1 = y1 < y2 ? 'bottom' : 'top';
+            }
+        }
+        if (tgtBounds && tgtBounds.isSwimlane) {
+            if (tgtBounds.isHorizontal) {
+                // Force left/right entry for horizontal swimlane
+                if (s2 !== 'left' && s2 !== 'right') s2 = x1 < x2 ? 'left' : 'right';
+            } else {
+                // Force top/bottom entry for vertical swimlane
+                if (s2 !== 'top' && s2 !== 'bottom') s2 = y1 < y2 ? 'top' : 'bottom';
+            }
+        }
+
+        const dx1 = s1 === 'left' ? -1 : s1 === 'right' ? 1 : 0;
+        const dy1 = s1 === 'top' ? -1 : s1 === 'bottom' ? 1 : 0;
+        const dx2 = s2 === 'left' ? -1 : s2 === 'right' ? 1 : 0;
+        const dy2 = s2 === 'top' ? -1 : s2 === 'bottom' ? 1 : 0;
+
+        // Apply spacing
+        const sx1 = x1 + dx1 * sourceSpacing;
+        const sy1 = y1 + dy1 * sourceSpacing;
+        const sx2 = x2 + dx2 * targetSpacing;
+        const sy2 = y2 + dy2 * targetSpacing;
+
+        if (routing === 'elbow') {
+            var orient = (arguments[12] || 'auto').toLowerCase();
+            if (orient === 'horizontal') {
+                if (dx1 !== 0 && dx2 !== 0) {
+                    const midX = (sx1 + sx2) / 2;
+                    return [[midX, sy1], [midX, sy2]];
+                }
+                return [[sx2, sy1]];
+            }
+            if (orient === 'vertical') {
+                if (dy1 !== 0 && dy2 !== 0) {
+                    const midY = (sy1 + sy2) / 2;
+                    return [[sx1, midY], [sx2, midY]];
+                }
+                return [[sx1, sy2]];
+            }
+            // auto
+            if (dx1 !== 0 && dx2 !== 0) {
+                const midX = (sx1 + sx2) / 2;
+                return [[midX, sy1], [midX, sy2]];
+            }
+            if (dy1 !== 0 && dy2 !== 0) {
+                const midY = (sy1 + sy2) / 2;
+                return [[sx1, midY], [sx2, midY]];
+            }
+            if (dx1 !== 0 && dy2 !== 0) {
+                return [[sx2, sy1]];
+            }
+            if (dy1 !== 0 && dx2 !== 0) {
+                return [[sx1, sy2]];
+            }
+            return [[sx1, sy2]];
+        }
+
+        if (routing === 'segment') {
+            if (dx1 !== 0 && dx2 !== 0) {
+                const midX = (sx1 + sx2) / 2;
+                return [[midX, sy1], [midX, sy2]];
+            }
+            if (dy1 !== 0 && dy2 !== 0) {
+                const midY = (sy1 + sy2) / 2;
+                return [[sx1, midY], [sx2, midY]];
+            }
+            if (dx1 !== 0 && dy2 !== 0) {
+                return [[sx2, sy1]];
+            }
+            if (dy1 !== 0 && dx2 !== 0) {
+                return [[sx1, sy2]];
+            }
+            return [[sx1, sy2]];
+        }
+
+        if (routing === 'isometric') {
+            const dx = sx2 - sx1;
+            const dy = sy2 - sy1;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            if (absDx > absDy) {
+                // Horizontal arms with diagonal connector
+                return [[sx1 + dx * 0.3, sy1], [sx1 + dx * 0.7, sy2]];
+            } else {
+                // Vertical arms with diagonal connector
+                return [[sx1, sy1 + dy * 0.3], [sx2, sy1 + dy * 0.7]];
+            }
+        }
+
+        if (routing === 'entityrelation') {
+            const arm = 30;
+            const midY = (sy1 + sy2) / 2;
+            if (dx1 > 0) {
+                return [[sx1 + arm, sy1], [sx1 + arm, midY], [sx2 - arm, midY], [sx2 - arm, sy2]];
+            } else {
+                return [[sx1 - arm, sy1], [sx1 - arm, midY], [sx2 + arm, midY], [sx2 + arm, sy2]];
+            }
+        }
+
+        // orthogonal (default) and rounded
+        if (routing === 'orthogonal' || routing === 'rounded') {
+            const obstaclePath = this._computeObstacleAvoidingWaypoints(sx1, sy1, sx2, sy2, obstacles);
+            if (obstaclePath && obstaclePath.length >= 2) {
+                // obstaclePath includes start and end; we need intermediate waypoints only
+                return obstaclePath.slice(1, obstaclePath.length - 1);
+            }
+        }
+
+        // Simple fallback for orthogonal, rounded, and any other routing
+        if (dx1 !== 0 && dx2 !== 0) {
+            const midX = (sx1 + sx2) / 2;
+            return [[midX, sy1], [midX, sy2]];
+        }
+        if (dy1 !== 0 && dy2 !== 0) {
+            const midY = (sy1 + sy2) / 2;
+            return [[sx1, midY], [sx2, midY]];
+        }
+        if (dx1 !== 0 && dy2 !== 0) {
+            return [[sx2, sy1]];
+        }
+        if (dy1 !== 0 && dx2 !== 0) {
+            return [[sx1, sy2]];
+        }
+        const midX = (sx1 + sx2) / 2;
+        return [[midX, sy1], [midX, sy2]];
+    },
+
+    // ── Programmatic API ─────────────────────────────────────────────────────
+
+    setSelection: function (container, ids) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.selectedIds = new Set(ids || []);
+        this._updateSelection(inst);
+    },
+
+    setActiveGroupId: function (container, activeGroupId) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.activeGroupId = activeGroupId || null;
+    },
+
+    setRulerUnit: function (container, unit) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.rulerUnit = unit || 'px';
+    },
+
+    setPageScale: function (container, scale) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.pageScale = scale || 1.0;
+    },
+
+    zoomTo: function (container, scale) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        const vb = this._getViewBox(inst);
+        const cx = vb.x + vb.w / 2;
+        const cy = vb.y + vb.h / 2;
+        const svgRect = inst.svg.getBoundingClientRect();
+        const newW = svgRect.width / scale;
+        const newH = svgRect.height / scale;
+        const nx = cx - newW / 2;
+        const ny = cy - newH / 2;
+        this._setViewBox(inst, nx, ny, newW, newH);
+        if (inst.dotNetRef) {
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
+            inst.dotNetRef.invokeMethodAsync('OnZoomChanged', inst.scale);
+        }
+    },
+
+    fitToView: function (container, padding) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return 1.0;
+        padding = (padding != null) ? padding : 40;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let hasNodes = false;
+
+        if (inst.scenePane) {
+            inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
+                const id = el.getAttribute('data-node-id');
+                const r = this._nodeRect(inst, id);
+                if (!r) return;
+                hasNodes = true;
+                minX = Math.min(minX, r.x);
+                minY = Math.min(minY, r.y);
+                maxX = Math.max(maxX, r.x + r.w);
+                maxY = Math.max(maxY, r.y + r.h);
+            });
+        }
+
+        if (!hasNodes) {
+            const svgRect = inst.svg.getBoundingClientRect();
+            this._setViewBox(inst, 0, 0, inst.canvasW, inst.canvasH);
+            const emptyScale = inst.scale;
+            if (inst.dotNetRef) {
+                inst.dotNetRef.invokeMethodAsync('OnViewportChanged', 0, 0, inst.canvasW, inst.canvasH);
+                inst.dotNetRef.invokeMethodAsync('OnZoomChanged', emptyScale);
+            }
+            return emptyScale;
+        }
+
+        const contentW = maxX - minX + padding * 2;
+        const contentH = maxY - minY + padding * 2;
+        const svgRect = inst.svg.getBoundingClientRect();
+        const fitScale = Math.min(svgRect.width / contentW, svgRect.height / contentH, 2.0);
+        const newW = svgRect.width / fitScale;
+        const newH = svgRect.height / fitScale;
+        const nx = minX - padding;
+        const ny = minY - padding;
+        this._setViewBox(inst, nx, ny, newW, newH);
+        if (inst.dotNetRef) {
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
+            inst.dotNetRef.invokeMethodAsync('OnZoomChanged', inst.scale);
+        }
+        return fitScale;
+    },
+
+    openContextMenu: function (container, menuEl) {
+        if (!container || !menuEl) return;
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        // Clean up any existing dismiss handlers first
+        if (inst._menuDismissHandler) {
+            document.removeEventListener('mousedown', inst._menuDismissHandler);
+            document.removeEventListener('keydown', inst._menuKeyHandler);
+            inst._menuDismissHandler = null;
+            inst._menuKeyHandler = null;
+        }
+        setTimeout(function () {
+            if (!menuEl) return;
+            const rect = menuEl.getBoundingClientRect();
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const margin = 8;
+            let left = parseFloat(menuEl.style.left) || 0;
+            let top = parseFloat(menuEl.style.top) || 0;
+            if (left + rect.width + margin > vw) {
+                left = Math.max(margin, vw - rect.width - margin);
+            }
+            if (top + rect.height + margin > vh) {
+                top = Math.max(margin, vh - rect.height - margin);
+            }
+            menuEl.style.left = left + 'px';
+            menuEl.style.top = top + 'px';
+
+            inst._menuDismissHandler = function (e) {
+                if (e.button !== 0) return; // only left click outside
+                if (e.target.closest('.tm-diagram-editor__context-menu')) return;
+                if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('CloseContextMenu');
+                document.removeEventListener('mousedown', inst._menuDismissHandler);
+                document.removeEventListener('keydown', inst._menuKeyHandler);
+                inst._menuDismissHandler = null;
+                inst._menuKeyHandler = null;
+            };
+            inst._menuKeyHandler = function (e) {
+                if (e.key === 'Escape') {
+                    if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('CloseContextMenu');
+                    document.removeEventListener('mousedown', inst._menuDismissHandler);
+                    document.removeEventListener('keydown', inst._menuKeyHandler);
+                    inst._menuDismissHandler = null;
+                    inst._menuKeyHandler = null;
+                }
+            };
+            document.addEventListener('mousedown', inst._menuDismissHandler);
+            document.addEventListener('keydown', inst._menuKeyHandler);
+        }, 0);
+    },
+
+    closeContextMenu: function (container) {
+        if (!container) return;
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        if (inst._menuDismissHandler) {
+            document.removeEventListener('mousedown', inst._menuDismissHandler);
+            document.removeEventListener('keydown', inst._menuKeyHandler);
+            inst._menuDismissHandler = null;
+            inst._menuKeyHandler = null;
+        }
+    },
+
+    scrollTo: function (container, centreX, centreY) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst) return;
+        const vb = this._getViewBox(inst);
+        const newX = centreX - vb.w / 2;
+        const newY = centreY - vb.h / 2;
+        this._setViewBox(inst, newX, newY, vb.w, vb.h);
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', newX, newY, vb.w, vb.h);
+    },
+
+    zoomToRect: function (container, x, y, w, h, padding) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst || !inst.svg) return;
+        padding = (padding != null) ? padding : 40;
+        const svgRect = inst.svg.getBoundingClientRect();
+        const contentW = w + padding * 2;
+        const contentH = h + padding * 2;
+        const scale = Math.min(svgRect.width / contentW, svgRect.height / contentH, 2.0);
+        const clampedScale = Math.max(0.25, scale);
+        const newW = svgRect.width / clampedScale;
+        const newH = svgRect.height / clampedScale;
+        const nx = x + w / 2 - newW / 2;
+        const ny = y + h / 2 - newH / 2;
+        this._setViewBox(inst, nx, ny, newW, newH);
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnZoomChanged', clampedScale);
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
+    },
+
+    addPageViewMargin: function (container, margin) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst || !inst.svg) return;
+        const vb = this._getViewBox(inst);
+        this._setViewBox(inst, vb.x - margin, vb.y - margin, vb.w + margin * 2, vb.h + margin * 2);
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', vb.x - margin, vb.y - margin, vb.w + margin * 2, vb.h + margin * 2);
+    },
+
+    // ── Toolbox drag init ─────────────────────────────────────────────────────
+
+    initToolbox: function (toolboxElement) {
+        if (!toolboxElement || toolboxElement._tmdToolboxInit) return;
+        toolboxElement._tmdToolboxInit = true;
+        toolboxElement.addEventListener('dragstart', function (e) {
+            const item = e.target.closest('[data-stencil-id]');
+            if (!item) return;
+            const type = item.getAttribute('data-stencil-id');
+            window.__tmDiagramDragStencil = type;
+            e.dataTransfer.setData('text/plain', type);
+            e.dataTransfer.effectAllowed = 'copy';
+        });
+    },
+
+    updateSelectionOutlines: function (container) {
+        const inst = this.instances.get(container.id);
+        if (inst) this._updateSelection(inst);
+    },
+
+    getDragStencilId: function () {
+        return window.__tmDiagramDragStencil ?? null;
+    },
+
+    _applyNodeRotation: function (inst, nodeId, angle) {
+        const el = this._nodeEl(inst, nodeId);
+        if (!el) return;
+        const p = this._parseNodeTransform(el);
+        const w = parseFloat(el.getAttribute('data-w') || '0');
+        const h = parseFloat(el.getAttribute('data-h') || '0');
+        const tr = this._buildNodeTransform(p.x, p.y, angle, w, h);
+        el.setAttribute('transform', tr);
+        // F5: also rotate the handles group in decorator-pane so the resize
+        // squares, rotate knob and connect arrows track the live rotation.
+        if (inst.decoratorPane) {
+            const handles = inst.decoratorPane.querySelector('g.tm-diagram-node-handles[data-node-id="' + nodeId + '"]');
+            if (handles) handles.setAttribute('transform', tr);
+        }
+        this._updateSelection(inst);
+    },
+
+    setNodeRotation: function (container, nodeId, angle) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst) return;
+        this._applyNodeRotation(inst, nodeId, angle);
+    },
+
+    startRotate: function (container, nodeId, clientX, clientY, initialRotation, snap) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst) return;
+        const r = this._nodeRect(inst, nodeId);
+        if (!r) return;
+
+        inst.isRotating = true;
+        inst.rotateNodeId = nodeId;
+        inst.rotateCenterDoc = { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+        inst.rotateStartNodeRotation = initialRotation;
+        inst.rotateSnap = snap || 0;
+        inst.rotateGroupMembers = null;
+
+        const startPt = this._screenToDoc(inst, clientX, clientY);
+        inst.rotateStartAngle = Math.atan2(startPt.y - inst.rotateCenterDoc.y, startPt.x - inst.rotateCenterDoc.x) * 180 / Math.PI;
+
+        // If rotating a group, cache member start rotations for real-time updates
+        const nodeEl = this._nodeEl(inst, nodeId);
+        if (nodeEl && nodeEl.getAttribute('data-stencil-id') === 'general.group' && inst.scenePane) {
+            inst.rotateGroupMembers = [];
+            inst.scenePane.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
+                if (el.getAttribute('data-parent-group-id') === nodeId) {
+                    const memberId = el.getAttribute('data-node-id');
+                    const memberRot = this._getNodeRotation(el);
+                    inst.rotateGroupMembers.push({ id: memberId, startRotation: memberRot });
+                }
+            });
+        }
+
+        const self = this;
+        const move = function (e) {
+            if (!inst.isRotating) return;
+            e.preventDefault();
+            const pt = self._screenToDoc(inst, e.clientX, e.clientY);
+            const angle = Math.atan2(pt.y - inst.rotateCenterDoc.y, pt.x - inst.rotateCenterDoc.x) * 180 / Math.PI;
+            let delta = angle - inst.rotateStartAngle;
+            let rot = inst.rotateStartNodeRotation + delta;
+            if (inst.rotateSnap > 0) {
+                rot = Math.round(rot / inst.rotateSnap) * inst.rotateSnap;
+            }
+            self._applyNodeRotation(inst, inst.rotateNodeId, rot);
+            if (inst.rotateGroupMembers) {
+                const groupDelta = rot - inst.rotateStartNodeRotation;
+                inst.rotateGroupMembers.forEach(function (m) {
+                    self._applyNodeRotation(inst, m.id, m.startRotation + groupDelta);
+                });
+            }
+        };
+        const up = function (e) {
+            if (!inst.isRotating) return;
+            inst.isRotating = false;
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+            const nodeEl = self._nodeEl(inst, inst.rotateNodeId);
+            const rot = nodeEl ? self._getNodeRotation(nodeEl) : inst.rotateStartNodeRotation;
+            if (inst.dotNetRef) {
+                inst.dotNetRef.invokeMethodAsync('OnRotateEnded', inst.rotateNodeId, rot);
+            }
+            inst.rotateNodeId = null;
+            inst.rotateGroupMembers = null;
+        };
+
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+    },
+
+    computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing, srcBounds, tgtBounds, obstacles) {
+        return this._computeOrthogonalWaypoints(x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing, srcBounds, tgtBounds, obstacles);
+    },
+
+    screenToDoc: function (container, clientX, clientY) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return { x: clientX, y: clientY };
+        return this._screenToDoc(inst, clientX, clientY);
+    },
+
+    // ── Magnetic guidelines ────────────────────────────────────────────────
+
+    _computeSnapGuides: function (inst, dragNodeIds, dragStartPositions, dxDoc, dyDoc) {
+        const threshold = 8 / inst.scale; // 8 screen px
+        const guides = { x: null, y: null, distances: { x: null, y: null } };
+        if (!inst.scenePane) return guides;
+
+        const draggedRects = dragNodeIds.map(id => {
+            const start = dragStartPositions[id];
+            if (!start) return null;
+            const w = start.w ?? 0;
+            const h = start.h ?? 0;
+            return {
+                id,
+                left: start.x + dxDoc,
+                right: start.x + dxDoc + w,
+                top: start.y + dyDoc,
+                bottom: start.y + dyDoc + h,
+                centerX: start.x + dxDoc + w / 2,
+                centerY: start.y + dyDoc + h / 2,
+            };
+        }).filter(Boolean);
+
+        const allRects = [];
+        inst.scenePane.querySelectorAll('.tm-diagram-node').forEach(el => {
+            const id = el.getAttribute('data-node-id');
+            if (!id || dragNodeIds.includes(id)) return;
+            const r = this._nodeRect(inst, id);
+            if (!r) return;
+            allRects.push({
+                id,
+                left: r.x,
+                right: r.x + r.w,
+                top: r.y,
+                bottom: r.y + r.h,
+                centerX: r.x + r.w / 2,
+                centerY: r.y + r.h / 2,
+            });
+        });
+
+        function findBest(dragged, targets, propNames) {
+            let best = null;
+            for (const d of dragged) {
+                for (const t of targets) {
+                    for (const dp of propNames) {
+                        for (const tp of propNames) {
+                            const delta = t[tp] - d[dp];
+                            if (Math.abs(delta) <= threshold) {
+                                if (!best || Math.abs(delta) < Math.abs(best.delta)) {
+                                    best = { delta, dProp: dp, tProp: tp, dVal: d[dp], tVal: t[tp] };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return best;
+        }
+
+        const xBest = findBest(draggedRects, allRects, ['left', 'right', 'centerX']);
+        const yBest = findBest(draggedRects, allRects, ['top', 'bottom', 'centerY']);
+
+        if (xBest) guides.x = xBest;
+        if (yBest) guides.y = yBest;
+
+        // Distance guides
+        if (draggedRects.length > 0) {
+            const dragBounds = {
+                left: Math.min(...draggedRects.map(r => r.left)),
+                right: Math.max(...draggedRects.map(r => r.right)),
+                top: Math.min(...draggedRects.map(r => r.top)),
+                bottom: Math.max(...draggedRects.map(r => r.bottom)),
+            };
+            const distThreshold = 500; // document px max distance to show label
+
+            // X axis distances
+            let leftNeighbor = null;
+            let rightNeighbor = null;
+            let minLeftGap = Infinity;
+            let minRightGap = Infinity;
+            for (const t of allRects) {
+                const gapLeft = dragBounds.left - t.right;
+                const gapRight = t.left - dragBounds.right;
+                if (gapLeft >= 0 && gapLeft < minLeftGap) { minLeftGap = gapLeft; leftNeighbor = t; }
+                if (gapRight >= 0 && gapRight < minRightGap) { minRightGap = gapRight; rightNeighbor = t; }
+            }
+            if (leftNeighbor && minLeftGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== leftNeighbor && Math.abs((dragBounds.left - t.right) - minLeftGap) < 1);
+                guides.distances.x = { value: minLeftGap, from: leftNeighbor.right, to: dragBounds.left, side: 'left', consistent };
+            } else if (rightNeighbor && minRightGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== rightNeighbor && Math.abs((t.left - dragBounds.right) - minRightGap) < 1);
+                guides.distances.x = { value: minRightGap, from: dragBounds.right, to: rightNeighbor.left, side: 'right', consistent };
+            }
+
+            // Y axis distances
+            let topNeighbor = null;
+            let bottomNeighbor = null;
+            let minTopGap = Infinity;
+            let minBottomGap = Infinity;
+            for (const t of allRects) {
+                const gapTop = dragBounds.top - t.bottom;
+                const gapBottom = t.top - dragBounds.bottom;
+                if (gapTop >= 0 && gapTop < minTopGap) { minTopGap = gapTop; topNeighbor = t; }
+                if (gapBottom >= 0 && gapBottom < minBottomGap) { minBottomGap = gapBottom; bottomNeighbor = t; }
+            }
+            if (topNeighbor && minTopGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== topNeighbor && Math.abs((dragBounds.top - t.bottom) - minTopGap) < 1);
+                guides.distances.y = { value: minTopGap, from: topNeighbor.bottom, to: dragBounds.top, side: 'top', consistent };
+            } else if (bottomNeighbor && minBottomGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== bottomNeighbor && Math.abs((t.top - dragBounds.bottom) - minBottomGap) < 1);
+                guides.distances.y = { value: minBottomGap, from: dragBounds.bottom, to: bottomNeighbor.top, side: 'bottom', consistent };
+            }
+        }
+
+        return guides;
+    },
+
+    _formatDistance: function (inst, px) {
+        const unit = (inst.rulerUnit || 'px').toLowerCase();
+        const scale = inst.pageScale || 1.0;
+        const dpi = 96.0;
+        let factor = 1.0;
+        switch (unit) {
+            case 'pt': factor = 72.0 / dpi; break;
+            case 'in': factor = 1.0 / dpi; break;
+            case 'mm': factor = 25.4 / dpi; break;
+            case 'm': factor = 0.0254 / dpi; break;
+        }
+        const val = px * factor / scale;
+        let s = val.toFixed(2);
+        if (s.endsWith('.00')) s = s.slice(0, -3);
+        else if (s.endsWith('0')) s = s.slice(0, -1);
+        if (s === '-0') s = '0';
+        return s + ' ' + unit;
+    },
+
+    _computeSnapGuidesForPoint: function (inst, x, y) {
+        const threshold = 8 / inst.scale;
+        const guides = { x: null, y: null, distances: { x: null, y: null } };
+        if (!inst.scenePane) return guides;
+
+        let xBest = null;
+        let yBest = null;
+        const self = this;
+
+        inst.scenePane.querySelectorAll('.tm-diagram-node').forEach(function (el) {
+            const id = el.getAttribute('data-node-id');
+            if (!id) return;
+            const r = self._nodeRect(inst, id);
+            if (!r) return;
+
+            const xTargets = [
+                { val: r.left, prop: 'left' },
+                { val: r.right, prop: 'right' },
+                { val: r.left + r.w / 2, prop: 'centerX' }
+            ];
+            for (let i = 0; i < xTargets.length; i++) {
+                const t = xTargets[i];
+                const delta = t.val - x;
+                if (Math.abs(delta) <= threshold) {
+                    if (!xBest || Math.abs(delta) < Math.abs(xBest.delta)) {
+                        xBest = { delta: delta, dProp: 'centerX', tProp: t.prop, dVal: x, tVal: t.val };
+                    }
+                }
+            }
+
+            const yTargets = [
+                { val: r.top, prop: 'top' },
+                { val: r.bottom, prop: 'bottom' },
+                { val: r.top + r.h / 2, prop: 'centerY' }
+            ];
+            for (let i = 0; i < yTargets.length; i++) {
+                const t = yTargets[i];
+                const delta = t.val - y;
+                if (Math.abs(delta) <= threshold) {
+                    if (!yBest || Math.abs(delta) < Math.abs(yBest.delta)) {
+                        yBest = { delta: delta, dProp: 'centerY', tProp: t.prop, dVal: y, tVal: t.val };
+                    }
+                }
+            }
+        });
+
+        if (xBest) guides.x = xBest;
+        if (yBest) guides.y = yBest;
+        return guides;
+    },
+
+    _drawGuideLines: function (inst, guides) {
+        this._clearGuideLines(inst);
+        if (!inst.svg) return;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.id = 'tm-diagram-snap-guides';
+        g.setAttribute('pointer-events', 'none');
+
+        const vb = this._getViewBox(inst);
+        const color = '#3b82f6'; // blue-500
+
+        if (guides.x !== null) {
+            const x = guides.x.tVal;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('y1', vb.y);
+            line.setAttribute('x2', x);
+            line.setAttribute('y2', vb.y + vb.h);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', 1 / inst.scale);
+            line.setAttribute('stroke-dasharray', (4 / inst.scale) + ',' + (4 / inst.scale));
+            g.appendChild(line);
+        }
+        if (guides.y !== null) {
+            const y = guides.y.tVal;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', vb.x);
+            line.setAttribute('y1', y);
+            line.setAttribute('x2', vb.x + vb.w);
+            line.setAttribute('y2', y);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', 1 / inst.scale);
+            line.setAttribute('stroke-dasharray', (4 / inst.scale) + ',' + (4 / inst.scale));
+            g.appendChild(line);
+        }
+
+        // Distance guide lines & labels
+        if (guides.distances) {
+            if (guides.distances.x) {
+                const d = guides.distances.x;
+                const midY = vb.y + vb.h / 2;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', d.from);
+                line.setAttribute('y1', midY);
+                line.setAttribute('x2', d.to);
+                line.setAttribute('y2', midY);
+                line.setAttribute('stroke', '#10b981'); // emerald-500
+                line.setAttribute('stroke-width', 1 / inst.scale);
+                line.setAttribute('marker-start', 'url(#arrow-emerald)');
+                line.setAttribute('marker-end', 'url(#arrow-emerald)');
+                g.appendChild(line);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', (d.from + d.to) / 2);
+                text.setAttribute('y', midY - (4 / inst.scale));
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('class', 'tm-diagram-distance-label');
+                text.setAttribute('font-size', (11 / inst.scale));
+                text.textContent = this._formatDistance(inst, d.value);
+                g.appendChild(text);
+            }
+            if (guides.distances.y) {
+                const d = guides.distances.y;
+                const midX = vb.x + vb.w / 2;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', midX);
+                line.setAttribute('y1', d.from);
+                line.setAttribute('x2', midX);
+                line.setAttribute('y2', d.to);
+                line.setAttribute('stroke', '#10b981');
+                line.setAttribute('stroke-width', 1 / inst.scale);
+                line.setAttribute('marker-start', 'url(#arrow-emerald)');
+                line.setAttribute('marker-end', 'url(#arrow-emerald)');
+                g.appendChild(line);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', midX + (4 / inst.scale));
+                text.setAttribute('y', (d.from + d.to) / 2);
+                text.setAttribute('text-anchor', 'start');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('class', 'tm-diagram-distance-label');
+                text.setAttribute('font-size', (11 / inst.scale));
+                text.textContent = this._formatDistance(inst, d.value);
+                g.appendChild(text);
+            }
+        }
+
+        if (g.childNodes.length > 0) {
+            inst.svg.appendChild(g);
+        }
+    },
+
+    _clearGuideLines: function (inst) {
+        if (!inst.svg) return;
+        const g = inst.svg.getElementById('tm-diagram-snap-guides');
+        if (g) g.remove();
+    },
+
+    // ── Layout (dagre) ─────────────────────────────────────────────────────
+
+    runDagreLayout: function (container, nodes, edges, direction) {
+        if (typeof dagre === 'undefined') {
+            console.warn('dagre not loaded');
+            return null;
+        }
+        const inst = this.instances.get(container.id);
+        if (!inst) return null;
+
+        const g = new dagre.graphlib.Graph().setGraph({
+            rankdir: direction || 'TB',
+            ranksep: 80,
+            nodesep: 40,
+            marginx: 20,
+            marginy: 20,
+        }).setDefaultEdgeLabel(function() { return {}; });
+
+        nodes.forEach(function(n) {
+            g.setNode(n.id, { width: n.width, height: n.height });
+        });
+
+        edges.forEach(function(e) {
+            g.setEdge(e.source, e.target);
+        });
+
+        dagre.layout(g);
+
+        const result = [];
+        g.nodes().forEach(function(v) {
+            const node = g.node(v);
+            result.push({ id: v, x: node.x - node.width / 2, y: node.y - node.height / 2 });
+        });
+
+        return result;
+    },
+
+    // ── Tree Layout (d3-hierarchy) ───────────────────────────────────────────
+
+    runTreeLayout: function (container, nodes, edges, direction) {
+        if (typeof d3 === 'undefined' || !d3.tree) {
+            console.warn('d3-hierarchy not loaded');
+            return null;
+        }
+        const nodeMap = new Map(nodes.map(n => [n.id, n]));
+        const inDegree = new Map();
+        nodes.forEach(n => inDegree.set(n.id, 0));
+        edges.forEach(e => {
+            if (inDegree.has(e.target)) inDegree.set(e.target, inDegree.get(e.target) + 1);
+        });
+
+        const roots = nodes.filter(n => inDegree.get(n.id) === 0).map(n => n.id);
+
+        let hierarchyData;
+        if (roots.length === 0) {
+            // Cycle: pick arbitrary root
+            hierarchyData = { name: nodes[0].id, children: this._buildTreeChildren(nodes[0].id, nodeMap, edges, new Set()) };
+        } else if (roots.length === 1) {
+            hierarchyData = { name: roots[0], children: this._buildTreeChildren(roots[0], nodeMap, edges, new Set()) };
+        } else {
+            const children = roots.map(r => ({ name: r, children: this._buildTreeChildren(r, nodeMap, edges, new Set()) }));
+            hierarchyData = { name: '__virtual_root__', children: children };
+        }
+
+        const root = d3.hierarchy(hierarchyData);
+        const nodeCount = nodes.length;
+        const avgSize = Math.max(60, nodes.reduce((s, n) => s + n.width + n.height, 0) / (nodeCount * 2));
+        const sizeW = nodeCount * avgSize * 1.5;
+        const sizeH = nodeCount * avgSize * 1.2;
+
+        const isHorizontal = direction === 'LR' || direction === 'RL';
+        const treeLayout = d3.tree().size(isHorizontal ? [sizeH, sizeW] : [sizeW, sizeH]);
+        treeLayout(root);
+
+        const result = [];
+        root.descendants().forEach(d => {
+            if (d.data.name === '__virtual_root__') return;
+            const n = nodeMap.get(d.data.name);
+            if (!n) return;
+            let x = d.x;
+            let y = d.y;
+            if (direction === 'BT') {
+                y = sizeH - y;
+            } else if (direction === 'RL') {
+                x = sizeW - x;
+            }
+            result.push({ id: d.data.name, x: x - n.width / 2, y: y - n.height / 2 });
+        });
+
+        return result;
+    },
+
+    _buildTreeChildren: function (parentId, nodeMap, edges, visited) {
+        visited.add(parentId);
+        const children = [];
+        edges.forEach(e => {
+            if (e.source === parentId && !visited.has(e.target)) {
+                children.push({
+                    name: e.target,
+                    children: this._buildTreeChildren(e.target, nodeMap, edges, visited)
+                });
+            }
+        });
+        return children;
+    },
+
+    // ── Force-directed Layout (d3-force) ─────────────────────────────────────
+
+    runForceLayout: function (container, nodes, edges, options) {
+        if (typeof d3 === 'undefined' || !d3.forceSimulation) {
+            console.warn('d3-force not loaded');
+            return null;
+        }
+        const opts = options || {};
+        const width = opts.width || 800;
+        const height = opts.height || 600;
+        const linkDistance = opts.linkDistance || 100;
+        const chargeStrength = opts.chargeStrength || -300;
+        const collideRadius = opts.collideRadius || 40;
+        const ticks = opts.ticks || 300;
+
+        const nodeMap = new Map();
+        const simNodes = nodes.map(n => {
+            const sn = { id: n.id, x: width / 2 + (Math.random() - 0.5) * 50, y: height / 2 + (Math.random() - 0.5) * 50, width: n.width, height: n.height };
+            nodeMap.set(n.id, sn);
+            return sn;
+        });
+
+        const simLinks = edges.map(e => ({
+            source: nodeMap.get(e.source),
+            target: nodeMap.get(e.target)
+        })).filter(l => l.source && l.target);
+
+        const simulation = d3.forceSimulation(simNodes)
+            .force('link', d3.forceLink(simLinks).id(d => d.id).distance(linkDistance))
+            .force('charge', d3.forceManyBody().strength(chargeStrength))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collide', d3.forceCollide().radius(d => collideRadius))
+            .stop();
+
+        for (let i = 0; i < ticks; i++) {
+            simulation.tick();
+        }
+
+        const result = [];
+        simNodes.forEach(n => {
+            const original = nodes.find(x => x.id === n.id);
+            const w = original ? original.width : 0;
+            const h = original ? original.height : 0;
+            const x = Number.isFinite(n.x) ? n.x : width / 2;
+            const y = Number.isFinite(n.y) ? n.y : height / 2;
+            result.push({ id: n.id, x: x - w / 2, y: y - h / 2 });
+        });
+
+        return result;
+    },
+
+    // ── Circle Layout ────────────────────────────────────────────────────────
+
+    runCircleLayout: function (container, nodes, options) {
+        const opts = options || {};
+        const maxSize = Math.max(60, ...nodes.map(n => Math.max(n.width, n.height)));
+        const radius = opts.radius || (maxSize * nodes.length / (2 * Math.PI) + maxSize);
+        const centerX = opts.centerX || radius + maxSize;
+        const centerY = opts.centerY || radius + maxSize;
+        const startAngle = opts.startAngle || 0;
+
+        const result = [];
+        const count = nodes.length;
+        nodes.forEach((n, i) => {
+            const angle = startAngle + (2 * Math.PI * i / count);
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            result.push({ id: n.id, x: x - n.width / 2, y: y - n.height / 2 });
+        });
+
+        return result;
+    },
+
+    // ── Grid / Matrix Layout ─────────────────────────────────────────────────
+
+    runGridLayout: function (container, nodes, options) {
+        const opts = options || {};
+        const cellWidth = opts.cellWidth || 180;
+        const cellHeight = opts.cellHeight || 120;
+        const padding = opts.padding || 20;
+        const columns = opts.columns || Math.ceil(Math.sqrt(nodes.length));
+
+        const result = [];
+        nodes.forEach((n, i) => {
+            const col = n.gridColumn != null ? n.gridColumn : (i % columns);
+            const row = n.gridRow != null ? n.gridRow : Math.floor(i / columns);
+            const x = padding + col * (cellWidth + padding);
+            const y = padding + row * (cellHeight + padding);
+            result.push({ id: n.id, x: x, y: y });
+        });
+
+        return result;
+    },
+
+    // ── Export ───────────────────────────────────────────────────────────────
+
+    exportViewportAsSvg: function (container) {
+        const inst = this.instances.get(container.id);
+        if (!inst || !inst.svg) return null;
+        const clone = inst.svg.cloneNode(true);
+        // Remove interactive / transient layers that should not appear in export
+        clone.querySelector('.tm-diagram-decorator-pane')?.remove();
+        clone.querySelector('.tm-diagram-overlay-pane')?.remove();
+        // Remove any temporary draw path
+        clone.querySelectorAll('.tm-diagram-edge-draw-path').forEach(function (el) { el.remove(); });
+        // Wrap every foreignObject in <switch> with a <rect> fallback so viewers
+        // that do not support foreignObject still render a visible placeholder.
+        // (draw.io/mxGraph pattern — see planning/DIAGRAM_UNIFIED_SVG_PLAN.md §11.5)
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        clone.querySelectorAll('foreignObject').forEach(function (fo) {
+            var parent = fo.parentNode;
+            if (!parent) return;
+            var sw = document.createElementNS(SVG_NS, 'switch');
+            fo.setAttribute('requiredFeatures', 'http://www.w3.org/TR/SVG11/feature#Extensibility');
+            var fallback = document.createElementNS(SVG_NS, 'rect');
+            fallback.setAttribute('x', fo.getAttribute('x') || '0');
+            fallback.setAttribute('y', fo.getAttribute('y') || '0');
+            fallback.setAttribute('width', fo.getAttribute('width') || '0');
+            fallback.setAttribute('height', fo.getAttribute('height') || '0');
+            fallback.setAttribute('fill', '#f9fafb');
+            fallback.setAttribute('stroke', '#d1d5db');
+            fallback.setAttribute('stroke-width', '1');
+            parent.insertBefore(sw, fo);
+            sw.appendChild(fo);
+            sw.appendChild(fallback);
+        });
+        // Ensure the clone has explicit xmlns for standalone SVG serialization
+        if (!clone.getAttribute('xmlns')) {
+            clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        }
+        return new XMLSerializer().serializeToString(clone);
+    },
+};
+
+// ── TmDiagramArrowSelect helpers ─────────────────────────────────────────────
+
+window.tmDiagramArrowSelect = {
+    _refs: new Map(),
+
+    init: function (menuId, dotNetRef, focusedIndex) {
+        const menu = document.getElementById(menuId);
+        if (!menu) return;
+
+        // Clean up any previous instance for this menu
+        this.destroy(menuId);
+
+        // Move focus into the menu so key events target it
+        menu.focus();
+
+        // Capture-phase keydown handler so we intercept ArrowUp/ArrowDown
+        // BEFORE they bubble up and scroll the parent panel
+        const handler = function (e) {
+            switch (e.key) {
+                case 'ArrowDown':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.key === 'ArrowDown')
+                        dotNetRef.invokeMethodAsync('OnArrowDown');
+                    else
+                        dotNetRef.invokeMethodAsync('OnArrowUp');
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dotNetRef.invokeMethodAsync('OnEnter');
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dotNetRef.invokeMethodAsync('OnEscape');
+                    break;
+            }
+        };
+
+        menu.addEventListener('keydown', handler, true);
+        this._refs.set(menuId, { handler: handler, dotNetRef: dotNetRef });
+
+        // Auto-scroll to currently selected value
+        const selected = menu.children[focusedIndex];
+        if (selected) {
+            selected.scrollIntoView({ block: 'nearest' });
+        }
+    },
+
+    destroy: function (menuId) {
+        const menu = document.getElementById(menuId);
+        const entry = this._refs.get(menuId);
+        if (menu && entry) {
+            menu.removeEventListener('keydown', entry.handler, true);
+        }
+        this._refs.delete(menuId);
+    },
+
+    scrollToOption: function (menuId, index) {
+        const menu = document.getElementById(menuId);
+        if (!menu || index < 0) return;
+        const child = menu.children[index];
+        if (!child) return;
+        child.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+};
+
+// ── Per-node DotNetRef registry for table cells ───────────────────────────
+//
+// Each TmDiagramStencilShape registers its DotNetObjectReference keyed by
+// the diagram Node.Id. The canvas-level dblclick handler (installed in
+// _attachEvents) looks up the shape by nodeId and calls StartTableCellEditFromJs
+// directly, bypassing Blazor's @ondblclick — which is unreliable on Blazor
+// Server because the SignalR round-trip for the preceding click re-renders
+// the component and can eat the native dblclick.
+window.tmDiagramStencilShape = {
+    _refs: new Map(),
+
+    register: function (nodeId, dotNetRef) {
+        if (!nodeId || !dotNetRef) return;
+        this._refs.set(nodeId, dotNetRef);
+    },
+
+    unregister: function (nodeId) {
+        if (!nodeId) return;
+        this._refs.delete(nodeId);
+    },
+
+    getRef: function (nodeId) {
+        return this._refs.get(nodeId);
+    }
+};

@@ -1,0 +1,230 @@
+.tm-signing-form-runner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(calc(var(--tm-space-16) * 4), calc(var(--tm-space-16) * 6));
+    gap: var(--tm-space-4);
+    min-height: 0;
+    color: var(--tm-text-primary);
+}
+
+.tm-signing-form-runner--loading {
+    pointer-events: none;
+}
+
+.tm-signing-form-runner__empty {
+    grid-column: 1 / -1;
+}
+
+.tm-signing-form-runner__documents {
+    display: grid;
+    align-content: start;
+    gap: var(--tm-space-4);
+    min-width: 0;
+    min-height: 0;
+}
+
+.tm-signing-form-runner__document {
+    min-width: 0;
+    overflow: auto;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface-secondary);
+}
+
+.tm-signing-form-runner__steps {
+    min-width: 0;
+    border-left: 1px solid var(--tm-border-color);
+    padding-left: var(--tm-space-4);
+}
+
+.tm-signing-form-runner__step-panel {
+    position: sticky;
+    top: var(--tm-space-4);
+    display: grid;
+    gap: var(--tm-space-3);
+    min-width: 0;
+    padding: var(--tm-space-4);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    box-shadow: var(--tm-shadow-sm);
+}
+
+.tm-signing-form-runner__progress,
+.tm-signing-form-runner__autosave {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-signing-form-runner__progress {
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-signing-form-runner__language {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-signing-form-runner__language-select {
+    width: 100%;
+    min-height: calc(var(--tm-space-5) + var(--tm-space-4));
+    padding: 0 var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+}
+
+.tm-signing-form-runner__accessibility-entry,
+.tm-signing-form-runner__accessibility-field,
+.tm-signing-form-runner__previous,
+.tm-signing-form-runner__skip,
+.tm-signing-form-runner__next,
+.tm-signing-form-runner__complete,
+.tm-signing-form-runner__mobile-expand,
+.tm-signing-form-runner__mobile-minimize {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(var(--tm-space-5) + var(--tm-space-4));
+    padding: 0 var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+    cursor: pointer;
+}
+
+.tm-signing-form-runner__accessibility-entry:hover,
+.tm-signing-form-runner__accessibility-field:hover,
+.tm-signing-form-runner__previous:hover:not(:disabled),
+.tm-signing-form-runner__skip:hover:not(:disabled),
+.tm-signing-form-runner__next:hover:not(:disabled),
+.tm-signing-form-runner__complete:hover:not(:disabled),
+.tm-signing-form-runner__mobile-expand:hover,
+.tm-signing-form-runner__mobile-minimize:hover {
+    background: var(--tm-bg-muted);
+}
+
+.tm-signing-form-runner__accessibility-list {
+    display: grid;
+    gap: var(--tm-space-2);
+}
+
+.tm-signing-form-runner__accessibility-field {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.tm-signing-form-runner__accessibility-field[aria-current="true"] {
+    border-color: var(--tm-color-primary);
+    background: var(--tm-color-primary-subtle);
+    color: var(--tm-color-primary-text);
+}
+
+.tm-signing-form-runner__current-step {
+    min-width: 0;
+}
+
+.tm-signing-form-runner__validation {
+    padding: var(--tm-space-2) var(--tm-space-3);
+    border: 1px solid var(--tm-color-danger-soft-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-color-danger-subtle);
+    color: var(--tm-color-danger-text);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-signing-form-runner__autosave[data-state="saved"] {
+    color: var(--tm-color-success-text);
+}
+
+.tm-signing-form-runner__autosave[data-state="saving"] {
+    color: var(--tm-color-warning-text);
+}
+
+.tm-signing-form-runner__autosave[data-state="error"] {
+    color: var(--tm-color-danger-text);
+}
+
+.tm-signing-form-runner__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--tm-space-2);
+}
+
+.tm-signing-form-runner__next,
+.tm-signing-form-runner__complete,
+.tm-signing-form-runner__mobile-expand {
+    border-color: var(--tm-color-primary);
+    background: var(--tm-color-primary);
+    color: var(--tm-color-white);
+}
+
+.tm-signing-form-runner__next:hover:not(:disabled),
+.tm-signing-form-runner__complete:hover:not(:disabled),
+.tm-signing-form-runner__mobile-expand:hover {
+    background: var(--tm-color-primary-hover);
+}
+
+.tm-signing-form-runner__previous:disabled,
+.tm-signing-form-runner__skip:disabled,
+.tm-signing-form-runner__next:disabled,
+.tm-signing-form-runner__complete:disabled {
+    cursor: not-allowed;
+    background: var(--tm-bg-muted);
+    color: var(--tm-text-muted);
+}
+
+.tm-signing-form-runner__mobile-panel {
+    display: none;
+}
+
+@media (max-width: 48rem) {
+    .tm-signing-form-runner {
+        grid-template-columns: minmax(0, 1fr);
+        padding-bottom: calc(var(--tm-space-16) * 2);
+    }
+
+    .tm-signing-form-runner__steps {
+        display: none;
+    }
+
+    .tm-signing-form-runner__mobile-panel {
+        position: fixed;
+        inset-inline: var(--tm-space-3);
+        inset-block-end: var(--tm-space-3);
+        z-index: var(--tm-z-modal);
+        display: grid;
+        gap: var(--tm-space-2);
+    }
+
+    .tm-signing-form-runner__mobile-panel--has-complete-target {
+        inset-block-end: calc(var(--tm-space-16) + var(--tm-space-3));
+    }
+
+    .tm-signing-form-runner__mobile-panel--expanded {
+        padding: var(--tm-space-3);
+        border: 1px solid var(--tm-color-border);
+        border-radius: var(--tm-radius-lg);
+        background: var(--tm-bg-surface);
+        box-shadow: var(--tm-shadow-lg);
+    }
+
+    .tm-signing-form-runner__mobile-panel .tm-signing-form-runner__step-panel {
+        position: static;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .tm-signing-form-runner__mobile-expand {
+        width: 100%;
+        box-shadow: var(--tm-shadow-md);
+    }
+}
