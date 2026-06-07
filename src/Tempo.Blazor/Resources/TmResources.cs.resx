@@ -3908,24 +3908,44 @@
   <data name="DiagramStencilPalette_Archimate3Technology" xml:space="preserve"><value>Technologie</value></data>
   <data name="DiagramStencilPalette_Archimate3Motivation" xml:space="preserve"><value>Motivace</value></data>
   <data name="DiagramStencilPalette_Archimate3Strategy" xml:space="preserve"><value>Strategie</value></data>
+  <data name="DiagramStencilPalette_Archimate3Physical" xml:space="preserve"><value>Fyzická</value></data>
+  <data name="DiagramStencilPalette_Archimate3Implementation" xml:space="preserve"><value>Implementace</value></data>
+  <data name="DiagramStencilPalette_Archimate3CrossCutting" xml:space="preserve"><value>Průřezové</value></data>
   <data name="DiagramStencilPalette_Archimate3Relationships" xml:space="preserve"><value>Vztahy</value></data>
   <data name="DiagramStencil_Archimate3BusinessActor" xml:space="preserve"><value>Business aktér</value></data>
   <data name="DiagramStencil_Archimate3BusinessRole" xml:space="preserve"><value>Business role</value></data>
+  <data name="DiagramStencil_Archimate3BusinessCollaboration" xml:space="preserve"><value>Business spolupráce</value></data>
+  <data name="DiagramStencil_Archimate3BusinessInterface" xml:space="preserve"><value>Business rozhraní</value></data>
   <data name="DiagramStencil_Archimate3BusinessProcess" xml:space="preserve"><value>Business proces</value></data>
   <data name="DiagramStencil_Archimate3BusinessFunction" xml:space="preserve"><value>Business funkce</value></data>
+  <data name="DiagramStencil_Archimate3BusinessInteraction" xml:space="preserve"><value>Business interakce</value></data>
+  <data name="DiagramStencil_Archimate3BusinessEvent" xml:space="preserve"><value>Business událost</value></data>
   <data name="DiagramStencil_Archimate3BusinessService" xml:space="preserve"><value>Business služba</value></data>
   <data name="DiagramStencil_Archimate3BusinessObject" xml:space="preserve"><value>Business objekt</value></data>
+  <data name="DiagramStencil_Archimate3Contract" xml:space="preserve"><value>Kontrakt</value></data>
+  <data name="DiagramStencil_Archimate3Representation" xml:space="preserve"><value>Reprezentace</value></data>
+  <data name="DiagramStencil_Archimate3Product" xml:space="preserve"><value>Produkt</value></data>
   <data name="DiagramStencil_Archimate3ApplicationComponent" xml:space="preserve"><value>Aplikační komponenta</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationCollaboration" xml:space="preserve"><value>Aplikační spolupráce</value></data>
   <data name="DiagramStencil_Archimate3ApplicationInterface" xml:space="preserve"><value>Aplikační rozhraní</value></data>
   <data name="DiagramStencil_Archimate3ApplicationFunction" xml:space="preserve"><value>Aplikační funkce</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationInteraction" xml:space="preserve"><value>Aplikační interakce</value></data>
   <data name="DiagramStencil_Archimate3ApplicationProcess" xml:space="preserve"><value>Aplikační proces</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationEvent" xml:space="preserve"><value>Aplikační událost</value></data>
   <data name="DiagramStencil_Archimate3ApplicationService" xml:space="preserve"><value>Aplikační služba</value></data>
   <data name="DiagramStencil_Archimate3DataObject" xml:space="preserve"><value>Datový objekt</value></data>
   <data name="DiagramStencil_Archimate3TechnologyNode" xml:space="preserve"><value>Technologický uzel</value></data>
   <data name="DiagramStencil_Archimate3Device" xml:space="preserve"><value>Zařízení</value></data>
   <data name="DiagramStencil_Archimate3SystemSoftware" xml:space="preserve"><value>Systémový software</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyCollaboration" xml:space="preserve"><value>Technologická spolupráce</value></data>
   <data name="DiagramStencil_Archimate3TechnologyInterface" xml:space="preserve"><value>Technologické rozhraní</value></data>
   <data name="DiagramStencil_Archimate3Path" xml:space="preserve"><value>Cesta</value></data>
+  <data name="DiagramStencil_Archimate3CommunicationNetwork" xml:space="preserve"><value>Komunikační síť</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyFunction" xml:space="preserve"><value>Technologická funkce</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyProcess" xml:space="preserve"><value>Technologický proces</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyInteraction" xml:space="preserve"><value>Technologická interakce</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyEvent" xml:space="preserve"><value>Technologická událost</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyService" xml:space="preserve"><value>Technologická služba</value></data>
   <data name="DiagramStencil_Archimate3Artifact" xml:space="preserve"><value>Artefakt</value></data>
   <data name="DiagramStencil_Archimate3Stakeholder" xml:space="preserve"><value>Stakeholder</value></data>
   <data name="DiagramStencil_Archimate3Driver" xml:space="preserve"><value>Driver</value></data>
@@ -3935,9 +3955,24 @@
   <data name="DiagramStencil_Archimate3Principle" xml:space="preserve"><value>Princip</value></data>
   <data name="DiagramStencil_Archimate3Requirement" xml:space="preserve"><value>Požadavek</value></data>
   <data name="DiagramStencil_Archimate3Constraint" xml:space="preserve"><value>Omezení</value></data>
+  <data name="DiagramStencil_Archimate3Meaning" xml:space="preserve"><value>Význam</value></data>
+  <data name="DiagramStencil_Archimate3Value" xml:space="preserve"><value>Hodnota</value></data>
   <data name="DiagramStencil_Archimate3Resource" xml:space="preserve"><value>Zdroj</value></data>
   <data name="DiagramStencil_Archimate3Capability" xml:space="preserve"><value>Schopnost</value></data>
+  <data name="DiagramStencil_Archimate3CourseOfAction" xml:space="preserve"><value>Směr jednání</value></data>
   <data name="DiagramStencil_Archimate3ValueStream" xml:space="preserve"><value>Value stream</value></data>
+  <data name="DiagramStencil_Archimate3Equipment" xml:space="preserve"><value>Vybavení</value></data>
+  <data name="DiagramStencil_Archimate3Facility" xml:space="preserve"><value>Facility</value></data>
+  <data name="DiagramStencil_Archimate3DistributionNetwork" xml:space="preserve"><value>Distribuční síť</value></data>
+  <data name="DiagramStencil_Archimate3Material" xml:space="preserve"><value>Materiál</value></data>
+  <data name="DiagramStencil_Archimate3WorkPackage" xml:space="preserve"><value>Pracovní balík</value></data>
+  <data name="DiagramStencil_Archimate3Deliverable" xml:space="preserve"><value>Dodávka</value></data>
+  <data name="DiagramStencil_Archimate3ImplementationEvent" xml:space="preserve"><value>Implementační událost</value></data>
+  <data name="DiagramStencil_Archimate3Plateau" xml:space="preserve"><value>Plateau</value></data>
+  <data name="DiagramStencil_Archimate3Gap" xml:space="preserve"><value>Mezera</value></data>
+  <data name="DiagramStencil_Archimate3Junction" xml:space="preserve"><value>Spojka</value></data>
+  <data name="DiagramStencil_Archimate3Grouping" xml:space="preserve"><value>Seskupení</value></data>
+  <data name="DiagramStencil_Archimate3Location" xml:space="preserve"><value>Lokace</value></data>
   <data name="DiagramStencil_Archimate3Association" xml:space="preserve"><value>Asociace</value></data>
   <data name="DiagramStencil_Archimate3Triggering" xml:space="preserve"><value>Spouštění</value></data>
   <data name="DiagramStencil_Archimate3Flow" xml:space="preserve"><value>Tok</value></data>
@@ -4046,4 +4081,122 @@
   <data name="TmSpreadsheet_Hyperlink_SelectNamedRange" xml:space="preserve"><value>Vybrat pojmenovaný rozsah</value></data>
   <data name="TmSpreadsheet_Hyperlink_Save" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_Hyperlink_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+
+  <!-- ═══════════════ Modeling Editor ═══════════════ -->
+  <data name="TmModelingEditor_Title" xml:space="preserve"><value>Modelovací editor</value></data>
+  <data name="TmModelingEditor_Context" xml:space="preserve"><value>Modelovací kontext</value></data>
+  <data name="TmModelingEditor_Provider" xml:space="preserve"><value>Poskytovatel</value></data>
+  <data name="TmModelingEditor_Notation" xml:space="preserve"><value>Notace</value></data>
+  <data name="TmModelingEditor_Viewpoint" xml:space="preserve"><value>Pohled</value></data>
+  <data name="TmModelingEditor_NotSelected" xml:space="preserve"><value>Nevybráno</value></data>
+  <data name="TmModelingEditor_Default" xml:space="preserve"><value>Výchozí</value></data>
+  <data name="TmModelingEditor_StateLoading" xml:space="preserve"><value>Načítá se</value></data>
+  <data name="TmModelingEditor_StateLoaded" xml:space="preserve"><value>Načteno</value></data>
+  <data name="TmModelingEditor_StateEmpty" xml:space="preserve"><value>Bez poskytovatele</value></data>
+  <data name="TmModelingEditor_StateError" xml:space="preserve"><value>Chyba</value></data>
+  <data name="TmModelingEditor_LoadingTitle" xml:space="preserve"><value>Načítám model</value></data>
+  <data name="TmModelingEditor_LoadingText" xml:space="preserve"><value>Sémantický model se připravuje a převádí do náhledu diagramu.</value></data>
+  <data name="TmModelingEditor_EmptyTitle" xml:space="preserve"><value>Není dostupný žádný modelovací poskytovatel</value></data>
+  <data name="TmModelingEditor_EmptyText" xml:space="preserve"><value>Vyberte platného poskytovatele pro načtení sémantického modelu.</value></data>
+  <data name="TmModelingEditor_ErrorTitle" xml:space="preserve"><value>Model se nepodařilo načíst</value></data>
+  <data name="TmModelingEditor_ErrorText" xml:space="preserve"><value>Editor zůstal dostupný, ale vybraný poskytovatel nevrátil použitelný model.</value></data>
+  <data name="TmModelingEditor_ModelTree" xml:space="preserve"><value>Strom modelu</value></data>
+  <data name="TmModelingEditor_Preview" xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmModelingEditor_Inspector" xml:space="preserve"><value>Inspektor</value></data>
+  <data name="TmModelingEditor_Panels" xml:space="preserve"><value>Panely</value></data>
+  <data name="TmModelingEditor_Status" xml:space="preserve"><value>Stav</value></data>
+  <data name="TmModelingEditor_StatusLoaded" xml:space="preserve"><value>Model načten</value></data>
+  <data name="TmModelingEditor_Elements" xml:space="preserve"><value>Elementy</value></data>
+  <data name="TmModelingEditor_Relationships" xml:space="preserve"><value>Vazby</value></data>
+  <data name="TmModelingEditor_DiagramNodes" xml:space="preserve"><value>Uzly diagramu</value></data>
+  <data name="TmModelingEditor_DiagramEdges" xml:space="preserve"><value>Hrany diagramu</value></data>
+  <data name="TmModelingEditor_Source" xml:space="preserve"><value>Zdroj</value></data>
+  <data name="TmModelingEditor_Views" xml:space="preserve"><value>Pohledy</value></data>
+  <data name="TmModelingEditor_Issues" xml:space="preserve"><value>Nálezy</value></data>
+  <data name="TmModelingEditor_Governance" xml:space="preserve"><value>Řízení kvality</value></data>
+  <data name="TmModelingEditor_ReadOnly" xml:space="preserve"><value>Pouze pro čtení</value></data>
+  <data name="TmModelingEditor_Unknown" xml:space="preserve"><value>Neznámé</value></data>
+  <data name="TmModelingEditor_DemoError" xml:space="preserve"><value>Ukázkovému modelovacímu poskytovateli se nepodařilo načíst model.</value></data>
+  <data name="TmModelingEditor_LongLoadingText" xml:space="preserve"><value>Poskytovatel odpovídá déle, než se čekalo. Editor stále čeká na model.</value></data>
+  <data name="TmModelingEditor_SelectedElement" xml:space="preserve"><value>Vybraný prvek</value></data>
+  <data name="TmModelingEditor_ElementName" xml:space="preserve"><value>Název</value></data>
+  <data name="TmModelingEditor_ElementId" xml:space="preserve"><value>ID prvku</value></data>
+  <data name="TmModelingEditor_ElementType" xml:space="preserve"><value>Typ</value></data>
+  <data name="TmModelingEditor_SourcePath" xml:space="preserve"><value>Cesta ve zdroji</value></data>
+  <data name="TmModelingEditor_Description" xml:space="preserve"><value>Popis</value></data>
+  <data name="TmModelingModelTree_Title" xml:space="preserve"><value>Strom modelu</value></data>
+  <data name="TmModelingModelTree_Count" xml:space="preserve"><value>{0} prvků</value></data>
+  <data name="TmModelingModelTree_SearchLabel" xml:space="preserve"><value>Hledat</value></data>
+  <data name="TmModelingModelTree_SearchPlaceholder" xml:space="preserve"><value>Filtrovat prvky...</value></data>
+  <data name="TmModelingModelTree_EmptyTitle" xml:space="preserve"><value>Žádné prvky</value></data>
+  <data name="TmModelingModelTree_EmptyText" xml:space="preserve"><value>Načtený model neobsahuje žádné prvky.</value></data>
+  <data name="TmModelingModelTree_NoResultsTitle" xml:space="preserve"><value>Žádné odpovídající prvky</value></data>
+  <data name="TmModelingModelTree_NoResultsText" xml:space="preserve"><value>Filtru „{0}“ neodpovídají žádné modelové prvky.</value></data>
+  <data name="TmModelingModelTree_Unnamed" xml:space="preserve"><value>(Bez názvu)</value></data>
+  <data name="TmModelingModelTree_UnknownType" xml:space="preserve"><value>Neznámý typ</value></data>
+  <data name="TmModelingModelTree_UnknownId" xml:space="preserve"><value>Neznámé ID</value></data>
+  <data name="TmModelingViewSelector_Title" xml:space="preserve"><value>Výběr modelovacího pohledu</value></data>
+  <data name="TmModelingViewSelector_Notation" xml:space="preserve"><value>Notace</value></data>
+  <data name="TmModelingViewSelector_Viewpoint" xml:space="preserve"><value>Pohled</value></data>
+  <data name="TmModelingViewSelector_SelectNotation" xml:space="preserve"><value>Vyberte notaci</value></data>
+  <data name="TmModelingViewSelector_SelectNotationHint" xml:space="preserve"><value>Vyberte notaci pro výběr pohledu.</value></data>
+  <data name="TmModelingViewSelector_NoViewpoints" xml:space="preserve"><value>Pro tuto notaci nejsou dostupné žádné pohledy.</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Application" xml:space="preserve"><value>Aplikační použití</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Business" xml:space="preserve"><value>Byznys</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Default" xml:space="preserve"><value>Výchozí</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Layered" xml:space="preserve"><value>Vrstvený</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Operations" xml:space="preserve"><value>Provoz</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Overview" xml:space="preserve"><value>Přehled</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Process" xml:space="preserve"><value>Proces</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Technology" xml:space="preserve"><value>Technologie</value></data>
+  <data name="TmModelingDiagramPreview_Title" xml:space="preserve"><value>Náhled diagramu</value></data>
+  <data name="TmModelingDiagramPreview_Generate" xml:space="preserve"><value>Generovat diagram</value></data>
+  <data name="TmModelingDiagramPreview_OpenInEditor" xml:space="preserve"><value>Otevřít v editoru</value></data>
+  <data name="TmModelingDiagramPreview_EmptyTitle" xml:space="preserve"><value>Není vygenerovaný žádný diagram</value></data>
+  <data name="TmModelingDiagramPreview_EmptyText" xml:space="preserve"><value>Vygenerujte diagram pro náhled vybrané modelovací notace a pohledu.</value></data>
+  <data name="TmModelingDiagramPreview_EmptySummary" xml:space="preserve"><value>Čeká se na vygenerovaný dokument</value></data>
+  <data name="TmModelingDiagramPreview_Summary" xml:space="preserve"><value>{0} uzlů · {1} hran</value></data>
+  <data name="TmModelingDiagramPreview_EmptyDiagramHint" xml:space="preserve"><value>Vygenerovaný diagram je prázdný. Načtěte model s prvky nebo vyberte pohled, který obsahuje modelový obsah.</value></data>
+  <data name="TmModelingDiagramPreview_DropHint" xml:space="preserve"><value>Plocha je připravená na přetažení prvků ze stromu modelu.</value></data>
+  <data name="TmModelingDiagramPreview_OpenEditorSummary" xml:space="preserve"><value>Plný diagramový editor pro vygenerovaný modelovací dokument.</value></data>
+  <data name="TmModelingIssuePanel_Title" xml:space="preserve"><value>Nálezy</value></data>
+  <data name="TmModelingIssuePanel_Count" xml:space="preserve"><value>{0} nálezů</value></data>
+  <data name="TmModelingIssuePanel_EmptyTitle" xml:space="preserve"><value>Žádné problémy</value></data>
+  <data name="TmModelingIssuePanel_EmptyText" xml:space="preserve"><value>Vygenerovaný model prošel validací pro aktuální notaci a pohled.</value></data>
+  <data name="TmModelingIssuePanel_Info" xml:space="preserve"><value>Informace</value></data>
+  <data name="TmModelingIssuePanel_Warning" xml:space="preserve"><value>Varování</value></data>
+  <data name="TmModelingIssuePanel_Error" xml:space="preserve"><value>Chyba</value></data>
+  <data name="TmModelingIssuePanel_UnspecifiedMessage" xml:space="preserve"><value>Zpráva nálezu není určena.</value></data>
+  <data name="TmModelingInspector_Title" xml:space="preserve"><value>Inspektor</value></data>
+  <data name="TmModelingInspector_EmptyTitle" xml:space="preserve"><value>Vyberte prvek</value></data>
+  <data name="TmModelingInspector_EmptyText" xml:space="preserve"><value>Vyberte prvek ve stromu modelu nebo vztah v náhledu pro zobrazení zdrojových metadat.</value></data>
+  <data name="TmModelingInspector_Element" xml:space="preserve"><value>Prvek</value></data>
+  <data name="TmModelingInspector_Relationship" xml:space="preserve"><value>Vztah</value></data>
+  <data name="TmModelingInspector_Name" xml:space="preserve"><value>Název</value></data>
+  <data name="TmModelingInspector_SemanticType" xml:space="preserve"><value>Sémantický typ</value></data>
+  <data name="TmModelingInspector_Notation" xml:space="preserve"><value>Notace</value></data>
+  <data name="TmModelingInspector_SourceId" xml:space="preserve"><value>Zdrojové ID</value></data>
+  <data name="TmModelingInspector_SourceType" xml:space="preserve"><value>Zdrojový typ</value></data>
+  <data name="TmModelingInspector_SourcePath" xml:space="preserve"><value>Cesta ve zdroji</value></data>
+  <data name="TmModelingInspector_Description" xml:space="preserve"><value>Popis</value></data>
+  <data name="TmModelingInspector_NoDescription" xml:space="preserve"><value>(Bez popisu)</value></data>
+  <data name="TmModelingInspector_Governance" xml:space="preserve"><value>Řízení kvality</value></data>
+  <data name="TmModelingInspector_Trust" xml:space="preserve"><value>Důvěra</value></data>
+  <data name="TmModelingInspector_ReviewState" xml:space="preserve"><value>Stav kontroly</value></data>
+  <data name="TmModelingInspector_SyncState" xml:space="preserve"><value>Stav synchronizace</value></data>
+  <data name="TmModelingInspector_DataSource" xml:space="preserve"><value>Datový zdroj</value></data>
+  <data name="TmModelingInspector_Properties" xml:space="preserve"><value>Vlastnosti</value></data>
+  <data name="TmModelingInspector_NoProperties" xml:space="preserve"><value>(Žádné)</value></data>
+  <data name="TmModelingSourcePanel_Title" xml:space="preserve"><value>Datový zdroj</value></data>
+  <data name="TmModelingSourcePanel_LoadModel" xml:space="preserve"><value>Načíst model</value></data>
+  <data name="TmModelingSourcePanel_Loading" xml:space="preserve"><value>Načítám model</value></data>
+  <data name="TmModelingSourcePanel_EmptyTitle" xml:space="preserve"><value>Není načten žádný zdroj</value></data>
+  <data name="TmModelingSourcePanel_EmptyText" xml:space="preserve"><value>Načtěte model pro zobrazení metadat zdroje.</value></data>
+  <data name="TmModelingSourcePanel_SourceSystem" xml:space="preserve"><value>Zdrojový systém</value></data>
+  <data name="TmModelingSourcePanel_SourceVersion" xml:space="preserve"><value>Verze zdroje</value></data>
+  <data name="TmModelingSourcePanel_LoadedAt" xml:space="preserve"><value>Načteno</value></data>
+  <data name="TmModelingSourcePanel_Fresh" xml:space="preserve"><value>Aktuální</value></data>
+  <data name="TmModelingSourcePanel_Stale" xml:space="preserve"><value>Zastaralé</value></data>
+  <data name="TmModelingSourcePanel_Unknown" xml:space="preserve"><value>Neznámé</value></data>
+  <data name="TmModelingSourcePanel_StaleWarning" xml:space="preserve"><value>Zdrojová data mohou být zastaralá. Před rozhodováním model znovu načtěte.</value></data>
 </root>

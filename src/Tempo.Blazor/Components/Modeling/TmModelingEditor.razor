@@ -1,0 +1,190 @@
+@using Tempo.Blazor.Components.Diagram.Models
+@using Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Modeling
+
+<section class="@RootClass"
+         data-testid="modeling-editor"
+         data-state="@StateName"
+         data-load-count="@_completedLoadCount"
+         data-generation-count="@_completedGenerationCount"
+         data-notation="@EffectiveNotationKey"
+         data-viewpoint="@EffectiveViewpointKey"
+         data-selected-element-id="@(_selectedElement?.Id ?? string.Empty)"
+         data-selected-relationship-id="@(_selectedRelationship?.Id ?? string.Empty)"
+         data-element-count="@(_model?.Elements.Count ?? 0)"
+         data-relationship-count="@(_model?.Relationships.Count ?? 0)"
+         data-diagram-node-count="@(_document?.Nodes.Count ?? 0)"
+         data-diagram-edge-count="@(_document?.Edges.Count ?? 0)"
+         data-issue-count="@IssueCount"
+         data-active-panel="@ActivePanelName"
+         data-open-editor="@(_openedEditorDocument is not null).ToString().ToLowerInvariant()">
+    <header class="tm-modeling-editor__toolbar" data-testid="modeling-editor-toolbar">
+        <div class="tm-modeling-editor__title-group">
+            <h2 class="tm-modeling-editor__title">@Loc["TmModelingEditor_Title"]</h2>
+            <span class="tm-modeling-editor__state">@Loc[StateLabelKey]</span>
+        </div>
+        <TmModelingViewSelector NotationKey="@EffectiveNotationKey"
+                                ViewpointKey="@EffectiveViewpointKey"
+                                OnNotationChanged="ChangeNotationAsync"
+                                OnViewpointChanged="ChangeViewpointAsync" />
+        <div class="tm-modeling-editor__chips" aria-label="@Loc["TmModelingEditor_Context"]">
+            <span class="tm-modeling-editor__chip">
+                <span>@Loc["TmModelingEditor_Provider"]</span>
+                <strong>@DisplayProviderKey</strong>
+            </span>
+            <span class="tm-modeling-editor__chip">
+                <span>@Loc["TmModelingEditor_Notation"]</span>
+                <strong>@DisplayNotationKey</strong>
+            </span>
+            <span class="tm-modeling-editor__chip">
+                <span>@Loc["TmModelingEditor_Viewpoint"]</span>
+                <strong>@DisplayViewpointKey</strong>
+            </span>
+        </div>
+    </header>
+
+    @if (_state == ModelingEditorState.Loading)
+    {
+        <div class="tm-modeling-editor__single-state" data-testid="modeling-editor-loading" aria-live="polite">
+            <TmSpinner Size="SpinnerSize.Lg" />
+            <div>
+                <h3>@Loc["TmModelingEditor_LoadingTitle"]</h3>
+                <p>@Loc["TmModelingEditor_LoadingText"]</p>
+                @if (_showLongLoadingMessage)
+                {
+                    <p class="tm-modeling-editor__detail" data-testid="modeling-editor-timeout-message">@Loc["TmModelingEditor_LongLoadingText"]</p>
+                }
+            </div>
+        </div>
+    }
+    else if (_state == ModelingEditorState.Empty)
+    {
+        <div class="tm-modeling-editor__single-state" data-testid="modeling-editor-empty" aria-live="polite">
+            <div class="tm-modeling-editor__state-mark" aria-hidden="true">0</div>
+            <div>
+                <h3>@Loc["TmModelingEditor_EmptyTitle"]</h3>
+                <p>@Loc["TmModelingEditor_EmptyText"]</p>
+            </div>
+        </div>
+    }
+    else if (_state == ModelingEditorState.Error)
+    {
+        <div class="tm-modeling-editor__single-state tm-modeling-editor__single-state--error" data-testid="modeling-editor-error" role="alert">
+            <div class="tm-modeling-editor__state-mark" aria-hidden="true">!</div>
+            <div>
+                <h3>@Loc["TmModelingEditor_ErrorTitle"]</h3>
+                <p>@Loc["TmModelingEditor_ErrorText"]</p>
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <p class="tm-modeling-editor__detail">@_errorMessage</p>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <nav class="tm-modeling-editor__panel-tabs"
+             data-testid="modeling-panel-tabs"
+             aria-label="@Loc["TmModelingEditor_Panels"]">
+            <button type="button"
+                    class="@GetPanelTabClass(ModelingEditorPanel.Tree)"
+                    data-testid="modeling-panel-tab-tree"
+                    aria-pressed="@(_activePanel == ModelingEditorPanel.Tree).ToString().ToLowerInvariant()"
+                    @onclick="() => ActivatePanelAsync(ModelingEditorPanel.Tree)">
+                @Loc["TmModelingEditor_ModelTree"]
+            </button>
+            <button type="button"
+                    class="@GetPanelTabClass(ModelingEditorPanel.Preview)"
+                    data-testid="modeling-panel-tab-preview"
+                    aria-pressed="@(_activePanel == ModelingEditorPanel.Preview).ToString().ToLowerInvariant()"
+                    @onclick="() => ActivatePanelAsync(ModelingEditorPanel.Preview)">
+                @Loc["TmModelingEditor_Preview"]
+            </button>
+            <button type="button"
+                    class="@GetPanelTabClass(ModelingEditorPanel.Inspector)"
+                    data-testid="modeling-panel-tab-inspector"
+                    aria-pressed="@(_activePanel == ModelingEditorPanel.Inspector).ToString().ToLowerInvariant()"
+                    @onclick="() => ActivatePanelAsync(ModelingEditorPanel.Inspector)">
+                @Loc["TmModelingEditor_Inspector"]
+            </button>
+        </nav>
+
+        <div class="tm-modeling-editor__workspace">
+            <aside class="@GetPanelClass(ModelingEditorPanel.Tree, "tm-modeling-editor__panel tm-modeling-editor__tree")" data-testid="modeling-model-tree-panel" aria-label="@Loc["TmModelingEditor_ModelTree"]">
+                <TmModelingModelTree Elements="@VisibleTreeElements"
+                                     SelectedElement="@_selectedElement"
+                                     OnElementSelected="SelectElementAsync"
+                                     OnElementDragStarted="HandleElementDragStartedAsync"
+                                     OnElementDragEnded="HandleElementDragEndedAsync" />
+            </aside>
+
+            <main class="@GetPanelClass(ModelingEditorPanel.Preview, "tm-modeling-editor__panel tm-modeling-editor__preview")" data-testid="modeling-preview-panel" aria-label="@Loc["TmModelingEditor_Preview"]">
+                <TmModelingDiagramPreview Document="@_document"
+                                          DocumentChanged="UpdatePreviewDocumentAsync"
+                                          ActiveDraggedElement="@_draggedElement"
+                                          AllowNodeDrop="@AllowNodeDrop"
+                                          OnNodeDropped="HandleNodeDroppedAsync"
+                                          OnGenerateRequested="GenerateDiagramFromLoadedModelAsync"
+                                          OnRelationshipSelected="SelectRelationshipAsync"
+                                          OnOpenInEditor="OpenGeneratedDiagramAsync" />
+            </main>
+
+            <aside class="@GetPanelClass(ModelingEditorPanel.Inspector, "tm-modeling-editor__panel tm-modeling-editor__inspector")" data-testid="modeling-inspector-panel" aria-label="@Loc["TmModelingEditor_Inspector"]">
+                <TmModelingSourcePanel Metadata="@_model?.Metadata"
+                                       IsLoading="@(_state == ModelingEditorState.Loading || _isReloading)"
+                                       OnLoadRequested="ReloadModelAsync" />
+                <TmModelingInspector Element="@_selectedElement"
+                                     Relationship="@_selectedRelationship"
+                                     Elements="@LoadedElements" />
+                <TmModelingIssuePanel Issues="@DisplayIssues"
+                                      OnIssueSelected="SelectIssueAsync" />
+            </aside>
+        </div>
+
+        <footer class="tm-modeling-editor__status"
+                data-testid="modeling-status-strip"
+                aria-label="@Loc["TmModelingEditor_Status"]"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true">
+            <span>@Loc["TmModelingEditor_StatusLoaded"]</span>
+            <span>@Loc["TmModelingEditor_Elements"]: <strong>@(_model?.Elements.Count ?? 0)</strong></span>
+            <span>@Loc["TmModelingEditor_Relationships"]: <strong>@(_model?.Relationships.Count ?? 0)</strong></span>
+            <span>@Loc["TmModelingEditor_DiagramNodes"]: <strong>@(_document?.Nodes.Count ?? 0)</strong></span>
+            <span>@Loc["TmModelingEditor_DiagramEdges"]: <strong>@(_document?.Edges.Count ?? 0)</strong></span>
+        </footer>
+
+        @if (_openedEditorDocument is not null)
+        {
+            <section class="tm-modeling-editor__open-editor"
+                     data-testid="modeling-open-diagram-editor"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-label="@Loc["TmModelingDiagramPreview_OpenInEditor"]">
+                <header class="tm-modeling-editor__open-editor-header">
+                    <div>
+                        <h3>@(_openedEditorDocument.Title ?? Loc["TmModelingEditor_Preview"])</h3>
+                        <span>@Loc["TmModelingDiagramPreview_OpenEditorSummary"]</span>
+                    </div>
+                    <TmButton Variant="ButtonVariant.Secondary"
+                              Size="ButtonSize.Sm"
+                              Icon="@IconNames.X"
+                              OnClick="CloseGeneratedDiagramAsync"
+                              data-testid="modeling-open-diagram-close">
+                        @Loc["Tm_Close"]
+                    </TmButton>
+                </header>
+                <div class="tm-modeling-editor__open-editor-body">
+                    <TmDiagramEditor Document="@_openedEditorDocument"
+                                     DocumentChanged="UpdateOpenedEditorDocumentAsync"
+                                     ShowToolbox="true"
+                                     ShowPropertiesPanel="true"
+                                     ShowLayersPanel="true"
+                                     ShowMinimap="true"
+                                     ShowToolbar="true"
+                                     Class="tm-modeling-editor__open-editor-diagram" />
+                </div>
+            </section>
+        }
+    }
+</section>

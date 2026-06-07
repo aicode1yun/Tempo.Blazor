@@ -67,6 +67,9 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     /// <summary>Additional CSS class on the editor root.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>Raised when selected diagram item identifiers change.</summary>
+    [Parameter] public EventCallback<string[]> OnSelectedIdsChanged { get; set; }
+
     // ── Child component refs ─────────────────────────────────────────────────
 
     private TmDiagramCanvas? _canvas;
@@ -277,6 +280,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task OnSelectionChanged(string[] ids)
     {
         _selectedIds = ids;
+        await OnSelectedIdsChanged.InvokeAsync(ids);
         await InvokeAsync(StateHasChanged);
     }
 

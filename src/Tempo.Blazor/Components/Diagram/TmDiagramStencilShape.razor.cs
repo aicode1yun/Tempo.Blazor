@@ -275,6 +275,68 @@ public partial class TmDiagramStencilShape : ComponentBase, IAsyncDisposable
         return (MarkupString)$"""<span class="tm-diagram-math">{System.Net.WebUtility.HtmlEncode(text)}</span>""";
     }
 
+    private IReadOnlyList<DiagramStencilSection> GetRenderableSections(IReadOnlyList<DiagramStencilSection> sections)
+    {
+        if (sections.Count == 0)
+            return [];
+
+        var visible = new bool[sections.Count];
+        for (var index = 0; index < sections.Count; index++)
+        {
+            visible[index] = ShouldRenderSection(sections[index]);
+        }
+
+        var result = new List<DiagramStencilSection>(sections.Count);
+        for (var index = 0; index < sections.Count; index++)
+        {
+            var section = sections[index];
+            if (section.Type == "divider")
+            {
+                if (HasRenderableContentBefore(sections, visible, index)
+                    && HasRenderableContentAfter(sections, visible, index))
+                {
+                    result.Add(section);
+                }
+
+                continue;
+            }
+
+            if (visible[index])
+                result.Add(section);
+        }
+
+        return result;
+    }
+
+    private bool ShouldRenderSection(DiagramStencilSection section)
+        => section.Type != "list" || GetSectionList(section).Any();
+
+    private static bool HasRenderableContentBefore(IReadOnlyList<DiagramStencilSection> sections, bool[] visible, int index)
+    {
+        for (var cursor = index - 1; cursor >= 0; cursor--)
+        {
+            if (sections[cursor].Type == "divider")
+                continue;
+
+            return visible[cursor];
+        }
+
+        return false;
+    }
+
+    private static bool HasRenderableContentAfter(IReadOnlyList<DiagramStencilSection> sections, bool[] visible, int index)
+    {
+        for (var cursor = index + 1; cursor < sections.Count; cursor++)
+        {
+            if (sections[cursor].Type == "divider")
+                continue;
+
+            return visible[cursor];
+        }
+
+        return false;
+    }
+
     private IEnumerable<string> GetSectionList(DiagramStencilSection section)
     {
         if (section.DataKey is not null && Node.Data.TryGetValue(section.DataKey, out var value))

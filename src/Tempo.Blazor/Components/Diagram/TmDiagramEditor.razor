@@ -12,6 +12,8 @@
 
     @* ── Page tabs ────────────────────────────────────────────────────────── *@
     <div class="tm-diagram-editor__page-tabs"
+         role="@(ReadOnly ? null : "tablist")"
+         aria-label="@(ReadOnly ? null : Loc["TmDiagramEditor_PageName"])"
          @ondragover:preventDefault
          @ondrop:preventDefault>
         @if (_document?.Pages is not null)
@@ -29,8 +31,8 @@
                      @ondrop="() => OnPageTabDrop(pg.Id)"
                      draggable="true"
                      title="@pg.Name"
-                     role="tab"
-                     aria-selected="@isActive">
+                     role="@(ReadOnly ? null : "tab")"
+                     aria-selected="@(ReadOnly ? null : isActive.ToString().ToLowerInvariant())">
                     @if (_pageRenamingId == pg.Id)
                     {
                         <input type="text"
@@ -48,22 +50,25 @@
                         {
                             <span class="tm-diagram-editor__page-tab-dot" aria-hidden="true"></span>
                         }
-                        <button class="tm-diagram-editor__page-tab-close"
-                                aria-label="@Loc["TmDiagramEditor_DuplicatePage"]"
-                                title="@Loc["TmDiagramEditor_DuplicatePage"]"
-                                @onclick:stopPropagation
-                                @onclick="() => DuplicatePage(pg.Id)">
-                            ⧉
-                        </button>
-                        @if (_document.Pages.Count > 1)
+                        @if (!ReadOnly)
                         {
                             <button class="tm-diagram-editor__page-tab-close"
-                                    aria-label="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
-                                    title="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
+                                    aria-label="@Loc["TmDiagramEditor_DuplicatePage"]"
+                                    title="@Loc["TmDiagramEditor_DuplicatePage"]"
                                     @onclick:stopPropagation
-                                    @onclick="() => RemovePage(pg.Id)">
-                                ✕
+                                    @onclick="() => DuplicatePage(pg.Id)">
+                                ⧉
                             </button>
+                            @if (_document.Pages.Count > 1)
+                            {
+                                <button class="tm-diagram-editor__page-tab-close"
+                                        aria-label="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
+                                        title="@Loc["TmDiagramEditor_ClosePage", pg.Name]"
+                                        @onclick:stopPropagation
+                                        @onclick="() => RemovePage(pg.Id)">
+                                    ✕
+                                </button>
+                            }
                         }
                     }
                 </div>

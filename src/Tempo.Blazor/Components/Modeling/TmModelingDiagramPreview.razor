@@ -1,0 +1,77 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Diagram.Models
+
+<section class="@RootClass"
+         data-testid="modeling-diagram-preview"
+         data-state="@StateName"
+         data-node-count="@NodeCount"
+         data-edge-count="@EdgeCount"
+         data-drop-enabled="@AllowNodeDrop.ToString().ToLowerInvariant()">
+    <header class="tm-modeling-diagram-preview__header">
+        <div class="tm-modeling-diagram-preview__title-group">
+            <h3>@Loc["TmModelingDiagramPreview_Title"]</h3>
+            <span>@SummaryText</span>
+        </div>
+        <div class="tm-modeling-diagram-preview__actions">
+            @if (OnGenerateRequested.HasDelegate)
+            {
+                <TmButton Variant="ButtonVariant.Secondary"
+                          Size="ButtonSize.Sm"
+                          Icon="@IconNames.Refresh"
+                          OnClick="HandleGenerateRequestedAsync"
+                          data-testid="modeling-generate-diagram-button">
+                    @Loc["TmModelingDiagramPreview_Generate"]
+                </TmButton>
+            }
+            <TmButton Variant="ButtonVariant.Primary"
+                      Size="ButtonSize.Sm"
+                      Icon="@IconNames.ExternalLink"
+                      Disabled="@(Document is null)"
+                      OnClick="HandleOpenInEditorAsync"
+                      AriaLabel="@Loc["TmModelingDiagramPreview_OpenInEditor"]"
+                      data-testid="modeling-open-in-editor-button">
+                @Loc["TmModelingDiagramPreview_OpenInEditor"]
+            </TmButton>
+        </div>
+    </header>
+
+    @if (Document is null)
+    {
+        <div class="tm-modeling-diagram-preview__empty" data-testid="modeling-diagram-preview-empty">
+            <strong>@Loc["TmModelingDiagramPreview_EmptyTitle"]</strong>
+            <span>@Loc["TmModelingDiagramPreview_EmptyText"]</span>
+        </div>
+    }
+    else
+    {
+        <div class="tm-modeling-diagram-preview__canvas-shell"
+             data-testid="modeling-diagram-preview-canvas-shell"
+             data-drop-enabled="@AllowNodeDrop.ToString().ToLowerInvariant()"
+             @ondragover="HandleDragOver"
+             @ondragover:preventDefault
+             @ondrop="HandleDropAsync"
+             @ondrop:preventDefault>
+            @if (IsEmptyDiagram)
+            {
+                <div class="tm-modeling-diagram-preview__empty-diagram-hint" data-testid="modeling-diagram-preview-empty-diagram-hint">
+                    @Loc["TmModelingDiagramPreview_EmptyDiagramHint"]
+                </div>
+            }
+            <TmDiagramEditor Document="@Document"
+                             DocumentChanged="HandleDocumentChangedAsync"
+                             ReadOnly="true"
+                             ShowToolbox="false"
+                             ShowPropertiesPanel="false"
+                             ShowLayersPanel="false"
+                             ShowMinimap="false"
+                             ShowPageView="false"
+                             ShowToolbar="true"
+                             OnSelectedIdsChanged="HandleSelectedIdsChangedAsync"
+                             Class="tm-modeling-diagram-preview__editor" />
+        </div>
+        <div class="tm-modeling-diagram-preview__drop-hint" data-testid="modeling-diagram-preview-drop-hint">
+            @Loc["TmModelingDiagramPreview_DropHint"]
+        </div>
+    }
+</section>

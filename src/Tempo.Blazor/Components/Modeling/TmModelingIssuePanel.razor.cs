@@ -1,0 +1,79 @@
+using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Modeling;
+
+namespace Tempo.Blazor.Components.Modeling;
+
+/// <summary>Displays validation and generation issues for a modeling document.</summary>
+public partial class TmModelingIssuePanel
+{
+    /// <summary>Issues to render in severity-coded order.</summary>
+    [Parameter] public IReadOnlyList<ModelingIssueDto> Issues { get; set; } = [];
+
+    /// <summary>Raised when the user selects an issue that points to a model element or relationship.</summary>
+    [Parameter] public EventCallback<ModelingIssueDto> OnIssueSelected { get; set; }
+
+    /// <summary>Additional CSS class applied to the panel root.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private string RootClass => string.Join(" ", new[] { "tm-modeling-issue-panel", Class }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    private Task SelectIssueAsync(ModelingIssueDto issue)
+    {
+        if (string.IsNullOrWhiteSpace(issue.SourceElementId)
+            && string.IsNullOrWhiteSpace(issue.SourceRelationshipId))
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnIssueSelected.InvokeAsync(issue);
+    }
+
+    private string GetIssueClass(ModelingIssueDto issue)
+        => $"tm-modeling-issue-panel__item tm-modeling-issue-panel__item--{GetSeverityKey(issue)}";
+
+    private string GetIconClass(ModelingIssueDto issue)
+        => $"tm-modeling-issue-panel__icon tm-modeling-issue-panel__icon--{GetSeverityKey(issue)}";
+
+    private static string GetSeverityKey(ModelingIssueDto issue)
+        => issue.Severity switch
+        {
+            ModelingIssueSeverity.Error => "error",
+            ModelingIssueSeverity.Warning => "warning",
+            _ => "info"
+        };
+
+    private string GetSeverityLabel(ModelingIssueDto issue)
+        => issue.Severity switch
+        {
+            ModelingIssueSeverity.Error => Loc["TmModelingIssuePanel_Error"],
+            ModelingIssueSeverity.Warning => Loc["TmModelingIssuePanel_Warning"],
+            _ => Loc["TmModelingIssuePanel_Info"]
+        };
+
+    private static string GetSeverityIcon(ModelingIssueDto issue)
+        => issue.Severity switch
+        {
+            ModelingIssueSeverity.Error => "!",
+            ModelingIssueSeverity.Warning => "!",
+            _ => "i"
+        };
+
+    private string GetMessage(ModelingIssueDto issue)
+        => string.IsNullOrWhiteSpace(issue.Message)
+            ? Loc["TmModelingIssuePanel_UnspecifiedMessage"]
+            : issue.Message;
+
+    private string GetIssueAriaLabel(ModelingIssueDto issue)
+    {
+        var parts = new[]
+        {
+            GetSeverityLabel(issue),
+            issue.Category,
+            GetMessage(issue),
+            string.IsNullOrWhiteSpace(issue.SourceElementId) ? null : issue.SourceElementId,
+            string.IsNullOrWhiteSpace(issue.SourceRelationshipId) ? null : issue.SourceRelationshipId
+        };
+
+        return string.Join(", ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
+    }
+}

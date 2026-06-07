@@ -32,6 +32,7 @@
   <ItemGroup>
     <!-- Minimal DI abstractions (IServiceCollection, ServiceDescriptor) — no runtime dependency -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,41 @@
+@using Tempo.Blazor.Modeling
+
+<section class="@RootClass"
+         data-testid="modeling-view-selector"
+         data-notation="@CurrentNotation"
+         data-viewpoint="@CurrentViewpoint"
+         aria-label="@Loc["TmModelingViewSelector_Title"]">
+    <label class="tm-modeling-view-selector__field">
+        <span>@Loc["TmModelingViewSelector_Notation"]</span>
+        <select data-testid="modeling-notation-select"
+                value="@CurrentNotation"
+                @onchange="HandleNotationChangedAsync">
+            <option value="">@Loc["TmModelingViewSelector_SelectNotation"]</option>
+            @foreach (var option in NotationOptions)
+            {
+                <option value="@option.Key">@option.Label</option>
+            }
+        </select>
+    </label>
+
+    @if (ShouldShowViewpointSelect)
+    {
+        <label class="tm-modeling-view-selector__field">
+            <span>@Loc["TmModelingViewSelector_Viewpoint"]</span>
+            <select data-testid="modeling-viewpoint-select"
+                    value="@CurrentViewpoint"
+                    @onchange="HandleViewpointChangedAsync">
+                @foreach (var option in ViewpointOptions)
+                {
+                    <option value="@option.Key">@option.Label</option>
+                }
+            </select>
+        </label>
+    }
+    else
+    {
+        <div class="tm-modeling-view-selector__empty-viewpoints" data-testid="modeling-viewpoint-empty">
+            @ViewpointEmptyText
+        </div>
+    }
+</section>

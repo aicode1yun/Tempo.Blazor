@@ -1,0 +1,77 @@
+@using Tempo.Blazor.Modeling
+
+<section class="@RootClass"
+         data-testid="modeling-model-tree"
+         data-visible-count="@VisibleElementCount"
+         aria-label="@Loc["TmModelingModelTree_Title"]">
+    <div class="tm-modeling-model-tree__header">
+        <div>
+            <h3>@Loc["TmModelingModelTree_Title"]</h3>
+            <span>@Loc["TmModelingModelTree_Count", Elements.Count]</span>
+        </div>
+        <label class="tm-modeling-model-tree__search">
+            <span>@Loc["TmModelingModelTree_SearchLabel"]</span>
+            <input data-testid="modeling-tree-search"
+                   value="@_filterText"
+                   @oninput="HandleFilterChanged"
+                   placeholder="@Loc["TmModelingModelTree_SearchPlaceholder"]"
+                   autocomplete="off" />
+        </label>
+    </div>
+
+    @if (Elements.Count == 0)
+    {
+        <div class="tm-modeling-model-tree__empty" data-testid="modeling-tree-empty">
+            <strong>@Loc["TmModelingModelTree_EmptyTitle"]</strong>
+            <span>@Loc["TmModelingModelTree_EmptyText"]</span>
+        </div>
+    }
+    else if (VisibleElementCount == 0)
+    {
+        <div class="tm-modeling-model-tree__empty" data-testid="modeling-tree-empty-filter" aria-live="polite">
+            <strong>@Loc["TmModelingModelTree_NoResultsTitle"]</strong>
+            <span>@Loc["TmModelingModelTree_NoResultsText", _filterText]</span>
+        </div>
+    }
+    else
+    {
+        <div class="tm-modeling-model-tree__groups" role="tree">
+            @foreach (var group in FilteredGroups)
+            {
+                <div class="tm-modeling-model-tree__group"
+                     data-testid="@($"modeling-tree-group-{group.Key}")">
+                    <div class="tm-modeling-model-tree__group-header">
+                        <span>@group.Label</span>
+                        <strong>@group.Elements.Count</strong>
+                    </div>
+                    <div class="tm-modeling-model-tree__nodes">
+                        @foreach (var element in group.Elements)
+                        {
+                            <div>
+                                <button type="button"
+                                        class="@GetNodeClass(element)"
+                                        data-testid="@($"modeling-tree-node-{element.Id}")"
+                                        data-element-id="@element.Id"
+                                        data-semantic-type="@element.SemanticType"
+                                        data-modeling-drag-element-id="@element.Id"
+                                        draggable="true"
+                                        role="treeitem"
+                                        aria-selected="@IsSelected(element).ToString().ToLowerInvariant()"
+                                        aria-label="@GetNodeAriaLabel(element)"
+                                        title="@GetDisplayName(element)"
+                                        @onclick="() => SelectElementAsync(element)"
+                                        @onkeydown="args => HandleNodeKeyDownAsync(element, args)"
+                                        @ondragstart="() => HandleDragStartedAsync(element)"
+                                        @ondragend="HandleDragEndedAsync">
+                                    <span class="tm-modeling-model-tree__drag-handle" aria-hidden="true">::</span>
+                                    <span class="tm-modeling-model-tree__node-name">@GetDisplayName(element)</span>
+                                    <span class="tm-modeling-model-tree__node-meta">@GetNodeMetadata(element)</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>

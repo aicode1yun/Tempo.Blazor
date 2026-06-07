@@ -1,0 +1,162 @@
+.tm-modeling-inspector {
+    display: grid;
+    gap: var(--tm-space-3);
+    padding: var(--tm-space-4);
+    border-top: 1px solid var(--tm-color-border);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+}
+
+.tm-modeling-inspector__empty {
+    display: grid;
+    align-content: center;
+    gap: var(--tm-space-2);
+    min-height: calc(var(--tm-space-16) * 2);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-modeling-inspector__empty strong {
+    color: var(--tm-color-text);
+    font-size: var(--tm-font-size-base);
+}
+
+.tm-modeling-inspector__header {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: 0;
+}
+
+.tm-modeling-inspector__header h3 {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--tm-font-size-lg);
+    font-weight: var(--tm-font-weight-semibold);
+    line-height: var(--tm-line-height-tight);
+}
+
+.tm-modeling-inspector__header p {
+    margin: 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-modeling-inspector__kind {
+    justify-self: start;
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 1px solid var(--tm-color-primary-soft-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-primary-subtle);
+    color: var(--tm-color-primary-text);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-modeling-inspector__summary {
+    display: grid;
+    gap: var(--tm-space-2);
+    margin: 0;
+}
+
+.tm-modeling-inspector__summary div {
+    display: grid;
+    grid-template-columns: minmax(6rem, 0.42fr) minmax(0, 1fr);
+    gap: var(--tm-space-2);
+    min-width: 0;
+}
+
+.tm-modeling-inspector__summary dt {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-modeling-inspector__summary dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-modeling-inspector__value {
+    display: inline-grid;
+}
+
+.tm-modeling-inspector__value--trust-low {
+    justify-self: start;
+    padding: 0 var(--tm-space-2);
+    border: 1px solid var(--tm-color-danger);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-danger-subtle);
+    color: var(--tm-color-danger-text);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-modeling-inspector__section {
+    display: grid;
+    gap: var(--tm-space-2);
+    min-width: 0;
+    padding-top: var(--tm-space-3);
+    border-top: 1px solid var(--tm-color-border-subtle);
+}
+
+.tm-modeling-inspector__section h4 {
+    margin: 0;
+    color: var(--tm-color-text);
+    font-size: var(--tm-font-size-sm);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-modeling-inspector__section p {
+    margin: 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+    overflow-wrap: anywhere;
+}
+
+.tm-modeling-inspector__relationship-flow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-2);
+    border: 1px solid var(--tm-color-border-subtle);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-modeling-inspector__relationship-flow span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.tm-modeling-inspector__relationship-flow strong {
+    color: var(--tm-color-primary);
+}
+
+.tm-modeling-inspector__properties-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-modeling-inspector__properties-table th,
+.tm-modeling-inspector__properties-table td {
+    padding: var(--tm-space-2);
+    border-bottom: 1px solid var(--tm-color-border-subtle);
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+.tm-modeling-inspector__properties-table th {
+    width: 38%;
+    color: var(--tm-text-secondary);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-modeling-inspector__empty-note {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}

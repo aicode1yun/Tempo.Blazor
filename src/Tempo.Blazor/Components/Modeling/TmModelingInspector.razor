@@ -1,0 +1,142 @@
+@using Tempo.Blazor.Modeling
+
+<section class="@RootClass"
+         data-testid="modeling-inspector"
+         data-kind="@Kind"
+         data-selected-element-id="@(Element?.Id ?? string.Empty)"
+         data-selected-relationship-id="@(Relationship?.Id ?? string.Empty)"
+         aria-label="@Loc["TmModelingInspector_Title"]">
+    @if (Element is null && Relationship is null)
+    {
+        <div class="tm-modeling-inspector__empty" data-testid="modeling-inspector-empty">
+            <strong>@Loc["TmModelingInspector_EmptyTitle"]</strong>
+            <span>@Loc["TmModelingInspector_EmptyText"]</span>
+        </div>
+    }
+    else
+    {
+        <header class="tm-modeling-inspector__header">
+            <span class="tm-modeling-inspector__kind">@KindLabel</span>
+            <h3>@DisplayName</h3>
+            <p>@DisplayType</p>
+        </header>
+
+        @if (Element is not null)
+        {
+            <div data-testid="modeling-inspector-selected-element">
+                @RenderSummary()
+                @RenderDescription(Element.Description)
+                @RenderGovernance(Element.Governance)
+                @RenderProperties(Element.Properties)
+            </div>
+        }
+        else if (Relationship is not null)
+        {
+            <div data-testid="modeling-inspector-selected-relationship">
+                <div class="tm-modeling-inspector__relationship-flow" data-testid="modeling-inspector-relationship-flow">
+                    <span>@DisplaySourceName</span>
+                    <strong aria-hidden="true">→</strong>
+                    <span>@DisplayTargetName</span>
+                </div>
+                @RenderSummary()
+                @RenderProperties(Relationship.Properties)
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private RenderFragment RenderSummary() => builder =>
+    {
+        var sequence = 0;
+        builder.OpenElement(sequence++, "dl");
+        builder.AddAttribute(sequence++, "class", "tm-modeling-inspector__summary");
+
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_Name"], DisplayName, "modeling-inspector-name");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_SemanticType"], DisplayType, "modeling-inspector-type");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_Notation"], DisplayNotation, "modeling-inspector-notation");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_SourceId"], DisplaySourceId, "modeling-inspector-source-id");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_SourceType"], DisplaySourceType, "modeling-inspector-source-type");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_SourcePath"], DisplaySourcePath, "modeling-inspector-source-path");
+
+        builder.CloseElement();
+    };
+
+    private RenderFragment RenderDescription(string description) => builder =>
+    {
+        var sequence = 0;
+        builder.OpenElement(sequence++, "section");
+        builder.AddAttribute(sequence++, "class", "tm-modeling-inspector__section");
+        builder.AddAttribute(sequence++, "data-testid", "modeling-inspector-description");
+        builder.OpenElement(sequence++, "h4");
+        builder.AddContent(sequence++, Loc["TmModelingInspector_Description"]);
+        builder.CloseElement();
+        builder.OpenElement(sequence++, "p");
+        builder.AddContent(sequence++, string.IsNullOrWhiteSpace(description) ? Loc["TmModelingInspector_NoDescription"] : description);
+        builder.CloseElement();
+        builder.CloseElement();
+    };
+
+    private RenderFragment RenderGovernance(ModelingGovernanceDto governance) => builder =>
+    {
+        var sequence = 0;
+        builder.OpenElement(sequence++, "section");
+        builder.AddAttribute(sequence++, "class", "tm-modeling-inspector__section");
+        builder.AddAttribute(sequence++, "data-testid", "modeling-inspector-governance");
+        builder.OpenElement(sequence++, "h4");
+        builder.AddContent(sequence++, Loc["TmModelingInspector_Governance"]);
+        builder.CloseElement();
+
+        builder.OpenElement(sequence++, "dl");
+        builder.AddAttribute(sequence++, "class", "tm-modeling-inspector__summary");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_Trust"], governance.TrustLevel, "modeling-inspector-trust", GetTrustClass(governance.TrustLevel));
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_ReviewState"], governance.ReviewState, "modeling-inspector-review");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_SyncState"], governance.SyncState, "modeling-inspector-sync");
+        AddDefinition(builder, ref sequence, Loc["TmModelingInspector_DataSource"], governance.DataSource, "modeling-inspector-data-source");
+        builder.CloseElement();
+
+        builder.CloseElement();
+    };
+
+    private RenderFragment RenderProperties(IReadOnlyDictionary<string, System.Text.Json.JsonElement> properties) => builder =>
+    {
+        var sequence = 0;
+        builder.OpenElement(sequence++, "section");
+        builder.AddAttribute(sequence++, "class", "tm-modeling-inspector__section");
+        builder.AddAttribute(sequence++, "data-testid", "modeling-inspector-properties");
+        builder.OpenElement(sequence++, "h4");
+        builder.AddContent(sequence++, Loc["TmModelingInspector_Properties"]);
+        builder.CloseElement();
+
+        if (properties.Count == 0)
+        {
+            builder.OpenElement(sequence++, "p");
+            builder.AddAttribute(sequence++, "class", "tm-modeling-inspector__empty-note");
+            builder.AddAttribute(sequence++, "data-testid", "modeling-inspector-no-properties");
+            builder.AddContent(sequence++, Loc["TmModelingInspector_NoProperties"]);
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.OpenElement(sequence++, "table");
+            builder.AddAttribute(sequence++, "class", "tm-modeling-inspector__properties-table");
+            builder.OpenElement(sequence++, "tbody");
+            foreach (var property in properties.OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                builder.OpenElement(sequence++, "tr");
+                builder.AddAttribute(sequence++, "data-testid", $"modeling-inspector-property-{property.Key}");
+                builder.OpenElement(sequence++, "th");
+                builder.AddContent(sequence++, property.Key);
+                builder.CloseElement();
+                builder.OpenElement(sequence++, "td");
+                builder.AddContent(sequence++, FormatPropertyValue(property.Value));
+                builder.CloseElement();
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+            builder.CloseElement();
+        }
+
+        builder.CloseElement();
+    };
+}

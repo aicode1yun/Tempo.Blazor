@@ -35,7 +35,7 @@
         </svg>
     }
     <div class="tm-diagram-node__content" style="@GetContentStyle(contentBelow)">
-        @foreach (var section in _stencil?.Layout.Sections ?? [])
+        @foreach (var section in GetRenderableSections(_stencil?.Layout.Sections ?? []))
         {
             switch (section.Type)
             {

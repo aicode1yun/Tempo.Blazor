@@ -394,6 +394,8 @@
                    class="tm-diagram-node @(_activeSearchResultId == node.Id ? "tm-diagram-search-match" : "")"
                    data-node-id="@node.Id"
                    data-stencil-id="@node.StencilId"
+                   data-source-id="@GetNodeDataString(node, "sourceId")"
+                   data-model-element-id="@GetNodeDataString(node, "modelElementId")"
                    data-w="@node.W"
                    data-h="@node.H"
                    data-group-id="@node.GroupId"

@@ -2196,6 +2196,9 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
+    private static string GetNodeDataString(DiagramNode node, string key)
+        => node.Data.TryGetValue(key, out var value) ? value?.ToString() ?? string.Empty : string.Empty;
+
     private (double X, double Y, string TextAnchor, string Baseline) ComputeCardinalityPosition(DiagramEdge edge, bool isSource)
     {
         var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);

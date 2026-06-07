@@ -3969,24 +3969,44 @@
   <data name="DiagramStencilPalette_Archimate3Technology" xml:space="preserve"><value>Technology</value></data>
   <data name="DiagramStencilPalette_Archimate3Motivation" xml:space="preserve"><value>Motivation</value></data>
   <data name="DiagramStencilPalette_Archimate3Strategy" xml:space="preserve"><value>Strategy</value></data>
+  <data name="DiagramStencilPalette_Archimate3Physical" xml:space="preserve"><value>Physical</value></data>
+  <data name="DiagramStencilPalette_Archimate3Implementation" xml:space="preserve"><value>Implementation</value></data>
+  <data name="DiagramStencilPalette_Archimate3CrossCutting" xml:space="preserve"><value>Cross-cutting</value></data>
   <data name="DiagramStencilPalette_Archimate3Relationships" xml:space="preserve"><value>Relationships</value></data>
   <data name="DiagramStencil_Archimate3BusinessActor" xml:space="preserve"><value>Business Actor</value></data>
   <data name="DiagramStencil_Archimate3BusinessRole" xml:space="preserve"><value>Business Role</value></data>
+  <data name="DiagramStencil_Archimate3BusinessCollaboration" xml:space="preserve"><value>Business Collaboration</value></data>
+  <data name="DiagramStencil_Archimate3BusinessInterface" xml:space="preserve"><value>Business Interface</value></data>
   <data name="DiagramStencil_Archimate3BusinessProcess" xml:space="preserve"><value>Business Process</value></data>
   <data name="DiagramStencil_Archimate3BusinessFunction" xml:space="preserve"><value>Business Function</value></data>
+  <data name="DiagramStencil_Archimate3BusinessInteraction" xml:space="preserve"><value>Business Interaction</value></data>
+  <data name="DiagramStencil_Archimate3BusinessEvent" xml:space="preserve"><value>Business Event</value></data>
   <data name="DiagramStencil_Archimate3BusinessService" xml:space="preserve"><value>Business Service</value></data>
   <data name="DiagramStencil_Archimate3BusinessObject" xml:space="preserve"><value>Business Object</value></data>
+  <data name="DiagramStencil_Archimate3Contract" xml:space="preserve"><value>Contract</value></data>
+  <data name="DiagramStencil_Archimate3Representation" xml:space="preserve"><value>Representation</value></data>
+  <data name="DiagramStencil_Archimate3Product" xml:space="preserve"><value>Product</value></data>
   <data name="DiagramStencil_Archimate3ApplicationComponent" xml:space="preserve"><value>Application Component</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationCollaboration" xml:space="preserve"><value>Application Collaboration</value></data>
   <data name="DiagramStencil_Archimate3ApplicationInterface" xml:space="preserve"><value>Application Interface</value></data>
   <data name="DiagramStencil_Archimate3ApplicationFunction" xml:space="preserve"><value>Application Function</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationInteraction" xml:space="preserve"><value>Application Interaction</value></data>
   <data name="DiagramStencil_Archimate3ApplicationProcess" xml:space="preserve"><value>Application Process</value></data>
+  <data name="DiagramStencil_Archimate3ApplicationEvent" xml:space="preserve"><value>Application Event</value></data>
   <data name="DiagramStencil_Archimate3ApplicationService" xml:space="preserve"><value>Application Service</value></data>
   <data name="DiagramStencil_Archimate3DataObject" xml:space="preserve"><value>Data Object</value></data>
   <data name="DiagramStencil_Archimate3TechnologyNode" xml:space="preserve"><value>Node</value></data>
   <data name="DiagramStencil_Archimate3Device" xml:space="preserve"><value>Device</value></data>
   <data name="DiagramStencil_Archimate3SystemSoftware" xml:space="preserve"><value>System Software</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyCollaboration" xml:space="preserve"><value>Technology Collaboration</value></data>
   <data name="DiagramStencil_Archimate3TechnologyInterface" xml:space="preserve"><value>Technology Interface</value></data>
   <data name="DiagramStencil_Archimate3Path" xml:space="preserve"><value>Path</value></data>
+  <data name="DiagramStencil_Archimate3CommunicationNetwork" xml:space="preserve"><value>Communication Network</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyFunction" xml:space="preserve"><value>Technology Function</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyProcess" xml:space="preserve"><value>Technology Process</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyInteraction" xml:space="preserve"><value>Technology Interaction</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyEvent" xml:space="preserve"><value>Technology Event</value></data>
+  <data name="DiagramStencil_Archimate3TechnologyService" xml:space="preserve"><value>Technology Service</value></data>
   <data name="DiagramStencil_Archimate3Artifact" xml:space="preserve"><value>Artifact</value></data>
   <data name="DiagramStencil_Archimate3Stakeholder" xml:space="preserve"><value>Stakeholder</value></data>
   <data name="DiagramStencil_Archimate3Driver" xml:space="preserve"><value>Driver</value></data>
@@ -3996,9 +4016,24 @@
   <data name="DiagramStencil_Archimate3Principle" xml:space="preserve"><value>Principle</value></data>
   <data name="DiagramStencil_Archimate3Requirement" xml:space="preserve"><value>Requirement</value></data>
   <data name="DiagramStencil_Archimate3Constraint" xml:space="preserve"><value>Constraint</value></data>
+  <data name="DiagramStencil_Archimate3Meaning" xml:space="preserve"><value>Meaning</value></data>
+  <data name="DiagramStencil_Archimate3Value" xml:space="preserve"><value>Value</value></data>
   <data name="DiagramStencil_Archimate3Resource" xml:space="preserve"><value>Resource</value></data>
   <data name="DiagramStencil_Archimate3Capability" xml:space="preserve"><value>Capability</value></data>
+  <data name="DiagramStencil_Archimate3CourseOfAction" xml:space="preserve"><value>Course of Action</value></data>
   <data name="DiagramStencil_Archimate3ValueStream" xml:space="preserve"><value>Value Stream</value></data>
+  <data name="DiagramStencil_Archimate3Equipment" xml:space="preserve"><value>Equipment</value></data>
+  <data name="DiagramStencil_Archimate3Facility" xml:space="preserve"><value>Facility</value></data>
+  <data name="DiagramStencil_Archimate3DistributionNetwork" xml:space="preserve"><value>Distribution Network</value></data>
+  <data name="DiagramStencil_Archimate3Material" xml:space="preserve"><value>Material</value></data>
+  <data name="DiagramStencil_Archimate3WorkPackage" xml:space="preserve"><value>Work Package</value></data>
+  <data name="DiagramStencil_Archimate3Deliverable" xml:space="preserve"><value>Deliverable</value></data>
+  <data name="DiagramStencil_Archimate3ImplementationEvent" xml:space="preserve"><value>Implementation Event</value></data>
+  <data name="DiagramStencil_Archimate3Plateau" xml:space="preserve"><value>Plateau</value></data>
+  <data name="DiagramStencil_Archimate3Gap" xml:space="preserve"><value>Gap</value></data>
+  <data name="DiagramStencil_Archimate3Junction" xml:space="preserve"><value>Junction</value></data>
+  <data name="DiagramStencil_Archimate3Grouping" xml:space="preserve"><value>Grouping</value></data>
+  <data name="DiagramStencil_Archimate3Location" xml:space="preserve"><value>Location</value></data>
   <data name="DiagramStencil_Archimate3Association" xml:space="preserve"><value>Association</value></data>
   <data name="DiagramStencil_Archimate3Triggering" xml:space="preserve"><value>Triggering</value></data>
   <data name="DiagramStencil_Archimate3Flow" xml:space="preserve"><value>Flow</value></data>
@@ -4107,4 +4142,122 @@
   <data name="TmSpreadsheet_Hyperlink_SelectNamedRange" xml:space="preserve"><value>Select named range</value></data>
   <data name="TmSpreadsheet_Hyperlink_Save" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_Hyperlink_Cancel" xml:space="preserve"><value>Cancel</value></data>
+
+  <!-- ═══════════════ Modeling Editor ═══════════════ -->
+  <data name="TmModelingEditor_Title" xml:space="preserve"><value>Modeling Editor</value></data>
+  <data name="TmModelingEditor_Context" xml:space="preserve"><value>Modeling context</value></data>
+  <data name="TmModelingEditor_Provider" xml:space="preserve"><value>Provider</value></data>
+  <data name="TmModelingEditor_Notation" xml:space="preserve"><value>Notation</value></data>
+  <data name="TmModelingEditor_Viewpoint" xml:space="preserve"><value>Viewpoint</value></data>
+  <data name="TmModelingEditor_NotSelected" xml:space="preserve"><value>Not selected</value></data>
+  <data name="TmModelingEditor_Default" xml:space="preserve"><value>Default</value></data>
+  <data name="TmModelingEditor_StateLoading" xml:space="preserve"><value>Loading</value></data>
+  <data name="TmModelingEditor_StateLoaded" xml:space="preserve"><value>Loaded</value></data>
+  <data name="TmModelingEditor_StateEmpty" xml:space="preserve"><value>No provider</value></data>
+  <data name="TmModelingEditor_StateError" xml:space="preserve"><value>Error</value></data>
+  <data name="TmModelingEditor_LoadingTitle" xml:space="preserve"><value>Loading model</value></data>
+  <data name="TmModelingEditor_LoadingText" xml:space="preserve"><value>The semantic model is being resolved and converted into a diagram preview.</value></data>
+  <data name="TmModelingEditor_EmptyTitle" xml:space="preserve"><value>No modeling provider available</value></data>
+  <data name="TmModelingEditor_EmptyText" xml:space="preserve"><value>Select a valid provider to load a semantic model.</value></data>
+  <data name="TmModelingEditor_ErrorTitle" xml:space="preserve"><value>Model could not be loaded</value></data>
+  <data name="TmModelingEditor_ErrorText" xml:space="preserve"><value>The editor stayed available, but the selected provider did not return a usable model.</value></data>
+  <data name="TmModelingEditor_ModelTree" xml:space="preserve"><value>Model tree</value></data>
+  <data name="TmModelingEditor_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="TmModelingEditor_Inspector" xml:space="preserve"><value>Inspector</value></data>
+  <data name="TmModelingEditor_Panels" xml:space="preserve"><value>Panels</value></data>
+  <data name="TmModelingEditor_Status" xml:space="preserve"><value>Status</value></data>
+  <data name="TmModelingEditor_StatusLoaded" xml:space="preserve"><value>Model loaded</value></data>
+  <data name="TmModelingEditor_Elements" xml:space="preserve"><value>Elements</value></data>
+  <data name="TmModelingEditor_Relationships" xml:space="preserve"><value>Relationships</value></data>
+  <data name="TmModelingEditor_DiagramNodes" xml:space="preserve"><value>Diagram nodes</value></data>
+  <data name="TmModelingEditor_DiagramEdges" xml:space="preserve"><value>Diagram edges</value></data>
+  <data name="TmModelingEditor_Source" xml:space="preserve"><value>Source</value></data>
+  <data name="TmModelingEditor_Views" xml:space="preserve"><value>Views</value></data>
+  <data name="TmModelingEditor_Issues" xml:space="preserve"><value>Issues</value></data>
+  <data name="TmModelingEditor_Governance" xml:space="preserve"><value>Governance</value></data>
+  <data name="TmModelingEditor_ReadOnly" xml:space="preserve"><value>Read-only</value></data>
+  <data name="TmModelingEditor_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="TmModelingEditor_DemoError" xml:space="preserve"><value>Demo modeling provider failed to load the model.</value></data>
+  <data name="TmModelingEditor_LongLoadingText" xml:space="preserve"><value>The provider is taking longer than expected. The editor is still waiting for the model.</value></data>
+  <data name="TmModelingEditor_SelectedElement" xml:space="preserve"><value>Selected element</value></data>
+  <data name="TmModelingEditor_ElementName" xml:space="preserve"><value>Name</value></data>
+  <data name="TmModelingEditor_ElementId" xml:space="preserve"><value>Element ID</value></data>
+  <data name="TmModelingEditor_ElementType" xml:space="preserve"><value>Type</value></data>
+  <data name="TmModelingEditor_SourcePath" xml:space="preserve"><value>Source path</value></data>
+  <data name="TmModelingEditor_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="TmModelingModelTree_Title" xml:space="preserve"><value>Model tree</value></data>
+  <data name="TmModelingModelTree_Count" xml:space="preserve"><value>{0} elements</value></data>
+  <data name="TmModelingModelTree_SearchLabel" xml:space="preserve"><value>Search</value></data>
+  <data name="TmModelingModelTree_SearchPlaceholder" xml:space="preserve"><value>Filter elements...</value></data>
+  <data name="TmModelingModelTree_EmptyTitle" xml:space="preserve"><value>No elements</value></data>
+  <data name="TmModelingModelTree_EmptyText" xml:space="preserve"><value>The loaded model does not contain any elements.</value></data>
+  <data name="TmModelingModelTree_NoResultsTitle" xml:space="preserve"><value>No matching elements</value></data>
+  <data name="TmModelingModelTree_NoResultsText" xml:space="preserve"><value>No model elements match "{0}".</value></data>
+  <data name="TmModelingModelTree_Unnamed" xml:space="preserve"><value>(Unnamed)</value></data>
+  <data name="TmModelingModelTree_UnknownType" xml:space="preserve"><value>Unknown type</value></data>
+  <data name="TmModelingModelTree_UnknownId" xml:space="preserve"><value>Unknown ID</value></data>
+  <data name="TmModelingViewSelector_Title" xml:space="preserve"><value>Modeling view selection</value></data>
+  <data name="TmModelingViewSelector_Notation" xml:space="preserve"><value>Notation</value></data>
+  <data name="TmModelingViewSelector_Viewpoint" xml:space="preserve"><value>Viewpoint</value></data>
+  <data name="TmModelingViewSelector_SelectNotation" xml:space="preserve"><value>Select notation</value></data>
+  <data name="TmModelingViewSelector_SelectNotationHint" xml:space="preserve"><value>Select a notation to choose a viewpoint.</value></data>
+  <data name="TmModelingViewSelector_NoViewpoints" xml:space="preserve"><value>No viewpoints are available for this notation.</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Application" xml:space="preserve"><value>Application usage</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Business" xml:space="preserve"><value>Business</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Default" xml:space="preserve"><value>Default</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Layered" xml:space="preserve"><value>Layered</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Operations" xml:space="preserve"><value>Operations</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Process" xml:space="preserve"><value>Process</value></data>
+  <data name="TmModelingViewSelector_Viewpoint_Technology" xml:space="preserve"><value>Technology</value></data>
+  <data name="TmModelingDiagramPreview_Title" xml:space="preserve"><value>Diagram preview</value></data>
+  <data name="TmModelingDiagramPreview_Generate" xml:space="preserve"><value>Generate diagram</value></data>
+  <data name="TmModelingDiagramPreview_OpenInEditor" xml:space="preserve"><value>Open in editor</value></data>
+  <data name="TmModelingDiagramPreview_EmptyTitle" xml:space="preserve"><value>No diagram generated</value></data>
+  <data name="TmModelingDiagramPreview_EmptyText" xml:space="preserve"><value>Generate a diagram to preview the selected modeling notation and viewpoint.</value></data>
+  <data name="TmModelingDiagramPreview_EmptySummary" xml:space="preserve"><value>Waiting for a generated document</value></data>
+  <data name="TmModelingDiagramPreview_Summary" xml:space="preserve"><value>{0} nodes · {1} edges</value></data>
+  <data name="TmModelingDiagramPreview_EmptyDiagramHint" xml:space="preserve"><value>The generated diagram is empty. Load a model with elements or choose a viewpoint that includes model content.</value></data>
+  <data name="TmModelingDiagramPreview_DropHint" xml:space="preserve"><value>Drop-ready canvas for model tree elements.</value></data>
+  <data name="TmModelingDiagramPreview_OpenEditorSummary" xml:space="preserve"><value>Full diagram editor for the generated modeling document.</value></data>
+  <data name="TmModelingIssuePanel_Title" xml:space="preserve"><value>Issues</value></data>
+  <data name="TmModelingIssuePanel_Count" xml:space="preserve"><value>{0} issues</value></data>
+  <data name="TmModelingIssuePanel_EmptyTitle" xml:space="preserve"><value>No issues found</value></data>
+  <data name="TmModelingIssuePanel_EmptyText" xml:space="preserve"><value>The generated model passed validation for the current notation and viewpoint.</value></data>
+  <data name="TmModelingIssuePanel_Info" xml:space="preserve"><value>Info</value></data>
+  <data name="TmModelingIssuePanel_Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="TmModelingIssuePanel_Error" xml:space="preserve"><value>Error</value></data>
+  <data name="TmModelingIssuePanel_UnspecifiedMessage" xml:space="preserve"><value>Issue message is not specified.</value></data>
+  <data name="TmModelingInspector_Title" xml:space="preserve"><value>Inspector</value></data>
+  <data name="TmModelingInspector_EmptyTitle" xml:space="preserve"><value>Select an element</value></data>
+  <data name="TmModelingInspector_EmptyText" xml:space="preserve"><value>Choose an element in the model tree or a relationship in the preview to inspect its source metadata.</value></data>
+  <data name="TmModelingInspector_Element" xml:space="preserve"><value>Element</value></data>
+  <data name="TmModelingInspector_Relationship" xml:space="preserve"><value>Relationship</value></data>
+  <data name="TmModelingInspector_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="TmModelingInspector_SemanticType" xml:space="preserve"><value>Semantic type</value></data>
+  <data name="TmModelingInspector_Notation" xml:space="preserve"><value>Notation</value></data>
+  <data name="TmModelingInspector_SourceId" xml:space="preserve"><value>Source ID</value></data>
+  <data name="TmModelingInspector_SourceType" xml:space="preserve"><value>Source type</value></data>
+  <data name="TmModelingInspector_SourcePath" xml:space="preserve"><value>Source path</value></data>
+  <data name="TmModelingInspector_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="TmModelingInspector_NoDescription" xml:space="preserve"><value>(No description)</value></data>
+  <data name="TmModelingInspector_Governance" xml:space="preserve"><value>Governance</value></data>
+  <data name="TmModelingInspector_Trust" xml:space="preserve"><value>Trust</value></data>
+  <data name="TmModelingInspector_ReviewState" xml:space="preserve"><value>Review state</value></data>
+  <data name="TmModelingInspector_SyncState" xml:space="preserve"><value>Sync state</value></data>
+  <data name="TmModelingInspector_DataSource" xml:space="preserve"><value>Data source</value></data>
+  <data name="TmModelingInspector_Properties" xml:space="preserve"><value>Properties</value></data>
+  <data name="TmModelingInspector_NoProperties" xml:space="preserve"><value>(None)</value></data>
+  <data name="TmModelingSourcePanel_Title" xml:space="preserve"><value>Data source</value></data>
+  <data name="TmModelingSourcePanel_LoadModel" xml:space="preserve"><value>Load model</value></data>
+  <data name="TmModelingSourcePanel_Loading" xml:space="preserve"><value>Loading model</value></data>
+  <data name="TmModelingSourcePanel_EmptyTitle" xml:space="preserve"><value>No source loaded</value></data>
+  <data name="TmModelingSourcePanel_EmptyText" xml:space="preserve"><value>Load a model to see source metadata.</value></data>
+  <data name="TmModelingSourcePanel_SourceSystem" xml:space="preserve"><value>Source system</value></data>
+  <data name="TmModelingSourcePanel_SourceVersion" xml:space="preserve"><value>Source version</value></data>
+  <data name="TmModelingSourcePanel_LoadedAt" xml:space="preserve"><value>Loaded at</value></data>
+  <data name="TmModelingSourcePanel_Fresh" xml:space="preserve"><value>Fresh</value></data>
+  <data name="TmModelingSourcePanel_Stale" xml:space="preserve"><value>Stale</value></data>
+  <data name="TmModelingSourcePanel_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="TmModelingSourcePanel_StaleWarning" xml:space="preserve"><value>Source data may be out of date. Load the model again before using this view for decisions.</value></data>
 </root>
