@@ -1,0 +1,49 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Page
+@using Tempo.Blazor.Components.NotionEditor
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<section class="tm-npp @Class" data-testid="notion-public-page">
+    @if (_loading)
+    {
+        <div class="tm-npp__state" role="status" aria-busy="true">
+            <span class="tm-npp__spinner" aria-hidden="true"></span>
+            @Loc["Tm_Loading"]
+        </div>
+    }
+    else if (_share is null)
+    {
+        <div class="tm-npp__state tm-npp__state--empty" data-testid="notion-public-not-found">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                <path d="M9 13h10M11 17h6M8 4.5h8l4 4v15H8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 4.5v4h4" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+            <h1>@Loc["Notion_Share_NotFoundTitle"]</h1>
+            <p>@Loc["Notion_Share_Disabled"]</p>
+        </div>
+    }
+    else
+    {
+        <header class="tm-npp__header">
+            <div>
+                <h1>@Loc["Notion_Share_PublicPage"]</h1>
+                <p>@Loc["Notion_Share_ReadOnlyNotice"]</p>
+            </div>
+            @if (_share.ExpiresAt is not null)
+            {
+                <span class="tm-npp__expires">@Loc["Notion_Share_ExpiresOn", _share.ExpiresAt.Value.ToLocalTime().ToString("d")]</span>
+            }
+        </header>
+
+        <div class="tm-npp__editor">
+            <TmNotionEditor DataProvider="DataProvider"
+                            BlockProvider="BlockProvider"
+                            CommentProvider="@(_share.AllowComments ? CommentProvider : null)"
+                            InitialPageId="@_share.PageId.ToString("D")"
+                            ShowSidebar="false"
+                            ReadOnly="true"
+                            RecordAnalyticsViews="false"
+                            CurrentUserId="anonymous"
+                            Class="tm-npp__editor-inner" />
+        </div>
+    }
+</section>

@@ -1,0 +1,125 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-ns-space" data-testid="notion-space-switcher" aria-label="@Loc["Notion_Space_Switch"]">
+    @if (_isLoading)
+    {
+        <div class="tm-ns-space__loading" aria-busy="true" aria-live="polite">
+            <span class="tm-ns-space__spinner" aria-hidden="true"></span>
+            <span>@Loc["Tm_Loading"]</span>
+        </div>
+    }
+    else if (_loadError is not null)
+    {
+        <div class="tm-ns-space__error" role="alert">
+            <span>@_loadError</span>
+            <button type="button" class="tm-ns-space__retry" @onclick="LoadSpacesAsync">@Loc["Tm_Retry"]</button>
+        </div>
+    }
+    else
+    {
+        <button class="tm-ns-space__current"
+                data-testid="notion-space-current"
+                type="button"
+                aria-expanded="@_listOpen"
+                aria-controls="@_listId"
+                title="@Loc["Notion_Space_Switch"]"
+                @onclick="ToggleList">
+            <span class="tm-ns-space__avatar" aria-hidden="true">@GetIcon(_selectedSpace)</span>
+            <span class="tm-ns-space__meta">
+                <span class="tm-ns-space__name">@GetName(_selectedSpace)</span>
+                <span class="tm-ns-space__type">@GetTypeLabel(_selectedSpace?.Type)</span>
+            </span>
+            <svg class="tm-ns-space__chevron @(_listOpen ? "tm-ns-space__chevron--open" : "")"
+                 width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        @if (_listOpen)
+        {
+            <div id="@_listId" class="tm-ns-space__list" role="listbox" aria-label="@Loc["Notion_Space_Switch"]">
+                @foreach (var space in _spaces)
+                {
+                    <button class="tm-ns-space__option @(IsSelected(space) ? "tm-ns-space__option--selected" : "")"
+                            type="button"
+                            role="option"
+                            data-space-id="@space.Id"
+                            aria-selected="@IsSelected(space)"
+                            @onclick="async () => await SelectSpaceAsync(space)">
+                        <span class="tm-ns-space__avatar tm-ns-space__avatar--small" aria-hidden="true">@GetIcon(space)</span>
+                        <span class="tm-ns-space__option-text">
+                            <span>@GetName(space)</span>
+                            <span>@GetTypeLabel(space.Type)</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        }
+
+        @if (SpaceProvider is not null)
+        {
+            <button class="tm-ns-space__overview-toggle"
+                    data-testid="notion-space-overview-toggle"
+                    type="button"
+                    aria-expanded="@_overviewOpen"
+                    @onclick="ToggleOverviewAsync">
+                <span>@Loc["Notion_Space_Overview"]</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2.5 6h7M6 2.5v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+            </button>
+        }
+
+        @if (_overviewOpen)
+        {
+            <div class="tm-ns-space__overview" data-testid="notion-space-overview" role="region" aria-label="@Loc["Notion_Space_Overview"]">
+                @foreach (var space in _spaces)
+                {
+                    var pages = GetOverviewPages(space.Id);
+                    <article class="tm-ns-space-card" data-testid="@($"notion-space-card-{space.Id}")">
+                        <header class="tm-ns-space-card__header">
+                            <span class="tm-ns-space-card__icon" aria-hidden="true">@GetIcon(space)</span>
+                            <span class="tm-ns-space-card__title">@GetName(space)</span>
+                            <span class="tm-ns-space-card__count" aria-label="@string.Format(Loc["Notion_Space_PageCount"], pages.Count)">
+                                @pages.Count
+                            </span>
+                        </header>
+                        @if (!string.IsNullOrWhiteSpace(space.Description))
+                        {
+                            <p class="tm-ns-space-card__description">@space.Description</p>
+                        }
+                        @if (CurrentPageId is not null && !IsSelected(space))
+                        {
+                            <button class="tm-ns-space-card__move"
+                                    data-testid="@($"notion-space-move-{space.Id}")"
+                                    type="button"
+                                    disabled="@_isMoving"
+                                    @onclick="async () => await MoveCurrentPageAsync(space.Id)">
+                                @Loc["Notion_Space_MoveHere"]
+                            </button>
+                        }
+                        @if (pages.Count == 0)
+                        {
+                            <div class="tm-ns-space-card__empty">@Loc["Notion_Space_Empty"]</div>
+                        }
+                        else
+                        {
+                            <ul class="tm-ns-space-card__pages" aria-label="@Loc["Notion_Space_Pages"]">
+                                @foreach (var page in pages.Take(5))
+                                {
+                                    <li>
+                                        <span aria-hidden="true">@GetPageIcon(page)</span>
+                                        <span>@GetPageTitle(page)</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </article>
+                }
+            </div>
+        }
+    }
+</section>

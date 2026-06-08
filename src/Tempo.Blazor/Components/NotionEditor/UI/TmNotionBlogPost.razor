@@ -1,0 +1,39 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Components.NotionEditor.Blocks
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+<article class="tm-notion-blog-post @Class" data-testid="notion-blog-post" data-post-id="@Post.Id">
+    <header class="tm-notion-blog-post__header">
+        <div class="tm-notion-blog-post__title-wrap">
+            <h2 class="tm-notion-blog-post__title">@Post.Title</h2>
+            <div class="tm-notion-blog-post__meta">
+                <span class="@StatusClass">@StatusText</span>
+                @if (Post.PublishedAt is not null)
+                {
+                    <time datetime="@Post.PublishedAt.Value.ToString("O")">
+                        @Loc["Notion_Blog_PublishedOn", Post.PublishedAt.Value.ToString("d")]
+                    </time>
+                }
+                <span>@Post.AuthorId</span>
+            </div>
+        </div>
+
+        @if (Post.PublishedAt is null)
+        {
+            <button type="button"
+                    class="tm-notion-blog-post__publish"
+                    data-testid="notion-blog-publish"
+                    disabled="@IsPublishing"
+                    @onclick="() => OnPublish.InvokeAsync(Post.Id)">
+                @Loc["Notion_Blog_Publish"]
+            </button>
+        }
+    </header>
+
+    <div class="tm-notion-blog-post__body">
+        <TmNotionBlockList Blocks="PostBlocks"
+                           PageId="@Post.Id"
+                           ReadOnly="true" />
+    </div>
+</article>

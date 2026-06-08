@@ -1,0 +1,135 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Components.Icons
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+@if (Provider is not null && !string.IsNullOrWhiteSpace(PageId) && !string.IsNullOrWhiteSpace(UserId))
+{
+    <div class="tm-notion-watch @(_watching ? "tm-notion-watch--active" : "")" data-testid="notion-watch-button">
+        <button type="button"
+                class="tm-notion-watch__toggle"
+                data-testid="notion-watch-toggle"
+                aria-pressed="@_watching"
+                aria-label="@ToggleLabel"
+                title="@ToggleLabel"
+                disabled="@_busy"
+                @onclick="ToggleWatchAsync">
+            <TmIcon Name="@(_watching ? IconNames.EyeOff : IconNames.Eye)" Size="IconSize.Sm" />
+            <span>@ToggleLabel</span>
+        </button>
+
+        @if (_watching)
+        {
+            <label class="tm-notion-watch__children" title="@Loc["Notion_Watch_IncludeChildren"]">
+                <input type="checkbox"
+                       data-testid="notion-watch-include-children"
+                       checked="@_includeChildren"
+                       disabled="@_busy"
+                       @onchange="ToggleIncludeChildrenAsync" />
+                <span>@Loc["Notion_Watch_IncludeChildren"]</span>
+            </label>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>Watch provider used to persist page subscriptions.</summary>
+    [Parameter] public INotionWatchProvider? Provider { get; set; }
+
+    /// <summary>Page identifier being watched.</summary>
+    [Parameter] public string PageId { get; set; } = string.Empty;
+
+    /// <summary>User identifier for the current watcher.</summary>
+    [Parameter] public string UserId { get; set; } = string.Empty;
+
+    /// <summary>Raised after watch state changes.</summary>
+    [Parameter] public EventCallback<bool> OnWatchingChanged { get; set; }
+
+    private bool _watching;
+    private bool _includeChildren;
+    private bool _busy;
+    private string? _loadedPageId;
+    private string? _loadedUserId;
+
+    private string ToggleLabel => _watching ? Loc["Notion_Watch_Stop"] : Loc["Notion_Watch_Start"];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Provider is null || string.IsNullOrWhiteSpace(PageId) || string.IsNullOrWhiteSpace(UserId))
+            return;
+
+        if (string.Equals(_loadedPageId, PageId, StringComparison.Ordinal) &&
+            string.Equals(_loadedUserId, UserId, StringComparison.Ordinal))
+            return;
+
+        _loadedPageId = PageId;
+        _loadedUserId = UserId;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Provider is null)
+            return;
+
+        _busy = true;
+        try
+        {
+            var watchers = await Provider.GetWatchersAsync(PageId);
+            var current = watchers.FirstOrDefault(w => string.Equals(w.PageId, PageId, StringComparison.OrdinalIgnoreCase) &&
+                                                       string.Equals(w.UserId, UserId, StringComparison.OrdinalIgnoreCase));
+            _watching = current is not null || await Provider.IsWatchingAsync(PageId, UserId);
+            _includeChildren = current?.IncludeChildren ?? false;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ToggleWatchAsync()
+    {
+        if (Provider is null || _busy)
+            return;
+
+        _busy = true;
+        try
+        {
+            if (_watching)
+            {
+                await Provider.UnwatchAsync(PageId, UserId);
+                _watching = false;
+                _includeChildren = false;
+            }
+            else
+            {
+                await Provider.WatchAsync(PageId, UserId, _includeChildren);
+                _watching = true;
+            }
+
+            await OnWatchingChanged.InvokeAsync(_watching);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ToggleIncludeChildrenAsync(ChangeEventArgs args)
+    {
+        if (Provider is null || _busy)
+            return;
+
+        _includeChildren = args.Value is bool b ? b : string.Equals(args.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+        _busy = true;
+        try
+        {
+            await Provider.WatchAsync(PageId, UserId, _includeChildren);
+            _watching = true;
+            await OnWatchingChanged.InvokeAsync(true);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

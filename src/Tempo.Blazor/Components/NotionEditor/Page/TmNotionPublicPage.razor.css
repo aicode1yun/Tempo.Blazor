@@ -1,0 +1,102 @@
+.tm-npp {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+}
+
+.tm-npp__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tm-space-4);
+    padding: var(--tm-space-4) clamp(var(--tm-space-4), 5vw, var(--tm-space-8));
+    border-bottom: 1px solid var(--tm-border-color);
+    background: var(--tm-bg-elevated);
+}
+
+.tm-npp__header h1 {
+    margin: 0;
+    font-size: var(--tm-font-size-xl);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-npp__header p {
+    margin: var(--tm-space-1) 0 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-npp__expires {
+    flex: 0 0 auto;
+    padding: var(--tm-space-1) var(--tm-space-3);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-full);
+    background: var(--tm-bg-muted);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-npp__editor {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.tm-npp__editor-inner {
+    height: calc(100vh - 82px);
+}
+
+.tm-npp__state {
+    width: min(520px, calc(100vw - 32px));
+    margin: auto;
+    display: grid;
+    justify-items: center;
+    gap: var(--tm-space-3);
+    padding: var(--tm-space-6);
+    text-align: center;
+    color: var(--tm-text-secondary);
+}
+
+.tm-npp__state h1 {
+    margin: 0;
+    color: var(--tm-text-primary);
+    font-size: var(--tm-font-size-xl);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-npp__state p {
+    margin: 0;
+    line-height: var(--tm-line-height-relaxed);
+}
+
+.tm-npp__state--empty {
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-lg);
+    background: var(--tm-bg-elevated);
+    box-shadow: var(--tm-shadow-sm);
+}
+
+.tm-npp__spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: var(--tm-radius-full);
+    animation: tm-npp-spin 680ms linear infinite;
+}
+
+@keyframes tm-npp-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+    .tm-npp__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .tm-npp__editor-inner {
+        height: calc(100vh - 126px);
+    }
+}

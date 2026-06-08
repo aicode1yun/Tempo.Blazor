@@ -1,0 +1,87 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-page-props"
+         aria-label="@Loc["Notion_PageProps_Title"]"
+         @onclick="HandleFocusedAsync">
+    <div class="tm-page-props__header">
+        <span class="tm-page-props__badge" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 3.5h10M3 7h10M3 10.5h10" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" />
+                <path d="M6.5 2.5v11" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" />
+            </svg>
+        </span>
+        <div class="tm-page-props__heading">
+            <span class="tm-page-props__title">@Loc["Notion_PageProps_Title"]</span>
+            <span class="tm-page-props__count">@RowsSummary</span>
+        </div>
+        @if (!ReadOnly)
+        {
+            <button class="tm-page-props__add"
+                    type="button"
+                    @onclick="AddRowAsync"
+                    @onclick:stopPropagation="true">
+                @Loc["Notion_PageProps_AddRow"]
+            </button>
+        }
+    </div>
+
+    @if (_rows.Count == 0)
+    {
+        <div class="tm-page-props__empty">@Loc["Notion_PageProps_Empty"]</div>
+    }
+    else
+    {
+        <div class="tm-page-props__table" role="table" aria-label="@Loc["Notion_PageProps_Title"]">
+            <div class="tm-page-props__thead" role="row">
+                <div class="tm-page-props__th" role="columnheader">@Loc["Notion_PageProps_Key"]</div>
+                <div class="tm-page-props__th" role="columnheader">@Loc["Notion_PageProps_Value"]</div>
+                @if (!ReadOnly)
+                {
+                    <div class="tm-page-props__th tm-page-props__th--actions" role="columnheader">
+                        <span class="tm-page-props__sr">@Loc["Tm_Delete"]</span>
+                    </div>
+                }
+            </div>
+            @for (var i = 0; i < _rows.Count; i++)
+            {
+                var index = i;
+                var row = _rows[index];
+                <div class="tm-page-props__row" role="row">
+                    <div class="tm-page-props__cell" role="cell">
+                        <input class="tm-page-props__key-input"
+                               type="text"
+                               value="@row.Key"
+                               aria-label="@Loc["Notion_PageProps_Key"]"
+                               readonly="@ReadOnly"
+                               @onchange="args => ChangeKeyAsync(index, args.Value?.ToString() ?? string.Empty)"
+                               @onclick:stopPropagation="true" />
+                    </div>
+                    <div class="tm-page-props__cell" role="cell">
+                        <textarea class="tm-page-props__value-input"
+                                  rows="1"
+                                  aria-label="@Loc["Notion_PageProps_Value"]"
+                                  readonly="@ReadOnly"
+                                  @onchange="args => ChangeValueAsync(index, args.Value?.ToString() ?? string.Empty)"
+                                  @onclick:stopPropagation="true">@row.ValueText</textarea>
+                    </div>
+                    @if (!ReadOnly)
+                    {
+                        <div class="tm-page-props__cell tm-page-props__cell--actions" role="cell">
+                            <button class="tm-page-props__remove"
+                                    type="button"
+                                    title="@Loc["Tm_Delete"]"
+                                    aria-label="@Loc["Tm_Delete"]"
+                                    @onclick="() => RemoveRowAsync(index)"
+                                    @onclick:stopPropagation="true">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                    <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" />
+                                </svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</section>

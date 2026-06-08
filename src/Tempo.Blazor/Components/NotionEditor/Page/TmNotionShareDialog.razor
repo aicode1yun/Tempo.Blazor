@@ -1,0 +1,133 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Page
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+@if (Visible)
+{
+    <div class="tm-npsd-backdrop" aria-hidden="true" @onclick="CloseAsync"></div>
+    <section class="tm-npsd"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="tm-npsd-title"
+             data-testid="notion-share-dialog"
+             @onclick:stopPropagation="true">
+        <header class="tm-npsd__header">
+            <div>
+                <h2 id="tm-npsd-title">@Loc["Notion_Share_Title"]</h2>
+                <p>@Loc["Notion_Share_AnonymousReadOnly"]</p>
+            </div>
+            <button class="tm-npsd__icon-btn"
+                    type="button"
+                    aria-label="@Loc["Tm_Close"]"
+                    title="@Loc["Tm_Close"]"
+                    @onclick="CloseAsync">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </header>
+
+        @if (_loading)
+        {
+            <div class="tm-npsd__loading" role="status" aria-busy="true">
+                <span class="tm-npsd__spinner" aria-hidden="true"></span>
+                @Loc["Tm_Loading"]
+            </div>
+        }
+        else
+        {
+            <div class="tm-npsd__body">
+                <div class="tm-npsd__status @StatusClass"
+                     data-testid="@StatusTestId">
+                    <span class="tm-npsd__status-dot" aria-hidden="true"></span>
+                    <span>@StatusText</span>
+                </div>
+
+                <label class="tm-npsd__toggle">
+                    <input type="checkbox"
+                           checked="@_allowComments"
+                           disabled="@_saving"
+                           data-testid="notion-share-allow-comments"
+                           @onchange="HandleAllowCommentsChanged" />
+                    <span>@Loc["Notion_Share_AllowComments"]</span>
+                </label>
+
+                <div class="tm-npsd__field">
+                    <label for="tm-npsd-expires">@Loc["Notion_Share_Expires"]</label>
+                    <input id="tm-npsd-expires"
+                           class="tm-npsd__input"
+                           type="date"
+                           value="@ExpiresValue"
+                           disabled="@_saving"
+                           data-testid="notion-share-expires"
+                           @onchange="HandleExpiresChanged" />
+                </div>
+
+                @if (IsShareUsable)
+                {
+                    <div class="tm-npsd__field">
+                        <label for="tm-npsd-url">@Loc["Notion_Share_PublicUrl"]</label>
+                        <div class="tm-npsd__url-row">
+                            <input id="tm-npsd-url"
+                                   class="tm-npsd__input tm-npsd__input--url"
+                                   type="text"
+                                   value="@ShareUrl"
+                                   readonly
+                                   data-testid="notion-share-url" />
+                            <button class="tm-npsd__secondary"
+                                    type="button"
+                                    disabled="@_copying"
+                                    data-testid="notion-share-copy"
+                                    @onclick="CopyAsync">
+                                @if (_copying)
+                                {
+                                    <span class="tm-npsd__spinner" aria-hidden="true"></span>
+                                }
+                                @Loc["Notion_Share_Copy"]
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="tm-npsd__error" role="alert">@_error</div>
+                }
+            </div>
+
+            <footer class="tm-npsd__footer">
+                <button class="tm-npsd__secondary" type="button" @onclick="CloseAsync">
+                    @Loc["Tm_Close"]
+                </button>
+
+                @if (IsShareUsable)
+                {
+                    <button class="tm-npsd__danger"
+                            type="button"
+                            disabled="@_saving"
+                            data-testid="notion-share-revoke"
+                            @onclick="RevokeAsync">
+                        @if (_saving)
+                        {
+                            <span class="tm-npsd__spinner" aria-hidden="true"></span>
+                        }
+                        @Loc["Notion_Share_Revoke"]
+                    </button>
+                }
+                else
+                {
+                    <button class="tm-npsd__primary"
+                            type="button"
+                            disabled="@_saving"
+                            data-testid="notion-share-create"
+                            @onclick="CreateAsync">
+                        @if (_saving)
+                        {
+                            <span class="tm-npsd__spinner" aria-hidden="true"></span>
+                        }
+                        @Loc["Notion_Share_CreateLink"]
+                    </button>
+                }
+            </footer>
+        }
+    </section>
+}

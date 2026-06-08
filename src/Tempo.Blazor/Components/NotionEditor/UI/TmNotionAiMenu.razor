@@ -1,0 +1,155 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Enums
+
+@if (Visible && ActiveProvider is not null)
+{
+    <section class="tm-notion-ai @(Panel ? "tm-notion-ai--panel" : "")"
+             style="@PanelStyle"
+             role="dialog"
+             aria-label="@Loc["Notion_AI_Assistant"]"
+             data-testid="notion-ai-menu"
+             @onkeydown="HandleKeyDownAsync">
+        <header class="tm-notion-ai__header">
+            <div class="tm-notion-ai__title">
+                <span class="tm-notion-ai__spark" aria-hidden="true"></span>
+                <span>@Loc["Notion_AI_Assistant"]</span>
+            </div>
+            <button class="tm-notion-ai__icon-btn"
+                    type="button"
+                    title="@Loc["Tm_Close"]"
+                    aria-label="@Loc["Tm_Close"]"
+                    data-testid="notion-ai-close"
+                    @onclick="CloseAsync">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </header>
+
+        <div class="tm-notion-ai__tabs" role="tablist" aria-label="@Loc["Notion_AI_Assistant"]">
+            <button type="button" role="tab" class="@ModeButtonClass(NotionAiMenuMode.Generate)" data-testid="notion-ai-mode-generate" @onclick="() => SetMode(NotionAiMenuMode.Generate)">
+                @Loc["Notion_AI_Generate"]
+            </button>
+            <button type="button" role="tab" class="@ModeButtonClass(NotionAiMenuMode.Improve)" data-testid="notion-ai-mode-improve" @onclick="() => SetMode(NotionAiMenuMode.Improve)">
+                @Loc["Notion_AI_Improve"]
+            </button>
+            <button type="button" role="tab" class="@ModeButtonClass(NotionAiMenuMode.Summarize)" data-testid="notion-ai-mode-summarize" @onclick="() => SetMode(NotionAiMenuMode.Summarize)">
+                @Loc["Notion_AI_Summarize"]
+            </button>
+            <button type="button" role="tab" class="@ModeButtonClass(NotionAiMenuMode.Ask)" data-testid="notion-ai-mode-ask" @onclick="() => SetMode(NotionAiMenuMode.Ask)">
+                @Loc["Notion_AI_Ask"]
+            </button>
+        </div>
+
+        @if (_mode == NotionAiMenuMode.Generate)
+        {
+            <label class="tm-notion-ai__field">
+                <span>@Loc["Notion_AI_Generate"]</span>
+                <textarea class="tm-notion-ai__textarea"
+                          value="@_prompt"
+                          placeholder="@Loc["Notion_AI_PromptPlaceholder"]"
+                          data-testid="notion-ai-prompt"
+                          @oninput="HandlePromptInput"></textarea>
+            </label>
+        }
+        else if (_mode == NotionAiMenuMode.Improve)
+        {
+            <div class="tm-notion-ai__mode-grid" role="group" aria-label="@Loc["Notion_AI_Improve"]">
+                @foreach (var option in ImproveOptions)
+                {
+                    <button type="button"
+                            class="tm-notion-ai__mode-chip @(_improveMode == option.Mode ? "tm-notion-ai__mode-chip--active" : "")"
+                            data-testid="@option.TestId"
+                            @onclick="() => _improveMode = option.Mode">
+                        @Loc[option.Key]
+                    </button>
+                }
+            </div>
+            @if (string.IsNullOrWhiteSpace(SourceText))
+            {
+                <p class="tm-notion-ai__hint">@Loc["Notion_AI_SourceEmpty"]</p>
+            }
+        }
+        else if (_mode == NotionAiMenuMode.Ask)
+        {
+            <label class="tm-notion-ai__field">
+                <span>@Loc["Notion_AI_Ask"]</span>
+                <textarea class="tm-notion-ai__textarea"
+                          value="@_question"
+                          placeholder="@Loc["Notion_AI_QuestionPlaceholder"]"
+                          data-testid="notion-ai-question"
+                          @oninput="HandleQuestionInput"></textarea>
+            </label>
+        }
+        else
+        {
+            <p class="tm-notion-ai__hint">@Loc["Notion_AI_SummarizeDescription"]</p>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="tm-notion-ai__error" role="alert" data-testid="notion-ai-error">
+                @Loc["Notion_AI_Error"]: @_error
+            </div>
+        }
+
+        <div class="tm-notion-ai__output-wrap">
+            <div class="tm-notion-ai__output-label">@Loc["Notion_AI_OutputLabel"]</div>
+            <output class="tm-notion-ai__output"
+                    aria-live="polite"
+                    data-testid="notion-ai-output">
+                @if (string.IsNullOrEmpty(_streamedText) && _isStreaming)
+                {
+                    <span class="tm-notion-ai__thinking">@Loc["Notion_AI_Thinking"]</span>
+                }
+                else
+                {
+                    @_streamedText
+                }
+                @if (_isStreaming)
+                {
+                    <span class="tm-notion-ai__cursor" aria-hidden="true"></span>
+                }
+            </output>
+        </div>
+
+        <footer class="tm-notion-ai__actions">
+            <button class="tm-notion-ai__btn tm-notion-ai__btn--primary"
+                    type="button"
+                    disabled="@_isStreaming"
+                    data-testid="notion-ai-run"
+                    @onclick="RunAsync">
+                @Loc["Notion_AI_Run"]
+            </button>
+            <button class="tm-notion-ai__btn"
+                    type="button"
+                    disabled="@(_isStreaming || string.IsNullOrWhiteSpace(_streamedText))"
+                    data-testid="notion-ai-accept"
+                    @onclick="AcceptAsync">
+                @Loc["Notion_AI_Accept"]
+            </button>
+            <button class="tm-notion-ai__btn"
+                    type="button"
+                    disabled="@(_isStreaming || _lastRequest is null)"
+                    data-testid="notion-ai-retry"
+                    @onclick="RetryAsync">
+                @Loc["Notion_AI_Retry"]
+            </button>
+            @if (_isStreaming)
+            {
+                <button class="tm-notion-ai__btn"
+                        type="button"
+                        data-testid="notion-ai-cancel"
+                        @onclick="CancelStreaming">
+                    @Loc["Notion_AI_Cancel"]
+                </button>
+            }
+            <button class="tm-notion-ai__btn tm-notion-ai__btn--ghost"
+                    type="button"
+                    data-testid="notion-ai-discard"
+                    @onclick="DiscardAsync">
+                @Loc["Notion_AI_Discard"]
+            </button>
+        </footer>
+    </section>
+}

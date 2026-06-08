@@ -1,0 +1,116 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.NotionEditor.Services
+
+<section class="tm-notion-labels"
+         aria-label="@Loc["Notion_Labels_Title"]"
+         @onkeydown="HandleKeyDownAsync">
+    <div class="tm-notion-labels__chips">
+        @if (_labels.Count == 0)
+        {
+            <span class="tm-notion-labels__empty">@Loc["Notion_Labels_None"]</span>
+        }
+        else
+        {
+            @foreach (var label in _labels)
+            {
+                <span class="tm-notion-labels__chip" role="group">
+                    <button class="tm-notion-labels__chip-filter"
+                            type="button"
+                            title="@string.Format(Loc["Notion_Labels_FilterTitle"], label)"
+                            @onclick="() => OpenFilterAsync(label)">
+                        <span class="tm-notion-labels__chip-text">@label</span>
+                    </button>
+                    @if (!ReadOnly)
+                    {
+                        <button class="tm-notion-labels__remove"
+                                type="button"
+                                title="@Loc["Notion_Labels_Remove"]"
+                                aria-label="@Loc["Notion_Labels_Remove"]"
+                                @onclick="() => RemoveLabelAsync(label)">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </button>
+                    }
+                </span>
+            }
+        }
+    </div>
+
+    @if (!ReadOnly)
+    {
+        <div class="tm-notion-labels__editor">
+            <input class="tm-notion-labels__input"
+                   type="text"
+                   autocomplete="off"
+                   spellcheck="false"
+                   placeholder="@Loc["Notion_Labels_Placeholder"]"
+                   aria-label="@Loc["Notion_Labels_Placeholder"]"
+                   value="@_input"
+                   @onfocus="LoadSuggestionsAsync"
+                   @oninput="HandleInputAsync" />
+            <button class="tm-notion-labels__add"
+                    type="button"
+                    disabled="@string.IsNullOrWhiteSpace(_input)"
+                    @onclick="AddCurrentInputAsync">
+                @Loc["Notion_Labels_Add"]
+            </button>
+        </div>
+
+        @if (FilteredSuggestions.Count > 0)
+        {
+            <div class="tm-notion-labels__suggestions" role="listbox" aria-label="@Loc["Notion_Labels_Suggestions"]">
+                @foreach (var suggestion in FilteredSuggestions)
+                {
+                    <button class="tm-notion-labels__suggestion"
+                            type="button"
+                            role="option"
+                            @onclick="() => AddLabelAsync(suggestion)">
+                        @suggestion
+                    </button>
+                }
+            </div>
+        }
+    }
+
+    @if (_filterLabel is not null)
+    {
+        <div class="tm-notion-labels__filter" role="region" aria-label="@string.Format(Loc["Notion_Labels_FilterTitle"], _filterLabel)">
+            <div class="tm-notion-labels__filter-header">
+                <span>@string.Format(Loc["Notion_Labels_FilterTitle"], _filterLabel)</span>
+                <button class="tm-notion-labels__filter-close"
+                        type="button"
+                        aria-label="@Loc["Tm_Close"]"
+                        @onclick="CloseFilter">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            @if (_filterLoading)
+            {
+                <div class="tm-notion-labels__filter-state" role="status">@Loc["Tm_Loading"]</div>
+            }
+            else if (_filteredPages.Count == 0)
+            {
+                <div class="tm-notion-labels__filter-state">@Loc["Notion_Labels_FilterEmpty"]</div>
+            }
+            else
+            {
+                <div class="tm-notion-labels__filter-results" role="list" aria-label="@Loc["Notion_Labels_FilterResults"]">
+                    @foreach (var page in _filteredPages)
+                    {
+                        <button class="tm-notion-labels__filter-page"
+                                type="button"
+                                role="listitem"
+                                @onclick="() => NavigateToPageAsync(page)">
+                            <span class="tm-notion-labels__filter-icon" aria-hidden="true">@PageIcon(page)</span>
+                            <span class="tm-notion-labels__filter-title">@PageTitle(page)</span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    }
+</section>

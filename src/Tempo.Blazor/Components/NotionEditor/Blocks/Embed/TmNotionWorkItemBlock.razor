@@ -1,0 +1,113 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Embed
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Components.NotionEditor.Services
+
+<div class="tm-work-item-host" @onfocus="HandleFocusAsync">
+    @if (NeedsPicker)
+    {
+        @if (!ReadOnly && Providers.Count > 0)
+        {
+            <section class="tm-work-item-picker" aria-label="@Loc["Notion_WorkItem_Insert"]">
+                <div class="tm-work-item-picker__row">
+                    @if (Providers.Count > 1)
+                    {
+                        <label class="tm-work-item-picker__provider">
+                            <span>@Loc["Notion_WorkItem_Provider"]</span>
+                            <select class="tm-work-item-picker__select"
+                                    value="@_selectedProviderKey"
+                                    @onchange="HandleProviderChangedAsync">
+                                @foreach (var provider in Providers)
+                                {
+                                    <option value="@provider.ProviderKey">@provider.DisplayName</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                    <label class="tm-work-item-picker__search">
+                        <span class="tm-work-item-picker__label">@Loc["Notion_WorkItem_Search"]</span>
+                        <input class="tm-work-item-picker__input"
+                               value="@_searchText"
+                               placeholder="@Loc["Notion_WorkItem_Search"]"
+                               aria-label="@Loc["Notion_WorkItem_Search"]"
+                               @oninput="HandleSearchInputAsync"
+                               @onkeydown="HandleSearchKeyDownAsync" />
+                    </label>
+                    <button class="tm-work-item-picker__button"
+                            type="button"
+                            disabled="@(_searching || string.IsNullOrWhiteSpace(_searchText))"
+                            @onclick="SearchAsync">
+                        @Loc["Tm_Search"]
+                    </button>
+                </div>
+                @if (_searching)
+                {
+                    <div class="tm-work-item-picker__state" role="status">@Loc["Tm_Loading"]</div>
+                }
+                else if (!string.IsNullOrWhiteSpace(_pickerError))
+                {
+                    <div class="tm-work-item-picker__error" role="alert">@_pickerError</div>
+                }
+                else if (_searched && _searchResults.Count == 0)
+                {
+                    <div class="tm-work-item-picker__state">@Loc["Tm_NoResults"]</div>
+                }
+                else if (_searchResults.Count > 0)
+                {
+                    <div class="tm-work-item-picker__results" role="listbox" aria-label="@Loc["Notion_WorkItem_Search"]">
+                        @foreach (var item in _searchResults)
+                        {
+                            <button class="tm-work-item-picker__result"
+                                    type="button"
+                                    role="option"
+                                    @onclick="() => SelectWorkItemAsync(item)">
+                                <span class="tm-work-item-picker__result-id">@item.ExternalId</span>
+                                <span class="tm-work-item-picker__result-title">@item.Title</span>
+                                <span class="tm-work-item-picker__result-status">@item.Status</span>
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        }
+        else if (Snapshot is not null)
+        {
+            @RenderWorkItem(Snapshot)
+        }
+    }
+    else if (Snapshot is not null)
+    {
+        @if (!string.IsNullOrWhiteSpace(_loadError))
+        {
+            <div class="tm-work-item__fallback" role="status">
+                @Loc["Notion_WorkItem_LoadError"]
+            </div>
+        }
+        @RenderWorkItem(Snapshot)
+    }
+    else if (!string.IsNullOrWhiteSpace(_loadError))
+    {
+        <div class="tm-work-item__empty-error" role="alert">
+            @Loc["Notion_WorkItem_LoadError"]
+        </div>
+    }
+</div>
+
+@code {
+    private RenderFragment RenderWorkItem(WorkItemDto item) => builder =>
+    {
+        switch (CurrentDisplayMode)
+        {
+            case WorkItemDisplayMode.Inline:
+                RenderInline(builder, item);
+                break;
+            case WorkItemDisplayMode.List:
+                RenderList(builder, item);
+                break;
+            default:
+                RenderCard(builder, item);
+                break;
+        }
+    };
+}

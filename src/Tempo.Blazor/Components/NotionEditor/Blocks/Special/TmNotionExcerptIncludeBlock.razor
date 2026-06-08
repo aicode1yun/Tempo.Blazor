@@ -1,0 +1,76 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-excerpt-include"
+         aria-label="@Loc["Notion_ExcerptInclude_Title"]"
+         @onclick="HandleFocusedAsync">
+    <div class="tm-excerpt-include__header">
+        <span class="tm-excerpt-include__badge" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 3h4.25l1.25 2H13v8H3V3Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+                <path d="M5 7.5h6M5 10h4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+            </svg>
+        </span>
+        <div class="tm-excerpt-include__heading">
+            <span class="tm-excerpt-include__title">@Loc["Notion_ExcerptInclude_Title"]</span>
+            <span class="tm-excerpt-include__source">@SourceSummary</span>
+        </div>
+
+        @if (_sourcePage is not null && !_notFound)
+        {
+            <button class="tm-excerpt-include__source-link"
+                    type="button"
+                    title="@Loc["Notion_ExcerptInclude_EditSource"]"
+                    aria-label="@Loc["Notion_ExcerptInclude_EditSource"]"
+                    @onclick="NavigateToSourceAsync"
+                    @onclick:stopPropagation="true">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M8.75 3.25H4.25A1.25 1.25 0 0 0 3 4.5v7.25A1.25 1.25 0 0 0 4.25 13h7.25a1.25 1.25 0 0 0 1.25-1.25v-4.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" />
+                    <path d="M10 2.5h3.5V6M13.5 2.5 7.25 8.75" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>@Loc["Notion_ExcerptInclude_EditSource"]</span>
+            </button>
+        }
+    </div>
+
+    @if (!ReadOnly)
+    {
+        <label class="tm-excerpt-include__picker">
+            <span class="tm-excerpt-include__picker-label">@Loc["Notion_ExcerptInclude_Select"]</span>
+            <select class="tm-excerpt-include__select"
+                    value="@(Content?.SourcePageId?.ToString("D") ?? string.Empty)"
+                    disabled="@_loadingPages"
+                    @onchange="HandleSourceChangedAsync"
+                    @onclick:stopPropagation="true">
+                <option value="">@Loc["Notion_ExcerptInclude_Select"]</option>
+                @foreach (var choice in _pageChoices)
+                {
+                    <option value="@choice.Id.ToString("D")">@ChoiceLabel(choice)</option>
+                }
+            </select>
+        </label>
+    }
+
+    <div class="tm-excerpt-include__body">
+        @if (_loadingContent)
+        {
+            <div class="tm-excerpt-include__state" role="status">@Loc["Tm_Loading"]</div>
+        }
+        else if (_notFound)
+        {
+            <div class="tm-excerpt-include__state tm-excerpt-include__state--warning">@Loc["Notion_ExcerptInclude_NotFound"]</div>
+        }
+        else if (Content?.SourcePageId is null)
+        {
+            <div class="tm-excerpt-include__state">@Loc["Notion_ExcerptInclude_Select"]</div>
+        }
+        else if (string.IsNullOrWhiteSpace(_excerptHtml))
+        {
+            <div class="tm-excerpt-include__state">@Loc["Notion_ExcerptInclude_NoExcerpt"]</div>
+        }
+        else
+        {
+            <div class="tm-excerpt-include__content">@((MarkupString)_excerptHtml)</div>
+        }
+    </div>
+</section>

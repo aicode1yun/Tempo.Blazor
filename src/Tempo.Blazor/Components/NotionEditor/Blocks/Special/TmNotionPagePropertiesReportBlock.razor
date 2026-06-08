@@ -1,0 +1,101 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-props-report"
+         aria-label="@Loc["Notion_PropsReport_Title"]"
+         @onclick="HandleFocusedAsync">
+    <div class="tm-props-report__header">
+        <span class="tm-props-report__badge" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2.5 3.5h11v9h-11v-9Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+                <path d="M2.5 6.5h11M6 3.5v9M10 3.5v9" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" />
+            </svg>
+        </span>
+        <div class="tm-props-report__heading">
+            <span class="tm-props-report__title">@Loc["Notion_PropsReport_Title"]</span>
+            <span class="tm-props-report__summary">@SummaryText</span>
+        </div>
+    </div>
+
+    @if (!ReadOnly)
+    {
+        <div class="tm-props-report__config" aria-label="@Loc["Notion_PropsReport_Configure"]">
+            <label class="tm-props-report__field">
+                <span class="tm-props-report__field-label">@Loc["Notion_PropsReport_Labels"]</span>
+                <input class="tm-props-report__labels-input"
+                       type="text"
+                       value="@_labelsText"
+                       @onchange="HandleLabelsChangedAsync"
+                       @onclick:stopPropagation="true" />
+            </label>
+            <label class="tm-props-report__field">
+                <span class="tm-props-report__field-label">@Loc["Notion_PropsReport_Columns"]</span>
+                <input class="tm-props-report__columns-input"
+                       type="text"
+                       value="@_columnsText"
+                       @onchange="HandleColumnsChangedAsync"
+                       @onclick:stopPropagation="true" />
+            </label>
+        </div>
+    }
+
+    @if (Context.PagePropertiesProvider is null)
+    {
+        <div class="tm-props-report__state tm-props-report__state--warning">
+            @Loc["Notion_PropsReport_NoProvider"]
+        </div>
+    }
+    else if (_loading)
+    {
+        <div class="tm-props-report__state" role="status">@Loc["Tm_Loading"]</div>
+    }
+    else if (_rows.Count == 0)
+    {
+        <div class="tm-props-report__empty">@Loc["Notion_PropsReport_Empty"]</div>
+    }
+    else
+    {
+        <div class="tm-props-report__table-wrap">
+            <table class="tm-props-report__table">
+                <thead>
+                    <tr>
+                        <th scope="col">@Loc["Notion_PropsReport_Page"]</th>
+                        @foreach (var column in VisibleColumns)
+                        {
+                            <th scope="col">@column</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <th scope="row">
+                                <button class="tm-props-report__page-link"
+                                        type="button"
+                                        @onclick="() => NavigateToPageAsync(row)"
+                                        @onclick:stopPropagation="true">
+                                    <span class="tm-props-report__page-icon" aria-hidden="true">@PageIcon(row)</span>
+                                    <span class="tm-props-report__page-title">@PageTitle(row)</span>
+                                </button>
+                            </th>
+                            @foreach (var column in VisibleColumns)
+                            {
+                                <td>
+                                    @if (TryGetProperty(row, column, out var valueHtml))
+                                    {
+                                        <span class="tm-props-report__value">@((MarkupString)Sanitize(valueHtml))</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="tm-props-report__missing">@Loc["Notion_PropsReport_MissingValue"]</span>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

@@ -1,0 +1,119 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-notion-analytics @Class" aria-label="@Loc["Notion_Analytics_Title"]" data-testid="notion-analytics-panel">
+    <header class="tm-notion-analytics__header">
+        <div class="tm-notion-analytics__title-wrap">
+            <h2 class="tm-notion-analytics__title">@Loc["Notion_Analytics_Title"]</h2>
+            <span class="tm-notion-analytics__subtitle">@Loc["Notion_Analytics_Subtitle"]</span>
+        </div>
+
+        <button type="button"
+                class="tm-notion-analytics__icon-btn"
+                title="@Loc["Tm_Close"]"
+                aria-label="@Loc["Tm_Close"]"
+                @onclick="() => OnClosed.InvokeAsync()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M4 4l8 8M12 4L4 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </header>
+
+    @if (_isLoading)
+    {
+        <div class="tm-notion-analytics__state" role="status" aria-busy="true">
+            <span class="tm-notion-analytics__spinner" aria-hidden="true"></span>
+            <span>@Loc["Tm_Loading"]</span>
+        </div>
+    }
+    else if (_loadError is not null)
+    {
+        <div class="tm-notion-analytics__state tm-notion-analytics__state--error" role="alert">
+            <span>@Loc["Notion_Analytics_LoadError"]</span>
+            <button type="button" class="tm-notion-analytics__retry" @onclick="LoadAsync">@Loc["Tm_Retry"]</button>
+        </div>
+    }
+    else
+    {
+        <div class="tm-notion-analytics__body">
+            <section class="tm-notion-analytics__summary" aria-label="@Loc["Notion_Analytics_Views"]">
+                <div class="tm-notion-analytics__metric" data-testid="notion-analytics-views">
+                    <span class="tm-notion-analytics__metric-label">@Loc["Notion_Analytics_Views"]</span>
+                    <strong class="tm-notion-analytics__metric-value">@CurrentSummary.Views.ToString("N0")</strong>
+                </div>
+                <div class="tm-notion-analytics__metric" data-testid="notion-analytics-unique">
+                    <span class="tm-notion-analytics__metric-label">@Loc["Notion_Analytics_Unique"]</span>
+                    <strong class="tm-notion-analytics__metric-value">@CurrentSummary.UniqueVisitors.ToString("N0")</strong>
+                </div>
+                <div class="tm-notion-analytics__metric tm-notion-analytics__metric--wide">
+                    <span class="tm-notion-analytics__metric-label">@Loc["Notion_Analytics_LastViewed"]</span>
+                    @if (CurrentSummary.LastViewedAt is null)
+                    {
+                        <strong class="tm-notion-analytics__metric-value">@Loc["Notion_Analytics_NeverViewed"]</strong>
+                    }
+                    else
+                    {
+                        <time class="tm-notion-analytics__metric-value" datetime="@CurrentSummary.LastViewedAt.Value.ToString("O")">
+                            @FormatDate(CurrentSummary.LastViewedAt)
+                        </time>
+                    }
+                </div>
+            </section>
+
+            <section class="tm-notion-analytics__chart" aria-label="@Loc["Notion_Analytics_ViewsByDay"]">
+                <div class="tm-notion-analytics__section-head">
+                    <h3>@Loc["Notion_Analytics_ViewsByDay"]</h3>
+                </div>
+                @if (CurrentSummary.ViewsByDay.Count == 0)
+                {
+                    <div class="tm-notion-analytics__empty tm-notion-analytics__empty--compact" data-testid="notion-analytics-zero">
+                        @Loc["Notion_Analytics_Empty"]
+                    </div>
+                }
+                else
+                {
+                    <svg class="tm-notion-analytics__sparkline"
+                         viewBox="0 0 220 64"
+                         role="img"
+                         aria-label="@Loc["Notion_Analytics_ViewsByDay"]"
+                         preserveAspectRatio="none">
+                        <polyline class="tm-notion-analytics__sparkline-fill"
+                                  points="0,64 @BuildSparklinePoints(CurrentSummary.ViewsByDay) 220,64" />
+                        <polyline class="tm-notion-analytics__sparkline-line"
+                                  points="@BuildSparklinePoints(CurrentSummary.ViewsByDay)" />
+                    </svg>
+                }
+            </section>
+
+            <section class="tm-notion-analytics__top" aria-label="@Loc["Notion_Analytics_TopPages"]">
+                <div class="tm-notion-analytics__section-head">
+                    <h3>@Loc["Notion_Analytics_TopPages"]</h3>
+                </div>
+
+                @if (_topPages.Count == 0)
+                {
+                    <div class="tm-notion-analytics__empty" data-testid="notion-analytics-empty">
+                        @Loc["Notion_Analytics_Empty"]
+                    </div>
+                }
+                else
+                {
+                    <ol class="tm-notion-analytics__top-list" data-testid="notion-analytics-top-pages">
+                        @foreach (var topPage in _topPages)
+                        {
+                            <li class="tm-notion-analytics__top-item">
+                                <div class="tm-notion-analytics__top-row">
+                                    <span class="tm-notion-analytics__top-title">@GetPageTitle(topPage.PageId)</span>
+                                    <strong class="tm-notion-analytics__top-value">@topPage.Views.ToString("N0")</strong>
+                                </div>
+                                <div class="tm-notion-analytics__bar" aria-hidden="true">
+                                    <span style="width:@(GetTopPagePercent(topPage, _topPages).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></span>
+                                </div>
+                            </li>
+                        }
+                    </ol>
+                }
+            </section>
+        </div>
+    }
+</section>

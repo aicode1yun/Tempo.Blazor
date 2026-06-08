@@ -1,0 +1,116 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-notion-blog @Class" aria-label="@Loc["Notion_Blog_Title"]" data-testid="notion-blog-panel">
+    <header class="tm-notion-blog__header">
+        <div class="tm-notion-blog__title-wrap">
+            <h2 class="tm-notion-blog__title">@Loc["Notion_Blog_Title"]</h2>
+            <span class="tm-notion-blog__count" aria-live="polite">@Loc["Notion_Blog_Count", _totalCount]</span>
+        </div>
+
+        <div class="tm-notion-blog__actions">
+            <button type="button"
+                    class="tm-notion-blog__new"
+                    data-testid="notion-blog-new"
+                    disabled="@_isCreating"
+                    @onclick="CreatePostAsync">
+                @Loc["Notion_Blog_New"]
+            </button>
+
+            <button type="button"
+                    class="tm-notion-blog__icon-btn"
+                    title="@Loc["Tm_Close"]"
+                    aria-label="@Loc["Tm_Close"]"
+                    @onclick="() => OnClosed.InvokeAsync()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    @if (_isLoading)
+    {
+        <div class="tm-notion-blog__state" role="status" aria-busy="true">
+            <span class="tm-notion-blog__spinner" aria-hidden="true"></span>
+            <span>@Loc["Tm_Loading"]</span>
+        </div>
+    }
+    else if (_loadError is not null)
+    {
+        <div class="tm-notion-blog__state tm-notion-blog__state--error" role="alert">
+            <span>@Loc["Notion_Blog_LoadError"]</span>
+            <button type="button" class="tm-notion-blog__retry" @onclick="LoadPostsAsync">@Loc["Tm_Retry"]</button>
+        </div>
+    }
+    else if (_posts.Count == 0)
+    {
+        <div class="tm-notion-blog__empty" role="status" data-testid="notion-blog-empty">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+                <rect x="7" y="6" width="20" height="22" rx="4" stroke="currentColor" stroke-width="1.6"/>
+                <path d="M12 13h10M12 18h8M12 23h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <span>@Loc["Notion_Blog_Empty"]</span>
+        </div>
+    }
+    else
+    {
+        <div class="tm-notion-blog__content">
+            <nav class="tm-notion-blog__list" aria-label="@Loc["Notion_Blog_Title"]">
+                @foreach (var post in _posts)
+                {
+                    <button type="button"
+                            class="@PostButtonClass(post)"
+                            data-testid="notion-blog-post-item"
+                            data-post-id="@post.Id"
+                            @onclick="() => SelectPostAsync(post.Id)">
+                        <span class="tm-notion-blog__post-title">@post.Title</span>
+                        <span class="tm-notion-blog__post-meta">
+                            <span class="@PostStatusClass(post)">
+                                @(post.PublishedAt is null ? Loc["Notion_Blog_Draft"] : Loc["Notion_Blog_Published"])
+                            </span>
+                            @if (post.PublishedAt is not null)
+                            {
+                                <time datetime="@post.PublishedAt.Value.ToString("O")">
+                                    @Loc["Notion_Blog_PublishedOn", post.PublishedAt.Value.ToString("d")]
+                                </time>
+                            }
+                        </span>
+                    </button>
+                }
+
+                <div class="tm-notion-blog__paging" role="group" aria-label="@Loc["Notion_Blog_Paging"]">
+                    <button type="button"
+                            class="tm-notion-blog__page"
+                            disabled="@(_skip == 0)"
+                            @onclick="PreviousPageAsync">
+                        @Loc["Notion_Blog_Previous"]
+                    </button>
+                    <span>@Loc["Notion_Blog_Page", CurrentPage]</span>
+                    <button type="button"
+                            class="tm-notion-blog__page"
+                            data-testid="notion-blog-next"
+                            disabled="@(!_hasNextPage)"
+                            @onclick="NextPageAsync">
+                        @Loc["Notion_Blog_Next"]
+                    </button>
+                </div>
+            </nav>
+
+            <section class="tm-notion-blog__detail">
+                @if (_selectedPost is not null)
+                {
+                    <TmNotionBlogPost Post="_selectedPost"
+                                      IsPublishing="@(_publishingPostId == _selectedPost.Id)"
+                                      OnPublish="PublishPostAsync" />
+                }
+                else
+                {
+                    <div class="tm-notion-blog__no-selection" role="status">
+                        @Loc["Notion_Blog_NoPostSelected"]
+                    </div>
+                }
+            </section>
+        </div>
+    }
+</section>

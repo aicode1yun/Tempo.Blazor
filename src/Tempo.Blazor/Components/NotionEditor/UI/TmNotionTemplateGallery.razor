@@ -1,0 +1,116 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+@if (Visible)
+{
+    <div class="tm-ntg__backdrop" role="presentation" @onclick="CloseAsync">
+        <section class="tm-ntg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-label="@Loc["Notion_Templates_Title"]"
+                 @onclick:stopPropagation="true">
+            <header class="tm-ntg__header">
+                <div class="tm-ntg__title-wrap">
+                    <h2 class="tm-ntg__title">@Loc["Notion_Templates_Title"]</h2>
+                    <p class="tm-ntg__subtitle">@Loc["Notion_Templates_Subtitle"]</p>
+                </div>
+                <button class="tm-ntg__close"
+                        type="button"
+                        aria-label="@Loc["Tm_Close"]"
+                        title="@Loc["Tm_Close"]"
+                        @onclick="CloseAsync">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </header>
+
+            <div class="tm-ntg__toolbar">
+                <label class="tm-ntg__search">
+                    <span class="tm-ntg__search-icon" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                            <circle cx="6.5" cy="6.5" r="4.75" stroke="currentColor" stroke-width="1.35" />
+                            <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" />
+                        </svg>
+                    </span>
+                    <input class="tm-ntg__search-input"
+                           type="search"
+                           autocomplete="off"
+                           spellcheck="false"
+                           value="@_query"
+                           placeholder="@Loc["Notion_Templates_Search"]"
+                           aria-label="@Loc["Notion_Templates_Search"]"
+                           @oninput="OnSearchInput" />
+                </label>
+
+                <div class="tm-ntg__categories" role="tablist" aria-label="@Loc["Notion_Templates_Categories"]">
+                    @foreach (var category in Categories)
+                    {
+                        var active = string.Equals(category, _selectedCategory, StringComparison.OrdinalIgnoreCase);
+                        <button class="tm-ntg__category @(active ? "tm-ntg__category--active" : "")"
+                                type="button"
+                                role="tab"
+                                aria-selected="@active"
+                                @onclick="() => SelectCategory(category)">
+                            @GetCategoryLabel(category)
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @if (_loading)
+            {
+                <div class="tm-ntg__state" role="status" aria-busy="true">
+                    <span class="tm-ntg__spinner" aria-hidden="true"></span>
+                    @Loc["Tm_Loading"]
+                </div>
+            }
+            else if (_error is not null)
+            {
+                <div class="tm-ntg__state tm-ntg__state--error" role="alert">
+                    @_error
+                </div>
+            }
+            else if (FilteredTemplates.Count == 0)
+            {
+                <div class="tm-ntg__state">
+                    @Loc["Notion_Templates_NoResults"]
+                </div>
+            }
+            else
+            {
+                <div class="tm-ntg__grid" role="list">
+                    @foreach (var template in FilteredTemplates)
+                    {
+                        <article class="tm-ntg__card"
+                                 role="listitem"
+                                 data-template-id="@template.Id">
+                            <div class="tm-ntg__preview" aria-hidden="true">
+                                <span class="tm-ntg__icon">@GetTemplateIcon(template)</span>
+                                @foreach (var line in GetPreviewLines(template))
+                                {
+                                    <span class="tm-ntg__line @line"></span>
+                                }
+                            </div>
+                            <div class="tm-ntg__card-body">
+                                <div class="tm-ntg__card-meta">
+                                    <span class="tm-ntg__card-icon" aria-hidden="true">@GetTemplateIcon(template)</span>
+                                    <span class="tm-ntg__card-category">@GetCategoryLabel(template.Category)</span>
+                                </div>
+                                <h3 class="tm-ntg__card-title">@GetTemplateName(template)</h3>
+                                <p class="tm-ntg__card-description">@GetTemplateDescription(template)</p>
+                            </div>
+                            <button class="tm-ntg__use"
+                                    type="button"
+                                    disabled="@_applying"
+                                    @onclick="() => SelectTemplateAsync(template)">
+                                @Loc["Notion_Templates_Use"]
+                            </button>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+}

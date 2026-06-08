@@ -1,0 +1,106 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Models
+
+<section class="tm-ndv tm-ndv--@ModeClass"
+         data-testid="notion-diff-viewer"
+         aria-label="@Loc["TmNotionDiffViewer_Label"]">
+    @if (Loading)
+    {
+        <div class="tm-ndv__status" aria-live="polite" aria-busy="true">
+            <span class="tm-ndv__spinner" aria-hidden="true"></span>
+            @Loc["TmNotionPageHistory_LoadingDiff"]
+        </div>
+    }
+    else if (Diffs.Count == 0)
+    {
+        <div class="tm-ndv__status tm-ndv__empty" aria-live="polite">
+            @Loc["TmNotionPageHistory_NoDiff"]
+        </div>
+    }
+    else if (ViewMode == NotionDiffViewMode.SideBySide)
+    {
+        <div class="tm-ndv__list">
+            @foreach (var diff in OrderedDiffs)
+            {
+                <article class="tm-ndv__entry tm-ndv__entry--@DiffClass(diff)"
+                         data-diff-type="@diff.DiffType.ToString().ToLowerInvariant()"
+                         aria-label="@GetDiffLabel(diff.DiffType)">
+                    <div class="tm-ndv__entry-header">
+                        <span class="tm-ndv__indicator" aria-hidden="true">@GetDiffSymbol(diff.DiffType)</span>
+                        <span class="tm-ndv__block-type">@GetBlockTypeLabel(diff.Before ?? diff.After)</span>
+                        <span class="tm-ndv__diff-name">@GetDiffLabel(diff.DiffType)</span>
+                    </div>
+                    <div class="tm-ndv__side-grid">
+                        <div class="tm-ndv__pane tm-ndv__pane--before">
+                            <span class="tm-ndv__pane-label">@Loc["TmNotionPageHistory_DiffBefore"]</span>
+                            @if (diff.Before is null)
+                            {
+                                <span class="tm-ndv__empty-pane">@Loc["TmNotionDiffViewer_NotPresent"]</span>
+                            }
+                            else
+                            {
+                                <div class="tm-ndv__block">@((MarkupString)GetBlockHtml(diff.Before))</div>
+                            }
+                        </div>
+                        <div class="tm-ndv__pane tm-ndv__pane--after">
+                            <span class="tm-ndv__pane-label">@Loc["TmNotionPageHistory_DiffAfter"]</span>
+                            @if (diff.After is null)
+                            {
+                                <span class="tm-ndv__empty-pane">@Loc["TmNotionDiffViewer_NotPresent"]</span>
+                            }
+                            else
+                            {
+                                <div class="tm-ndv__block">@((MarkupString)GetBlockHtml(diff.After))</div>
+                            }
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="tm-ndv__list">
+            @foreach (var diff in OrderedDiffs)
+            {
+                <article class="tm-ndv__entry tm-ndv__entry--@DiffClass(diff)"
+                         data-diff-type="@diff.DiffType.ToString().ToLowerInvariant()"
+                         aria-label="@GetDiffLabel(diff.DiffType)">
+                    <span class="tm-ndv__indicator" aria-hidden="true">@GetDiffSymbol(diff.DiffType)</span>
+                    <div class="tm-ndv__entry-body">
+                        <div class="tm-ndv__entry-title">
+                            <span class="tm-ndv__block-type">@GetBlockTypeLabel(diff.Before ?? diff.After)</span>
+                            <span class="tm-ndv__diff-name">@GetDiffLabel(diff.DiffType)</span>
+                        </div>
+                        @if (diff.DiffType == BlockDiffType.Added && diff.After is not null)
+                        {
+                            <div class="tm-ndv__block tm-ndv__block--after">@((MarkupString)GetBlockHtml(diff.After))</div>
+                        }
+                        else if (diff.DiffType == BlockDiffType.Removed && diff.Before is not null)
+                        {
+                            <div class="tm-ndv__block tm-ndv__block--before">@((MarkupString)GetBlockHtml(diff.Before))</div>
+                        }
+                        else
+                        {
+                            @if (diff.Before is not null)
+                            {
+                                <div class="tm-ndv__row">
+                                    <span class="tm-ndv__pane-label">@Loc["TmNotionPageHistory_DiffBefore"]</span>
+                                    <div class="tm-ndv__block tm-ndv__block--before">@((MarkupString)GetBlockHtml(diff.Before))</div>
+                                </div>
+                            }
+                            @if (diff.After is not null)
+                            {
+                                <div class="tm-ndv__row">
+                                    <span class="tm-ndv__pane-label">@Loc["TmNotionPageHistory_DiffAfter"]</span>
+                                    <div class="tm-ndv__block tm-ndv__block--after">@((MarkupString)GetBlockHtml(diff.After))</div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

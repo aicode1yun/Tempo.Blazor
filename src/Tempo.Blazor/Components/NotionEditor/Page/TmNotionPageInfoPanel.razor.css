@@ -1,0 +1,156 @@
+.tm-page-info-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--tm-z-overlay);
+    background: var(--tm-bg-overlay);
+}
+
+.tm-page-info {
+    --tm-page-info-width: 22.5rem;
+    --tm-page-info-close-size: 2rem;
+    --tm-page-info-metric-min: 6rem;
+    --tm-page-info-metric-min-height: 4.875rem;
+
+    position: fixed;
+    top: var(--tm-space-4);
+    right: var(--tm-space-4);
+    z-index: calc(var(--tm-z-overlay) + 1);
+    width: min(var(--tm-page-info-width), calc(100vw - var(--tm-space-4) * 2));
+    max-height: calc(100vh - var(--tm-space-4) * 2);
+    overflow: auto;
+    padding: var(--tm-space-4);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-lg);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    box-shadow: var(--tm-shadow-xl);
+}
+
+.tm-page-info__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--tm-space-3);
+    padding-bottom: var(--tm-space-3);
+    border-bottom: 1px solid var(--tm-color-border-subtle);
+}
+
+.tm-page-info__title {
+    margin: 0;
+    font-size: var(--tm-font-size-lg);
+    font-weight: var(--tm-font-weight-semibold);
+    line-height: var(--tm-line-height-tight);
+}
+
+.tm-page-info__subtitle {
+    margin: var(--tm-space-1) 0 0;
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-sm);
+    line-height: var(--tm-line-height-normal);
+}
+
+.tm-page-info__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--tm-page-info-close-size);
+    width: var(--tm-page-info-close-size);
+    height: var(--tm-page-info-close-size);
+    border: 1px solid transparent;
+    border-radius: var(--tm-radius-md);
+    background: transparent;
+    color: var(--tm-color-text-muted);
+    cursor: pointer;
+}
+
+.tm-page-info__close:hover,
+.tm-page-info__close:focus-visible {
+    border-color: var(--tm-color-border);
+    background: var(--tm-color-surface-hover);
+    color: var(--tm-color-text);
+    outline: none;
+}
+
+.tm-page-info__section {
+    padding: var(--tm-space-4) 0;
+}
+
+.tm-page-info__facts {
+    display: grid;
+    gap: var(--tm-space-3);
+    margin: 0;
+}
+
+.tm-page-info__fact {
+    display: grid;
+    gap: var(--tm-space-1);
+}
+
+.tm-page-info__fact dt,
+.tm-page-info__metric-label {
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-medium);
+    text-transform: uppercase;
+}
+
+.tm-page-info__fact dd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tm-space-2);
+    margin: 0;
+    color: var(--tm-color-text);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-page-info__user {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-page-info__fact time {
+    flex: 0 0 auto;
+    color: var(--tm-color-text-muted);
+}
+
+.tm-page-info__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(var(--tm-page-info-metric-min), 1fr));
+    gap: var(--tm-space-2);
+}
+
+.tm-page-info__metric {
+    display: grid;
+    gap: var(--tm-space-2);
+    min-height: var(--tm-page-info-metric-min-height);
+    padding: var(--tm-space-3);
+    border: 1px solid var(--tm-color-border-subtle);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-surface-secondary);
+}
+
+.tm-page-info__metric-value {
+    font-size: var(--tm-font-size-xl);
+    font-weight: var(--tm-font-weight-semibold);
+    line-height: var(--tm-line-height-tight);
+}
+
+@media (max-width: 520px) {
+    .tm-page-info {
+        top: auto;
+        right: var(--tm-space-2);
+        bottom: var(--tm-space-2);
+        left: var(--tm-space-2);
+        width: auto;
+        max-height: calc(100vh - var(--tm-space-4));
+        border-radius: var(--tm-radius-lg) var(--tm-radius-lg) var(--tm-radius-md) var(--tm-radius-md);
+    }
+
+    .tm-page-info__fact dd {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,87 @@
+.tm-excerpt {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-3);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: var(--tm-space-3) var(--tm-space-4);
+    border: 1px solid var(--tm-color-info-border, var(--tm-border-color));
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    box-shadow: inset 3px 0 0 var(--tm-color-info, var(--tm-color-primary));
+}
+
+.tm-excerpt__header {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    min-width: 0;
+}
+
+.tm-excerpt__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-info-bg-subtle, var(--tm-color-primary-bg-subtle));
+    color: var(--tm-color-info, var(--tm-color-primary));
+    flex: 0 0 auto;
+}
+
+.tm-excerpt__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.tm-excerpt__title {
+    color: var(--tm-text-primary);
+    font-size: var(--tm-font-size-sm);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-excerpt__hint {
+    color: var(--tm-text-tertiary);
+    font-size: var(--tm-font-size-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-excerpt__editor {
+    min-width: 0;
+    min-height: 54px;
+    padding: var(--tm-space-2);
+    border: 1px solid transparent;
+    border-radius: var(--tm-radius-sm);
+    color: var(--tm-text-primary);
+    font-size: var(--tm-font-size-sm);
+    line-height: var(--tm-line-height-relaxed);
+    overflow-wrap: anywhere;
+}
+
+.tm-excerpt__editor:focus-visible {
+    border-color: var(--tm-color-primary);
+    outline: 2px solid var(--tm-color-primary-500);
+    outline-offset: 1px;
+}
+
+.tm-excerpt__editor[contenteditable="true"]:empty::before {
+    content: attr(data-placeholder);
+    color: var(--tm-text-tertiary);
+}
+
+@media (max-width: 640px) {
+    .tm-excerpt {
+        padding: var(--tm-space-3);
+    }
+
+    .tm-excerpt__hint {
+        white-space: normal;
+    }
+}
