@@ -262,7 +262,7 @@ test('image wrap modes choose the expected text exclusion and paint layers', () 
         ['Tight', true, 'objects'],
         ['Through', true, 'objects'],
         ['TopBottom', false, 'objects'],
-        ['BehindText', false, 'content'],
+        ['BehindText', false, 'page-background'],
         ['InFrontOfText', false, 'objects'],
     ];
 

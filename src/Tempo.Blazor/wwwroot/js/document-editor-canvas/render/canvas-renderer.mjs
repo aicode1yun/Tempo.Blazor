@@ -15,11 +15,24 @@ export function paintDisplayList(layers, displayList, options = {}) {
         diagnosticCount: 0,
     };
 
+    // Optional safety-net clip: confine body content to the page body so a mislaid-out run can
+    // never bleed into the margins. Applied lazily per layer context and released at the end.
+    const clipRect = isValidClipRect(options.clipRect) ? options.clipRect : null;
+    const clippedContexts = clipRect ? new Set() : null;
+
     for (const command of commands) {
         const canvas = layers instanceof Map ? layers.get(command.layer) : layers?.[command.layer];
         const context = canvas?.getContext?.('2d');
         if (!context) {
             continue;
+        }
+
+        if (clipRect && !clippedContexts.has(context) && typeof context.clip === 'function' && typeof context.save === 'function') {
+            context.save();
+            context.beginPath?.();
+            context.rect?.(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
+            context.clip();
+            clippedContexts.add(context);
         }
 
         if (paintCommand(context, command, options)) {
@@ -42,7 +55,21 @@ export function paintDisplayList(layers, displayList, options = {}) {
         }
     }
 
+    if (clippedContexts) {
+        for (const context of clippedContexts) {
+            context.restore?.();
+        }
+    }
+
     return summary;
+}
+
+function isValidClipRect(rect) {
+    return rect
+        && Number.isFinite(Number(rect.x))
+        && Number.isFinite(Number(rect.y))
+        && Number(rect.width) > 0
+        && Number(rect.height) > 0;
 }
 
 export function paintCommand(context, command, options = {}) {

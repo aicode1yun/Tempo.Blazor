@@ -7,7 +7,7 @@
   "scripts": {
     "build:document-editor": "node tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs",
     "build:document-editor:watch": "node tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs --watch",
-    "test:document-editor-modules": "node --test src/Tempo.Blazor/wwwroot/js/document-editor/**/*.test.mjs"
+    "test:document-editor-modules": "sh -c 'node --test $(find src/Tempo.Blazor/wwwroot/js/document-editor src/Tempo.Blazor/wwwroot/js/document-editor-canvas -name \"*.test.mjs\" | sort)'"
   },
   "devDependencies": {
     "esbuild": "^0.21.0"

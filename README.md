@@ -23,6 +23,10 @@ dotnet add package Tempo.Blazor.Abstractions      # Interfaces only (for API/ser
 dotnet add package Tempo.Blazor.FluentValidation   # FluentValidation integration for EditForm
 ```
 
+## Document Editor Cutover
+
+`TmDocumentEditor` defaults to the canvas engine after the phase 25 cutover. Rollback and migration notes are in [docs/document-editor-canvas-cutover.md](docs/document-editor-canvas-cutover.md).
+
 ## Quick Start
 
 ### 1. Register Services

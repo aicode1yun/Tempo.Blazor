@@ -183,13 +183,32 @@ export function createCanvasStack(options = {}) {
                 };
             }
 
+            const pageCommands = repaintPage
+                ? displayList.commands.filter(command => command.pageIndex === pageLayout.index)
+                : [];
             const pageDisplayList = {
                 ...displayList,
-                commands: repaintPage
-                    ? displayList.commands.filter(command => command.pageIndex === pageLayout.index)
-                    : [],
+                commands: pageCommands,
             };
-            const paintSummary = paintDisplayList(page.layers, pageDisplayList, { contentControlRenderMode });
+            // Two-pass paint: margin/decoration/object content is painted first without a clip
+            // (it legitimately lives in the margins or is page-clipped already), then body text
+            // flow is painted clipped to the page body so a mislaid-out run cannot bleed out.
+            const { bodyCommands, marginCommands } = partitionPageCommands(pageCommands);
+            const marginSummary = paintDisplayList(
+                page.layers,
+                { ...displayList, commands: marginCommands },
+                { contentControlRenderMode });
+            const bodySummary = paintDisplayList(
+                page.layers,
+                { ...displayList, commands: bodyCommands },
+                { contentControlRenderMode, clipRect: pageBodyClipRect(pageLayout) });
+            const paintSummary = {
+                paintedCommandCount: marginSummary.paintedCommandCount + bodySummary.paintedCommandCount,
+                textRunCount: marginSummary.textRunCount + bodySummary.textRunCount,
+                mathEquationCount: marginSummary.mathEquationCount + bodySummary.mathEquationCount,
+                contentControlCount: marginSummary.contentControlCount + bodySummary.contentControlCount,
+                diagnosticCount: marginSummary.diagnosticCount + bodySummary.diagnosticCount,
+            };
             if (repaintPage) {
                 tileCache.commitPage(pageIndex, cacheDecision.signature, {
                     paintedCommandCount: paintSummary.paintedCommandCount,
@@ -1198,4 +1217,48 @@ function removeElement(element) {
 
 function readThemeValue(theme, key, fallback) {
     return theme && theme[key] ? theme[key] : fallback;
+}
+
+// Command types that must NOT be clipped to the page body: page chrome, watermarks, header/footer
+// frames, line numbers (left margin), notes, column separators, and all positioned objects /
+// drawings (which may sit in the margin and are already confined to the page canvas).
+const UNCLIPPED_COMMAND_TYPES = new Set([
+    'pageFill', 'pageBorder', 'marginGuide', 'bodyArea',
+    'watermarkText', 'watermarkImage',
+    'headerFooterFrame', 'lineNumber', 'noteMarker', 'noteSeparator', 'columnSeparator',
+    'imageObject', 'imageCaption', 'imageBox',
+    'drawingShape', 'drawingShapeEffect', 'drawingShapeFill', 'drawingShapeStroke',
+    'drawingLine', 'drawingChart', 'drawingRun', 'drawingText',
+    'diagnosticOverlay', 'debugBounds', 'pageBreak',
+]);
+
+function partitionPageCommands(commands) {
+    const bodyCommands = [];
+    const marginCommands = [];
+    for (const command of commands || []) {
+        if (UNCLIPPED_COMMAND_TYPES.has(command.type) || command.headerFooterId || command.noteId || command.region) {
+            marginCommands.push(command);
+        } else {
+            bodyCommands.push(command);
+        }
+    }
+
+    return { bodyCommands, marginCommands };
+}
+
+function pageBodyClipRect(pageLayout) {
+    const body = pageLayout?.body;
+    if (!body) {
+        return null;
+    }
+
+    // A small inset of slack keeps legitimate ascenders/descenders at the body edges intact while
+    // still catching gross horizontal/vertical bleed into the margins.
+    const pad = 8;
+    return {
+        x: Number(body.x || 0) - pad,
+        y: Number(body.y || 0) - pad,
+        width: Number(body.width || 0) + pad * 2,
+        height: Number(body.height || 0) + pad * 2,
+    };
 }

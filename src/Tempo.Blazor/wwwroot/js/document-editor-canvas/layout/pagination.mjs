@@ -183,7 +183,11 @@ export function layoutCanvasDocument(model, options = {}) {
             });
             const imageLayout = layoutCanvasImageObject(imageObject, {
                 page: ensurePage(currentPageIndex, currentSection),
-                y: imageObject.isFloating ? (imageObject.explicitY ?? cursorY) : cursorY,
+                // Always pass the current flow position; layoutCanvasImageObject applies the
+                // object's vertical offset relative to its reference frame (paragraph/page/margin).
+                // Passing `explicitY ?? cursorY` collapsed to 0 whenever the offset was 0
+                // (`0 ?? cursorY === 0`), pinning every paragraph-anchored float to the page top.
+                y: cursorY,
                 sequence: sequence++,
             });
             if (cursorY > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).y && imageLayout.rect.y + imageLayout.rect.height > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).bottom) {
@@ -217,7 +221,11 @@ export function layoutCanvasDocument(model, options = {}) {
             });
             const imageLayout = layoutCanvasImageObject(imageObject, {
                 page: ensurePage(currentPageIndex, currentSection),
-                y: imageObject.isFloating ? (imageObject.explicitY ?? cursorY) : cursorY,
+                // Always pass the current flow position; layoutCanvasImageObject applies the
+                // object's vertical offset relative to its reference frame (paragraph/page/margin).
+                // Passing `explicitY ?? cursorY` collapsed to 0 whenever the offset was 0
+                // (`0 ?? cursorY === 0`), pinning every paragraph-anchored float to the page top.
+                y: cursorY,
                 sequence: sequence++,
             });
 

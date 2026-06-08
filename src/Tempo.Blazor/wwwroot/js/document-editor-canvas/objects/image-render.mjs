@@ -97,6 +97,13 @@ export function normalizeCanvasImageObject(context) {
         fallbackIndex: Number(context?.blockIndex || 0) || 0,
     });
     const y = Number(position.y ?? position.Y ?? layout.y ?? layout.Y);
+    // Preserve absence as '' so legacy/JS-authored objects (no reference frame) keep their
+    // historical body-absolute placement, while objects that explicitly declare a frame
+    // (e.g. C# wrapped images with VerticalRelativeTo=Paragraph) are honored.
+    const verticalRelativeTo = relativePositionName(
+        position.verticalRelativeTo ?? position.VerticalRelativeTo
+        ?? layout.verticalRelativeTo ?? layout.VerticalRelativeTo,
+        '');
     const zIndex = Number(stacking.zIndex ?? stacking.ZIndex ?? layout.zIndex ?? layout.ZIndex ?? 0) || 0;
     const asset = findImageAsset(model, source.assetId ?? source.AssetId);
     const url = resolveImageUrl(model, source);
@@ -152,6 +159,7 @@ export function normalizeCanvasImageObject(context) {
         zIndex,
         x,
         explicitY: Number.isFinite(y) ? y : null,
+        verticalRelativeTo,
         anchorBlockId: String(anchor.blockId ?? anchor.BlockId ?? layout.anchorBlockId ?? layout.AnchorBlockId ?? block.id ?? ''),
         anchorOffset: Number(anchor.offset ?? anchor.Offset ?? layout.anchorOffset ?? layout.AnchorOffset ?? 0) || 0,
     };
@@ -170,11 +178,8 @@ export function resolveImageUrl(model, source) {
 export function layoutCanvasImageObject(object, context) {
     const page = context?.page || {};
     const body = page.body || { x: 72, y: 72, width: 480, height: 680 };
-    const explicitY = Number(object.explicitY);
     const fallbackY = Number(context?.y ?? body.y);
-    const y = object.isFloating && Number.isFinite(explicitY)
-        ? body.y + explicitY
-        : Math.max(body.y, fallbackY || body.y);
+    const y = resolveObjectY(object, page, body, fallbackY);
     const captionHeight = object.caption ? 22 : 0;
     return {
         id: object.id,
@@ -215,7 +220,10 @@ export function imageDisplayCommands(imageLayout, sequenceStart = 0, options = {
 
     const commands = [];
     let sequence = sequenceStart;
-    const layer = object.wrapMode === 'BehindText' ? 'content' : 'objects';
+    // Behind-text objects must paint under the body text (their own dedicated z-band), not on the
+    // content layer where ordering depends on paint sequence. page-background sits below content, so
+    // the object is guaranteed behind every text run; in-front objects stay on the objects layer.
+    const layer = object.wrapMode === 'BehindText' ? 'page-background' : 'objects';
     commands.push({
         id: `${imageLayout.objectId || imageLayout.blockId}-image`,
         type: 'imageObject',
@@ -276,7 +284,10 @@ export function drawingDisplayCommands(imageLayout, sequenceStart = 0, options =
     const object = imageLayout.object || {};
     const commands = [];
     let sequence = sequenceStart;
-    const layer = object.wrapMode === 'BehindText' ? 'content' : 'objects';
+    // Behind-text objects must paint under the body text (their own dedicated z-band), not on the
+    // content layer where ordering depends on paint sequence. page-background sits below content, so
+    // the object is guaranteed behind every text run; in-front objects stay on the objects layer.
+    const layer = object.wrapMode === 'BehindText' ? 'page-background' : 'objects';
     const kind = object.kind || 'shape';
     const shape = normalizeDrawingShape(object.shape, kind);
     const base = {
@@ -762,6 +773,59 @@ function resolveObjectX({ body, width, layoutKind, position, alignment, fallback
     }
 
     return body.x + Math.min(24, Math.max(0, fallbackIndex * 6));
+}
+
+// Resolves the top (y) of a positioned object honoring its vertical reference frame.
+// Word/OnlyOffice anchor most wrapped images to the PARAGRAPH, where the vertical offset is
+// measured from the anchoring paragraph (the current flow position), not the page body top.
+// Treating every offset as body-relative pins every paragraph-anchored float (offset 0) to the
+// top of the page, stacking them on top of each other and the first lines of text.
+function resolveObjectY(object, page, body, fallbackY) {
+    const flowY = Number.isFinite(Number(fallbackY)) ? Number(fallbackY) : body.y;
+    if (!object.isFloating) {
+        return Math.max(body.y, flowY || body.y);
+    }
+
+    const hasExplicitY = object.explicitY != null && Number.isFinite(Number(object.explicitY));
+    const explicitY = hasExplicitY ? Number(object.explicitY) : 0;
+    const relativeTo = relativePositionName(object.verticalRelativeTo, '');
+
+    if (relativeTo === 'page') {
+        return (Number(page?.y) || 0) + explicitY;
+    }
+
+    if (relativeTo === 'margin') {
+        return body.y + explicitY;
+    }
+
+    // paragraph / line / character / column: the vertical offset is measured from the anchoring
+    // paragraph (the current flow position), so a zero offset keeps the float beside its paragraph
+    // (Word/OnlyOffice) instead of pinning every float to the top of the page body. Only objects
+    // that actually participate in text flow (reserve/exclude space) track the paragraph; decorative
+    // overlays and connectors (in-front / behind text) keep their stored body-absolute offset.
+    const flowReference = relativeTo === 'paragraph' || relativeTo === 'line'
+        || relativeTo === 'character' || relativeTo === 'column';
+    if (flowReference && reservesTextSpace(object)) {
+        return Math.max(body.y, flowY + explicitY);
+    }
+
+    // No flow reference (legacy / JS-authored objects, decorative overlays): keep the historical
+    // body-absolute placement when an explicit offset exists, otherwise flow at the cursor.
+    return hasExplicitY ? body.y + explicitY : Math.max(body.y, flowY || body.y);
+}
+
+function reservesTextSpace(object) {
+    const mode = String(object?.wrapMode || '').toLowerCase();
+    return mode === 'square' || mode === 'tight' || mode === 'through' || mode === 'topbottom';
+}
+
+function relativePositionName(value, fallback = '') {
+    if (typeof value === 'number') {
+        return ['page', 'margin', 'column', 'paragraph', 'character', 'line'][Math.max(0, Math.min(5, Math.trunc(value)))] || fallback;
+    }
+
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized || fallback;
 }
 
 function distance(wrap, side, layout, fallback) {
