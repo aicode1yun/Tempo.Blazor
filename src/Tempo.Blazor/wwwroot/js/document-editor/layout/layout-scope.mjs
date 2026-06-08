@@ -4,8 +4,14 @@
 // `LayoutScopeKinds`, `OperationTypes`, `normalizeTarget`, `normalizeRange` are all
 // available as ES modules.
 
-import { asArray, sortObject, unique } from '../core/helpers.mjs';
+import { asArray, unique } from '../core/helpers.mjs';
 import { normalizeTarget, normalizeRange } from '../core/normalize-target.mjs';
+
+// Cold-layout optimization: layout scope output is read by field name, so the deep canonical key
+// sort is skipped here (it dominated layout time). Pass-through keeps call sites unchanged.
+function sortObject(value) {
+    return value;
+}
 import { OperationTypes } from '../history/operation-types.mjs';
 import { LayoutScopeKinds } from './scope-kinds.mjs';
 

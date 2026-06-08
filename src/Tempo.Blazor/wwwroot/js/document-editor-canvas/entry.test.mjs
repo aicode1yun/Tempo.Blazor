@@ -277,6 +277,50 @@ test('view zoom commands rerender page surfaces without marking document dirty',
     assert.equal(engine.getSnapshot().modelVersion, 0);
 });
 
+test('proofing analysis and the accessibility mirror are deferred during incremental edits (Phase 6)', () => {
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({ host, document: doc, model: createTextModel('Initial paragraph text.', 0) });
+
+    engine.render();
+    // The first render analyzes immediately so the accessibility mirror is correct on first paint.
+    assert.equal(engine.lastAnalyzedModelVersion, engine.modelStore.getVersion());
+    assert.equal(engine.modelAnalysisTimer, 0);
+    const mirror = findOne(host, node => node.getAttribute('data-canvas-a11y-block-count') !== null);
+    assert.ok(Number(mirror?.getAttribute('data-canvas-a11y-block-count') || '0') >= 1);
+
+    // Simulate a keystroke: change the model (bumped version) and render with dirty blocks.
+    const analyzedBefore = engine.lastAnalyzedModelVersion;
+    engine.modelStore.setModel(createTextModel('Initial paragraph text edited.', 1));
+    engine.render({ dirtyBlockIds: ['p1'] });
+
+    // The O(document) analysis is deferred (debounced), not re-run on the edit frame.
+    assert.notEqual(engine.modelStore.getVersion(), analyzedBefore);
+    assert.equal(engine.lastAnalyzedModelVersion, analyzedBefore, 'analysis must NOT re-run on the edit frame');
+    assert.notEqual(engine.modelAnalysisTimer, 0, 'a deferred analysis must be scheduled');
+
+    // The deferred pass catches the analysis up to the latest model.
+    engine.runModelAnalysis();
+    assert.equal(engine.lastAnalyzedModelVersion, engine.modelStore.getVersion());
+
+    engine.clearModelAnalysisTimer();
+    engine.destroy();
+});
+
+test('replacing the model (import/load) refreshes analysis immediately, not on the typing debounce', () => {
+    const doc = createFakeDocument();
+    const host = doc.createElement('div');
+    const engine = createCanvasDocumentEngine({ host, document: doc, model: createTextModel('First document.', 0) });
+    engine.render();
+
+    engine.setModel(createTextModel('A different imported document.', 0));
+    engine.render();
+    assert.equal(engine.lastAnalyzedModelVersion, engine.modelStore.getVersion(), 'a model replacement analyzes immediately');
+    assert.equal(engine.modelAnalysisTimer, 0, 'no deferred timer for an immediate analysis');
+
+    engine.destroy();
+});
+
 test('selection layout enriches existing connector drawing blocks with endpoint handles', () => {
     const doc = createFakeDocument();
     const host = doc.createElement('div');

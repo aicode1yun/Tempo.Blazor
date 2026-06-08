@@ -27,6 +27,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private readonly DocumentEditorFeatureRegistry _featureRegistry = DocumentEditorBuiltInFeatures.CreateDefaultRegistry();
     private const long MaxDocumentFormatImportSize = 20 * 1024 * 1024;
     private Timer? _autoSaveTimer;
+    private int _canvasReconcileSeq;
+    private int _canvasToolbarSyncSeq;
+    // Toolbar/formatting readback is cheap + gated, so it can fire shortly after a pause. The canonical
+    // document reconciliation (full model marshal JS->C# + convert) is heavier, only feeds non-realtime
+    // consumers (word count, collaboration, comments — save always pulls fresh), and must NOT fire during
+    // active composition; a long debounce keeps it off the typing path entirely (it runs once the user
+    // genuinely stops). Per-keystroke painting is unaffected (it is pure canvas, ~5 ms).
+    private static readonly TimeSpan CanvasDocumentReconcileDebounce = TimeSpan.FromMilliseconds(2500);
+    private static readonly TimeSpan CanvasToolbarSyncDebounce = TimeSpan.FromMilliseconds(200);
     private Timer? _collaborationTimer;
     private TimeSpan? _configuredAutoSaveInterval;
     private TimeSpan? _configuredCollaborationInterval;
@@ -697,9 +706,45 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
     }
 
-    private int DocumentWordCount => CountWords(DisplayedDocument);
+    // Word/page counts walk the entire document text (O(document)). They are bound into the status bar, so
+    // a naive computed property recomputed them on EVERY render — including the per-word-pause re-render
+    // while typing. Cache them and recompute only when the document reference actually changes.
+    private DocumentEditorDocument? _statsDocumentRef;
+    private bool _statsComputed;
+    private int _cachedWordCount;
+    private int _cachedPageCount;
 
-    private int DocumentPageCount => CountPages(DisplayedDocument);
+    private void EnsureDocumentStatistics()
+    {
+        var document = DisplayedDocument;
+        if (_statsComputed && ReferenceEquals(document, _statsDocumentRef))
+        {
+            return;
+        }
+
+        _statsDocumentRef = document;
+        _statsComputed = true;
+        _cachedWordCount = CountWords(document);
+        _cachedPageCount = CountPages(document);
+    }
+
+    private int DocumentWordCount
+    {
+        get
+        {
+            EnsureDocumentStatistics();
+            return _cachedWordCount;
+        }
+    }
+
+    private int DocumentPageCount
+    {
+        get
+        {
+            EnsureDocumentStatistics();
+            return _cachedPageCount;
+        }
+    }
 
     private string ActiveRegionLabel => _activeWysiwygRegion switch
     {
@@ -3814,7 +3859,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return Task.CompletedTask;
         }
 
+        // The canvas fires a selection change on EVERY keystroke (the caret moves). When the mini toolbar
+        // is not shown and stays not shown — the common case while typing — there is nothing visible to
+        // update, so skip the (expensive) re-render of the whole editor entirely.
+        var hadMiniToolbar = _miniToolbar is not null;
         _miniToolbar = IsVisibleRangeMiniToolbarRequest(request) ? request : null;
+        if (!hadMiniToolbar && _miniToolbar is null)
+        {
+            return Task.CompletedTask;
+        }
+
         if (_miniToolbar is not null)
         {
             _lastMiniToolbarRequest = _miniToolbar;
@@ -7503,11 +7557,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task HandleCanvasMiniToolbarChangedAsync(WysiwygMiniToolbarRequest? request)
     {
+        // HandleMiniToolbarChangedAsync only re-renders when the mini toolbar actually shows/hides; the
+        // formatting-state readback + collaboration cursor broadcast are debounced (the selection changes
+        // on every keystroke, so doing them synchronously here froze typing).
         await HandleMiniToolbarChangedAsync(request);
         if (!_disposed && UsingCanvasEngine)
         {
-            await SyncCanvasEngineStateAsync();
-            await BroadcastCollaborationCursorAsync();
+            ScheduleCanvasToolbarSync();
         }
     }
 
@@ -8029,9 +8085,119 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private Task HandleCanvasEngineReadyAsync(TmDocumentCanvasEngineHost _)
         => SyncCanvasEngineStateAsync();
 
-    private async Task HandleCanvasEngineChangedAsync(TmDocumentCanvasEngineHost.CanvasEngineChangedState _)
+    private Task HandleCanvasEngineChangedAsync(TmDocumentCanvasEngineHost.CanvasEngineChangedState state)
     {
         if (_disposed || !UsingCanvasEngine)
+        {
+            return Task.CompletedTask;
+        }
+
+        // Per-keystroke fast path MUST be O(1). Everything that touches the whole document — the toolbar
+        // state readback (formatting query walks outline + bookmarks), the canonical-document reconciliation
+        // (full model marshal JS->C# + provider snapshot + deep collaboration diff), AND the (heavy)
+        // component re-render — is coalesced into a single debounced pass that runs after typing settles.
+        // The change payload already carries dirty + model version, so no interop is needed here. This is
+        // safe because Save/RequestDocumentAsync always pull a fresh canonical document from the engine.
+        _isDirty = state.IsDirty;
+        ScheduleCanvasToolbarSync();
+        ScheduleCanvasDocumentReconcile();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Debounces the lightweight toolbar/formatting state readback + one re-render. Fires after a short
+    /// pause so the per-keystroke path stays O(1); the readback itself (dirty/undo/formatting at the caret)
+    /// is cheap, but the editor re-render it drives is not, so it must not run on every keystroke.
+    /// </summary>
+    private void ScheduleCanvasToolbarSync()
+    {
+        if (_disposed || !UsingCanvasEngine || _canvasHost is null)
+        {
+            return;
+        }
+
+        var seq = ++_canvasToolbarSyncSeq;
+        _ = DebouncedCanvasToolbarSyncAsync(seq);
+    }
+
+    private async Task DebouncedCanvasToolbarSyncAsync(int seq)
+    {
+        try
+        {
+            await Task.Delay(CanvasToolbarSyncDebounce);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (seq != _canvasToolbarSyncSeq || _disposed || !UsingCanvasEngine || _canvasHost is null)
+        {
+            return;
+        }
+
+        // Re-render the (large) editor chrome ONLY when the toolbar-visible state actually changed. While
+        // typing plain text the formatting at the caret, dirty flag and undo availability do not change after
+        // the first keystroke, so the parent StateHasChanged — which rebuilds the whole toolbar/ribbon/status
+        // render tree (~200 ms) — would be pure waste. Gating it keeps continuous typing at canvas speed.
+        var before = ComputeChromeStateSignature();
+        await SyncCanvasEngineStateAsync();
+        await BroadcastCollaborationCursorAsync();
+        if (!string.Equals(before, ComputeChromeStateSignature(), StringComparison.Ordinal))
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>Cheap fingerprint of all toolbar/status-bar-visible state, to skip redundant chrome re-renders.</summary>
+    private string ComputeChromeStateSignature()
+    {
+        var f = _formattingState;
+        var u = EffectiveUndoState;
+        return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{_isDirty}|{u.CanUndo}|{u.CanRedo}|{_isSaving}|{_saveMessage}|{f.Bold}|{f.Italic}|{f.Underline}|{f.Strikethrough}|{f.Superscript}|{f.Subscript}|{f.SmallCaps}|{f.AllCaps}|{f.DoubleStrikethrough}|{f.FontFamily}|{f.FontFamilyMixed}|{f.FontSize}|{f.FontSizeMixed}|{f.TextColor}|{f.TextColorMixed}|{f.HighlightColor}|{f.HighlightColorMixed}|{f.ParagraphAlignment}|{f.ParagraphAlignmentMixed}|{f.LineSpacing}|{f.LineSpacingMixed}|{f.SpacingBefore}|{f.SpacingAfter}|{f.LeftIndent}|{f.IsBulletList}|{f.IsNumberedList}|{f.ListMixed}|{_coreBlockStyle}|{_showRuler}|{_showBlocks}|{_showNonPrintingCharacters}|{_canvasViewMode}|{_miniToolbar is not null}");
+    }
+
+    /// <summary>Debounces the heavy canonical-document reconciliation after a burst of canvas edits.</summary>
+    /// <remarks>
+    /// Uses a monotonic sequence + <see cref="Task.Delay(TimeSpan)"/> rather than a <see cref="Timer"/>:
+    /// in the single-threaded WASM runtime a re-scheduled <see cref="Timer"/> did not reliably cancel its
+    /// already-queued callback, so a burst of keystrokes fired one heavy reconcile PER key instead of one
+    /// for the whole burst. The sequence guard guarantees only the last keystroke's delayed task proceeds.
+    /// </remarks>
+    private void ScheduleCanvasDocumentReconcile()
+    {
+        if (_disposed || !UsingCanvasEngine || _canvasHost is null)
+        {
+            return;
+        }
+
+        var seq = ++_canvasReconcileSeq;
+        _ = DebouncedCanvasReconcileAsync(seq);
+    }
+
+    private async Task DebouncedCanvasReconcileAsync(int seq)
+    {
+        try
+        {
+            await Task.Delay(CanvasDocumentReconcileDebounce);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (seq != _canvasReconcileSeq || _disposed || !UsingCanvasEngine)
+        {
+            return;
+        }
+
+        await InvokeAsync(ReconcileCanvasDocumentAsync);
+    }
+
+    /// <summary>Pulls the canonical document out of the canvas engine once typing settles.</summary>
+    private async Task ReconcileCanvasDocumentAsync()
+    {
+        if (_disposed || !UsingCanvasEngine || _canvasHost is null)
         {
             return;
         }
@@ -8039,20 +8205,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var collaborationBefore = !_suppressCollaborationBroadcast && _document is not null
             ? Clone(_collaborationSnapshot ?? _document)
             : null;
-        await SyncCanvasEngineStateAsync();
-        if (_canvasHost is not null)
+
+        var canvasDocument = await _canvasHost.RequestDocumentAsync();
+        if (canvasDocument is not null)
         {
-            var canvasDocument = await _canvasHost.RequestDocumentAsync();
-            if (canvasDocument is not null)
+            var synchronizedDocument = CreateProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
+            _document = synchronizedDocument;
+            _currentDocument = synchronizedDocument;
+            // The engine already holds this exact model (we just pulled it). Tell the host so the upcoming
+            // re-render does not serialize + replaceModel it back, which would re-notify and loop.
+            _canvasHost.MarkDocumentMounted(synchronizedDocument);
+            SyncCommentsFromRuntimeDocument(synchronizedDocument);
+            if (collaborationBefore is not null && !DocumentsEqual(collaborationBefore, synchronizedDocument))
             {
-                var synchronizedDocument = CreateProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
-                _document = synchronizedDocument;
-                _currentDocument = synchronizedDocument;
-                SyncCommentsFromRuntimeDocument(synchronizedDocument);
-                if (collaborationBefore is not null && !DocumentsEqual(collaborationBefore, synchronizedDocument))
-                {
-                    await BroadcastLocalCollaborationChangeAsync(collaborationBefore, synchronizedDocument);
-                }
+                await BroadcastLocalCollaborationChangeAsync(collaborationBefore, synchronizedDocument);
             }
         }
 
@@ -12016,6 +12182,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _disposed = true;
         _commandStack.OnStackChanged -= HandleCommandStackChanged;
         _autoSaveTimer?.Dispose();
+        _canvasReconcileSeq++;
+        _canvasToolbarSyncSeq++;
         _collaborationTimer?.Dispose();
         collaborationSync = _collaborationSync;
         _collaborationSync = null;

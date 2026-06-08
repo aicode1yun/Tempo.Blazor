@@ -50,6 +50,15 @@ export function layoutCanvasDocument(model, options = {}) {
     let cursorY = columnFrame(pages[0], currentColumnIndex).y;
     let sequence = 0;
 
+    // Incremental layout cache (Phase 3): memoizes the expensive per-paragraph layout keyed by
+    // block id. A reuse is valid only when both the block content AND its incoming flow state
+    // (cursorY, page/column, section, frame geometry, active floats, sequence) are unchanged — so an
+    // edit recomputes from the first changed block onward (its end cursorY shifts, invalidating the
+    // next block's state signature), exactly like OnlyOffice's StartIndex recalc.
+    const layoutCache = options.layoutCache instanceof Map ? options.layoutCache : null;
+    const cacheStats = { hits: 0, misses: 0, reusedBlockIds: [] };
+    const seenBlockIds = new Set();
+
     const ensurePage = (index, section = currentSection) => {
         while (pages.length <= index) {
             pages.push(createCanvasPageLayout(pages.length, section?.pageSettings || pageSettings, section));
@@ -238,23 +247,60 @@ export function layoutCanvasDocument(model, options = {}) {
             continue;
         }
 
-        const normalizedBlock = normalizeTextBlock(sourceModel, block, metrics);
-        const paragraphLayout = layoutTextBlockAcrossPages({
-            sourceModel,
-            sourceBlock: block,
-            normalizedBlock,
-            layoutEngine,
-            metrics,
-            pages,
-            ensurePage,
-            currentPageIndex,
-            currentColumnIndex,
-            cursorY,
-            sequence: sequence++,
-            objectLayouts,
-            section: currentSection,
-            numberingState,
-        });
+        const paragraphSequence = sequence++;
+        const blockKey = String(block?.id || '');
+        const cacheable = layoutCache !== null && blockKey !== '' && isCacheableTextBlock(block);
+        let paragraphLayout = null;
+        let contentSig = 0;
+        let stateSig = 0;
+        if (cacheable) {
+            seenBlockIds.add(blockKey);
+            const frame = columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex);
+            contentSig = textBlockContentSignature(block);
+            stateSig = textBlockStateSignature({
+                cursorY: Math.round(cursorY * 100),
+                currentPageIndex,
+                currentColumnIndex,
+                sectionId: currentSection?.id || '',
+                frame,
+                sequence: paragraphSequence,
+                spacingAfter,
+                objects: objectLayoutsSignature(objectLayouts),
+            });
+            const cached = layoutCache.get(blockKey);
+            if (cached && cached.contentSig === contentSig && cached.stateSig === stateSig) {
+                paragraphLayout = cached.result;
+                cacheStats.hits += 1;
+                cacheStats.reusedBlockIds.push(blockKey);
+                for (const fragment of paragraphLayout.fragments) {
+                    ensurePage(fragment.pageIndex, currentSection);
+                }
+            }
+        }
+
+        if (paragraphLayout === null) {
+            const normalizedBlock = normalizeTextBlock(sourceModel, block, metrics);
+            paragraphLayout = layoutTextBlockAcrossPages({
+                sourceModel,
+                sourceBlock: block,
+                normalizedBlock,
+                layoutEngine,
+                metrics,
+                pages,
+                ensurePage,
+                currentPageIndex,
+                currentColumnIndex,
+                cursorY,
+                sequence: paragraphSequence,
+                objectLayouts,
+                section: currentSection,
+                numberingState,
+            });
+            if (cacheable) {
+                cacheStats.misses += 1;
+                layoutCache.set(blockKey, { contentSig, stateSig, result: paragraphLayout });
+            }
+        }
 
         blockLayouts.push(...paragraphLayout.fragments);
         textRects.push(...paragraphLayout.textRects);
@@ -281,6 +327,15 @@ export function layoutCanvasDocument(model, options = {}) {
         moveToNextPage(currentSection);
     }
 
+    // Drop cache entries for blocks that no longer exist so the cache stays bounded by the document.
+    if (layoutCache !== null) {
+        for (const key of layoutCache.keys()) {
+            if (!seenBlockIds.has(key)) {
+                layoutCache.delete(key);
+            }
+        }
+    }
+
     return {
         ok: true,
         schemaVersion: 1,
@@ -292,7 +347,81 @@ export function layoutCanvasDocument(model, options = {}) {
         listLabels,
         lineNumbers,
         measurementStats: typeof metrics.getStats === 'function' ? metrics.getStats() : null,
+        cacheStats,
     };
+}
+
+// A text block is safe to memoize when its layout depends only on its own content and incoming flow
+// state. Lists are excluded because their labels depend on the document-wide numbering state, and
+// non-text blocks (tables/images/page breaks) are cheap or have side effects on the object flow.
+function isCacheableTextBlock(block) {
+    const type = canvasBlockType(block);
+    return type === 'paragraph' || type === 'heading' || type === 'quote';
+}
+
+function hashLayoutString(input) {
+    const str = String(input);
+    let hash = 5381;
+    for (let i = 0; i < str.length; i += 1) {
+        hash = (((hash << 5) + hash) + str.charCodeAt(i)) | 0;
+    }
+
+    return hash;
+}
+
+function textBlockContentSignature(block) {
+    return hashLayoutString(JSON.stringify({
+        t: canvasBlockType(block),
+        s: block?.styleId ?? block?.StyleId ?? null,
+        p: block?.paragraphProperties ?? block?.ParagraphProperties ?? null,
+        c: block?.content ?? block?.Content ?? null,
+    }));
+}
+
+function textBlockStateSignature(parts) {
+    const frame = parts.frame || {};
+    return hashLayoutString(JSON.stringify({
+        y: parts.cursorY,
+        p: parts.currentPageIndex,
+        c: parts.currentColumnIndex,
+        s: parts.sectionId,
+        fx: Math.round(Number(frame.x || 0)),
+        fw: Math.round(Number(frame.width || 0)),
+        fy: Math.round(Number(frame.y || 0)),
+        fb: Math.round(Number(frame.bottom || 0)),
+        seq: parts.sequence,
+        sa: parts.spacingAfter,
+        o: parts.objects,
+    }));
+}
+
+function objectLayoutsSignature(objectLayouts) {
+    if (!Array.isArray(objectLayouts) || objectLayouts.length === 0) {
+        return '';
+    }
+
+    // Only floating, text-affecting objects change paragraph layout; include their geometry so a
+    // moved/resized float invalidates the paragraphs that wrap around it.
+    const parts = [];
+    for (const layout of objectLayouts) {
+        const object = layout?.object || layout || {};
+        const isFloating = object.isFloating ?? layout?.isFloating;
+        if (!isFloating) {
+            continue;
+        }
+
+        const rect = layout?.rect || {};
+        parts.push([
+            String(layout?.objectId || layout?.blockId || ''),
+            String(object.wrapMode || ''),
+            Math.round(Number(rect.x || 0)),
+            Math.round(Number(rect.y || 0)),
+            Math.round(Number(rect.width || 0)),
+            Math.round(Number(rect.height || 0)),
+        ].join(':'));
+    }
+
+    return parts.join('|');
 }
 
 export function createCanvasLayoutEngine(model, metrics, options = {}) {

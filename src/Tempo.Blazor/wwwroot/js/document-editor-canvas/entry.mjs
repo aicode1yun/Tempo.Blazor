@@ -57,6 +57,10 @@ export class CanvasDocumentEngine {
         };
         this.pendingInputRender = null;
         this.inputRenderScheduled = false;
+        // Deferred (debounced) proofing analysis + accessibility mirror rebuild — see refreshModelAnalysis.
+        this.lastAnalyzedModelVersion = undefined;
+        this.modelAnalysisTimer = 0;
+        this.forceImmediateAnalysis = false;
         this.pendingTextInputSideEffects = null;
         this.textInputSideEffectsTimer = 0;
         this.trackChangesEnabled = options.trackChanges?.enabled === true;
@@ -243,8 +247,10 @@ export class CanvasDocumentEngine {
             viewport,
         });
         this.selectionController.update(render.selectionLayout, model);
-        const proofing = this.proofingService.analyze(model, render);
-        this.proofingOverlay.update(proofing, render);
+        // Proofing analysis and the accessibility DOM mirror are O(document). Re-position the existing
+        // squiggles against the new text (cheap, last analysis) here; the expensive re-analysis and
+        // mirror rebuild are deferred to a debounced idle pass so typing stays fast (Phase 6).
+        this.proofingOverlay.update(this.proofingService.snapshot(), render);
         this.searchOverlay.update(this.commandRuntime.getSearchState(), render);
         this.restrictedEditing.update(model);
         this.commentOverlay.update(model, render, { selectedCommentId: this.selectedCommentId || '' });
@@ -258,9 +264,9 @@ export class CanvasDocumentEngine {
             selection: this.selectionController.getSelection(),
         });
         syncBlockVisualization(this.canvasStack, render.selectionLayout, model, viewState);
-        this.accessibilityMirror.update(model);
         this.lastLayout = layout;
         this.lastRender = render;
+        this.refreshModelAnalysis(model, render);
         this.lastPrintPreview = createPrintPreviewSnapshot(model, layout, render, viewState);
         this.host.setAttribute?.('data-canvas-engine-ready', 'true');
         this.publishPerformanceDiagnostics(this.performanceMetrics.recordRender(now() - startedAt, render), render);
@@ -274,8 +280,103 @@ export class CanvasDocumentEngine {
         };
     }
 
+    // Refreshes the O(document) proofing analysis + accessibility mirror without blocking typing:
+    // the first analysis (and any model replacement, e.g. import/load) runs immediately; incremental
+    // edits are coalesced into a single debounced pass that fires once typing pauses.
+    refreshModelAnalysis(model, render) {
+        const version = this.modelStore.getVersion();
+        if (version === this.lastAnalyzedModelVersion && !this.forceImmediateAnalysis) {
+            return;
+        }
+
+        if (this.forceImmediateAnalysis || this.lastAnalyzedModelVersion === undefined) {
+            this.forceImmediateAnalysis = false;
+            this.clearModelAnalysisTimer();
+            this.runModelAnalysis(model, render);
+            return;
+        }
+
+        this.scheduleModelAnalysis();
+    }
+
+    runModelAnalysis(model = this.modelStore.getModel(), render = this.lastRender) {
+        const proofing = this.proofingService.analyze(model, render);
+        this.proofingOverlay.update(proofing, render);
+        this.accessibilityMirror.update(model);
+        this.lastAnalyzedModelVersion = this.modelStore.getVersion();
+    }
+
+    scheduleModelAnalysis() {
+        this.clearModelAnalysisTimer();
+        const view = this.document?.defaultView || globalThis.window || globalThis;
+        const run = () => {
+            this.modelAnalysisTimer = 0;
+            if (this.mounted) {
+                this.runModelAnalysis();
+            }
+        };
+        this.modelAnalysisTimer = view.setTimeout ? view.setTimeout(run, 180) : setTimeout(run, 180);
+    }
+
+    clearModelAnalysisTimer() {
+        if (!this.modelAnalysisTimer) {
+            return;
+        }
+
+        const view = this.document?.defaultView || globalThis.window || globalThis;
+        if (view.clearTimeout) {
+            view.clearTimeout(this.modelAnalysisTimer);
+        } else {
+            clearTimeout(this.modelAnalysisTimer);
+        }
+
+        this.modelAnalysisTimer = 0;
+    }
+
+    // Paint-only re-render for scroll/zoom: the model and layout are unchanged, so we reuse the
+    // cached display list (no document re-layout) and only re-position the viewport-dependent
+    // surfaces. The expensive model-only passes — proofing analysis, the accessibility DOM mirror,
+    // restricted-editing and ruler — are deliberately skipped because their inputs did not change.
+    repaint(repaintOptions = {}) {
+        if (!this.mounted) {
+            return null;
+        }
+
+        const model = this.modelStore.getModel();
+        const viewState = this.commandRuntime.getViewState();
+        const viewport = this.readViewport();
+        const render = this.canvasStack.repaint({ viewState, viewport, ...repaintOptions });
+        if (!render) {
+            // No cached plan yet (first frame): fall back to a full recalc.
+            return this.render({ forceRepaint: false });
+        }
+
+        this.selectionController.update(render.selectionLayout, model);
+        this.proofingOverlay.update(this.proofingService.snapshot(), render);
+        this.searchOverlay.update(this.commandRuntime.getSearchState(), render);
+        this.commentOverlay.update(model, render, { selectedCommentId: this.selectedCommentId || '' });
+        this.revisionOverlay.update(model, render, {
+            selectedRevisionId: this.selectedRevisionId || '',
+            reviewMode: this.reviewDisplayMode,
+        });
+        this.presenceOverlay.update(this.operationLog.cursors(), render, model);
+        syncBlockVisualization(this.canvasStack, render.selectionLayout, model, viewState);
+        this.lastRender = render;
+        this.publishPerformanceDiagnostics(this.performanceMetrics.snapshot(), render);
+
+        return {
+            ok: true,
+            layout: this.lastLayout,
+            render,
+            architecture: this.getArchitecture(),
+        };
+    }
+
     setModel(model) {
         this.modelStore.setModel(model);
+        // A full model replacement (import / document load) should refresh proofing + a11y immediately,
+        // not on the typing debounce.
+        this.forceImmediateAnalysis = true;
         return this;
     }
 
@@ -372,6 +473,7 @@ export class CanvasDocumentEngine {
         this.document?.defaultView?.removeEventListener?.('scroll', this.scrollHandler);
         this.pendingInputRender = null;
         this.inputRenderScheduled = false;
+        this.clearModelAnalysisTimer();
         this.clearTextInputSideEffectsTimer();
         this.flushPendingTextInputSideEffects();
         this.searchOverlay.destroy();
@@ -966,7 +1068,8 @@ export class CanvasDocumentEngine {
         schedule(() => {
             this.scrollRenderPending = false;
             this.performanceMetrics.recordScrollFrame(now() - startedAt);
-            this.render({ forceRepaint: false });
+            // Scroll never changes the model/layout — paint visible pages from the cached plan.
+            this.repaint({ forceRepaint: false });
         });
     }
 

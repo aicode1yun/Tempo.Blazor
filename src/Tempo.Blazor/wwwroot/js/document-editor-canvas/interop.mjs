@@ -3,6 +3,10 @@ import { createCanvasDocumentEngine } from './entry.mjs';
 const instances = new Map();
 let nextInstanceId = 1;
 
+// Debounce window for the JS->.NET change notification (see notifyChanged). Long enough to coalesce a
+// burst of keystrokes into a single .NET callback, short enough that the toolbar/save state feels live.
+const CHANGE_NOTIFY_DEBOUNCE_MS = 120;
+
 export function createInteropBridge(engine) {
     if (!engine || typeof engine.getSnapshot !== 'function') {
         throw new Error('CanvasDocumentEngine interop bridge requires an engine instance.');
@@ -97,6 +101,12 @@ export function dispose(handle) {
         return;
     }
 
+    if (state.changeNotifyTimer) {
+        const view = state.document?.defaultView || globalThis;
+        (view.clearTimeout || clearTimeout)(state.changeNotifyTimer);
+        state.changeNotifyTimer = 0;
+    }
+
     state.engine.destroy();
     setReadyAttributes(state, false);
     instances.delete(handle);
@@ -167,7 +177,7 @@ export function getOfflineStateJson(handle) {
 
 export function isDirty(handle) {
     const state = getInstance(handle);
-    return state.dirty || state.engine.getSnapshot().modelVersion !== state.savedVersion;
+    return state.dirty || engineModelVersion(state) !== state.savedVersion;
 }
 
 export function markSaved(handle) {
@@ -231,7 +241,11 @@ export function queryCommand(handle, commandId = null) {
 
 export function getFormattingStateJson(handle) {
     const state = getInstance(handle);
-    const formatting = state.engine.getSnapshot().formatting || {};
+    // queryCommandState({ includeNavigation: false }) inspects only the current selection (no outline /
+    // bookmark walk over the whole document) — far cheaper than the full engine snapshot.
+    const formatting = (typeof state.engine.commandRuntime?.queryCommandState === 'function'
+        ? state.engine.commandRuntime.queryCommandState({ includeNavigation: false })
+        : state.engine.getSnapshot().formatting) || {};
     const commands = formatting.commands || {};
     return JSON.stringify({
         bold: commands.bold?.active === true,
@@ -298,7 +312,10 @@ export function getPrintPreviewStateJson(handle) {
 
 export function getUndoStateJson(handle) {
     const state = getInstance(handle);
-    const history = state.engine.getSnapshot().history || {};
+    // history.snapshot() only reads the undo/redo stack lengths — cheap, unlike the full engine snapshot.
+    const history = (typeof state.engine.history?.snapshot === 'function'
+        ? state.engine.history.snapshot()
+        : state.engine.getSnapshot().history) || {};
     return JSON.stringify({
         canUndo: (history.undoDepth || 0) > 0,
         canRedo: (history.redoDepth || 0) > 0,
@@ -447,11 +464,28 @@ function setReadyAttributes(state, ready) {
 }
 
 function notifyChanged(state) {
+    // The dirty attribute is published synchronously (cheap, used by tests/host).
     state.host.setAttribute('data-canvas-engine-dirty', String(isDirtyForState(state)));
-    notifyDotNet(state.dotNetRef, 'OnCanvasEngineChanged', {
-        isDirty: isDirtyForState(state),
-        modelVersion: state.engine.getSnapshot().modelVersion,
-    });
+
+    // Debounce the JS->.NET change notification. On the single-threaded WASM runtime, invoking .NET per
+    // keystroke blocks the thread with interop marshalling + async machinery BETWEEN keystrokes, which
+    // throttles how fast the canvas can process the next key. The canvas has already painted this edit;
+    // .NET only needs to learn about it once typing settles (it then runs its own debounced toolbar sync +
+    // document reconcile). This keeps continuous typing at canvas speed regardless of .NET overhead.
+    const view = state.document?.defaultView || globalThis;
+    const clear = view.clearTimeout || clearTimeout;
+    const set = view.setTimeout || setTimeout;
+    if (state.changeNotifyTimer) {
+        clear(state.changeNotifyTimer);
+    }
+
+    state.changeNotifyTimer = set(() => {
+        state.changeNotifyTimer = 0;
+        notifyDotNet(state.dotNetRef, 'OnCanvasEngineChanged', {
+            isDirty: isDirtyForState(state),
+            modelVersion: engineModelVersion(state),
+        });
+    }, CHANGE_NOTIFY_DEBOUNCE_MS);
 }
 
 function notifyDotNet(dotNetRef, methodName, payload) {
@@ -497,6 +531,17 @@ async function uploadClipboardImage(dotNetRef, documentId, file) {
         streamReference);
 }
 
+// Cheap model version read. getSnapshot() assembles the whole document + ~15 subsystem snapshots, so it
+// must NOT be used on per-keystroke paths (dirty/version checks) — that froze typing on large documents.
+function engineModelVersion(state) {
+    const store = state.engine.modelStore;
+    if (store && typeof store.getVersion === 'function') {
+        return store.getVersion();
+    }
+
+    return state.engine.getSnapshot().modelVersion;
+}
+
 function isDirtyForState(state) {
-    return state.dirty || state.engine.getSnapshot().modelVersion !== state.savedVersion;
+    return state.dirty || engineModelVersion(state) !== state.savedVersion;
 }

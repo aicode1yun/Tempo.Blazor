@@ -129,6 +129,109 @@ public sealed class DocumentEditorCanvasOverlapPerfE2ETests : WasmTestBase
         Assert.AreEqual(0, overlapCount, $"Text runs from different blocks must not overlap. Report: {overlapJson}");
     }
 
+    [TestMethod]
+    public async Task Scrolling_RepaintsFromCachedPlan_WithoutRecomputingLayout()
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.GotoAsync($"{BaseUrl}/document-editor", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.NetworkIdle,
+            Timeout = 120_000,
+        });
+        await page.WaitForSelectorAsync("[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Attached,
+            Timeout = 120_000,
+        });
+        await page.WaitForTimeoutAsync(800);
+
+        var before = await ReadScrollCountersAsync(page);
+
+        // Drive several scroll frames. The engine listens to window + host scroll, so window
+        // scrolling exercises the paint-only path.
+        for (var i = 0; i < 8; i++)
+        {
+            await page.Mouse.WheelAsync(0, 320);
+            await page.EvaluateAsync("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))");
+        }
+
+        await page.WaitForTimeoutAsync(400);
+        var after = await ReadScrollCountersAsync(page);
+
+        TestContext.WriteLine($"renderCount {before.RenderCount} -> {after.RenderCount}; scrollFrames {before.ScrollFrames} -> {after.ScrollFrames}");
+
+        Assert.IsTrue(after.ScrollFrames > before.ScrollFrames, "Scrolling must register scroll frames on the engine.");
+        // The headline Phase 2 guarantee: scrolling repaints from the cached plan and must NOT run
+        // the document layout (which would bump the full-render counter). A tiny tolerance absorbs an
+        // unrelated background recalc (e.g. a collaboration sync tick).
+        Assert.IsTrue(
+            after.RenderCount - before.RenderCount <= 1,
+            $"Scrolling must not re-run the full render/layout. renderCount {before.RenderCount} -> {after.RenderCount}.");
+    }
+
+    [TestMethod]
+    public async Task ReRender_ReusesCachedBlockLayout_InsteadOfFullRelayout()
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.GotoAsync($"{BaseUrl}/document-editor", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.NetworkIdle,
+            Timeout = 120_000,
+        });
+        await page.WaitForSelectorAsync("[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Attached,
+            Timeout = 120_000,
+        });
+        await page.WaitForTimeoutAsync(800);
+
+        // Toggle a host option (read-only) to force a fresh full render with an unchanged model. The
+        // incremental layout cache must reuse every cached paragraph instead of re-laying them out.
+        await page.GetByTestId("document-editor-readonly").ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+        var warm = await ReadCacheStatsAsync(page);
+
+        TestContext.WriteLine($"warm layout cache hits={warm.LayoutHits}/{warm.LayoutMisses}; command cache hits={warm.CommandHits}/{warm.CommandMisses}");
+        Assert.IsTrue(warm.LayoutHits > 0, "A re-render with an unchanged model must reuse cached block layouts.");
+        Assert.IsTrue(warm.LayoutHits >= warm.LayoutMisses, $"Most blocks should reuse layout on a no-op re-render (hits={warm.LayoutHits}, misses={warm.LayoutMisses}).");
+        // Phase 4: the display-command assembly must also be reused for unchanged blocks.
+        Assert.IsTrue(warm.CommandHits > 0, "A re-render with an unchanged model must reuse cached display commands.");
+        Assert.IsTrue(warm.CommandHits >= warm.CommandMisses, $"Most blocks should reuse commands on a no-op re-render (hits={warm.CommandHits}, misses={warm.CommandMisses}).");
+    }
+
+    private static async Task<(int LayoutHits, int LayoutMisses, int CommandHits, int CommandMisses)> ReadCacheStatsAsync(IPage page)
+    {
+        var json = await page.EvaluateAsync<string>(@"() => {
+            const root = document.querySelector('[data-testid=""document-canvas-engine-root""]');
+            const n = name => Number(root?.getAttribute(name) || 0);
+            return JSON.stringify({
+                layoutHits: n('data-canvas-layout-cache-hit-count'),
+                layoutMisses: n('data-canvas-layout-cache-miss-count'),
+                commandHits: n('data-canvas-command-cache-hit-count'),
+                commandMisses: n('data-canvas-command-cache-miss-count'),
+            });
+        }");
+        using var doc = JsonDocument.Parse(json);
+        var r = doc.RootElement;
+        return (r.GetProperty("layoutHits").GetInt32(), r.GetProperty("layoutMisses").GetInt32(),
+            r.GetProperty("commandHits").GetInt32(), r.GetProperty("commandMisses").GetInt32());
+    }
+
+    private static async Task<(int RenderCount, int ScrollFrames)> ReadScrollCountersAsync(IPage page)
+    {
+        var json = await page.EvaluateAsync<string>(@"() => {
+            const root = document.querySelector('[data-testid=""document-canvas-engine-root""]');
+            return JSON.stringify({
+                renderCount: Number(root?.getAttribute('data-canvas-render-count') || 0),
+                scrollFrames: Number(root?.getAttribute('data-canvas-scroll-frame-count') || 0),
+            });
+        }");
+        using var doc = JsonDocument.Parse(json);
+        return (doc.RootElement.GetProperty("renderCount").GetInt32(), doc.RootElement.GetProperty("scrollFrames").GetInt32());
+    }
+
     private static string Prettify(string json)
     {
         try

@@ -4,7 +4,13 @@
 // it as tokens are placed). `materializeLineDraft` freezes the draft into a final
 // line shape with computed visual rect, range shifts and segment heights.
 
-import { asArray, sortObject } from '../core/helpers.mjs';
+import { asArray } from '../core/helpers.mjs';
+
+// Cold-layout optimization: layout output is read by field name, so the deep canonical key sort is
+// skipped here (it dominated layout time). Pass-through keeps call sites + determinism unchanged.
+function sortObject(value) {
+    return value;
+}
 
 export function createLineDraft(index, ranges, y) {
     const rawList = asArray(ranges).length ? asArray(ranges) : [{ x: 0, y: y, width: 0, height: 0 }];

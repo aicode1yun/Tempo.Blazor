@@ -12,7 +12,9 @@ import { asArray, asText, sortObject, unique } from '../core/helpers.mjs';
 
 export function normalizeLayoutSegmentStyle(style) {
     const source = style || {};
-    return sortObject(Object.assign({}, source, {
+    // Per-segment style; consumed by field name, so canonical key sorting is unnecessary here and
+    // was a hot spot during cold layout (see paragraph-tokenizer / paragraph-engine).
+    return Object.assign({}, source, {
         fontFamily: source.fontFamily || source.FontFamily || 'Arial',
         fontSize: Number(source.fontSize || source.FontSize || 16) || 16,
         fontWeight: asText(source.fontWeight || source.FontWeight || '400'),
@@ -24,7 +26,7 @@ export function normalizeLayoutSegmentStyle(style) {
         fontVariantCaps: source.fontVariantCaps || source.FontVariantCaps || 'normal',
         kerning: source.kerning ?? source.Kerning ?? true,
         letterSpacing: Number(source.letterSpacing ?? source.LetterSpacing ?? 0) || 0,
-    }));
+    });
 }
 
 export function decorationsFromMarks(marks) {

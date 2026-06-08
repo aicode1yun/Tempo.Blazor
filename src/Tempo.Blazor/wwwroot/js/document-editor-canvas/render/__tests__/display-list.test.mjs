@@ -21,7 +21,9 @@ test('display list is deterministic and separates page, content, objects, annota
     assert.ok(first.commands.some(command => command.type === 'marginGuide' && command.layer === 'page-background'));
     assert.ok(first.commands.some(command => command.type === 'paragraphBox' && command.layer === 'content'));
     assert.ok(first.commands.some(command => command.type === 'textRun' && command.layer === 'content'));
-    assert.ok(first.commands.some(command => command.type === 'glyphRun' && command.layer === 'content'));
+    // glyphRun commands are no longer emitted (Phase 5.1): textRun paints the glyphs; the duplicate
+    // glyphRun was never painted and only doubled the command list.
+    assert.ok(first.commands.every(command => command.type !== 'glyphRun'));
     assert.ok(first.commands.some(command => command.type === 'field' && command.layer === 'content'));
     assert.ok(first.commands.some(command => command.type === 'imageObject' && command.layer === 'objects'));
     assert.ok(first.commands.some(command => command.type === 'tableBox' && command.layer === 'content'));
@@ -111,7 +113,8 @@ test('display list emits form control commands with validation metadata', () => 
     assert.equal(control.isPlaceholder, true);
     assert.equal(control.validation.valid, false);
     assert.equal(control.validation.reason, 'required');
-    assert.ok(displayList.commands.some(command => command.id === 'customer-name-run-glyphs'));
+    assert.ok(displayList.commands.some(command => command.id === 'customer-name-run' && command.type === 'formControl'));
+    assert.ok(displayList.commands.every(command => command.type !== 'glyphRun'));
     assert.equal(designControl.renderMode, 'design');
     assert.equal(designControl.renderState.showChrome, true);
     assert.equal(designControl.renderState.showTag, true);

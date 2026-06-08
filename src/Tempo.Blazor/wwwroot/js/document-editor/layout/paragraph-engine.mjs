@@ -14,7 +14,15 @@
 //
 // Pure sub-modules are imported directly (no injection needed).
 
-import { asArray, asText, clone, sortObject, unique } from '../core/helpers.mjs';
+import { asArray, asText, clone, unique } from '../core/helpers.mjs';
+
+// Cold-layout optimization (perf+rendering fix 2026-06-08): the layout output is consumed by field
+// name (canvas renderer, hit-test, selection) — never by serialized key order — so the deep canonical
+// key sort that previously dominated layout time (and GC) is skipped. Kept as a named pass-through so
+// the many call sites read unchanged. Determinism is preserved by the engine's fixed insertion order.
+function sortObject(value) {
+    return value;
+}
 import { createFontMetricsService } from './font-metrics.mjs';
 import { createLineBreakerModule } from './line-breaker.mjs';
 import {
@@ -250,7 +258,7 @@ export function createParagraphLayoutEngineFactory(deps) {
                 const baseline = rect.y + Math.max(1, rect.height || 1) * 0.78;
                 const firstLineInterval = asArray(line.availableIntervals)[0] || null;
                 const pageIndex = line.pageIndex ?? (firstLineInterval && firstLineInterval.pageIndex) ?? null;
-                return sortObject(Object.assign({}, line, {
+                return Object.assign({}, line, {
                     id,
                     blockId: block.id,
                     lineId: id,
@@ -265,7 +273,7 @@ export function createParagraphLayoutEngineFactory(deps) {
                     ranges: asArray(line.ranges).map(function (range, rangeIndex) {
                         return Object.assign({}, range, { blockId: block.id, lineId: id, pageIndex: range.pageIndex ?? pageIndex, index: range.index ?? rangeIndex });
                     }),
-                }));
+                });
             });
             const lineByOriginalId = {};
             asArray(lineLayout.lines).forEach(function (line, index) {
@@ -279,7 +287,7 @@ export function createParagraphLayoutEngineFactory(deps) {
                         && segment.end <= candidate.end;
                 }) || lines[0];
                 const run = runs.find(function (item) { return item.id === segment.runId; }) || runForOffset(runs, segment.start);
-                return sortObject(Object.assign({}, segment, {
+                return Object.assign({}, segment, {
                     id: block.id + '-segment-' + index,
                     blockId: block.id,
                     lineId: (line && line.id) || null,
@@ -294,7 +302,7 @@ export function createParagraphLayoutEngineFactory(deps) {
                     decorations: decorationsFromMarks((run && run.marks) || []),
                     marks: asArray(run && run.marks),
                     mapping: { blockId: block.id, runId: (run && run.id) || null, start: segment.start, end: segment.end },
-                }));
+                });
             });
             const segmentsByLine = new Map();
             segments.forEach(function (segment) {
@@ -312,26 +320,26 @@ export function createParagraphLayoutEngineFactory(deps) {
                     const end = rangeSegments.length
                         ? rangeSegments.reduce(function (v, s) { return Math.max(v, Number(s.end || 0) || 0); }, start)
                         : Number(range.end ?? start) || start;
-                    return sortObject(Object.assign({}, range, {
+                    return Object.assign({}, range, {
                         blockId: block.id, lineId: line.id,
                         pageIndex: range.pageIndex ?? line.pageIndex ?? null,
                         index: indexValue, start, end: Math.max(start, end),
                         empty: rangeSegments.length === 0,
                         collapsedOffset: rangeSegments.length === 0 ? start : null,
                         segments: rangeSegments,
-                    }));
+                    });
                 });
                 line.textRanges = line.ranges;
                 line.availableIntervals = asArray(line.availableIntervals).map(function (interval, intervalIndex) {
                     const range = line.ranges[intervalIndex] || null;
-                    return sortObject(Object.assign({}, interval, {
+                    return Object.assign({}, interval, {
                         blockId: block.id, lineId: line.id,
                         pageIndex: interval.pageIndex ?? line.pageIndex ?? null,
                         start: range ? range.start : interval.start,
                         end: range ? range.end : interval.end,
                         collapsedOffset: range ? range.collapsedOffset : interval.collapsedOffset,
                         empty: range ? range.empty : interval.empty,
-                    }));
+                    });
                 });
                 line.inlineObjects = line.segments.filter(function (s) {
                     return s.inlineObject === true || s.kind === 'drawing';
@@ -339,15 +347,15 @@ export function createParagraphLayoutEngineFactory(deps) {
             });
             const caretStops = asArray(lineLayout.caretStops).map(function (stop) {
                 const inline = inlineAtOffset(block, stop.offset);
-                return sortObject(Object.assign({}, stop, {
+                return Object.assign({}, stop, {
                     blockId: block.id,
                     inlineId: (inline && inline.run) ? inline.run.id : null,
                     lineId: lineByOriginalId[stop.lineId] || stop.lineId,
                     affinity: stop.affinity || (Number(stop.offset || 0) === 0 ? 'before' : 'after'),
-                }));
+                });
             });
             const baselines = lines.map(function (line) {
-                return sortObject({ blockId: block.id, lineId: line.id, y: line.baseline, offset: line.baselineOffset });
+                return { blockId: block.id, lineId: line.id, y: line.baseline, offset: line.baselineOffset };
             });
             let inlineObjects = [];
             lines.forEach(function (line) { inlineObjects = inlineObjects.concat(asArray(line.inlineObjects)); });

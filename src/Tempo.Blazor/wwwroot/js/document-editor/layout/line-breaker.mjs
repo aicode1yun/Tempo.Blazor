@@ -7,8 +7,14 @@
 // The shape of the returned breaker matches the legacy contract:
 //   { breakParagraph(paragraph, opts), getMeasurementStats() }
 
-import { asArray, clone, sortObject } from '../core/helpers.mjs';
+import { asArray, clone } from '../core/helpers.mjs';
 import { baseDirection } from './bidi.mjs';
+
+// Cold-layout optimization: layout output is read by field name, so the deep canonical key sort is
+// skipped here (it dominated layout time). Pass-through keeps call sites + determinism unchanged.
+function sortObject(value) {
+    return value;
+}
 import { hyphenateTokenToFit, normalizeHyphenationOptions } from '../../document-editor-canvas/layout/hyphenation.mjs';
 
 const SOFT_HYPHEN = '\u00AD';

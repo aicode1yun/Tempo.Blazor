@@ -516,7 +516,10 @@ export function createCanvasCommandRuntime(options = {}) {
         };
     }
 
-    function queryCommandState() {
+    function queryCommandState(options) {
+        // Outline + bookmark extraction walks the whole document. The toolbar formatting readback (polled
+        // after every typing burst) does NOT need navigation, so callers can opt out to keep it O(selection).
+        const includeNavigation = !(options && options.includeNavigation === false);
         const inline = queryInlineFormattingState(getModel(), getSelection(), formatState);
         const paragraph = queryParagraphCommandState(getModel(), getSelection(), paragraphState);
         const table = queryTableCommandState(getModel(), getSelection());
@@ -549,10 +552,12 @@ export function createCanvasCommandRuntime(options = {}) {
             forms: forms.forms,
             formatPainter: formatPainter.formatPainter,
             search: clone(searchState),
-            navigation: {
-                outline: extractCanvasOutline(getModel(), getLayout()),
-                bookmarks: listBookmarks(getModel()),
-            },
+            navigation: includeNavigation
+                ? {
+                    outline: extractCanvasOutline(getModel(), getLayout()),
+                    bookmarks: listBookmarks(getModel()),
+                }
+                : null,
             view: {
                 ...(paragraph.view || {}),
                 ...(canvasView.view || {}),

@@ -11,6 +11,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     /// <summary>Stable document id used by the canvas render pipeline E2E gate.</summary>
     public const string CanvasRenderDocumentId = "phase-5-canvas-render";
 
+    /// <summary>Stable document id for the large (1000-paragraph) performance-budget E2E gate.</summary>
+    public const string LargePerfDocumentId = "large-perf-1000";
+
     /// <summary>Stable document id used by the canvas text layout and pagination E2E gate.</summary>
     public const string CanvasTextLayoutDocumentId = "phase-6-canvas-text-layout";
 
@@ -108,6 +111,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         var recovery = SeedRecoveryDocument();
         var onlyOfficeParity = SeedOnlyOfficeParityDocument();
         var canvasSearchOutlineToc = SeedCanvasSearchOutlineTocDocument();
+        var largePerf = SeedLargePerfDocument();
 
         PrepareContractDemo(contract);
 
@@ -157,6 +161,13 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         {
             DocumentId = canvasSearchOutlineToc.DocumentId,
             Document = canvasSearchOutlineToc,
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        }).GetAwaiter().GetResult();
+
+        _ = base.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = largePerf.DocumentId,
+            Document = largePerf,
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         }).GetAwaiter().GetResult();
 
@@ -284,6 +295,65 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 ]
             }
         });
+
+        StoreDocument(document);
+        return document;
+    }
+
+    /// <summary>Seeds a large (1000-paragraph) document used by the performance-budget E2E gate.</summary>
+    public DocumentEditorDocument SeedLargePerfDocument(string documentId = LargePerfDocumentId, int paragraphCount = 150)
+    {
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "large-perf-section-main";
+        document.Metadata.Title = "Large performance document";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.Theme = new DocumentEditorTheme
+        {
+            BodyFontFamily = "Aptos, Arial, sans-serif",
+            BodyFontSize = 11.5,
+            BodyLineHeight = 1.2,
+            ParagraphSpacingAfter = 9
+        };
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = DocumentPageSize.A4,
+            Margins = new DocumentPageMargins { Top = 72, Right = 72, Bottom = 72, Left = 72 },
+            HeaderDistanceFromTop = 36,
+            FooterDistanceFromBottom = 36
+        };
+        document.Sections[0].Id = sectionId;
+        document.Sections[0].Properties.PageSettings = document.PageSettings;
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "large-perf-heading",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Heading,
+            Order = 0,
+            ParagraphProperties = new DocumentParagraphProperties { SpacingAfter = 12 },
+            Content = new HeadingBlockContent
+            {
+                Level = 1,
+                Inlines = [new TextRun { Id = "large-perf-heading-run", Text = "Large Performance Document" }]
+            }
+        });
+
+        // Deterministic, multi-line paragraphs so the document spans many pages — the worst case the
+        // incremental layout/command caches and the paint virtualizer must keep fast.
+        for (var i = 0; i < paragraphCount; i++)
+        {
+            document.Blocks.Add(TextParagraph(
+                sectionId,
+                $"large-perf-p{i}",
+                i + 1,
+                DocumentTextAlignment.Left,
+                $"Paragraph {i + 1} of the large performance document deliberately carries enough deterministic "
+                + "descriptive contract language to wrap across several visual lines. It exercises the incremental "
+                + "layout cache, the per-block display-command cache, and the page virtualizer so that scrolling, "
+                + "typing, and re-rendering stay responsive even when the document is very long.",
+                spacingAfter: 9));
+        }
 
         StoreDocument(document);
         return document;

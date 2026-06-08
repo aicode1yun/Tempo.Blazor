@@ -16,6 +16,7 @@ export function buildDisplayList(model, layout, options = {}) {
         pageSettings: layout?.pageSettings,
         fontMetrics: options.fontMetrics,
         fontMetricsOptions: options.fontMetricsOptions,
+        layoutCache: options.layoutCache,
     });
     const pages = textLayout.pages.length > 0 ? textLayout.pages : (Array.isArray(layout?.pages) ? layout.pages : []);
     const commands = [];
@@ -27,7 +28,8 @@ export function buildDisplayList(model, layout, options = {}) {
         }
     }
 
-    for (const command of buildBodyCommands(textLayout, options)) {
+    const commandCacheStats = { hits: 0, misses: 0 };
+    for (const command of buildBodyCommands(textLayout, options, commandCacheStats)) {
         commands.push(withSequence(command, sequence++));
     }
 
@@ -83,6 +85,8 @@ export function buildDisplayList(model, layout, options = {}) {
         headerFooterRegions: headerFooterLayout.regions,
         noteRegions: notesLayout.regions,
         measurementStats: textLayout.measurementStats,
+        layoutCacheStats: textLayout.cacheStats || null,
+        commandCacheStats,
     };
 }
 
@@ -106,11 +110,15 @@ function buildLineNumberCommands(textLayout) {
     }));
 }
 
-function buildBodyCommands(textLayout, options = {}) {
+function buildBodyCommands(textLayout, options = {}, stats = null) {
     const commands = [];
     let localSequence = 0;
-    const seenTextCommandIds = new Map();
     const contentControlRenderMode = normalizeContentControlRenderMode(options.contentControlRenderMode);
+    // Per-block display-command cache (Phase 4): a paragraph fragment's commands are a pure function
+    // of the fragment object. The layout cache (Phase 3) returns the SAME fragment instance for
+    // unchanged blocks, so a keystroke re-assembles commands only for the edited block and reuses the
+    // rest — making the whole layout -> display-list pipeline O(changed blocks) instead of O(document).
+    const commandCache = options.commandCache instanceof WeakMap ? options.commandCache : null;
 
     for (const block of textLayout.blocks || []) {
         if (block.type === 'table') {
@@ -166,99 +174,27 @@ function buildBodyCommands(textLayout, options = {}) {
             continue;
         }
 
-        commands.push({
-            id: `${block.blockId || `block-${localSequence}`}-box-${block.pageIndex}`,
-            type: 'paragraphBox',
-            layer: CANVAS_RENDER_LAYERS.content,
-            pageIndex: Number(block.pageIndex) || 0,
-            blockId: block.blockId || '',
-            x: block.rect.x,
-            y: block.rect.y,
-            width: block.rect.width,
-            height: block.rect.height,
-            sequence: localSequence++,
-        });
-
-        for (const line of block.lines || []) {
-            for (const leader of line.tabLeaders || []) {
-                commands.push({
-                    id: leader.id || `${block.blockId || 'block'}-tab-leader-${localSequence}`,
-                    type: 'tabLeader',
-                    layer: CANVAS_RENDER_LAYERS.content,
-                    pageIndex: Number(leader.pageIndex ?? line.pageIndex ?? block.pageIndex) || 0,
-                    blockId: block.blockId || leader.blockId || '',
-                    leader: leader.leader || 'dots',
-                    alignment: leader.alignment || 'left',
-                    x: Number(leader.x || 0) || 0,
-                    y: Number(leader.y || 0) || 0,
-                    baseline: Number(leader.baseline || line.baseline || 0) || 0,
-                    width: Math.max(0, Number(leader.width || 0) || 0),
-                    height: Math.max(1, Number(leader.height || line.rect?.height || 1) || 1),
-                    style: leader.style || {},
-                    sequence: localSequence++,
-                });
+        const cachedBlockCommands = reuseParagraphCommands(commandCache, block, contentControlRenderMode);
+        if (cachedBlockCommands) {
+            if (stats) {
+                stats.hits += 1;
             }
 
-            const lineSegments = positionedLineSegments(line);
-            for (const segment of lineSegments) {
-                if (isMathSegment(segment)) {
-                    const command = mathCommandForSegment(segment, line, block, options, localSequence++);
-                    commands.push(command);
-                    for (const annotation of annotationCommandsForRun(command, segment)) {
-                        commands.push({ ...annotation, sequence: localSequence++ });
-                    }
-                    continue;
-                }
-
-                if (isContentControlSegment(segment)) {
-                    const command = contentControlCommandForSegment(
-                        segment,
-                        line,
-                        block,
-                        seenTextCommandIds,
-                        localSequence++,
-                        contentControlRenderMode);
-                    commands.push(command);
-                    commands.push({ ...command, id: `${command.id}-glyphs`, type: 'glyphRun', sequence: localSequence++ });
-                    for (const annotation of annotationCommandsForRun(command, segment)) {
-                        commands.push({ ...annotation, sequence: localSequence++ });
-                    }
-                    continue;
-                }
-
-                if (!segment.text && segment.type !== 'space') {
-                    continue;
-                }
-
-                const commandType = segment.kind === 'field' || segment.type === 'field' ? 'field' : 'textRun';
-                const commandId = stableTextCommandId(segment, seenTextCommandIds);
-                const command = {
-                    id: commandId,
-                    type: commandType,
-                    layer: CANVAS_RENDER_LAYERS.content,
-                    pageIndex: Number(segment.pageIndex ?? line.pageIndex ?? block.pageIndex) || 0,
-                    blockId: block.blockId || '',
-                    runId: segment.runId || '',
-                    text: segment.text || '',
-                    x: segment.rect.x,
-                    y: segment.rect.y,
-                    baseline: line.baseline + (Number(segment.style?.baselineShift || 0) || 0),
-                    width: segment.rect.width,
-                    height: segment.rect.height,
-                    style: segment.style || {},
-                    marks: Array.isArray(segment.marks) ? segment.marks : [],
-                    hyphenated: segment.hyphenated === true,
-                    hyphenation: segment.hyphenation || null,
-                    start: Number(segment.start || 0) || 0,
-                    end: Number(segment.end || 0) || 0,
-                    sequence: localSequence++,
-                };
+            for (const command of cachedBlockCommands) {
                 commands.push(command);
-                commands.push({ ...command, id: `${command.id}-glyphs`, type: 'glyphRun', sequence: localSequence++ });
-                for (const annotation of annotationCommandsForRun(command, segment)) {
-                    commands.push({ ...annotation, sequence: localSequence++ });
-                }
             }
+
+            continue;
+        }
+
+        if (stats) {
+            stats.misses += 1;
+        }
+
+        const blockCommands = buildParagraphBlockCommands(block, options, contentControlRenderMode);
+        storeParagraphCommands(commandCache, block, contentControlRenderMode, blockCommands);
+        for (const command of blockCommands) {
+            commands.push(command);
         }
     }
 
@@ -279,6 +215,125 @@ function buildBodyCommands(textLayout, options = {}) {
             style: label.style,
             sequence: localSequence++,
         });
+    }
+
+    return commands;
+}
+
+function reuseParagraphCommands(cache, block, contentControlRenderMode) {
+    if (!cache || !block || typeof block !== 'object') {
+        return null;
+    }
+
+    const entry = cache.get(block);
+    return entry && entry.mode === contentControlRenderMode ? entry.commands : null;
+}
+
+function storeParagraphCommands(cache, block, contentControlRenderMode, commands) {
+    if (cache && block && typeof block === 'object') {
+        cache.set(block, { mode: contentControlRenderMode, commands });
+    }
+}
+
+// Builds the display commands for a single paragraph fragment. Pure with respect to the fragment:
+// uses a local sequence counter (overwritten by the global pass in buildDisplayList) and a local
+// command-id disambiguation map (run ids are unique per block, so this is identical to a shared map).
+function buildParagraphBlockCommands(block, options, contentControlRenderMode) {
+    const commands = [];
+    let localSequence = 0;
+    const seenTextCommandIds = new Map();
+
+    commands.push({
+        id: `${block.blockId || `block-${localSequence}`}-box-${block.pageIndex}`,
+        type: 'paragraphBox',
+        layer: CANVAS_RENDER_LAYERS.content,
+        pageIndex: Number(block.pageIndex) || 0,
+        blockId: block.blockId || '',
+        x: block.rect.x,
+        y: block.rect.y,
+        width: block.rect.width,
+        height: block.rect.height,
+        sequence: localSequence++,
+    });
+
+    for (const line of block.lines || []) {
+        for (const leader of line.tabLeaders || []) {
+            commands.push({
+                id: leader.id || `${block.blockId || 'block'}-tab-leader-${localSequence}`,
+                type: 'tabLeader',
+                layer: CANVAS_RENDER_LAYERS.content,
+                pageIndex: Number(leader.pageIndex ?? line.pageIndex ?? block.pageIndex) || 0,
+                blockId: block.blockId || leader.blockId || '',
+                leader: leader.leader || 'dots',
+                alignment: leader.alignment || 'left',
+                x: Number(leader.x || 0) || 0,
+                y: Number(leader.y || 0) || 0,
+                baseline: Number(leader.baseline || line.baseline || 0) || 0,
+                width: Math.max(0, Number(leader.width || 0) || 0),
+                height: Math.max(1, Number(leader.height || line.rect?.height || 1) || 1),
+                style: leader.style || {},
+                sequence: localSequence++,
+            });
+        }
+
+        const lineSegments = positionedLineSegments(line);
+        for (const segment of lineSegments) {
+            if (isMathSegment(segment)) {
+                const command = mathCommandForSegment(segment, line, block, options, localSequence++);
+                commands.push(command);
+                for (const annotation of annotationCommandsForRun(command, segment)) {
+                    commands.push({ ...annotation, sequence: localSequence++ });
+                }
+                continue;
+            }
+
+            if (isContentControlSegment(segment)) {
+                const command = contentControlCommandForSegment(
+                    segment,
+                    line,
+                    block,
+                    seenTextCommandIds,
+                    localSequence++,
+                    contentControlRenderMode);
+                commands.push(command);
+                for (const annotation of annotationCommandsForRun(command, segment)) {
+                    commands.push({ ...annotation, sequence: localSequence++ });
+                }
+                continue;
+            }
+
+            if (!segment.text && segment.type !== 'space') {
+                continue;
+            }
+
+            const commandType = segment.kind === 'field' || segment.type === 'field' ? 'field' : 'textRun';
+            const commandId = stableTextCommandId(segment, seenTextCommandIds);
+            const command = {
+                id: commandId,
+                type: commandType,
+                layer: CANVAS_RENDER_LAYERS.content,
+                pageIndex: Number(segment.pageIndex ?? line.pageIndex ?? block.pageIndex) || 0,
+                blockId: block.blockId || '',
+                runId: segment.runId || '',
+                text: segment.text || '',
+                x: segment.rect.x,
+                y: segment.rect.y,
+                baseline: line.baseline + (Number(segment.style?.baselineShift || 0) || 0),
+                width: segment.rect.width,
+                height: segment.rect.height,
+                style: segment.style || {},
+                marks: Array.isArray(segment.marks) ? segment.marks : [],
+                hyphenated: segment.hyphenated === true,
+                hyphenation: segment.hyphenation || null,
+                start: Number(segment.start || 0) || 0,
+                end: Number(segment.end || 0) || 0,
+                sequence: localSequence++,
+            };
+            commands.push(command);
+            for (const annotation of annotationCommandsForRun(command, segment)) {
+                commands.push({ ...annotation, sequence: localSequence++ });
+            }
+        }
     }
 
     return commands;

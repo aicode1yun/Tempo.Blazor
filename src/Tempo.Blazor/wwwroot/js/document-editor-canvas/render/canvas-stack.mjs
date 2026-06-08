@@ -1,5 +1,5 @@
 import { buildDisplayList } from './display-list.mjs';
-import { CANVAS_LAYER_KINDS } from './layers.mjs';
+import { CANVAS_CACHE_LAYER_KINDS, CANVAS_LAYER_KINDS } from './layers.mjs';
 import { paintDisplayList } from './canvas-renderer.mjs';
 import { ensureStyleStore, findStyle } from '../styles/style-store.mjs';
 import { resolveStyle } from '../styles/style-resolver.mjs';
@@ -46,6 +46,15 @@ export function createCanvasStack(options = {}) {
     const tileCache = createTileCache({
         maxEntries: Number(options.tileCache?.maxEntries ?? 160) || 160,
     });
+    // The last computed render plan (layout + display list + view state). `repaint` reuses it so a
+    // scroll/zoom re-paints visible pages WITHOUT re-running the document layout (buildDisplayList).
+    let lastPlan = null;
+    // Incremental layout cache: persists per-block paragraph layout across recalcs so an edit only
+    // re-lays-out the changed block and everything after it (Phase 3).
+    const layoutBlockCache = new Map();
+    // Per-fragment display-command cache (Phase 4): keyed by the (cached) fragment object, so an edit
+    // re-assembles display commands only for the changed block and reuses the rest.
+    const commandDisplayCache = new WeakMap();
 
     function ensurePage(pageLayout) {
         const key = String(pageLayout.index);
@@ -86,8 +95,9 @@ export function createCanvasStack(options = {}) {
         return page;
     }
 
-    function render(layout, model = {}, options = {}) {
-        const pixelRatio = Math.max(1, Number(pixelRatioProvider()) || 1);
+    // Builds the (expensive) render plan: runs the document layout and the display list. Called only
+    // on a real recalc (mount/edit/command), never on scroll.
+    function buildRenderPlan(layout, model = {}, options = {}) {
         const viewState = createCanvasViewState(options.viewState || {});
         const presentation = viewPresentation(viewState);
         const zoomScale = Math.max(0.01, Number(viewState.zoom?.scale || 1) || 1);
@@ -96,10 +106,49 @@ export function createCanvasStack(options = {}) {
             theme,
             debug: theme.debug === true,
             contentControlRenderMode,
+            layoutCache: layoutBlockCache,
+            commandCache: commandDisplayCache,
         });
         const allRenderPages = Array.isArray(displayList.pages) && displayList.pages.length > 0
             ? displayList.pages
             : (Array.isArray(layout?.pages) ? layout.pages : []);
+        return { layout, model, viewState, presentation, zoomScale, contentControlRenderMode, displayList, allRenderPages };
+    }
+
+    // Full recalc + paint. Use for mount/edit/command (anything that changes the model or layout).
+    function render(layout, model = {}, options = {}) {
+        lastPlan = buildRenderPlan(layout, model, options);
+        return paintRenderPlan(lastPlan, options);
+    }
+
+    // Paint-only re-render for scroll/zoom. Reuses the cached plan (no layout / display list rebuild);
+    // re-plans virtualization for the new viewport and repaints the newly visible pages.
+    function repaint(options = {}) {
+        if (!lastPlan) {
+            return null;
+        }
+
+        if (options.viewState) {
+            lastPlan.viewState = createCanvasViewState(options.viewState);
+            lastPlan.presentation = viewPresentation(lastPlan.viewState);
+            lastPlan.zoomScale = Math.max(0.01, Number(lastPlan.viewState.zoom?.scale || 1) || 1);
+        }
+
+        return paintRenderPlan(lastPlan, { ...options, dirtyBlockIds: [], structural: false });
+    }
+
+    // Paints a render plan to the visible pages. Pure with respect to the document model: it only
+    // depends on the cached plan and the current viewport, so it is safe to call repeatedly on scroll.
+    function paintRenderPlan(plan, options = {}) {
+        const layout = plan.layout;
+        const model = plan.model || {};
+        const viewState = plan.viewState;
+        const presentation = plan.presentation;
+        const zoomScale = plan.zoomScale;
+        const contentControlRenderMode = plan.contentControlRenderMode;
+        const displayList = plan.displayList;
+        const allRenderPages = plan.allRenderPages;
+        const pixelRatio = Math.max(1, Number(pixelRatioProvider()) || 1);
         const virtualization = virtualizer.plan(allRenderPages, options.viewport || {});
         const renderPages = virtualization.pages;
         const activePageKeys = new Set(renderPages.map(page => String(page.index)));
@@ -120,6 +169,10 @@ export function createCanvasStack(options = {}) {
         root.setAttribute('data-canvas-virtualization-enabled', String(virtualization.enabled === true));
         root.setAttribute('data-canvas-virtualization-progressive', String(virtualization.progressive === true));
         root.setAttribute('data-canvas-visible-page-indexes', virtualization.visiblePageIndexes.join(','));
+        root.setAttribute('data-canvas-layout-cache-hit-count', String(displayList.layoutCacheStats?.hits || 0));
+        root.setAttribute('data-canvas-layout-cache-miss-count', String(displayList.layoutCacheStats?.misses || 0));
+        root.setAttribute('data-canvas-command-cache-hit-count', String(displayList.commandCacheStats?.hits || 0));
+        root.setAttribute('data-canvas-command-cache-miss-count', String(displayList.commandCacheStats?.misses || 0));
         root.setAttribute('data-canvas-tab-leader-count', String(displayList.commands.filter(command => command.type === 'tabLeader').length));
         root.setAttribute('data-canvas-dotted-tab-leader-count', String(displayList.commands.filter(command => command.type === 'tabLeader' && command.leader === 'dots').length));
         root.setAttribute('data-canvas-view-mode', presentation.mode);
@@ -134,6 +187,9 @@ export function createCanvasStack(options = {}) {
         topSpacer.setAttribute('data-canvas-spacer-height', String(Math.round(Math.max(0, virtualization.topSpacerHeight))));
         bottomSpacer.setAttribute('data-canvas-spacer-height', String(Math.round(Math.max(0, virtualization.bottomSpacerHeight))));
         const incremental = createIncrementalPlan(displayList, options);
+        // Model-wide diagnostic counters are identical for every page and each one scans the whole
+        // model, so compute them ONCE per paint instead of O(visible pages) times (Phase 5.3).
+        const modelDiagnostics = computeModelDiagnostics(model);
 
         for (const pageLayout of renderPages) {
             const page = ensurePage(pageLayout);
@@ -167,20 +223,9 @@ export function createCanvasStack(options = {}) {
                 } else {
                     configureCanvasWithoutClearing(page.layers.get(kind), pageLayout.width, pageLayout.height, pixelRatio, zoomScale);
                 }
-                page.layers.get(kind).__tmCanvasRepaint = () => {
-                    const latestDisplayList = buildDisplayList(model, {
-                        pageSettings: layout?.pageSettings,
-                        pages: renderPages,
-                    }, {
-                        theme,
-                        debug: theme.debug === true,
-                        contentControlRenderMode,
-                    });
-                    paintDisplayList(page.layers, {
-                        ...latestDisplayList,
-                        commands: latestDisplayList.commands.filter(command => command.pageIndex === pageLayout.index),
-                    }, { contentControlRenderMode });
-                };
+                // Repaint hook for async image loads (image.onload): reuse the already-computed
+                // display list instead of re-laying-out the whole document (Phase 5.4).
+                page.layers.get(kind).__tmCanvasRepaint = () => repaintPageFromDisplayList(page, pageLayout, displayList, contentControlRenderMode);
             }
 
             const pageCommands = repaintPage
@@ -215,42 +260,33 @@ export function createCanvasStack(options = {}) {
                 });
                 page.needsFirstPaint = false;
             }
-            page.pageElement.setAttribute('data-canvas-model-document-id', String(model?.documentId || ''));
-            page.pageElement.setAttribute('data-canvas-model-block-count', String(Array.isArray(model?.body?.blocks) ? model.body.blocks.length : 0));
-            page.pageElement.setAttribute('data-canvas-model-section-count', String(Array.isArray(model?.sections) ? model.sections.length : 0));
-            page.pageElement.setAttribute('data-canvas-model-section-ids', (Array.isArray(model?.sections) ? model.sections : []).map(section => String(section?.id || '')).filter(Boolean).join(','));
-            page.pageElement.setAttribute('data-canvas-model-section-block-counts', (Array.isArray(model?.sections) ? model.sections : []).map(section => String((section?.blocks || []).length)).join(','));
-            page.pageElement.setAttribute('data-canvas-model-hyphenation-enabled', String((model?.hyphenation || model?.Hyphenation || {})?.enabled === true || (model?.hyphenation || model?.Hyphenation || {})?.Enabled === true));
-            page.pageElement.setAttribute('data-canvas-model-page-background-color', String((model?.pageBackground || model?.PageBackground || {})?.color || (model?.pageBackground || model?.PageBackground || {})?.Color || ''));
-            page.pageElement.setAttribute('data-canvas-model-table-block-count', String(countModelBlocks(model, 'table')));
-            page.pageElement.setAttribute('data-canvas-model-image-block-count', String(countModelBlocks(model, 'image')));
-            page.pageElement.setAttribute('data-canvas-model-field-count', String(countModelFields(model).length));
-            page.pageElement.setAttribute('data-canvas-model-math-count', String(countModelMathRuns(model).length));
-            page.pageElement.setAttribute('data-canvas-model-content-control-count', String(countModelContentControls(model).length));
-            page.pageElement.setAttribute('data-canvas-model-advanced-char-mark-count', String(countModelMarks(model, [
-                'superscript',
-                'subscript',
-                'smallcaps',
-                'allcaps',
-                'doublestrikethrough',
-                'characterspacing',
-                'characterscale',
-                'kerning',
-            ])));
-            page.pageElement.setAttribute('data-canvas-model-caption-count', String(countModelCaptions(model)));
-            page.pageElement.setAttribute('data-canvas-model-toc-entry-count', String(countModelTocEntries(model)));
-            page.pageElement.setAttribute('data-canvas-cross-reference-count', String(countModelFields(model, 13).length));
-            page.pageElement.setAttribute('data-canvas-table-of-figures-text', truncateAttribute(firstFieldText(model, 15)));
-            page.pageElement.setAttribute('data-canvas-bibliography-text', truncateAttribute(firstFieldText(model, 16)));
-            page.pageElement.setAttribute('data-canvas-cross-reference-text', truncateAttribute(firstFieldText(model, 13)));
-            page.pageElement.setAttribute('data-canvas-style-count', String(ensureStyleStore(model).length));
-            page.pageElement.setAttribute('data-canvas-style-heading1-font-size', String(readStyleFontSize(model, 'heading-1')));
+            page.pageElement.setAttribute('data-canvas-model-document-id', modelDiagnostics.documentId);
+            page.pageElement.setAttribute('data-canvas-model-block-count', modelDiagnostics.blockCount);
+            page.pageElement.setAttribute('data-canvas-model-section-count', modelDiagnostics.sectionCount);
+            page.pageElement.setAttribute('data-canvas-model-section-ids', modelDiagnostics.sectionIds);
+            page.pageElement.setAttribute('data-canvas-model-section-block-counts', modelDiagnostics.sectionBlockCounts);
+            page.pageElement.setAttribute('data-canvas-model-hyphenation-enabled', modelDiagnostics.hyphenationEnabled);
+            page.pageElement.setAttribute('data-canvas-model-page-background-color', modelDiagnostics.pageBackgroundColor);
+            page.pageElement.setAttribute('data-canvas-model-table-block-count', modelDiagnostics.tableBlockCount);
+            page.pageElement.setAttribute('data-canvas-model-image-block-count', modelDiagnostics.imageBlockCount);
+            page.pageElement.setAttribute('data-canvas-model-field-count', modelDiagnostics.fieldCount);
+            page.pageElement.setAttribute('data-canvas-model-math-count', modelDiagnostics.mathCount);
+            page.pageElement.setAttribute('data-canvas-model-content-control-count', modelDiagnostics.contentControlCount);
+            page.pageElement.setAttribute('data-canvas-model-advanced-char-mark-count', modelDiagnostics.advancedCharMarkCount);
+            page.pageElement.setAttribute('data-canvas-model-caption-count', modelDiagnostics.captionCount);
+            page.pageElement.setAttribute('data-canvas-model-toc-entry-count', modelDiagnostics.tocEntryCount);
+            page.pageElement.setAttribute('data-canvas-cross-reference-count', modelDiagnostics.crossReferenceCount);
+            page.pageElement.setAttribute('data-canvas-table-of-figures-text', modelDiagnostics.tableOfFiguresText);
+            page.pageElement.setAttribute('data-canvas-bibliography-text', modelDiagnostics.bibliographyText);
+            page.pageElement.setAttribute('data-canvas-cross-reference-text', modelDiagnostics.crossReferenceText);
+            page.pageElement.setAttribute('data-canvas-style-count', modelDiagnostics.styleCount);
+            page.pageElement.setAttribute('data-canvas-style-heading1-font-size', modelDiagnostics.heading1FontSize);
             page.pageElement.setAttribute('data-canvas-render-command-count', String(pageDisplayList.commands.length));
             page.pageElement.setAttribute('data-canvas-painted-command-count', String(paintSummary.paintedCommandCount));
             page.pageElement.setAttribute('data-canvas-text-run-count', String(pageDisplayList.commands.filter(command => command.type === 'textRun' || command.type === 'listLabel').length));
             page.pageElement.setAttribute('data-canvas-tab-leader-count', String(pageDisplayList.commands.filter(command => command.type === 'tabLeader').length));
             page.pageElement.setAttribute('data-canvas-dotted-tab-leader-count', String(pageDisplayList.commands.filter(command => command.type === 'tabLeader' && command.leader === 'dots').length));
-            page.pageElement.setAttribute('data-canvas-hyphenated-text-run-count', String(pageDisplayList.commands.filter(command => (command.type === 'textRun' || command.type === 'glyphRun') && command.hyphenated === true).length));
+            page.pageElement.setAttribute('data-canvas-hyphenated-text-run-count', String(pageDisplayList.commands.filter(command => command.type === 'textRun' && command.hyphenated === true).length));
             page.pageElement.setAttribute('data-canvas-watermark-count', String(pageDisplayList.commands.filter(command => command.type === 'watermarkText' || command.type === 'watermarkImage').length));
             page.pageElement.setAttribute('data-canvas-page-fill', String(pageDisplayList.commands.find(command => command.type === 'pageFill')?.fill || ''));
             page.pageElement.setAttribute('data-canvas-page-border-count', String(pageDisplayList.commands.filter(command => command.type === 'pageBorder').length));
@@ -328,12 +364,15 @@ export function createCanvasStack(options = {}) {
         }
         pages.clear();
         tileCache.invalidate();
+        layoutBlockCache.clear();
+        lastPlan = null;
     }
 
     return {
         root,
         mount,
         render,
+        repaint,
         destroy,
         pages,
     };
@@ -726,6 +765,46 @@ function clearLayer(canvas, pageLayout) {
     if (context) {
         context.clearRect(0, 0, pageLayout.width, pageLayout.height);
     }
+}
+
+// Computes the model-wide diagnostic counters once per paint. Each value scans the whole model, so
+// hoisting this out of the per-page loop turns O(visible pages x model) into O(model) per paint.
+function computeModelDiagnostics(model) {
+    const sections = Array.isArray(model?.sections) ? model.sections : [];
+    const hyphenation = model?.hyphenation || model?.Hyphenation || {};
+    const background = model?.pageBackground || model?.PageBackground || {};
+    return {
+        documentId: String(model?.documentId || ''),
+        blockCount: String(Array.isArray(model?.body?.blocks) ? model.body.blocks.length : 0),
+        sectionCount: String(sections.length),
+        sectionIds: sections.map(section => String(section?.id || '')).filter(Boolean).join(','),
+        sectionBlockCounts: sections.map(section => String((section?.blocks || []).length)).join(','),
+        hyphenationEnabled: String(hyphenation.enabled === true || hyphenation.Enabled === true),
+        pageBackgroundColor: String(background.color || background.Color || ''),
+        tableBlockCount: String(countModelBlocks(model, 'table')),
+        imageBlockCount: String(countModelBlocks(model, 'image')),
+        fieldCount: String(countModelFields(model).length),
+        mathCount: String(countModelMathRuns(model).length),
+        contentControlCount: String(countModelContentControls(model).length),
+        advancedCharMarkCount: String(countModelMarks(model, [
+            'superscript',
+            'subscript',
+            'smallcaps',
+            'allcaps',
+            'doublestrikethrough',
+            'characterspacing',
+            'characterscale',
+            'kerning',
+        ])),
+        captionCount: String(countModelCaptions(model)),
+        tocEntryCount: String(countModelTocEntries(model)),
+        crossReferenceCount: String(countModelFields(model, 13).length),
+        tableOfFiguresText: truncateAttribute(firstFieldText(model, 15)),
+        bibliographyText: truncateAttribute(firstFieldText(model, 16)),
+        crossReferenceText: truncateAttribute(firstFieldText(model, 13)),
+        styleCount: String(ensureStyleStore(model).length),
+        heading1FontSize: String(readStyleFontSize(model, 'heading-1')),
+    };
 }
 
 function countModelBlocks(model, type) {
@@ -1231,6 +1310,24 @@ const UNCLIPPED_COMMAND_TYPES = new Set([
     'drawingLine', 'drawingChart', 'drawingRun', 'drawingText',
     'diagnosticOverlay', 'debugBounds', 'pageBreak',
 ]);
+
+// Repaints a single page from an already-computed display list (used by the async image-load hook).
+// Clears the cached content layers and re-runs the same two-pass (margin unclipped, body clipped)
+// paint as the main render so a late-loading image appears without re-laying-out the document.
+function repaintPageFromDisplayList(page, pageLayout, displayList, contentControlRenderMode) {
+    if (!page?.layers) {
+        return;
+    }
+
+    for (const kind of CANVAS_CACHE_LAYER_KINDS) {
+        clearLayer(page.layers.get(kind), pageLayout);
+    }
+
+    const pageCommands = (displayList.commands || []).filter(command => command.pageIndex === pageLayout.index);
+    const { bodyCommands, marginCommands } = partitionPageCommands(pageCommands);
+    paintDisplayList(page.layers, { ...displayList, commands: marginCommands }, { contentControlRenderMode });
+    paintDisplayList(page.layers, { ...displayList, commands: bodyCommands }, { contentControlRenderMode, clipRect: pageBodyClipRect(pageLayout) });
+}
 
 function partitionPageCommands(commands) {
     const bodyCommands = [];

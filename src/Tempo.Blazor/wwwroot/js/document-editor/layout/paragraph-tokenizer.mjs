@@ -89,7 +89,9 @@ export function tokenizeText(text, options) {
     const tokens = [];
     let index = 0;
     function push(type, value, start, end, extra) {
-        tokens.push(sortObject(Object.assign({
+        // Layout tokens are consumed by field name, never by key order; canonical key sorting here
+        // (sortObject) dominated cold layout (~55% of the time / GC pressure on long documents).
+        tokens.push(Object.assign({
             type: type,
             text: value,
             start: start,
@@ -99,7 +101,7 @@ export function tokenizeText(text, options) {
             breakAfter: false,
             hardBreak: false,
             unbreakable: false,
-        }, extra || {})));
+        }, extra || {}));
     }
     while (index < source.length) {
         const ch = source[index];
@@ -312,14 +314,14 @@ export function createParagraphTokenizer(options) {
             const runMath = run.math ? clone(run.math) : null;
             const runContentControl = run.contentControl ? clone(run.contentControl) : null;
             tokenizeText(run.text).forEach(function (token) {
-                const normalized = sortObject(Object.assign({}, token, {
+                const normalized = Object.assign({}, token, {
                     start: token.start + run.start,
                     end: token.end + run.start,
                     runId: run.id || null,
                     kind: run.kind,
                     math: runMath,
                     contentControl: runContentControl,
-                }));
+                });
                 normalized.style = runStyle;
                 normalized.marks = runMarks;
                 tokens.push(normalized);

@@ -91,6 +91,7 @@
     private string? _lastModelJson;
     private string? _lastParameterModelJson;
     private string? _lastOptionsJson;
+    private object? _lastMountedDocumentRef;
     private DotNetObjectReference<TmDocumentCanvasEngineHost>? _selfRef;
     private bool _ready;
     private bool _disposed;
@@ -137,14 +138,24 @@
     /// <summary>Raised when the JavaScript canvas host has mounted and reported readiness.</summary>
     [Parameter] public EventCallback<TmDocumentCanvasEngineHost> OnReady { get; set; }
 
-    /// <summary>Raised when the canvas engine reports a model change.</summary>
-    [Parameter] public EventCallback<CanvasEngineChangedState> OnChanged { get; set; }
+    /// <summary>
+    /// Raised when the canvas engine reports a model change. This is a plain delegate rather than an
+    /// <see cref="EventCallback{T}"/> ON PURPOSE: it fires on every keystroke, and an EventCallback would
+    /// auto-invoke StateHasChanged on the (very large) parent editor after every keystroke, re-rendering
+    /// the whole toolbar/ribbon/chrome and freezing typing. The parent owns its own (debounced) re-render.
+    /// </summary>
+    [Parameter] public Func<CanvasEngineChangedState, Task>? OnChanged { get; set; }
 
     /// <summary>Raised when the canvas engine requests a context menu at the pointer location.</summary>
     [Parameter] public EventCallback<CanvasEngineContextMenuRequest> OnContextMenu { get; set; }
 
-    /// <summary>Raised when canvas text selection changes enough to show or hide the mini toolbar.</summary>
-    [Parameter] public EventCallback<WysiwygMiniToolbarRequest?> OnMiniToolbarChanged { get; set; }
+    /// <summary>
+    /// Raised when the canvas selection changes (mini toolbar show/hide). A plain delegate, NOT an
+    /// EventCallback, for the same reason as <see cref="OnChanged"/>: the selection changes on every
+    /// keystroke (the caret moves), and an EventCallback would auto-render the whole parent editor each
+    /// time. The parent re-renders itself only when the selection-driven state actually changes.
+    /// </summary>
+    [Parameter] public Func<WysiwygMiniToolbarRequest?, Task>? OnMiniToolbarChanged { get; set; }
 
     /// <summary>Raised when a canvas comment or revision marker is selected.</summary>
     [Parameter] public EventCallback<CanvasEngineAnnotationSelection> OnAnnotationSelected { get; set; }
@@ -228,6 +239,7 @@
         _selfRef = DotNetObjectReference.Create(this);
         _lastModelJson = JsonSerializer.Serialize(BuildCanvasModel(), CanvasJsonOptions);
         _lastParameterModelJson = _lastModelJson;
+        _lastMountedDocumentRef = Document;
         _lastOptionsJson = JsonSerializer.Serialize(BuildCanvasOptions(), CanvasJsonOptions);
         try
         {
@@ -267,7 +279,11 @@
             return Document;
         }
 
-        _lastModelJson = JsonSerializer.Serialize(model, CanvasJsonOptions);
+        // Reuse the JSON the engine already produced instead of re-serializing the whole model (the extra
+        // O(document) Serialize was pure overhead on the per-pause reconcile path). The mounted-model
+        // reference-gate in UpdateMountedModelAsync — primed via MarkDocumentMounted after a reconcile —
+        // prevents this from triggering a spurious replaceModel even if the JS/C# JSON form differs.
+        _lastModelJson = modelJson;
         return CanvasDocumentModelConverter.FromCanvasModel(model, Document);
     }
 
@@ -283,6 +299,17 @@
         {
             await _module.InvokeVoidAsync("replaceModel", _handle, modelJson);
         }
+    }
+
+    /// <summary>
+    /// Marks <paramref name="document"/> as the model already mounted in the engine, so the next render's
+    /// <see cref="UpdateMountedModelAsync"/> reference-gate skips re-serializing and re-pushing it. The
+    /// parent calls this right after it reconciles its canonical document out of the engine, which breaks
+    /// the reconcile -> re-render -> replaceModel -> change-notify -> reconcile feedback loop.
+    /// </summary>
+    internal void MarkDocumentMounted(DocumentEditorDocument document)
+    {
+        _lastMountedDocumentRef = document;
     }
 
     /// <summary>Returns the canvas runtime debug snapshot as JSON.</summary>
@@ -582,18 +609,15 @@
         }
 
         var state = DeserializeState(stateJson, new CanvasEngineChangedState());
-        if (_module is not null && _handle is not null)
-        {
-            var modelJson = await _module.InvokeAsync<string?>("getModelJson", _handle);
-            if (!string.IsNullOrWhiteSpace(modelJson))
-            {
-                _lastModelJson = modelJson;
-            }
-        }
+        // Phase 6.5: do NOT marshal the full model JSON across the JS<->.NET boundary on every edit.
+        // The engine is the source of truth; the canonical model is fetched lazily only on save /
+        // RequestDocumentAsync. Invalidating the cached parameter snapshot keeps parameter-driven
+        // re-sync correct (a later Document parameter change always re-applies via UpdateMountedModel).
+        _lastModelJson = null;
 
-        if (OnChanged.HasDelegate)
+        if (OnChanged is not null)
         {
-            await OnChanged.InvokeAsync(state);
+            await OnChanged(state);
         }
     }
 
@@ -615,7 +639,7 @@
         }
 
         var request = DeserializeState<WysiwygMiniToolbarRequest?>(stateJson, null);
-        return OnMiniToolbarChanged.HasDelegate ? OnMiniToolbarChanged.InvokeAsync(request) : Task.CompletedTask;
+        return OnMiniToolbarChanged is not null ? OnMiniToolbarChanged(request) : Task.CompletedTask;
     }
 
     /// <summary>JavaScript callback for canvas comment or revision marker selection.</summary>
@@ -746,7 +770,10 @@
             return fallback;
         }
 
-        return JsonSerializer.Deserialize<TState>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web)) ?? fallback;
+        // MUST reuse the cached options instance: a fresh JsonSerializerOptions rebuilds its reflection
+        // metadata cache on first use, and this runs on every change callback (per keystroke) — constructing
+        // new options each time cost ~170 ms/keystroke on WASM.
+        return JsonSerializer.Deserialize<TState>(json, CanvasJsonOptions) ?? fallback;
     }
 
     private CanvasDocumentModel BuildCanvasModel()
@@ -787,6 +814,18 @@
             _lastOptionsJson = optionsJson;
             await _module.InvokeVoidAsync("setOptions", _handle, optionsJson);
         }
+
+        // OnAfterRenderAsync fires after EVERY render — and a render happens after every keystroke. Building
+        // and serializing the whole canvas model in C# here (heavy on large documents) per keystroke froze
+        // typing. The host app only swaps the model by handing us a new Document parameter reference; the
+        // canvas engine owns in-place edits. So when the Document reference is unchanged there is nothing to
+        // push and we must skip the serialization entirely.
+        if (ReferenceEquals(Document, _lastMountedDocumentRef))
+        {
+            return;
+        }
+
+        _lastMountedDocumentRef = Document;
 
         var modelJson = JsonSerializer.Serialize(BuildCanvasModel(), CanvasJsonOptions);
         if (string.Equals(_lastParameterModelJson, modelJson, StringComparison.Ordinal))
