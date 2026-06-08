@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.IO.Compression;
+using System.Text;
 using System.Xml.Linq;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -42,6 +43,33 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task JsonSourceEndpoints_ForceSavePreservesRequestedConcurrencyMode()
+    {
+        var documentId = $"force-save-{Guid.NewGuid():N}";
+        var document = DocumentEditorDocument.Empty(documentId);
+        document.Metadata.Title = "Initial force-save endpoint document";
+
+        var initialSave = await _client.PutAsJsonAsync($"/api/document-editor/documents/{documentId}", new DocumentEditorSaveRequest
+        {
+            DocumentId = documentId,
+            Document = document,
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        });
+        initialSave.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        document.Metadata.Title = "Forced stale-token endpoint document";
+        var forcedStaleSave = await _client.PutAsJsonAsync($"/api/document-editor/documents/{documentId}", new DocumentEditorSaveRequest
+        {
+            DocumentId = documentId,
+            Document = document,
+            BaseConcurrencyToken = "stale-client-token",
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        });
+
+        forcedStaleSave.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -361,6 +389,49 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
         exported.Content.Should().NotBeEmpty();
         exported.ContentType.Should().Be("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         exported.FileName.Should().EndWith(".docx");
+    }
+
+    [Theory]
+    [InlineData(DocumentFormatProviderKind.Odt, ".odt", "application/vnd.oasis.opendocument.text")]
+    [InlineData(DocumentFormatProviderKind.Html, ".html", "text/html; charset=utf-8")]
+    [InlineData(DocumentFormatProviderKind.Markdown, ".md", "text/markdown; charset=utf-8")]
+    public async Task ProviderStyleExportExternalFormats_ReturnsProviderResult(
+        DocumentFormatProviderKind format,
+        string extension,
+        string contentType)
+    {
+        var document = CreateImportDocument($"Provider Exported {format}");
+
+        var response = await _client.PostAsJsonAsync("/api/document-editor/formats/export", new DocumentFormatExportProviderRequest
+        {
+            DocumentId = document.DocumentId,
+            Format = format,
+            Document = document,
+            FileName = $"provider-export-{format.ToString().ToLowerInvariant()}"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var exported = await response.Content.ReadFromJsonAsync<DocumentFormatExportProviderResult>();
+        exported.Should().NotBeNull();
+        exported!.Success.Should().BeTrue();
+        exported.Format.Should().Be(format);
+        exported.Content.Should().NotBeEmpty();
+        exported.ContentType.Should().Be(contentType);
+        exported.FileName.Should().EndWith(extension);
+        Encoding.UTF8.GetString(exported.Content).Should().Contain(format == DocumentFormatProviderKind.Odt ? "mimetype" : "Provider Exported");
+    }
+
+    [Fact]
+    public async Task ProviderStyleImportOdtHtmlAndMarkdown_ReturnsProviderResult()
+    {
+        var odt = await new DocumentOdtExporter().ExportAsync(CreateImportDocument("Imported ODT provider"));
+        await AssertProviderImportAsync(DocumentFormatProviderKind.Odt, odt.Content, odt.ContentType, "provider-import.odt", "Imported ODT provider");
+
+        const string html = "<main><h1>Imported HTML provider</h1><p>Semantic HTML import</p></main>";
+        await AssertProviderImportAsync(DocumentFormatProviderKind.Html, Encoding.UTF8.GetBytes(html), "text/html", "provider-import.html", "Imported HTML provider");
+
+        const string markdown = "# Imported Markdown provider\n\nSemantic **Markdown** import";
+        await AssertProviderImportAsync(DocumentFormatProviderKind.Markdown, Encoding.UTF8.GetBytes(markdown), "text/markdown", "provider-import.md", "Imported Markdown provider");
     }
 
     [Fact]
@@ -741,12 +812,49 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
         }
     }
 
+    private async Task AssertProviderImportAsync(
+        DocumentFormatProviderKind format,
+        byte[] content,
+        string contentType,
+        string fileName,
+        string expectedText)
+    {
+        using var form = new MultipartFormDataContent();
+        using var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        form.Add(fileContent, "file", fileName);
+
+        var response = await _client.PostAsync($"/api/document-editor/formats/import?format={format}", form);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var imported = await response.Content.ReadFromJsonAsync<DocumentFormatImportProviderResult>();
+        imported.Should().NotBeNull();
+        imported!.Success.Should().BeTrue();
+        imported.Format.Should().Be(format);
+        GetDocumentText(imported.Document!).Should().Contain(expectedText);
+    }
+
     private static string GetBlockText(DocumentEditorDocument document, string blockId)
     {
         var block = FindBlock(document.Blocks, blockId);
         block.Should().NotBeNull($"document should contain block {blockId}");
         return string.Concat(GetInlineText(block!.Content));
     }
+
+    private static string GetDocumentText(DocumentEditorDocument document)
+        => string.Join('\n', document.Blocks.Select(GetBlockText));
+
+    private static string GetBlockText(DocumentBlock block)
+        => block.Content switch
+        {
+            ParagraphBlockContent paragraph => string.Concat(paragraph.Inlines.Select(GetInlineText)),
+            HeadingBlockContent heading => string.Concat(heading.Inlines.Select(GetInlineText)),
+            ListBlockContent list => string.Concat(list.Inlines.Select(GetInlineText)),
+            QuoteBlockContent quote => string.Concat(quote.Inlines.Select(GetInlineText)),
+            TableBlockContent table => string.Join('\n', table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks).Select(GetBlockText)),
+            ImageBlockContent image => image.Caption ?? image.AltText ?? string.Empty,
+            _ => string.Empty
+        };
 
     private static DocumentBlock? FindBlock(IEnumerable<DocumentBlock> blocks, string blockId)
     {

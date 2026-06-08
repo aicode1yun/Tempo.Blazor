@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Components.DocumentEditor;
 using Tempo.Blazor.Components.DocumentEditor.Registry;
 using Tempo.Blazor.Tests.Localization;
@@ -75,12 +76,13 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     [Fact]
     public void BuiltInToolbar_InsertReviewViewAndHeaderFooterMetadataCoversRenderedCommands()
     {
-        AssertMetadata(DocumentToolbarTab.Insert, "insertTable", "insertImage", "insertPageBreak");
+        AssertMetadata(DocumentToolbarTab.Insert, "insertTable", "insertImage", "insertEquation", "insertSymbol", "insertPageBreak");
+        AssertMetadata(DocumentToolbarTab.Math, "mathInsertEquation");
         AssertMetadata(DocumentToolbarTab.Review,
             "trackChanges", "reviewDisplayMode", "addComment", "openComments", "openRevisions",
             "compareDocuments", "protectDocument", "markEditableRegion");
         AssertMetadata(DocumentToolbarTab.View,
-            "showRuler", "zoomPageWidth", "showBlocks", "fullscreen", "viewDocumentJson",
+            "showRuler", "zoomPageWidth", "showBlocks", "fullscreen", "openPrintPreview", "printDocument", "viewDocumentJson",
             "viewClipboardHtml", "exportPdf", "importDocx", "exportDocx", "openVersions");
         AssertMetadata(DocumentToolbarTab.HeaderFooter,
             "insertPageNumber", "insertPageCount", "insertPageXOfY", "insertDateField", "insertDocumentTitleField",
@@ -97,6 +99,46 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
         AssertCommand(cut, "document-toolbar-table", "insertTable");
         AssertCommand(cut, "document-toolbar-image", "insertImage");
         AssertCommand(cut, "document-insert-page-break", "insertPageBreak");
+    }
+
+    [Fact]
+    public void Toolbar_InsertTabRendersSymbolPaletteWhenCanvasToolsEnabled()
+    {
+        string? insertedPreset = null;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.ShowSymbolTools, true)
+            .Add(p => p.OnInsertSymbol, EventCallback.Factory.Create<string>(this, value => insertedPreset = value)));
+
+        cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
+
+        AssertCommand(cut, "document-toolbar-symbol", "insertSymbol");
+        cut.Find("[data-testid='document-toolbar-symbol']").Click();
+
+        cut.Find("[role='group'][aria-label='Special characters']").Should().NotBeNull();
+        cut.Find("[role='group'][aria-label='Emoji']").Should().NotBeNull();
+        cut.Find("[data-testid='document-symbol-em-dash']").Click();
+
+        insertedPreset.Should().Be("emDash");
+    }
+
+    [Fact]
+    public void Toolbar_MathTabRendersEquationGalleryWhenCanvasToolsEnabled()
+    {
+        string? insertedPreset = null;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.ShowEquationTools, true)
+            .Add(p => p.OnInsertEquation, EventCallback.Factory.Create<string>(this, value => insertedPreset = value)));
+
+        cut.Find("[data-testid='document-ribbon-tab-math']").Click();
+
+        AssertCommand(cut, "document-toolbar-equation", "insertEquation");
+        cut.Find("[data-testid='document-toolbar-equation']").Click();
+
+        cut.Find("[role='group'][aria-label='Structures']").Should().NotBeNull();
+        cut.Find("[role='group'][aria-label='Symbols']").Should().NotBeNull();
+        cut.Find("[data-testid='document-equation-sum']").Click();
+
+        insertedPreset.Should().Be("sum");
     }
 
     [Fact]
@@ -123,6 +165,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     {
         var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowDebugTools, true)
+            .Add(p => p.ShowPrintPreviewTools, true)
             .Add(p => p.CanExportPdf, true)
             .Add(p => p.CanExportDocx, true));
 
@@ -132,6 +175,8 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
         AssertCommand(cut, "document-zoom-page-width", "zoomPageWidth");
         AssertCommand(cut, "document-show-blocks", "showBlocks");
         AssertCommand(cut, "document-fullscreen", "fullscreen");
+        AssertCommand(cut, "document-open-print-preview", "openPrintPreview");
+        AssertCommand(cut, "document-print-document", "printDocument");
         AssertCommand(cut, "document-view-json", "viewDocumentJson");
         AssertCommand(cut, "document-view-clipboard-html", "viewClipboardHtml");
         AssertCommand(cut, "document-open-versions", "openVersions");

@@ -2,7 +2,7 @@
 // `normalizeParagraphLayoutOptions(options)` — coerces caller-supplied layout
 // options into the canonical shape used by the paragraph layout engine:
 //   { page, x, y, width, minReadableWidth, lineGap, availableIntervals,
-//     resolveAvailableIntervals }
+//     resolveAvailableIntervals, hyphenation }
 // • `page` falls through `normalizePageBox`.
 // • `x` / `y` fall back to the page's x/y when missing or zero-coerced.
 // • `width` is clamped to ≥ 1, defaulting to the page width.
@@ -31,5 +31,6 @@ export function normalizeParagraphLayoutOptions(options) {
             : (typeof opts.ResolveAvailableIntervals === 'function'
                 ? opts.ResolveAvailableIntervals
                 : null),
+        hyphenation: opts.hyphenation || opts.Hyphenation || null,
     };
 }

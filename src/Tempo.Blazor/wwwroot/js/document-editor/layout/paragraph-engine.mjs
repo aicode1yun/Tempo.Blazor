@@ -241,6 +241,7 @@ export function createParagraphLayoutEngineFactory(deps) {
                 lineGap: popts.lineGap,
                 availableIntervals: popts.availableIntervals,
                 resolveAvailableIntervals: popts.resolveAvailableIntervals,
+                hyphenation: popts.hyphenation,
             });
             const runs = flattenParagraphRuns(paragraphInput, normalizeImageObject);
             const lines = asArray(lineLayout.lines).map(function (line, index) {
@@ -288,6 +289,7 @@ export function createParagraphLayoutEngineFactory(deps) {
                     inlineObject: segment.inlineObject === true || segment.type === 'inlineObject',
                     objectRect: segment.objectRect ? clone(segment.objectRect) : null,
                     object: segment.object ? clone(segment.object) : (run && run.object ? clone(run.object) : null),
+                    math: segment.math ? clone(segment.math) : (run && run.math ? clone(run.math) : null),
                     style: normalizeLayoutSegmentStyle((run && run.style) || segment.style || {}),
                     decorations: decorationsFromMarks((run && run.marks) || []),
                     marks: asArray(run && run.marks),

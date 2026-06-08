@@ -790,6 +790,12 @@ public class DocumentOperationApplier
             or InlineMarkType.Strikethrough
             or InlineMarkType.Superscript
             or InlineMarkType.Subscript
+            or InlineMarkType.SmallCaps
+            or InlineMarkType.AllCaps
+            or InlineMarkType.DoubleStrikethrough
+            or InlineMarkType.CharacterSpacing
+            or InlineMarkType.CharacterScale
+            or InlineMarkType.Kerning
             or InlineMarkType.Highlight
             or InlineMarkType.TextColor
             or InlineMarkType.FontFamily

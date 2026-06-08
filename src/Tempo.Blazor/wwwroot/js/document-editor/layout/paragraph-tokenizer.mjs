@@ -16,6 +16,7 @@
 
 import { asArray, asText, sortObject, clone } from '../core/helpers.mjs';
 import { markType } from '../core/marks.mjs';
+import { uppercasePreservingLength } from '../core/text-transform.mjs';
 
 export function isCjkCharacter(ch) {
     return /[぀-ヿ㐀-䶿一-鿿豈-﫿]/.test(ch || '');
@@ -40,6 +41,7 @@ export function cssLengthToPixels(value, fallback) {
 
 export function mergeTextStyle(baseStyle, run) {
     const style = Object.assign({}, baseStyle || {}, run && run.style || run && run.Style || {});
+    let verticalScript = '';
     asArray(run && (run.marks || run.Marks)).forEach(function (mark) {
         const type = markType(mark);
         const value = mark && (mark.value ?? mark.Value ?? mark.color ?? mark.Color ?? null);
@@ -55,7 +57,28 @@ export function mergeTextStyle(baseStyle, run) {
         if ((type === 'highlight' || type === 'backgroundcolor') && value) {
             style.backgroundColor = value;
         }
+        if (type === 'superscript') {
+            verticalScript = 'superscript';
+        }
+        if (type === 'subscript') {
+            verticalScript = 'subscript';
+        }
+        if (type === 'smallcaps') style.fontVariantCaps = 'small-caps';
+        if (type === 'allcaps') style.textTransform = 'uppercase';
+        if (type === 'characterspacing' && value != null) style.letterSpacing = Number(value) || 0;
+        if (type === 'characterscale' && value != null) style.characterScale = Math.max(0.1, (Number(value) || 100) / 100);
+        if (type === 'kerning' && value != null) style.kerning = String(value).toLowerCase() !== 'false';
     });
+    if (verticalScript === 'superscript') {
+        const originalSize = cssLengthToPixels(style.fontSize || 16, 16);
+        style.fontSize = originalSize * 0.65;
+        style.baselineShift = -originalSize * 0.34;
+    }
+    if (verticalScript === 'subscript') {
+        const originalSize = cssLengthToPixels(style.fontSize || 16, 16);
+        style.fontSize = originalSize * 0.65;
+        style.baselineShift = originalSize * 0.22;
+    }
     return style;
 }
 
@@ -161,10 +184,18 @@ export function createParagraphTokenizer(options) {
                 ? 'drawing'
                 : rawKind.indexOf('field') >= 0
                     ? 'field'
-                    : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
-            const text = kind === 'drawing'
+                    : rawKind.indexOf('math') >= 0
+                        ? 'math'
+                        : rawKind.indexOf('contentcontrol') >= 0
+                            ? 'contentControl'
+                            : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
+            const rawText = kind === 'drawing'
                 ? ''
                 : asText(run.text || run.Text || run.fallbackText || run.FallbackText || '');
+            const style = mergeTextStyle(baseStyle, run);
+            const text = style.textTransform === 'uppercase'
+                ? uppercasePreservingLength(rawText)
+                : rawText;
             const object = kind === 'drawing'
                 ? normalizeImageObject(run, {
                     blockId: source.id || source.Id || source.blockId || source.BlockId || '',
@@ -176,13 +207,19 @@ export function createParagraphTokenizer(options) {
                 kind: kind,
                 text: text,
                 start: cursor,
-                end: cursor + text.length,
-                style: mergeTextStyle(baseStyle, run),
+                end: cursor + rawText.length,
+                style: style,
                 marks: asArray(run.marks || run.Marks),
                 object: object,
+                math: run.math || run.Math || null,
+                mathLayoutWidth: run.mathLayoutWidth ?? run.MathLayoutWidth ?? run.width ?? run.Width ?? null,
+                mathLayoutHeight: run.mathLayoutHeight ?? run.MathLayoutHeight ?? run.height ?? run.Height ?? null,
+                mathLayoutAscent: run.mathLayoutAscent ?? run.MathLayoutAscent ?? null,
+                mathLayoutDescent: run.mathLayoutDescent ?? run.MathLayoutDescent ?? null,
+                contentControl: run.contentControl || run.ContentControl || null,
                 objectId: object && object.objectId || run.objectId || run.ObjectId || null,
             });
-            cursor += text.length;
+            cursor += rawText.length;
         });
         return result;
     }
@@ -223,14 +260,69 @@ export function createParagraphTokenizer(options) {
                 return;
             }
 
+            if (run.kind === 'math') {
+                const fontSize = cssLengthToPixels(run.style && (run.style.fontSize ?? run.style.FontSize), 16);
+                const width = Math.max(1, Number(run.mathLayoutWidth || run.width || 0) || Math.max(1, run.text.length * fontSize * 0.55));
+                const height = Math.max(1, Number(run.mathLayoutHeight || run.height || 0) || fontSize * 1.25);
+                tokens.push(sortObject({
+                    type: 'math',
+                    text: run.text,
+                    start: run.start,
+                    end: run.end,
+                    length: run.text.length,
+                    breakBefore: true,
+                    breakAfter: true,
+                    hardBreak: false,
+                    unbreakable: true,
+                    runId: run.id || null,
+                    kind: run.kind,
+                    math: run.math ? clone(run.math) : null,
+                    width,
+                    height,
+                    mathLayoutAscent: Number(run.mathLayoutAscent || 0) || null,
+                    mathLayoutDescent: Number(run.mathLayoutDescent || 0) || null,
+                    style: clone(run.style || {}),
+                    marks: clone(run.marks || []),
+                }));
+                return;
+            }
+
+            if (run.kind === 'contentControl') {
+                tokens.push(sortObject({
+                    type: 'word',
+                    text: run.text,
+                    start: run.start,
+                    end: run.end,
+                    length: run.text.length,
+                    breakBefore: true,
+                    breakAfter: true,
+                    hardBreak: false,
+                    unbreakable: true,
+                    runId: run.id || null,
+                    kind: run.kind,
+                    contentControl: run.contentControl ? clone(run.contentControl) : null,
+                    style: clone(run.style || {}),
+                    marks: clone(run.marks || []),
+                }));
+                return;
+            }
+
+            const runStyle = clone(run.style || {});
+            const runMarks = clone(run.marks || []);
+            const runMath = run.math ? clone(run.math) : null;
+            const runContentControl = run.contentControl ? clone(run.contentControl) : null;
             tokenizeText(run.text).forEach(function (token) {
-                tokens.push(sortObject(Object.assign({}, token, {
+                const normalized = sortObject(Object.assign({}, token, {
                     start: token.start + run.start,
                     end: token.end + run.start,
                     runId: run.id || null,
-                    style: clone(run.style || {}),
-                    marks: clone(run.marks || []),
-                })));
+                    kind: run.kind,
+                    math: runMath,
+                    contentControl: runContentControl,
+                }));
+                normalized.style = runStyle;
+                normalized.marks = runMarks;
+                tokens.push(normalized);
             });
         });
         return { text: text, runs: runs, tokens: tokens };

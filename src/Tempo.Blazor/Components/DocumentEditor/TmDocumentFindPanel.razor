@@ -55,6 +55,10 @@
             @Loc["TmDocumentEditor_FindWholeWord"]
         </label>
         <label>
+            <input type="checkbox" data-testid="document-find-regex" @bind="_useRegex" @bind:after="RunSearchAsync" />
+            @Loc["TmDocumentEditor_FindRegex"]
+        </label>
+        <label>
             <span>@Loc["TmDocumentEditor_FindScopeLabel"]</span>
             <select class="tm-document-find-panel__scope"
                     data-testid="document-find-scope"
@@ -135,6 +139,7 @@
     private string _replacement = string.Empty;
     private bool _caseSensitive;
     private bool _wholeWord;
+    private bool _useRegex;
     private DocumentSearchScope _scope = DocumentSearchScope.Body;
     private IReadOnlyList<DocumentSearchResult> _results = [];
     private int _activeIndex;
@@ -254,6 +259,7 @@
         Text = _query,
         CaseSensitive = _caseSensitive,
         WholeWord = _wholeWord,
+        UseRegex = _useRegex,
         Scope = _scope
     };
 

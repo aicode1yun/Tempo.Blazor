@@ -67,6 +67,16 @@ public sealed class DocumentSearchServiceTests
         }
     };
 
+    private static DocumentBlock ContentControlBlock(params DocumentBlock[] blocks) => new()
+    {
+        Id = Guid.NewGuid().ToString("N"),
+        Type = DocumentBlockType.ContentControl,
+        Content = new ContentControlBlockContent
+        {
+            Blocks = [.. blocks]
+        }
+    };
+
     // ─── Query model ─────────────────────────────────────────────────────────
 
     [Fact]
@@ -118,6 +128,15 @@ public sealed class DocumentSearchServiceTests
         Assert.Equal(2, results.Count);
         Assert.Equal(0, results[0].BlockTextOffset);
         Assert.Equal(8, results[1].BlockTextOffset);
+    }
+
+    [Fact]
+    public void Search_SingleParagraph_UsesNonOverlappingMatches()
+    {
+        var svc = Create();
+        var results = svc.Search(Doc(Para("aaaa")), new DocumentSearchQuery { Text = "aa" });
+        Assert.Equal(2, results.Count);
+        Assert.Equal([0, 2], results.Select(result => result.BlockTextOffset));
     }
 
     [Fact]
@@ -235,6 +254,18 @@ public sealed class DocumentSearchServiceTests
         var results = svc.Search(doc, new DocumentSearchQuery { Text = "a" });
         // "Name" has 'a', "Alice" has 'a' and 'e' contains 'a' — "Name" → 1, "Alice" → 1
         Assert.True(results.Count >= 2);
+    }
+
+    [Fact]
+    public void Search_ContentControlBlock_FindsTextInNestedBlock()
+    {
+        var svc = Create();
+        var nested = Para("Locked template text");
+        var doc = Doc(ContentControlBlock(nested));
+        var results = svc.Search(doc, new DocumentSearchQuery { Text = "template" });
+
+        Assert.Single(results);
+        Assert.Equal(nested.Id, results[0].BlockId);
     }
 
     // ─── Preview ─────────────────────────────────────────────────────────────

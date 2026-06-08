@@ -139,6 +139,46 @@ public class DocumentEditorProviderTests
     }
 
     [Fact]
+    public async Task Provider_Save_PreservesImageBlocksWhenCanvasBoundaryRequestsCanonicalBlocks()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedEmptyDocument("doc-1");
+        var loaded = await provider.LoadAsync("doc-1");
+        loaded.Document!.Blocks.Add(new DocumentBlock
+        {
+            Id = "canvas-image",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "/canvas-image.png",
+                AltText = "Canvas image",
+                Caption = "Canvas image caption",
+                Size = new DocumentImageSize { Width = 180, Height = 120 },
+                Layout = DocumentObjectLayout.Inline()
+            }
+        });
+
+        var saved = await provider.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = "doc-1",
+            Document = loaded.Document,
+            BaseConcurrencyToken = loaded.ConcurrencyToken,
+            PreserveImageBlocks = true
+        });
+        var reloaded = await provider.LoadAsync("doc-1");
+
+        saved.Success.Should().BeTrue();
+        saved.JsonSnapshot.Should().Contain("\"$type\":\"image\"");
+        reloaded.Document!.Blocks.Should().ContainSingle(block => block.Content is ImageBlockContent);
+        DocumentImagePersistence.EnumerateDrawingRuns(reloaded.Document).Should().BeEmpty();
+        var image = reloaded.Document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
+        image.Url.Should().Be("/canvas-image.png");
+        image.AltText.Should().Be("Canvas image");
+        image.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Inline);
+    }
+
+    [Fact]
     public async Task Provider_SavesNormalizedRawJsonAndRejectsInvalidConcurrencyToken()
     {
         var provider = new InMemoryDocumentEditorProvider();

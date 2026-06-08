@@ -80,7 +80,11 @@ export function flattenParagraphRuns(paragraph, normalizeImageObject) {
             ? 'drawing'
             : rawKind.indexOf('field') >= 0
                 ? 'field'
-                : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
+                : rawKind.indexOf('math') >= 0
+                    ? 'math'
+                    : rawKind.indexOf('contentcontrol') >= 0
+                        ? 'contentControl'
+                        : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
         const text = kind === 'drawing'
             ? ''
             : asText(run.text || run.Text || run.fallbackText || run.FallbackText || '');
@@ -99,6 +103,8 @@ export function flattenParagraphRuns(paragraph, normalizeImageObject) {
             style: mergeTextStyle(baseStyle, run),
             marks: asArray(run.marks || run.Marks),
             object,
+            math: run.math || run.Math || null,
+            contentControl: run.contentControl || run.ContentControl || null,
             objectId: (object && object.objectId) || run.objectId || run.ObjectId || null,
         });
         cursor += text.length;

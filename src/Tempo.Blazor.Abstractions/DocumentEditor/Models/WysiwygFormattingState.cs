@@ -37,6 +37,21 @@ public sealed class WysiwygFormattingState
     /// <summary>Strikethrough formatting state.</summary>
     public WysiwygFormattingValue Strikethrough { get; set; }
 
+    /// <summary>Superscript formatting state.</summary>
+    public WysiwygFormattingValue Superscript { get; set; }
+
+    /// <summary>Subscript formatting state.</summary>
+    public WysiwygFormattingValue Subscript { get; set; }
+
+    /// <summary>Small caps formatting state.</summary>
+    public WysiwygFormattingValue SmallCaps { get; set; }
+
+    /// <summary>All caps formatting state.</summary>
+    public WysiwygFormattingValue AllCaps { get; set; }
+
+    /// <summary>Double strikethrough formatting state.</summary>
+    public WysiwygFormattingValue DoubleStrikethrough { get; set; }
+
     /// <summary>Paragraph alignment for the current selection.</summary>
     public DocumentTextAlignment ParagraphAlignment { get; set; } = DocumentTextAlignment.Left;
 

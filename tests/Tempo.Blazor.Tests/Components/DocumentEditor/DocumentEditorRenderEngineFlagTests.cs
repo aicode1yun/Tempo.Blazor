@@ -34,13 +34,29 @@ public class DocumentEditorRenderEngineFlagTests
             DocumentEditorRenderEngineFlag.Resolve(DocumentEditorRenderEngine.CoreEnginePreview, hostedInteropReady: true));
     }
 
+    [Fact]
+    public void CanvasEnginePreview_RunsWhenExplicitlyRequested()
+    {
+        Assert.Equal(DocumentEditorRenderEngine.CanvasEnginePreview,
+            DocumentEditorRenderEngineFlag.Resolve(DocumentEditorRenderEngine.CanvasEnginePreview, hostedInteropReady: false));
+        Assert.Equal(DocumentEditorRenderEngine.CanvasEnginePreview,
+            DocumentEditorRenderEngineFlag.Resolve(DocumentEditorRenderEngine.CanvasEnginePreview, hostedInteropReady: true));
+    }
+
     /// <summary>
-    /// R.5 cutover: the component now DEFAULTS to the core engine. The flip is reversible (this
-    /// default parameter value); legacy is still selectable via an explicit RenderEngine.
+    /// Phase 25 cutover: the component now defaults to the canvas engine. The flip is
+    /// reversible through the RenderEngine parameter; legacy is still selectable explicitly.
     /// </summary>
     [Fact]
-    public void Default_RenderEngine_IsCoreEnginePreview_AfterR5Cutover()
+    public void Default_RenderEngine_IsCanvasEnginePreview_AfterPhase25Cutover()
     {
-        Assert.Equal(DocumentEditorRenderEngine.CoreEnginePreview, new TmDocumentEditor().RenderEngine);
+        Assert.Equal(DocumentEditorRenderEngine.CanvasEnginePreview, new TmDocumentEditor().RenderEngine);
+    }
+
+    [Fact]
+    public void Explicit_Legacy_RemainsAvailableAsRollback()
+    {
+        Assert.Equal(DocumentEditorRenderEngine.Legacy,
+            DocumentEditorRenderEngineFlag.Resolve(DocumentEditorRenderEngine.Legacy, hostedInteropReady: true));
     }
 }

@@ -132,7 +132,10 @@ public static class DocumentImagePersistence
         }
 
         NormalizeLayout(drawing.Layout);
-        drawing.Url = ToPersistentImageUrl(drawing.Source, drawing.AssetId, drawing.Url);
+        if (drawing.Kind == DocumentDrawingKind.Image)
+        {
+            drawing.Url = ToPersistentImageUrl(drawing.Source, drawing.AssetId, drawing.Url);
+        }
     }
 
     /// <summary>Enumerates drawing runs in a full document, including table cells, headers, footers, and notes.</summary>

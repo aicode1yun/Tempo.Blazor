@@ -1,0 +1,161 @@
+{
+  "schema": "Tempo.Blazor.CanvasParitySeed.v1",
+  "documentId": "phase-24-canvas-parity-seed",
+  "createdUtc": "2026-06-04T00:00:00Z",
+  "route": "/canvas-engine-host?documentId=phase-24-canvas-parity-seed&showToolbar=true&preferLocalDraft=false",
+  "featureGroups": [
+    {
+      "id": "text",
+      "description": "Body text, inline marks, caret, selection and keyboard input.",
+      "coveredBy": "DocumentEditorCanvasTypingE2ETests; DocumentEditorCanvasInlineFormatE2ETests"
+    },
+    {
+      "id": "heading",
+      "description": "Heading hierarchy used by outline, TOC and style inheritance.",
+      "coveredBy": "DocumentEditorCanvasStylesE2ETests; DocumentEditorCanvasSearchOutlineTocE2ETests"
+    },
+    {
+      "id": "list",
+      "description": "Bulleted, numbered, nested and restarted list paragraphs.",
+      "coveredBy": "DocumentEditorCanvasNumberingListsE2ETests"
+    },
+    {
+      "id": "table",
+      "description": "Tables with headers, selection, cell content and advanced layout.",
+      "coveredBy": "DocumentEditorCanvasTableE2ETests; DocumentEditorCanvasHyphenationAdvancedTablesE2ETests"
+    },
+    {
+      "id": "image",
+      "description": "Inline and floating image objects with alt text, captions and wrapping.",
+      "coveredBy": "DocumentEditorCanvasImageE2ETests"
+    },
+    {
+      "id": "drawing",
+      "description": "Lines, connectors, grouped objects and drawing clipboard payloads.",
+      "coveredBy": "DocumentEditorCanvasShapesDrawingsE2ETests"
+    },
+    {
+      "id": "shape",
+      "description": "Shapes, text boxes, charts, handles, hit testing and z-order.",
+      "coveredBy": "DocumentEditorCanvasShapesDrawingsE2ETests"
+    },
+    {
+      "id": "math",
+      "description": "Display and inline equations with editable slots and OMML export smoke.",
+      "coveredBy": "DocumentEditorCanvasMathEquationsE2ETests"
+    },
+    {
+      "id": "form",
+      "description": "Content controls, form fills, locks, repeating sections and validation.",
+      "coveredBy": "DocumentEditorCanvasContentControlsE2ETests"
+    },
+    {
+      "id": "header-footer",
+      "description": "Primary, first-page and odd/even header/footer regions with fields.",
+      "coveredBy": "DocumentEditorCanvasHeadersFootersNotesE2ETests"
+    },
+    {
+      "id": "notes",
+      "description": "Footnotes and endnotes with reference anchors and editable note body.",
+      "coveredBy": "DocumentEditorCanvasHeadersFootersNotesE2ETests"
+    },
+    {
+      "id": "comment",
+      "description": "Comment anchors, threads, replies, resolve state and review pane.",
+      "coveredBy": "DocumentEditorCanvasCommentsRevisionsE2ETests"
+    },
+    {
+      "id": "revision",
+      "description": "Inserted, deleted and formatting revisions with accept/reject workflows.",
+      "coveredBy": "DocumentEditorCanvasCommentsRevisionsE2ETests"
+    },
+    {
+      "id": "field",
+      "description": "Page, date, document title, caption, cross-reference and bibliography fields.",
+      "coveredBy": "DocumentEditorCanvasFieldsE2ETests"
+    },
+    {
+      "id": "toc",
+      "description": "Table of contents and outline generated from canvas heading data.",
+      "coveredBy": "DocumentEditorCanvasSearchOutlineTocE2ETests"
+    },
+    {
+      "id": "section",
+      "description": "Section breaks, page settings and landscape/portrait transitions.",
+      "coveredBy": "DocumentEditorCanvasSectionsColumnsE2ETests"
+    },
+    {
+      "id": "columns",
+      "description": "Multi-column page layout, separator line and line numbering.",
+      "coveredBy": "DocumentEditorCanvasSectionsColumnsE2ETests"
+    }
+  ],
+  "legacyPhases": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23"
+  ],
+  "extendedPhases": [
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "E7",
+    "E8",
+    "E9",
+    "E10",
+    "E11",
+    "E12"
+  ],
+  "providerBoundaries": [
+    "Image",
+    "Font",
+    "Token",
+    "Mention",
+    "PdfExport",
+    "Format",
+    "Comparison",
+    "Suggestion",
+    "Collaboration",
+    "Offline",
+    "Sync",
+    "Audit"
+  ],
+  "majorInteractions": [
+    "typing",
+    "selection",
+    "drag",
+    "table",
+    "image",
+    "comment",
+    "revision",
+    "find",
+    "toc",
+    "form",
+    "math",
+    "shape"
+  ]
+}

@@ -28,6 +28,30 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
                 CanExport = true,
                 FileExtensions = [".docx"],
                 ContentTypes = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+            },
+            new()
+            {
+                Format = DocumentFormatProviderKind.Odt,
+                CanImport = true,
+                CanExport = true,
+                FileExtensions = [".odt"],
+                ContentTypes = ["application/vnd.oasis.opendocument.text"]
+            },
+            new()
+            {
+                Format = DocumentFormatProviderKind.Html,
+                CanImport = true,
+                CanExport = true,
+                FileExtensions = [".html", ".htm"],
+                ContentTypes = ["text/html"]
+            },
+            new()
+            {
+                Format = DocumentFormatProviderKind.Markdown,
+                CanImport = true,
+                CanExport = true,
+                FileExtensions = [".md", ".markdown"],
+                ContentTypes = ["text/markdown", "text/x-markdown", "text/plain"]
             }
         ];
 
@@ -65,11 +89,11 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
                 return result;
             }
 
-            return result ?? FailedImport(request.Format, "DOCX import failed.");
+            return result ?? FailedImport(request.Format, "Document import failed.");
         }
         catch
         {
-            return FailedImport(request.Format, "DOCX import failed.");
+            return FailedImport(request.Format, "Document import failed.");
         }
     }
 
@@ -97,11 +121,11 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
                 return result;
             }
 
-            return result ?? FailedExport(request.Format, "DOCX export failed.");
+            return result ?? FailedExport(request.Format, "Document export failed.");
         }
         catch
         {
-            return FailedExport(request.Format, "DOCX export failed.");
+            return FailedExport(request.Format, "Document export failed.");
         }
     }
 

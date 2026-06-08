@@ -25,6 +25,9 @@ public sealed class DocumentSearchQuery
     /// <summary>Whether the match must be a whole word (bounded by non-word characters).</summary>
     public bool WholeWord { get; init; }
 
+    /// <summary>Whether <see cref="Text"/> should be interpreted as a regular expression.</summary>
+    public bool UseRegex { get; init; }
+
     /// <summary>Which parts of the document to search.</summary>
     public DocumentSearchScope Scope { get; init; } = DocumentSearchScope.Body;
 }

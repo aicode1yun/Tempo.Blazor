@@ -1,13 +1,22 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @using Tempo.Blazor.Components.DocumentEditor.Registry
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
 @if (IsOpen && VisibleCommands.Count > 0)
 {
     <div class="tm-command-palette-backdrop tm-document-command-palette" data-testid="document-command-palette">
-        <div class="tm-command-palette" role="dialog" aria-modal="true" aria-label="@Loc["TmCommandPalette_Placeholder"]">
+        <div @ref="_dialog"
+             class="tm-command-palette"
+             role="dialog"
+             aria-modal="true"
+             aria-label="@Loc["TmCommandPalette_Placeholder"]"
+             data-testid="document-command-palette-dialog">
             <div class="tm-command-palette-header">
                 <input class="tm-command-palette-input"
+                       @ref="_searchInput"
                        value="@_query"
                        @oninput="HandleSearchInput"
                        @onkeydown="HandleSearchKeyDownAsync"
@@ -20,7 +29,9 @@
                         type="button"
                         aria-label="@Loc["TmDocumentEditor_FindClose"]"
                         @onclick="CloseAsync"
-                        data-testid="document-command-palette-close">x</button>
+                        data-testid="document-command-palette-close">
+                    <TmIcon Name="x" Size="IconSize.Sm" />
+                </button>
             </div>
             <ul class="tm-command-palette-list"
                 role="listbox"
@@ -78,6 +89,10 @@
 @code {
     private string _query = string.Empty;
     private int _highlightedIndex;
+    private ElementReference _dialog;
+    private ElementReference _searchInput;
+    private DocumentEditorFocusTrapController? _focusTrap;
+    private bool _focusTrapActive;
 
     /// <summary>Whether the command palette is visible.</summary>
     [Parameter] public bool IsOpen { get; set; }
@@ -113,6 +128,24 @@
         : Math.Clamp(_highlightedIndex, 0, FilteredCommands.Count - 1);
 
     private string? ActiveOptionId => HighlightedIndex < 0 ? null : GetOptionId(HighlightedIndex);
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsOpen && VisibleCommands.Count > 0)
+        {
+            if (!_focusTrapActive)
+            {
+                _focusTrap ??= new DocumentEditorFocusTrapController(JSRuntime);
+                await _focusTrap.ActivateAsync(_dialog, _searchInput);
+                _focusTrapActive = true;
+            }
+
+            return;
+        }
+
+        await ReleaseFocusTrapAsync(restoreFocus: true);
+    }
 
     private string GetLabel(DocumentEditorCommandState command) =>
         string.IsNullOrWhiteSpace(command.DescriptionKey)
@@ -200,4 +233,24 @@
     }
 
     private static string GetOptionId(int index) => $"tm-document-command-palette-option-{index}";
+
+    private async ValueTask ReleaseFocusTrapAsync(bool restoreFocus)
+    {
+        if (_focusTrap is not null && _focusTrapActive)
+        {
+            await _focusTrap.ReleaseAsync(restoreFocus);
+        }
+
+        _focusTrapActive = false;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        await ReleaseFocusTrapAsync(restoreFocus: false);
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DisposeAsync();
+        }
+    }
 }

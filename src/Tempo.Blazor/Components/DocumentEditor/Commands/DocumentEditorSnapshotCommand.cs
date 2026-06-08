@@ -52,6 +52,7 @@ public sealed class DocumentEditorSnapshotCommand : IDocumentEditorCommand
         _target.Notes = DocumentEditorCommandCloner.Clone(source.Notes);
         _target.HeadersFooters = DocumentEditorCommandCloner.Clone(source.HeadersFooters);
         _target.Revisions = DocumentEditorCommandCloner.Clone(source.Revisions);
+        _target.Styles = DocumentEditorCommandCloner.Clone(source.Styles);
         _target.Assets = DocumentEditorCommandCloner.Clone(source.Assets);
         _target.Anchors = DocumentEditorCommandCloner.Clone(source.Anchors);
     }

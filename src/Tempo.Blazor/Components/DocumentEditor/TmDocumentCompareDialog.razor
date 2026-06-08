@@ -1,15 +1,24 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Rendering
+@using Microsoft.JSInterop
 @using Tempo.Blazor.Components.Files
 @using Tempo.Blazor.DocumentEditor.Interfaces
 @using Tempo.Blazor.DocumentEditor.Models
 @using Tempo.Blazor.DocumentEditor.Services
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
-<section class="tm-document-version-dialog tm-document-compare-dialog" role="dialog" aria-modal="true" aria-label="@Loc["TmDocumentEditor_CompareDialogTitle"]" data-testid="document-compare-dialog">
+<section @ref="_dialog"
+         class="tm-document-version-dialog tm-document-compare-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-label="@Loc["TmDocumentEditor_CompareDialogTitle"]"
+         data-testid="document-compare-dialog">
     <header class="tm-document-version-dialog__header">
         <h3>@Loc["TmDocumentEditor_CompareDialogTitle"]</h3>
         <button type="button"
+                @ref="_closeButton"
                 class="tm-document-version-dialog__icon-button"
                 aria-label="@Loc["TmDocumentEditor_Close"]"
                 @onclick="OnClose"
@@ -72,6 +81,10 @@
     private bool _isComparing;
     private string? _message;
     private DocumentCompareResult? _result;
+    private ElementReference _dialog;
+    private ElementReference _closeButton;
+    private DocumentEditorFocusTrapController? _focusTrap;
+    private bool _focusTrapActive;
 
     /// <summary>Current editor document snapshot.</summary>
     [Parameter] public DocumentEditorDocument? CurrentDocument { get; set; }
@@ -99,6 +112,19 @@
 
     /// <summary>Raised when the dialog should close.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusTrapActive)
+        {
+            return;
+        }
+
+        _focusTrap ??= new DocumentEditorFocusTrapController(JSRuntime);
+        await _focusTrap.ActivateAsync(_dialog, _closeButton);
+        _focusTrapActive = true;
+    }
 
     private RenderFragment RenderSourceEditor(bool isBase) => builder =>
     {
@@ -401,5 +427,15 @@
     {
         var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
         return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.ReleaseAsync(restoreFocus: true);
+            await _focusTrap.DisposeAsync();
+        }
     }
 }

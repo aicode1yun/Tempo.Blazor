@@ -9,6 +9,9 @@ public enum DocumentToolbarTab
     /// <summary>Insert tab.</summary>
     Insert,
 
+    /// <summary>Math tab.</summary>
+    Math,
+
     /// <summary>Layout tab.</summary>
     Layout,
 

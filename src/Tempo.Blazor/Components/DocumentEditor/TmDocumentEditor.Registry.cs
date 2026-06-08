@@ -245,6 +245,13 @@ public partial class TmDocumentEditor
             icon: "list-end",
             disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
 
+        RegisterCanvasReferenceCommand("insertCaption", "TmDocumentEditor_InsertCaption", "captions", InsertCaptionAsync);
+        RegisterCanvasReferenceCommand("insertCrossReference", "TmDocumentEditor_CrossReference", "scan-line", InsertCrossReferenceAsync);
+        RegisterCanvasReferenceCommand("insertTableOfContents", "TmDocumentEditor_TableOfContents", "list", InsertTableOfContentsAsync);
+        RegisterCanvasReferenceCommand("insertTableOfFigures", "TmDocumentEditor_TableOfFigures", "list-tree", InsertTableOfFiguresAsync);
+        RegisterCanvasReferenceCommand("insertBibliography", "TmDocumentEditor_Bibliography", "book-open", InsertBibliographyAsync);
+        RegisterCanvasReferenceCommand("updateAllFields", "TmDocumentEditor_UpdateFields", "refresh-ccw", UpdateFieldsAsync);
+
         // ── Format providers ─────────────────────────────────────────────────
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "exportPdf", affectsData: false,
@@ -562,6 +569,26 @@ public partial class TmDocumentEditor
             icon: "maximize"));
 
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "openPrintPreview", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument && UsingCanvasEngine,
+            computeValue: _ => _canvasPrintPreviewActive ? "active" : "inactive",
+            execute: (_, _) => OpenCanvasPrintPreviewAsync(),
+            descriptionKey: "TmDocumentEditor_PrintPreview",
+            tooltipKey: "TmDocumentEditor_PrintPreview",
+            category: "View",
+            icon: "printer"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "printDocument", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument && UsingCanvasEngine,
+            computeValue: _ => null,
+            execute: (_, _) => PrintCanvasDocumentAsync(),
+            descriptionKey: "TmDocumentEditor_PrintDocument",
+            tooltipKey: "TmDocumentEditor_PrintDocument",
+            category: "View",
+            icon: "printer"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "viewDocumentJson", affectsData: false,
             computeEnabled: ctx => ShowDebugTools && ctx.HasDocument,
             computeValue: _ => null,
@@ -638,6 +665,20 @@ public partial class TmDocumentEditor
             descriptionKey: key,
             tooltipKey: key,
             category: "HeaderFooter",
+            icon: icon,
+            disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
+    }
+
+    private void RegisterCanvasReferenceCommand(string name, string key, string icon, Func<Task> execute)
+    {
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            name,
+            affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && !ctx.IsReadOnly && UsingCanvasEngine,
+            execute: (_, _) => execute(),
+            descriptionKey: key,
+            tooltipKey: key,
+            category: "References",
             icon: icon,
             disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
     }

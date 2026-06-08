@@ -29,6 +29,16 @@ public sealed class DocumentReplaceServiceTests
     private static DocumentBlock SimplePara(string id, string text) =>
         Para(id, (text, []));
 
+    private static DocumentBlock ContentControlBlock(string id, params DocumentBlock[] blocks) => new()
+    {
+        Id = id,
+        Type = DocumentBlockType.ContentControl,
+        Content = new ContentControlBlockContent
+        {
+            Blocks = [.. blocks]
+        }
+    };
+
     private static string GetFlatText(DocumentBlock block) =>
         block.Content is ParagraphBlockContent p
             ? string.Concat(p.Inlines.OfType<TextRun>().Select(r => r.Text))
@@ -142,5 +152,17 @@ public sealed class DocumentReplaceServiceTests
             new DocumentSearchQuery { Text = "cat", CaseSensitive = true }, "dog");
         Assert.Equal(1, count);
         Assert.Equal("Cat dog CAT", GetFlatText(doc.Blocks[0]));
+    }
+
+    [Fact]
+    public void ReplaceAll_ContentControlBlock_ReplacesTextInNestedBlock()
+    {
+        var nested = SimplePara("nested-p", "Template cat text");
+        var doc = Doc(ContentControlBlock("cc1", nested));
+
+        var count = Replace().ReplaceAll(doc, new DocumentSearchQuery { Text = "cat" }, "dog");
+
+        Assert.Equal(1, count);
+        Assert.Equal("Template dog text", GetFlatText(nested));
     }
 }

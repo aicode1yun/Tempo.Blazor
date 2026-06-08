@@ -9,7 +9,13 @@ public enum DocumentFormatKind
     Docx,
 
     /// <summary>OpenDocument Text package.</summary>
-    Odt
+    Odt,
+
+    /// <summary>Semantic HTML document.</summary>
+    Html,
+
+    /// <summary>Markdown document.</summary>
+    Markdown
 }
 
 /// <summary>Severity of an import/export compatibility message.</summary>

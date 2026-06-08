@@ -1,12 +1,21 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@using Microsoft.JSInterop
 @using Tempo.Blazor.DocumentEditor.Models
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
-<section class="tm-document-version-dialog" role="dialog" aria-modal="true" aria-label="@Loc["TmDocumentEditor_CreateVersion"]" data-testid="document-version-dialog">
+<section @ref="_dialog"
+         class="tm-document-version-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-label="@Loc["TmDocumentEditor_CreateVersion"]"
+         data-testid="document-version-dialog">
     <header class="tm-document-version-dialog__header">
         <h3>@Loc["TmDocumentEditor_CreateVersion"]</h3>
         <button type="button"
                 class="tm-document-version-dialog__icon-button"
                 title="@Loc["TmDocumentEditor_CloseVersionDialog"]"
+                aria-label="@Loc["TmDocumentEditor_CloseVersionDialog"]"
                 @onclick="OnCancel"
                 data-testid="document-version-dialog-close">
             <TmIcon Name="x" Size="IconSize.Sm" />
@@ -15,7 +24,10 @@
 
     <label>
         <span>@Loc["TmDocumentEditor_VersionKind"]</span>
-        <select value="@_kind" @onchange="ChangeKind" data-testid="document-version-kind">
+        <select @ref="_kindSelect"
+                value="@_kind"
+                @onchange="ChangeKind"
+                data-testid="document-version-kind">
             <option value="@DocumentVersionKind.Minor">@Loc["TmDocumentEditor_VersionKindMinor"]</option>
             <option value="@DocumentVersionKind.Major">@Loc["TmDocumentEditor_VersionKindMajor"]</option>
         </select>
@@ -49,6 +61,10 @@
     private string? _label;
     private string? _description;
     private string? _validationMessage;
+    private ElementReference _dialog;
+    private ElementReference _kindSelect;
+    private DocumentEditorFocusTrapController? _focusTrap;
+    private bool _focusTrapActive;
 
     /// <summary>Whether create action is currently running.</summary>
     [Parameter] public bool IsBusy { get; set; }
@@ -61,6 +77,19 @@
 
     /// <summary>Raised when the dialog should close without creating a version.</summary>
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusTrapActive)
+        {
+            return;
+        }
+
+        _focusTrap ??= new DocumentEditorFocusTrapController(JSRuntime);
+        await _focusTrap.ActivateAsync(_dialog, _kindSelect);
+        _focusTrapActive = true;
+    }
 
     private void ChangeKind(ChangeEventArgs args)
     {
@@ -87,5 +116,15 @@
             Label = string.IsNullOrWhiteSpace(_label) ? null : _label.Trim(),
             Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim()
         });
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.ReleaseAsync(restoreFocus: true);
+            await _focusTrap.DisposeAsync();
+        }
     }
 }

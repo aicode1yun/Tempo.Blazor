@@ -1,6 +1,7 @@
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using System.Globalization;
+using System.Text.Json;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Internal;
 using W = DocumentFormat.OpenXml.Wordprocessing;
@@ -61,11 +62,14 @@ public sealed class DocxPackageWriter
         0xAE, 0x42, 0x60, 0x82
     ];
 
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly WordprocessingDocument _package;
     private readonly DocumentEditorDocument _document;
     private readonly DocumentFormatExportOptions _options;
     private MainDocumentPart _mainPart = null!;
     private long _drawingId = 1;
+    private readonly Dictionary<string, int> _numberingInstanceIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _commentIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _revisionIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DocumentFormatImageExportResult?> _assetImageCache = new(StringComparer.Ordinal);
@@ -128,6 +132,13 @@ public sealed class DocxPackageWriter
         return document;
     }
 
+    private static void AddTempoCompatibility(OpenXmlElement element)
+    {
+        element.MCAttributes = new MarkupCompatibilityAttributes { Ignorable = TempoPrefix };
+        element.AddNamespaceDeclaration("mc", MarkupCompatibilityNamespace);
+        element.AddNamespaceDeclaration(TempoPrefix, TempoNamespace);
+    }
+
     private DocumentRestrictedMarker? FindRestrictedMarkerForBlock(string blockId)
         => _document.RestrictedMarkers.FirstOrDefault(marker =>
             string.Equals(marker.StartBlockId, blockId, StringComparison.Ordinal)
@@ -148,13 +159,14 @@ public sealed class DocxPackageWriter
     {
         return block.Content switch
         {
-            ParagraphBlockContent paragraph => [await WriteParagraphAsync(paragraph.Inlines, context, blockId: block.Id, cancellationToken: cancellationToken)],
-            HeadingBlockContent heading => [await WriteParagraphAsync(heading.Inlines, context, heading.Level, blockId: block.Id, cancellationToken: cancellationToken)],
-            ListBlockContent list => [await WriteParagraphAsync(list.Inlines, context, ordered: list.Ordered, level: list.IndentLevel, blockId: block.Id, cancellationToken: cancellationToken)],
-            QuoteBlockContent quote => [await WriteParagraphAsync(quote.Inlines, context, styleId: "Quote", blockId: block.Id, cancellationToken: cancellationToken)],
-            TableBlockContent table => [await WriteTableAsync(table, context, block.Id, cancellationToken)],
-            ImageBlockContent image => [await WriteImageParagraphAsync(image, context, block.Id, cancellationToken)],
-            PageBreakBlockContent => [new W.Paragraph(new W.Run(new W.Break { Type = W.BreakValues.Page }))],
+            ParagraphBlockContent paragraph => [await WriteParagraphAsync(paragraph.Inlines, context, block: block, cancellationToken: cancellationToken)],
+            HeadingBlockContent heading => [await WriteParagraphAsync(heading.Inlines, context, heading.Level, block: block, cancellationToken: cancellationToken)],
+            ListBlockContent list => [await WriteParagraphAsync(list.Inlines, context, ordered: list.Ordered, level: list.IndentLevel, block: block, list: list, cancellationToken: cancellationToken)],
+            QuoteBlockContent quote => [await WriteParagraphAsync(quote.Inlines, context, styleId: "Quote", block: block, cancellationToken: cancellationToken)],
+            TableBlockContent table => [await WriteTableAsync(table, context, block.Id, block.SectionId, cancellationToken)],
+            ImageBlockContent image => [await WriteImageParagraphAsync(image, context, block.Id, block.SectionId, cancellationToken)],
+            PageBreakBlockContent pageBreak => [WriteBreakParagraph(block, pageBreak)],
+            ContentControlBlockContent contentControl => [await WriteContentControlBlockAsync(block, contentControl, context, cancellationToken)],
             _ => []
         };
     }
@@ -166,11 +178,13 @@ public sealed class DocxPackageWriter
         bool ordered = false,
         int level = 0,
         string? styleId = null,
-        string? blockId = null,
+        DocumentBlock? block = null,
+        ListBlockContent? list = null,
         CancellationToken cancellationToken = default)
     {
         var paragraph = new W.Paragraph();
-        SetTempoAttribute(paragraph, "block-id", blockId);
+        SetTempoAttribute(paragraph, "block-id", block?.Id);
+        SetTempoAttribute(paragraph, "section-id", block?.SectionId);
         var properties = new W.ParagraphProperties();
         if (headingLevel is not null)
         {
@@ -181,11 +195,15 @@ public sealed class DocxPackageWriter
             properties.Append(new W.ParagraphStyleId { Val = styleId });
         }
 
-        if (ordered || level > 0)
+        AppendParagraphFormatting(properties, block?.ParagraphProperties);
+
+        if (list is not null || ordered || level > 0)
         {
+            var numberingId = ResolveNumberingInstanceId(list, ordered);
             properties.Append(new W.NumberingProperties(
                 new W.NumberingLevelReference { Val = level },
-                new W.NumberingId { Val = ordered ? 2 : 1 }));
+                new W.NumberingId { Val = numberingId }));
+            WriteTempoListAttributes(paragraph, list, ordered, level);
         }
 
         if (properties.HasChildren)
@@ -230,6 +248,18 @@ public sealed class DocxPackageWriter
                     paragraph.Append(new W.Run(new W.Break()), WriteRun(drawing.Caption, []));
                 }
             }
+            else if (inline is DocumentFieldRun field)
+            {
+                paragraph.Append(WriteFieldInline(field));
+            }
+            else if (inline is DocumentMathRun math)
+            {
+                paragraph.Append(WriteMathInline(math));
+            }
+            else if (inline is DocumentContentControlRun contentControl)
+            {
+                paragraph.Append(WriteContentControlInline(contentControl));
+            }
         }
 
         if (!paragraph.ChildElements.Any(element =>
@@ -248,8 +278,307 @@ public sealed class DocxPackageWriter
         bool ordered = false,
         int level = 0,
         string? styleId = null,
-        string? blockId = null)
-        => WriteParagraphAsync(inlines, context, headingLevel, ordered, level, styleId, blockId).GetAwaiter().GetResult();
+        DocumentBlock? block = null)
+        => WriteParagraphAsync(inlines, context, headingLevel, ordered, level, styleId, block).GetAwaiter().GetResult();
+
+    private static void AppendParagraphFormatting(W.ParagraphProperties properties, DocumentParagraphProperties? formatting)
+    {
+        if (formatting is null)
+        {
+            return;
+        }
+
+        if (formatting.Alignment != DocumentTextAlignment.Left)
+        {
+            properties.Append(new W.Justification
+            {
+                Val = formatting.Alignment switch
+                {
+                    DocumentTextAlignment.Center => W.JustificationValues.Center,
+                    DocumentTextAlignment.Right => W.JustificationValues.Right,
+                    DocumentTextAlignment.Justify => W.JustificationValues.Both,
+                    _ => W.JustificationValues.Left
+                }
+            });
+        }
+
+        if (formatting.SpacingBefore > 0 || formatting.SpacingAfter > 0 || Math.Abs(formatting.LineSpacing - 1) > 0.001)
+        {
+            properties.Append(new W.SpacingBetweenLines
+            {
+                Before = PointsToTwips(formatting.SpacingBefore).ToString(CultureInfo.InvariantCulture),
+                After = PointsToTwips(formatting.SpacingAfter).ToString(CultureInfo.InvariantCulture),
+                Line = Math.Max(1, (int)Math.Round(formatting.LineSpacing * 240)).ToString(CultureInfo.InvariantCulture),
+                LineRule = W.LineSpacingRuleValues.Auto
+            });
+        }
+
+        if (formatting.LeftIndent > 0 || formatting.RightIndent > 0 || Math.Abs(formatting.FirstLineIndent) > 0.001)
+        {
+            var indentation = new W.Indentation
+            {
+                Left = PointsToTwips(formatting.LeftIndent).ToString(CultureInfo.InvariantCulture),
+                Right = PointsToTwips(formatting.RightIndent).ToString(CultureInfo.InvariantCulture)
+            };
+            if (formatting.FirstLineIndent > 0)
+            {
+                indentation.FirstLine = PointsToTwips(formatting.FirstLineIndent).ToString(CultureInfo.InvariantCulture);
+            }
+            else if (formatting.FirstLineIndent < 0)
+            {
+                indentation.Hanging = PointsToTwips(Math.Abs(formatting.FirstLineIndent)).ToString(CultureInfo.InvariantCulture);
+            }
+
+            properties.Append(indentation);
+        }
+
+        if (formatting.TabStops.Count > 0)
+        {
+            properties.Append(new W.Tabs(formatting.TabStops
+                .OrderBy(tab => tab.Position)
+                .Select(tab => new W.TabStop
+                {
+                    Val = ToDocxTabStopAlignment(tab.Alignment),
+                    Leader = ToDocxTabLeader(tab.Leader),
+                    Position = PointsToTwips(tab.Position)
+                })));
+        }
+    }
+
+    private static W.TabStopValues ToDocxTabStopAlignment(DocumentTabStopAlignment alignment)
+        => alignment switch
+        {
+            DocumentTabStopAlignment.Center => W.TabStopValues.Center,
+            DocumentTabStopAlignment.Right => W.TabStopValues.Right,
+            DocumentTabStopAlignment.Decimal => W.TabStopValues.Decimal,
+            DocumentTabStopAlignment.Bar => W.TabStopValues.Bar,
+            _ => W.TabStopValues.Left
+        };
+
+    private static W.TabStopLeaderCharValues ToDocxTabLeader(DocumentTabStopLeader leader)
+        => leader switch
+        {
+            DocumentTabStopLeader.Dots => W.TabStopLeaderCharValues.Dot,
+            DocumentTabStopLeader.Dash => W.TabStopLeaderCharValues.Hyphen,
+            DocumentTabStopLeader.Underline => W.TabStopLeaderCharValues.Underscore,
+            _ => W.TabStopLeaderCharValues.None
+        };
+
+    private int ResolveNumberingInstanceId(ListBlockContent? list, bool ordered)
+    {
+        if (!string.IsNullOrWhiteSpace(list?.NumberingId)
+            && _numberingInstanceIds.TryGetValue(list.NumberingId, out var mapped))
+        {
+            return mapped;
+        }
+
+        return ordered ? 2 : 1;
+    }
+
+    private static void WriteTempoListAttributes(W.Paragraph paragraph, ListBlockContent? list, bool ordered, int level)
+    {
+        if (list is null)
+        {
+            SetTempoAttribute(paragraph, "list-ordered", FormatBool(ordered));
+            SetTempoAttribute(paragraph, "list-level", level.ToString(CultureInfo.InvariantCulture));
+            return;
+        }
+
+        SetTempoAttribute(paragraph, "list-ordered", FormatBool(list.Ordered));
+        SetTempoAttribute(paragraph, "list-level", list.IndentLevel.ToString(CultureInfo.InvariantCulture));
+        SetTempoAttribute(paragraph, "list-start-number", list.StartNumber.ToString(CultureInfo.InvariantCulture));
+        SetTempoAttribute(paragraph, "numbering-id", list.NumberingId);
+        SetTempoAttribute(paragraph, "abstract-numbering-id", list.AbstractNumberingId);
+        SetTempoAttribute(paragraph, "list-style-id", list.ListStyleId);
+        SetTempoAttribute(paragraph, "number-format", list.NumberFormat);
+        SetTempoAttribute(paragraph, "level-text", list.LevelText);
+        SetTempoAttribute(paragraph, "list-suffix", list.Suffix);
+        SetTempoAttribute(paragraph, "label-indent", FormatNullableNumber(list.LabelIndent));
+        SetTempoAttribute(paragraph, "hanging-indent", FormatNullableNumber(list.HangingIndent));
+        SetTempoAttribute(paragraph, "restart-numbering", FormatBool(list.RestartNumbering));
+        SetTempoAttribute(paragraph, "continue-numbering", FormatBool(list.ContinueNumbering));
+        SetTempoAttribute(paragraph, "numbering-value", list.NumberingValue?.ToString(CultureInfo.InvariantCulture));
+    }
+
+    private static W.SimpleField WriteFieldInline(DocumentFieldRun field)
+    {
+        var simpleField = new W.SimpleField
+        {
+            Instruction = BuildFieldInstruction(field)
+        };
+        SetTempoAttribute(simpleField, "inline-id", field.Id);
+        SetTempoAttribute(simpleField, "field-json", JsonSerializer.Serialize(field, JsonOptions));
+        simpleField.Append(WriteRun(GetFieldDisplayText(field), field.Marks));
+        return simpleField;
+    }
+
+    private static string BuildFieldInstruction(DocumentFieldRun field)
+    {
+        if (!string.IsNullOrWhiteSpace(field.InstrText))
+        {
+            return field.InstrText;
+        }
+
+        return field.FieldType switch
+        {
+            DocumentFieldType.PageNumber => "PAGE",
+            DocumentFieldType.PageCount => "NUMPAGES",
+            DocumentFieldType.PageXOfY => "PAGE \\* MERGEFORMAT",
+            DocumentFieldType.Date => string.IsNullOrWhiteSpace(field.Format) ? "DATE" : $"DATE \\@ \"{field.Format}\"",
+            DocumentFieldType.Time => string.IsNullOrWhiteSpace(field.Format) ? "TIME" : $"TIME \\@ \"{field.Format}\"",
+            DocumentFieldType.DocumentTitle => "TITLE",
+            DocumentFieldType.Author => "AUTHOR",
+            DocumentFieldType.LastSaved => "SAVEDATE",
+            DocumentFieldType.FileName => "FILENAME",
+            DocumentFieldType.RevisionNumber => "REVNUM",
+            DocumentFieldType.StyleRef => $"STYLEREF \"{field.ReferenceKind ?? field.TargetId ?? "Heading 1"}\"",
+            DocumentFieldType.Ref => $"REF {field.TargetId ?? field.ReferenceKind ?? "bookmark"} \\h",
+            DocumentFieldType.Seq => $"SEQ {field.SequenceId ?? field.SequenceLabel ?? "Figure"}",
+            DocumentFieldType.TableOfFigures => $"TOC \\h \\z \\c \"{field.SequenceId ?? field.SequenceLabel ?? "Figure"}\"",
+            DocumentFieldType.Bibliography => "BIBLIOGRAPHY",
+            DocumentFieldType.Citation => $"CITATION {field.CitationId ?? field.TargetId ?? string.Empty}".TrimEnd(),
+            DocumentFieldType.SectionPageNumber => "PAGE",
+            DocumentFieldType.SectionPageCount => "SECTIONPAGES",
+            DocumentFieldType.Unknown => field.InstrText ?? string.Empty,
+            _ => field.FieldType.ToString().ToUpperInvariant()
+        };
+    }
+
+    private static string GetFieldDisplayText(DocumentFieldRun field)
+        => FirstNonWhiteSpace(field.CachedResult, field.DisplayText, field.FallbackText, field.SequenceLabel, field.TargetId, field.CitationId, field.FieldType.ToString())!;
+
+    private static W.Run WriteMathInline(DocumentMathRun math)
+    {
+        var run = WriteRun(GetMathDisplayText(math), math.Marks);
+        SetTempoAttribute(run, "inline-kind", "math");
+        SetTempoAttribute(run, "math-json", JsonSerializer.Serialize(math, JsonOptions));
+        return run;
+    }
+
+    private static string GetMathDisplayText(DocumentMathRun math)
+        => FirstNonWhiteSpace(math.AltText, DocumentMathText.FlattenMathContent(math.Content), math.MathId)!;
+
+    private static W.SdtRun WriteContentControlInline(DocumentContentControlRun contentControl)
+    {
+        var sdt = new W.SdtRun();
+        SetTempoAttribute(sdt, "inline-id", contentControl.Id);
+        SetTempoAttribute(sdt, "content-control-json", JsonSerializer.Serialize(contentControl, JsonOptions));
+        sdt.Append(CreateContentControlProperties(contentControl.Control));
+        sdt.Append(new W.SdtContentRun(WriteRun(GetContentControlDisplayText(contentControl), contentControl.Marks)));
+        return sdt;
+    }
+
+    private async Task<W.SdtBlock> WriteContentControlBlockAsync(
+        DocumentBlock block,
+        ContentControlBlockContent contentControl,
+        DocxPartWriterContext context,
+        CancellationToken cancellationToken)
+    {
+        var sdt = new W.SdtBlock();
+        SetTempoAttribute(sdt, "block-id", block.Id);
+        SetTempoAttribute(sdt, "section-id", block.SectionId);
+        SetTempoAttribute(sdt, "content-control-json", JsonSerializer.Serialize(contentControl.Control, JsonOptions));
+        sdt.Append(CreateContentControlProperties(contentControl.Control));
+
+        var content = new W.SdtContentBlock();
+        foreach (var childBlock in contentControl.Blocks.OrderBy(item => item.Order))
+        {
+            foreach (var element in await WriteBlockAsync(childBlock, context, cancellationToken))
+            {
+                content.Append(element);
+            }
+        }
+
+        if (!content.ChildElements.Any())
+        {
+            content.Append(new W.Paragraph(new W.Run(new W.Text(string.Empty))));
+        }
+
+        sdt.Append(content);
+        return sdt;
+    }
+
+    private static W.SdtProperties CreateContentControlProperties(DocumentContentControl control)
+    {
+        var properties = new W.SdtProperties();
+        SetTempoAttribute(properties, "control-json", JsonSerializer.Serialize(control, JsonOptions));
+        if (!string.IsNullOrWhiteSpace(control.Alias))
+        {
+            properties.Append(new W.SdtAlias { Val = control.Alias });
+        }
+
+        if (!string.IsNullOrWhiteSpace(control.Tag))
+        {
+            properties.Append(new W.Tag { Val = control.Tag });
+        }
+
+        if (control.LockContent || control.LockDeletion)
+        {
+            properties.Append(new W.Lock
+            {
+                Val = control.LockContent && control.LockDeletion
+                    ? W.LockingValues.SdtLocked
+                    : W.LockingValues.ContentLocked
+            });
+        }
+
+        return properties;
+    }
+
+    private static string GetContentControlDisplayText(DocumentContentControlRun run)
+    {
+        var richText = DocumentModelText.GetInlineText(run.Inlines);
+        if (!string.IsNullOrWhiteSpace(richText))
+        {
+            return richText;
+        }
+
+        return GetContentControlValueText(run.Control);
+    }
+
+    private static string GetContentControlValueText(DocumentContentControl control)
+    {
+        if (!string.IsNullOrWhiteSpace(control.Value.Text))
+        {
+            return control.Value.Text;
+        }
+
+        if (!string.IsNullOrWhiteSpace(control.Value.SelectedValue))
+        {
+            return control.Items.FirstOrDefault(item => item.Value == control.Value.SelectedValue)?.DisplayText
+                ?? control.Value.SelectedValue;
+        }
+
+        if (control.Value.Checked.HasValue)
+        {
+            return control.Value.Checked.Value ? "Yes" : "No";
+        }
+
+        if (!string.IsNullOrWhiteSpace(control.Value.DateIso))
+        {
+            return control.Value.DateIso;
+        }
+
+        if (!string.IsNullOrWhiteSpace(control.Value.AssetId))
+        {
+            return control.Value.AssetId;
+        }
+
+        return control.PlaceholderText ?? control.Alias ?? control.Tag ?? control.ControlId;
+    }
+
+    private static W.Paragraph WriteBreakParagraph(DocumentBlock block, PageBreakBlockContent pageBreak)
+    {
+        var breakType = pageBreak.BreakType == DocumentSectionBreakType.Column
+            ? W.BreakValues.Column
+            : W.BreakValues.Page;
+        var paragraph = new W.Paragraph(new W.Run(new W.Break { Type = breakType }));
+        SetTempoAttribute(paragraph, "block-id", block.Id);
+        SetTempoAttribute(paragraph, "section-id", block.SectionId);
+        SetTempoAttribute(paragraph, "break-type", pageBreak.BreakType.ToString());
+        SetTempoAttribute(paragraph, "next-section-id", pageBreak.NextSectionId);
+        return paragraph;
+    }
 
     private IEnumerable<OpenXmlElement> WriteTextInline(TextRun text, DocxPartWriterContext context)
     {
@@ -339,6 +668,7 @@ public sealed class DocxPackageWriter
         TableBlockContent table,
         DocxPartWriterContext context,
         string tableId,
+        string? sectionId,
         CancellationToken cancellationToken)
     {
         var tableProperties = new W.TableProperties(new W.TableBorders(
@@ -376,6 +706,7 @@ public sealed class DocxPackageWriter
 
         var docxTable = new W.Table(tableProperties);
         SetTempoAttribute(docxTable, "block-id", tableId);
+        SetTempoAttribute(docxTable, "section-id", sectionId);
 
         foreach (var row in table.Rows)
         {
@@ -430,11 +761,11 @@ public sealed class DocxPackageWriter
                     var cellContext = context.ForTableCell(tableId, cell.Id);
                     if (block.Content is ParagraphBlockContent paragraph)
                     {
-                        docxCell.Append(await WriteParagraphAsync(paragraph.Inlines, cellContext, blockId: block.Id, cancellationToken: cancellationToken));
+                        docxCell.Append(await WriteParagraphAsync(paragraph.Inlines, cellContext, block: block, cancellationToken: cancellationToken));
                     }
                     else
                     {
-                        docxCell.Append(WriteParagraph(DocumentModelText.TextInlines(DocumentModelText.GetBlockText(block)), cellContext, blockId: block.Id));
+                        docxCell.Append(WriteParagraph(DocumentModelText.TextInlines(DocumentModelText.GetBlockText(block)), cellContext, block: block));
                     }
                 }
 
@@ -476,12 +807,14 @@ public sealed class DocxPackageWriter
         ImageBlockContent image,
         DocxPartWriterContext context,
         string? blockId,
+        string? sectionId,
         CancellationToken cancellationToken)
     {
         var drawing = DocxDrawingRunAdapter.FromImageBlock(image);
         var imageRun = await WriteDrawingRunAsync(drawing, context, cancellationToken);
         var paragraph = imageRun is null ? new W.Paragraph() : new W.Paragraph(imageRun);
         SetTempoAttribute(paragraph, "block-id", blockId);
+        SetTempoAttribute(paragraph, "section-id", sectionId);
         if (imageRun is not null && !string.IsNullOrWhiteSpace(image.Caption))
         {
             paragraph.Append(new W.Run(new W.Break()), WriteRun(image.Caption, []));
@@ -1183,8 +1516,9 @@ public sealed class DocxPackageWriter
 
     private W.SectionProperties CreateSectionProperties()
     {
-        var settings = _document.Sections.FirstOrDefault()?.Properties.PageSettings ?? _document.PageSettings;
-        return new W.SectionProperties(
+        var section = _document.Sections.OrderBy(item => item.Order).FirstOrDefault();
+        var settings = section?.Properties.PageSettings ?? _document.PageSettings;
+        var sectionProperties = new W.SectionProperties(
             new W.PageSize
             {
                 Width = (UInt32Value)(uint)DocxUnitConverter.PointToTwip(settings.Size.Width),
@@ -1198,17 +1532,154 @@ public sealed class DocxPackageWriter
                 Bottom = (Int32Value)DocxUnitConverter.PointToTwip(settings.Margins.Bottom),
                 Left = (UInt32Value)(uint)DocxUnitConverter.PointToTwip(settings.Margins.Left)
             });
+        SetTempoAttribute(sectionProperties, "section-id", section?.Id);
+        SetTempoAttribute(sectionProperties, "sections-json", JsonSerializer.Serialize(_document.Sections.OrderBy(item => item.Order).ToList(), JsonOptions));
+
+        if (section?.Properties.Columns is { } columns)
+        {
+            sectionProperties.Append(CreateColumns(columns));
+        }
+
+        if (section?.Properties.LineNumbering is { Enabled: true } lineNumbering)
+        {
+            sectionProperties.Append(new W.LineNumberType
+            {
+                Start = (Int16Value)(short)Math.Clamp(lineNumbering.StartAt, short.MinValue, short.MaxValue),
+                CountBy = (Int16Value)(short)Math.Clamp(lineNumbering.Increment, short.MinValue, short.MaxValue),
+                Distance = PointsToTwips(lineNumbering.DistanceFromText).ToString(CultureInfo.InvariantCulture),
+                Restart = lineNumbering.Restart switch
+                {
+                    DocumentLineNumberingRestart.Page => W.LineNumberRestartValues.NewPage,
+                    DocumentLineNumberingRestart.Section => W.LineNumberRestartValues.NewSection,
+                    _ => W.LineNumberRestartValues.Continuous
+                }
+            });
+        }
+
+        return sectionProperties;
+    }
+
+    private static W.Columns CreateColumns(DocumentSectionColumns columns)
+    {
+        var result = new W.Columns
+        {
+            ColumnCount = (Int16Value)(short)Math.Clamp(columns.Count, 1, short.MaxValue),
+            Space = PointsToTwips(columns.Spacing).ToString(CultureInfo.InvariantCulture),
+            Separator = columns.SeparatorLine
+        };
+
+        foreach (var column in columns.Items)
+        {
+            var docxColumn = new W.Column();
+            if (column.Width is > 0)
+            {
+                docxColumn.Width = PointsToTwips(column.Width.Value).ToString(CultureInfo.InvariantCulture);
+            }
+
+            if (column.SpacingAfter is > 0)
+            {
+                docxColumn.Space = PointsToTwips(column.SpacingAfter.Value).ToString(CultureInfo.InvariantCulture);
+            }
+
+            result.Append(docxColumn);
+        }
+
+        return result;
     }
 
     private void AddStylesPart()
     {
         var stylesPart = _mainPart.AddNewPart<StyleDefinitionsPart>();
-        stylesPart.Styles = new W.Styles(
+        var styles = new W.Styles();
+        AddTempoCompatibility(styles);
+        var writtenStyleIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var style in new[]
+        {
+            new W.Style(new W.Name { Val = "Normal" }) { Type = W.StyleValues.Paragraph, StyleId = "Normal", Default = true },
             new W.Style(new W.Name { Val = "Heading 1" }, new W.BasedOn { Val = "Normal" }, new W.NextParagraphStyle { Val = "Normal" }) { Type = W.StyleValues.Paragraph, StyleId = "Heading1" },
             new W.Style(new W.Name { Val = "Heading 2" }, new W.BasedOn { Val = "Normal" }, new W.NextParagraphStyle { Val = "Normal" }) { Type = W.StyleValues.Paragraph, StyleId = "Heading2" },
-            new W.Style(new W.Name { Val = "Quote" }) { Type = W.StyleValues.Paragraph, StyleId = "Quote" });
+            new W.Style(new W.Name { Val = "Quote" }) { Type = W.StyleValues.Paragraph, StyleId = "Quote" }
+        })
+        {
+            styles.Append(style);
+            writtenStyleIds.Add(style.StyleId!.Value!);
+        }
+
+        foreach (var style in _document.Styles)
+        {
+            var docxStyle = CreateStyleElement(style);
+            if (writtenStyleIds.Add(docxStyle.StyleId!.Value!))
+            {
+                styles.Append(docxStyle);
+            }
+        }
+
+        stylesPart.Styles = styles;
         stylesPart.Styles.Save();
     }
+
+    private static W.Style CreateStyleElement(DocumentStyleDefinition style)
+    {
+        var docxStyle = new W.Style(new W.Name { Val = style.Name })
+        {
+            Type = ToDocxStyleType(style.Type),
+            StyleId = CreateModelStyleId(style.Id)
+        };
+        SetTempoAttribute(docxStyle, "style-json", JsonSerializer.Serialize(style, JsonOptions));
+        SetTempoAttribute(docxStyle, "style-id", style.Id);
+        if (!string.IsNullOrWhiteSpace(style.BasedOn))
+        {
+            docxStyle.Append(new W.BasedOn { Val = SanitizeStyleId(style.BasedOn) });
+        }
+
+        if (!string.IsNullOrWhiteSpace(style.Next))
+        {
+            docxStyle.Append(new W.NextParagraphStyle { Val = SanitizeStyleId(style.Next) });
+        }
+
+        if (style.IsPrimary)
+        {
+            docxStyle.Append(new W.PrimaryStyle());
+        }
+
+        if (style.HeadingLevel.HasValue)
+        {
+            docxStyle.Append(new W.OutlineLevel { Val = Math.Clamp(style.HeadingLevel.Value - 1, 0, 8) });
+        }
+
+        return docxStyle;
+    }
+
+    private static W.StyleValues ToDocxStyleType(DocumentStyleType type)
+        => type switch
+        {
+            DocumentStyleType.Character => W.StyleValues.Character,
+            DocumentStyleType.Table => W.StyleValues.Table,
+            DocumentStyleType.List => W.StyleValues.Numbering,
+            _ => W.StyleValues.Paragraph
+        };
+
+    private static string SanitizeStyleId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Normal";
+        }
+
+        var builder = new System.Text.StringBuilder();
+        foreach (var ch in value)
+        {
+            if (char.IsLetterOrDigit(ch))
+            {
+                builder.Append(ch);
+            }
+        }
+
+        return builder.Length == 0 ? "Style" : builder.ToString();
+    }
+
+    private static string CreateModelStyleId(string? value)
+        => $"Tm{SanitizeStyleId(value)}";
 
     private void AddSettingsPart()
     {
@@ -1230,13 +1701,76 @@ public sealed class DocxPackageWriter
     private void AddNumberingPart()
     {
         var numberingPart = _mainPart.AddNewPart<NumberingDefinitionsPart>();
-        numberingPart.Numbering = new W.Numbering(
+        var numbering = new W.Numbering(
             new W.AbstractNum(new W.Level(new W.NumberingFormat { Val = W.NumberFormatValues.Bullet }, new W.LevelText { Val = "•" }) { LevelIndex = 0 }) { AbstractNumberId = 1 },
             new W.AbstractNum(new W.Level(new W.NumberingFormat { Val = W.NumberFormatValues.Decimal }, new W.LevelText { Val = "%1." }) { LevelIndex = 0 }) { AbstractNumberId = 2 },
             new W.NumberingInstance(new W.AbstractNumId { Val = 1 }) { NumberID = 1 },
             new W.NumberingInstance(new W.AbstractNumId { Val = 2 }) { NumberID = 2 });
+        AddTempoCompatibility(numbering);
+        SetTempoAttribute(numbering, "list-styles-json", JsonSerializer.Serialize(_document.ListStyles, JsonOptions));
+
+        var nextId = 10;
+        foreach (var definition in _document.NumberingDefinitions)
+        {
+            var abstractId = nextId++;
+            var numberId = nextId++;
+            _numberingInstanceIds[definition.Id] = numberId;
+
+            var abstractNumber = new W.AbstractNum { AbstractNumberId = abstractId };
+            SetTempoAttribute(abstractNumber, "numbering-json", JsonSerializer.Serialize(definition, JsonOptions));
+            SetTempoAttribute(abstractNumber, "numbering-id", definition.Id);
+            SetTempoAttribute(abstractNumber, "abstract-numbering-id", definition.AbstractId);
+            foreach (var level in definition.Levels.OrderBy(item => item.Level))
+            {
+                var docxLevel = new W.Level(
+                    new W.StartNumberingValue { Val = level.StartAt },
+                    new W.NumberingFormat { Val = ToDocxNumberFormat(level.Format) },
+                    new W.LevelText { Val = level.Text },
+                    new W.ParagraphProperties(new W.Indentation
+                    {
+                        Left = PointsToTwips(level.Indent).ToString(CultureInfo.InvariantCulture),
+                        Hanging = PointsToTwips(level.Hanging).ToString(CultureInfo.InvariantCulture)
+                    }))
+                {
+                    LevelIndex = Math.Clamp(level.Level, 0, 8)
+                };
+                if (!string.IsNullOrWhiteSpace(level.Suffix))
+                {
+                    docxLevel.Append(new W.LevelSuffix { Val = ToDocxLevelSuffix(level.Suffix) });
+                }
+
+                abstractNumber.Append(docxLevel);
+            }
+
+            numbering.Append(abstractNumber);
+            var instance = new W.NumberingInstance(new W.AbstractNumId { Val = abstractId }) { NumberID = numberId };
+            SetTempoAttribute(instance, "numbering-id", definition.Id);
+            numbering.Append(instance);
+        }
+
+        numberingPart.Numbering = numbering;
         numberingPart.Numbering.Save();
     }
+
+    private static W.NumberFormatValues ToDocxNumberFormat(string? format)
+        => format?.Trim().ToLowerInvariant() switch
+        {
+            "bullet" => W.NumberFormatValues.Bullet,
+            "lower-roman" => W.NumberFormatValues.LowerRoman,
+            "upper-roman" => W.NumberFormatValues.UpperRoman,
+            "lower-letter" => W.NumberFormatValues.LowerLetter,
+            "upper-letter" => W.NumberFormatValues.UpperLetter,
+            "none" => W.NumberFormatValues.None,
+            _ => W.NumberFormatValues.Decimal
+        };
+
+    private static W.LevelSuffixValues ToDocxLevelSuffix(string suffix)
+        => suffix.Trim().ToLowerInvariant() switch
+        {
+            "space" => W.LevelSuffixValues.Space,
+            "none" => W.LevelSuffixValues.Nothing,
+            _ => W.LevelSuffixValues.Tab
+        };
 
     private async Task AddHeadersFootersAsync(W.Body body, CancellationToken cancellationToken)
     {

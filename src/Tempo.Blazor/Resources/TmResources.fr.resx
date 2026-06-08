@@ -2442,6 +2442,7 @@
   <data name="TmDocumentEditor_ToolbarTabsLabel"       xml:space="preserve"><value>Onglets de l'éditeur de document</value></data>
   <data name="TmDocumentEditor_TabHome"                xml:space="preserve"><value>Accueil</value></data>
   <data name="TmDocumentEditor_TabInsert"              xml:space="preserve"><value>Insertion</value></data>
+  <data name="TmDocumentEditor_TabMath"                xml:space="preserve"><value>Équations</value></data>
   <data name="TmDocumentEditor_TabLayout"              xml:space="preserve"><value>Mise en page</value></data>
   <data name="TmDocumentEditor_TabReferences"          xml:space="preserve"><value>Références</value></data>
   <data name="TmDocumentEditor_TabReview"              xml:space="preserve"><value>Révision</value></data>
@@ -2472,6 +2473,7 @@
   <data name="TmDocumentEditor_GroupClipboard"         xml:space="preserve"><value>Presse-papiers</value></data>
   <data name="TmDocumentEditor_GroupFormatting"        xml:space="preserve"><value>Mise en forme</value></data>
   <data name="TmDocumentEditor_GroupInsert"            xml:space="preserve"><value>Insertion</value></data>
+  <data name="TmDocumentEditor_GroupMath"              xml:space="preserve"><value>Équations</value></data>
   <data name="TmDocumentEditor_GroupLayout"            xml:space="preserve"><value>Mise en page</value></data>
   <data name="TmDocumentEditor_GroupReferences"        xml:space="preserve"><value>Références</value></data>
   <data name="TmDocumentEditor_GroupReview"            xml:space="preserve"><value>Révision</value></data>
@@ -2489,6 +2491,19 @@
   <data name="TmDocumentEditor_Italic"                 xml:space="preserve"><value>Italique</value></data>
   <data name="TmDocumentEditor_Underline"              xml:space="preserve"><value>Souligné</value></data>
   <data name="TmDocumentEditor_Strikethrough"          xml:space="preserve"><value>Barré</value></data>
+  <data name="TmDocumentEditor_Superscript"            xml:space="preserve"><value>Exposant</value></data>
+  <data name="TmDocumentEditor_Subscript"              xml:space="preserve"><value>Indice</value></data>
+  <data name="TmDocumentEditor_SmallCaps"              xml:space="preserve"><value>Petites capitales</value></data>
+  <data name="TmDocumentEditor_AllCaps"                xml:space="preserve"><value>Majuscules</value></data>
+  <data name="TmDocumentEditor_DoubleStrikethrough"    xml:space="preserve"><value>Double barré</value></data>
+  <data name="TmDocumentEditor_IncreaseFontSize"       xml:space="preserve"><value>Agrandir</value></data>
+  <data name="TmDocumentEditor_DecreaseFontSize"       xml:space="preserve"><value>Réduire</value></data>
+  <data name="TmDocumentEditor_ChangeCase"             xml:space="preserve"><value>Changer la casse</value></data>
+  <data name="TmDocumentEditor_CaseSentence"           xml:space="preserve"><value>Casse de phrase</value></data>
+  <data name="TmDocumentEditor_CaseLowercase"          xml:space="preserve"><value>minuscules</value></data>
+  <data name="TmDocumentEditor_CaseUppercase"          xml:space="preserve"><value>MAJUSCULES</value></data>
+  <data name="TmDocumentEditor_CaseTitle"              xml:space="preserve"><value>Casse De Titre</value></data>
+  <data name="TmDocumentEditor_CaseToggle"             xml:space="preserve"><value>iNVERSER lA cASSE</value></data>
   <data name="TmDocumentEditor_FontFamily"             xml:space="preserve"><value>Police</value></data>
   <data name="TmDocumentEditor_FontFamilyDefault"      xml:space="preserve"><value>Police par défaut</value></data>
   <data name="TmDocumentEditor_FontSize"               xml:space="preserve"><value>Taille</value></data>
@@ -2507,9 +2522,89 @@
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Annuler</value></data>
   <data name="TmDocumentEditor_Close"                  xml:space="preserve"><value>Fermer</value></data>
   <data name="TmDocumentEditor_ClearFormatting"        xml:space="preserve"><value>Effacer la mise en forme</value></data>
+  <data name="TmDocumentEditor_SpellIgnoreOnce"        xml:space="preserve"><value>Ignorer une fois</value></data>
+  <data name="TmDocumentEditor_SpellIgnoreAll"         xml:space="preserve"><value>Tout ignorer</value></data>
+  <data name="TmDocumentEditor_SpellAddToDictionary"   xml:space="preserve"><value>Ajouter au dictionnaire</value></data>
   <data name="TmDocumentEditor_PageLayout"             xml:space="preserve"><value>Mise en page</value></data>
   <data name="TmDocumentEditor_InsertTable"            xml:space="preserve"><value>Tableau</value></data>
   <data name="TmDocumentEditor_InsertImage"            xml:space="preserve"><value>Image</value></data>
+  <data name="TmDocumentEditor_InsertEquation"         xml:space="preserve"><value>Équation</value></data>
+  <data name="TmDocumentEditor_InsertSymbol"           xml:space="preserve"><value>Symbole</value></data>
+  <data name="TmDocumentEditor_EquationMenu"           xml:space="preserve"><value>Galerie d'équations</value></data>
+  <data name="TmDocumentEditor_EquationStructures"     xml:space="preserve"><value>Structures</value></data>
+  <data name="TmDocumentEditor_EquationSymbols"        xml:space="preserve"><value>Symboles</value></data>
+  <data name="TmDocumentEditor_EquationFraction"       xml:space="preserve"><value>Fraction</value></data>
+  <data name="TmDocumentEditor_EquationRadical"        xml:space="preserve"><value>Radical</value></data>
+  <data name="TmDocumentEditor_EquationSuperscript"    xml:space="preserve"><value>Exposant</value></data>
+  <data name="TmDocumentEditor_EquationSubscript"      xml:space="preserve"><value>Indice</value></data>
+  <data name="TmDocumentEditor_EquationSum"            xml:space="preserve"><value>Somme</value></data>
+  <data name="TmDocumentEditor_EquationMatrix"         xml:space="preserve"><value>Matrice</value></data>
+  <data name="TmDocumentEditor_EquationLimit"          xml:space="preserve"><value>Limite</value></data>
+  <data name="TmDocumentEditor_EquationAccent"         xml:space="preserve"><value>Accent</value></data>
+  <data name="TmDocumentEditor_EquationBorderBox"      xml:space="preserve"><value>Encadré</value></data>
+  <data name="TmDocumentEditor_EquationAlpha"          xml:space="preserve"><value>Alpha</value></data>
+  <data name="TmDocumentEditor_EquationBeta"           xml:space="preserve"><value>Bêta</value></data>
+  <data name="TmDocumentEditor_EquationPi"             xml:space="preserve"><value>Pi</value></data>
+  <data name="TmDocumentEditor_EquationInfinity"       xml:space="preserve"><value>Infini</value></data>
+  <data name="TmDocumentEditor_EquationPlusMinus"      xml:space="preserve"><value>Plus ou moins</value></data>
+  <data name="TmDocumentEditor_EquationIntegral"       xml:space="preserve"><value>Intégrale</value></data>
+  <data name="TmDocumentEditor_EquationGamma"          xml:space="preserve"><value>Gamma</value></data>
+  <data name="TmDocumentEditor_EquationDelta"          xml:space="preserve"><value>Delta</value></data>
+  <data name="TmDocumentEditor_EquationTheta"          xml:space="preserve"><value>Thêta</value></data>
+  <data name="TmDocumentEditor_EquationLambda"         xml:space="preserve"><value>Lambda</value></data>
+  <data name="TmDocumentEditor_EquationRightArrow"     xml:space="preserve"><value>Flèche droite</value></data>
+  <data name="TmDocumentEditor_EquationLessEqual"      xml:space="preserve"><value>Inférieur ou égal</value></data>
+  <data name="TmDocumentEditor_EquationGreaterEqual"   xml:space="preserve"><value>Supérieur ou égal</value></data>
+  <data name="TmDocumentEditor_EquationNotEqual"       xml:space="preserve"><value>Différent de</value></data>
+  <data name="TmDocumentEditor_EquationProduct"        xml:space="preserve"><value>Produit</value></data>
+  <data name="TmDocumentEditor_EquationQuadratic"      xml:space="preserve"><value>Formule quadratique</value></data>
+  <data name="TmDocumentEditor_EquationSymbolSum"      xml:space="preserve"><value>∑</value></data>
+  <data name="TmDocumentEditor_EquationSymbolProduct"  xml:space="preserve"><value>∏</value></data>
+  <data name="TmDocumentEditor_EquationSymbolLimit"    xml:space="preserve"><value>lim</value></data>
+  <data name="TmDocumentEditor_EquationSymbolAccent"   xml:space="preserve"><value>x̂</value></data>
+  <data name="TmDocumentEditor_EquationSymbolAlpha"    xml:space="preserve"><value>α</value></data>
+  <data name="TmDocumentEditor_EquationSymbolBeta"     xml:space="preserve"><value>β</value></data>
+  <data name="TmDocumentEditor_EquationSymbolPi"       xml:space="preserve"><value>π</value></data>
+  <data name="TmDocumentEditor_EquationSymbolInfinity" xml:space="preserve"><value>∞</value></data>
+  <data name="TmDocumentEditor_EquationSymbolPlusMinus" xml:space="preserve"><value>±</value></data>
+  <data name="TmDocumentEditor_EquationSymbolIntegral" xml:space="preserve"><value>∫</value></data>
+  <data name="TmDocumentEditor_EquationSymbolGamma"    xml:space="preserve"><value>γ</value></data>
+  <data name="TmDocumentEditor_EquationSymbolDelta"    xml:space="preserve"><value>Δ</value></data>
+  <data name="TmDocumentEditor_EquationSymbolTheta"    xml:space="preserve"><value>θ</value></data>
+  <data name="TmDocumentEditor_EquationSymbolLambda"   xml:space="preserve"><value>λ</value></data>
+  <data name="TmDocumentEditor_EquationSymbolRightArrow" xml:space="preserve"><value>→</value></data>
+  <data name="TmDocumentEditor_EquationSymbolLessEqual" xml:space="preserve"><value>≤</value></data>
+  <data name="TmDocumentEditor_EquationSymbolGreaterEqual" xml:space="preserve"><value>≥</value></data>
+  <data name="TmDocumentEditor_EquationSymbolNotEqual" xml:space="preserve"><value>≠</value></data>
+  <data name="TmDocumentEditor_EquationSymbolQuadratic" xml:space="preserve"><value>x²</value></data>
+  <data name="TmDocumentEditor_SymbolMenu"             xml:space="preserve"><value>Sélecteur de symboles et emoji</value></data>
+  <data name="TmDocumentEditor_SymbolCharacters"       xml:space="preserve"><value>Caractères spéciaux</value></data>
+  <data name="TmDocumentEditor_SymbolEmDash"           xml:space="preserve"><value>Tiret cadratin</value></data>
+  <data name="TmDocumentEditor_SymbolEnDash"           xml:space="preserve"><value>Tiret demi-cadratin</value></data>
+  <data name="TmDocumentEditor_SymbolNonBreakingSpace" xml:space="preserve"><value>Espace insécable</value></data>
+  <data name="TmDocumentEditor_SymbolOptionalHyphen"   xml:space="preserve"><value>Trait d'union facultatif</value></data>
+  <data name="TmDocumentEditor_SymbolSection"          xml:space="preserve"><value>Paragraphe</value></data>
+  <data name="TmDocumentEditor_SymbolCopyright"        xml:space="preserve"><value>Copyright</value></data>
+  <data name="TmDocumentEditor_SymbolRegistered"       xml:space="preserve"><value>Marque déposée</value></data>
+  <data name="TmDocumentEditor_SymbolGlyphEmDash"      xml:space="preserve"><value>—</value></data>
+  <data name="TmDocumentEditor_SymbolGlyphEnDash"      xml:space="preserve"><value>–</value></data>
+  <data name="TmDocumentEditor_SymbolGlyphNonBreakingSpace" xml:space="preserve"><value>⍽</value></data>
+  <data name="TmDocumentEditor_SymbolGlyphOptionalHyphen" xml:space="preserve"><value>SHY</value></data>
+  <data name="TmDocumentEditor_SymbolGlyphSection"     xml:space="preserve"><value>§</value></data>
+  <data name="TmDocumentEditor_SymbolGlyphCopyright"   xml:space="preserve"><value>©</value></data>
+  <data name="TmDocumentEditor_SymbolGlyphRegistered"  xml:space="preserve"><value>®</value></data>
+  <data name="TmDocumentEditor_EmojiPicker"            xml:space="preserve"><value>Emoji</value></data>
+  <data name="TmDocumentEditor_EmojiCheck"             xml:space="preserve"><value>Coche</value></data>
+  <data name="TmDocumentEditor_EmojiSparkles"          xml:space="preserve"><value>Étincelles</value></data>
+  <data name="TmDocumentEditor_EmojiWarning"           xml:space="preserve"><value>Avertissement</value></data>
+  <data name="TmDocumentEditor_EmojiRocket"            xml:space="preserve"><value>Fusée</value></data>
+  <data name="TmDocumentEditor_EmojiCalendar"          xml:space="preserve"><value>Calendrier</value></data>
+  <data name="TmDocumentEditor_EmojiGlyphCheck"        xml:space="preserve"><value>✓</value></data>
+  <data name="TmDocumentEditor_EmojiGlyphSparkles"     xml:space="preserve"><value>✨</value></data>
+  <data name="TmDocumentEditor_EmojiGlyphWarning"      xml:space="preserve"><value>⚠</value></data>
+  <data name="TmDocumentEditor_EmojiGlyphRocket"       xml:space="preserve"><value>🚀</value></data>
+  <data name="TmDocumentEditor_EmojiGlyphCalendar"     xml:space="preserve"><value>📅</value></data>
+  <data name="TmDocumentEditor_ImageUrlPlaceholder"    xml:space="preserve"><value>https://example.com/image.png</value></data>
   <data name="TmDocumentEditor_AddComment"             xml:space="preserve"><value>Commentaire</value></data>
   <data name="TmDocumentEditor_MiniToolbarLabel"       xml:space="preserve"><value>Mise en forme de la sélection</value></data>
   <data name="TmDocumentEditor_EditorLabel"            xml:space="preserve"><value>Éditeur de document</value></data>
@@ -2641,6 +2736,13 @@
   <data name="TmDocumentEditor_ExportPdfComplete"      xml:space="preserve"><value>PDF exporté</value></data>
   <data name="TmDocumentEditor_ExportPdfFailed"        xml:space="preserve"><value>L'export PDF a échoué</value></data>
   <data name="TmDocumentEditor_ExportPdfAria"          xml:space="preserve"><value>Exporter le document en PDF</value></data>
+  <data name="TmDocumentEditor_PrintPreview"           xml:space="preserve"><value>Aperçu avant impression</value></data>
+  <data name="TmDocumentEditor_PrintPreviewActions"    xml:space="preserve"><value>Actions d'aperçu avant impression</value></data>
+  <data name="TmDocumentEditor_PrintDocument"          xml:space="preserve"><value>Imprimer</value></data>
+  <data name="TmDocumentEditor_PrintDocumentAria"      xml:space="preserve"><value>Imprimer le document</value></data>
+  <data name="TmDocumentEditor_PrintToPdf"             xml:space="preserve"><value>Imprimer en PDF</value></data>
+  <data name="TmDocumentEditor_PrintToPdfAria"         xml:space="preserve"><value>Exporter l'aperçu avant impression en PDF</value></data>
+  <data name="TmDocumentEditor_ClosePrintPreview"      xml:space="preserve"><value>Fermer l'aperçu avant impression</value></data>
   <data name="TmDocumentEditor_ImportDocxComplete"     xml:space="preserve"><value>Importé</value></data>
   <data name="TmDocumentEditor_ImportDocxFailed"       xml:space="preserve"><value>L'import DOCX a échoué</value></data>
   <data name="TmDocumentEditor_ImportDocxAria"         xml:space="preserve"><value>Importer un document DOCX</value></data>
@@ -2735,6 +2837,21 @@
   <data name="TmDocumentEditor_ReviewModeSimpleMarkup" xml:space="preserve"><value>Marques simples</value></data>
   <data name="TmDocumentEditor_ReviewModeNoMarkup"     xml:space="preserve"><value>Aucune marque</value></data>
   <data name="TmDocumentEditor_EditParagraph"          xml:space="preserve"><value>Modifier le paragraphe</value></data>
+  <data name="TmDocumentEditor_BlockStyle"             xml:space="preserve"><value>Style</value></data>
+  <data name="TmDocumentEditor_StyleNormal"            xml:space="preserve"><value>Normal</value></data>
+  <data name="TmDocumentEditor_StyleTitle"             xml:space="preserve"><value>Titre</value></data>
+  <data name="TmDocumentEditor_StyleQuote"             xml:space="preserve"><value>Citation</value></data>
+  <data name="TmDocumentEditor_StyleGallery"           xml:space="preserve"><value>Galerie de styles</value></data>
+  <data name="TmDocumentEditor_QuickStyles"            xml:space="preserve"><value>Styles rapides</value></data>
+  <data name="TmDocumentEditor_ModifyStyle"            xml:space="preserve"><value>Modifier le style</value></data>
+  <data name="TmDocumentEditor_StyleFontSize"          xml:space="preserve"><value>Taille de police</value></data>
+  <data name="TmDocumentEditor_StyleName"              xml:space="preserve"><value>Nom du nouveau style</value></data>
+  <data name="TmDocumentEditor_StyleRenameName"        xml:space="preserve"><value>Nom du style actuel</value></data>
+  <data name="TmDocumentEditor_StyleActions"           xml:space="preserve"><value>Actions de style</value></data>
+  <data name="TmDocumentEditor_CreateStyle"            xml:space="preserve"><value>Créer un style</value></data>
+  <data name="TmDocumentEditor_RenameStyle"            xml:space="preserve"><value>Renommer le style</value></data>
+  <data name="TmDocumentEditor_DeleteStyle"            xml:space="preserve"><value>Supprimer le style</value></data>
+  <data name="TmDocumentEditor_ResetStyleFormatting"   xml:space="preserve"><value>Réinitialiser la mise en forme</value></data>
   <data name="TmDocumentEditor_HeadingLevel"           xml:space="preserve"><value>Niveau de titre</value></data>
   <data name="TmDocumentEditor_Heading1"               xml:space="preserve"><value>Titre 1</value></data>
   <data name="TmDocumentEditor_Heading2"               xml:space="preserve"><value>Titre 2</value></data>
@@ -2852,6 +2969,13 @@
   <data name="TmDocumentEditor_InsertPageXOfY"         xml:space="preserve"><value>Insérer page X sur Y</value></data>
   <data name="TmDocumentEditor_InsertDateField"        xml:space="preserve"><value>Insérer la date</value></data>
   <data name="TmDocumentEditor_InsertDocumentTitleField" xml:space="preserve"><value>Insérer le titre du document</value></data>
+  <data name="TmDocumentEditor_InsertCaption"          xml:space="preserve"><value>Légende</value></data>
+  <data name="TmDocumentEditor_CrossReference"         xml:space="preserve"><value>Renvoi</value></data>
+  <data name="TmDocumentEditor_TableOfFigures"         xml:space="preserve"><value>Table des illustrations</value></data>
+  <data name="TmDocumentEditor_Bibliography"           xml:space="preserve"><value>Bibliographie</value></data>
+  <data name="TmDocumentEditor_UpdateFields"           xml:space="preserve"><value>Mettre à jour les champs</value></data>
+  <data name="TmDocumentEditor_FigureLabel"            xml:space="preserve"><value>Figure</value></data>
+  <data name="TmDocumentEditor_DefaultCaptionText"     xml:space="preserve"><value>Légende</value></data>
   <data name="TmDocumentEditor_PageNumber"             xml:space="preserve"><value>Numéro de page</value></data>
   <data name="TmDocumentEditor_TotalPages"             xml:space="preserve"><value>Nombre de pages</value></data>
   <data name="TmDocumentEditor_PageXOfY"               xml:space="preserve"><value>Page X sur Y</value></data>
@@ -2977,6 +3101,34 @@
   <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>Éditeur WYSIWYG indisponible</value></data>
   <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>Le moteur d'édition WYSIWYG n'a pas pu être chargé. Veuillez utiliser l'éditeur par blocs ou recharger la page.</value></data>
   <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>Le document n'a pas pu être mis à jour. Veuillez réessayer ou recharger la page.</value></data>
+  <data name="TmDocumentEditor_CanvasSurfaceLabel"     xml:space="preserve"><value>Surface de document canvas</value></data>
+  <data name="TmDocumentEditor_CanvasInputLabel"       xml:space="preserve"><value>Saisie d'édition du document canvas</value></data>
+  <data name="TmDocumentEditor_CanvasLiveRegionLabel"  xml:space="preserve"><value>État du document canvas</value></data>
+  <data name="TmDocumentEditor_CanvasCaretAnnouncement" xml:space="preserve"><value>Curseur dans le bloc {0}, position {1}</value></data>
+  <data name="TmDocumentEditor_CanvasSearchResultAnnouncement" xml:space="preserve"><value>Correspondance {0} sur {1}</value></data>
+  <data name="TmDocumentEditor_CanvasSearchNoResultsAnnouncement" xml:space="preserve"><value>Aucune correspondance canvas pour {0}</value></data>
+  <data name="TmDocumentEditor_CanvasCommentAnnouncement" xml:space="preserve"><value>Commentaire sélectionné : {0}</value></data>
+  <data name="TmDocumentEditor_CanvasRevisionAnnouncement" xml:space="preserve"><value>Révision sélectionnée : {0}</value></data>
+  <data name="TmDocumentEditor_CanvasSaveAnnouncement" xml:space="preserve"><value>Document canvas enregistré</value></data>
+  <data name="TmDocumentEditor_CanvasMathSlotAnnouncement" xml:space="preserve"><value>Emplacement d'équation {0}, position {1}</value></data>
+  <data name="TmDocumentEditor_CanvasMathExitAnnouncement" xml:space="preserve"><value>Édition d'équation quittée</value></data>
+  <data name="TmDocumentEditor_ContentControlPopoverLabel" xml:space="preserve"><value>Éditeur de champ de formulaire</value></data>
+  <data name="TmDocumentEditor_ContentControlPopoverKicker" xml:space="preserve"><value>Champ de formulaire</value></data>
+  <data name="TmDocumentEditor_ContentControlClose" xml:space="preserve"><value>Fermer l'éditeur de champ de formulaire</value></data>
+  <data name="TmDocumentEditor_ContentControlRequired" xml:space="preserve"><value>Obligatoire</value></data>
+  <data name="TmDocumentEditor_ContentControlLocked" xml:space="preserve"><value>Verrouillé</value></data>
+  <data name="TmDocumentEditor_ContentControlDateLabel" xml:space="preserve"><value>Valeur de date</value></data>
+  <data name="TmDocumentEditor_ContentControlChoiceLabel" xml:space="preserve"><value>Choix</value></data>
+  <data name="TmDocumentEditor_ContentControlComboTextLabel" xml:space="preserve"><value>Texte personnalisé</value></data>
+  <data name="TmDocumentEditor_ContentControlPictureLabel" xml:space="preserve"><value>Image</value></data>
+  <data name="TmDocumentEditor_ContentControlPicturePlaceholder" xml:space="preserve"><value>Sélectionner une image</value></data>
+  <data name="TmDocumentEditor_ContentControlNoChoices" xml:space="preserve"><value>Aucun choix disponible</value></data>
+  <data name="TmDocumentEditor_ContentControlNoAssets" xml:space="preserve"><value>Aucune image disponible</value></data>
+  <data name="TmDocumentEditor_ContentControlKindDate" xml:space="preserve"><value>Date</value></data>
+  <data name="TmDocumentEditor_ContentControlKindCombo" xml:space="preserve"><value>Zone combinée</value></data>
+  <data name="TmDocumentEditor_ContentControlKindDropdown" xml:space="preserve"><value>Liste déroulante</value></data>
+  <data name="TmDocumentEditor_ContentControlKindPicture" xml:space="preserve"><value>Image</value></data>
+  <data name="TmDocumentEditor_ContentControlKindField" xml:space="preserve"><value>Champ</value></data>
 
   <!-- Phase 6: Find & Replace -->
   <data name="TmDocumentEditor_FindPlaceholder"         xml:space="preserve"><value>Rechercher…</value></data>
@@ -2990,6 +3142,7 @@
   <data name="TmDocumentEditor_FindReplaceAll"          xml:space="preserve"><value>Tout remplacer</value></data>
   <data name="TmDocumentEditor_FindCaseSensitive"       xml:space="preserve"><value>Respecter la casse</value></data>
   <data name="TmDocumentEditor_FindWholeWord"           xml:space="preserve"><value>Mot entier</value></data>
+  <data name="TmDocumentEditor_FindRegex"               xml:space="preserve"><value>Expression régulière</value></data>
   <data name="TmDocumentEditor_FindScopeLabel"          xml:space="preserve"><value>Périmètre</value></data>
   <data name="TmDocumentEditor_FindScopeBody"           xml:space="preserve"><value>Corps</value></data>
   <data name="TmDocumentEditor_FindScopeHeadersFooters" xml:space="preserve"><value>En-têtes et pieds de page</value></data>
@@ -3033,6 +3186,22 @@
   <data name="TmDocumentEditor_MarginLeft"             xml:space="preserve"><value>Gauche</value></data>
   <data name="TmDocumentEditor_HeaderDistance"         xml:space="preserve"><value>Distance de l'en-tête</value></data>
   <data name="TmDocumentEditor_FooterDistance"         xml:space="preserve"><value>Distance du pied de page</value></data>
+  <data name="TmDocumentEditor_Columns"                xml:space="preserve"><value>Colonnes</value></data>
+  <data name="TmDocumentEditor_ColumnCount"            xml:space="preserve"><value>Nombre de colonnes</value></data>
+  <data name="TmDocumentEditor_ColumnsOne"             xml:space="preserve"><value>Une</value></data>
+  <data name="TmDocumentEditor_ColumnsTwo"             xml:space="preserve"><value>Deux</value></data>
+  <data name="TmDocumentEditor_ColumnsThree"           xml:space="preserve"><value>Trois</value></data>
+  <data name="TmDocumentEditor_ColumnSpacing"          xml:space="preserve"><value>Espacement</value></data>
+  <data name="TmDocumentEditor_ColumnSeparator"        xml:space="preserve"><value>Ligne entre les colonnes</value></data>
+  <data name="TmDocumentEditor_LineNumbers"            xml:space="preserve"><value>Numéros de ligne</value></data>
+  <data name="TmDocumentEditor_LineNumbersEnabled"     xml:space="preserve"><value>Afficher les numéros de ligne</value></data>
+  <data name="TmDocumentEditor_LineNumbersStartAt"     xml:space="preserve"><value>Commencer à</value></data>
+  <data name="TmDocumentEditor_LineNumbersIncrement"   xml:space="preserve"><value>Incrément</value></data>
+  <data name="TmDocumentEditor_LineNumbersDistance"    xml:space="preserve"><value>Distance</value></data>
+  <data name="TmDocumentEditor_LineNumbersRestart"     xml:space="preserve"><value>Redémarrage</value></data>
+  <data name="TmDocumentEditor_LineNumbersRestartContinuous" xml:space="preserve"><value>Continu</value></data>
+  <data name="TmDocumentEditor_LineNumbersRestartPage" xml:space="preserve"><value>Chaque page</value></data>
+  <data name="TmDocumentEditor_LineNumbersRestartSection" xml:space="preserve"><value>Chaque section</value></data>
 
   <!-- Phase 2 : barre d'état, zoom, rechercher/remplacer -->
   <data name="TmSpreadsheet_Status_Sum" xml:space="preserve"><value>Somme</value></data>

@@ -9,6 +9,9 @@
 
 import { asArray, clone, sortObject } from '../core/helpers.mjs';
 import { baseDirection } from './bidi.mjs';
+import { hyphenateTokenToFit, normalizeHyphenationOptions } from '../../document-editor-canvas/layout/hyphenation.mjs';
+
+const SOFT_HYPHEN = '\u00AD';
 
 export function createLineBreakerModule(options) {
     const opts = options || {};
@@ -59,7 +62,7 @@ export function createLineBreakerModule(options) {
             }
 
             const paragraphData = tokensForParagraph(paragraph);
-            const tokens = coalesceNonBreakingTokens(paragraphData.tokens);
+            const tokens = mergeSoftHyphenTokens(coalesceNonBreakingTokens(paragraphData.tokens));
             const lines = [];
             const segments = [];
             const caretStops = [];
@@ -75,6 +78,8 @@ export function createLineBreakerModule(options) {
             let y = normalizedOptions.y;
             let current = createLineDraft(0, firstRanges, y);
             let nextSegmentId = 0;
+            const hyphenationOptions = normalizeHyphenationOptions(merged.hyphenation || merged.Hyphenation, paragraphData.text);
+            const hyphenationState = { consecutiveCount: 0 };
 
             function activeRange() {
                 return current.ranges[Math.max(0, Math.min(current.rangeIndex, current.ranges.length - 1))];
@@ -191,9 +196,27 @@ export function createLineBreakerModule(options) {
                 }
             }
 
-            function pushSegment(token, tokenText, start, end, width, style, splitFromLongToken) {
+            function measureToken(token, tokenText, style) {
+                const visibleText = String(tokenText || '').replaceAll(SOFT_HYPHEN, '');
+                const measured = service.measureText(visibleText || ' ', style);
+                if (token?.type !== 'math') {
+                    return measured;
+                }
+
+                const width = Number(token.width ?? token.mathLayoutWidth ?? 0);
+                const height = Number(token.height ?? token.mathLayoutHeight ?? 0);
+                return {
+                    width: width > 0 ? width : measured.width,
+                    height: height > 0 ? height : measured.height,
+                };
+            }
+
+            function pushSegment(token, tokenText, start, end, width, style, splitFromLongToken, metadata) {
                 const range = activeRange();
-                const height = service.measureText(tokenText || ' ', style).height;
+                const measured = Number(metadata?.height || 0) > 0
+                    ? { height: Number(metadata.height) }
+                    : measureToken(token, tokenText, style);
+                const height = Math.max(1, Number(measured.height || 0) || 1);
                 current.lineHeight = Math.max(current.lineHeight, height);
                 const segment = {
                     id: 'segment-' + nextSegmentId++,
@@ -202,6 +225,11 @@ export function createLineBreakerModule(options) {
                     start: start,
                     end: end,
                     runId: token.runId || null,
+                    kind: token.kind || token.type || 'text',
+                    math: token.math || null,
+                    contentControl: token.contentControl || null,
+                    style: token.style || null,
+                    marks: Array.isArray(token.marks) ? token.marks : [],
                     rangeIndex: range.index,
                     rangeId: range.id,
                     rect: {
@@ -211,8 +239,13 @@ export function createLineBreakerModule(options) {
                         height: height,
                     },
                     splitFromLongToken: splitFromLongToken === true,
+                    hyphenated: metadata?.hyphenated === true,
+                    hyphenation: metadata?.hyphenation || null,
                 };
                 current.segments.push(segment);
+                if (segment.hyphenated === true) {
+                    current.hyphenated = true;
+                }
                 range.segments.push(segment);
                 range.usedWidth += width;
                 range.start = range.start === null ? start : Math.min(range.start, start);
@@ -266,7 +299,9 @@ export function createLineBreakerModule(options) {
             }
 
             function finishCurrent(hardBreak) {
+                const lineWasHyphenated = current.hyphenated === true;
                 const line = materializeLineDraft(current, lines.length, hardBreak === true, alignment);
+                line.hyphenated = lineWasHyphenated;
                 lines.push(line);
                 Object.keys(line.rangeShifts || {}).forEach(function (key) {
                     const shift = Number(line.rangeShifts[key] || 0) || 0;
@@ -290,10 +325,41 @@ export function createLineBreakerModule(options) {
                 y = line.rect.y + line.rect.height + normalizedOptions.lineGap;
                 current = createLineDraft(lines.length,
                     resolveLineRangesForBreaker(normalizedOptions, y, line.rect.height), y);
+                hyphenationState.consecutiveCount = lineWasHyphenated ? hyphenationState.consecutiveCount + 1 : 0;
                 if (lineRangesAreInvalid(current.ranges, normalizedOptions.minReadableWidth)) {
                     current.invalid = true;
                 }
                 return line;
+            }
+
+            function canHyphenateToken(token) {
+                return hyphenationOptions.enabled === true
+                    && (token.type === 'longToken' || token.type === 'word')
+                    && String(token.text || '').indexOf('\u2011') < 0;
+            }
+
+            function pushHyphenatedToken(token, tokenText, tokenStyle, availableWidth, tokenIndex) {
+                if (!canHyphenateToken(token)) {
+                    return false;
+                }
+
+                const hyphenated = hyphenateTokenToFit(token, tokenText, tokenStyle, service, availableWidth, hyphenationOptions, hyphenationState);
+                if (!hyphenated) {
+                    return false;
+                }
+
+                pushSegment(token, hyphenated.text, hyphenated.start, hyphenated.end, hyphenated.width, tokenStyle, true, {
+                    hyphenated: true,
+                    hyphenation: hyphenated.hyphenation,
+                });
+                tokens.splice(tokenIndex + 1, 0, {
+                    ...token,
+                    text: hyphenated.remainderText,
+                    start: hyphenated.remainderStart,
+                    type: token.type === 'longToken' ? 'longToken' : 'word',
+                    hyphenationRemainder: true,
+                });
+                return true;
             }
 
             for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
@@ -319,7 +385,7 @@ export function createLineBreakerModule(options) {
                 }
                 const tokenText = token.type === 'tab' ? '    ' : token.text;
                 const tokenStyle = token.style || {};
-                const measurement = service.measureText(tokenText, tokenStyle);
+                const measurement = measureToken(token, tokenText, tokenStyle);
                 const width = measurement.width;
                 const isBreakSpace = token.type === 'space';
                 const isNonBreakingToken = token.type === 'nbsp' || token.type === 'nbspSequence';
@@ -334,6 +400,10 @@ export function createLineBreakerModule(options) {
                     range = activeRange();
                 }
                 if (range.segments.length > 0 && range.usedWidth + width > range.width) {
+                    if (pushHyphenatedToken(token, tokenText, tokenStyle, range.width - range.usedWidth, tokenIndex)) {
+                        moveToNextRangeOrLine();
+                        continue;
+                    }
                     const movedTo = moveToNextRangeOrLine();
                     range = activeRange();
                     if (isBreakSpace && movedTo === 'line') {
@@ -351,6 +421,10 @@ export function createLineBreakerModule(options) {
                 }
                 range = activeRange();
                 if (width > range.width && (token.type === 'longToken' || token.type === 'word' || token.type === 'cjk')) {
+                    if (pushHyphenatedToken(token, tokenText, tokenStyle, range.width, tokenIndex)) {
+                        moveToNextRangeOrLine();
+                        continue;
+                    }
                     const pieces = splitTokenIntoFittingPieces(token, tokenText, tokenStyle, service, range.width);
                     for (let pieceIndex = 0; pieceIndex < pieces.length; pieceIndex++) {
                         const piece = pieces[pieceIndex];
@@ -363,7 +437,9 @@ export function createLineBreakerModule(options) {
                     }
                     continue;
                 }
-                pushSegment(token, tokenText, token.start, token.end, width, tokenStyle, false);
+                pushSegment(token, tokenText, token.start, token.end, width, tokenStyle, false, {
+                    height: measurement.height,
+                });
             }
             if (current.segments.length > 0 || lines.length === 0) finishCurrent(false);
 
@@ -391,4 +467,49 @@ export function createLineBreakerModule(options) {
     }
 
     return Object.freeze({ createLineBreaker });
+}
+
+export function mergeSoftHyphenTokens(tokens) {
+    const source = Array.isArray(tokens) ? tokens : [];
+    const merged = [];
+    for (let index = 0; index < source.length; index += 1) {
+        const token = source[index];
+        if (isWordLikeToken(token)) {
+            let combined = token;
+            let cursor = index;
+            let consumedSoftHyphen = false;
+            while (String(source[cursor + 1]?.text || '') === SOFT_HYPHEN && isWordLikeToken(source[cursor + 2])) {
+                const after = source[cursor + 2];
+                combined = {
+                    ...combined,
+                    type: combined.type === 'longToken' || after.type === 'longToken' ? 'longToken' : 'word',
+                    text: `${combined.text}${SOFT_HYPHEN}${after.text}`,
+                    end: after.end,
+                    length: Math.max(0, Number(after.end ?? combined.end ?? 0) - Number(combined.start ?? 0)),
+                    breakAfter: after.breakAfter ?? combined.breakAfter,
+                    unbreakable: combined.unbreakable === true || after.unbreakable === true,
+                    runId: combined.runId === after.runId ? combined.runId : null,
+                };
+                cursor += 2;
+                consumedSoftHyphen = true;
+            }
+
+            if (consumedSoftHyphen) {
+                merged.push(combined);
+                index = cursor;
+                continue;
+            }
+        }
+
+        if (String(token?.text || '') !== SOFT_HYPHEN) {
+            merged.push(token);
+            continue;
+        }
+    }
+
+    return merged;
+}
+
+function isWordLikeToken(token) {
+    return token?.type === 'word' || token?.type === 'longToken';
 }

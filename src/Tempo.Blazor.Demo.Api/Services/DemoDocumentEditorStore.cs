@@ -36,6 +36,9 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
         var table = CreateTablePropertiesDocument("table-demo");
         var recovery = SeedRecoveryDocument();
         var onlyOfficeParity = SeedOnlyOfficeParityDocument();
+        var canvasAdvancedCharacter = CreateCanvasAdvancedCharacterDocument("phase-e6-canvas-advanced-char");
+        var canvasCommentsRevisions = CreateCanvasCommentsRevisionsDocument("phase-17-canvas-comments-revisions");
+        var canvasSearchOutlineToc = SeedCanvasSearchOutlineTocDocument();
 
         SeedProviderImages();
         PrepareContractDemo(contract);
@@ -65,6 +68,9 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
 
         StoreDocument(recovery, "recovery-2026-05-23-canonical-v1");
         StoreDocument(onlyOfficeParity, "onlyoffice-parity-2026-05-24-canonical-v1");
+        StoreDocument(canvasAdvancedCharacter, "phase-e6-canvas-advanced-char-canonical-v1");
+        StoreDocument(canvasCommentsRevisions, "phase-17-canvas-comments-revisions-canonical-v1");
+        StoreDocument(canvasSearchOutlineToc, "phase-18-canvas-search-outline-toc-canonical-v1");
     }
 
     private void SeedProviderImages()
@@ -602,6 +608,264 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             SectionId = "contract-section-main",
             Type = DocumentBlockType.PageBreak,
             Order = order
+        };
+
+    private static DocumentEditorDocument CreateCanvasAdvancedCharacterDocument(string documentId)
+    {
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = document.Sections[0].Id;
+        document.Metadata.Title = "Canvas advanced character formatting";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.Theme = new DocumentEditorTheme
+        {
+            BodyFontFamily = "Aptos, Arial, sans-serif",
+            BodyFontSize = 12,
+            BodyLineHeight = 1.16,
+            ParagraphSpacingAfter = 8
+        };
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = DocumentPageSize.A4,
+            Margins = new DocumentPageMargins { Top = 72, Right = 78, Bottom = 72, Left = 78 },
+            HeaderDistanceFromTop = 36,
+            FooterDistanceFromBottom = 36
+        };
+        document.Sections[0].Properties.PageSettings = document.PageSettings;
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "canvas-e6-heading",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Heading,
+            Order = 10,
+            Content = new HeadingBlockContent
+            {
+                Level = 1,
+                Inlines = [new TextRun { Id = "canvas-e6-heading-run", Text = "Advanced character controls" }]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "canvas-e6-formula",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 20,
+            ParagraphProperties = new DocumentParagraphProperties { SpacingAfter = 8, LineSpacing = 1.16 },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun { Id = "canvas-e6-h", Text = "H" },
+                    new TextRun { Id = "canvas-e6-subscript", Text = "2", Marks = [new InlineMark { Type = InlineMarkType.Subscript }] },
+                    new TextRun { Id = "canvas-e6-o", Text = "O  " },
+                    new TextRun { Id = "canvas-e6-x", Text = "x" },
+                    new TextRun { Id = "canvas-e6-superscript", Text = "2", Marks = [new InlineMark { Type = InlineMarkType.Superscript }] },
+                    new TextRun { Id = "canvas-e6-formula-tail", Text = " baseline proof" }
+                ]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "canvas-e6-preformatted",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 30,
+            ParagraphProperties = new DocumentParagraphProperties { SpacingAfter = 8, LineSpacing = 1.16 },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun { Id = "canvas-e6-smallcaps", Text = "small caps sample", Marks = [new InlineMark { Type = InlineMarkType.SmallCaps }] },
+                    new TextRun { Id = "canvas-e6-gap-a", Text = "  " },
+                    new TextRun { Id = "canvas-e6-expanded", Text = "expanded", Marks = [new InlineMark { Type = InlineMarkType.CharacterSpacing, Value = "2" }] },
+                    new TextRun { Id = "canvas-e6-gap-b", Text = "  " },
+                    new TextRun { Id = "canvas-e6-scaled", Text = "scaled", Marks = [new InlineMark { Type = InlineMarkType.CharacterScale, Value = "125" }] },
+                    new TextRun { Id = "canvas-e6-gap-c", Text = "  " },
+                    new TextRun { Id = "canvas-e6-double", Text = "double strike", Marks = [new InlineMark { Type = InlineMarkType.DoubleStrikethrough }] }
+                ]
+            }
+        });
+        document.Blocks.Add(CreateCanvasParagraph(
+            sectionId,
+            "canvas-e6-command-target",
+            40,
+            "phase e6 command target for toolbar case and undo"));
+
+        return document;
+    }
+
+    private static DocumentBlock CreateCanvasParagraph(
+        string sectionId,
+        string id,
+        double order,
+        string text)
+        => new()
+        {
+            Id = id,
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = order,
+            ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Left,
+                LineSpacing = 1.16,
+                SpacingAfter = 8
+            },
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = $"{id}-run", Text = text }]
+            }
+        };
+
+    private static DocumentEditorDocument CreateCanvasCommentsRevisionsDocument(string documentId)
+    {
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "canvas-comments-revisions-section-main";
+        document.Metadata.Title = "Canvas comments and revisions";
+        document.Metadata.CreatedAt = CanonicalDemoTimestamp;
+        document.Metadata.ModifiedAt = CanonicalDemoTimestamp;
+        document.Theme = new DocumentEditorTheme
+        {
+            BodyFontFamily = "Aptos, Arial, sans-serif",
+            BodyFontSize = 11.5,
+            BodyLineHeight = 1.16,
+            ParagraphSpacingAfter = 9
+        };
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = DocumentPageSize.A4,
+            Margins = new DocumentPageMargins { Top = 72, Right = 78, Bottom = 72, Left = 78 }
+        };
+        document.Sections[0].Id = sectionId;
+        document.Sections[0].Properties.PageSettings = document.PageSettings;
+
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "canvas-phase17-review",
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 10,
+            ParagraphProperties = new DocumentParagraphProperties { LineSpacing = 1.16, SpacingAfter = 12 },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = "canvas-phase17-comment-run",
+                        Text = "Commented clause ",
+                        Marks =
+                        [
+                            new InlineMark
+                            {
+                                Type = InlineMarkType.CommentAnchor,
+                                CommentAnchor = new CommentAnchorMarkData { CommentId = "canvas-phase17-comment" }
+                            }
+                        ]
+                    },
+                    new TextRun
+                    {
+                        Id = "canvas-phase17-insertion-run",
+                        Text = "inserted text ",
+                        Marks =
+                        [
+                            new InlineMark { Type = InlineMarkType.Revision, RevisionId = "canvas-phase17-revision-insert", Value = "Insertion" }
+                        ]
+                    },
+                    new TextRun
+                    {
+                        Id = "canvas-phase17-deletion-run",
+                        Text = "deleted text ",
+                        Marks =
+                        [
+                            new InlineMark { Type = InlineMarkType.Revision, RevisionId = "canvas-phase17-revision-delete", Value = "Deletion" }
+                        ]
+                    },
+                    new TextRun
+                    {
+                        Id = "canvas-phase17-format-run",
+                        Text = "formatted text.",
+                        Marks =
+                        [
+                            new InlineMark { Type = InlineMarkType.Bold },
+                            new InlineMark { Type = InlineMarkType.Revision, RevisionId = "canvas-phase17-revision-format", Value = "Formatting" }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        document.Blocks.Add(CreateCanvasParagraph(
+            sectionId,
+            "canvas-phase17-protected",
+            20,
+            "Locked prefix editable island locked suffix."));
+
+        document.Comments.Add(new DocumentComment
+        {
+            Id = "canvas-phase17-comment",
+            Anchor = new DocumentCommentAnchor
+            {
+                Type = DocumentCommentAnchorType.TextRange,
+                BlockId = "canvas-phase17-review",
+                StartInlineIndex = 0,
+                EndInlineIndex = 0,
+                StartOffset = 0,
+                EndOffset = 16
+            },
+            Visibility = DocumentCommentVisibility.Internal,
+            Entries =
+            [
+                new DocumentCommentEntry
+                {
+                    Id = "canvas-phase17-comment-entry",
+                    Author = DemoAuthor,
+                    Text = "Canvas phase 17 comment",
+                    CreatedAt = CanonicalDemoTimestamp.AddMinutes(17)
+                }
+            ]
+        });
+
+        document.Revisions.Add(CreateCanvasPhase17Revision("canvas-phase17-revision-insert", DocumentRevisionType.Insertion, "canvas-phase17-review", 17, 31, "Inserted text pending review"));
+        document.Revisions.Add(CreateCanvasPhase17Revision("canvas-phase17-revision-delete", DocumentRevisionType.Deletion, "canvas-phase17-review", 31, 44, "Deleted text pending review"));
+        document.Revisions.Add(CreateCanvasPhase17Revision("canvas-phase17-revision-format", DocumentRevisionType.Formatting, "canvas-phase17-review", 44, 59, """{"markType":"Bold","newActive":true}"""));
+        document.IsProtected = true;
+        document.RestrictedMarkers.Add(new DocumentRestrictedMarker
+        {
+            Id = "canvas-phase17-editable-region",
+            StartBlockId = "canvas-phase17-protected",
+            StartOffset = 14,
+            EndBlockId = "canvas-phase17-protected",
+            EndOffset = 29,
+            Label = "Editable island"
+        });
+
+        return document;
+    }
+
+    private static DocumentRevision CreateCanvasPhase17Revision(string id, DocumentRevisionType type, string blockId, int startOffset, int endOffset, string payload)
+        => new()
+        {
+            Id = id,
+            Type = type,
+            Range = new DocumentRevisionRange
+            {
+                BlockId = blockId,
+                StartInlineIndex = 0,
+                EndInlineIndex = 3,
+                StartOffset = startOffset,
+                EndOffset = endOffset
+            },
+            Author = new DocumentRevisionAuthor
+            {
+                Id = "demo-reviewer",
+                DisplayName = "Demo Reviewer",
+                Email = "reviewer@example.local"
+            },
+            CreatedAt = CanonicalDemoTimestamp.AddMinutes(18),
+            Action = DocumentRevisionAction.Pending,
+            PayloadJson = payload
         };
 
     private static DocumentBlock CreateImageDrawingParagraph(

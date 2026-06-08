@@ -46,10 +46,22 @@ public sealed class DocumentReplaceService
 
     private static DocumentBlock? FindBlock(DocumentEditorDocument document, string blockId)
     {
-        return FindBlockInList(document.Blocks, blockId)
-            ?? document.HeadersFooters
-                .SelectMany(hf => hf.Blocks)
-                .FirstOrDefault(b => b.Id == blockId);
+        var block = FindBlockInList(document.Blocks, blockId);
+        if (block is not null)
+        {
+            return block;
+        }
+
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            block = FindBlockInList(headerFooter.Blocks, blockId);
+            if (block is not null)
+            {
+                return block;
+            }
+        }
+
+        return null;
     }
 
     private static DocumentBlock? FindBlockInList(IEnumerable<DocumentBlock> blocks, string blockId)
@@ -66,6 +78,12 @@ public sealed class DocumentReplaceService
                         var found = FindBlockInList(cell.Blocks, blockId);
                         if (found is not null) return found;
                     }
+            }
+
+            if (block.Content is ContentControlBlockContent contentControl)
+            {
+                var found = FindBlockInList(contentControl.Blocks, blockId);
+                if (found is not null) return found;
             }
         }
         return null;

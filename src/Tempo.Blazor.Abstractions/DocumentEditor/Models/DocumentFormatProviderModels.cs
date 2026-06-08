@@ -4,7 +4,16 @@ namespace Tempo.Blazor.DocumentEditor.Models;
 public enum DocumentFormatProviderKind
 {
     /// <summary>Microsoft Word Open XML document package.</summary>
-    Docx
+    Docx,
+
+    /// <summary>OpenDocument Text package.</summary>
+    Odt,
+
+    /// <summary>Semantic HTML document.</summary>
+    Html,
+
+    /// <summary>Markdown document.</summary>
+    Markdown
 }
 
 /// <summary>Severity of an import/export compatibility warning.</summary>

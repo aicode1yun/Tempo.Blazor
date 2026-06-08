@@ -3,7 +3,7 @@ using Tempo.Blazor.DocumentEditor.Models;
 namespace Tempo.Blazor.DocumentEditor.Services;
 
 /// <summary>A single entry in the document heading outline.</summary>
-public sealed record DocumentOutlineItem(string BlockId, int Level, string Text);
+public sealed record DocumentOutlineItem(string BlockId, int Level, string Text, int PageIndex = 0, double Y = 0, int PageNumber = 1);
 
 /// <summary>Extracts a navigable heading outline from a document.</summary>
 public sealed class DocumentOutlineService

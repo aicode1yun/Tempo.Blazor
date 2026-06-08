@@ -51,4 +51,26 @@ public sealed class DocumentMarkdownExporterTests
         markdown.Should().Contain("- Item");
         markdown.Should().Contain("> Quoted");
     }
+
+    [Fact]
+    public void ImportThenExport_PreservesSemanticMarkdownBlocks()
+    {
+        const string source = """
+            ## Phase 19
+
+            Canvas **export** bridge
+
+            | Kind | Status |
+            | --- | --- |
+            | Markdown | Ready |
+            """;
+
+        var document = new DocumentMarkdownImporter().Import(source);
+        var markdown = new DocumentMarkdownExporter().Export(document);
+
+        markdown.Should().Contain("## Phase 19");
+        markdown.Should().Contain("Canvas **export** bridge");
+        markdown.Should().Contain("| Kind | Status |");
+        markdown.Should().Contain("| Markdown | Ready |");
+    }
 }

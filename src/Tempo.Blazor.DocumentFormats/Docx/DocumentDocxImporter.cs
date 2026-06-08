@@ -2,6 +2,7 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using System.Xml.Linq;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Internal;
@@ -34,12 +35,14 @@ public sealed class DocumentDocxImporter : IDocumentFormatImporter
 public sealed class DocxPackageReader
 {
     private const string TempoNamespace = "urn:tempo-blazor:document-editor:1.0";
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly WordprocessingDocument _document;
     private readonly DocumentFormatImportOptions _options;
     private readonly List<DocumentFormatCompatibilityWarning> _warnings = [];
     private readonly List<DocumentFormatPreservedPart> _preservedParts = [];
     private readonly Dictionary<string, string> _hyperlinks = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, DocumentNumberingDefinition> _numberingDefinitionsByInstanceId = new();
     private int _order;
     private int _preservedDrawingIndex;
 
@@ -65,6 +68,8 @@ public sealed class DocxPackageReader
         }
 
         ReadProtectionSettings(doc, main);
+        ReadStyles(doc, main);
+        ReadNumberingDefinitions(doc, main);
 
         foreach (var relationship in main.HyperlinkRelationships)
         {
@@ -86,6 +91,13 @@ public sealed class DocxPackageReader
             }
             else if (element is W.SdtBlock sdtBlock)
             {
+                var contentControlBlock = await ReadContentControlBlockAsync(sdtBlock, bodyContext, cancellationToken);
+                if (contentControlBlock is not null)
+                {
+                    doc.Blocks.Add(contentControlBlock);
+                    continue;
+                }
+
                 var firstBlockIndex = doc.Blocks.Count;
                 foreach (var child in sdtBlock.GetFirstChild<W.SdtContentBlock>()?.Elements() ?? Enumerable.Empty<OpenXmlElement>())
                 {
@@ -140,6 +152,148 @@ public sealed class DocxPackageReader
         }
     }
 
+    private void ReadStyles(DocumentEditorDocument doc, MainDocumentPart main)
+    {
+        var styles = main.StyleDefinitionsPart?.Styles?.Elements<W.Style>() ?? [];
+        foreach (var style in styles)
+        {
+            var model = DeserializeTempoJson<DocumentStyleDefinition>(
+                GetTempoAttribute(style, "style-json"),
+                "word/styles.xml",
+                "docx.styleMetadataInvalid");
+            if (model is not null && !doc.Styles.Any(existing => string.Equals(existing.Id, model.Id, StringComparison.Ordinal)))
+            {
+                doc.Styles.Add(model);
+            }
+        }
+    }
+
+    private void ReadNumberingDefinitions(DocumentEditorDocument doc, MainDocumentPart main)
+    {
+        var numbering = main.NumberingDefinitionsPart?.Numbering;
+        if (numbering is null)
+        {
+            return;
+        }
+
+        var listStyles = DeserializeTempoJson<List<DocumentListStyle>>(
+            GetTempoAttribute(numbering, "list-styles-json"),
+            "word/numbering.xml",
+            "docx.listStyleMetadataInvalid");
+        if (listStyles is not null)
+        {
+            foreach (var style in listStyles.Where(style => !doc.ListStyles.Any(existing => existing.Id == style.Id)))
+            {
+                doc.ListStyles.Add(style);
+            }
+        }
+
+        var definitionsByAbstractId = new Dictionary<int, DocumentNumberingDefinition>();
+        foreach (var abstractNumber in numbering.Elements<W.AbstractNum>())
+        {
+            var abstractId = abstractNumber.AbstractNumberId?.Value;
+            if (!abstractId.HasValue)
+            {
+                continue;
+            }
+
+            var model = DeserializeTempoJson<DocumentNumberingDefinition>(
+                GetTempoAttribute(abstractNumber, "numbering-json"),
+                "word/numbering.xml",
+                "docx.numberingMetadataInvalid")
+                ?? ReadNumberingDefinitionFallback(abstractNumber);
+            definitionsByAbstractId[abstractId.Value] = model;
+        }
+
+        foreach (var instance in numbering.Elements<W.NumberingInstance>())
+        {
+            var instanceId = instance.NumberID?.Value;
+            var abstractId = instance.AbstractNumId?.Val?.Value;
+            if (!instanceId.HasValue || !abstractId.HasValue || !definitionsByAbstractId.TryGetValue(abstractId.Value, out var definition))
+            {
+                continue;
+            }
+
+            _numberingDefinitionsByInstanceId[instanceId.Value] = definition;
+            if (!doc.NumberingDefinitions.Any(existing => existing.Id == definition.Id))
+            {
+                doc.NumberingDefinitions.Add(definition);
+            }
+        }
+    }
+
+    private static DocumentNumberingDefinition ReadNumberingDefinitionFallback(W.AbstractNum abstractNumber)
+    {
+        var abstractId = abstractNumber.AbstractNumberId?.Value.ToString(CultureInfo.InvariantCulture) ?? Guid.NewGuid().ToString("N");
+        return new DocumentNumberingDefinition
+        {
+            Id = $"docx-numbering-{abstractId}",
+            AbstractId = $"docx-abstract-{abstractId}",
+            Levels = abstractNumber.Elements<W.Level>()
+                .Select(level => new DocumentNumberingLevel
+                {
+                    Level = level.LevelIndex?.Value ?? 0,
+                    Format = FromDocxNumberFormat(level.GetFirstChild<W.NumberingFormat>()?.Val?.Value),
+                    Text = level.GetFirstChild<W.LevelText>()?.Val?.Value ?? "%1.",
+                    StartAt = level.GetFirstChild<W.StartNumberingValue>()?.Val?.Value ?? 1,
+                    Suffix = FromDocxLevelSuffix(level.GetFirstChild<W.LevelSuffix>()?.Val?.Value),
+                    Indent = TwipsToPointsOrZero(level.GetFirstChild<W.ParagraphProperties>()?.GetFirstChild<W.Indentation>()?.Left?.Value),
+                    Hanging = TwipsToPointsOrZero(level.GetFirstChild<W.ParagraphProperties>()?.GetFirstChild<W.Indentation>()?.Hanging?.Value)
+                })
+                .ToList()
+        };
+    }
+
+    private static string FromDocxNumberFormat(W.NumberFormatValues? value)
+    {
+        if (value == W.NumberFormatValues.Bullet)
+        {
+            return "bullet";
+        }
+
+        if (value == W.NumberFormatValues.LowerRoman)
+        {
+            return "lower-roman";
+        }
+
+        if (value == W.NumberFormatValues.UpperRoman)
+        {
+            return "upper-roman";
+        }
+
+        if (value == W.NumberFormatValues.LowerLetter)
+        {
+            return "lower-letter";
+        }
+
+        if (value == W.NumberFormatValues.UpperLetter)
+        {
+            return "upper-letter";
+        }
+
+        if (value == W.NumberFormatValues.None)
+        {
+            return "none";
+        }
+
+        return "decimal";
+    }
+
+    private static string FromDocxLevelSuffix(W.LevelSuffixValues? value)
+    {
+        if (value == W.LevelSuffixValues.Space)
+        {
+            return "space";
+        }
+
+        if (value == W.LevelSuffixValues.Nothing)
+        {
+            return "none";
+        }
+
+        return "tab";
+    }
+
     private static bool TryReadEditableRegion(W.SdtBlock sdtBlock, IReadOnlyList<DocumentBlock> blocks, out DocumentRestrictedMarker marker)
     {
         marker = new DocumentRestrictedMarker();
@@ -170,6 +324,62 @@ public sealed class DocxPackageReader
             Label = label
         };
         return true;
+    }
+
+    private async Task<DocumentBlock?> ReadContentControlBlockAsync(
+        W.SdtBlock sdtBlock,
+        DocxPartReadContext context,
+        CancellationToken cancellationToken)
+    {
+        var control = DeserializeTempoJson<DocumentContentControl>(
+            GetTempoAttribute(sdtBlock, "content-control-json")
+            ?? (sdtBlock.SdtProperties is null ? null : GetTempoAttribute(sdtBlock.SdtProperties, "control-json")),
+            GetPartSourcePath(context.OwnerPart),
+            "docx.blockContentControlMetadataInvalid");
+        if (control is null)
+        {
+            return null;
+        }
+
+        var blocks = new List<DocumentBlock>();
+        foreach (var child in sdtBlock.GetFirstChild<W.SdtContentBlock>()?.Elements() ?? Enumerable.Empty<OpenXmlElement>())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (child is W.Paragraph paragraph)
+            {
+                blocks.AddRange(await ReadParagraphAsync(paragraph, context, cancellationToken));
+            }
+            else if (child is W.Table table)
+            {
+                blocks.Add(await ReadTableAsync(table, context, cancellationToken));
+            }
+            else if (child is W.SdtBlock nestedSdt)
+            {
+                var nested = await ReadContentControlBlockAsync(nestedSdt, context, cancellationToken);
+                if (nested is not null)
+                {
+                    blocks.Add(nested);
+                }
+            }
+        }
+
+        for (var index = 0; index < blocks.Count; index++)
+        {
+            blocks[index].Order = index;
+        }
+
+        return new DocumentBlock
+        {
+            Id = ReadElementId(sdtBlock, "block-id"),
+            SectionId = GetTempoAttribute(sdtBlock, "section-id"),
+            Type = DocumentBlockType.ContentControl,
+            Order = _order++,
+            Content = new ContentControlBlockContent
+            {
+                Control = control,
+                Blocks = blocks
+            }
+        };
     }
 
     private static int GetBlockTextLength(DocumentBlock block)
@@ -209,7 +419,7 @@ public sealed class DocxPackageReader
     {
         var blocks = new List<DocumentBlock>();
         var pageBreakSeen = false;
-        if (paragraph.Descendants<W.Break>().Any(b => b.Type?.Value == W.BreakValues.Page))
+        if (paragraph.Descendants<W.Break>().Any(b => b.Type?.Value == W.BreakValues.Page || b.Type?.Value == W.BreakValues.Column))
         {
             pageBreakSeen = true;
         }
@@ -225,12 +435,20 @@ public sealed class DocxPackageReader
 
         if (inlines.Count > 0 || blocks.Count == 0)
         {
+            var blockType = GetParagraphType(paragraph, out var headingLevel, out var ordered, out var indent);
+            var content = CreateTextContent(blockType, inlines, headingLevel, ordered, indent);
+            if (content is ListBlockContent list)
+            {
+                ApplyListMetadata(paragraph, list, ordered, indent);
+            }
+
             var block = new DocumentBlock
             {
                 Id = ReadElementId(paragraph, "block-id"),
-                Type = GetParagraphType(paragraph, out var headingLevel, out var ordered, out var indent),
+                SectionId = GetTempoAttribute(paragraph, "section-id"),
+                Type = blockType,
                 Order = _order++,
-                Content = CreateTextContent(paragraph, inlines, headingLevel, ordered, indent)
+                Content = content
             };
             NormalizeDrawingAnchors(block, inlines);
             blocks.Insert(0, block);
@@ -242,7 +460,12 @@ public sealed class DocxPackageReader
             {
                 Type = DocumentBlockType.PageBreak,
                 Order = _order++,
-                Content = new PageBreakBlockContent()
+                SectionId = GetTempoAttribute(paragraph, "section-id"),
+                Content = new PageBreakBlockContent
+                {
+                    BreakType = ReadBreakType(paragraph),
+                    NextSectionId = GetTempoAttribute(paragraph, "next-section-id")
+                }
             });
         }
 
@@ -361,14 +584,61 @@ public sealed class DocxPackageReader
         return DocumentBlockType.Paragraph;
     }
 
-    private static DocumentBlockContent CreateTextContent(W.Paragraph paragraph, List<InlineContent> inlines, int headingLevel, bool ordered, int indent)
+    private static DocumentBlockContent CreateTextContent(DocumentBlockType blockType, List<InlineContent> inlines, int headingLevel, bool ordered, int indent)
     {
-        return GetParagraphType(paragraph, out _, out _, out _) switch
+        return blockType switch
         {
             DocumentBlockType.Heading => new HeadingBlockContent { Level = headingLevel <= 0 ? 1 : headingLevel, Inlines = inlines },
             DocumentBlockType.List => new ListBlockContent { Ordered = ordered, IndentLevel = indent, Inlines = inlines },
             _ => new ParagraphBlockContent { Inlines = inlines }
         };
+    }
+
+    private void ApplyListMetadata(W.Paragraph paragraph, ListBlockContent list, bool ordered, int indent)
+    {
+        var numId = paragraph.ParagraphProperties?.NumberingProperties?.NumberingId?.Val?.Value;
+        if (numId.HasValue && _numberingDefinitionsByInstanceId.TryGetValue(numId.Value, out var definition))
+        {
+            list.NumberingId = definition.Id;
+            list.AbstractNumberingId = definition.AbstractId;
+            var level = definition.Levels.FirstOrDefault(item => item.Level == indent);
+            if (level is not null)
+            {
+                list.NumberFormat = level.Format;
+                list.LevelText = level.Text;
+                list.Suffix = level.Suffix;
+                list.LabelIndent = level.Indent;
+                list.HangingIndent = level.Hanging;
+                list.Ordered = !string.Equals(level.Format, "bullet", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        list.Ordered = ParseBool(GetTempoAttribute(paragraph, "list-ordered"), list.Ordered || ordered);
+        list.IndentLevel = ParseInt(GetTempoAttribute(paragraph, "list-level"), indent);
+        list.StartNumber = ParseInt(GetTempoAttribute(paragraph, "list-start-number"), list.StartNumber);
+        list.NumberingId = GetTempoAttribute(paragraph, "numbering-id") ?? list.NumberingId;
+        list.AbstractNumberingId = GetTempoAttribute(paragraph, "abstract-numbering-id") ?? list.AbstractNumberingId;
+        list.ListStyleId = GetTempoAttribute(paragraph, "list-style-id") ?? list.ListStyleId;
+        list.NumberFormat = GetTempoAttribute(paragraph, "number-format") ?? list.NumberFormat;
+        list.LevelText = GetTempoAttribute(paragraph, "level-text") ?? list.LevelText;
+        list.Suffix = GetTempoAttribute(paragraph, "list-suffix") ?? list.Suffix;
+        list.LabelIndent = ParseNullableDouble(GetTempoAttribute(paragraph, "label-indent")) ?? list.LabelIndent;
+        list.HangingIndent = ParseNullableDouble(GetTempoAttribute(paragraph, "hanging-indent")) ?? list.HangingIndent;
+        list.RestartNumbering = ParseBool(GetTempoAttribute(paragraph, "restart-numbering"), list.RestartNumbering);
+        list.ContinueNumbering = ParseBool(GetTempoAttribute(paragraph, "continue-numbering"), list.ContinueNumbering);
+        list.NumberingValue = ParseNullableInt(GetTempoAttribute(paragraph, "numbering-value")) ?? list.NumberingValue;
+    }
+
+    private static DocumentSectionBreakType ReadBreakType(W.Paragraph paragraph)
+    {
+        if (Enum.TryParse<DocumentSectionBreakType>(GetTempoAttribute(paragraph, "break-type"), ignoreCase: true, out var parsed))
+        {
+            return parsed;
+        }
+
+        return paragraph.Descendants<W.Break>().Any(b => b.Type?.Value == W.BreakValues.Column)
+            ? DocumentSectionBreakType.Column
+            : DocumentSectionBreakType.Page;
     }
 
     private async Task<List<InlineContent>> ReadInlinesAsync(
@@ -412,6 +682,14 @@ public sealed class DocxPackageReader
                 var linkMarks = MergeMarks(currentInherited, [new InlineMark { Type = InlineMarkType.Link, Link = new LinkMarkData { Href = href } }]);
                 result.AddRange(await ReadInlinesAsync(hyperlink.ChildElements, context, linkMarks, cancellationToken));
             }
+            else if (element is W.SimpleField simpleField)
+            {
+                result.Add(await ReadFieldInlineAsync(simpleField, context, currentInherited, cancellationToken));
+            }
+            else if (element is W.SdtRun sdtRun)
+            {
+                result.Add(await ReadContentControlInlineAsync(sdtRun, context, currentInherited, cancellationToken));
+            }
             else if (element is W.InsertedRun inserted)
             {
                 var revisionId = $"docx-rev-{inserted.Id?.Value ?? Guid.NewGuid().ToString("N")}";
@@ -436,6 +714,21 @@ public sealed class DocxPackageReader
         List<InlineContent> result,
         CancellationToken cancellationToken)
     {
+        if (string.Equals(GetTempoAttribute(run, "inline-kind"), "math", StringComparison.Ordinal)
+            && DeserializeTempoJson<DocumentMathRun>(
+                GetTempoAttribute(run, "math-json"),
+                GetPartSourcePath(context.OwnerPart),
+                "docx.mathMetadataInvalid") is { } math)
+        {
+            if (math.Marks.Count == 0)
+            {
+                math.Marks = marks.Select(CloneMark).ToList();
+            }
+
+            result.Add(math);
+            return;
+        }
+
         foreach (var child in run.ChildElements)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -464,6 +757,116 @@ public sealed class DocxPackageReader
                 result.Add(new TextRun { Text = "\t", Marks = marks.Select(CloneMark).ToList() });
             }
         }
+    }
+
+    private async Task<DocumentFieldRun> ReadFieldInlineAsync(
+        W.SimpleField simpleField,
+        DocxPartReadContext context,
+        IReadOnlyList<InlineMark> inheritedMarks,
+        CancellationToken cancellationToken)
+    {
+        var field = DeserializeTempoJson<DocumentFieldRun>(
+            GetTempoAttribute(simpleField, "field-json"),
+            GetPartSourcePath(context.OwnerPart),
+            "docx.fieldMetadataInvalid");
+        if (field is not null)
+        {
+            if (field.Marks.Count == 0)
+            {
+                field.Marks = inheritedMarks.Select(CloneMark).ToList();
+            }
+
+            return field;
+        }
+
+        var inlines = await ReadInlinesAsync(simpleField.ChildElements, context, inheritedMarks.ToList(), cancellationToken);
+        var instruction = simpleField.Instruction?.Value ?? string.Empty;
+        return new DocumentFieldRun
+        {
+            Id = GetTempoAttribute(simpleField, "inline-id"),
+            FieldType = ParseFieldType(instruction),
+            InstrText = instruction,
+            CachedResult = GetInlineText(inlines),
+            DisplayText = GetInlineText(inlines),
+            Marks = inheritedMarks.Select(CloneMark).ToList()
+        };
+    }
+
+    private async Task<DocumentContentControlRun> ReadContentControlInlineAsync(
+        W.SdtRun sdtRun,
+        DocxPartReadContext context,
+        IReadOnlyList<InlineMark> inheritedMarks,
+        CancellationToken cancellationToken)
+    {
+        var model = DeserializeTempoJson<DocumentContentControlRun>(
+            GetTempoAttribute(sdtRun, "content-control-json"),
+            GetPartSourcePath(context.OwnerPart),
+            "docx.contentControlMetadataInvalid");
+        if (model is not null)
+        {
+            if (model.Marks.Count == 0)
+            {
+                model.Marks = inheritedMarks.Select(CloneMark).ToList();
+            }
+
+            return model;
+        }
+
+        var content = sdtRun.GetFirstChild<W.SdtContentRun>();
+        var inlines = await ReadInlinesAsync(content?.ChildElements ?? [], context, inheritedMarks.ToList(), cancellationToken);
+        return new DocumentContentControlRun
+        {
+            Id = GetTempoAttribute(sdtRun, "inline-id"),
+            Control = ReadContentControlProperties(sdtRun.SdtProperties),
+            Inlines = inlines,
+            Marks = inheritedMarks.Select(CloneMark).ToList()
+        };
+    }
+
+    private DocumentContentControl ReadContentControlProperties(W.SdtProperties? properties)
+    {
+        var model = DeserializeTempoJson<DocumentContentControl>(
+            properties is null ? null : GetTempoAttribute(properties, "control-json"),
+            "word/document.xml",
+            "docx.contentControlPropertiesInvalid");
+        if (model is not null)
+        {
+            return model;
+        }
+
+        return new DocumentContentControl
+        {
+            Alias = properties?.GetFirstChild<W.SdtAlias>()?.Val?.Value,
+            Tag = properties?.GetFirstChild<W.Tag>()?.Val?.Value,
+            LockContent = properties?.GetFirstChild<W.Lock>()?.Val?.Value == W.LockingValues.ContentLocked
+                || properties?.GetFirstChild<W.Lock>()?.Val?.Value == W.LockingValues.SdtLocked
+        };
+    }
+
+    private static DocumentFieldType ParseFieldType(string instruction)
+    {
+        var normalized = instruction.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.ToUpperInvariant() ?? string.Empty;
+        return normalized switch
+        {
+            "PAGE" => DocumentFieldType.PageNumber,
+            "NUMPAGES" => DocumentFieldType.PageCount,
+            "DATE" => DocumentFieldType.Date,
+            "TIME" => DocumentFieldType.Time,
+            "TITLE" => DocumentFieldType.DocumentTitle,
+            "AUTHOR" => DocumentFieldType.Author,
+            "SAVEDATE" => DocumentFieldType.LastSaved,
+            "FILENAME" => DocumentFieldType.FileName,
+            "REVNUM" => DocumentFieldType.RevisionNumber,
+            "STYLEREF" => DocumentFieldType.StyleRef,
+            "REF" => DocumentFieldType.Ref,
+            "SEQ" => DocumentFieldType.Seq,
+            "TOC" => DocumentFieldType.TableOfFigures,
+            "BIBLIOGRAPHY" => DocumentFieldType.Bibliography,
+            "CITATION" => DocumentFieldType.Citation,
+            "SECTIONPAGE" => DocumentFieldType.SectionPageNumber,
+            "SECTIONPAGES" => DocumentFieldType.SectionPageCount,
+            _ => DocumentFieldType.Unknown
+        };
     }
 
     private async Task<DocumentDrawingRun?> ReadDrawingRunAsync(
@@ -858,6 +1261,7 @@ public sealed class DocxPackageReader
         return new DocumentBlock
         {
             Id = tableId,
+            SectionId = GetTempoAttribute(table, "section-id"),
             Type = DocumentBlockType.Table,
             Order = _order++,
             Content = new TableBlockContent { Layout = tableLayout, Rows = rows }
@@ -1645,6 +2049,28 @@ public sealed class DocxPackageReader
         return string.IsNullOrWhiteSpace(attribute.Value) ? null : attribute.Value;
     }
 
+    private T? DeserializeTempoJson<T>(string? json, string sourcePath, string warningCode)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return default;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            _warnings.Add(Warning(
+                warningCode,
+                $"DOCX Tempo metadata '{typeof(T).Name}' could not be parsed and was ignored.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                sourcePath));
+            return default;
+        }
+    }
+
     private static string ReadElementId(OpenXmlElement element, string tempoAttributeName)
         => GetTempoAttribute(element, tempoAttributeName) ?? Guid.NewGuid().ToString("N");
 
@@ -1995,10 +2421,30 @@ public sealed class DocxPackageReader
             TextRun text => text.Text,
             TokenRun token => token.DisplayName,
             DocumentFieldRun field => field.DisplayText ?? field.FallbackText ?? string.Empty,
+            DocumentMathRun math => math.AltText ?? DocumentMathText.FlattenMathContent(math.Content),
+            DocumentContentControlRun control => GetContentControlText(control),
             DocumentNoteReferenceRun note => note.NoteId,
             DocumentDrawingRun drawing => drawing.AltText ?? string.Empty,
             _ => string.Empty
         }));
+
+    private static string GetContentControlText(DocumentContentControlRun control)
+    {
+        var inlineText = GetInlineText(control.Inlines);
+        if (!string.IsNullOrWhiteSpace(inlineText))
+        {
+            return inlineText;
+        }
+
+        return control.Control.Value.Text
+            ?? control.Control.Value.SelectedValue
+            ?? control.Control.Value.DateIso
+            ?? control.Control.Value.AssetId
+            ?? control.Control.PlaceholderText
+            ?? control.Control.Alias
+            ?? control.Control.Tag
+            ?? string.Empty;
+    }
 
     private static List<DocumentRevision> ReadRevisions(W.Body body)
     {
@@ -2029,6 +2475,24 @@ public sealed class DocxPackageReader
             return;
         }
 
+        var sections = DeserializeTempoJson<List<DocumentSection>>(
+            GetTempoAttribute(sectionProperties, "sections-json"),
+            "word/document.xml",
+            "docx.sectionMetadataInvalid");
+        if (sections is { Count: > 0 })
+        {
+            doc.Sections = sections.OrderBy(item => item.Order).ToList();
+            section = doc.Sections[0];
+        }
+        else
+        {
+            var sectionId = GetTempoAttribute(sectionProperties, "section-id");
+            if (!string.IsNullOrWhiteSpace(sectionId))
+            {
+                section.Id = sectionId;
+            }
+        }
+
         var size = sectionProperties.GetFirstChild<W.PageSize>();
         if (size?.Width is not null && size.Height is not null)
         {
@@ -2052,9 +2516,66 @@ public sealed class DocxPackageReader
                 Left = TwipsToPoints(margin.Left?.Value ?? 1440)
             };
         }
+
+        var columns = sectionProperties.GetFirstChild<W.Columns>();
+        if (columns is not null)
+        {
+            section.Properties.Columns = new DocumentSectionColumns
+            {
+                Count = Math.Max(1, (int)(columns.ColumnCount?.Value ?? 1)),
+                Spacing = TwipsToPointsOrZero(columns.Space?.Value),
+                SeparatorLine = columns.Separator?.Value == true,
+                Preset = (columns.ColumnCount?.Value ?? 1) switch
+                {
+                    2 => "two",
+                    3 => "three",
+                    _ => "custom"
+                },
+                Items = columns.Elements<W.Column>()
+                    .Select(column => new DocumentSectionColumn
+                    {
+                        Width = TwipsToNullablePoints(column.Width?.Value),
+                        SpacingAfter = TwipsToNullablePoints(column.Space?.Value)
+                    })
+                    .ToList()
+            };
+        }
+
+        var lineNumbering = sectionProperties.GetFirstChild<W.LineNumberType>();
+        if (lineNumbering is not null)
+        {
+            section.Properties.LineNumbering = new DocumentLineNumbering
+            {
+                Enabled = true,
+                StartAt = lineNumbering.Start?.Value ?? 1,
+                Increment = lineNumbering.CountBy?.Value ?? 1,
+                DistanceFromText = TwipsToPointsOrZero(lineNumbering.Distance?.Value),
+                Restart = ToLineNumberingRestart(lineNumbering.Restart?.Value)
+            };
+        }
     }
 
     private static double TwipsToPoints(double twips) => DocxUnitConverter.TwipToPoint(twips);
+
+    private static DocumentLineNumberingRestart ToLineNumberingRestart(W.LineNumberRestartValues? value)
+    {
+        if (value == W.LineNumberRestartValues.NewPage)
+        {
+            return DocumentLineNumberingRestart.Page;
+        }
+
+        if (value == W.LineNumberRestartValues.NewSection)
+        {
+            return DocumentLineNumberingRestart.Section;
+        }
+
+        return DocumentLineNumberingRestart.Continuous;
+    }
+
+    private static double TwipsToPointsOrZero(string? value)
+        => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var twips)
+            ? TwipsToPoints(twips)
+            : 0;
 
     private static string GetPartSourcePath(OpenXmlPartContainer ownerPart)
         => ownerPart is OpenXmlPart part

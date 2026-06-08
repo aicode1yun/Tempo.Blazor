@@ -106,6 +106,7 @@
     color: var(--tm-color-text-muted);
     font-size: var(--tm-font-size-xs);
     line-height: 1;
+    pointer-events: none;
     text-align: center;
     white-space: nowrap;
 }
@@ -115,6 +116,8 @@
 }
 
 .tm-document-editor__ribbon-button {
+    position: relative;
+    z-index: 1;
     flex: 0 0 auto;
     inline-size: 4.75rem;
     min-height: 3.25rem;

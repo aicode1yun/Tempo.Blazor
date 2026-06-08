@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@using Microsoft.AspNetCore.Components.Web
 
 @if (IsOpen)
 {
@@ -16,6 +17,7 @@
                 @if (ShowComments)
                 {
                     <button type="button"
+                            @ref="_commentsTab"
                             id="@GetTabId(DocumentSidePanelTab.Comments)"
                             class="@GetTabClass(DocumentSidePanelTab.Comments)"
                             role="tab"
@@ -34,6 +36,7 @@
                 @if (ShowRevisions)
                 {
                     <button type="button"
+                            @ref="_revisionsTab"
                             id="@GetTabId(DocumentSidePanelTab.Revisions)"
                             class="@GetTabClass(DocumentSidePanelTab.Revisions)"
                             role="tab"
@@ -52,6 +55,7 @@
                 @if (ShowVersions)
                 {
                     <button type="button"
+                            @ref="_versionsTab"
                             id="@GetTabId(DocumentSidePanelTab.Versions)"
                             class="@GetTabClass(DocumentSidePanelTab.Versions)"
                             role="tab"
@@ -70,6 +74,7 @@
                 @if (ShowProperties)
                 {
                     <button type="button"
+                            @ref="_propertiesTab"
                             id="@GetTabId(DocumentSidePanelTab.Properties)"
                             class="@GetTabClass(DocumentSidePanelTab.Properties)"
                             role="tab"
@@ -84,6 +89,7 @@
                 @if (ShowOutline)
                 {
                     <button type="button"
+                            @ref="_outlineTab"
                             id="@GetTabId(DocumentSidePanelTab.Outline)"
                             class="@GetTabClass(DocumentSidePanelTab.Outline)"
                             role="tab"
@@ -98,6 +104,7 @@
                 @if (ShowPages)
                 {
                     <button type="button"
+                            @ref="_pagesTab"
                             id="@GetTabId(DocumentSidePanelTab.Pages)"
                             class="@GetTabClass(DocumentSidePanelTab.Pages)"
                             role="tab"
@@ -145,6 +152,12 @@ else if (ShowEdgeToggle)
 
 @code {
     private const string PanelId = "document-side-panel-content";
+    private ElementReference _commentsTab;
+    private ElementReference _revisionsTab;
+    private ElementReference _versionsTab;
+    private ElementReference _propertiesTab;
+    private ElementReference _outlineTab;
+    private ElementReference _pagesTab;
 
     /// <summary>Whether the side panel shell is open.</summary>
     [Parameter] public bool IsOpen { get; set; } = true;
@@ -218,6 +231,19 @@ else if (ShowEdgeToggle)
         => IsTabAvailable(tab)
             ? ActiveTabChanged.InvokeAsync(tab)
             : Task.CompletedTask;
+
+    /// <summary>Moves keyboard focus to the active side-panel tab.</summary>
+    public ValueTask FocusActiveTabAsync()
+        => EffectiveActiveTab switch
+        {
+            DocumentSidePanelTab.Comments => _commentsTab.FocusAsync(),
+            DocumentSidePanelTab.Revisions => _revisionsTab.FocusAsync(),
+            DocumentSidePanelTab.Versions => _versionsTab.FocusAsync(),
+            DocumentSidePanelTab.Properties => _propertiesTab.FocusAsync(),
+            DocumentSidePanelTab.Outline => _outlineTab.FocusAsync(),
+            DocumentSidePanelTab.Pages => _pagesTab.FocusAsync(),
+            _ => _propertiesTab.FocusAsync()
+        };
 
     private RenderFragment? GetActiveContent()
         => EffectiveActiveTab switch

@@ -98,7 +98,9 @@ public static class DocumentEditorEndpoints
             CancellationToken cancellationToken) =>
         {
             request.DocumentId = documentId;
-            request.ConcurrencyMode = DocumentEditorConcurrencyMode.Optional;
+            request.ConcurrencyMode = request.ConcurrencyMode == DocumentEditorConcurrencyMode.Force
+                ? DocumentEditorConcurrencyMode.Force
+                : DocumentEditorConcurrencyMode.Optional;
             var result = await store.SaveAsync(request, cancellationToken);
             return result.Success ? Results.Ok(result) : Results.Conflict(result);
         });
@@ -124,7 +126,9 @@ public static class DocumentEditorEndpoints
             CancellationToken cancellationToken) =>
         {
             request.DocumentId = documentId;
-            request.ConcurrencyMode = DocumentEditorConcurrencyMode.Optional;
+            request.ConcurrencyMode = request.ConcurrencyMode == DocumentEditorConcurrencyMode.Force
+                ? DocumentEditorConcurrencyMode.Force
+                : DocumentEditorConcurrencyMode.Optional;
             var result = await store.SaveAsync(request, cancellationToken);
             return result.Success ? Results.Ok(result) : Results.Conflict(result);
         });

@@ -1,7 +1,11 @@
+using System.Text;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats;
 using Tempo.Blazor.DocumentFormats.Docx;
+using Tempo.Blazor.DocumentFormats.Html;
+using Tempo.Blazor.DocumentFormats.Markdown;
+using Tempo.Blazor.DocumentFormats.Odt;
 
 namespace Tempo.Blazor.Demo.Api.Services;
 
@@ -19,6 +23,30 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
             CanExport = true,
             FileExtensions = [".docx"],
             ContentTypes = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+        },
+        new()
+        {
+            Format = DocumentFormatProviderKind.Odt,
+            CanImport = true,
+            CanExport = true,
+            FileExtensions = [".odt"],
+            ContentTypes = ["application/vnd.oasis.opendocument.text"]
+        },
+        new()
+        {
+            Format = DocumentFormatProviderKind.Html,
+            CanImport = true,
+            CanExport = true,
+            FileExtensions = [".html", ".htm"],
+            ContentTypes = ["text/html"]
+        },
+        new()
+        {
+            Format = DocumentFormatProviderKind.Markdown,
+            CanImport = true,
+            CanExport = true,
+            FileExtensions = [".md", ".markdown"],
+            ContentTypes = ["text/markdown", "text/x-markdown", "text/plain"]
         }
     ];
 
@@ -39,7 +67,7 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
         DocumentFormatImportProviderRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Format != DocumentFormatProviderKind.Docx)
+        if (!Capabilities.Any(capability => capability.Format == request.Format && capability.CanImport))
         {
             return new DocumentFormatImportProviderResult
             {
@@ -49,20 +77,44 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
             };
         }
 
-        await using var stream = new MemoryStream(request.Content);
-        var imported = await new DocumentDocxImporter().ImportAsync(stream, new DocumentFormatImportOptions
-        {
-            DocumentId = request.DocumentId,
-            FileName = request.FileName,
-            ImageImporter = ImportImageAsync
-        }, cancellationToken);
+        var imported = await ImportDocumentAsync(request, cancellationToken);
 
         return new DocumentFormatImportProviderResult
         {
             Success = true,
             Document = imported.Document,
-            Format = DocumentFormatProviderKind.Docx,
+            Format = request.Format,
             Warnings = MapWarnings(imported.Warnings, request.FileName)
+        };
+    }
+
+    private async Task<DocumentFormatImportResult> ImportDocumentAsync(
+        DocumentFormatImportProviderRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var stream = new MemoryStream(request.Content);
+        var options = new DocumentFormatImportOptions
+        {
+            DocumentId = request.DocumentId,
+            FileName = request.FileName,
+            ImageImporter = ImportImageAsync
+        };
+
+        return request.Format switch
+        {
+            DocumentFormatProviderKind.Docx => await new DocumentDocxImporter().ImportAsync(stream, options, cancellationToken),
+            DocumentFormatProviderKind.Odt => await new DocumentOdtImporter().ImportAsync(stream, options, cancellationToken),
+            DocumentFormatProviderKind.Html => new DocumentFormatImportResult
+            {
+                Document = new DocumentHtmlImporter().Import(Encoding.UTF8.GetString(request.Content), new DocumentHtmlImportOptions
+                {
+                    DocumentId = request.DocumentId,
+                    Title = Path.GetFileNameWithoutExtension(request.FileName)
+                }),
+                Format = DocumentFormatKind.Html
+            },
+            DocumentFormatProviderKind.Markdown => await new DocumentMarkdownImporter().ImportAsync(stream, options, cancellationToken),
+            _ => throw new InvalidOperationException("Unsupported document format.")
         };
     }
 
@@ -71,7 +123,7 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
         DocumentFormatExportProviderRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.Format != DocumentFormatProviderKind.Docx)
+        if (!Capabilities.Any(capability => capability.Format == request.Format && capability.CanExport))
         {
             return new DocumentFormatExportProviderResult
             {
@@ -81,11 +133,7 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
             };
         }
 
-        var exported = await new DocumentDocxExporter().ExportAsync(request.Document, new DocumentFormatExportOptions
-        {
-            FileName = request.FileName,
-            ImageResolver = ResolveImageAsync
-        }, cancellationToken);
+        var exported = await ExportDocumentAsync(request, cancellationToken);
 
         return new DocumentFormatExportProviderResult
         {
@@ -93,9 +141,69 @@ public sealed class DemoDocumentFormatProvider : IDocumentFormatProvider
             Content = exported.Content,
             ContentType = exported.ContentType,
             FileName = exported.FileName,
-            Format = DocumentFormatProviderKind.Docx,
+            Format = request.Format,
             Warnings = MapWarnings(exported.Warnings, request.FileName)
         };
+    }
+
+    private async Task<DocumentFormatExportResult> ExportDocumentAsync(
+        DocumentFormatExportProviderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var options = new DocumentFormatExportOptions
+        {
+            FileName = request.FileName,
+            ImageResolver = ResolveImageAsync
+        };
+
+        return request.Format switch
+        {
+            DocumentFormatProviderKind.Docx => await new DocumentDocxExporter().ExportAsync(request.Document, options, cancellationToken),
+            DocumentFormatProviderKind.Odt => await new DocumentOdtExporter().ExportAsync(request.Document, options, cancellationToken),
+            DocumentFormatProviderKind.Html => ExportHtml(request),
+            DocumentFormatProviderKind.Markdown => ExportMarkdown(request),
+            _ => throw new InvalidOperationException("Unsupported document format.")
+        };
+    }
+
+    private static DocumentFormatExportResult ExportHtml(DocumentFormatExportProviderRequest request)
+    {
+        var html = new DocumentHtmlExporter().Export(request.Document, new DocumentHtmlExportOptions
+        {
+            IncludeDocumentWrapper = true
+        });
+
+        return new DocumentFormatExportResult
+        {
+            Content = Encoding.UTF8.GetBytes(html),
+            ContentType = "text/html; charset=utf-8",
+            FileName = EnsureExtension(request.FileName, request.Document, ".html"),
+            Format = DocumentFormatKind.Html
+        };
+    }
+
+    private static DocumentFormatExportResult ExportMarkdown(DocumentFormatExportProviderRequest request)
+    {
+        var markdown = new DocumentMarkdownExporter().Export(request.Document);
+        return new DocumentFormatExportResult
+        {
+            Content = Encoding.UTF8.GetBytes(markdown),
+            ContentType = "text/markdown; charset=utf-8",
+            FileName = EnsureExtension(request.FileName, request.Document, ".md"),
+            Format = DocumentFormatKind.Markdown
+        };
+    }
+
+    private static string EnsureExtension(string? requestedFileName, DocumentEditorDocument document, string extension)
+    {
+        var baseName = string.IsNullOrWhiteSpace(requestedFileName)
+            ? string.IsNullOrWhiteSpace(document.Metadata.Title) ? document.DocumentId : document.Metadata.Title
+            : requestedFileName;
+        var sanitized = string.Join("_", baseName.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)).Trim();
+        sanitized = string.IsNullOrWhiteSpace(sanitized) ? "document" : sanitized;
+        return sanitized.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
+            ? sanitized
+            : sanitized + extension;
     }
 
     private async Task<DocumentFormatImageImportResult> ImportImageAsync(

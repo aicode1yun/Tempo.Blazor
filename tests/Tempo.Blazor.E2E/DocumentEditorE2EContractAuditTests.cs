@@ -2,7 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tempo.Blazor.E2E;
 
-/// <summary>Audits the DocumentEditor E2E suite taxonomy so legacy diagnostics are not mistaken for UX parity coverage.</summary>
+/// <summary>Audits the legacy DocumentEditor E2E suite taxonomy so diagnostics are not mistaken for canvas UX parity coverage.</summary>
 [TestClass]
 [TestCategory("DocumentEditor")]
 [TestCategory("DocumentEditor:DiagnosticRuntime")]
@@ -26,6 +26,7 @@ public sealed class DocumentEditorE2EContractAuditTests
         new("DocumentEditorPhase20PerformanceE2ETests.cs", E2EContractKind.DiagnosticRuntime, "Performance and latency diagnostic coverage."),
         new("DocumentEditorPhase21AccessibilityE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "Keyboard and accessibility workflows."),
         new("DocumentEditorPhase22DemoDocsE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.ProviderBoundary, "Demo document reset and scenario boundary coverage."),
+        new("DocumentEditorPhaseABCPerformanceE2ETests.cs", E2EContractKind.DiagnosticRuntime, "Phase A/B/C legacy WYSIWYG typing performance diagnostic coverage."),
         new("DocumentEditorPhase3CommandRegistryE2ETests.cs", E2EContractKind.DiagnosticRuntime | E2EContractKind.ProviderBoundary, "Diagnostic command registry/provider boundary coverage."),
         new("DocumentEditorPhase4ToolbarE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "Toolbar and ribbon shell workflows."),
         new("DocumentEditorPhase5RuntimeModularizationE2ETests.cs", E2EContractKind.DiagnosticRuntime, "Runtime modularization diagnostics."),
@@ -83,12 +84,13 @@ public sealed class DocumentEditorE2EContractAuditTests
                 : [])
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .Cast<string>()
+            .Where(name => !name.StartsWith("DocumentEditorCanvas", StringComparison.Ordinal))
             .Order(StringComparer.Ordinal)
             .ToArray();
         var registered = Contracts.Select(contract => contract.FileName).Order(StringComparer.Ordinal).ToArray();
 
         CollectionAssert.AreEquivalent(files, registered,
-            $"Every DocumentEditor E2E file must be classified. Missing registry entries: {string.Join(", ", files.Except(registered, StringComparer.Ordinal))}. Stale registry entries: {string.Join(", ", registered.Except(files, StringComparer.Ordinal))}.");
+            $"Every legacy DocumentEditor E2E file must be classified. Canvas E2E files are audited by DocumentEditorCanvasParityCoverageMatrixTests. Missing registry entries: {string.Join(", ", files.Except(registered, StringComparer.Ordinal))}. Stale registry entries: {string.Join(", ", registered.Except(files, StringComparer.Ordinal))}.");
     }
 
     [TestMethod]

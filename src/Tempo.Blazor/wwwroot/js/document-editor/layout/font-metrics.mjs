@@ -42,6 +42,9 @@ export function normalizeFontMetricStyle(request) {
         fontSize: Number(source.FontSize ?? source.fontSize ?? 12) || 12,
         fontWeight,
         fontStyle,
+        characterScale: Math.max(0.1, Number(source.CharacterScale ?? source.characterScale ?? 1) || 1),
+        fontVariantCaps: normalizeFontVariantCaps(source.FontVariantCaps ?? source.fontVariantCaps ?? 'normal'),
+        kerning: source.Kerning ?? source.kerning ?? true,
         letterSpacing: Number(source.LetterSpacing ?? source.letterSpacing ?? 0) || 0,
         zoom: Number(source.Zoom ?? source.zoom ?? 1) || 1,
     };
@@ -51,7 +54,8 @@ export function normalizeFontMetricStyle(request) {
 export function computeFontMetricKey(style) {
     return [
         style.text, style.fontFamily, style.fontSize,
-        style.fontWeight, style.fontStyle, style.letterSpacing, style.zoom,
+        style.fontWeight, style.fontStyle, style.characterScale, style.fontVariantCaps,
+        style.kerning, style.letterSpacing, style.zoom,
     ].join(KEY_SEP);
 }
 
@@ -59,6 +63,8 @@ export function computeFontMetricKey(style) {
 export function fontStringFromStyle(style) {
     const parts = [];
     if (style.fontStyle && style.fontStyle !== 'normal') parts.push(style.fontStyle);
+    const fontVariantCaps = normalizeFontVariantCaps(style.fontVariantCaps);
+    if (fontVariantCaps && fontVariantCaps !== 'normal') parts.push(fontVariantCaps);
     if (style.fontWeight && style.fontWeight !== '400' && style.fontWeight !== 'normal') parts.push(style.fontWeight);
     parts.push(style.fontSize + 'px');
     parts.push(style.fontFamily || 'Arial');
@@ -74,7 +80,10 @@ export function syntheticRunMetrics(style) {
         0);
     if (/700|bold/i.test(style.fontWeight)) width *= 1.08;
     if (/italic/i.test(style.fontStyle)) width *= 1.04;
-    width += Math.max(0, Array.from(style.text).length - 1) * style.letterSpacing;
+    if (style.letterSpacing) {
+        width += Math.max(0, Array.from(style.text).length - 1) * style.letterSpacing;
+    }
+    width *= style.characterScale;
     width *= style.zoom;
     const ascent = style.fontSize * 0.8 * style.zoom;
     const descent = style.fontSize * 0.2 * style.zoom;
@@ -155,11 +164,17 @@ export function createFontMetricsService(options) {
         if (!c) return null;
         try {
             c.font = fontStringFromStyle(style);
+            if ('fontKerning' in c) {
+                c.fontKerning = style.kerning === false || String(style.kerning).toLowerCase() === 'false' ? 'none' : 'normal';
+            }
             const m = c.measureText(style.text);
             let width = Number(m.width) || 0;
             // CSS letter-spacing: applied between glyphs (n-1 gaps). measureText gives
             // the natural advance; add letter-spacing explicitly for determinism.
-            width += Math.max(0, Array.from(style.text).length - 1) * style.letterSpacing;
+            if (style.letterSpacing) {
+                width += Math.max(0, Array.from(style.text).length - 1) * style.letterSpacing;
+            }
+            width *= style.characterScale;
             width *= style.zoom;
             // Vertical metrics: prefer font-level bounding box (consistent across text),
             // fall back to actual bounding box, then to a synthetic ratio.
@@ -239,4 +254,9 @@ export function createFontMetricsService(options) {
         computeCacheKey: (request) => computeFontMetricKey(normalizeFontMetricStyle(request)),
         normalizeStyle: normalizeFontMetricStyle,
     });
+}
+
+function normalizeFontVariantCaps(value) {
+    const normalized = asText(value || 'normal').trim().toLowerCase();
+    return normalized === 'small-caps' ? 'small-caps' : 'normal';
 }

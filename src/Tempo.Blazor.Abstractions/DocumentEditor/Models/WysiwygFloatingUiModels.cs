@@ -39,6 +39,31 @@ public sealed class WysiwygTextContextMenuRequest : WysiwygFloatingUiPosition
 
     /// <summary>Optional block type when the menu targets a structural block.</summary>
     public string? BlockType { get; set; }
+
+    /// <summary>Optional spelling diagnostic under the pointer.</summary>
+    public WysiwygMisspelling? Misspelling { get; set; }
+}
+
+/// <summary>Misspelled word and replacement suggestions shown in a document editor text context menu.</summary>
+public sealed class WysiwygMisspelling
+{
+    /// <summary>Misspelled word.</summary>
+    public string? Word { get; set; }
+
+    /// <summary>Start offset inside the target block.</summary>
+    public int Start { get; set; }
+
+    /// <summary>End offset inside the target block.</summary>
+    public int End { get; set; }
+
+    /// <summary>Target block id.</summary>
+    public string? BlockId { get; set; }
+
+    /// <summary>Suggested replacements.</summary>
+    public List<string> Suggestions { get; set; } = [];
+
+    /// <summary>Whether the editor may apply a replacement.</summary>
+    public bool CanApplyFix { get; set; } = true;
 }
 
 /// <summary>Request to show the table context menu for the current table cell.</summary>

@@ -35,6 +35,29 @@ public sealed class DocumentDocxDrawingPhase36Tests
     }
 
     [Fact]
+    public async Task PhaseE7_ImportAsync_UnsupportedShapeTextBoxConnectorAndChartDrawingMlPreservesRawPayloads()
+    {
+        await using var package = CreateUnsupportedDrawingKindsDocx();
+
+        var imported = await new DocumentDocxImporter().ImportAsync(package);
+
+        imported.Warnings.Should().Contain(warning => warning.Code == "docx.drawingUnsupportedGraphicData");
+        imported.Warnings.Should().Contain(warning => warning.Code == "docx.drawingChartUnsupported");
+        imported.PreservedParts.Should().Contain(part =>
+            part.Path.Contains("#drawing/", StringComparison.Ordinal)
+            && Encoding.UTF8.GetString(part.Content).Contains("wordprocessingShape", StringComparison.OrdinalIgnoreCase));
+        imported.PreservedParts.Should().Contain(part =>
+            part.Path.Contains("#drawing/", StringComparison.Ordinal)
+            && Encoding.UTF8.GetString(part.Content).Contains("txbx", StringComparison.OrdinalIgnoreCase));
+        imported.PreservedParts.Should().Contain(part =>
+            part.Path.Contains("#drawing/", StringComparison.Ordinal)
+            && Encoding.UTF8.GetString(part.Content).Contains("cxnSp", StringComparison.OrdinalIgnoreCase));
+        imported.PreservedParts.Should().Contain(part =>
+            part.Path.Contains("#drawing/", StringComparison.Ordinal)
+            && Encoding.UTF8.GetString(part.Content).Contains("chart", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task Phase36_ImportAsync_SmartArtAndCanvasGroupWarnAndPreserveRawDrawingXml()
     {
         await using var package = CreateSmartArtAndCanvasDocx();
@@ -117,6 +140,32 @@ public sealed class DocumentDocxDrawingPhase36Tests
             new W.Run(new W.Text("Before ")),
             CreateDrawingRun(CreateDrawing(description, new A.Graphic(new A.GraphicData { Uri = uri }))),
             new W.Run(new W.Text(" after"))));
+
+    private static MemoryStream CreateUnsupportedDrawingKindsDocx()
+        => CreateBodyDocument(main => new W.Paragraph(
+            new W.Run(new W.Text("Drawings ")),
+            CreateDrawingRun(CreateDrawing(
+                "Shape drawing",
+                CreateUnknownGraphic(
+                    "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                    "wsp"))),
+            CreateDrawingRun(CreateDrawing(
+                "Text box drawing",
+                CreateUnknownGraphic(
+                    "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                    "txbx"))),
+            CreateDrawingRun(CreateDrawing(
+                "Connector drawing",
+                CreateUnknownGraphic(
+                    "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+                    "cxnSp"))),
+            CreateDrawingRun(CreateDrawing(
+                "Chart drawing",
+                CreateUnknownGraphic(
+                    "http://schemas.openxmlformats.org/drawingml/2006/chart",
+                    "chart",
+                    prefix: "c"))),
+            new W.Run(new W.Text(" preserved"))));
 
     private static MemoryStream CreateSmartArtAndCanvasDocx()
         => CreateBodyDocument(main => new W.Paragraph(
@@ -228,6 +277,13 @@ public sealed class DocumentDocxDrawingPhase36Tests
                 blipFill,
                 shapeProperties))
         { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" });
+    }
+
+    private static A.Graphic CreateUnknownGraphic(string uri, string localName, string prefix = "wps")
+    {
+        var graphicData = new A.GraphicData { Uri = uri };
+        graphicData.Append(new OpenXmlUnknownElement(prefix, localName, uri));
+        return new A.Graphic(graphicData);
     }
 
     private static IEnumerable<InlineContent> GetInlines(DocumentBlock block)

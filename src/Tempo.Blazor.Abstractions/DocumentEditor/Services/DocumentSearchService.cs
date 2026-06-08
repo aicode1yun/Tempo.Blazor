@@ -1,4 +1,5 @@
 using Tempo.Blazor.DocumentEditor.Models;
+using System.Text.RegularExpressions;
 
 namespace Tempo.Blazor.DocumentEditor.Services;
 
@@ -83,6 +84,10 @@ public sealed class DocumentSearchService
                     foreach (var cell in row.Cells)
                         CollectFromBlocks(cell.Blocks, query, resultScope, results);
                 break;
+
+            case ContentControlBlockContent cc:
+                CollectFromBlocks(cc.Blocks, query, resultScope, results);
+                break;
         }
     }
 
@@ -100,34 +105,7 @@ public sealed class DocumentSearchService
         if (string.IsNullOrEmpty(flatText))
             return;
 
-        var comparison = query.CaseSensitive
-            ? StringComparison.Ordinal
-            : StringComparison.OrdinalIgnoreCase;
-
-        var searchText = query.Text;
-        var pos = 0;
-
-        while (pos <= flatText.Length - searchText.Length)
-        {
-            var idx = flatText.IndexOf(searchText, pos, comparison);
-            if (idx < 0) break;
-
-            if (!query.WholeWord || IsWholeWordMatch(flatText, idx, searchText.Length))
-            {
-                var matchText = flatText.Substring(idx, searchText.Length);
-                results.Add(new DocumentSearchResult
-                {
-                    Index = results.Count, // temporary; re-indexed after all blocks
-                    BlockId = blockId,
-                    BlockTextOffset = idx,
-                    Length = searchText.Length,
-                    Scope = resultScope,
-                    Preview = matchText.Length <= 80 ? matchText : matchText[..80]
-                });
-            }
-
-            pos = idx + 1;
-        }
+        CollectMatches(blockId, flatText, query, resultScope, results);
     }
 
     private static bool IsWholeWordMatch(string text, int start, int length)
@@ -166,6 +144,22 @@ public sealed class DocumentSearchService
         if (string.IsNullOrEmpty(text))
             return;
 
+        CollectMatches(blockId, text, query, resultScope, results);
+    }
+
+    private static void CollectMatches(
+        string blockId,
+        string text,
+        DocumentSearchQuery query,
+        DocumentSearchScope resultScope,
+        List<DocumentSearchResult> results)
+    {
+        if (query.UseRegex)
+        {
+            CollectRegexMatches(blockId, text, query, resultScope, results);
+            return;
+        }
+
         var comparison = query.CaseSensitive
             ? StringComparison.Ordinal
             : StringComparison.OrdinalIgnoreCase;
@@ -178,20 +172,66 @@ public sealed class DocumentSearchService
 
             if (!query.WholeWord || IsWholeWordMatch(text, idx, query.Text.Length))
             {
-                var matchText = text.Substring(idx, query.Text.Length);
-                results.Add(new DocumentSearchResult
-                {
-                    Index = results.Count,
-                    BlockId = blockId,
-                    BlockTextOffset = idx,
-                    Length = query.Text.Length,
-                    Scope = resultScope,
-                    Preview = matchText.Length <= 80 ? matchText : matchText[..80]
-                });
+                AddResult(blockId, text, idx, query.Text.Length, resultScope, results);
             }
 
-            pos = idx + 1;
+            // Advance by the matched query length so find/replace uses non-overlapping matches.
+            pos = idx + Math.Max(1, query.Text.Length);
         }
+    }
+
+    private static void CollectRegexMatches(
+        string blockId,
+        string text,
+        DocumentSearchQuery query,
+        DocumentSearchScope resultScope,
+        List<DocumentSearchResult> results)
+    {
+        Regex regex;
+        try
+        {
+            regex = new Regex(
+                query.Text,
+                RegexOptions.CultureInvariant | (query.CaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase),
+                TimeSpan.FromMilliseconds(250));
+        }
+        catch (ArgumentException)
+        {
+            return;
+        }
+
+        foreach (Match match in regex.Matches(text))
+        {
+            if (!match.Success || match.Length == 0)
+            {
+                continue;
+            }
+
+            if (!query.WholeWord || IsWholeWordMatch(text, match.Index, match.Length))
+            {
+                AddResult(blockId, text, match.Index, match.Length, resultScope, results);
+            }
+        }
+    }
+
+    private static void AddResult(
+        string blockId,
+        string text,
+        int start,
+        int length,
+        DocumentSearchScope resultScope,
+        List<DocumentSearchResult> results)
+    {
+        var matchText = text.Substring(start, length);
+        results.Add(new DocumentSearchResult
+        {
+            Index = results.Count,
+            BlockId = blockId,
+            BlockTextOffset = start,
+            Length = length,
+            Scope = resultScope,
+            Preview = matchText.Length <= 80 ? matchText : matchText[..80]
+        });
     }
 
     private static string BuildMarkerId(int index, DocumentSearchResult result) =>

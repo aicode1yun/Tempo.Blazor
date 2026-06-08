@@ -1,0 +1,343 @@
+@page "/canvas-engine-host"
+@using Microsoft.AspNetCore.Components
+@using Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Interfaces
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
+@inject DemoDocumentEditorProvider DocumentProvider
+@inject DemoDocumentImageUrlResolver ImageResolver
+@inject DemoDocumentFormatProvider FormatProvider
+@inject DemoDocumentPdfExportProvider PdfExportProvider
+@inject DemoDocumentComparisonProvider ComparisonProvider
+@inject SignalRDocumentCollaborationProvider CollaborationProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Canvas Engine Host - Tempo.Blazor</PageTitle>
+
+<main class="min-h-screen bg-slate-100 p-4 pt-24 dark:bg-slate-950"
+      style="padding-top: 96px;"
+      data-testid="canvas-engine-host-page">
+    <TmDocumentEditor DocumentId="@DocumentId"
+		                      Provider="@DocumentProvider"
+	                              FormatProvider="@FormatProvider"
+	                              PdfExportProvider="@PdfExportProvider"
+	                              ComparisonProvider="@ComparisonProvider"
+                                  CollaborationProvider="@EffectiveCollaborationProvider"
+			                      ImageUrlResolver="@ImageResolver"
+	                      ImageProvider="@ImageResolver"
+	                      ImageAssetOptions="@DemoImageAssets"
+                          ContentControlRenderMode="@ContentControlMode"
+	                      ProofingOptions="@CanvasProofingOptions"
+	                      AutoSaveInterval="@DemoAutoSaveInterval"
+	                      OfflineMode="DocumentEditorOfflineMode.Enabled"
+	                      OfflineStore="@_offlineStore"
+	                      PreferLocalDraft="@PreferLocalDraft"
+	                      RenderEngine="DocumentEditorRenderEngine.CanvasEnginePreview"
+                          CollaborationSyncInterval="@TimeSpan.FromMilliseconds(500)"
+                          Author="@DemoAuthor"
+	                      ShowToolbar="@ShowToolbar"
+                      ShowDebugTools="true"
+                      ShowComments="true"
+                      CanDeleteOwnComments="true"
+                      ShowVersionHistory="false"
+                      data-testid="document-editor-demo" />
+</main>
+
+@code {
+    private const string DefaultDocumentId = "phase-3-canvas-empty";
+    private readonly InMemoryDocumentOfflineStore _offlineStore = new();
+    private string? _seededDocumentId;
+    private static DocumentEditorAuthor DemoAuthor => new() { Id = "canvas-demo-user", DisplayName = "Canvas Demo User" };
+
+    /// <summary>Document id loaded into the canvas host page.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "documentId")]
+    public string DocumentId { get; set; } = DefaultDocumentId;
+
+    /// <summary>Whether the canvas host page should show the document toolbar.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "showToolbar")]
+    public bool ShowToolbar { get; set; }
+
+    /// <summary>Optional autosave interval in milliseconds used by canvas save boundary E2E gates.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "autosaveMs")]
+    public int? AutosaveMs { get; set; }
+
+    /// <summary>Whether the demo provider should return a recoverable save error.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "failSaves")]
+    public bool FailSaves { get; set; }
+
+    /// <summary>Whether the demo provider should fail document loads through the editor error boundary.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "failLoads")]
+    public bool FailLoads { get; set; }
+
+    /// <summary>Optional demo load delay in milliseconds used by canvas loading-state visual gates.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "loadDelayMs")]
+    public int? LoadDelayMs { get; set; }
+
+    /// <summary>Whether the editor should prefer a local offline draft over the provider document.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "preferLocalDraft")]
+    public bool PreferLocalDraft { get; set; } = true;
+
+    /// <summary>Whether the demo host should recreate the seeded document before loading it.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "resetSeed")]
+    public bool ResetSeed { get; set; }
+
+    /// <summary>Whether the canvas host page should skip realtime collaboration wiring for deterministic single-client runs.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "disableCollaboration")]
+    public bool DisableCollaboration { get; set; }
+
+    /// <summary>Canvas content-control rendering mode for E9 form/design visual parity tests.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "contentControlMode")]
+    public string? ContentControlMode { get; set; }
+
+    private TimeSpan? DemoAutoSaveInterval => AutosaveMs is { } value
+        ? TimeSpan.FromMilliseconds(Math.Clamp(value, 250, 30000))
+        : null;
+
+    private TimeSpan DemoLoadDelay => LoadDelayMs is { } value
+        ? TimeSpan.FromMilliseconds(Math.Clamp(value, 0, 30000))
+        : TimeSpan.Zero;
+
+    private IDocumentCollaborationProvider? EffectiveCollaborationProvider => DisableCollaboration
+        ? null
+        : CollaborationProvider;
+
+    private DocumentProofingOptions? CanvasProofingOptions => string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasToolbarSpellcheckDocumentId, StringComparison.Ordinal)
+        ? new DocumentProofingOptions
+        {
+            DefaultLanguage = "en-US",
+            FlaggedWords = ["wrngg"],
+            Suggestions = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["wrngg"] = ["wrong"]
+            }
+        }
+        : null;
+
+    private IReadOnlyList<DocumentImageAsset> DemoImageAssets =>
+    [
+        new DocumentImageAsset
+        {
+            Id = DemoDocumentImageUrlResolver.ContractAssetId,
+            Source = DocumentImageSource.Asset,
+            Url = DemoDocumentImageUrlResolver.DemoPngDataUrl,
+            ContentType = "image/png",
+            FileName = "contract-evidence.png",
+            AltText = "Provider evidence preview",
+            Caption = "Provider-backed evidence preview"
+        }
+    ];
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        DocumentId = ResolveDocumentId();
+        DocumentProvider.FailDemoSaves = FailSaves;
+        DocumentProvider.FailDemoLoads = FailLoads;
+        DocumentProvider.DemoLoadDelay = DemoLoadDelay;
+        if (string.Equals(_seededDocumentId, DocumentId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _seededDocumentId = DocumentId;
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasRenderDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasRenderDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasTextLayoutDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasTextLayoutDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasCaretSelectionDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasCaretSelectionDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasTypingDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasTypingDocument(DocumentId);
+            return;
+        }
+
+        if (DocumentId.StartsWith(DemoDocumentEditorProvider.CanvasCollaborationOfflineDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasTypingDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasInlineFormatDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasInlineFormatDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasParagraphDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasParagraphDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasTabStopsRulerDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasTabStopsRulerDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasClipboardDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasClipboardDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasHistorySaveDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasHistorySaveDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasToolbarSpellcheckDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasToolbarSpellcheckDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasTablesDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasTablesDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasImagesDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasImagesDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasShapesDrawingsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasShapesDrawingsDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasMathEquationsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasMathEquationsDocument(DocumentId, ResetSeed);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasContentControlsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasContentControlsDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasAutocorrectFormatPainterDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasAutocorrectFormatPainterDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasViewModesPrintDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasViewModesPrintDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasHyphenationAdvancedTablesDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasHyphenationAdvancedTablesDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasHeadersFootersNotesDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasHeadersFootersNotesDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasCommentsRevisionsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasCommentsRevisionsDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasNumberingListsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasNumberingListsDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasSectionsColumnsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasSectionsColumnsDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasStylesDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasStylesDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasFieldsDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasFieldsDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasAdvancedCharacterDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasAdvancedCharacterDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasSearchOutlineTocDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasSearchOutlineTocDocument(DocumentId);
+            return;
+        }
+
+        if (string.Equals(DocumentId, DemoDocumentEditorProvider.CanvasPerformanceDocumentId, StringComparison.Ordinal))
+        {
+            DocumentProvider.SeedCanvasPerformanceDocument(DocumentId);
+            return;
+        }
+
+        DocumentProvider.SeedEmptyDocument(DocumentId);
+    }
+
+    private string ResolveDocumentId()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var query = uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var part in query)
+        {
+            var pair = part.Split('=', 2);
+            if (pair.Length == 2 && string.Equals(Uri.UnescapeDataString(pair[0]), "documentId", StringComparison.Ordinal))
+            {
+                var value = Uri.UnescapeDataString(pair[1].Replace("+", "%20"));
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(DocumentId) ? DefaultDocumentId : DocumentId;
+    }
+}

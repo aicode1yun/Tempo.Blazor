@@ -19,6 +19,11 @@ export function normalizeLayoutSegmentStyle(style) {
         fontStyle: asText(source.fontStyle || source.FontStyle || 'normal'),
         color: source.color || source.Color || null,
         backgroundColor: source.backgroundColor || source.BackgroundColor || null,
+        baselineShift: Number(source.baselineShift ?? source.BaselineShift ?? 0) || 0,
+        characterScale: Math.max(0.1, Number(source.characterScale ?? source.CharacterScale ?? 1) || 1),
+        fontVariantCaps: source.fontVariantCaps || source.FontVariantCaps || 'normal',
+        kerning: source.kerning ?? source.Kerning ?? true,
+        letterSpacing: Number(source.letterSpacing ?? source.LetterSpacing ?? 0) || 0,
     }));
 }
 
@@ -28,6 +33,7 @@ export function decorationsFromMarks(marks) {
         const type = String((mark && (mark.type || mark.Type)) || '').toLowerCase();
         if (type === 'underline') decorations.push('underline');
         if (type === 'strikethrough' || type === 'strike') decorations.push('line-through');
+        if (type === 'doublestrikethrough' || type === 'doublestrike') decorations.push('double-line-through');
         if (type === 'link' || type === 'hyperlink') decorations.push('underline'); // hyperlinks underline
         if (type === 'insertion') decorations.push('underline'); // tracked insert
         if (type === 'deletion') decorations.push('line-through'); // tracked delete

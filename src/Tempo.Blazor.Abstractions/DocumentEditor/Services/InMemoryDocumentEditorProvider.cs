@@ -13,6 +13,9 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
     /// <summary>Stable document id for the 2026-05-24 ONLYOFFICE parity baseline.</summary>
     public const string OnlyOfficeParity20260524DocumentId = "onlyoffice-parity-2026-05-24";
 
+    /// <summary>Stable document id for canvas search, bookmarks, outline, and table-of-contents coverage.</summary>
+    public const string CanvasSearchOutlineTocDocumentId = "phase-18-canvas-search-outline-toc";
+
     private const string RecoverySectionId = "recovery-section-main";
     private const string RecoveryUrlImageUrl = "/document-editor-evidence.svg";
     private const string RecoveryProviderAssetId = "contract-evidence-asset";
@@ -895,6 +898,67 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         return Clone(document);
     }
 
+    /// <summary>Seeds a document that exercises canvas search, bookmarks, outline extraction, and generated TOC.</summary>
+    public DocumentEditorDocument SeedCanvasSearchOutlineTocDocument(string documentId = CanvasSearchOutlineTocDocumentId)
+    {
+        var document = DocumentEditorDocument.Empty(documentId);
+        var sectionId = "phase18-section-main";
+        document.Metadata.Title = "Canvas search outline and TOC";
+        document.Metadata.CreatedAt = new DateTimeOffset(2026, 6, 4, 8, 0, 0, TimeSpan.Zero);
+        document.Metadata.ModifiedAt = document.Metadata.CreatedAt;
+        document.Theme = new DocumentEditorTheme
+        {
+            BodyFontFamily = "Aptos, Arial, sans-serif",
+            BodyFontSize = 11.5,
+            BodyLineHeight = 1.22,
+            ParagraphSpacingAfter = 8
+        };
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = DocumentPageSize.A4,
+            Margins = new DocumentPageMargins { Top = 72, Right = 72, Bottom = 72, Left = 72 },
+            HeaderDistanceFromTop = 36,
+            FooterDistanceFromBottom = 36
+        };
+        document.Sections[0].Id = sectionId;
+        document.Sections[0].Properties.PageSettings = document.PageSettings;
+        document.Blocks.Add(CreatePhase18Heading("phase18-h1", sectionId, 10, 1, "Project Tempo"));
+        document.Blocks.Add(CreatePhase18Paragraph(
+            "phase18-intro",
+            sectionId,
+            20,
+            [
+                new TextRun { Id = "phase18-intro-a", Text = "Tempo-18 search baseline includes Tempo-42 and Tempo-108 for regex replacement. " },
+                new TextRun
+                {
+                    Id = "phase18-bookmark-run",
+                    Text = "Bookmark target paragraph remains navigable.",
+                    Marks = [new InlineMark { Type = InlineMarkType.Bookmark, Value = "phase18-target" }]
+                }
+            ]));
+        document.Blocks.Add(CreatePhase18Heading("phase18-h2-scope", sectionId, 30, 2, "Delivery Scope"));
+        document.Blocks.Add(CreatePhase18Paragraph(
+            "phase18-scope-body",
+            sectionId,
+            40,
+            "The outline panel should jump to Delivery Scope and generated TOC entries should resolve page numbers from the canvas layout cache."));
+        document.Blocks.Add(CreatePhase18Heading("phase18-h2-quality", sectionId, 50, 2, "Quality Gates"));
+        document.Blocks.Add(CreatePhase18Paragraph(
+            "phase18-quality-body",
+            sectionId,
+            60,
+            "Quality Gates contain Tempo-204 and stable prose that forces the search overlay to paint multiple highlights without moving the layout."));
+        document.Blocks.Add(CreatePhase18Heading("phase18-h3-details", sectionId, 70, 3, "Implementation Details"));
+        document.Blocks.Add(CreatePhase18Paragraph(
+            "phase18-details-body",
+            sectionId,
+            80,
+            "Implementation Details verify that a level-three heading appears in the generated table of contents and remains undoable."));
+
+        StoreDocument(document, $"{documentId}-canonical-v1");
+        return Clone(document);
+    }
+
     /// <inheritdoc />
     public virtual Task<DocumentEditorLoadResult> LoadAsync(
         string documentId,
@@ -951,7 +1015,11 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
             document.Metadata.ModifiedAt = DateTimeOffset.UtcNow;
         }
 
-        DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(document);
+        if (!request.PreserveImageBlocks)
+        {
+            DocumentImagePersistence.ConvertImageBlocksToDrawingRuns(document);
+        }
+
         DocumentImagePersistence.Sanitize(document);
 
         var json = request.Document is not null
@@ -1326,6 +1394,40 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
                 Alignment = DocumentTextAlignment.Left,
                 LineSpacing = 1.25,
                 SpacingAfter = spacingAfter
+            },
+            Content = new ParagraphBlockContent { Inlines = inlines }
+        };
+
+    private static DocumentBlock CreatePhase18Heading(string id, string sectionId, double order, int level, string text)
+        => new()
+        {
+            Id = id,
+            SectionId = sectionId,
+            Type = DocumentBlockType.Heading,
+            Order = order,
+            ParagraphProperties = new DocumentParagraphProperties { SpacingAfter = 10 },
+            Content = new HeadingBlockContent
+            {
+                Level = level,
+                Inlines = [new TextRun { Id = $"{id}-text", Text = text }]
+            }
+        };
+
+    private static DocumentBlock CreatePhase18Paragraph(string id, string sectionId, double order, string text)
+        => CreatePhase18Paragraph(id, sectionId, order, [new TextRun { Id = $"{id}-text", Text = text }]);
+
+    private static DocumentBlock CreatePhase18Paragraph(string id, string sectionId, double order, List<InlineContent> inlines)
+        => new()
+        {
+            Id = id,
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Order = order,
+            ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Left,
+                LineSpacing = 1.22,
+                SpacingAfter = 8
             },
             Content = new ParagraphBlockContent { Inlines = inlines }
         };

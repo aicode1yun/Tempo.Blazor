@@ -63,6 +63,9 @@ public class DocumentEditorSaveRequest
     /// <summary>Whether raw JSON should be normalized before it is stored.</summary>
     public bool NormalizeJson { get; set; } = true;
 
+    /// <summary>Whether standalone image blocks should remain image blocks instead of being normalized into drawing runs.</summary>
+    public bool PreserveImageBlocks { get; set; }
+
     /// <summary>Author who saved the document.</summary>
     public DocumentEditorAuthor? Author { get; set; }
 
@@ -169,8 +172,7 @@ public enum DocumentEditorOfflineMode
 }
 
 /// <summary>
-/// Selects which rendering/editing engine <c>TmDocumentEditor</c> uses. Feature flag for
-/// the R.4 core-rewrite cutover (see <c>planning/r48-cutover-plan.md</c>).
+/// Selects which rendering/editing engine <c>TmDocumentEditor</c> uses.
 /// </summary>
 public enum DocumentEditorRenderEngine
 {
@@ -182,21 +184,22 @@ public enum DocumentEditorRenderEngine
     Legacy,
 
     /// <summary>
-    /// The new model-owned, positioned-DOM core engine (R.4.0–R.4.7). Verified standalone
-    /// via the core-engine harness + Playwright gates, but NOT yet wired into the hosted
-    /// component's C# interop — selecting it today falls back to <see cref="Legacy"/>
-    /// rendering (preview flag only). Becomes the default at cutover once it reaches full
-    /// parity (full E2E suite green on it + perf ≥ legacy).
+    /// The model-owned, positioned-DOM core engine.
     /// </summary>
-    CoreEnginePreview
+    CoreEnginePreview,
+
+    /// <summary>
+    /// The canvas-backed document engine preview. This is an explicit opt-in host shell
+    /// with canvas layers, accessibility mirror, hidden input bridge, and lifecycle interop.
+    /// </summary>
+    CanvasEnginePreview
 }
 
 /// <summary>
 /// Resolves the requested <see cref="DocumentEditorRenderEngine"/> to the engine that may
-/// actually run. The R.4.8 cutover guard: until the core engine is wired into the hosted
-/// component's C# interop, <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/> falls
-/// back to <see cref="DocumentEditorRenderEngine.Legacy"/> so the flag can never leave the
-/// editor non-functional.
+/// actually run. The guard keeps <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/>
+/// fail-safe until hosted interop is available; other explicit engine selections run as
+/// requested.
 /// </summary>
 public static class DocumentEditorRenderEngineFlag
 {
@@ -512,6 +515,12 @@ public static class DocumentEditorJson
                 }
 
                 break;
+            case ContentControlBlockContent control:
+                control.Control ??= new DocumentContentControl { Scope = DocumentContentControlScope.Block };
+                control.Control.Scope = DocumentContentControlScope.Block;
+                control.Blocks ??= [];
+                NormalizeBlocks(control.Blocks);
+                break;
         }
     }
 
@@ -525,6 +534,13 @@ public static class DocumentEditorJson
         foreach (var inline in inlines)
         {
             inline.Marks ??= [];
+            if (inline is DocumentContentControlRun controlRun)
+            {
+                controlRun.Control ??= new DocumentContentControl { Scope = DocumentContentControlScope.Inline };
+                controlRun.Control.Scope = DocumentContentControlScope.Inline;
+                controlRun.Inlines ??= [];
+                NormalizeInlines(controlRun.Inlines);
+            }
         }
     }
 }

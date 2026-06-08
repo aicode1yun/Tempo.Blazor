@@ -1760,6 +1760,12 @@ public sealed class WysiwygPatchApplier
             InlineMarkType.Strikethrough,
             InlineMarkType.Superscript,
             InlineMarkType.Subscript,
+            InlineMarkType.SmallCaps,
+            InlineMarkType.AllCaps,
+            InlineMarkType.DoubleStrikethrough,
+            InlineMarkType.CharacterSpacing,
+            InlineMarkType.CharacterScale,
+            InlineMarkType.Kerning,
             InlineMarkType.FontFamily,
             InlineMarkType.FontSize,
             InlineMarkType.TextColor,
@@ -1854,7 +1860,10 @@ public sealed class WysiwygPatchApplier
         return markType is InlineMarkType.FontFamily
             or InlineMarkType.FontSize
             or InlineMarkType.TextColor
-            or InlineMarkType.Highlight;
+            or InlineMarkType.Highlight
+            or InlineMarkType.CharacterSpacing
+            or InlineMarkType.CharacterScale
+            or InlineMarkType.Kerning;
     }
 
     private static InlineContent CloneInline(InlineContent inline)
