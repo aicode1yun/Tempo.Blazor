@@ -533,6 +533,98 @@ public class MockNotionBlockStore
 
     // ── Public API ────────────────────────────────────────────────────────────
 
+    public void SeedE2ESearchPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id, MockNotionDataStore.Page4Id);
+
+        AddTo(MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "The beacon rollout verifies engineering search filters across author, label, date, content type, and space."
+        });
+        AddTo(MockNotionDataStore.Page1Id, BlockType.Heading2, 1, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "Operational notes"
+        });
+
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Žluťoučký zlutoucky produktový souhrn pokrývá lokalizované dotazy bez ztráty diakritiky."
+        });
+
+        AddTo(MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Support space overview for triage knowledge."
+        });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Customer escalation contains the customer timeline, owner notes, and next response window."
+        });
+
+        var searchPageIds = new HashSet<Guid>
+        {
+            MockNotionDataStore.Page1Id,
+            MockNotionDataStore.Page2Id,
+            MockNotionDataStore.Page3Id,
+            MockNotionDataStore.Page4Id
+        };
+        var searchBlocks = _blocks.Values
+            .Where(block => searchPageIds.Contains(block.PageId))
+            .ToArray();
+        foreach (var block in searchBlocks)
+        {
+            block.CreatedAt = new DateTime(2026, 1, 10, 9, 0, 0, DateTimeKind.Utc);
+            block.LastEditedAt = new DateTime(2026, 1, 20, 9, 0, 0, DateTimeKind.Utc);
+        }
+    }
+
+    public void SeedE2EBulkPages()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id, MockNotionDataStore.Page4Id);
+
+        AddTo(MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent { Level = 1, Html = "CF24 Source Root" });
+        AddTo(MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent { Html = "Root copy source content." });
+
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Heading2, 0, new HeadingBlockContent { Level = 2, Html = "CF24 Child A" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.TodoItem, 1, new TodoBlockContent { Html = "Child action", IsChecked = false });
+
+        AddTo(MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent { Html = "Grandchild content." });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent { Html = "Target destination." });
+    }
+
+    public void CopyBlocksForPages(IReadOnlyDictionary<Guid, Guid> pageIdMap)
+    {
+        var sourceBlocks = _blocks.Values
+            .Where(block => pageIdMap.ContainsKey(block.PageId))
+            .OrderBy(block => block.PageId)
+            .ThenBy(block => block.ParentBlockId.HasValue)
+            .ThenBy(block => block.Order)
+            .ToArray();
+
+        var blockIdMap = sourceBlocks.ToDictionary(block => block.Id, _ => Guid.NewGuid());
+
+        foreach (var source in sourceBlocks)
+        {
+            var clonedParentId = source.ParentBlockId is { } parentId && blockIdMap.TryGetValue(parentId, out var mappedParentId)
+                ? mappedParentId
+                : source.ParentBlockId;
+
+            var clone = new PageBlock
+            {
+                Id = blockIdMap[source.Id],
+                PageId = pageIdMap[source.PageId],
+                ParentBlockId = clonedParentId,
+                Type = source.Type,
+                Order = source.Order,
+                Content = source.Content,
+                CreatedAt = DateTime.UtcNow,
+                LastEditedAt = DateTime.UtcNow
+            };
+
+            _blocks[clone.Id] = clone;
+        }
+    }
+
     public async Task<IEnumerable<IPageBlock>> GetBlocksAsync(string pageId)
     {
         if (Guid.TryParse(pageId, out var id))
@@ -604,6 +696,42 @@ public class MockNotionBlockStore
         return await Task.FromResult(created);
     }
 
+    public Task<IReadOnlyList<PageBlock>> CreateImportedBlocksAsync(
+        string pageId,
+        IEnumerable<IPageBlock> blocks,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var pageGuid = Guid.Parse(pageId);
+        var imported = new List<PageBlock>();
+        var nextOrder = GetNextOrder(pageGuid, null);
+
+        foreach (var source in blocks)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var id = source.Id == Guid.Empty ? Guid.NewGuid() : source.Id;
+            while (_blocks.ContainsKey(id))
+                id = Guid.NewGuid();
+
+            var block = new PageBlock
+            {
+                Id = id,
+                PageId = pageGuid,
+                ParentBlockId = source.ParentBlockId,
+                Type = source.Type,
+                Order = source.ParentBlockId is null ? nextOrder++ : source.Order,
+                Content = source.Content,
+                CreatedAt = DateTime.UtcNow,
+                LastEditedAt = DateTime.UtcNow
+            };
+
+            _blocks[block.Id] = block;
+            imported.Add(block);
+        }
+
+        return Task.FromResult<IReadOnlyList<PageBlock>>(imported);
+    }
+
     public async Task UpdateBlockAsync(IPageBlock block)
     {
         if (block is PageBlock pageBlock && _blocks.ContainsKey(pageBlock.Id))
@@ -626,6 +754,13 @@ public class MockNotionBlockStore
         _blocks.Clear();
         InitializeMockBlocks();
     }
+
+    public IReadOnlyList<PageBlock> GetAllBlocksSnapshot()
+        => _blocks.Values
+            .OrderBy(block => block.PageId)
+            .ThenBy(block => block.ParentBlockId.HasValue)
+            .ThenBy(block => block.Order)
+            .ToArray();
 
     public async Task ReorderBlocksAsync(string pageId, IEnumerable<string> orderedBlockIds)
     {
@@ -729,6 +864,21 @@ public class MockNotionBlockStore
         return await Task.FromResult($"https://notion.demo/block/{blockId}");
     }
 
+    public Task SetTodoCompletedAsync(string taskId, bool completed, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!Guid.TryParse(taskId, out var id) || !_blocks.TryGetValue(id, out var block))
+            throw new KeyNotFoundException($"Task block {taskId} not found");
+
+        if (block.Content is not TodoBlockContent todo)
+            throw new InvalidOperationException($"Block {taskId} is not a todo block.");
+
+        todo.IsChecked = completed;
+        block.LastEditedAt = DateTime.UtcNow;
+        _blocks[id] = block;
+        return Task.CompletedTask;
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private int GetNextOrder(Guid pageId, Guid? parentBlockId)
@@ -737,6 +887,13 @@ public class MockNotionBlockStore
             .Where(b => b.PageId == pageId && b.ParentBlockId == parentBlockId)
             .Max(b => (int?)b.Order) ?? -1;
         return max + 1;
+    }
+
+    private void RemoveBlocksForPages(params Guid[] pageIds)
+    {
+        var set = pageIds.ToHashSet();
+        foreach (var id in _blocks.Values.Where(block => set.Contains(block.PageId)).Select(block => block.Id).ToArray())
+            _blocks.Remove(id);
     }
 
     private static IBlockContent CreateDefaultContent(BlockType type) => type switch

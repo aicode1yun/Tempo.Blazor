@@ -6,6 +6,8 @@ public class NotionPage : INotionPage
     public Guid? ParentId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? SpaceId { get; set; }
+    public IReadOnlyList<string> Labels { get; set; } = [];
     public string? IconEmoji { get; set; }
     public string? IconImageUrl { get; set; }
     public string? CoverImageUrl { get; set; }

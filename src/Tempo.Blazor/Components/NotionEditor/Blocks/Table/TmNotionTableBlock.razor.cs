@@ -41,6 +41,7 @@ public partial class TmNotionTableBlock : ComponentBase
     private int              _dragOverIndex   = -1;
     private ElementReference _containerRef;
     private ElementReference _tableRef;
+    private (int StartRow, int StartColumn, int EndRow, int EndColumn)? _selection;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -55,6 +56,15 @@ public partial class TmNotionTableBlock : ComponentBase
     {
         if (!_rowsLoaded && !_loadingRows)
             await LoadRowsAsync();
+    }
+
+    public void SetTableSelection(int startRow, int startColumn, int endRow, int endColumn)
+    {
+        _selection = (
+            Math.Min(startRow, endRow),
+            Math.Min(startColumn, endColumn),
+            Math.Max(startRow, endRow),
+            Math.Max(startColumn, endColumn));
     }
 
     // ── Row loading ───────────────────────────────────────────────────────────

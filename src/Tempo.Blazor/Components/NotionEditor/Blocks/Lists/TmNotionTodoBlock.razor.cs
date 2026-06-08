@@ -28,6 +28,9 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when the checkbox is toggled. Arg = new checked state.</summary>
     [Parameter] public EventCallback<bool>                      OnCheckedChanged  { get; set; }
 
+    /// <summary>Fired when the todo assignee changes. Args = assignee ID and display name.</summary>
+    [Parameter] public EventCallback<(string? AssigneeId, string? AssigneeDisplayName)> OnAssigneeChanged { get; set; }
+
     /// <summary>Fired on blur when HTML has changed. Arg = new HTML.</summary>
     [Parameter] public EventCallback<string>                    OnContentSaved    { get; set; }
 

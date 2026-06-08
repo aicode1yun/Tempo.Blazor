@@ -116,7 +116,8 @@
             case BlockType.Paragraph:
             {
                 var c = Block.Content as ITextBlockContent;
-                <TmNotionTextBlock Content="c"
+                <TmNotionTextBlock Block="Block"
+                                   Content="c"
                                    ReadOnly="ReadOnly"
                                    IsFocused="IsFocused"
                                    Placeholder="@Loc["TmNotionBlock_ParagraphPlaceholder"]"
@@ -251,6 +252,7 @@
                                    IsFocused="IsFocused"
                                    Placeholder="@Loc["TmNotionBlock_ListPlaceholder"]"
                                    OnCheckedChanged="HandleTodoCheckedChangedAsync"
+                                   OnAssigneeChanged="HandleTodoAssigneeChangedAsync"
                                    OnContentSaved="HandleTodoContentSavedAsync"
                                    OnEnterSplit="HandleTodoEnterSplitAsync"
                                    OnDeleteRequested="OnDeleted"

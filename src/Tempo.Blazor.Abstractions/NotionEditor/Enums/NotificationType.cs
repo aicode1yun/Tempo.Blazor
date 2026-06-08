@@ -6,5 +6,9 @@ public enum NotificationType
     Reply,
     Reaction,
     ThreadResolved,
-    NewThread
+    NewThread,
+    PageEdited,
+    PageCommentAdded,
+    TaskAssigned,
+    PageShared
 }

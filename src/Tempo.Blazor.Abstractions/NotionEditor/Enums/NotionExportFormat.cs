@@ -4,5 +4,7 @@ public enum NotionExportFormat
 {
     Markdown,
     Html,
-    Pdf
+    Pdf,
+    Docx,
+    Odt
 }

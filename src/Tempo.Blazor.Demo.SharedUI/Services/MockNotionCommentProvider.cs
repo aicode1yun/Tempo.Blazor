@@ -219,11 +219,41 @@ public class MockNotionCommentProvider : INotionCommentProvider
         return Task.FromResult<IBlockComment>(c);
     }
 
-    public Task<IEnumerable<IBlockComment>> GetPageCommentsAsync(string pageId)
-        => GetBlockCommentsAsync(pageId);
+    public async Task<IEnumerable<IPageComment>> GetPageCommentsAsync(string pageId)
+    {
+        var comments = await GetBlockCommentsAsync(pageId);
+        return comments.Select(comment => new PageComment
+        {
+            Id = comment.Id,
+            BlockId = comment.BlockId,
+            PageId = pageId,
+            Thread = comment.Thread,
+            IsResolved = comment.IsResolved,
+            ResolvedAt = comment.ResolvedAt,
+            ResolvedByUserId = comment.ResolvedByUserId,
+            LastActivityAt = comment.LastActivityAt,
+            ReadByUserIds = comment.ReadByUserIds.ToList(),
+            SubscribedUserIds = comment.SubscribedUserIds.ToList()
+        }).ToArray();
+    }
 
-    public Task<IBlockComment> AddPageCommentAsync(string pageId, string htmlContent)
-        => AddBlockCommentAsync(pageId, htmlContent);
+    public async Task<IPageComment> AddPageCommentAsync(string pageId, string htmlContent)
+    {
+        var comment = await AddBlockCommentAsync(pageId, htmlContent);
+        return new PageComment
+        {
+            Id = comment.Id,
+            BlockId = comment.BlockId,
+            PageId = pageId,
+            Thread = comment.Thread,
+            IsResolved = comment.IsResolved,
+            ResolvedAt = comment.ResolvedAt,
+            ResolvedByUserId = comment.ResolvedByUserId,
+            LastActivityAt = comment.LastActivityAt,
+            ReadByUserIds = comment.ReadByUserIds.ToList(),
+            SubscribedUserIds = comment.SubscribedUserIds.ToList()
+        };
+    }
 
     public Task<int> GetUnresolvedCommentsCountAsync(string pageId)
     {

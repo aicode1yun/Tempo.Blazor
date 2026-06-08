@@ -171,11 +171,39 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithContent(Block, new TodoBlockContent
         {
             IsChecked       = isChecked,
+            AssigneeId      = todo.AssigneeId,
+            AssigneeDisplayName = todo.AssigneeDisplayName,
+            DueDate         = todo.DueDate,
+            IsOverdue       = todo.IsOverdue,
             Html            = todo.Html,
             BackgroundColor = todo.BackgroundColor,
             TextColor       = todo.TextColor,
             Alignment       = todo.Alignment
         });
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
+
+    private async Task HandleTodoAssigneeChangedAsync((string? AssigneeId, string? AssigneeDisplayName) assignee)
+    {
+        if (Block.Content is not ITodoBlockContent todo) return;
+        var updated = BuildBlockWithContent(Block, new TodoBlockContent
+        {
+            IsChecked = todo.IsChecked,
+            AssigneeId = string.IsNullOrWhiteSpace(assignee.AssigneeId) ? null : assignee.AssigneeId,
+            AssigneeDisplayName = string.IsNullOrWhiteSpace(assignee.AssigneeDisplayName) ? null : assignee.AssigneeDisplayName,
+            DueDate = todo.DueDate,
+            IsOverdue = todo.IsOverdue,
+            Html = todo.Html,
+            BackgroundColor = todo.BackgroundColor,
+            TextColor = todo.TextColor,
+            Alignment = todo.Alignment
+        });
+
         try
         {
             await Context.BlockProvider.UpdateBlockAsync(updated);
@@ -1169,6 +1197,10 @@ public partial class TmNotionBlock : ComponentBase
             ITodoBlockContent tc => new TodoBlockContent
             {
                 Html = html, IsChecked = tc.IsChecked,
+                AssigneeId = tc.AssigneeId,
+                AssigneeDisplayName = tc.AssigneeDisplayName,
+                DueDate = tc.DueDate,
+                IsOverdue = tc.IsOverdue,
                 BackgroundColor = tc.BackgroundColor, TextColor = tc.TextColor, Alignment = tc.Alignment
             },
             IToggleBlockContent tg => new ToggleBlockContent
@@ -1207,4 +1239,3 @@ public partial class TmNotionBlock : ComponentBase
     }
 
 }
-

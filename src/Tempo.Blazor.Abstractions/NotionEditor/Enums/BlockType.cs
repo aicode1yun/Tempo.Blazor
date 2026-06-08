@@ -37,5 +37,13 @@ public enum BlockType
     TableOfContents,
     Diagram,
     Wireframe,
-    Spreadsheet
+    Spreadsheet,
+    WorkItem,
+    ContentByLabel,
+    IncludePage,
+    ChildrenDisplay,
+    Excerpt,
+    ExcerptInclude,
+    PageProperties,
+    PagePropertiesReport
 }

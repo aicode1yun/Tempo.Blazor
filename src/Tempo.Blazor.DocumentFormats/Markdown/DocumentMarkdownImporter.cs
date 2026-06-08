@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -14,7 +15,7 @@ public sealed class DocumentMarkdownImportOptions
     public string? Title { get; set; }
 }
 
-/// <summary>Imports a safe semantic Markdown subset into a <see cref="DocumentEditorDocument"/>.</summary>
+/// <summary>Imports common safe Markdown document structures into a <see cref="DocumentEditorDocument"/>.</summary>
 public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
 {
     /// <inheritdoc />
@@ -46,161 +47,218 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
         var document = DocumentEditorDocument.Empty(options.DocumentId);
         document.Metadata.Title = options.Title ?? string.Empty;
 
+        if (string.IsNullOrWhiteSpace(markdown))
+        {
+            return document;
+        }
+
         var lines = NormalizeNewLines(markdown).Split('\n');
         var order = 0d;
-        var paragraph = new List<string>();
-
-        for (var index = 0; index < lines.Length; index++)
+        for (var index = 0; index < lines.Length;)
         {
             var line = lines[index].TrimEnd('\r');
             if (string.IsNullOrWhiteSpace(line))
             {
-                FlushParagraph(document, paragraph, ref order);
+                index++;
                 continue;
             }
 
-            if (TryReadTable(lines, ref index, document, ref order))
+            if (TryReadTable(lines, index, out var table, out var nextIndex))
             {
-                FlushParagraph(document, paragraph, ref order);
+                table.Order = order++;
+                document.Blocks.Add(table);
+                index = nextIndex;
                 continue;
             }
 
-            var headingMatch = HeadingRegex().Match(line);
-            if (headingMatch.Success)
+            if (TryReadSingleLineBlock(line, order, out var block))
             {
-                FlushParagraph(document, paragraph, ref order);
+                document.Blocks.Add(block);
+                order++;
+                index++;
+                continue;
+            }
+
+            var paragraphLines = new List<string>();
+            while (index < lines.Length
+                   && !string.IsNullOrWhiteSpace(lines[index])
+                   && !TryReadSingleLineBlock(lines[index], order, out _)
+                   && !LooksLikeTable(lines, index))
+            {
+                paragraphLines.Add(lines[index].Trim());
+                index++;
+            }
+
+            if (paragraphLines.Count > 0)
+            {
                 document.Blocks.Add(new DocumentBlock
                 {
-                    Type = DocumentBlockType.Heading,
+                    Type = DocumentBlockType.Paragraph,
                     Order = order++,
-                    Content = new HeadingBlockContent
+                    Content = new ParagraphBlockContent
                     {
-                        Level = headingMatch.Groups["level"].Value.Length,
-                        Inlines = ParseInlines(headingMatch.Groups["text"].Value)
+                        Inlines = ParseInlines(string.Join(' ', paragraphLines))
                     }
                 });
-                continue;
             }
-
-            var imageMatch = ImageOnlyRegex().Match(line.Trim());
-            if (imageMatch.Success)
-            {
-                FlushParagraph(document, paragraph, ref order);
-                document.Blocks.Add(new DocumentBlock
-                {
-                    Type = DocumentBlockType.Image,
-                    Order = order++,
-                    Content = new ImageBlockContent
-                    {
-                        Source = DocumentImageSource.Url,
-                        Url = UnescapeMarkdown(imageMatch.Groups["url"].Value.Trim()),
-                        AltText = UnescapeMarkdown(imageMatch.Groups["alt"].Value),
-                        Caption = UnescapeMarkdown(imageMatch.Groups["alt"].Value)
-                    }
-                });
-                continue;
-            }
-
-            var listMatch = ListRegex().Match(line);
-            if (listMatch.Success)
-            {
-                FlushParagraph(document, paragraph, ref order);
-                var ordered = !string.IsNullOrWhiteSpace(listMatch.Groups["number"].Value);
-                var startNumber = ordered && int.TryParse(listMatch.Groups["number"].Value, out var parsed)
-                    ? parsed
-                    : 1;
-                document.Blocks.Add(new DocumentBlock
-                {
-                    Type = DocumentBlockType.List,
-                    Order = order++,
-                    Content = new ListBlockContent
-                    {
-                        Ordered = ordered,
-                        StartNumber = startNumber,
-                        Inlines = ParseInlines(listMatch.Groups["text"].Value)
-                    }
-                });
-                continue;
-            }
-
-            if (line.StartsWith("> ", StringComparison.Ordinal))
-            {
-                FlushParagraph(document, paragraph, ref order);
-                document.Blocks.Add(new DocumentBlock
-                {
-                    Type = DocumentBlockType.Quote,
-                    Order = order++,
-                    Content = new QuoteBlockContent { Inlines = ParseInlines(line[2..]) }
-                });
-                continue;
-            }
-
-            if (line.Trim() is "---" or "***" or "___")
-            {
-                FlushParagraph(document, paragraph, ref order);
-                document.Blocks.Add(new DocumentBlock
-                {
-                    Type = DocumentBlockType.PageBreak,
-                    Order = order++,
-                    Content = new PageBreakBlockContent()
-                });
-                continue;
-            }
-
-            paragraph.Add(line.Trim());
         }
 
-        FlushParagraph(document, paragraph, ref order);
         return document;
     }
 
-    private static bool TryReadTable(string[] lines, ref int index, DocumentEditorDocument document, ref double order)
+    private static bool TryReadSingleLineBlock(string line, double order, out DocumentBlock block)
     {
-        if (index + 1 >= lines.Length || !IsTableRow(lines[index]) || !TableSeparatorRegex().IsMatch(lines[index + 1].Trim()))
+        block = new DocumentBlock();
+        var trimmed = line.Trim();
+
+        var heading = HeadingRegex().Match(trimmed);
+        if (heading.Success)
+        {
+            block = new DocumentBlock
+            {
+                Type = DocumentBlockType.Heading,
+                Order = order,
+                Content = new HeadingBlockContent
+                {
+                    Level = heading.Groups["level"].Value.Length,
+                    Inlines = ParseInlines(heading.Groups["text"].Value.Trim())
+                }
+            };
+            return true;
+        }
+
+        var image = ImageOnlyRegex().Match(trimmed);
+        if (image.Success)
+        {
+            var alt = DecodeMarkdownText(image.Groups["alt"].Value);
+            block = new DocumentBlock
+            {
+                Type = DocumentBlockType.Image,
+                Order = order,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Url,
+                    Url = DecodeMarkdownText(image.Groups["url"].Value.Trim()),
+                    AltText = alt,
+                    Caption = alt
+                }
+            };
+            return true;
+        }
+
+        if (trimmed is "---" or "***" or "___")
+        {
+            block = new DocumentBlock
+            {
+                Type = DocumentBlockType.PageBreak,
+                Order = order,
+                Content = new PageBreakBlockContent()
+            };
+            return true;
+        }
+
+        var quote = QuoteRegex().Match(trimmed);
+        if (quote.Success)
+        {
+            block = new DocumentBlock
+            {
+                Type = DocumentBlockType.Quote,
+                Order = order,
+                Content = new QuoteBlockContent
+                {
+                    Inlines = ParseInlines(quote.Groups["text"].Value.Trim())
+                }
+            };
+            return true;
+        }
+
+        var list = ListRegex().Match(line);
+        if (list.Success)
+        {
+            var marker = list.Groups["marker"].Value;
+            var ordered = char.IsDigit(marker[0]);
+            var startNumber = ordered && int.TryParse(NumberPrefixRegex().Match(marker).Value, out var parsed)
+                ? parsed
+                : 1;
+
+            block = new DocumentBlock
+            {
+                Type = DocumentBlockType.List,
+                Order = order,
+                Content = new ListBlockContent
+                {
+                    Ordered = ordered,
+                    StartNumber = startNumber,
+                    IndentLevel = list.Groups["indent"].Value.Replace("\t", "    ", StringComparison.Ordinal).Length / 2,
+                    Inlines = ParseInlines(list.Groups["text"].Value.Trim())
+                }
+            };
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryReadTable(string[] lines, int index, out DocumentBlock block, out int nextIndex)
+    {
+        block = new DocumentBlock();
+        nextIndex = index;
+        if (!LooksLikeTable(lines, index))
         {
             return false;
         }
 
-        var rows = new List<TableRowContent>();
-        rows.Add(ReadTableRow(lines[index]));
-        index += 2;
-        while (index < lines.Length && IsTableRow(lines[index]))
+        var rows = new List<TableRowContent>
         {
-            rows.Add(ReadTableRow(lines[index]));
-            index++;
+            new()
+            {
+                Cells = SplitTableCells(lines[index])
+                    .Select(cell => CreateTableCell(cell, isHeader: true))
+                    .ToList()
+            }
+        };
+
+        nextIndex = index + 2;
+        while (nextIndex < lines.Length && IsTableRow(lines[nextIndex]))
+        {
+            rows.Add(new TableRowContent
+            {
+                Cells = SplitTableCells(lines[nextIndex])
+                    .Select(cell => CreateTableCell(cell, isHeader: false))
+                    .ToList()
+            });
+            nextIndex++;
         }
 
-        index--;
-        document.Blocks.Add(new DocumentBlock
+        block = new DocumentBlock
         {
             Type = DocumentBlockType.Table,
-            Order = order++,
             Content = new TableBlockContent { Rows = rows }
-        });
+        };
         return true;
     }
+
+    private static bool LooksLikeTable(string[] lines, int index)
+        => index + 1 < lines.Length
+            && IsTableRow(lines[index])
+            && TableSeparatorRegex().IsMatch(lines[index + 1].Trim());
 
     private static bool IsTableRow(string line)
         => line.Trim().StartsWith('|') && line.Trim().EndsWith('|');
 
-    private static TableRowContent ReadTableRow(string line)
+    private static TableCellContent CreateTableCell(string markdown, bool isHeader) => new()
     {
-        var cells = SplitTableCells(line)
-            .Select(cell => new TableCellContent
+        IsHeader = isHeader,
+        Blocks =
+        [
+            new DocumentBlock
             {
-                Blocks =
-                [
-                    new DocumentBlock
-                    {
-                        Type = DocumentBlockType.Paragraph,
-                        Content = new ParagraphBlockContent { Inlines = ParseInlines(cell.Trim()) }
-                    }
-                ]
-            })
-            .ToList();
-
-        return new TableRowContent { Cells = cells };
-    }
+                Type = DocumentBlockType.Paragraph,
+                Order = 0,
+                Content = new ParagraphBlockContent { Inlines = ParseInlines(markdown.Trim()) }
+            }
+        ]
+    };
 
     private static IReadOnlyList<string> SplitTableCells(string line)
     {
@@ -237,22 +295,6 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
         return cells;
     }
 
-    private static void FlushParagraph(DocumentEditorDocument document, List<string> lines, ref double order)
-    {
-        if (lines.Count == 0)
-        {
-            return;
-        }
-
-        document.Blocks.Add(new DocumentBlock
-        {
-            Type = DocumentBlockType.Paragraph,
-            Order = order++,
-            Content = new ParagraphBlockContent { Inlines = ParseInlines(string.Join(' ', lines)) }
-        });
-        lines.Clear();
-    }
-
     private static List<InlineContent> ParseInlines(string markdown)
     {
         var result = new List<InlineContent>();
@@ -262,18 +304,21 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
             var nextImage = markdown.IndexOf("![", index, StringComparison.Ordinal);
             var nextLink = markdown.IndexOf('[', index);
             var nextBold = markdown.IndexOf("**", index, StringComparison.Ordinal);
+            var nextBoldUnderscore = markdown.IndexOf("__", index, StringComparison.Ordinal);
             var nextItalic = markdown.IndexOf('*', index);
+            var nextItalicUnderscore = markdown.IndexOf('_', index);
             var nextStrike = markdown.IndexOf("~~", index, StringComparison.Ordinal);
-            var next = MinPositive(nextImage, nextLink, nextBold, nextItalic, nextStrike);
+            var nextCode = markdown.IndexOf('`', index);
+            var next = MinPositive(nextImage, nextLink, nextBold, nextBoldUnderscore, nextItalic, nextItalicUnderscore, nextStrike, nextCode);
             if (next < 0)
             {
-                AddText(result, UnescapeMarkdown(markdown[index..]), []);
+                AddText(result, DecodeMarkdownText(markdown[index..]), []);
                 break;
             }
 
             if (next > index)
             {
-                AddText(result, UnescapeMarkdown(markdown[index..next]), []);
+                AddText(result, DecodeMarkdownText(markdown[index..next]), []);
                 index = next;
                 continue;
             }
@@ -293,15 +338,18 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
             }
 
             if (TryReadDelimited(markdown, index, "**", InlineMarkType.Bold, out var marked, out consumed)
+                || TryReadDelimited(markdown, index, "__", InlineMarkType.Bold, out marked, out consumed)
                 || TryReadDelimited(markdown, index, "~~", InlineMarkType.Strikethrough, out marked, out consumed)
-                || TryReadDelimited(markdown, index, "*", InlineMarkType.Italic, out marked, out consumed))
+                || TryReadDelimited(markdown, index, "`", InlineMarkType.FontFamily, out marked, out consumed)
+                || TryReadDelimited(markdown, index, "*", InlineMarkType.Italic, out marked, out consumed)
+                || TryReadDelimited(markdown, index, "_", InlineMarkType.Italic, out marked, out consumed))
             {
                 result.Add(marked);
                 index += consumed;
                 continue;
             }
 
-            AddText(result, UnescapeMarkdown(markdown[index].ToString()), []);
+            AddText(result, DecodeMarkdownText(markdown[index].ToString()), []);
             index++;
         }
 
@@ -329,8 +377,8 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
             return false;
         }
 
-        var alt = UnescapeMarkdown(markdown[(index + 2)..closeAlt]);
-        var url = UnescapeMarkdown(markdown[(closeAlt + 2)..closeUrl]);
+        var alt = DecodeMarkdownText(markdown[(index + 2)..closeAlt]);
+        var url = DecodeMarkdownText(markdown[(closeAlt + 2)..closeUrl]);
         drawing = new DocumentDrawingRun
         {
             Kind = DocumentDrawingKind.Image,
@@ -364,10 +412,10 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
             return false;
         }
 
-        var href = UnescapeMarkdown(markdown[(closeText + 2)..closeUrl]);
+        var href = DecodeMarkdownText(markdown[(closeText + 2)..closeUrl]);
         run = new TextRun
         {
-            Text = UnescapeMarkdown(markdown[(index + 1)..closeText]),
+            Text = DecodeMarkdownText(markdown[(index + 1)..closeText]),
             Marks = IsSafeMarkdownUrl(href)
                 ? [new InlineMark { Type = InlineMarkType.Link, Link = new LinkMarkData { Href = href } }]
                 : []
@@ -399,7 +447,7 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
 
         run = new TextRun
         {
-            Text = UnescapeMarkdown(markdown[(index + delimiter.Length)..close]),
+            Text = DecodeMarkdownText(markdown[(index + delimiter.Length)..close]),
             Marks = [new InlineMark { Type = markType }]
         };
         consumed = close - index + delimiter.Length;
@@ -408,12 +456,10 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
 
     private static void AddText(List<InlineContent> inlines, string text, List<InlineMark> marks)
     {
-        if (string.IsNullOrEmpty(text))
+        if (!string.IsNullOrEmpty(text))
         {
-            return;
+            inlines.Add(new TextRun { Text = text, Marks = marks });
         }
-
-        inlines.Add(new TextRun { Text = text, Marks = marks });
     }
 
     private static int MinPositive(params int[] values)
@@ -421,6 +467,9 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
 
     private static string NormalizeNewLines(string value)
         => (value ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+
+    private static string DecodeMarkdownText(string text)
+        => WebUtility.HtmlDecode(UnescapeMarkdown(text));
 
     private static string UnescapeMarkdown(string text)
         => Regex.Replace(text, """\\([\\`*_{}\[\]()#+\-.!|~<>])""", "$1");
@@ -432,11 +481,17 @@ public sealed partial class DocumentMarkdownImporter : IDocumentFormatImporter
     [GeneratedRegex("""^(?<level>#{1,6})\s+(?<text>.+)$""")]
     private static partial Regex HeadingRegex();
 
-    [GeneratedRegex("""^(?:(?<number>\d+)\.\s+|[-*+]\s+)(?<text>.+)$""")]
-    private static partial Regex ListRegex();
-
     [GeneratedRegex("""^!\[(?<alt>[^\]]*)\]\((?<url>[^)]*)\)$""")]
     private static partial Regex ImageOnlyRegex();
+
+    [GeneratedRegex("""^>\s?(?<text>.+)$""")]
+    private static partial Regex QuoteRegex();
+
+    [GeneratedRegex("""^(?<indent>\s*)(?<marker>(?:[-+*])|(?:\d+[.)]))\s+(?<text>.+)$""")]
+    private static partial Regex ListRegex();
+
+    [GeneratedRegex("""\d+""")]
+    private static partial Regex NumberPrefixRegex();
 
     [GeneratedRegex("""^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$""")]
     private static partial Regex TableSeparatorRegex();

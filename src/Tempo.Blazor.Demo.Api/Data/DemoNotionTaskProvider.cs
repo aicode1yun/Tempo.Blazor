@@ -22,6 +22,7 @@ public sealed partial class DemoNotionTaskProvider : INotionTaskProvider
         cancellationToken.ThrowIfCancellationRequested();
 
         var pages = _pageStore.GetAllPages()
+            .Where(page => !page.IsDeleted)
             .ToDictionary(page => page.Id.ToString(), page => page.Title, StringComparer.OrdinalIgnoreCase);
 
         var tasks = _blockStore.GetAllBlocksSnapshot()

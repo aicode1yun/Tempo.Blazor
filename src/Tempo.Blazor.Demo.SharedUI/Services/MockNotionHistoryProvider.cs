@@ -1,6 +1,7 @@
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.NotionEditor.Services;
 
 namespace Tempo.Blazor.Demo.Services;
 
@@ -171,26 +172,17 @@ public class MockNotionHistoryProvider : INotionHistoryProvider
     }
 
     public Task<IEnumerable<BlockDiff>> CompareVersionsAsync(string versionId1, string versionId2)
+        => GetDiffAsync(_page1Id.ToString("D"), versionId1, versionId2)
+            .ContinueWith(task => task.Result.AsEnumerable());
+
+    public Task<IReadOnlyList<BlockDiff>> GetDiffAsync(string pageId, string versionIdA, string versionIdB)
     {
-        var v1 = FindVersion(Guid.Parse(versionId1));
-        var v2 = FindVersion(Guid.Parse(versionId2));
+        var v1 = FindVersion(Guid.Parse(versionIdA));
+        var v2 = FindVersion(Guid.Parse(versionIdB));
         if (v1 is null || v2 is null)
-            return Task.FromResult(Enumerable.Empty<BlockDiff>());
+            return Task.FromResult<IReadOnlyList<BlockDiff>>([]);
 
-        var before = v1.BlocksSnapshot.ToDictionary(b => b.Id.ToString());
-        var after  = v2.BlocksSnapshot.ToDictionary(b => b.Id.ToString());
-        var diffs  = new List<BlockDiff>();
-
-        foreach (var (id, b) in before)
-            diffs.Add(after.TryGetValue(id, out var a)
-                ? new BlockDiff(id, BlockDiffType.Modified, b, a)
-                : new BlockDiff(id, BlockDiffType.Removed,  b, null));
-
-        foreach (var (id, a) in after)
-            if (!before.ContainsKey(id))
-                diffs.Add(new BlockDiff(id, BlockDiffType.Added, null, a));
-
-        return Task.FromResult<IEnumerable<BlockDiff>>(diffs);
+        return Task.FromResult(NotionBlockDiffService.Compare(v1.BlocksSnapshot, v2.BlocksSnapshot));
     }
 
     private PageVersion? FindVersion(Guid versionId)

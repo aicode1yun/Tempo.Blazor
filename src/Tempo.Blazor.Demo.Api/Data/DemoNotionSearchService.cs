@@ -281,6 +281,7 @@ public sealed partial class DemoNotionSearchService(
             ParentId = page.ParentId,
             Title = page.Title,
             Description = page.Description,
+            SpaceId = page.SpaceId,
             IconEmoji = page.IconEmoji,
             IconImageUrl = page.IconImageUrl,
             CoverImageUrl = page.CoverImageUrl,

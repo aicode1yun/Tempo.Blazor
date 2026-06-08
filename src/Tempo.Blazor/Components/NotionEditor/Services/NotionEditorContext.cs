@@ -12,6 +12,7 @@ namespace Tempo.Blazor.Components.NotionEditor.Services;
 /// </summary>
 public sealed class NotionEditorContext
 {
+    public string                      CurrentUserId        { get; init; } = "demo";
     public INotionDataProvider         DataProvider          { get; init; } = default!;
     public INotionBlockProvider        BlockProvider         { get; init; } = default!;
     public INotionSearchProvider?      SearchProvider        { get; init; }
@@ -20,6 +21,15 @@ public sealed class NotionEditorContext
     public INotionHistoryProvider?     HistoryProvider       { get; init; }
     public INotionCollaborationProvider? CollaborationProvider { get; init; }
     public INotionMentionProvider?     MentionProvider       { get; init; }
+    public INotionAIProvider?          AIProvider            { get; init; }
+    public WorkItemProviderRegistry?   WorkItemProviders     { get; init; }
+    public INotionReactionProvider?    ReactionProvider      { get; init; }
+    public INotionAnalyticsProvider?   AnalyticsProvider     { get; init; }
+    public INotionPagePropertiesProvider? PagePropertiesProvider { get; init; }
+    public INotionTemplateProvider?      TemplateProvider         { get; init; }
+    public ISmartLinkProvider?           SmartLinkProvider        { get; init; }
+    public INotionPermissionProvider?    PermissionProvider       { get; init; }
+    public IReadOnlyList<string>         CurrentUserGroupIds      { get; init; } = [];
     public INotionBookmarkProvider?      BookmarkProvider         { get; init; }
     public INotionFileProvider?          FileProvider             { get; init; }
     public INotionImportExportProvider?  ImportExportProvider     { get; init; }

@@ -31,6 +31,12 @@ public static class NotionEditorEndpoints
         pageGroup.MapGet("/trash", (MockNotionDataStore store) =>
             Results.Ok(store.GetTrashAsync().Result));
 
+        pageGroup.MapGet("/labels", (MockNotionDataStore store) =>
+            Results.Ok(store.GetAllLabelsAsync().Result));
+
+        pageGroup.MapGet("/labels/{label}", (string label, MockNotionDataStore store) =>
+            Results.Ok(store.GetPagesByLabelAsync(label).Result));
+
         pageGroup.MapGet("/{pageId}", (string pageId, MockNotionDataStore store) =>
         {
             try   { return Results.Ok(store.GetPageAsync(pageId).Result); }
@@ -65,6 +71,19 @@ public static class NotionEditorEndpoints
                 return Results.BadRequest();
             }
             catch { return Results.NotFound(); }
+        });
+
+        pageGroup.MapPut("/{pageId}/labels", (Guid pageId, IReadOnlyList<string> labels, MockNotionDataStore store) =>
+        {
+            try
+            {
+                store.SetPageLabelsAsync(pageId, labels).Wait();
+                return Results.NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return Results.NotFound();
+            }
         });
 
         pageGroup.MapDelete("/{pageId}", (string pageId, MockNotionDataStore store) =>

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Text;
@@ -17,8 +19,12 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
+    [CascadingParameter]
+    private NotionEditorContext? Context { get; set; }
+
     // ── Parameters ───────────────────────────────────────────────────────────
 
+    [Parameter] public IPageBlock?        Block       { get; set; }
     [Parameter] public ITextBlockContent? Content     { get; set; }
     [Parameter] public bool               ReadOnly    { get; set; }
     [Parameter] public bool               IsFocused   { get; set; }
@@ -179,6 +185,62 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
     public async Task OnTokenTriggered(double top, double left) =>
         await OnTokenMenu.InvokeAsync((top, left));
 
+    public async Task OnSmartLinkPasteRequested(string rawUrl, string displayMode)
+    {
+        var url = NormalizeUrl(rawUrl);
+        SmartLinkDto? resolved = null;
+
+        if (Context?.SmartLinkProvider is not null)
+        {
+            try { resolved = await Context.SmartLinkProvider.ResolveAsync(url); }
+            catch { resolved = null; }
+        }
+
+        if (resolved is not null &&
+            string.Equals(displayMode, "Card", StringComparison.OrdinalIgnoreCase) &&
+            Context?.BlockProvider is not null &&
+            Block is not null)
+        {
+            var bookmark = new PageBlock
+            {
+                Id = Guid.NewGuid(),
+                PageId = Block.PageId,
+                Type = BlockType.Bookmark,
+                Order = Block.Order + 1,
+                Content = new BookmarkBlockContent
+                {
+                    Url = resolved.Url,
+                    Title = resolved.Title,
+                    Description = resolved.Description,
+                    CoverImageUrl = resolved.ImageUrl,
+                    FaviconUrl = resolved.FaviconUrl,
+                    Domain = resolved.ProviderName
+                },
+                CreatedAt = DateTime.UtcNow,
+                LastEditedAt = DateTime.UtcNow
+            };
+
+            await Context.BlockProvider.CreateBlockAsync(Block.PageId.ToString("D"), bookmark, Block.Id.ToString("D"));
+            return;
+        }
+
+        if (resolved is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync(
+                    "tmNotionEditor.insertSmartLinkChip",
+                    _editableRef,
+                    resolved.Url,
+                    resolved.Title,
+                    resolved.FaviconUrl);
+            }
+            catch { }
+        }
+
+        await SaveCurrentHtmlAsync();
+    }
+
     // ── Dispose ───────────────────────────────────────────────────────────────
 
     public async ValueTask DisposeAsync()
@@ -189,5 +251,29 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
             catch { }
         }
         _dotNetRef?.Dispose();
+    }
+
+    private async Task SaveCurrentHtmlAsync()
+    {
+        try
+        {
+            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
+            await OnContentSaved.InvokeAsync(html);
+            _dirty = false;
+            _lastHtml = html;
+        }
+        catch { }
+    }
+
+    private static string NormalizeUrl(string rawUrl)
+    {
+        var trimmed = rawUrl.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return trimmed;
+
+        return Uri.TryCreate(trimmed, UriKind.Absolute, out var absolute) &&
+               !string.IsNullOrWhiteSpace(absolute.Scheme)
+            ? absolute.ToString()
+            : $"https://{trimmed.TrimStart('/')}";
     }
 }

@@ -38,6 +38,14 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public INotionHistoryProvider?       HistoryProvider       { get; set; }
     [Parameter] public INotionCollaborationProvider? CollaborationProvider { get; set; }
     [Parameter] public INotionMentionProvider?       MentionProvider       { get; set; }
+    [Parameter] public INotionAIProvider?            AIProvider            { get; set; }
+    [Parameter] public WorkItemProviderRegistry?     WorkItemProviders     { get; set; }
+    [Parameter] public INotionReactionProvider?      ReactionProvider      { get; set; }
+    [Parameter] public INotionAnalyticsProvider?     AnalyticsProvider     { get; set; }
+    [Parameter] public INotionPagePropertiesProvider? PagePropertiesProvider { get; set; }
+    [Parameter] public INotionTemplateProvider?      TemplateProvider       { get; set; }
+    [Parameter] public ISmartLinkProvider?           SmartLinkProvider      { get; set; }
+    [Parameter] public INotionPermissionProvider?    PermissionProvider     { get; set; }
     [Parameter] public INotionBookmarkProvider?      BookmarkProvider       { get; set; }
     [Parameter] public INotionFileProvider?          FileProvider           { get; set; }
     [Parameter] public INotionImportExportProvider?  ImportExportProvider   { get; set; }
@@ -64,6 +72,12 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     /// <summary>Prevents all editing interactions.</summary>
     [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Identifier of the current user for collaboration, reactions, and user-scoped actions.</summary>
+    [Parameter] public string CurrentUserId { get; set; } = "demo";
+
+    /// <summary>Group identifiers used for permission checks for the current user.</summary>
+    [Parameter] public IReadOnlyList<string> CurrentUserGroupIds { get; set; } = [];
 
     /// <summary>Additional CSS class on the root element.</summary>
     [Parameter] public string? Class { get; set; }
@@ -157,7 +171,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
             _currentPage   = page;
 
             if (_collabSync is not null && CollaborationProvider is not null)
-                await _collabSync.JoinAsync(CollaborationProvider, pageId, "demo");
+                await _collabSync.JoinAsync(CollaborationProvider, pageId, CurrentUserId);
 
             await OnPageChanged.InvokeAsync(page);
         }
@@ -245,6 +259,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     private NotionEditorContext BuildContext() => new()
     {
+        CurrentUserId        = CurrentUserId,
         DataProvider          = DataProvider,
         BlockProvider         = BlockProvider,
         SearchProvider        = SearchProvider,
@@ -254,6 +269,15 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         CollaborationProvider = CollaborationProvider,
         CollaborationSync     = _collabSync,
         MentionProvider       = MentionProvider,
+        AIProvider            = AIProvider,
+        WorkItemProviders     = WorkItemProviders,
+        ReactionProvider      = ReactionProvider,
+        AnalyticsProvider     = AnalyticsProvider,
+        PagePropertiesProvider = PagePropertiesProvider,
+        TemplateProvider       = TemplateProvider,
+        SmartLinkProvider      = SmartLinkProvider,
+        PermissionProvider     = PermissionProvider,
+        CurrentUserGroupIds    = CurrentUserGroupIds,
         BookmarkProvider          = BookmarkProvider,
         FileProvider              = FileProvider,
         ImportExportProvider      = ImportExportProvider,

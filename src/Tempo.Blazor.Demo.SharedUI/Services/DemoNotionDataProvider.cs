@@ -44,6 +44,26 @@ public class DemoNotionDataProvider : INotionDataProvider
         return pages ?? [];
     }
 
+    public async Task<IReadOnlyList<INotionPage>> GetPagesByLabelAsync(string label, CancellationToken cancellationToken = default)
+    {
+        var pages = await _http.GetFromJsonAsync<List<NotionPage>>(
+            $"/api/notion/pages/labels/{Uri.EscapeDataString(label)}",
+            cancellationToken);
+
+        return pages?.Cast<INotionPage>().ToArray() ?? [];
+    }
+
+    public async Task<IReadOnlyList<string>> GetAllLabelsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _http.GetFromJsonAsync<IReadOnlyList<string>>("/api/notion/pages/labels", cancellationToken) ?? [];
+    }
+
+    public async Task SetPageLabelsAsync(Guid pageId, IReadOnlyList<string> labels, CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PutAsJsonAsync($"/api/notion/pages/{pageId:D}/labels", labels, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<INotionPage> CreatePageAsync(string? parentId, string title)
     {
         var request = new { title, parentId };

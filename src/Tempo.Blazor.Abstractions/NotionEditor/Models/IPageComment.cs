@@ -1,11 +1,6 @@
 namespace Tempo.Blazor.NotionEditor.Models;
 
-public interface IPageComment
+public interface IPageComment : IBlockComment
 {
-    Guid Id { get; }
     string PageId { get; }
-    IReadOnlyList<INotionCommentEntry> Thread { get; }
-    bool IsResolved { get; }
-    DateTime? ResolvedAt { get; }
-    string? ResolvedByUserId { get; }
 }

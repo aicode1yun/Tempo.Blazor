@@ -4,6 +4,7 @@ using Tempo.Blazor.Demo.Validators;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.FluentValidation;
 using Tempo.Blazor.Interfaces;
+using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.Services;
 
 // Import Components namespace for App.razor
@@ -50,6 +51,13 @@ builder.Services.AddScoped<DemoNotionBlockProvider>();
 builder.Services.AddScoped<DemoNotionMediaLibraryProvider>();
 builder.Services.AddScoped<DemoNotionFileProvider>();
 builder.Services.AddScoped<DemoNotionTokenProvider>();
+builder.Services.AddScoped<DemoNotionAIProvider>();
+builder.Services.AddScoped<DemoNotionReactionProvider>();
+builder.Services.AddScoped<DemoNotionAnalyticsProvider>();
+builder.Services.AddScoped<DemoNotionPagePropertiesProvider>();
+builder.Services.AddScoped<IWorkItemProvider, DemoWorkItemProvider>();
+builder.Services.AddScoped<IWorkItemProvider, DemoOpsWorkItemProvider>();
+builder.Services.AddScoped<WorkItemProviderRegistry>();
 builder.Services.AddScoped<MockNotionDatabaseProvider>();
 builder.Services.AddScoped<MockNotionCommentProvider>();
 builder.Services.AddScoped<MockNotionHistoryProvider>();
