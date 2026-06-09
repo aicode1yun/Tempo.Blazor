@@ -397,6 +397,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private string? _clipboardDebugWarningsJson;
     private int _blazorRenderCount;
     private bool _suppressNextWysiwygStateRender;
+    // B7.1d: set when a DOM event handler (notably the root @onkeydown for a plain typing key) did nothing
+    // that needs a parent render. Blazor implicitly re-renders the component after EVERY @on* handler, so this
+    // flag lets ShouldRender suppress that wasted full-editor rebuild on the typing hot path.
+    private bool _suppressNextChromeRender;
     private string? _lastCollapsedSelectionRenderKey;
 
     private int NextBlazorRenderCount => ++_blazorRenderCount;
@@ -409,6 +413,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         if (_suppressNextWysiwygStateRender)
         {
             _suppressNextWysiwygStateRender = false;
+            return false;
+        }
+
+        if (_suppressNextChromeRender)
+        {
+            _suppressNextChromeRender = false;
             return false;
         }
 
@@ -8315,6 +8325,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         // mid-typing and the canvas paints every key unblocked). B6: there is NO per-edit canonical-document
         // reconcile anymore — the engine is the single source of truth and Save/export/compare pull a fresh
         // document on demand (B5). No full-model JS->C# marshal ever runs, which removes the ~700 ms jank.
+        // B7.1: gate the re-render on the chrome signature. At a human typing cadence the JS debounce DOES
+        // expire on the brief mid-word/inter-word pauses, firing this handler; rebuilding the whole editor
+        // render tree (~120 toolbar params + status bar + mini-toolbar + panels, ~200 ms) then stalls the
+        // single thread so the canvas cannot paint the queued keystrokes → the visible "freeze + catch-up".
+        // Most such fires change nothing toolbar-visible (dirty already true, formatting unchanged), so skip.
+        var before = ComputeChromeStateSignature();
         _isDirty = state.IsDirty;
         _canvasModelChangedSinceSync = true;
         // Arm autosave (O(1)) + surface dirty/autosave-pending status promptly. The debounced toolbar sync
@@ -8323,11 +8339,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         SyncAutosavePendingAction();
         ScheduleCanvasToolbarSync();
         await UpdateBeforeUnloadGuardAsync();
-        await InvokeAsync(StateHasChanged);
+        // The dirty flip (false->true) and any autosave-pending change move the signature, so the dirty /
+        // pending status still surfaces promptly (B6 Phase12); a no-op mid-burst fire renders nothing.
+        if (!string.Equals(before, ComputeChromeStateSignature(), StringComparison.Ordinal))
+        {
+            await InvokeAsync(StateHasChanged);
+        }
         // Collaboration relay rides this change-notify path, so collaborators see edits quickly without
-        // coupling to any document reconcile.
+        // coupling to any document reconcile. B7.1: yield first so the canvas paints the just-typed keystrokes
+        // before the op-log drain + submit interop runs on the single thread (otherwise the paint waits on it).
         if (_useEngineOperationRelay)
         {
+            await Task.Yield();
             await RelayLocalOperationsAsync();
         }
     }
@@ -9268,6 +9291,19 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task HandleEditorKeyDownAsync(KeyboardEventArgs args)
     {
+        // B7.1d: a plain typing key (or caret/edit key handled entirely by the canvas input surface — Arrows,
+        // Backspace, Enter, …) is NOT an editor shortcut, so this handler does nothing for it. Blazor still
+        // implicitly re-renders the whole editor after the @onkeydown handler completes, which on the typing
+        // hot path rebuilds the giant parent render tree (~120 toolbar params + status bar + mini-toolbar +
+        // panels) and stalls the single thread so the canvas cannot paint the keystroke → the reported freeze.
+        // Detect the no-op key up front and suppress that one implicit render (handled shortcuts below render
+        // themselves where needed, so nothing visible is lost).
+        if (!IsHandledEditorKeyDown(args))
+        {
+            _suppressNextChromeRender = true;
+            return;
+        }
+
         if (args.Key == "Escape" && (_textContextMenu is not null || _tableContextMenu is not null || _miniToolbar is not null))
         {
             CloseFloatingUi();
@@ -9336,6 +9372,26 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 await OpenFindPanelAsync(replaceMode: true);
                 break;
         }
+    }
+
+    /// <summary>True when the editor itself acts on a keydown (shortcut / Escape / navigation command). A
+    /// plain typing or caret/edit key — handled by the canvas input surface, not here — returns false so the
+    /// implicit post-event parent render can be suppressed (B7.1d). Mirrors the dispatch in
+    /// <see cref="HandleEditorKeyDownAsync"/>.</summary>
+    private bool IsHandledEditorKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape"
+            && (_textContextMenu is not null || _tableContextMenu is not null || _miniToolbar is not null || _commandPaletteOpen))
+        {
+            return true;
+        }
+
+        if (_keyboardManager.GetRegistryCommandName(args) is not null)
+        {
+            return true;
+        }
+
+        return _keyboardManager.GetCommand(args) != DocumentEditorKeyboardCommand.None;
     }
 
     private async Task HandleWysiwygKeyboardCommandRequestedAsync(string commandName)
