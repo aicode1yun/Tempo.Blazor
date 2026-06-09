@@ -235,15 +235,23 @@ public class DocumentCollaborationSync
             return append;
         }
 
-        if (batch.Operations.Count == 0)
+        // Phase B operation-relay: a batch may carry only the verbatim canvas op-log JSON
+        // (CanvasOperationBatchJson) with no typed Operations — it must still be broadcast. Only a truly
+        // empty batch (no typed ops AND no canvas payload) is a no-op.
+        if (batch.Operations.Count == 0 && string.IsNullOrEmpty(batch.CanvasOperationBatchJson))
         {
             return DocumentOperationValidationResult.Valid();
         }
 
-        var apply = _applier.Apply(Document, batch);
-        if (!apply.IsValid)
+        // The C# applier mutates the C# Document mirror from typed operations; canvas-relay batches carry no
+        // typed operations (the canvas engine is the source of truth), so there is nothing to apply here.
+        if (batch.Operations.Count > 0)
         {
-            return apply;
+            var apply = _applier.Apply(Document, batch);
+            if (!apply.IsValid)
+            {
+                return apply;
+            }
         }
 
         var remote = await _provider.BroadcastOperationBatchAsync(_session.Id, batch, cancellationToken);

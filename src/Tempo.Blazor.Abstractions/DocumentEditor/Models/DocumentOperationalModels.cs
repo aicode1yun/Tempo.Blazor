@@ -394,6 +394,15 @@ public class DocumentOperationBatch
 
     /// <summary>Operations in the batch.</summary>
     public List<DocumentOperation> Operations { get; set; } = [];
+
+    /// <summary>
+    /// Phase B operation-relay: the verbatim canvas-engine op-log batch JSON. When set, the host is acting as
+    /// a dumb pipe — collaborators apply this raw JSON directly via the canvas engine's
+    /// <c>applyRemoteOperationBatch</c> (which losslessly carries canvas blocks, tables and images that the
+    /// strongly-typed <see cref="Operations"/> / <see cref="DocumentBlock"/> model cannot round-trip). Null
+    /// for legacy C#-diff batches.
+    /// </summary>
+    public string? CanvasOperationBatchJson { get; set; }
 }
 
 /// <summary>Compatibility helpers for collaboration operation batch protocol versions.</summary>

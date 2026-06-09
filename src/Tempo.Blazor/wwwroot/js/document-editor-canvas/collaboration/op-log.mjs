@@ -52,6 +52,14 @@ export function createCanvasOperationLog(options = {}) {
         return normalized;
     }
 
+    // B1: hand the not-yet-relayed local batches to the host (C#), which relays them to collaborators.
+    // Removes them from the pending queue (ownership transfers to the host transport). The host is the dumb
+    // pipe — it forwards each batch's JSON verbatim; remotes apply it via applyRemoteOperationBatch.
+    function takeLocalBatches() {
+        const taken = pendingLocalBatches.splice(0, pendingLocalBatches.length);
+        return taken.map(clone);
+    }
+
     function acknowledgeThrough(sequence) {
         const value = Number(sequence || 0) || 0;
         if (value <= 0) {
@@ -116,6 +124,7 @@ export function createCanvasOperationLog(options = {}) {
         clientId,
         documentId,
         recordLocalChange,
+        takeLocalBatches,
         appendRemoteBatch,
         acknowledgeThrough,
         upsertCursor,
@@ -269,25 +278,22 @@ function createOperation(type, blockId, options, patch) {
     });
 }
 
+// Each TOP-LEVEL block is one diff unit. We deliberately do NOT recurse into table cells: a table's
+// cells/rows live inside the table block, so any cell change is captured as a single `updateBlock(table)`
+// carrying the whole table (the accepted `updateBlock` granularity). Recursing produced two bugs that broke
+// operation-relay (Phase B0.4): a redundant insertText/updateBlock on the cell IN ADDITION to the table
+// updateBlock (double-apply on remote), and a spurious moveBlock for every nested cell block (because the
+// global map index was compared against the within-array index).
 function flattenBlocks(model) {
     const result = [];
-    function visitBlocks(blocks, cellId = null) {
-        asArray(blocks).forEach((block, index) => {
-            if (!block || !asText(block.id)) {
-                return;
-            }
+    asArray(model?.body?.blocks || model?.blocks || []).forEach((block, index) => {
+        if (!block || !asText(block.id)) {
+            return;
+        }
 
-            result.push({ block, index, cellId });
-            const table = block.content?.table || block.content;
-            for (const row of asArray(table?.rows)) {
-                for (const cell of asArray(row?.cells)) {
-                    visitBlocks(cell?.blocks, asText(cell?.id || ''));
-                }
-            }
-        });
-    }
+        result.push({ block, index, cellId: null });
+    });
 
-    visitBlocks(model?.body?.blocks || model?.blocks || []);
     return result;
 }
 

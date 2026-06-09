@@ -7,6 +7,10 @@ export function createCanvasPresenceOverlay(options = {}) {
     root.className = 'tm-document-canvas-presence';
     root.setAttribute('data-testid', 'document-canvas-presence-overlay');
     root.setAttribute('aria-hidden', 'true');
+    // Presence (remote caret/label) is purely decorative — it must NOT capture pointer events, otherwise a
+    // remote collaborator's caret sitting at the end of the text intercepts the local user's click there,
+    // the canvas never receives the mousedown, the hidden input is not focused and the user cannot type.
+    root.style.pointerEvents = 'none';
     const cursorsBySession = new Map();
     let lastSnapshot = [];
 

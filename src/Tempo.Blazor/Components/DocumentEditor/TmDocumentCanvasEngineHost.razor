@@ -157,6 +157,14 @@
     /// </summary>
     [Parameter] public Func<WysiwygMiniToolbarRequest?, Task>? OnMiniToolbarChanged { get; set; }
 
+    /// <summary>
+    /// Raised with the small primitives-only UI snapshot (formatting pressed-state, dirty, undo/redo
+    /// availability, page count) the engine pushes alongside a deliberate selection change (B2). Lets the
+    /// parent update the toolbar immediately without a follow-up interop pull. A plain delegate for the same
+    /// reason as <see cref="OnMiniToolbarChanged"/>.
+    /// </summary>
+    [Parameter] public Func<CanvasEngineUiState?, Task>? OnUiStateChanged { get; set; }
+
     /// <summary>Raised when a canvas comment or revision marker is selected.</summary>
     [Parameter] public EventCallback<CanvasEngineAnnotationSelection> OnAnnotationSelected { get; set; }
 
@@ -373,6 +381,39 @@
     }
 
     /// <summary>Applies a remote collaboration batch to the mounted canvas runtime.</summary>
+    /// <summary>
+    /// B1 operation-relay: hands the engine's pending local op-log batches to the host for collaboration
+    /// relay, clearing them from the engine. Returns each batch as its verbatim canvas-format JSON string
+    /// (the host pipes it to collaborators unchanged — no C# document diff).
+    /// </summary>
+    public async Task<IReadOnlyList<string>> TakeLocalOperationBatchesAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return [];
+        }
+
+        var json = await _module.InvokeAsync<string?>("takeLocalOperationBatchesJson", _handle);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var batches = new List<string>(document.RootElement.GetArrayLength());
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            batches.Add(element.GetRawText());
+        }
+
+        return batches;
+    }
+
     public async Task<CanvasEngineRemoteApplyResult> ApplyRemoteOperationBatchAsync(DocumentCollaborationOperationBatch batch)
     {
         ArgumentNullException.ThrowIfNull(batch);
@@ -382,7 +423,12 @@
             return new CanvasEngineRemoteApplyResult { Success = false };
         }
 
-        var json = JsonSerializer.Serialize(batch, CanvasJsonOptions);
+        // B1 operation-relay: when the batch carries a verbatim canvas op-log payload, apply it RAW — the
+        // engine's applyRemoteOperationBatch consumes the canvas operations directly (incl. table/image
+        // blocks the typed model cannot round-trip). Otherwise fall back to the legacy typed batch.
+        var json = !string.IsNullOrEmpty(batch.Batch?.CanvasOperationBatchJson)
+            ? batch.Batch!.CanvasOperationBatchJson!
+            : JsonSerializer.Serialize(batch, CanvasJsonOptions);
         var resultJson = await _module.InvokeAsync<string?>("applyRemoteOperationBatch", _handle, json);
         var result = DeserializeState(resultJson, new CanvasEngineRemoteApplyResult());
         if (result.Success)
@@ -639,7 +685,14 @@
         }
 
         var request = DeserializeState<WysiwygMiniToolbarRequest?>(stateJson, null);
-        return OnMiniToolbarChanged is not null ? OnMiniToolbarChanged(request) : Task.CompletedTask;
+        // The selection payload also carries the pushed UI snapshot (B2). Dispatch it so a deliberate
+        // selection updates the toolbar pressed-state immediately, without a follow-up interop pull.
+        var envelope = DeserializeState<CanvasEngineUiStateEnvelope?>(stateJson, null);
+        var miniToolbar = OnMiniToolbarChanged is not null ? OnMiniToolbarChanged(request) : Task.CompletedTask;
+        var uiState = OnUiStateChanged is not null && envelope?.UiState is not null
+            ? OnUiStateChanged(envelope.UiState)
+            : Task.CompletedTask;
+        return Task.WhenAll(miniToolbar, uiState);
     }
 
     /// <summary>JavaScript callback for canvas comment or revision marker selection.</summary>
@@ -1520,5 +1573,25 @@
 
         /// <summary>Current model version.</summary>
         public long ModelVersion { get; set; }
+    }
+
+    /// <summary>
+    /// Primitives-only UI snapshot pushed from the engine (see interop.mjs buildUiState) so the parent toolbar
+    /// can update pressed-state / dirty / undo availability / page count without a follow-up interop pull.
+    /// </summary>
+    public sealed class CanvasEngineUiState
+    {
+        public CanvasEngineFormattingState? Formatting { get; set; }
+        public bool IsDirty { get; set; }
+        public bool CanUndo { get; set; }
+        public bool CanRedo { get; set; }
+        public int PageCount { get; set; }
+        public long ModelVersion { get; set; }
+    }
+
+    /// <summary>Wrapper used to pluck just the pushed <see cref="CanvasEngineUiState"/> out of the selection payload.</summary>
+    public sealed class CanvasEngineUiStateEnvelope
+    {
+        public CanvasEngineUiState? UiState { get; set; }
     }
 }

@@ -29,6 +29,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private Timer? _autoSaveTimer;
     private int _canvasReconcileSeq;
     private int _canvasToolbarSyncSeq;
+    // Last before-unload guard state pushed to JS; lets UpdateBeforeUnloadGuardAsync skip a redundant interop
+    // call when the desired state is unchanged, so it is safe to invoke from the debounced toolbar-sync.
+    private bool? _beforeUnloadGuardActive;
     // Toolbar/formatting readback is cheap + gated, so it can fire shortly after a pause. The canonical
     // document reconciliation (full model marshal JS->C# + convert) is heavier, only feeds non-realtime
     // consumers (word count, collaboration, comments — save always pulls fresh), and must NOT fire during
@@ -318,6 +321,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private DocumentCollaborationSync? _collaborationSync;
     private IDocumentCollaborationProvider? _loadedCollaborationProvider;
     private IDocumentCollaborationRealtimeProvider? _realtimeCollaborationProvider;
+    // Phase B1: when true, collaboration is driven by the canvas engine's op-log (operation-relay) instead
+    // of the C# before/after document diff. The relay needs no continuous _document mirror and fires on the
+    // (fast) change-notify path, decoupled from the heavy 2500 ms document reconcile.
+    private bool _useEngineOperationRelay = true;
     private IDocumentSuggestionProvider? _loadedSuggestionProvider;
     private IDocumentFormatProvider? _loadedFormatProvider;
     private IDocumentFontProvider? _loadedFontProvider;
@@ -4792,12 +4799,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         if (ReadOnly || _disposed) return;
         var shouldGuard = _isDirty || _pendingActions.HasAny;
+        if (_beforeUnloadGuardActive == shouldGuard)
+        {
+            // Desired state already applied — skip the redundant interop so this is cheap to call from the
+            // debounced toolbar-sync on every pass.
+            return;
+        }
+
         try
         {
             if (shouldGuard)
                 await JSRuntime.InvokeVoidAsync("tmDocumentEditor.enableBeforeUnloadGuard");
             else
                 await JSRuntime.InvokeVoidAsync("tmDocumentEditor.disableBeforeUnloadGuard");
+            _beforeUnloadGuardActive = shouldGuard;
         }
         catch
         {
@@ -6782,22 +6797,30 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
-        filter ??= new DocumentRevisionFilter();
-        var revisions = _document.Revisions
-            .Where(revision => revision.Action == DocumentRevisionAction.Pending)
-            .Where(filter.Matches)
-            .ToList();
-        if (revisions.Count == 0)
-        {
-            return;
-        }
-
         _isReviewingRevision = true;
-        _revisionMessage = null;
-        var before = DocumentEditorCommandCloner.Clone(_document);
-
         try
         {
+            // Under operation-relay the C# mirror lags the engine; refresh it before collecting + mutating the
+            // revisions and pushing the document back, so we act on the engine's live revision set.
+            await EnsureCanvasMirrorCurrentAsync();
+            if (_document is null)
+            {
+                return;
+            }
+
+            filter ??= new DocumentRevisionFilter();
+            var revisions = _document.Revisions
+                .Where(revision => revision.Action == DocumentRevisionAction.Pending)
+                .Where(filter.Matches)
+                .ToList();
+            if (revisions.Count == 0)
+            {
+                return;
+            }
+
+            _revisionMessage = null;
+            var before = DocumentEditorCommandCloner.Clone(_document);
+
             foreach (var revision in revisions)
             {
                 var removeContent = (revision.Type == DocumentRevisionType.Insertion && action == DocumentRevisionAction.Rejected)
@@ -6878,18 +6901,23 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
-        var target = _document.Revisions.FirstOrDefault(item => item.Id == revision.Id);
-        if (target is null)
-        {
-            return;
-        }
-
         _isReviewingRevision = true;
-        _revisionMessage = null;
-        var before = DocumentEditorCommandCloner.Clone(_document);
-
         try
         {
+            // Under operation-relay the C# mirror lags the engine, so refresh it before mutating + pushing it
+            // back; otherwise ReplaceDocumentAsync would clobber the canvas with a stale document and the
+            // revision marker would never clear.
+            await EnsureCanvasMirrorCurrentAsync();
+
+            var target = _document?.Revisions.FirstOrDefault(item => item.Id == revision.Id);
+            if (_document is null || target is null || target.Action != DocumentRevisionAction.Pending)
+            {
+                return;
+            }
+
+            _revisionMessage = null;
+            var before = DocumentEditorCommandCloner.Clone(_document);
+
             var removeContent = (target.Type == DocumentRevisionType.Insertion && action == DocumentRevisionAction.Rejected)
                 || (target.Type == DocumentRevisionType.Deletion && action == DocumentRevisionAction.Accepted);
 
@@ -6946,6 +6974,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         _isReviewingSuggestion = true;
+        // Under operation-relay the C# mirror lags the engine; refresh it before hashing/applying so the
+        // suggestion base-snapshot check and operation apply run against the engine's live document.
+        await EnsureCanvasMirrorCurrentAsync();
+        if (_document is null)
+        {
+            _isReviewingSuggestion = false;
+            return;
+        }
+
         _suggestionMessage = null;
         var before = Clone(_document);
         if (status == DocumentSuggestionStatus.Accepted
@@ -7701,60 +7738,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _canvasCanRedo = undoState.CanRedo;
 
         var fmt = await _canvasHost.GetFormattingStateAsync();
-        if (fmt is not null)
-        {
-            _formattingState.Bold = ToFormattingValue(fmt.Bold, fmt.BoldMixed);
-            _formattingState.Italic = ToFormattingValue(fmt.Italic, fmt.ItalicMixed);
-            _formattingState.Underline = ToFormattingValue(fmt.Underline, fmt.UnderlineMixed);
-            _formattingState.Strikethrough = ToFormattingValue(fmt.Strikethrough, fmt.StrikethroughMixed);
-            _formattingState.Superscript = ToFormattingValue(fmt.Superscript, fmt.SuperscriptMixed);
-            _formattingState.Subscript = ToFormattingValue(fmt.Subscript, fmt.SubscriptMixed);
-            _formattingState.SmallCaps = ToFormattingValue(fmt.SmallCaps, fmt.SmallCapsMixed);
-            _formattingState.AllCaps = ToFormattingValue(fmt.AllCaps, fmt.AllCapsMixed);
-            _formattingState.DoubleStrikethrough = ToFormattingValue(fmt.DoubleStrikethrough, fmt.DoubleStrikethroughMixed);
-            _formattingState.FontFamily = string.IsNullOrWhiteSpace(fmt.FontFamily) ? null : fmt.FontFamily;
-            _formattingState.FontFamilyMixed = fmt.FontFamilyMixed;
-            _formattingState.FontSize = string.IsNullOrWhiteSpace(fmt.FontSize) ? null : fmt.FontSize;
-            _formattingState.FontSizeMixed = fmt.FontSizeMixed;
-            _formattingState.TextColor = string.IsNullOrWhiteSpace(fmt.TextColor) ? null : fmt.TextColor;
-            _formattingState.TextColorMixed = fmt.TextColorMixed;
-            _formattingState.HighlightColor = string.IsNullOrWhiteSpace(fmt.HighlightColor) ? null : fmt.HighlightColor;
-            _formattingState.HighlightColorMixed = fmt.HighlightColorMixed;
-            _formattingState.ParagraphAlignment = ParseCanvasAlignment(fmt.Alignment);
-            _formattingState.ParagraphAlignmentMixed = fmt.AlignmentMixed;
-            _formattingState.LineSpacing = fmt.LineSpacing;
-            _formattingState.LineSpacingMixed = fmt.LineSpacingMixed;
-            _formattingState.SpacingBefore = fmt.SpacingBefore;
-            _formattingState.SpacingBeforeMixed = fmt.SpacingBeforeMixed;
-            _formattingState.SpacingAfter = fmt.SpacingAfter;
-            _formattingState.SpacingAfterMixed = fmt.SpacingAfterMixed;
-            _formattingState.LeftIndent = fmt.LeftIndent;
-            _formattingState.LeftIndentMixed = fmt.LeftIndentMixed;
-            _formattingState.IsBulletList = fmt.BulletList;
-            _formattingState.IsNumberedList = fmt.NumberedList;
-            _formattingState.ListMixed = fmt.ListMixed;
-            if (!string.IsNullOrWhiteSpace(fmt.BlockStyle))
-            {
-                _coreBlockStyle = fmt.BlockStyle;
-            }
-
-            _showRuler = fmt.ShowRuler;
-            _showBlocks = fmt.ShowBlocks;
-            _showNonPrintingCharacters = fmt.ShowNonPrintingCharacters;
-            if (!string.IsNullOrWhiteSpace(fmt.ViewMode))
-            {
-                _canvasViewMode = fmt.ViewMode;
-            }
-
-            if (fmt.ZoomPercent > 0)
-            {
-                _zoomPercent = Math.Clamp(fmt.ZoomPercent, 25, 400);
-            }
-
-            _zoomPageWidth = string.Equals(fmt.ZoomPreset, "fitWidth", StringComparison.OrdinalIgnoreCase);
-            _canvasPrintPreviewActive = fmt.PrintPreviewActive;
-            SyncCanvasActiveImage(fmt.Image);
-        }
+        ApplyCanvasFormattingState(fmt);
 
         var navigation = await _canvasHost.GetNavigationStateAsync();
         if (navigation.Outline.Count > 0)
@@ -7769,6 +7753,99 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await SyncCanvasContentControlPopoverAsync();
         await RefreshCommandRegistryAsync();
         StateHasChanged();
+    }
+
+    /// <summary>Maps a canvas formatting snapshot onto the toolbar/view state. Shared by the interop pull
+    /// (<see cref="SyncCanvasEngineStateAsync"/>) and the pushed UI state (<see cref="ApplyCanvasUiState"/>).</summary>
+    private void ApplyCanvasFormattingState(TmDocumentCanvasEngineHost.CanvasEngineFormattingState? fmt)
+    {
+        if (fmt is null)
+        {
+            return;
+        }
+
+        _formattingState.Bold = ToFormattingValue(fmt.Bold, fmt.BoldMixed);
+        _formattingState.Italic = ToFormattingValue(fmt.Italic, fmt.ItalicMixed);
+        _formattingState.Underline = ToFormattingValue(fmt.Underline, fmt.UnderlineMixed);
+        _formattingState.Strikethrough = ToFormattingValue(fmt.Strikethrough, fmt.StrikethroughMixed);
+        _formattingState.Superscript = ToFormattingValue(fmt.Superscript, fmt.SuperscriptMixed);
+        _formattingState.Subscript = ToFormattingValue(fmt.Subscript, fmt.SubscriptMixed);
+        _formattingState.SmallCaps = ToFormattingValue(fmt.SmallCaps, fmt.SmallCapsMixed);
+        _formattingState.AllCaps = ToFormattingValue(fmt.AllCaps, fmt.AllCapsMixed);
+        _formattingState.DoubleStrikethrough = ToFormattingValue(fmt.DoubleStrikethrough, fmt.DoubleStrikethroughMixed);
+        _formattingState.FontFamily = string.IsNullOrWhiteSpace(fmt.FontFamily) ? null : fmt.FontFamily;
+        _formattingState.FontFamilyMixed = fmt.FontFamilyMixed;
+        _formattingState.FontSize = string.IsNullOrWhiteSpace(fmt.FontSize) ? null : fmt.FontSize;
+        _formattingState.FontSizeMixed = fmt.FontSizeMixed;
+        _formattingState.TextColor = string.IsNullOrWhiteSpace(fmt.TextColor) ? null : fmt.TextColor;
+        _formattingState.TextColorMixed = fmt.TextColorMixed;
+        _formattingState.HighlightColor = string.IsNullOrWhiteSpace(fmt.HighlightColor) ? null : fmt.HighlightColor;
+        _formattingState.HighlightColorMixed = fmt.HighlightColorMixed;
+        _formattingState.ParagraphAlignment = ParseCanvasAlignment(fmt.Alignment);
+        _formattingState.ParagraphAlignmentMixed = fmt.AlignmentMixed;
+        _formattingState.LineSpacing = fmt.LineSpacing;
+        _formattingState.LineSpacingMixed = fmt.LineSpacingMixed;
+        _formattingState.SpacingBefore = fmt.SpacingBefore;
+        _formattingState.SpacingBeforeMixed = fmt.SpacingBeforeMixed;
+        _formattingState.SpacingAfter = fmt.SpacingAfter;
+        _formattingState.SpacingAfterMixed = fmt.SpacingAfterMixed;
+        _formattingState.LeftIndent = fmt.LeftIndent;
+        _formattingState.LeftIndentMixed = fmt.LeftIndentMixed;
+        _formattingState.IsBulletList = fmt.BulletList;
+        _formattingState.IsNumberedList = fmt.NumberedList;
+        _formattingState.ListMixed = fmt.ListMixed;
+        if (!string.IsNullOrWhiteSpace(fmt.BlockStyle))
+        {
+            _coreBlockStyle = fmt.BlockStyle;
+        }
+
+        _showRuler = fmt.ShowRuler;
+        _showBlocks = fmt.ShowBlocks;
+        _showNonPrintingCharacters = fmt.ShowNonPrintingCharacters;
+        if (!string.IsNullOrWhiteSpace(fmt.ViewMode))
+        {
+            _canvasViewMode = fmt.ViewMode;
+        }
+
+        if (fmt.ZoomPercent > 0)
+        {
+            _zoomPercent = Math.Clamp(fmt.ZoomPercent, 25, 400);
+        }
+
+        _zoomPageWidth = string.Equals(fmt.ZoomPreset, "fitWidth", StringComparison.OrdinalIgnoreCase);
+        _canvasPrintPreviewActive = fmt.PrintPreviewActive;
+        SyncCanvasActiveImage(fmt.Image);
+    }
+
+    /// <summary>
+    /// Prompt handler for the UI snapshot the engine pushes on a deliberate selection (B2). Applies ONLY the
+    /// formatting pressed-state — the responsiveness target — and re-renders only when it actually changed, so
+    /// the toolbar reflects the selection immediately without the 200&#160;ms toolbar-sync round-trip. Dirty /
+    /// undo / page-count deliberately stay on their existing (debounced) paths: pushing them here would both
+    /// pre-fill the chrome signature (defeating the toolbar-sync render gate) and add a render on every
+    /// selection. The handler is skipped while a mirror-mutating flow is mid-flight (revision/suggestion
+    /// review, save) — those run <c>ReplaceDocumentAsync</c>, which itself emits a selection event, and an
+    /// extra render in the middle of that flow corrupts the canvas update (e.g. an accepted revision marker
+    /// would not clear).
+    /// </summary>
+    private async Task HandleCanvasUiStateChangedAsync(TmDocumentCanvasEngineHost.CanvasEngineUiState? uiState)
+    {
+        if (_disposed
+            || !UsingCanvasEngine
+            || uiState?.Formatting is null
+            || _isReviewingRevision
+            || _isReviewingSuggestion
+            || _isSaving)
+        {
+            return;
+        }
+
+        var before = ComputeChromeStateSignature();
+        ApplyCanvasFormattingState(uiState.Formatting);
+        if (!string.Equals(before, ComputeChromeStateSignature(), StringComparison.Ordinal))
+        {
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private void SyncCanvasActiveImage(TmDocumentCanvasEngineHost.CanvasEngineImageState? image)
@@ -8101,6 +8178,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _isDirty = state.IsDirty;
         ScheduleCanvasToolbarSync();
         ScheduleCanvasDocumentReconcile();
+        // Collaboration relay rides the change-notify path (already debounced ~400 ms by the JS engine), so
+        // collaborators see edits quickly without coupling to the heavy document reconcile.
+        if (_useEngineOperationRelay)
+        {
+            return RelayLocalOperationsAsync();
+        }
+
         return Task.CompletedTask;
     }
 
@@ -8142,6 +8226,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         // render tree (~200 ms) — would be pure waste. Gating it keeps continuous typing at canvas speed.
         var before = ComputeChromeStateSignature();
         await SyncCanvasEngineStateAsync();
+        // The dirty flag is refreshed by SyncCanvasEngineStateAsync above; keep the before-unload guard and the
+        // autosave pending-action in lock-step with it here (not only in the slow document reconcile) so the
+        // navigation guard arms as soon as the dirty-status indicator renders after an edit settles.
+        SyncAutosavePendingAction();
+        await UpdateBeforeUnloadGuardAsync();
         await BroadcastCollaborationCursorAsync();
         if (!string.Equals(before, ComputeChromeStateSignature(), StringComparison.Ordinal))
         {
@@ -8194,6 +8283,36 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await InvokeAsync(ReconcileCanvasDocumentAsync);
     }
 
+    /// <summary>
+    /// Pulls the canvas engine's live model into the C# mirror (<c>_document</c>/<c>_currentDocument</c>)
+    /// without any of the reconcile's autosave/render side effects. With operation-relay (B1) the mirror is
+    /// only refreshed lazily by the debounced reconcile, so any discrete action that still reads or mutates
+    /// <c>_document</c> and pushes it back (revision review, etc.) MUST refresh it first or it operates on a
+    /// stale snapshot and clobbers the canvas. Returns true when the mirror now reflects the engine.
+    /// </summary>
+    private async Task<bool> EnsureCanvasMirrorCurrentAsync()
+    {
+        if (_disposed || !UsingCanvasEngine || _canvasHost is null)
+        {
+            return false;
+        }
+
+        var canvasDocument = await _canvasHost.RequestDocumentAsync();
+        if (canvasDocument is null)
+        {
+            return false;
+        }
+
+        var synchronizedDocument = CreateProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
+        _document = synchronizedDocument;
+        _currentDocument = synchronizedDocument;
+        // The engine already holds this exact model (we just pulled it). Tell the host so the upcoming
+        // re-render does not serialize + replaceModel it back, which would re-notify and loop.
+        _canvasHost.MarkDocumentMounted(synchronizedDocument);
+        SyncCommentsFromRuntimeDocument(synchronizedDocument);
+        return true;
+    }
+
     /// <summary>Pulls the canonical document out of the canvas engine once typing settles.</summary>
     private async Task ReconcileCanvasDocumentAsync()
     {
@@ -8202,24 +8321,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
-        var collaborationBefore = !_suppressCollaborationBroadcast && _document is not null
+        // With operation-relay (B1) collaboration is driven by the engine op-log on the change-notify path,
+        // so the reconcile no longer needs the before-snapshot or the C# diff broadcast.
+        var collaborationBefore = !_useEngineOperationRelay && !_suppressCollaborationBroadcast && _document is not null
             ? Clone(_collaborationSnapshot ?? _document)
             : null;
 
-        var canvasDocument = await _canvasHost.RequestDocumentAsync();
-        if (canvasDocument is not null)
+        if (await EnsureCanvasMirrorCurrentAsync()
+            && collaborationBefore is not null
+            && _document is not null
+            && !DocumentsEqual(collaborationBefore, _document))
         {
-            var synchronizedDocument = CreateProviderBoundarySnapshot(canvasDocument, preserveImageBlocks: true);
-            _document = synchronizedDocument;
-            _currentDocument = synchronizedDocument;
-            // The engine already holds this exact model (we just pulled it). Tell the host so the upcoming
-            // re-render does not serialize + replaceModel it back, which would re-notify and loop.
-            _canvasHost.MarkDocumentMounted(synchronizedDocument);
-            SyncCommentsFromRuntimeDocument(synchronizedDocument);
-            if (collaborationBefore is not null && !DocumentsEqual(collaborationBefore, synchronizedDocument))
-            {
-                await BroadcastLocalCollaborationChangeAsync(collaborationBefore, synchronizedDocument);
-            }
+            await BroadcastLocalCollaborationChangeAsync(collaborationBefore, _document);
         }
 
         if (_isDirty && _document is not null && !EffectiveReadOnly)
@@ -10665,6 +10778,58 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             CollaborationSyncInterval);
     }
 
+    /// <summary>
+    /// Phase B1 operation-relay: drains the canvas engine's pending local op-log batches and forwards each
+    /// verbatim to collaborators (as an opaque <see cref="DocumentOperationBatch.CanvasOperationBatchJson"/>),
+    /// with NO C# document diff and NO dependency on the _document mirror. Runs on the change-notify path
+    /// (~400 ms after typing settles), so collaboration latency is ~400 ms — not coupled to the 2.5 s reconcile.
+    /// </summary>
+    private async Task RelayLocalOperationsAsync()
+    {
+        if (_disposed
+            || !UsingCanvasEngine
+            || _canvasHost is null
+            || _suppressCollaborationBroadcast
+            || CollaborationProvider is null
+            || IsVersionPreview)
+        {
+            return;
+        }
+
+        if (_collaborationSync is null && _document is not null && CanEditDocument)
+        {
+            await EnsureCollaborationStartedAsync();
+        }
+
+        if (_collaborationSync is null || !CanEditDocument)
+        {
+            return;
+        }
+
+        var batches = await _canvasHost.TakeLocalOperationBatchesAsync();
+        if (batches.Count == 0)
+        {
+            return;
+        }
+
+        var documentId = _collaborationSync.Session?.DocumentId ?? _document?.DocumentId ?? string.Empty;
+        foreach (var batchJson in batches)
+        {
+            try
+            {
+                await _collaborationSync.SubmitLocalBatchAsync(new DocumentOperationBatch
+                {
+                    DocumentId = documentId,
+                    CanvasOperationBatchJson = batchJson,
+                });
+            }
+            catch
+            {
+                // Collaboration transport failures must not interrupt local editing.
+            }
+        }
+    }
+
     private async Task BroadcastLocalCollaborationChangeAsync(
         DocumentEditorDocument before,
         DocumentEditorDocument after,
@@ -10753,6 +10918,21 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         await InvokeAsync(async () =>
         {
+            // Phase B operation-relay: a relay batch carries the verbatim canvas op-log JSON and no typed
+            // operations, so the C# applier/mirror-diff path would treat it as a no-op (and bail at the
+            // DocumentsEqual check below). Apply it straight to the canvas engine — the source of truth.
+            if (_useEngineOperationRelay
+                && UsingCanvasEngine
+                && _canvasHost is not null
+                && !string.IsNullOrEmpty(batch.Batch?.CanvasOperationBatchJson))
+            {
+                // The canvas engine applies + repaints the remote edit itself (it owns the model); the toolbar
+                // sync just refreshes dirty/undo chrome.
+                await _canvasHost.ApplyRemoteOperationBatchAsync(batch);
+                ScheduleCanvasToolbarSync();
+                return;
+            }
+
             var result = _collaborationSync.ApplyRemoteBatch(batch);
             if (!result.IsValid || DocumentsEqual(_collaborationSnapshot, _collaborationSync.Document))
             {

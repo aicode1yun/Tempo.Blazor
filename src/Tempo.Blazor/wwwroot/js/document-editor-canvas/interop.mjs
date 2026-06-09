@@ -1,11 +1,16 @@
 import { createCanvasDocumentEngine } from './entry.mjs';
+import { isDeliberateSelectionNotification } from './selection-cadence.mjs';
+import { buildFormattingState } from './format-state.mjs';
 
 const instances = new Map();
 let nextInstanceId = 1;
 
-// Debounce window for the JS->.NET change notification (see notifyChanged). Long enough to coalesce a
-// burst of keystrokes into a single .NET callback, short enough that the toolbar/save state feels live.
-const CHANGE_NOTIFY_DEBOUNCE_MS = 120;
+// Debounce window for JS->.NET notifications (change + selection). Each invokeMethodAsync blocks the
+// single WASM thread, which on a HUMAN typing cadence (~150-250 ms/key) lands BETWEEN keystrokes and makes
+// glyphs appear in batches instead of one-per-key. This window is deliberately wider than typical typing
+// gaps so that during continuous typing/selection NO .NET call fires at all — the canvas paints every key
+// unblocked — and .NET only catches up (toolbar, dirty, reconcile) once the user actually pauses.
+const NET_NOTIFY_DEBOUNCE_MS = 400;
 
 export function createInteropBridge(engine) {
     if (!engine || typeof engine.getSnapshot !== 'function') {
@@ -53,7 +58,20 @@ export function mount(hostElement, mountElement, modelJson, optionsJson, dotNetR
         trackChanges: options.trackChanges,
         reviewDisplayMode: options.trackChanges?.reviewDisplayMode || options.reviewDisplayMode,
         onContextMenu: payload => notifyDotNet(dotNetRef, 'OnCanvasContextMenuRequested', payload),
-        onSelectionChange: payload => notifyDotNet(dotNetRef, 'OnCanvasMiniToolbarChanged', payload),
+        onSelectionChange: payload => {
+            if (!state) {
+                return;
+            }
+            // Carry the toolbar UI snapshot ONLY on a deliberate (range/object) selection — the only case
+            // where the pressed-state must update promptly, and it is low-frequency. Building it for every
+            // collapsed caret move (typing, arrow navigation, the selection reset emitted while a
+            // ReplaceDocumentAsync runs) would add per-event marshalling for no UI benefit and destabilises
+            // heavy flows. Collapsed selections fall through to the debounced toolbar-sync as before.
+            if (payload && typeof payload === 'object' && isDeliberateSelectionNotification(payload)) {
+                payload.uiState = buildUiState(state);
+            }
+            notifySelectionChanged(state, payload);
+        },
         onCommandPaletteRequested: () => notifyDotNet(dotNetRef, 'OnCanvasCommandPaletteRequested', {}),
         onRibbonFocusRequested: () => notifyDotNet(dotNetRef, 'OnCanvasRibbonFocusRequested', {}),
         onVersionsPanelRequested: () => notifyDotNet(dotNetRef, 'OnCanvasVersionsPanelRequested', {}),
@@ -101,10 +119,11 @@ export function dispose(handle) {
         return;
     }
 
-    if (state.changeNotifyTimer) {
+    {
         const view = state.document?.defaultView || globalThis;
-        (view.clearTimeout || clearTimeout)(state.changeNotifyTimer);
-        state.changeNotifyTimer = 0;
+        const clear = view.clearTimeout || clearTimeout;
+        if (state.changeNotifyTimer) { clear(state.changeNotifyTimer); state.changeNotifyTimer = 0; }
+        if (state.selectionNotifyTimer) { clear(state.selectionNotifyTimer); state.selectionNotifyTimer = 0; }
     }
 
     state.engine.destroy();
@@ -168,6 +187,18 @@ export function applyRemoteCursors(handle, cursorsJson) {
 export function getCollaborationStateJson(handle) {
     const state = getInstance(handle);
     return JSON.stringify(state.engine.getSnapshot().collaboration || {});
+}
+
+// B1: hand the engine's pending local operation batches to the host (C#) for relay, clearing them from the
+// op-log. The host forwards each batch verbatim to collaborators (dumb pipe) — no C# document diff needed.
+export function takeLocalOperationBatchesJson(handle) {
+    const state = getInstance(handle);
+    const log = state.engine?.operationLog;
+    if (!log || typeof log.takeLocalBatches !== 'function') {
+        return '[]';
+    }
+
+    return JSON.stringify(log.takeLocalBatches());
 }
 
 export function getOfflineStateJson(handle) {
@@ -239,66 +270,46 @@ export function queryCommand(handle, commandId = null) {
     return JSON.stringify(state.engine.queryCommand(commandId));
 }
 
-export function getFormattingStateJson(handle) {
-    const state = getInstance(handle);
+function readFormattingState(state) {
     // queryCommandState({ includeNavigation: false }) inspects only the current selection (no outline /
     // bookmark walk over the whole document) — far cheaper than the full engine snapshot.
     const formatting = (typeof state.engine.commandRuntime?.queryCommandState === 'function'
         ? state.engine.commandRuntime.queryCommandState({ includeNavigation: false })
         : state.engine.getSnapshot().formatting) || {};
-    const commands = formatting.commands || {};
-    return JSON.stringify({
-        bold: commands.bold?.active === true,
-        boldMixed: commands.bold?.mixed === true,
-        italic: commands.italic?.active === true,
-        italicMixed: commands.italic?.mixed === true,
-        underline: commands.underline?.active === true,
-        underlineMixed: commands.underline?.mixed === true,
-        strikethrough: commands.strikethrough?.active === true,
-        strikethroughMixed: commands.strikethrough?.mixed === true,
-        superscript: commands.superscript?.active === true,
-        superscriptMixed: commands.superscript?.mixed === true,
-        subscript: commands.subscript?.active === true,
-        subscriptMixed: commands.subscript?.mixed === true,
-        smallCaps: commands.smallcaps?.active === true,
-        smallCapsMixed: commands.smallcaps?.mixed === true,
-        allCaps: commands.allcaps?.active === true,
-        allCapsMixed: commands.allcaps?.mixed === true,
-        doubleStrikethrough: commands.doublestrikethrough?.active === true,
-        doubleStrikethroughMixed: commands.doublestrikethrough?.mixed === true,
-        fontFamily: commands.fontfamily?.value || '',
-        fontFamilyMixed: commands.fontfamily?.mixed === true,
-        fontSize: commands.fontsize?.value || '',
-        fontSizeMixed: commands.fontsize?.mixed === true,
-        textColor: commands.textcolor?.value || '',
-        textColorMixed: commands.textcolor?.mixed === true,
-        highlightColor: commands.highlight?.value || '',
-        highlightColorMixed: commands.highlight?.mixed === true,
-        alignment: commands.align?.value || formatting.paragraph?.alignment || 'left',
-        alignmentMixed: commands.align?.mixed === true || formatting.paragraph?.alignmentMixed === true,
-        lineSpacing: Number(commands.lineSpacing?.value ?? formatting.paragraph?.lineSpacing ?? 1) || 1,
-        lineSpacingMixed: commands.lineSpacing?.mixed === true || formatting.paragraph?.lineSpacingMixed === true,
-        spacingBefore: Number(commands.spacingBefore?.value ?? formatting.paragraph?.spacingBefore ?? 0) || 0,
-        spacingBeforeMixed: commands.spacingBefore?.mixed === true || formatting.paragraph?.spacingBeforeMixed === true,
-        spacingAfter: Number(commands.spacingAfter?.value ?? formatting.paragraph?.spacingAfter ?? 0) || 0,
-        spacingAfterMixed: commands.spacingAfter?.mixed === true || formatting.paragraph?.spacingAfterMixed === true,
-        leftIndent: Number(formatting.paragraph?.leftIndent ?? 0) || 0,
-        leftIndentMixed: formatting.paragraph?.leftIndentMixed === true,
-        bulletList: commands.bulletList?.active === true || formatting.paragraph?.bulletList === true,
-        numberedList: commands.numberedList?.active === true || formatting.paragraph?.numberedList === true,
-        listMixed: commands.bulletList?.mixed === true || commands.numberedList?.mixed === true || formatting.paragraph?.listMixed === true,
-        blockStyle: commands.blockStyle?.value || formatting.paragraph?.blockStyle || 'Normal',
-        blockStyleMixed: commands.blockStyle?.mixed === true || formatting.paragraph?.blockStyleMixed === true,
-        showRuler: commands.showRuler?.active !== false,
-        showBlocks: commands.showBlocks?.active === true,
-        showNonPrintingCharacters: commands.toggleNonPrintingCharacters?.active === true,
-        viewMode: formatting.view?.viewMode || formatting.view?.mode || 'print',
-        zoomPercent: Number(formatting.view?.zoomPercent || formatting.view?.zoom?.percent || 100) || 100,
-        zoomPreset: formatting.view?.zoomPreset || formatting.view?.zoom?.preset || 'custom',
-        toolbarHidden: formatting.view?.toolbarHidden === true,
-        printPreviewActive: formatting.view?.printPreview?.active === true,
-        image: formatting.image || null,
-    });
+    return buildFormattingState(formatting);
+}
+
+function readUndoState(state) {
+    // history.snapshot() only reads the undo/redo stack lengths — cheap, unlike the full engine snapshot.
+    const history = (typeof state.engine.history?.snapshot === 'function'
+        ? state.engine.history.snapshot()
+        : state.engine.getSnapshot().history) || {};
+    return {
+        canUndo: (history.undoDepth || 0) > 0,
+        canRedo: (history.redoDepth || 0) > 0,
+    };
+}
+
+// Small, primitives-only UI snapshot pushed to .NET alongside the change + deliberate-selection events so the
+// toolbar pressed-state / dirty / undo availability / page count update WITHOUT a round-trip of interop pulls
+// (B2). Everything here is O(selection) or O(1): formatting reads the current selection only, undo reads stack
+// depths, pageCount reads the already-computed layout. Word count stays C#-side for now (it is O(document) and
+// not latency-critical; it rides the debounced reconcile — revisit when the mirror is removed in B6).
+function buildUiState(state) {
+    const undo = readUndoState(state);
+    return {
+        formatting: readFormattingState(state),
+        isDirty: isDirtyForState(state),
+        canUndo: undo.canUndo,
+        canRedo: undo.canRedo,
+        pageCount: Array.isArray(state.engine.lastLayout?.pages) ? state.engine.lastLayout.pages.length : 0,
+        modelVersion: engineModelVersion(state),
+    };
+}
+
+export function getFormattingStateJson(handle) {
+    const state = getInstance(handle);
+    return JSON.stringify(readFormattingState(state));
 }
 
 export function getPrintPreviewStateJson(handle) {
@@ -312,14 +323,7 @@ export function getPrintPreviewStateJson(handle) {
 
 export function getUndoStateJson(handle) {
     const state = getInstance(handle);
-    // history.snapshot() only reads the undo/redo stack lengths — cheap, unlike the full engine snapshot.
-    const history = (typeof state.engine.history?.snapshot === 'function'
-        ? state.engine.history.snapshot()
-        : state.engine.getSnapshot().history) || {};
-    return JSON.stringify({
-        canUndo: (history.undoDepth || 0) > 0,
-        canRedo: (history.redoDepth || 0) > 0,
-    });
+    return JSON.stringify(readUndoState(state));
 }
 
 export function getSelectionStateJson(handle) {
@@ -485,7 +489,43 @@ function notifyChanged(state) {
             isDirty: isDirtyForState(state),
             modelVersion: engineModelVersion(state),
         });
-    }, CHANGE_NOTIFY_DEBOUNCE_MS);
+    }, NET_NOTIFY_DEBOUNCE_MS);
+}
+
+// Selection changes split into two cadences:
+//   * A DELIBERATE selection (a placed range or an object selection -> isVisible, or any non-collapsed
+//     selection) is low-frequency and drives the floating mini toolbar + toolbar pressed-state. The user is
+//     waiting on it, and pointer features (ctrl+click a link, right-click a misspelling) are positioned
+//     against it, so it must reach .NET PROMPTLY. Debouncing it regressed those interactions.
+//   * A COLLAPSED caret fires on every keystroke during typing and on every arrow-key move. Notifying .NET
+//     per key blocks the single WASM thread BETWEEN keystrokes and batches the glyphs, so it is debounced;
+//     the toolbar/mini-toolbar simply catch up once the caret settles. The latest payload wins.
+function notifySelectionChanged(state, payload) {
+    const view = state.document?.defaultView || globalThis;
+    const clear = view.clearTimeout || clearTimeout;
+    const set = view.setTimeout || setTimeout;
+
+    if (isDeliberateSelectionNotification(payload)) {
+        // Cancel any pending collapsed-caret notification so a stale "selection hidden" cannot land after the
+        // deliberate selection we are about to publish, then notify immediately.
+        if (state.selectionNotifyTimer) {
+            clear(state.selectionNotifyTimer);
+            state.selectionNotifyTimer = 0;
+        }
+        state.pendingSelectionPayload = null;
+        notifyDotNet(state.dotNetRef, 'OnCanvasMiniToolbarChanged', payload);
+        return;
+    }
+
+    state.pendingSelectionPayload = payload;
+    if (state.selectionNotifyTimer) {
+        clear(state.selectionNotifyTimer);
+    }
+
+    state.selectionNotifyTimer = set(() => {
+        state.selectionNotifyTimer = 0;
+        notifyDotNet(state.dotNetRef, 'OnCanvasMiniToolbarChanged', state.pendingSelectionPayload);
+    }, NET_NOTIFY_DEBOUNCE_MS);
 }
 
 function notifyDotNet(dotNetRef, methodName, payload) {

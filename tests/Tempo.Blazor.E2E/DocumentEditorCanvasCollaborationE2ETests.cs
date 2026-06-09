@@ -15,6 +15,37 @@ public sealed class DocumentEditorCanvasCollaborationE2ETests : WasmTestBase
     private const string CollaborationDocumentPrefix = "phase-20-canvas-collaboration-offline";
 
     [TestMethod]
+    public async Task ReceiverCanTypeAfterRemoteApply_PresenceCaretDoesNotBlockClicks()
+    {
+        // Regression for the Phase B operation-relay collaboration bug: a remote collaborator's presence
+        // caret renders at the end of the text — exactly where the local user clicks to resume editing. The
+        // overlay used to capture that click (pointer-events), so the canvas never received the mousedown,
+        // the hidden input was not focused and the user could no longer type. The overlay is now
+        // pointer-events:none. Here: A receives B's edit, then A must still be able to click + type.
+        var documentId = $"{CollaborationDocumentPrefix}-{Guid.NewGuid():N}";
+        var ctxA = await CreateContextAsync();
+        var ctxB = await CreateContextAsync();
+        var pageA = await OpenCanvasCollaborationTabAsync(ctxA, documentId);
+        var pageB = await OpenCanvasCollaborationTabAsync(ctxB, documentId);
+        await WaitForMirrorTextAsync(pageA, BodyBlockId, "Start");
+        await WaitForMirrorTextAsync(pageB, BodyBlockId, "Start");
+
+        // B edits -> A receives the remote apply and shows B's presence caret at the text end.
+        await TypeAtEndAsync(pageB, BodyBlockId, "-B");
+        await WaitForMirrorTextContainsAsync(pageA, BodyBlockId, "-B");
+
+        // The remote caret overlay must not intercept pointer events.
+        var caretBlocksClicks = await pageA.EvaluateAsync<bool>(
+            @"() => { const c = document.querySelector('[data-testid=""document-canvas-remote-caret""]'); return c ? getComputedStyle(c).pointerEvents !== 'none' : false; }");
+        caretBlocksClicks.Should().BeFalse("the presence caret overlay must be pointer-events:none");
+
+        // A clicks where B's caret is (end of text) and types — this must work.
+        await TypeAtEndAsync(pageA, BodyBlockId, "-A");
+        await WaitForMirrorTextContainsAsync(pageA, BodyBlockId, "-B-A");
+        (await ReadMirrorTextAsync(pageA, BodyBlockId)).Should().Be("Start-B-A");
+    }
+
+    [TestMethod]
     public async Task Phase20_TwoCanvasEditors_ConvergeAndRenderRemoteCaret_OverSignalR()
     {
         var documentId = $"{CollaborationDocumentPrefix}-{Guid.NewGuid():N}";
