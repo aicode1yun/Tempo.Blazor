@@ -27,17 +27,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private readonly DocumentEditorFeatureRegistry _featureRegistry = DocumentEditorBuiltInFeatures.CreateDefaultRegistry();
     private const long MaxDocumentFormatImportSize = 20 * 1024 * 1024;
     private Timer? _autoSaveTimer;
-    private int _canvasReconcileSeq;
     private int _canvasToolbarSyncSeq;
+    // B6: set when the engine model actually changes (the change-notify path), so the debounced toolbar sync —
+    // which also fires on pure selection moves — runs the light annotation pull ONLY after a real edit settles.
+    // This (with autosave on the change-notify) replaced the heavy per-pause document reconcile entirely.
+    private bool _canvasModelChangedSinceSync;
     // Last before-unload guard state pushed to JS; lets UpdateBeforeUnloadGuardAsync skip a redundant interop
     // call when the desired state is unchanged, so it is safe to invoke from the debounced toolbar-sync.
     private bool? _beforeUnloadGuardActive;
-    // Toolbar/formatting readback is cheap + gated, so it can fire shortly after a pause. The canonical
-    // document reconciliation (full model marshal JS->C# + convert) is heavier, only feeds non-realtime
-    // consumers (word count, collaboration, comments — save always pulls fresh), and must NOT fire during
-    // active composition; a long debounce keeps it off the typing path entirely (it runs once the user
-    // genuinely stops). Per-keystroke painting is unaffected (it is pure canvas, ~5 ms).
-    private static readonly TimeSpan CanvasDocumentReconcileDebounce = TimeSpan.FromMilliseconds(2500);
+    // Toolbar/formatting readback is cheap + gated, so it can fire shortly after a pause; it must NOT run on
+    // every keystroke (the re-render it drives is not cheap). Per-keystroke painting is pure canvas (~5 ms).
     private static readonly TimeSpan CanvasToolbarSyncDebounce = TimeSpan.FromMilliseconds(200);
     private Timer? _collaborationTimer;
     private TimeSpan? _configuredAutoSaveInterval;
@@ -278,6 +277,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private DocumentEditorDocument? _templatePreviewDocument;
     private IReadOnlyList<DocumentVersion> _versions = [];
     private IReadOnlyList<DocumentComment> _comments = [];
+    // Revisions pulled live from the canvas engine (B3). When set, the revision panel reads these instead of
+    // the C# document mirror, so it no longer depends on the debounced reconcile. Null until the first pull.
+    private IReadOnlyList<DocumentRevision>? _canvasRevisions;
     private IReadOnlyList<DocumentSuggestion> _suggestions = [];
     private IReadOnlyList<DocumentFontFamily> _fontFamilies = [];
     private DocumentVersion? _previewVersion;
@@ -637,9 +639,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         && !IsVersionPreview
         && !IsTemplatePreview;
 
-    private bool HasPendingRevisions => _document?.Revisions.Any(revision => revision.Action == DocumentRevisionAction.Pending) == true;
+    // Revision badge / count read the engine-sourced list (B3) when available, falling back to the mirror.
+    private IReadOnlyList<DocumentRevision> DisplayedRevisions => _canvasRevisions ?? _document?.Revisions ?? [];
 
-    private int PendingRevisionCount => _document?.Revisions.Count(revision => revision.Action == DocumentRevisionAction.Pending) ?? 0;
+    private bool HasPendingRevisions => DisplayedRevisions.Any(revision => revision.Action == DocumentRevisionAction.Pending);
+
+    private int PendingRevisionCount => DisplayedRevisions.Count(revision => revision.Action == DocumentRevisionAction.Pending);
 
     private int OpenCommentCount => _comments.Count(comment => comment.Status == DocumentCommentStatus.Open);
 
@@ -652,6 +657,48 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private string ActiveSidePanelDataValue => ActiveSidePanelTab.ToString().ToLowerInvariant();
 
     private bool EffectiveTrackChangesEnabled => _trackChangesEnabled;
+
+    // B4: the canvas engine has no separate provider-backed suggestion mode; its native "propose + review an
+    // edit" mechanism IS track-changes (revisions: inline overlay + accept/reject, built in B3). So when the
+    // host enables suggestion mode on the canvas engine, drive the engine's track-changes — every edit then
+    // becomes a reviewable revision (a suggestion), with no continuous C# mirror. No-op (== _trackChangesEnabled)
+    // when suggestions are not enabled, so the explicit track-changes toggle and existing tests are unaffected.
+    private bool CanvasEngineTracksChanges => _trackChangesEnabled || (UsingCanvasEngine && _suggestionsEnabled);
+
+    // B4 Slice 2: in canvas suggestion mode the proposed edits ARE the engine's revisions (Slice 1). Surface
+    // them in the suggestion panel by mapping the live revision list to suggestions, and review them through
+    // the engine revision review (B3) instead of the provider diff path. This keeps suggestion mode entirely
+    // engine-backed (no continuous mirror) while reusing the canvas's native propose/overlay/accept machinery.
+    private bool IsCanvasSuggestionMode => UsingCanvasEngine && _suggestionsEnabled;
+
+    private IReadOnlyList<DocumentSuggestion> DisplayedSuggestions => IsCanvasSuggestionMode
+        ? (_canvasRevisions ?? [])
+            .Where(revision => revision.Action == DocumentRevisionAction.Pending)
+            .Select(MapRevisionToSuggestion)
+            .ToList()
+        : _suggestions;
+
+    private DocumentSuggestion MapRevisionToSuggestion(DocumentRevision revision) => new()
+    {
+        Id = revision.Id,
+        DocumentId = _document?.DocumentId ?? DocumentId ?? string.Empty,
+        Type = revision.Type switch
+        {
+            DocumentRevisionType.Insertion => DocumentSuggestionType.InsertText,
+            DocumentRevisionType.Deletion => DocumentSuggestionType.DeleteText,
+            DocumentRevisionType.Formatting => DocumentSuggestionType.Formatting,
+            _ => DocumentSuggestionType.ReplaceText,
+        },
+        Range = revision.Range,
+        Author = revision.Author,
+        Status = revision.Action switch
+        {
+            DocumentRevisionAction.Accepted => DocumentSuggestionStatus.Accepted,
+            DocumentRevisionAction.Rejected => DocumentSuggestionStatus.Rejected,
+            _ => DocumentSuggestionStatus.Pending,
+        },
+        CreatedAt = revision.CreatedAt,
+    };
 
     private DocumentSection? ActiveSection => DisplayedDocument?.Sections.OrderBy(section => section.Order).FirstOrDefault();
 
@@ -720,6 +767,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private bool _statsComputed;
     private int _cachedWordCount;
     private int _cachedPageCount;
+    // B6: word/page count pushed live from the canvas engine's annotation pull. With the per-edit document
+    // mirror gone, the mirror-derived counts (CountWords(DisplayedDocument)) freeze during typing, so under the
+    // canvas engine the status bar reads these engine-sourced counts instead. Null until the first pull.
+    private int? _canvasPushedWordCount;
+    private int? _canvasPushedPageCount;
 
     private void EnsureDocumentStatistics()
     {
@@ -739,6 +791,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         get
         {
+            if (UsingCanvasEngine && _canvasPushedWordCount is int pushed)
+            {
+                return pushed;
+            }
+
             EnsureDocumentStatistics();
             return _cachedWordCount;
         }
@@ -748,6 +805,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     {
         get
         {
+            if (UsingCanvasEngine && _canvasPushedPageCount is int pushed && pushed > 0)
+            {
+                return pushed;
+            }
+
             EnsureDocumentStatistics();
             return _cachedPageCount;
         }
@@ -1021,6 +1083,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _templatePreviewDocument = null;
             _templatePreviewEnabled = false;
             _comments = [];
+            // Clear engine-sourced revisions + counts on (re)load so a new document never briefly shows the
+            // previous document's revisions/word-count before the next annotation pull (B3/B6).
+            _canvasRevisions = null;
+            _canvasPushedWordCount = null;
+            _canvasPushedPageCount = null;
             _draftCommentAnchor = null;
             _versionDialogOpen = false;
             _compareDialogOpen = false;
@@ -6717,10 +6784,26 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     }
 
     private Task AcceptSuggestionAsync(DocumentSuggestion suggestion)
-        => ReviewSuggestionAsync(suggestion, DocumentSuggestionStatus.Accepted);
+        => ReviewSuggestionRoutedAsync(suggestion, accepted: true);
 
     private Task RejectSuggestionAsync(DocumentSuggestion suggestion)
-        => ReviewSuggestionAsync(suggestion, DocumentSuggestionStatus.Rejected);
+        => ReviewSuggestionRoutedAsync(suggestion, accepted: false);
+
+    // B4 Slice 2: in canvas suggestion mode a "suggestion" is an engine revision, so route its accept/reject to
+    // the engine revision review (B3) by id; otherwise use the provider suggestion review (wysiwyg).
+    private Task ReviewSuggestionRoutedAsync(DocumentSuggestion suggestion, bool accepted)
+    {
+        if (IsCanvasSuggestionMode && _canvasRevisions is not null)
+        {
+            var revision = _canvasRevisions.FirstOrDefault(item => item.Id == suggestion.Id);
+            if (revision is not null)
+            {
+                return ReviewRevisionAsync(revision, accepted ? DocumentRevisionAction.Accepted : DocumentRevisionAction.Rejected);
+            }
+        }
+
+        return ReviewSuggestionAsync(suggestion, accepted ? DocumentSuggestionStatus.Accepted : DocumentSuggestionStatus.Rejected);
+    }
 
     private async Task SelectRevision(DocumentRevision revision)
     {
@@ -6800,6 +6883,28 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _isReviewingRevision = true;
         try
         {
+            filter ??= new DocumentRevisionFilter();
+
+            if (UsingCanvasEngine && _canvasHost is not null)
+            {
+                // B3: route accept-all / reject-all to the engine (no mirror round-trips). The engine applies
+                // every matching pending revision to its own model + redraws; collaboration rides the relay.
+                _revisionMessage = null;
+                var reviewedCount = DisplayedRevisions.Count(r => r.Action == DocumentRevisionAction.Pending && filter.Matches(r));
+                var commandId = action == DocumentRevisionAction.Accepted ? "acceptallrevisions" : "rejectallrevisions";
+                await _canvasHost.ExecCommandAsync(commandId, new
+                {
+                    authorId = filter.AuthorId,
+                    type = filter.Type?.ToString(),
+                });
+                _isDirty = true;
+                await PullCanvasAnnotationsAsync();
+                _revisionMessage = action == DocumentRevisionAction.Accepted
+                    ? Loc["TmDocumentEditor_AllRevisionsAccepted", reviewedCount]
+                    : Loc["TmDocumentEditor_AllRevisionsRejected", reviewedCount];
+                return;
+            }
+
             // Under operation-relay the C# mirror lags the engine; refresh it before collecting + mutating the
             // revisions and pushing the document back, so we act on the engine's live revision set.
             await EnsureCanvasMirrorCurrentAsync();
@@ -6808,7 +6913,6 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 return;
             }
 
-            filter ??= new DocumentRevisionFilter();
             var revisions = _document.Revisions
                 .Where(revision => revision.Action == DocumentRevisionAction.Pending)
                 .Where(filter.Matches)
@@ -6904,6 +7008,23 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _isReviewingRevision = true;
         try
         {
+            if (UsingCanvasEngine && _canvasHost is not null)
+            {
+                // B3: route a single accept/reject straight to the engine — it mutates its own model, redraws
+                // the marker away and records undo. This avoids the C# mirror pull + ReplaceDocumentAsync
+                // round-trips (two full-document marshals) that made the accept slow + flaky; collaboration
+                // rides the change relay.
+                _revisionMessage = null;
+                var commandId = action == DocumentRevisionAction.Accepted ? "acceptrevision" : "rejectrevision";
+                await _canvasHost.ExecCommandAsync(commandId, new { revisionId = revision.Id });
+                _isDirty = true;
+                await PullCanvasAnnotationsAsync();
+                _revisionMessage = action == DocumentRevisionAction.Accepted
+                    ? Loc["TmDocumentEditor_RevisionAccepted"]
+                    : Loc["TmDocumentEditor_RevisionRejected"];
+                return;
+            }
+
             // Under operation-relay the C# mirror lags the engine, so refresh it before mutating + pushing it
             // back; otherwise ReplaceDocumentAsync would clobber the canvas with a stale document and the
             // revision marker would never clear.
@@ -7755,6 +7876,26 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Light pull (B3/B6) of the engine's comment + revision lists AND live word/page counts into the rail /
+    /// revision panel / status bar — no full-document marshal. Gated to model-change toolbar syncs + the
+    /// revision review (not pure selection syncs) to avoid per-selection load. This is the engine-sourced path
+    /// that replaced the removed per-edit document reconcile in B6.
+    /// </summary>
+    private async Task PullCanvasAnnotationsAsync()
+    {
+        if (_canvasHost is null)
+        {
+            return;
+        }
+
+        var annotations = await _canvasHost.GetAnnotationsAsync();
+        _comments = annotations.Comments.Select(CloneForEditor).ToList();
+        _canvasRevisions = annotations.Revisions;
+        _canvasPushedWordCount = annotations.WordCount;
+        _canvasPushedPageCount = annotations.PageCount;
+    }
+
     /// <summary>Maps a canvas formatting snapshot onto the toolbar/view state. Shared by the interop pull
     /// (<see cref="SyncCanvasEngineStateAsync"/>) and the pushed UI state (<see cref="ApplyCanvasUiState"/>).</summary>
     private void ApplyCanvasFormattingState(TmDocumentCanvasEngineHost.CanvasEngineFormattingState? fmt)
@@ -8162,30 +8303,33 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private Task HandleCanvasEngineReadyAsync(TmDocumentCanvasEngineHost _)
         => SyncCanvasEngineStateAsync();
 
-    private Task HandleCanvasEngineChangedAsync(TmDocumentCanvasEngineHost.CanvasEngineChangedState state)
+    private async Task HandleCanvasEngineChangedAsync(TmDocumentCanvasEngineHost.CanvasEngineChangedState state)
     {
         if (_disposed || !UsingCanvasEngine)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        // Per-keystroke fast path MUST be O(1). Everything that touches the whole document — the toolbar
-        // state readback (formatting query walks outline + bookmarks), the canonical-document reconciliation
-        // (full model marshal JS->C# + provider snapshot + deep collaboration diff), AND the (heavy)
-        // component re-render — is coalesced into a single debounced pass that runs after typing settles.
-        // The change payload already carries dirty + model version, so no interop is needed here. This is
-        // safe because Save/RequestDocumentAsync always pull a fresh canonical document from the engine.
+        // The change-notify is already debounced ~400 ms by the JS engine, so this runs once after the user
+        // pauses — NOT per keystroke (continuous typing keeps resetting the JS debounce, so nothing here fires
+        // mid-typing and the canvas paints every key unblocked). B6: there is NO per-edit canonical-document
+        // reconcile anymore — the engine is the single source of truth and Save/export/compare pull a fresh
+        // document on demand (B5). No full-model JS->C# marshal ever runs, which removes the ~700 ms jank.
         _isDirty = state.IsDirty;
+        _canvasModelChangedSinceSync = true;
+        // Arm autosave (O(1)) + surface dirty/autosave-pending status promptly. The debounced toolbar sync
+        // below then does the light interop reads (toolbar state) + light annotation pull (comments/revisions).
+        RegisterCanvasAutosaveAfterEdit();
+        SyncAutosavePendingAction();
         ScheduleCanvasToolbarSync();
-        ScheduleCanvasDocumentReconcile();
-        // Collaboration relay rides the change-notify path (already debounced ~400 ms by the JS engine), so
-        // collaborators see edits quickly without coupling to the heavy document reconcile.
+        await UpdateBeforeUnloadGuardAsync();
+        await InvokeAsync(StateHasChanged);
+        // Collaboration relay rides this change-notify path, so collaborators see edits quickly without
+        // coupling to any document reconcile.
         if (_useEngineOperationRelay)
         {
-            return RelayLocalOperationsAsync();
+            await RelayLocalOperationsAsync();
         }
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -8226,9 +8370,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         // render tree (~200 ms) — would be pure waste. Gating it keeps continuous typing at canvas speed.
         var before = ComputeChromeStateSignature();
         await SyncCanvasEngineStateAsync();
-        // The dirty flag is refreshed by SyncCanvasEngineStateAsync above; keep the before-unload guard and the
-        // autosave pending-action in lock-step with it here (not only in the slow document reconcile) so the
-        // navigation guard arms as soon as the dirty-status indicator renders after an edit settles.
+        // B6: after a REAL edit settles (model changed, not a pure selection move), refresh the comment rail /
+        // revision panel from the engine via a LIGHT annotation pull (just the two lists — no full-document
+        // marshal) and register autosave. This replaces the removed heavy per-pause document reconcile, so no
+        // ~700 ms full-model JS->C# marshal ever runs after typing. Skipped during mirror-mutating reviews.
+        if (_canvasModelChangedSinceSync && !_isReviewingRevision && !_isReviewingSuggestion && !_isSaving)
+        {
+            _canvasModelChangedSinceSync = false;
+            await PullCanvasAnnotationsAsync();
+        }
+
+        // Keep the before-unload guard + autosave pending-action in lock-step with the dirty flag refreshed
+        // above so the navigation guard arms as soon as the dirty-status indicator renders after an edit.
         SyncAutosavePendingAction();
         await UpdateBeforeUnloadGuardAsync();
         await BroadcastCollaborationCursorAsync();
@@ -8238,50 +8391,42 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
     }
 
+    /// <summary>Registers the local edit with autosave after a settled canvas edit (formerly done by the
+    /// per-pause document reconcile, removed in B6). The actual save pulls a fresh document on demand.</summary>
+    private void RegisterCanvasAutosaveAfterEdit()
+    {
+        if (_isDirty && !EffectiveReadOnly)
+        {
+            _autosave.RegisterLocalChange();
+            if (_isSaving)
+            {
+                _saveAgainRequested = true;
+            }
+
+            ScheduleAutoSave();
+        }
+        else if (!_isDirty)
+        {
+            _autosave.ResetSynchronized();
+        }
+    }
+
     /// <summary>Cheap fingerprint of all toolbar/status-bar-visible state, to skip redundant chrome re-renders.</summary>
     private string ComputeChromeStateSignature()
     {
         var f = _formattingState;
         var u = EffectiveUndoState;
-        return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{_isDirty}|{u.CanUndo}|{u.CanRedo}|{_isSaving}|{_saveMessage}|{f.Bold}|{f.Italic}|{f.Underline}|{f.Strikethrough}|{f.Superscript}|{f.Subscript}|{f.SmallCaps}|{f.AllCaps}|{f.DoubleStrikethrough}|{f.FontFamily}|{f.FontFamilyMixed}|{f.FontSize}|{f.FontSizeMixed}|{f.TextColor}|{f.TextColorMixed}|{f.HighlightColor}|{f.HighlightColorMixed}|{f.ParagraphAlignment}|{f.ParagraphAlignmentMixed}|{f.LineSpacing}|{f.LineSpacingMixed}|{f.SpacingBefore}|{f.SpacingAfter}|{f.LeftIndent}|{f.IsBulletList}|{f.IsNumberedList}|{f.ListMixed}|{_coreBlockStyle}|{_showRuler}|{_showBlocks}|{_showNonPrintingCharacters}|{_canvasViewMode}|{_miniToolbar is not null}");
+        // Comment + revision counts + pending-action state are included so the light annotation pull + autosave
+        // registration (B6, formerly done by the always-rendering document reconcile) re-render the comment
+        // rail / revision + suggestion panels and the autosave/pending status when they change.
+        var annotations = $"{_comments.Count}:{_canvasRevisions?.Count ?? 0}:{PendingRevisionCount}:{_pendingActions.Count}:{_pendingActions.FirstMessage}";
+        return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{_isDirty}|{u.CanUndo}|{u.CanRedo}|{_isSaving}|{_saveMessage}|{f.Bold}|{f.Italic}|{f.Underline}|{f.Strikethrough}|{f.Superscript}|{f.Subscript}|{f.SmallCaps}|{f.AllCaps}|{f.DoubleStrikethrough}|{f.FontFamily}|{f.FontFamilyMixed}|{f.FontSize}|{f.FontSizeMixed}|{f.TextColor}|{f.TextColorMixed}|{f.HighlightColor}|{f.HighlightColorMixed}|{f.ParagraphAlignment}|{f.ParagraphAlignmentMixed}|{f.LineSpacing}|{f.LineSpacingMixed}|{f.SpacingBefore}|{f.SpacingAfter}|{f.LeftIndent}|{f.IsBulletList}|{f.IsNumberedList}|{f.ListMixed}|{_coreBlockStyle}|{_showRuler}|{_showBlocks}|{_showNonPrintingCharacters}|{_canvasViewMode}|{_miniToolbar is not null}|{annotations}");
     }
 
-    /// <summary>Debounces the heavy canonical-document reconciliation after a burst of canvas edits.</summary>
-    /// <remarks>
-    /// Uses a monotonic sequence + <see cref="Task.Delay(TimeSpan)"/> rather than a <see cref="Timer"/>:
-    /// in the single-threaded WASM runtime a re-scheduled <see cref="Timer"/> did not reliably cancel its
-    /// already-queued callback, so a burst of keystrokes fired one heavy reconcile PER key instead of one
-    /// for the whole burst. The sequence guard guarantees only the last keystroke's delayed task proceeds.
-    /// </remarks>
-    private void ScheduleCanvasDocumentReconcile()
-    {
-        if (_disposed || !UsingCanvasEngine || _canvasHost is null)
-        {
-            return;
-        }
-
-        var seq = ++_canvasReconcileSeq;
-        _ = DebouncedCanvasReconcileAsync(seq);
-    }
-
-    private async Task DebouncedCanvasReconcileAsync(int seq)
-    {
-        try
-        {
-            await Task.Delay(CanvasDocumentReconcileDebounce);
-        }
-        catch (TaskCanceledException)
-        {
-            return;
-        }
-
-        if (seq != _canvasReconcileSeq || _disposed || !UsingCanvasEngine)
-        {
-            return;
-        }
-
-        await InvokeAsync(ReconcileCanvasDocumentAsync);
-    }
+    // B6: ScheduleCanvasDocumentReconcile / DebouncedCanvasReconcileAsync / ReconcileCanvasDocumentAsync —
+    // the per-pause full-document reconcile — were REMOVED. The engine is the single source of truth; the
+    // comment rail / revision panel / word + page counts come from the light annotation pull, autosave +
+    // collaboration ride the change-notify, and Save/export/compare pull a fresh document on demand (B5).
 
     /// <summary>
     /// Pulls the canvas engine's live model into the C# mirror (<c>_document</c>/<c>_currentDocument</c>)
@@ -8310,49 +8455,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         // re-render does not serialize + replaceModel it back, which would re-notify and loop.
         _canvasHost.MarkDocumentMounted(synchronizedDocument);
         SyncCommentsFromRuntimeDocument(synchronizedDocument);
+        // Keep the engine-sourced revision list (B3) in step with the freshly pulled document so the revision
+        // panel reflects an accept/reject immediately, not only after the next debounced annotations pull.
+        _canvasRevisions = synchronizedDocument.Revisions;
         return true;
-    }
-
-    /// <summary>Pulls the canonical document out of the canvas engine once typing settles.</summary>
-    private async Task ReconcileCanvasDocumentAsync()
-    {
-        if (_disposed || !UsingCanvasEngine || _canvasHost is null)
-        {
-            return;
-        }
-
-        // With operation-relay (B1) collaboration is driven by the engine op-log on the change-notify path,
-        // so the reconcile no longer needs the before-snapshot or the C# diff broadcast.
-        var collaborationBefore = !_useEngineOperationRelay && !_suppressCollaborationBroadcast && _document is not null
-            ? Clone(_collaborationSnapshot ?? _document)
-            : null;
-
-        if (await EnsureCanvasMirrorCurrentAsync()
-            && collaborationBefore is not null
-            && _document is not null
-            && !DocumentsEqual(collaborationBefore, _document))
-        {
-            await BroadcastLocalCollaborationChangeAsync(collaborationBefore, _document);
-        }
-
-        if (_isDirty && _document is not null && !EffectiveReadOnly)
-        {
-            _autosave.RegisterLocalChange();
-            if (_isSaving)
-            {
-                _saveAgainRequested = true;
-            }
-
-            ScheduleAutoSave();
-        }
-        else if (!_isDirty)
-        {
-            _autosave.ResetSynchronized();
-        }
-
-        SyncAutosavePendingAction();
-        await UpdateBeforeUnloadGuardAsync();
-        await InvokeAsync(StateHasChanged);
     }
 
     private static DocumentTextAlignment ParseCanvasAlignment(string? alignment)
@@ -12362,7 +12468,6 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _disposed = true;
         _commandStack.OnStackChanged -= HandleCommandStackChanged;
         _autoSaveTimer?.Dispose();
-        _canvasReconcileSeq++;
         _canvasToolbarSyncSeq++;
         _collaborationTimer?.Dispose();
         collaborationSync = _collaborationSync;

@@ -135,7 +135,14 @@ export function buildRevisionMarkers(model, render, options = {}) {
         }
 
         const revision = revisions.find(item => item.id === revisionId) || null;
-        if (reviewMode === REVIEW_DISPLAY_MODES.original && revision?.type === 'insertion') {
+        // A marker must only ever represent a PENDING revision. A revisionAnchor command can still linger for a
+        // revision that was just accepted/rejected (e.g. accept-all / reject-all) until the next relayout —
+        // rendering a marker for it would leave a stale marker that never clears (Phase17 reject-all bug).
+        if (!revision) {
+            continue;
+        }
+
+        if (reviewMode === REVIEW_DISPLAY_MODES.original && revision.type === 'insertion') {
             continue;
         }
 

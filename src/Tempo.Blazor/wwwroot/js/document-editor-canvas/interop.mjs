@@ -1,6 +1,7 @@
 import { createCanvasDocumentEngine } from './entry.mjs';
 import { isDeliberateSelectionNotification } from './selection-cadence.mjs';
 import { buildFormattingState } from './format-state.mjs';
+import { extractAnnotations, countModelWords } from './annotations-state.mjs';
 
 const instances = new Map();
 let nextInstanceId = 1;
@@ -187,6 +188,21 @@ export function applyRemoteCursors(handle, cursorsJson) {
 export function getCollaborationStateJson(handle) {
     const state = getInstance(handle);
     return JSON.stringify(state.engine.getSnapshot().collaboration || {});
+}
+
+// B3: light pull of just the comment + revision lists out of the live engine model (no full-document marshal),
+// so the C# comment rail / revision panel can read them without depending on the debounced document mirror.
+export function getAnnotationsJson(handle) {
+    const state = getInstance(handle);
+    const model = typeof state.engine.modelStore?.getModel === 'function'
+        ? state.engine.modelStore.getModel()
+        : state.engine.getSnapshot().model;
+    const result = extractAnnotations(model);
+    // B6: also carry the live word + page count so the status bar stays current without the C# document mirror
+    // (no per-edit full marshal). pageCount comes from the already-computed layout; wordCount from the model.
+    result.wordCount = countModelWords(model);
+    result.pageCount = Array.isArray(state.engine.lastLayout?.pages) ? state.engine.lastLayout.pages.length : 0;
+    return JSON.stringify(result);
 }
 
 // B1: hand the engine's pending local operation batches to the host (C#) for relay, clearing them from the

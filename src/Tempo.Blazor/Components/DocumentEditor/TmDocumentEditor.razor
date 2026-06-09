@@ -411,7 +411,7 @@
                                                     ContentControlRenderMode="@ContentControlRenderMode"
                                                     ProofingOptions="@ProofingOptions"
                                                     Author="@Author"
-                                                    TrackChangesEnabled="@EffectiveTrackChangesEnabled"
+                                                    TrackChangesEnabled="@CanvasEngineTracksChanges"
                                                     ReviewDisplayMode="@_reviewDisplayMode"
                                                     AriaLabel="@Loc["TmDocumentEditor_CanvasSurfaceLabel"]"
                                                     InputAriaLabel="@Loc["TmDocumentEditor_CanvasInputLabel"]"
@@ -712,7 +712,7 @@
                                  ActiveTab="@ActiveSidePanelTab"
                                  ActiveTabChanged="SetSidePanelTabAsync"
                                  ShowComments="@IsFeatureEnabled(DocumentEditorFeatureNames.Comments)"
-                                 ShowRevisions="@IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges)"
+                                 ShowRevisions="@(IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) || IsCanvasSuggestionMode)"
                                  ShowVersions="@ShowVersionHistory"
                                  ShowProperties="true"
                                  ShowOutline="true"
@@ -751,7 +751,11 @@
                                            OnSelectComment="SelectCommentAsync" />
                 </CommentsContent>
                 <RevisionsContent>
-                    <TmDocumentRevisionPanel Revisions="@(_document?.Revisions ?? [])"
+                    @* In canvas suggestion mode the proposed edits are surfaced as suggestions (below); hide the
+                       revision panel so there is no duplicate/competing list of the same engine revisions. *@
+                    @if (!IsCanvasSuggestionMode)
+                    {
+                        <TmDocumentRevisionPanel Revisions="@(_canvasRevisions ?? _document?.Revisions ?? [])"
                                              IsBusy="@_isReviewingRevision"
                                              CanReview="@CanReviewRevisions"
                                              StatusMessage="@_revisionMessage"
@@ -761,9 +765,10 @@
                                              OnRejectRevision="RejectRevisionAsync"
                                              OnAcceptAllRevisions="AcceptAllRevisionsAsync"
                                              OnRejectAllRevisions="RejectAllRevisionsAsync" />
+                    }
                     @if (SuggestionProvider is not null && _suggestionsEnabled)
                     {
-                        <TmDocumentSuggestionPanel Suggestions="@_suggestions"
+                        <TmDocumentSuggestionPanel Suggestions="@DisplayedSuggestions"
                                                    IsLoading="@_isLoadingSuggestions"
                                                    IsBusy="@_isReviewingSuggestion"
                                                    CanReview="@CanReviewSuggestions"

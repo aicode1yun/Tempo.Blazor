@@ -508,6 +508,11 @@
     public Task<CanvasEngineUndoState> GetUndoStateAsync()
         => ReadStateAsync<CanvasEngineUndoState>("getUndoStateJson", new CanvasEngineUndoState());
 
+    /// <summary>Reads the live comment + revision lists from the engine (B3) — a light pull that avoids the
+    /// full-document marshal so the comment rail / revision panel need not read the C# document mirror.</summary>
+    public Task<CanvasEngineAnnotations> GetAnnotationsAsync()
+        => ReadStateAsync<CanvasEngineAnnotations>("getAnnotationsJson", new CanvasEngineAnnotations());
+
     /// <summary>Reads the current selection state from the canvas engine boundary.</summary>
     public Task<CanvasEngineSelectionState> GetSelectionStateAsync()
         => ReadStateAsync<CanvasEngineSelectionState>("getSelectionStateJson", new CanvasEngineSelectionState());
@@ -1593,5 +1598,19 @@
     public sealed class CanvasEngineUiStateEnvelope
     {
         public CanvasEngineUiState? UiState { get; set; }
+    }
+
+    /// <summary>Live comment + revision lists pulled from the engine model (B3). The lists already use the
+    /// canonical <see cref="DocumentComment"/> / <see cref="DocumentRevision"/> shapes, so they bind directly.</summary>
+    public sealed class CanvasEngineAnnotations
+    {
+        public List<DocumentComment> Comments { get; set; } = [];
+        public List<DocumentRevision> Revisions { get; set; } = [];
+
+        /// <summary>Live document body word count (B6) — read from the engine, not the C# document mirror.</summary>
+        public int WordCount { get; set; }
+
+        /// <summary>Live page count from the engine layout (B6).</summary>
+        public int PageCount { get; set; }
     }
 }

@@ -424,6 +424,20 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
 
     private static async Task ClickCanvasBlockAsync(IPage page, string blockId, int offset)
     {
+        // Scroll the target line clear of the sticky toolbar first. The block's screen position varies with
+        // scroll/layout after preceding edits, and when it lands behind the toolbar the click hits a toolbar
+        // button instead of the canvas (the caret never moves) — an intermittent failure otherwise.
+        await page.EvaluateAsync(
+            """
+            ([blockId, offset]) => {
+                const rects = Array.from(document.querySelectorAll(`[data-canvas-text-rect][data-block-id="${blockId}"]`));
+                const node = rects.find(item =>
+                    Number(item.getAttribute('data-canvas-start-offset') || '0') <= offset
+                    && Number(item.getAttribute('data-canvas-end-offset') || '0') >= offset) || rects[0];
+                node?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+            }
+            """,
+            new object[] { blockId, offset });
         var point = await ReadCanvasPointAsync(page, blockId, offset);
         await page.Mouse.ClickAsync((float)point.X, (float)point.Y);
         await page.WaitForFunctionAsync(

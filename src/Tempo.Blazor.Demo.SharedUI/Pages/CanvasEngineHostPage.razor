@@ -9,6 +9,7 @@
 @inject DemoDocumentFormatProvider FormatProvider
 @inject DemoDocumentPdfExportProvider PdfExportProvider
 @inject DemoDocumentComparisonProvider ComparisonProvider
+@inject DemoDocumentSuggestionProvider SuggestionProviderInstance
 @inject SignalRDocumentCollaborationProvider CollaborationProvider
 @inject NavigationManager Navigation
 
@@ -35,6 +36,8 @@
 	                      RenderEngine="DocumentEditorRenderEngine.CanvasEnginePreview"
                           CollaborationSyncInterval="@TimeSpan.FromMilliseconds(500)"
                           Author="@DemoAuthor"
+                          SuggestionProvider="@(SuggestionMode ? SuggestionProviderInstance : null)"
+                          SuggestionsEnabled="@SuggestionMode"
 	                      ShowToolbar="@ShowToolbar"
                       ShowDebugTools="true"
                       ShowComments="true"
@@ -58,6 +61,11 @@
     [Parameter]
     [SupplyParameterFromQuery(Name = "showToolbar")]
     public bool ShowToolbar { get; set; }
+
+    /// <summary>Enables canvas suggestion mode (B4): edits become engine revisions surfaced as suggestions.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "suggestionMode")]
+    public bool SuggestionMode { get; set; }
 
     /// <summary>Optional autosave interval in milliseconds used by canvas save boundary E2E gates.</summary>
     [Parameter]

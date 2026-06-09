@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { canCreateRestrictedSuggestion, canEditRestrictedSelection } from '../restricted-editing.mjs';
-import { applyReviewDecision, buildRevisionMarkers } from '../revision-render.mjs';
+import { applyReviewDecision, applyReviewDecisionAll, buildRevisionMarkers } from '../revision-render.mjs';
 import { applyDeletionRevision, applyFormattingRevision } from '../track-changes.mjs';
 
 test('revision render emits insertion deletion and formatting markers with review modes', () => {
@@ -30,6 +30,18 @@ test('accept and reject one revision update model content and pending action', (
     assert.equal(acceptedDeletion.changed, true);
     assert.equal(blockText(acceptedDeletion.model, 'p1').includes('Old'), false);
     assert.equal(acceptedDeletion.model.revisions.find(revision => revision.id === 'rev-delete').action, 'accepted');
+});
+
+test('reviewing all revisions renders no markers, even when stale revision anchors remain', () => {
+    const reviewed = applyReviewDecisionAll(createModel(), 'rejected', {});
+
+    assert.equal(reviewed.changed, true);
+    assert.equal(reviewed.model.revisions.every(revision => String(revision.action).toLowerCase() !== 'pending'), true);
+    // A marker must only ever represent a PENDING revision. The display list can still carry revisionAnchor
+    // commands for the just-reviewed revisions until the next relayout, so building markers against them must
+    // not resurrect a marker for a revision that is no longer pending (Phase17 reject-all marker bug).
+    const markers = buildRevisionMarkers(reviewed.model, createRender(), { reviewMode: 'allMarkup' });
+    assert.equal(markers.length, 0, `expected no markers after reviewing all revisions, got ${markers.length}`);
 });
 
 test('track deletion keeps cross-block text visible with deletion revisions', () => {
