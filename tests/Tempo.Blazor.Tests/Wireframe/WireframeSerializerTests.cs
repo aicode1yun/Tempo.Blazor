@@ -326,4 +326,56 @@ public class WireframeSerializerTests
         el.W.Should().Be(160);
         el.H.Should().Be(40);
     }
+
+    // ── New-component round-trip (Phases 1–8) ─────────────────────────────────
+
+    [Theory]
+    // Phase 1 — Inputs
+    [InlineData("TmSlider")]
+    [InlineData("TmRating")]
+    [InlineData("TmMaskedTextBox")]
+    // Phase 2 — Color
+    [InlineData("TmColorPicker")]
+    [InlineData("TmColorGradient")]
+    // Phase 3 — Signature / Pickers
+    [InlineData("TmSignature")]
+    [InlineData("TmRecurrenceEditor")]
+    // Phase 4 — Charts / Data Display
+    [InlineData("TmSparkline")]
+    [InlineData("TmGauge")]
+    [InlineData("TmQRCode")]
+    [InlineData("TmPdfViewer")]
+    // Phase 5 — Buttons / Navigation
+    [InlineData("TmFloatingActionButton")]
+    [InlineData("TmBottomNavigation")]
+    [InlineData("TmMenu")]
+    // Phase 6 — Layout
+    [InlineData("TmSplitter")]
+    [InlineData("TmDockManager")]
+    // Phase 7 — Builders & collaboration
+    [InlineData("TmFormulaBuilder")]
+    [InlineData("TmAIPrompt")]
+    [InlineData("TmShareLinkPanel")]
+    // Phase 8 — Editors & Apps
+    [InlineData("TmChat")]
+    [InlineData("TmSpreadsheet")]
+    [InlineData("TmGantt")]
+    [InlineData("TmDiagramEditor")]
+    [InlineData("TmDocumentEditor")]
+    [InlineData("TmNotionEditor")]
+    [InlineData("TmFileManager")]
+    public void Roundtrip_NewComponent_PreservesTypeAndProps(string type)
+    {
+        var doc = new WireframeDocument { Title = "Test" };
+        var el  = WireframeDocumentExtensions.NewElement(type, 10, 20, 200, 120);
+        el.SetProp("label", "test-value");
+        doc.Elements.Add(el);
+
+        var json     = WireframeSerializer.Serialize(doc);
+        var restored = WireframeSerializer.Deserialize(json);
+
+        restored.Elements.Should().HaveCount(1);
+        restored.Elements[0].Type.Should().Be(type);
+        restored.Elements[0].Props.GetString("label").Should().Be("test-value");
+    }
 }

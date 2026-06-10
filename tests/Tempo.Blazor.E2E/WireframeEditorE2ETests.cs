@@ -915,4 +915,109 @@ public class WireframeEditorE2ETests : WasmTestBase
         var widthInput = editor.Locator(".tm-wd-editor__canvas-size-input").First;
         Assert.IsTrue(await widthInput.IsVisibleAsync(), "Canvas width input should appear");
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // New-component gallery (Phases 1–8)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("New categories Color and Editors & Apps should appear in the toolbox")]
+    public async Task Toolbox_NewCategories_Visible()
+    {
+        var page  = await PrepareWireframePageAsync();
+        var toolbox = FirstEditor(page).Locator(".tm-wd-toolbox");
+        await toolbox.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+
+        var categoryNames = await toolbox.Locator(".tm-wd-toolbox__category-name").AllInnerTextsAsync();
+        Assert.IsTrue(categoryNames.Any(n => n.Contains("Color", StringComparison.OrdinalIgnoreCase)),
+            $"'Color' category should appear in toolbox. Found: {string.Join(", ", categoryNames)}");
+        Assert.IsTrue(categoryNames.Any(n => n.Contains("Editors", StringComparison.OrdinalIgnoreCase)),
+            $"'Editors & Apps' category should appear in toolbox. Found: {string.Join(", ", categoryNames)}");
+    }
+
+    [TestMethod]
+    [Description("Gallery: drop one component from each new phase; verify all render without throwing")]
+    public async Task NewComponents_GalleryScreenshot()
+    {
+        var page = await PrepareWireframePageAsync();
+
+        // Representative component from each phase — placed in a 3-column grid
+        var gallery = new (string type, int x, int y)[]
+        {
+            // Phase 1 — Inputs
+            ("TmSlider",              60,  50),
+            ("TmRating",             280,  50),
+            ("TmMaskedTextBox",      460,  50),
+            // Phase 2 — Color
+            ("TmColorPicker",         60, 110),
+            ("TmColorGradient",      280, 110),
+            // Phase 3 — Signature / Pickers
+            ("TmSignature",          460, 110),
+            ("TmRecurrenceEditor",    60, 240),
+            // Phase 4 — Charts / Data Display
+            ("TmSparkline",          280, 240),
+            ("TmGauge",              460, 240),
+            ("TmQRCode",              60, 360),
+            ("TmBarcode",            280, 360),
+            ("TmPdfViewer",          460, 360),
+            // Phase 5 — Buttons / Navigation
+            ("TmFloatingActionButton", 60, 540),
+            ("TmBottomNavigation",   280, 540),
+            ("TmMenu",               460, 540),
+            // Phase 6 — Layout
+            ("TmStackLayout",         60, 650),
+            ("TmSplitter",           280, 650),
+            ("TmDockManager",        460, 650),
+            // Phase 7 — Builders & collaboration
+            ("TmFormulaBuilder",      60, 810),
+            ("TmAIPrompt",           280, 810),
+            ("TmShareLinkPanel",     460, 810),
+            // Phase 8 — Editors & Apps
+            ("TmChat",                60, 960),
+            ("TmSpreadsheet",        280, 960),
+            ("TmGantt",              460, 960),
+            ("TmDiagramEditor",       60, 1150),
+            ("TmDocumentEditor",     280, 1150),
+            ("TmFileManager",        460, 1150),
+        };
+
+        foreach (var (type, x, y) in gallery)
+        {
+            var result = await AddElementAsync(page, type, x, y);
+            Assert.IsTrue(result.Contains("ok"), $"AddElement failed for {type}: {result}");
+        }
+
+        await page.WaitForTimeoutAsync(1000);
+
+        // Verify all elements are on the canvas
+        var elCount = await FirstEditor(page).Locator("g[data-el-id]").CountAsync();
+        Assert.IsTrue(elCount >= gallery.Length,
+            $"Expected at least {gallery.Length} elements, found {elCount}");
+
+        // Fit all elements into view via JS
+        var fitCanvasId = await FirstEditor(page).Locator(".tm-wd-canvas__svg").EvaluateAsync<string>("el => el.id");
+        await page.EvaluateAsync("""
+            ([svgId]) => {
+                const svg = document.getElementById(svgId);
+                if (svg) tmWireframeDesigner.fitToView(svg, 30);
+            }
+            """, new object[] { fitCanvasId });
+        await page.WaitForTimeoutAsync(600);
+
+        // Screenshot the editor area (cropped to canvas + toolbox)
+        var editorBox = await FirstEditor(page).BoundingBoxAsync();
+        if (editorBox is not null)
+        {
+            var bytes = await page.ScreenshotAsync(new PageScreenshotOptions
+            {
+                Type = ScreenshotType.Png,
+                Clip = new Clip { X = editorBox.X, Y = editorBox.Y, Width = editorBox.Width, Height = editorBox.Height }
+            });
+            var path = "/tmp/wireframe_gallery_ux_review.png";
+            await File.WriteAllBytesAsync(path, bytes);
+            TestContext.AddResultFile(path);
+        }
+
+        await TakeScreenshotAsync(page, "wireframe_new_components_gallery_phases1_8");
+    }
 }
