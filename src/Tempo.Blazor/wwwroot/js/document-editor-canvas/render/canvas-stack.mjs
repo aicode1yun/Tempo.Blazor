@@ -56,6 +56,32 @@ export function createCanvasStack(options = {}) {
     // re-assembles display commands only for the changed block and reuses the rest.
     const commandDisplayCache = new WeakMap();
 
+    // Page offset/scale snapshot shared by the DOM overlays (comments/revisions/presence). Reading
+    // offsetLeft/offsetTop forces a synchronous reflow, and each overlay used to read them PER MARKER while
+    // also writing to the DOM — layout thrashing that dominated per-keystroke profiles. The cache survives
+    // across paints: page offsets only move when the vertical geometry changes (pages mount/unmount/resize,
+    // spacer height, zoom — tracked via a signature computed from plan data, no DOM reads) or when the root
+    // itself is resized (tracked by a ResizeObserver), so steady typing performs NO forced reflow at all.
+    let pagePlacementsCache = null;
+    let pagePlacementsSignature = null;
+    let placementResizeObserver = null;
+
+    function getPagePlacements() {
+        if (!pagePlacementsCache) {
+            pagePlacementsCache = new Map();
+            for (const [key, page] of pages) {
+                const pageElement = page?.pageElement || null;
+                pagePlacementsCache.set(String(key), {
+                    offsetX: Number(pageElement?.offsetLeft || 0) || 0,
+                    offsetY: Number(pageElement?.offsetTop || 0) || 0,
+                    scale: Math.max(0.01, Number(pageElement?.getAttribute?.('data-canvas-page-zoom-scale') || 1) || 1),
+                });
+            }
+        }
+
+        return pagePlacementsCache;
+    }
+
     function ensurePage(pageLayout) {
         const key = String(pageLayout.index);
         if (pages.has(key)) {
@@ -151,6 +177,16 @@ export function createCanvasStack(options = {}) {
         const pixelRatio = Math.max(1, Number(pixelRatioProvider()) || 1);
         const virtualization = virtualizer.plan(allRenderPages, options.viewport || {});
         const renderPages = virtualization.pages;
+
+        // Invalidate the shared overlay placement snapshot ONLY when the page geometry can actually move
+        // (different mounted pages, page dimensions, spacer height or zoom). Typing inside a page keeps the
+        // signature stable, so overlays keep reading cached offsets with zero forced reflows.
+        const placementSignature = `${zoomScale}|${Math.round(Number(virtualization.topSpacerHeight) || 0)}|`
+            + renderPages.map(page => `${page.index}:${Math.round(Number(page.width) || 0)}x${Math.round(Number(page.height) || 0)}`).join(',');
+        if (placementSignature !== pagePlacementsSignature) {
+            pagePlacementsSignature = placementSignature;
+            pagePlacementsCache = null;
+        }
         const activePageKeys = new Set(renderPages.map(page => String(page.index)));
 
         for (const [key, page] of pages) {
@@ -355,6 +391,16 @@ export function createCanvasStack(options = {}) {
 
     function mount(host) {
         host.appendChild(root);
+        // Horizontal page offsets (centering) move when the root resizes without any paint — the geometry
+        // signature above cannot see that, so a ResizeObserver drops the placement snapshot instead.
+        const ResizeObserverCtor = globalThis.ResizeObserver;
+        if (!placementResizeObserver && typeof ResizeObserverCtor === 'function') {
+            placementResizeObserver = new ResizeObserverCtor(() => {
+                pagePlacementsCache = null;
+            });
+            placementResizeObserver.observe(root);
+        }
+
         return root;
     }
 
@@ -366,6 +412,10 @@ export function createCanvasStack(options = {}) {
         tileCache.invalidate();
         layoutBlockCache.clear();
         lastPlan = null;
+        pagePlacementsCache = null;
+        pagePlacementsSignature = null;
+        placementResizeObserver?.disconnect?.();
+        placementResizeObserver = null;
     }
 
     return {
@@ -375,6 +425,7 @@ export function createCanvasStack(options = {}) {
         repaint,
         destroy,
         pages,
+        getPagePlacements,
     };
 }
 

@@ -228,3 +228,31 @@ function findOne(node, predicate) {
 
     return null;
 }
+
+test('page placements are computed once per paint and shared (overlay reflow batching)', () => {
+    const document = createFakeDocument();
+    const stack = createCanvasStack({ document, pixelRatioProvider: () => 1 });
+    stack.mount(document.createElement('main'));
+    stack.render(createLayout(), createLongModel(90), { viewport: { scrollTop: 0, height: 900 } });
+
+    const first = stack.getPagePlacements();
+    assert.ok(first instanceof Map);
+    assert.ok(first.size > 0, 'mounted pages must have placements');
+    for (const placement of first.values()) {
+        assert.equal(typeof placement.offsetX, 'number');
+        assert.equal(typeof placement.offsetY, 'number');
+        assert.ok(placement.scale > 0);
+    }
+
+    // All overlays within one render share the same snapshot (single forced reflow).
+    assert.strictEqual(stack.getPagePlacements(), first);
+
+    // Re-painting the SAME page geometry (typing inside a page) must keep the snapshot — that is the
+    // whole point: steady typing performs no forced reflow at all.
+    stack.render(createLayout(), createLongModel(90), { viewport: { scrollTop: 0, height: 900 } });
+    assert.strictEqual(stack.getPagePlacements(), first);
+
+    // Scrolling mounts a different page set -> geometry signature changes -> snapshot refreshes.
+    stack.repaint({ viewport: { scrollTop: 1123 * 6, height: 900 } });
+    assert.notStrictEqual(stack.getPagePlacements(), first);
+});

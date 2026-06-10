@@ -141,3 +141,32 @@ function createEvent() {
         },
     };
 }
+
+test('plain mid-word typing takes the no-clone fast path (returns the input model reference)', () => {
+    // Typing a letter that cannot trigger any rule must not deep-clone the model (the clones dominated
+    // per-keystroke profiles); unchanged() returns the original references, which pins the fast path.
+    const model = createModel('hella');
+    const selection = collapsed(5);
+    const result = applyAutocorrectAfterTextInput({
+        model,
+        selection,
+        edit: { type: 'insertText', text: 'a' },
+    });
+    assert.equal(result.changed, false);
+    assert.equal(result.model, model, 'fast path must return the original model reference (no clone)');
+    assert.equal(result.selection, selection);
+});
+
+test('precheck still routes capitalize/em-dash candidates to the slow path', () => {
+    // 'w' after a sentence boundary — capitalize must still fire (the precheck reads block text).
+    assertAutocorrect('done. w', 7, 'w', 'done. W', 'autoCapitalize');
+    // second '-' (not a word boundary char) — em-dash must still fire.
+    assertAutocorrect('--', 2, '-', '—', 'emDash');
+    // a letter NOT after a boundary, with '--' NOT before the caret -> fast path, nothing fires.
+    const noFire = applyAutocorrectAfterTextInput({
+        model: createModel('a--bc'),
+        selection: collapsed(5),
+        edit: { type: 'insertText', text: 'c' },
+    });
+    assert.equal(noFire.changed, false);
+});

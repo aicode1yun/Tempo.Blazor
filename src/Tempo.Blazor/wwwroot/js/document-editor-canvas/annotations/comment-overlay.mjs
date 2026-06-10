@@ -241,6 +241,19 @@ function createMarkerElement(doc, marker) {
 }
 
 function withPagePlacement(marker, canvasStack) {
+    // Prefer the canvas-stack's shared placement snapshot: offsetLeft/offsetTop force a synchronous
+    // reflow, and reading them per marker per render — interleaved with the overlays' own DOM writes —
+    // was a dominant per-keystroke cost. The direct-read fallback keeps plain stacks (Node tests) working.
+    const placement = canvasStack?.getPagePlacements?.()?.get?.(String(marker.pageIndex));
+    if (placement) {
+        return {
+            ...marker,
+            pageOffsetX: placement.offsetX,
+            pageOffsetY: placement.offsetY,
+            scale: placement.scale,
+        };
+    }
+
     const page = canvasStack?.pages?.get?.(String(marker.pageIndex));
     const pageElement = page?.pageElement || null;
     const scale = Math.max(0.01, Number(pageElement?.getAttribute?.('data-canvas-page-zoom-scale') || 1) || 1);

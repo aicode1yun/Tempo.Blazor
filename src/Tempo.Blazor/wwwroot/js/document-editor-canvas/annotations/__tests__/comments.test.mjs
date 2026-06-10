@@ -238,3 +238,27 @@ class FakeElement {
         return this.attributes.get(String(name)) ?? null;
     }
 }
+
+test('comment overlay prefers the canvas-stack shared page placements (no per-marker offset reads)', () => {
+    const document = createFakeDocument();
+    const stack = {
+        root: document.createElement('div'),
+        // No `pages` map on purpose: the overlay must use the shared snapshot, which exists precisely so
+        // markers do not read pageElement.offsetLeft/offsetTop (forced reflow) per marker per render.
+        getPagePlacements: () => new Map([['0', { offsetX: 100, offsetY: 50, scale: 2 }]]),
+    };
+    const overlay = createCanvasCommentOverlay({ document }).mount(stack);
+
+    overlay.update({
+        comments: [{
+            id: 'comment-place',
+            status: 'Open',
+            anchor: { type: 'TextRange', blockId: 'p1', startOffset: 0, endOffset: 4 },
+        }],
+    }, createAnchorRender());
+
+    const marker = overlay.root.children[0];
+    const rect = overlay.snapshot().markers[0].rect;
+    assert.equal(marker.style.left, `${rect.x * 2 + 100}px`);
+    assert.equal(marker.style.top, `${rect.y * 2 + 50}px`);
+});

@@ -211,14 +211,18 @@ function measureCellContent(context) {
 }
 
 function shiftMeasuredBlocks(blocks, x, y, pageIndex) {
+    // Shallow copy on purpose: a deep clone here copied lines/segments/caretStops only to immediately
+    // replace them with the shifted mappings below, and tables get re-measured every layout (they are not
+    // block-cached), so this ran per keystroke and dominated allocation profiles. Everything not copied is
+    // shared read-only with the measured source, which this layout pass owns.
     return (blocks || []).map(block => {
-        const shifted = clone(block);
+        const shifted = { ...block, rect: { ...block.rect } };
         shifted.pageIndex = Number(pageIndex ?? shifted.pageIndex ?? 0) || 0;
-        shifted.rect.x += x;
-        shifted.rect.y += y;
-        shifted.lines = (shifted.lines || []).map(line => shiftLine(line, x, y, shifted.pageIndex));
-        shifted.segments = (shifted.segments || []).map(segment => shiftSegment(segment, x, y, shifted.pageIndex));
-        shifted.caretStops = (shifted.caretStops || []).map(stop => ({
+        shifted.rect.x = (Number(shifted.rect.x || 0) || 0) + x;
+        shifted.rect.y = (Number(shifted.rect.y || 0) || 0) + y;
+        shifted.lines = (block.lines || []).map(line => shiftLine(line, x, y, shifted.pageIndex));
+        shifted.segments = (block.segments || []).map(segment => shiftSegment(segment, x, y, shifted.pageIndex));
+        shifted.caretStops = (block.caretStops || []).map(stop => ({
             ...stop,
             pageIndex: shifted.pageIndex,
             rect: {
@@ -509,10 +513,3 @@ function containsPoint(rect, x, y) {
     return Number(x || 0) >= left && Number(x || 0) <= left + width && Number(y || 0) >= top && Number(y || 0) <= top + height;
 }
 
-function clone(value) {
-    if (typeof structuredClone === 'function') {
-        return structuredClone(value);
-    }
-
-    return JSON.parse(JSON.stringify(value ?? null));
-}

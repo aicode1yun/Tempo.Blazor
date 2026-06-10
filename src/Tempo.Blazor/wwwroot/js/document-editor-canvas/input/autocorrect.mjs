@@ -42,6 +42,13 @@ export function applyAutocorrectAfterTextInput(input = {}) {
         return unchanged(input);
     }
 
+    // Fast path for plain typing: the eager clones below copy the WHOLE model 2x per keystroke and were
+    // all wasted whenever no rule fires — the common case. The precheck mirrors the rule guards read-only
+    // against the original model and skips the clones entirely when no rule can match here.
+    if (!couldAutocorrect(input.model, input.selection, text, options)) {
+        return unchanged(input);
+    }
+
     let model = clone(input.model);
     let selection = clone(input.selection);
     const undoBeforeModel = clone(input.model);
@@ -125,6 +132,49 @@ function unchanged(input) {
         operations: [],
         dirtyBlockIds: [],
     };
+}
+
+/// Read-only mirror of the rule guards below — returns false only when NO rule can fire for this typed
+/// text at the caret, so the caller may skip the expensive model clones. Must stay conservative: any rule
+/// trigger change below needs a matching update here (the parity test in autocorrect tests pins this).
+function couldAutocorrect(model, selection, typedText, options) {
+    // maybeBoundaryReplacement triggers on boundary characters; maybeAutoformat on whitespace. Multi-char
+    // inserts (IME commit, programmatic) containing either also take the slow path.
+    if (WORD_BOUNDARY.test(typedText) || /\s/u.test(typedText)) {
+        return true;
+    }
+
+    // maybeSmartQuote triggers only on a lone quote character (covered by WORD_BOUNDARY above, kept for
+    // clarity should the boundary set ever change).
+    if (typedText === '"' || typedText === "'") {
+        return true;
+    }
+
+    const blockId = selection?.focus?.blockId || '';
+    const offset = Number(selection?.focus?.offset ?? 0) || 0;
+    if (!blockId || offset <= 0) {
+        return false;
+    }
+
+    const needsEmDash = options.emDash && offset >= 2;
+    const needsCapitalize = options.autoCapitalize && /^[a-z]$/u.test(typedText);
+    if (!needsEmDash && !needsCapitalize) {
+        return false;
+    }
+
+    const blockText = canvasBlockText(model, blockId);
+    if (needsEmDash && blockText.slice(offset - 2, offset) === '--') {
+        return true;
+    }
+
+    if (needsCapitalize) {
+        const beforeLetter = blockText.slice(0, Math.max(0, offset - 1));
+        if (beforeLetter.length === 0 || /[.!?]\s+$/u.test(beforeLetter)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function maybeSmartQuote(model, selection, typedText) {

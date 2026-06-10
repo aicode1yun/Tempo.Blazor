@@ -261,6 +261,18 @@ function createRevisionElement(doc, marker) {
 }
 
 function withPagePlacement(marker, canvasStack) {
+    // Prefer the canvas-stack's shared placement snapshot — see comment-overlay.mjs: per-marker
+    // offsetLeft/offsetTop reads force reflows on the per-keystroke render path.
+    const placement = canvasStack?.getPagePlacements?.()?.get?.(String(marker.pageIndex));
+    if (placement) {
+        return {
+            ...marker,
+            pageOffsetX: placement.offsetX,
+            pageOffsetY: placement.offsetY,
+            scale: placement.scale,
+        };
+    }
+
     const page = canvasStack?.pages?.get?.(String(marker.pageIndex));
     const pageElement = page?.pageElement || null;
     const scale = Math.max(0.01, Number(pageElement?.getAttribute?.('data-canvas-page-zoom-scale') || 1) || 1);

@@ -105,9 +105,21 @@ export const BUILT_IN_STYLE_DEFINITIONS = Object.freeze([
     },
 ]);
 
+// ensureStyleStore is on the per-keystroke layout path (resolveStyle -> findStyle per run); without a memo
+// it re-normalizes every style definition + re-merges built-ins on EVERY call (~1.5 s of a 6 s typing burst
+// in profiling). The memo is keyed on the model AND the styles array identity: the only in-place mutators
+// (upsertStyle/renameStyle/deleteStyle below) keep the array identity and already insert normalized entries,
+// so the memoized array stays correct; any code that REPLACES model.styles invalidates naturally.
+const STYLE_STORE_MEMO = new WeakMap();
+const STYLE_INDEX_MEMO = new WeakMap();
+
 export function ensureStyleStore(model) {
     if (!model || typeof model !== 'object') {
         return [];
+    }
+
+    if (Array.isArray(model.styles) && STYLE_STORE_MEMO.get(model) === model.styles) {
+        return model.styles;
     }
 
     const existing = Array.isArray(model.styles) ? model.styles.map(normalizeStyleDefinition).filter(Boolean) : [];
@@ -127,7 +139,36 @@ export function ensureStyleStore(model) {
     }
 
     model.styles = merged;
+    STYLE_STORE_MEMO.set(model, merged);
+    STYLE_INDEX_MEMO.delete(merged);
     return model.styles;
+}
+
+/// Lazy key -> styles index for findStyle (the linear styleKeys scan per run per layout shows up in typing
+/// profiles). Invalidated by the in-place mutators below; rebuilt on demand.
+function styleIndexOf(styles) {
+    let index = STYLE_INDEX_MEMO.get(styles);
+    if (!index) {
+        index = new Map();
+        for (const style of styles) {
+            for (const key of styleKeys(style)) {
+                const list = index.get(key);
+                if (list) {
+                    list.push(style);
+                } else {
+                    index.set(key, [style]);
+                }
+            }
+        }
+
+        STYLE_INDEX_MEMO.set(styles, index);
+    }
+
+    return index;
+}
+
+function invalidateStyleIndex(styles) {
+    STYLE_INDEX_MEMO.delete(styles);
 }
 
 export function quickStyles(model) {
@@ -137,15 +178,19 @@ export function quickStyles(model) {
 }
 
 export function findStyle(model, idOrName, type = null) {
+    const styles = ensureStyleStore(model);
     const key = normalizeStyleKey(idOrName);
     if (!key) {
-        return ensureStyleStore(model).find(style => style.id === 'normal') || null;
+        return styles.find(style => style.id === 'normal') || null;
     }
 
-    return ensureStyleStore(model).find(style => {
-        const sameType = !type || String(style.type || '').toLowerCase() === String(type).toLowerCase();
-        return sameType && styleKeys(style).includes(key);
-    }) || null;
+    const candidates = styleIndexOf(styles).get(key) || [];
+    if (!type) {
+        return candidates[0] || null;
+    }
+
+    const wanted = String(type).toLowerCase();
+    return candidates.find(style => String(style.type || '').toLowerCase() === wanted) || null;
 }
 
 export function upsertStyle(model, style) {
@@ -158,6 +203,7 @@ export function upsertStyle(model, style) {
     const index = styles.findIndex(candidate => styleKeys(candidate).some(key => styleKeys(normalized).includes(key)));
     if (index < 0) {
         styles.push(normalized);
+        invalidateStyleIndex(styles);
         return { changed: true, style: normalized };
     }
 
@@ -171,6 +217,7 @@ export function upsertStyle(model, style) {
         listFormat: { ...(styles[index].listFormat || {}), ...(normalized.listFormat || {}) },
     };
 
+    invalidateStyleIndex(styles);
     return { changed: before !== JSON.stringify(styles[index]), style: styles[index] };
 }
 
@@ -187,6 +234,7 @@ export function renameStyle(model, idOrName, nextName) {
     }
 
     style.name = name;
+    invalidateStyleIndex(ensureStyleStore(model));
     return { changed: true, style, previousName };
 }
 
@@ -205,6 +253,7 @@ export function deleteStyle(model, idOrName) {
     }
 
     styles.splice(index, 1);
+    invalidateStyleIndex(styles);
     return { changed: true, style };
 }
 
