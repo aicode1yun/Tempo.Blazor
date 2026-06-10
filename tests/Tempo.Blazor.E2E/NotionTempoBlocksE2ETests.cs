@@ -293,3 +293,140 @@ public class NotionTempoBlocksE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "tempo_wireframe_edit_reopen");
     }
 }
+
+[TestClass]
+public class NotionTempoBlocksRecoveryE2ETests : NotionE2ETestBase
+{
+    private static ILocator Block(IPage page, string id) =>
+        page.Locator($"[data-block-id='{id}']").First;
+
+    private static async Task<ILocator> VisibleBlockAsync(IPage page, string id, string selector)
+    {
+        var block = Block(page, id);
+        await block.Locator(selector).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await block.ScrollIntoViewIfNeededAsync();
+        await page.WaitForTimeoutAsync(350);
+        return block;
+    }
+
+    private static async Task CaptureEditableTempoBlockAsync(
+        NotionTempoBlocksRecoveryE2ETests test,
+        IPage page,
+        string blockId,
+        string emptySelector,
+        string modalSelector,
+        string saveSelector,
+        string savedSelector,
+        string emptyState,
+        string modalState,
+        string savedState)
+    {
+        var block = await VisibleBlockAsync(page, blockId, emptySelector);
+        await test.CaptureBaselineAsync("special-blocks", emptyState, block);
+
+        await block.Locator(emptySelector).First.ClickAsync();
+        var modal = page.Locator(modalSelector).First;
+        await modal.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await modal.Locator(saveSelector).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await test.CaptureBaselineAsync("special-blocks", modalState, modal);
+
+        await modal.Locator(saveSelector).First.ClickAsync();
+        await modal.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Hidden,
+            Timeout = 30000
+        });
+
+        await block.ScrollIntoViewIfNeededAsync();
+        await block.Locator(savedSelector).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await page.WaitForTimeoutAsync(500);
+        await test.CaptureBaselineAsync("special-blocks", savedState, block);
+    }
+
+    private async Task CaptureSpreadsheetBlockAsync(IPage page)
+    {
+        var block = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000060", ".tm-notion-media-upload-zone--spreadsheet");
+        await CaptureBaselineAsync("special-blocks", "spreadsheet-empty", block);
+
+        await block.Locator(".tm-notion-media-upload-zone--spreadsheet").First.ClickAsync();
+
+        var modal = page.Locator(".tm-notion-spreadsheet-edit-modal").First;
+        await modal.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await modal.Locator(".tm-notion-spreadsheet-edit-modal__btn--primary").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await CaptureBaselineAsync("special-blocks", "spreadsheet-no-provider-modal", modal);
+
+        await modal.Locator(".tm-notion-spreadsheet-edit-modal__btn--primary").First.ClickAsync();
+        await modal.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Hidden,
+            Timeout = 30000
+        });
+        await block.Locator(".tm-notion-spreadsheet-block__figure").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await block.ScrollIntoViewIfNeededAsync();
+        await page.WaitForTimeoutAsync(500);
+        await CaptureBaselineAsync("special-blocks", "spreadsheet-no-provider-saved", block);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB15 recovery baseline for diagram, wireframe and spreadsheet empty, modal and saved states.")]
+    public async Task EB15_TempoBlocks_DiagramWireframeSpreadsheet_CapturesEmptyModalAndSavedBaselines()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedSpecialBlocksPageAsync();
+
+        await CaptureEditableTempoBlockAsync(
+            this,
+            page,
+            "eb150000-0000-0000-0000-000000000040",
+            ".tm-notion-media-upload-zone--diagram",
+            ".tm-notion-diagram-edit-modal",
+            ".tm-notion-diagram-edit-modal__btn--primary",
+            ".tm-notion-diagram-block__figure",
+            "diagram-empty",
+            "diagram-no-provider-modal",
+            "diagram-no-provider-saved");
+
+        await CaptureEditableTempoBlockAsync(
+            this,
+            page,
+            "eb150000-0000-0000-0000-000000000050",
+            ".tm-notion-media-upload-zone--wireframe",
+            ".tm-notion-wireframe-edit-modal",
+            ".tm-notion-wireframe-edit-modal__btn--primary",
+            ".tm-notion-wireframe-block__figure",
+            "wireframe-empty",
+            "wireframe-no-provider-modal",
+            "wireframe-no-provider-saved");
+
+        await CaptureSpreadsheetBlockAsync(page);
+    }
+}

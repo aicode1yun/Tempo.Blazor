@@ -72,8 +72,23 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
-    private string _currentEmoji =>
-        string.IsNullOrEmpty(Content?.IconEmoji) ? "💡" : Content.IconEmoji;
+    private CalloutVariant _variant => Content?.Variant ?? CalloutVariant.Default;
+
+    private string _variantName => _variant.ToString().ToLowerInvariant();
+
+    private string _variantClass => _variant == CalloutVariant.Default
+        ? string.Empty
+        : $"tm-notion-callout--{_variantName}";
+
+    private string _currentEmoji => _variant switch
+    {
+        CalloutVariant.Info    => "ℹ️",
+        CalloutVariant.Note    => "📝",
+        CalloutVariant.Warning => "⚠️",
+        CalloutVariant.Error   => "❌",
+        CalloutVariant.Success => "✅",
+        _ => string.IsNullOrEmpty(Content?.IconEmoji) ? "💡" : Content.IconEmoji
+    };
 
     private string _alignClass => Content?.Alignment switch
     {

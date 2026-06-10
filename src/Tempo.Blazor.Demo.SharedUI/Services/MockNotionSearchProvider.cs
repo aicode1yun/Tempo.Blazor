@@ -5,9 +5,7 @@ using Tempo.Blazor.NotionEditor.Models;
 namespace Tempo.Blazor.Demo.Services;
 
 /// <summary>
-/// Search provider that fetches all pages from the Demo API and filters them
-/// client-side using case-insensitive string.Contains. Block-level search is not
-/// implemented (returns empty) to avoid per-page HTTP round-trips in the demo.
+/// Search provider backed by the Demo API full-text endpoint.
 /// </summary>
 public class MockNotionSearchProvider : INotionSearchProvider
 {
@@ -17,37 +15,28 @@ public class MockNotionSearchProvider : INotionSearchProvider
         => _http = factory.CreateClient("DemoApi");
 
     public async Task<IEnumerable<INotionPage>> SearchPagesAsync(string query, NotionSearchFilter? filter)
-    {
-        var pages = await _http.GetFromJsonAsync<List<NotionPage>>("/api/notion/pages") ?? [];
-        return Filter(pages, query, filter).Cast<INotionPage>();
-    }
+        => (await SearchAsync(query, filter, 20)).Pages.Cast<INotionPage>();
 
-    public Task<IEnumerable<NotionSearchResult>> SearchBlocksAsync(string query, NotionSearchFilter? filter)
-        => Task.FromResult<IEnumerable<NotionSearchResult>>(Array.Empty<NotionSearchResult>());
+    public async Task<IEnumerable<NotionSearchResult>> SearchBlocksAsync(string query, NotionSearchFilter? filter)
+        => (await SearchAsync(query, filter, 20)).Blocks;
 
     public async Task<(IEnumerable<INotionPage> Pages, IEnumerable<NotionSearchResult> Blocks)> SearchAllAsync(
         string query, NotionSearchFilter? filter, int maxResults)
     {
-        var pages = await SearchPagesAsync(query, filter);
-        return (pages.Take(maxResults), Array.Empty<NotionSearchResult>());
+        var response = await SearchAsync(query, filter, maxResults);
+        return (response.Pages.Cast<INotionPage>(), response.Blocks);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static IEnumerable<NotionPage> Filter(List<NotionPage> pages, string query, NotionSearchFilter? filter)
+    private async Task<NotionSearchResponse> SearchAsync(string query, NotionSearchFilter? filter, int maxResults)
     {
-        var q = pages.Where(p => !p.IsDeleted);
-
-        if (!string.IsNullOrWhiteSpace(query))
-            q = q.Where(p => p.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
-
-        if (filter is not null)
+        var request = new NotionSearchRequest
         {
-            if (filter.CreatedAfter  is { } after)  q = q.Where(p => p.CreatedAt >= after);
-            if (filter.CreatedBefore is { } before)  q = q.Where(p => p.CreatedAt <= before);
-            if (filter.CreatedByUserId is { } uid)   q = q.Where(p => p.CreatedByUserId == uid);
-        }
-
-        return q.OrderByDescending(p => p.LastEditedAt);
+            Query = query,
+            Filter = filter,
+            MaxResults = maxResults
+        };
+        var response = await _http.PostAsJsonAsync("/api/notion/search", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<NotionSearchResponse>() ?? new NotionSearchResponse();
     }
 }

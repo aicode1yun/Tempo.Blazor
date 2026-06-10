@@ -11,7 +11,7 @@ namespace Tempo.Blazor.E2E;
 [TestClass]
 public class NotionImportExportE2ETests : NotionE2ETestBase
 {
-    private const string SampleDocxWithImagesAndTablesUrl = "https://samplelib.com/docx/sample-simple.docx";
+    private const string RichDocxImageDataUrl = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMzIwIDE4MCI+PHJlY3Qgd2lkdGg9IjMyMCIgaGVpZ2h0PSIxODAiIHJ4PSIxOCIgZmlsbD0iI2Y4ZmFmYyIvPjxyZWN0IHg9IjI0IiB5PSIyNCIgd2lkdGg9IjI3MiIgaGVpZ2h0PSIxMzIiIHJ4PSIxNCIgZmlsbD0iI2RiZWFmZSIvPjxjaXJjbGUgY3g9IjkyIiBjeT0iOTAiIHI9IjM2IiBmaWxsPSIjMTRiOGE2Ii8+PHJlY3QgeD0iMTUyIiB5PSI2MiIgd2lkdGg9IjExMiIgaGVpZ2h0PSIxOCIgcng9IjkiIGZpbGw9IiMyNTYzZWIiLz48cmVjdCB4PSIxNTIiIHk9Ijk4IiB3aWR0aD0iODgiIGhlaWdodD0iMTgiIHJ4PSI5IiBmaWxsPSIjZjU5ZTBiIi8+PC9zdmc+";
 
     [TestMethod]
     [Description("CF25: export menu downloads Markdown, HTML, PDF, DOCX, and ODT artifacts through the HTTPS demo API")]
@@ -85,6 +85,7 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
     }
 
     [TestMethod]
+    [TestCategory("NotionUxBaseline")]
     [Description("CF26: import menu uploads a DOCX document through the HTTPS demo API and creates a Notion page with converted blocks")]
     public async Task CF26_ImportMenu_UploadsWordDocumentAndCreatesConvertedPage()
     {
@@ -122,14 +123,15 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
 
     [TestMethod]
     [TestCategory("NotionUxBaseline")]
-    [Description("CF26: DOCX import edge cases cover invalid files, empty documents, and a real internet DOCX containing images and tables")]
-    public async Task CF26_ImportEdges_InvalidEmptyAndRealDocxWithImagesAndTablesWork()
+    [Description("CF26: DOCX import edge cases cover invalid files, empty documents, and a deterministic DOCX containing images and tables")]
+    public async Task CF26_ImportEdges_InvalidEmptyAndGeneratedDocxWithImagesAndTablesWork()
     {
         var page = await OpenNotionEditorAsync();
 
         var invalidDocx = Path.Combine(Path.GetTempPath(), $"tempo-cf26-invalid-{Guid.NewGuid():N}.docx");
         await File.WriteAllTextAsync(invalidDocx, "This is not an OpenXML package.");
-        await ImportFileExpectingErrorAsync(page, "notion-import-word", invalidDocx);
+        var invalidImportMenu = await ImportFileExpectingErrorAsync(page, "notion-import-word", invalidDocx);
+        await CaptureBaselineAsync("import-export", "cf26-invalid-docx-error", invalidImportMenu);
 
         var emptyDocx = await CreateEmptyImportDocxAsync();
         await ImportFileAsync(page, "notion-import-word", emptyDocx, "CF26 Empty Word Import");
@@ -140,9 +142,19 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
         });
         await CaptureBaselineAsync("import-export", "cf26-empty-docx-import-result", page.Locator(".tm-notion-page").First);
 
-        var externalDocx = await DownloadDocxFixtureAsync(SampleDocxWithImagesAndTablesUrl, "samplelib-images-tables");
-        await ImportFileAsync(page, "notion-import-word", externalDocx, expectedTitle: null);
+        var richDocx = await CreateRichImportDocxAsync();
+        await ImportFileAsync(page, "notion-import-word", richDocx, "CF26 Rich Word Import");
+        await page.GetByText("CF26 deterministic image fixture").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
         await page.Locator(".tm-notion-table").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+        await page.Locator(".tm-notion-image-block__img").First.WaitForAsync(new LocatorWaitForOptions
         {
             State = WaitForSelectorState.Visible,
             Timeout = 60000
@@ -154,7 +166,7 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
         });
         await CaptureBaselineAsync("import-export", "cf26-rich-docx-import-result", page.Locator(".tm-notion-page").First);
 
-        TestContext.WriteLine($"UX CF26 review: invalid DOCX shows inline error feedback, empty DOCX lands on an editable page, and external DOCX fixture with images/tables imports without blocking the editor. Fixture: {SampleDocxWithImagesAndTablesUrl}");
+        TestContext.WriteLine("UX CF26 review: invalid DOCX shows inline error feedback, empty DOCX lands on an editable page, and deterministic DOCX fixture with image/table content imports without blocking the editor.");
     }
 
     private static readonly ExportFormatProbe[] ExportFormats =
@@ -267,7 +279,7 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
         }
     }
 
-    private async Task ImportFileExpectingErrorAsync(IPage page, string importTestId, string path)
+    private async Task<ILocator> ImportFileExpectingErrorAsync(IPage page, string importTestId, string path)
     {
         var menu = await EnsureImportMenuOpenAsync(page);
         var chooser = await page.RunAndWaitForFileChooserAsync(
@@ -280,6 +292,8 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
             State = WaitForSelectorState.Visible,
             Timeout = 60000
         });
+
+        return menu;
     }
 
     private static async Task AssertMenuItemHiddenAsync(ILocator menu, string label)
@@ -381,6 +395,95 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
         return path;
     }
 
+    private static async Task<string> CreateRichImportDocxAsync()
+    {
+        var document = Dm.DocumentEditorDocument.Empty();
+        document.Metadata.Title = "CF26 Rich Word Import";
+        document.Blocks =
+        [
+            new Dm.DocumentBlock
+            {
+                Type = Dm.DocumentBlockType.Heading,
+                Order = 0,
+                Content = new Dm.HeadingBlockContent
+                {
+                    Level = 1,
+                    Inlines = [new Dm.TextRun { Text = "CF26 Rich Word Import" }]
+                }
+            },
+            new Dm.DocumentBlock
+            {
+                Type = Dm.DocumentBlockType.Paragraph,
+                Order = 1,
+                Content = new Dm.ParagraphBlockContent
+                {
+                    Inlines = [new Dm.TextRun { Text = "Generated DOCX fixture exercises Word import fidelity for image and table blocks." }]
+                }
+            },
+            new Dm.DocumentBlock
+            {
+                Type = Dm.DocumentBlockType.Image,
+                Order = 2,
+                Content = new Dm.ImageBlockContent
+                {
+                    Source = Dm.DocumentImageSource.Url,
+                    Url = RichDocxImageDataUrl,
+                    AltText = "CF26 deterministic image fixture",
+                    Caption = "CF26 deterministic image fixture",
+                    Size = new Dm.DocumentImageSize { Width = 320, Height = 180 },
+                    NaturalSize = new Dm.DocumentImageSize { Width = 320, Height = 180 },
+                    Alignment = Dm.DocumentImageAlignment.Center
+                }
+            },
+            new Dm.DocumentBlock
+            {
+                Type = Dm.DocumentBlockType.Table,
+                Order = 3,
+                Content = new Dm.TableBlockContent
+                {
+                    Rows =
+                    [
+                        new Dm.TableRowContent
+                        {
+                            Cells =
+                            [
+                                Cell("Imported asset", true),
+                                Cell("Expected result", true)
+                            ]
+                        },
+                        new Dm.TableRowContent
+                        {
+                            Cells =
+                            [
+                                Cell("Image", false),
+                                Cell("Visible with caption", false)
+                            ]
+                        },
+                        new Dm.TableRowContent
+                        {
+                            Cells =
+                            [
+                                Cell("Table", false),
+                                Cell("Readable after import", false)
+                            ]
+                        }
+                    ]
+                }
+            }
+        ];
+
+        var exported = await new DocumentDocxExporter().ExportAsync(document, new DocumentFormatExportOptions
+        {
+            FileName = "cf26-rich-word-import",
+            AllowImagePlaceholders = false
+        });
+        AssertDocxContains(exported.Content, requireImages: true, requireTables: true, description: "CF26 rich generated DOCX fixture");
+
+        var path = Path.Combine(Path.GetTempPath(), $"tempo-cf26-rich-{Guid.NewGuid():N}.docx");
+        await File.WriteAllBytesAsync(path, exported.Content);
+        return path;
+    }
+
     private static async Task<string> CreateLargeMarkdownImportAsync()
     {
         var markdown = new StringBuilder("# CF25 Large Export Page\n\n");
@@ -403,22 +506,6 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
         return path;
     }
 
-    private static async Task<string> DownloadDocxFixtureAsync(string url, string name)
-    {
-        using var http = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(45)
-        };
-        using var response = await http.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        AssertDocxContains(bytes, requireImages: true, requireTables: true, description: name);
-
-        var path = Path.Combine(Path.GetTempPath(), $"tempo-{name}-{Guid.NewGuid():N}.docx");
-        await File.WriteAllBytesAsync(path, bytes);
-        return path;
-    }
-
     private static void AssertDocxContains(byte[] bytes, bool requireImages, bool requireTables, string description)
     {
         using var archive = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
@@ -427,7 +514,9 @@ public class NotionImportExportE2ETests : NotionE2ETestBase
 
         if (requireImages)
         {
-            Assert.IsTrue(archive.Entries.Any(entry => entry.FullName.StartsWith("word/media/", StringComparison.OrdinalIgnoreCase)),
+            Assert.IsTrue(archive.Entries.Any(entry =>
+                    entry.FullName.StartsWith("word/media/", StringComparison.OrdinalIgnoreCase)
+                    || entry.FullName.StartsWith("media/", StringComparison.OrdinalIgnoreCase)),
                 $"{description} should contain at least one image part.");
         }
 

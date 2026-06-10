@@ -67,6 +67,14 @@ public partial class TmNotionPageTreeItem : ComponentBase
 
     private bool MenuOpen => _menuPhase != MenuPhase.None;
 
+    // ── Selection ─────────────────────────────────────────────────────────────
+
+    private async Task OnSelectionChangedAsync(ChangeEventArgs e)
+    {
+        var selected = e.Value is bool value && value;
+        await Tree.SetSelectedAsync(Page.Id.ToString("D"), selected);
+    }
+
     // ── Expand / collapse ─────────────────────────────────────────────────────
 
     private async Task ToggleExpandAsync()

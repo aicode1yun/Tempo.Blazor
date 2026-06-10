@@ -219,3 +219,72 @@ public class NotionNavBlocksE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "navblock_breadcrumb_click");
     }
 }
+
+[TestClass]
+public class NotionNavBlocksRecoveryE2ETests : NotionE2ETestBase
+{
+    private static ILocator Block(IPage page, string id) =>
+        page.Locator($"[data-block-id='{id}']").First;
+
+    private static async Task<ILocator> VisibleBlockAsync(IPage page, string id, string selector)
+    {
+        var block = Block(page, id);
+        await block.Locator(selector).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await block.ScrollIntoViewIfNeededAsync();
+        await page.WaitForTimeoutAsync(350);
+        return block;
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB15 recovery baseline for synced origin/ref and navigation special blocks.")]
+    public async Task EB15_NavigationAndSyncedBlocks_CapturesBaselines()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedSpecialBlocksPageAsync();
+
+        var syncedOrigin = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000080", ".tm-synced-origin");
+        await syncedOrigin.Locator(".tm-synced-origin__body").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await CaptureBaselineAsync("special-blocks", "synced-origin", syncedOrigin);
+
+        var syncedRef = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000090", ".tm-synced-ref");
+        await syncedRef.Locator(".tm-synced-ref__body").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await CaptureBaselineAsync("special-blocks", "synced-ref", syncedRef);
+
+        var childPage = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000100", ".tm-child-page");
+        await childPage.Locator(".tm-child-page__title").Filter(new LocatorFilterOptions { HasText = "Product Roadmap" }).First.WaitForAsync();
+        await CaptureBaselineAsync("special-blocks", "child-page", childPage);
+
+        var linkedPage = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000101", ".tm-linked-page");
+        await linkedPage.Locator(".tm-linked-page__title").Filter(new LocatorFilterOptions { HasText = "Meeting Notes" }).First.WaitForAsync();
+        await CaptureBaselineAsync("special-blocks", "linked-page", linkedPage);
+
+        var breadcrumb = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000102", ".tm-notion-breadcrumb");
+        await page.WaitForSelectorAsync(".tm-notion-breadcrumb__skeleton-row", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Hidden,
+            Timeout = 30000
+        });
+        await CaptureBaselineAsync("special-blocks", "breadcrumb", breadcrumb);
+
+        var tableOfContents = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000110", ".tm-toc");
+        await tableOfContents.Locator(".tm-toc__item").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await CaptureBaselineAsync("special-blocks", "table-of-contents", tableOfContents);
+    }
+}

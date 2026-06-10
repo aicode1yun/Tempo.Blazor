@@ -62,6 +62,21 @@ public sealed class NotionAIStreamingServiceTests
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
+    [Fact]
+    public async Task GenerateTextAsync_ProviderException_PropagatesToCaller()
+    {
+        var service = new NotionAIStreamingService();
+        var provider = new ContractAIProvider { ThrowOnGenerate = true };
+
+        var act = async () => await service.GenerateTextAsync(
+            provider,
+            new AiCompletionRequest { Prompt = "Draft section" },
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Provider failed");
+    }
+
     private static async IAsyncEnumerable<string> Stream(params string[] chunks)
     {
         foreach (var chunk in chunks)
@@ -85,12 +100,18 @@ public sealed class NotionAIStreamingServiceTests
     private sealed class ContractAIProvider : INotionAIProvider
     {
         public bool EnumerationStarted { get; private set; }
+        public bool ThrowOnGenerate { get; init; }
 
         public async IAsyncEnumerable<string> GenerateAsync(
             AiCompletionRequest request,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             EnumerationStarted = true;
+            if (ThrowOnGenerate)
+            {
+                throw new InvalidOperationException("Provider failed");
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
             await Task.Yield();
             yield return "generated";

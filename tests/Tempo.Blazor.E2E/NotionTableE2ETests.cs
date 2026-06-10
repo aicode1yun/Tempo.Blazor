@@ -11,6 +11,8 @@ namespace Tempo.Blazor.E2E;
 [TestClass]
 public class NotionTableE2ETests : WasmTestBase
 {
+    private const string TablePageSeedEndpoint = "https://localhost:5100/api/notion/e2e/seed/seedTablePage";
+
     // ══════════════════════════════════════════════════════════════════════════
     //  Helpers
     // ══════════════════════════════════════════════════════════════════════════
@@ -41,6 +43,210 @@ public class NotionTableE2ETests : WasmTestBase
 
     private ILocator CellAt(IPage page, int rowIndex, int colIndex) =>
         page.Locator($".tm-notion-table tbody tr:nth-child({rowIndex + 1}) .tm-notion-table__cell-td:nth-child({colIndex + 2}) .tm-notion-table__cell[contenteditable='true']").First;
+
+    private async Task SeedTablePageAsync(IPage page)
+    {
+        using var http = new HttpClient();
+        using var response = await http.PostAsync(TablePageSeedEndpoint, null);
+        response.EnsureSuccessStatusCode();
+
+        await page.ReloadAsync(new PageReloadOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60000
+        });
+        await WaitForAppReadyAsync(page);
+        await page.WaitForSelectorAsync("[data-block-id='eb700000-0000-0000-0000-000000000010'] .tm-notion-table", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+    }
+
+    private async Task CaptureBaselineAsync(IPage page, string state, ILocator region)
+    {
+        var outputDir = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "__baseline__", "notion", "tables");
+        outputDir = Path.GetFullPath(outputDir);
+        Directory.CreateDirectory(outputDir);
+
+        var fullPath = Path.Combine(outputDir, $"{state}.png");
+        var regionPath = Path.Combine(outputDir, $"{state}.region.png");
+
+        await page.WaitForTimeoutAsync(250);
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+        await region.ScreenshotAsync(new LocatorScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            OmitBackground = false
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+    }
+
+    private static async Task AssertNoHorizontalPageOverflowAsync(IPage page)
+    {
+        var hasOverflow = await page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1");
+        Assert.IsFalse(hasOverflow, "Wide Notion table must scroll inside its wrapper without creating page-level horizontal overflow.");
+    }
+
+    private static ILocator TableCell(ILocator tableBlock, int rowIndex, int columnIndex) =>
+        tableBlock.Locator($"[data-tm-row='{rowIndex}'][data-tm-col='{columnIndex}']").First;
+
+    private static async Task DragSelectCellsAsync(IPage page, ILocator startCell, ILocator endCell)
+    {
+        var start = await startCell.BoundingBoxAsync();
+        var end = await endCell.BoundingBoxAsync();
+        Assert.IsNotNull(start, "Start table cell should have a visible bounding box.");
+        Assert.IsNotNull(end, "End table cell should have a visible bounding box.");
+
+        await page.Mouse.MoveAsync((float)(start.X + start.Width / 2), (float)(start.Y + start.Height / 2));
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)(end.X + end.Width / 2), (float)(end.Y + end.Height / 2), new MouseMoveOptions
+        {
+            Steps = 12
+        });
+        await page.Mouse.UpAsync();
+        await page.WaitForTimeoutAsync(250);
+    }
+
+    private async Task CaptureBaselineAndAssertAsync(IPage page, string state, ILocator region)
+    {
+        await region.ScrollIntoViewIfNeededAsync();
+        await CaptureBaselineAsync(page, state, region);
+
+        var outputDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "__baseline__", "notion", "tables"));
+        Assert.IsTrue(File.Exists(Path.Combine(outputDir, $"{state}.png")), $"CF11 full-page baseline should be written for {state}.");
+        Assert.IsTrue(File.Exists(Path.Combine(outputDir, $"{state}.region.png")), $"CF11 region baseline should be written for {state}.");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  EB7 screenshot recovery
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("EB7 captures desktop table, wide table, empty table, and long-cell wrapping baselines.")]
+    public async Task EB7_TableDesktopWideEmptyAndLongContent_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedTablePageAsync(page);
+        await page.SetViewportSizeAsync(1366, 768);
+
+        var desktopTable = page.Locator("[data-block-id='eb700000-0000-0000-0000-000000000010']").First;
+        await desktopTable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await Assertions.Expect(desktopTable.Locator(".tm-notion-table__cell").First).ToHaveCSSAsync("white-space", "pre-wrap");
+        await Assertions.Expect(desktopTable.Locator(".tm-notion-table__cell-td").First).ToHaveCSSAsync("border-top-style", "solid");
+        await Assertions.Expect(desktopTable).ToContainTextAsync("intentionally long enough to wrap");
+        await CaptureBaselineAsync(page, "desktop-table", desktopTable);
+        await CaptureBaselineAsync(page, "long-cell-content-desktop", desktopTable);
+
+        var wideTable = page.Locator("[data-block-id='eb700000-0000-0000-0000-000000000020']").First;
+        await wideTable.ScrollIntoViewIfNeededAsync();
+        await Assertions.Expect(wideTable.Locator(".tm-notion-table__cell-td").First).ToHaveCSSAsync("border-top-style", "solid");
+        await CaptureBaselineAsync(page, "desktop-wide-table", wideTable);
+
+        var emptyTable = page.Locator("[data-block-id='eb700000-0000-0000-0000-000000000030']").First;
+        await emptyTable.ScrollIntoViewIfNeededAsync();
+        await Assertions.Expect(emptyTable.Locator(".tm-notion-table-block__empty-grid")).ToBeVisibleAsync();
+        await Assertions.Expect(emptyTable.Locator(".tm-notion-table-block__add-col")).ToBeVisibleAsync();
+        await Assertions.Expect(emptyTable.Locator(".tm-notion-table-block__add-row")).ToBeVisibleAsync();
+        await CaptureBaselineAsync(page, "empty-table-desktop", emptyTable);
+
+        await AssertNoHorizontalPageOverflowAsync(page);
+    }
+
+    [TestMethod]
+    [Description("EB7 captures mobile horizontal scroll for a wide Notion table.")]
+    public async Task EB7_TableMobileHorizontalScroll_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await page.SetViewportSizeAsync(390, 844);
+        await SeedTablePageAsync(page);
+
+        var wideTable = page.Locator("[data-block-id='eb700000-0000-0000-0000-000000000020']").First;
+        await wideTable.ScrollIntoViewIfNeededAsync();
+        var wrapper = wideTable.Locator(".tm-notion-table-block__wrapper").First;
+        await wrapper.EvaluateAsync("element => element.scrollLeft = element.scrollWidth");
+        await page.WaitForTimeoutAsync(250);
+
+        var scrollMetrics = await wrapper.EvaluateAsync<ScrollMetrics>("element => ({ scrollLeft: element.scrollLeft, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth })");
+        Assert.IsTrue(scrollMetrics.ScrollWidth > scrollMetrics.ClientWidth, "Wide table should overflow inside its wrapper on mobile.");
+        Assert.IsTrue(scrollMetrics.ScrollLeft > 0, "Mobile baseline should capture the horizontally scrolled state.");
+
+        await CaptureBaselineAsync(page, "mobile-wide-table-horizontal-scroll", wideTable);
+        await AssertNoHorizontalPageOverflowAsync(page);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  CF11 screenshot recovery
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("CF11 captures merged cells, split state, colored/header cells, sorted column state, and mobile horizontal scroll.")]
+    public async Task CF11_AdvancedTableMergedSplitColorSortAndMobile_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedTablePageAsync(page);
+        await page.SetViewportSizeAsync(1366, 768);
+
+        var advancedTable = page.Locator("[data-block-id='cf110000-0000-0000-0000-000000000010']").First;
+        await advancedTable.ScrollIntoViewIfNeededAsync();
+        await advancedTable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+
+        var mergedHeader = TableCell(advancedTable, 0, 0);
+        await Assertions.Expect(mergedHeader).ToHaveAttributeAsync("colspan", "2");
+        await Assertions.Expect(TableCell(advancedTable, 1, 2)).ToHaveAttributeAsync("rowspan", "2");
+        await Assertions.Expect(advancedTable.Locator(".tm-notion-table-row--header .tm-notion-table__cell").First).ToHaveCSSAsync("font-weight", "600");
+        await Assertions.Expect(advancedTable.Locator(".tm-notion-table__cell-td--header-col").First).ToBeVisibleAsync();
+        await Assertions.Expect(advancedTable.Locator("[style*='color-mix']").First).ToBeVisibleAsync();
+
+        await DragSelectCellsAsync(page, TableCell(advancedTable, 1, 0), TableCell(advancedTable, 3, 0));
+        await advancedTable.Locator("button[title='Sort column']").ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+        await Assertions.Expect(advancedTable.Locator(".tm-notion-table-row").Nth(1)).ToContainTextAsync("Discovery");
+        await CaptureBaselineAndAssertAsync(page, "cf11-advanced-merged-colored-header-sorted", advancedTable);
+
+        await DragSelectCellsAsync(page, TableCell(advancedTable, 1, 2), TableCell(advancedTable, 2, 3));
+        await advancedTable.Locator("button[title='Split cells']").ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+        await Assertions.Expect(TableCell(advancedTable, 1, 2)).ToHaveAttributeAsync("rowspan", "1");
+        await Assertions.Expect(TableCell(advancedTable, 2, 2)).ToBeVisibleAsync();
+        await Assertions.Expect(TableCell(advancedTable, 2, 2).Locator(".tm-notion-table__cell")).ToHaveTextAsync(string.Empty);
+        await Assertions.Expect(TableCell(advancedTable, 2, 3)).ToContainTextAsync("Ivan");
+        await CaptureBaselineAndAssertAsync(page, "cf11-split-unmerged-state", advancedTable);
+
+        page = await OpenNotionEditorAsync();
+        await page.SetViewportSizeAsync(390, 844);
+        await SeedTablePageAsync(page);
+
+        var mobileTable = page.Locator("[data-block-id='cf110000-0000-0000-0000-000000000010']").First;
+        await mobileTable.ScrollIntoViewIfNeededAsync();
+        var wrapper = mobileTable.Locator(".tm-notion-table-block__wrapper").First;
+        await wrapper.EvaluateAsync("element => element.scrollLeft = element.scrollWidth");
+        await page.WaitForTimeoutAsync(250);
+
+        var scrollMetrics = await wrapper.EvaluateAsync<ScrollMetrics>("element => ({ scrollLeft: element.scrollLeft, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth })");
+        Assert.IsTrue(scrollMetrics.ScrollWidth > scrollMetrics.ClientWidth, "CF11 advanced table should scroll inside its wrapper on mobile.");
+        Assert.IsTrue(scrollMetrics.ScrollLeft > 0, "CF11 mobile baseline should capture the horizontally scrolled merged table.");
+        await Assertions.Expect(TableCell(mobileTable, 0, 0)).ToHaveAttributeAsync("colspan", "2");
+
+        await CaptureBaselineAndAssertAsync(page, "cf11-mobile-merged-horizontal-scroll", mobileTable);
+        await AssertNoHorizontalPageOverflowAsync(page);
+    }
+
+    private sealed class ScrollMetrics
+    {
+        public double ScrollLeft { get; set; }
+        public double ScrollWidth { get; set; }
+        public double ClientWidth { get; set; }
+    }
 
     // ══════════════════════════════════════════════════════════════════════════
     //  Rendering

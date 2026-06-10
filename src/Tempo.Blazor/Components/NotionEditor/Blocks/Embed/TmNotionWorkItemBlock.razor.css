@@ -26,13 +26,23 @@
 
 .tm-work-item-host ::deep .tm-work-item--list {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
-    align-items: center;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
     gap: var(--tm-space-3);
     padding: var(--tm-space-2) var(--tm-space-3);
     border: var(--tm-border-width-1, 1px) solid var(--tm-color-border);
     border-radius: var(--tm-radius-sm);
     background: var(--tm-bg-surface);
+}
+
+.tm-work-item-host ::deep .tm-work-item--list .tm-work-item__link {
+    overflow: hidden;
+}
+
+.tm-work-item-host ::deep .tm-work-item--list .tm-work-item__actions {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+    margin-top: calc(var(--tm-space-1) * -1);
 }
 
 .tm-work-item-host ::deep .tm-work-item--inline {
@@ -95,6 +105,7 @@
     display: inline-flex;
     align-items: baseline;
     gap: var(--tm-space-2);
+    min-width: 0;
     max-width: 100%;
     color: var(--tm-text-primary);
     text-decoration: none;
@@ -278,6 +289,10 @@
 
     .tm-work-item-host ::deep .tm-work-item--list {
         grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .tm-work-item-host ::deep .tm-work-item--list .tm-work-item__actions {
+        grid-column: 1 / -1;
     }
 
     .tm-work-item-host ::deep .tm-work-item__actions {

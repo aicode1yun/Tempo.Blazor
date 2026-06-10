@@ -49,7 +49,11 @@ public partial class TmNotionIncludePageBlock : ComponentBase
     private bool _tooDeep;
 
     private string SourceSummary
-        => _sourcePage is not null ? PageTitle(_sourcePage) : Loc["Notion_IncludePage_Select"];
+        => _sourcePage is not null
+            ? PageTitle(_sourcePage)
+            : Content?.SourcePageId is not null && _notFound
+                ? Loc["Notion_IncludePage_MissingSource"]
+                : Loc["Notion_IncludePage_Select"];
 
     protected override async Task OnParametersSetAsync()
     {

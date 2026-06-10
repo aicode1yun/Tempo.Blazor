@@ -13,7 +13,7 @@
     gap: var(--tm-space-4);
     padding: var(--tm-space-4) clamp(var(--tm-space-4), 5vw, var(--tm-space-8));
     border-bottom: 1px solid var(--tm-border-color);
-    background: var(--tm-bg-elevated);
+    background: var(--tm-bg-surface);
 }
 
 .tm-npp__header h1 {
@@ -73,7 +73,7 @@
 .tm-npp__state--empty {
     border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg);
-    background: var(--tm-bg-elevated);
+    background: var(--tm-bg-surface);
     box-shadow: var(--tm-shadow-sm);
 }
 

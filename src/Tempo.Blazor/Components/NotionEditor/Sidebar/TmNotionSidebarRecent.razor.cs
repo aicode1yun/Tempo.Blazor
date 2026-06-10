@@ -17,7 +17,14 @@ public partial class TmNotionSidebarRecent : ComponentBase
 
     // ── Section expand ────────────────────────────────────────────────────────
 
-    private bool _isExpanded = false;
+    private bool _isExpanded;
+    private bool _hasUserToggledExpanded;
+
+    protected override void OnParametersSet()
+    {
+        if (!_hasUserToggledExpanded && Pages.Count == 0)
+            _isExpanded = true;
+    }
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -47,6 +54,12 @@ public partial class TmNotionSidebarRecent : ComponentBase
             return string.Format(Loc["TmNotionSidebarRecent_HoursAgo"], (int)diff.TotalHours);
 
         return string.Format(Loc["TmNotionSidebarRecent_DaysAgo"], (int)diff.TotalDays);
+    }
+
+    private void ToggleExpanded()
+    {
+        _hasUserToggledExpanded = true;
+        _isExpanded = !_isExpanded;
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────

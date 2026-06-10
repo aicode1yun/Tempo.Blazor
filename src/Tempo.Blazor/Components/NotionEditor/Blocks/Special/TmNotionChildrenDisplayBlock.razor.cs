@@ -234,7 +234,7 @@ public partial class TmNotionChildrenDisplayBlock : ComponentBase, IDisposable
         builder.AddAttribute(seq++, "role", "none");
 
         builder.OpenElement(seq++, "button");
-        builder.AddAttribute(seq++, "class", "tm-children__page");
+        builder.AddAttribute(seq++, "class", _showIcons ? "tm-children__page" : "tm-children__page tm-children__page--no-icon");
         builder.AddAttribute(seq++, "type", "button");
         builder.AddAttribute(seq++, "role", "treeitem");
         builder.AddAttribute(seq++, "aria-level", level);

@@ -29,6 +29,9 @@ public partial class TmNotionPageHeader : ComponentBase, IDisposable
 
     [Parameter] public bool ReadOnly { get; set; }
 
+    /// <summary>When true, displays a visible page-level restricted access indicator in the header.</summary>
+    [Parameter] public bool ShowRestrictedIndicator { get; set; }
+
     [Parameter] public EventCallback<INotionPage> OnPageUpdated { get; set; }
 
     /// <summary>Fired when Enter is pressed in the title, signalling to add a new block.</summary>
@@ -52,6 +55,7 @@ public partial class TmNotionPageHeader : ComponentBase, IDisposable
     private string       _coverUrlInput    = string.Empty;
     private double       _coverPositionY   = 50;
     private string       _emojiSearch      = string.Empty;
+    private List<string> _recentEmojis     = [];
     private INotionPage? _lastPage;
 
     private ElementReference _titleRef;
@@ -213,7 +217,7 @@ public partial class TmNotionPageHeader : ComponentBase, IDisposable
 
     // ── Icon ──────────────────────────────────────────────────────────────────
 
-    private void ToggleIconPicker()
+    private async Task ToggleIconPickerAsync()
     {
         if (ReadOnly) return;
         _showIconPicker = !_showIconPicker;
@@ -221,12 +225,14 @@ public partial class TmNotionPageHeader : ComponentBase, IDisposable
         {
             _showCoverDialog = false;
             _emojiSearch     = string.Empty;
+            await LoadRecentEmojisAsync();
         }
     }
 
     private async Task SelectEmojiAsync(string emoji)
     {
         _showIconPicker = false;
+        await AddRecentEmojiAsync(emoji);
         var updated = MapToMutable(Page);
         updated.IconEmoji    = emoji;
         updated.IconImageUrl = null;
@@ -281,6 +287,36 @@ public partial class TmNotionPageHeader : ComponentBase, IDisposable
             try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _titleRef, Page.Title); }
             catch { }
         }
+    }
+
+    private async Task LoadRecentEmojisAsync()
+    {
+        try
+        {
+            var recent = await JS.InvokeAsync<string[]>("tmNotionEditor.getRecentEmojis");
+            _recentEmojis = recent
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .Distinct(StringComparer.Ordinal)
+                .Take(16)
+                .ToList();
+        }
+        catch
+        {
+            _recentEmojis = [];
+        }
+    }
+
+    private async Task AddRecentEmojiAsync(string emoji)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.addRecentEmoji", emoji);
+            _recentEmojis.RemoveAll(e => string.Equals(e, emoji, StringComparison.Ordinal));
+            _recentEmojis.Insert(0, emoji);
+            if (_recentEmojis.Count > 16)
+                _recentEmojis.RemoveRange(16, _recentEmojis.Count - 16);
+        }
+        catch { }
     }
 
     private async Task SaveTitleAsync(string newTitle)

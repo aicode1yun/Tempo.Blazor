@@ -24,16 +24,25 @@ public sealed class NotionPageReactionsE2ETests : NotionE2ETestBase
         var likeButton = reactions.Locator(".tm-page-reactions__like").First;
         var likeCount = reactions.Locator(".tm-page-reactions__like-count").First;
         Assert.AreEqual("0", (await likeCount.TextContentAsync())?.Trim());
+        Assert.AreEqual("false", await likeButton.GetAttributeAsync("aria-pressed"));
+        await CaptureBaselineAsync("page-reactions", "cf17-like-inactive-empty-bar", reactions);
 
         await likeButton.ClickAsync();
         await ExpectTextAsync(likeCount, "1");
         Assert.AreEqual("true", await likeButton.GetAttributeAsync("aria-pressed"));
+        await CaptureBaselineAsync("page-reactions", "cf17-like-active", reactions);
 
         await likeButton.ClickAsync();
         await ExpectTextAsync(likeCount, "0");
         Assert.AreEqual("false", await likeButton.GetAttributeAsync("aria-pressed"));
 
         await reactions.Locator(".tm-page-reactions__add").First.ClickAsync();
+        await reactions.Locator(".tm-page-reactions__picker").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        await CaptureBaselineAsync("page-reactions", "cf17-emoji-picker-open", page.Locator(".tm-notion-page").First);
         await reactions.Locator(".tm-page-reactions__choice").Filter(new() { HasText = "🎉" }).ClickAsync();
         var celebration = reactions.Locator(".tm-page-reactions__pill[data-reaction='🎉']").First;
         await celebration.WaitForAsync(new LocatorWaitForOptions
@@ -50,6 +59,7 @@ public sealed class NotionPageReactionsE2ETests : NotionE2ETestBase
         var providerlessPage = await OpenNotionEditorAsync("?disableReactionProvider=true");
         await SeedPageReactionsEmptyPageAsync();
         Assert.AreEqual(0, await providerlessPage.Locator(".tm-page-reactions").CountAsync());
+        await CaptureBaselineAsync("page-reactions", "cf17-providerless-hidden-state", providerlessPage.Locator(".tm-notion-page").First);
 
         var manyPage = await OpenNotionEditorAsync();
         await SeedPageReactionsManyPageAsync();
@@ -61,6 +71,7 @@ public sealed class NotionPageReactionsE2ETests : NotionE2ETestBase
         });
         Assert.IsTrue(await manyReactions.Locator(".tm-page-reactions__pill").CountAsync() >= 5);
         Assert.IsTrue(await manyReactions.EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth + 1"), "Page reactions should not overflow horizontally.");
+        await CaptureBaselineAsync("page-reactions", "cf17-many-reactions-wrapping", manyReactions);
     }
 
     private static async Task ExpectTextAsync(ILocator locator, string expected)

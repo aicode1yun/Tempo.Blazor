@@ -104,6 +104,7 @@
                              OnCopyLink="HandleCopyLinkAsync"
                              OnComment="HandleCommentAsync"
                              OnNewThread="HandleNewThreadAsync"
+                             OnCalloutVariantChange="HandleCalloutVariantChangedAsync"
                              OnTextColorChange="HandleTextColorChangeAsync"
                              OnBackgroundChange="HandleBackgroundColorChangeAsync" />
     }
@@ -127,6 +128,8 @@
                                    OnIndentChange="HandleParagraphTabAsync"
                                    OnTypeConvert="HandleParagraphMarkdownShortcutAsync"
                                    OnFocused="OnFocusedAsync"
+                                   OnMoveFocusPrevious="MoveFocusPreviousAsync"
+                                   OnMoveFocusNext="MoveFocusNextAsync"
                                    OnSlashMenu="HandleParagraphSlashAsync"
                                    OnMentionMenu="HandleParagraphMentionAsync"
                                    OnPageLinkMenu="HandleParagraphPageLinkAsync"
@@ -253,6 +256,7 @@
                                    Placeholder="@Loc["TmNotionBlock_ListPlaceholder"]"
                                    OnCheckedChanged="HandleTodoCheckedChangedAsync"
                                    OnAssigneeChanged="HandleTodoAssigneeChangedAsync"
+                                   OnDueDateChanged="HandleTodoDueDateChangedAsync"
                                    OnContentSaved="HandleTodoContentSavedAsync"
                                    OnEnterSplit="HandleTodoEnterSplitAsync"
                                    OnDeleteRequested="OnDeleted"
@@ -418,6 +422,17 @@
                 break;
             }
 
+            // ── Work item ───────────────────────────────────────────────────
+            case BlockType.WorkItem:
+            {
+                var c = Block.Content as IWorkItemBlockContent;
+                <TmNotionWorkItemBlock Content="c"
+                                       ReadOnly="ReadOnly"
+                                       OnContentChanged="HandleWorkItemContentChangedAsync"
+                                       OnFocused="OnFocusedAsync" />
+                break;
+            }
+
             // ── Child page ───────────────────────────────────────────────────
             case BlockType.ChildPage:
             {
@@ -449,6 +464,89 @@
                 <TmNotionTableOfContentsBlock Content="c"
                                               ReadOnly="ReadOnly"
                                               OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Include page ────────────────────────────────────────────────
+            case BlockType.IncludePage:
+            {
+                var c = Block.Content as IIncludePageBlockContent;
+                <TmNotionIncludePageBlock Block="Block"
+                                          Content="c"
+                                          ReadOnly="ReadOnly"
+                                          OnUpdated="OnUpdated"
+                                          OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Children display ────────────────────────────────────────────
+            case BlockType.ChildrenDisplay:
+            {
+                var c = Block.Content as IChildrenDisplayBlockContent;
+                <TmNotionChildrenDisplayBlock Block="Block"
+                                              Content="c"
+                                              ReadOnly="ReadOnly"
+                                              OnContentChanged="HandleChildrenDisplayContentChangedAsync"
+                                              OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Excerpt ─────────────────────────────────────────────────────
+            case BlockType.Excerpt:
+            {
+                var c = Block.Content as IExcerptBlockContent;
+                <TmNotionExcerptBlock Block="Block"
+                                      Content="c"
+                                      ReadOnly="ReadOnly"
+                                      OnContentChanged="HandleExcerptContentChangedAsync"
+                                      OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Excerpt include ─────────────────────────────────────────────
+            case BlockType.ExcerptInclude:
+            {
+                var c = Block.Content as IExcerptIncludeBlockContent;
+                <TmNotionExcerptIncludeBlock Block="Block"
+                                             Content="c"
+                                             ReadOnly="ReadOnly"
+                                             OnUpdated="OnUpdated"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Content by label ────────────────────────────────────────────
+            case BlockType.ContentByLabel:
+            {
+                var c = Block.Content as IContentByLabelBlockContent;
+                <TmNotionContentByLabelBlock Content="c"
+                                             ReadOnly="ReadOnly"
+                                             OnContentChanged="HandleContentByLabelContentChangedAsync"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Page properties ─────────────────────────────────────────────
+            case BlockType.PageProperties:
+            {
+                var c = Block.Content as IPagePropertiesBlockContent;
+                <TmNotionPagePropertiesBlock Block="Block"
+                                             Content="c"
+                                             ReadOnly="ReadOnly"
+                                             OnContentChanged="HandlePagePropertiesContentChangedAsync"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Page properties report ──────────────────────────────────────
+            case BlockType.PagePropertiesReport:
+            {
+                var c = Block.Content as IPagePropertiesReportBlockContent;
+                <TmNotionPagePropertiesReportBlock Block="Block"
+                                                   Content="c"
+                                                   ReadOnly="ReadOnly"
+                                                   OnContentChanged="HandlePagePropertiesReportContentChangedAsync"
+                                                   OnFocused="OnFocusedAsync" />
                 break;
             }
 

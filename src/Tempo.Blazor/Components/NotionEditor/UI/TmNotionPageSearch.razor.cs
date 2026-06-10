@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -31,10 +32,13 @@ public partial class TmNotionPageSearch : ComponentBase, IAsyncDisposable
 
     // ── Filter state ──────────────────────────────────────────────────────────
 
-    private string _filterAuthor   = string.Empty;
-    private string _filterType     = string.Empty;
-    private string _filterDateFrom = string.Empty;
-    private string _filterDateTo   = string.Empty;
+    private string _filterAuthor       = string.Empty;
+    private string _filterLabel        = string.Empty;
+    private string _filterType         = string.Empty;
+    private string _filterSpace        = string.Empty;
+    private string _filterDateFrom     = string.Empty;
+    private string _filterDateTo       = string.Empty;
+    private string _filterEditedBefore = string.Empty;
 
     // ── Refs & cleanup ────────────────────────────────────────────────────────
 
@@ -145,23 +149,54 @@ public partial class TmNotionPageSearch : ComponentBase, IAsyncDisposable
     private NotionSearchFilter? BuildFilter()
     {
         var hasFilter =
-            !string.IsNullOrEmpty(_filterAuthor)   ||
-            !string.IsNullOrEmpty(_filterType)      ||
-            !string.IsNullOrEmpty(_filterDateFrom)  ||
-            !string.IsNullOrEmpty(_filterDateTo);
+            !string.IsNullOrWhiteSpace(_filterAuthor)       ||
+            !string.IsNullOrWhiteSpace(_filterLabel)        ||
+            !string.IsNullOrWhiteSpace(_filterType)         ||
+            !string.IsNullOrWhiteSpace(_filterSpace)        ||
+            !string.IsNullOrWhiteSpace(_filterDateFrom)     ||
+            !string.IsNullOrWhiteSpace(_filterDateTo)       ||
+            !string.IsNullOrWhiteSpace(_filterEditedBefore);
 
         if (!hasFilter) return null;
 
         return new NotionSearchFilter
         {
-            CreatedByUserId = string.IsNullOrEmpty(_filterAuthor) ? null : _filterAuthor,
-            CreatedAfter    = TryParseDate(_filterDateFrom),
-            CreatedBefore   = TryParseDate(_filterDateTo)
+            Author           = NormalizeFilterValue(_filterAuthor),
+            LabelFilter      = NormalizeFilterValue(_filterLabel),
+            ContentType      = NormalizeFilterValue(_filterType),
+            SpaceId          = NormalizeFilterValue(_filterSpace),
+            BlockType        = ResolveBlockType(_filterType),
+            CreatedAfter     = TryParseDate(_filterDateFrom),
+            CreatedBefore    = TryParseDate(_filterDateTo),
+            LastEditedBefore = TryParseDate(_filterEditedBefore)
         };
     }
 
+    private static string? NormalizeFilterValue(string value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private static DateTime? TryParseDate(string? s) =>
         DateTime.TryParse(s, out var d) ? d : null;
+
+    private static BlockType? ResolveBlockType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType) ||
+            contentType.Equals("Page", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        if (Enum.TryParse<BlockType>(contentType, ignoreCase: true, out var parsed))
+            return parsed;
+
+        return contentType.Trim().ToLowerInvariant() switch
+        {
+            "paragraph" => BlockType.Paragraph,
+            "heading" => BlockType.Heading1,
+            "todo" => BlockType.TodoItem,
+            "media" => BlockType.Image,
+            "table" => BlockType.Table,
+            _ => null
+        };
+    }
 
     private void RebuildFlatResults()
     {
@@ -249,18 +284,24 @@ public partial class TmNotionPageSearch : ComponentBase, IAsyncDisposable
 
     private async Task ClearFiltersAsync()
     {
-        _filterAuthor   = string.Empty;
-        _filterType     = string.Empty;
-        _filterDateFrom = string.Empty;
-        _filterDateTo   = string.Empty;
+        _filterAuthor       = string.Empty;
+        _filterLabel        = string.Empty;
+        _filterType         = string.Empty;
+        _filterSpace        = string.Empty;
+        _filterDateFrom     = string.Empty;
+        _filterDateTo       = string.Empty;
+        _filterEditedBefore = string.Empty;
         await SearchAsync(_query);
     }
 
     private bool HasActiveFilters =>
-        !string.IsNullOrEmpty(_filterAuthor)  ||
-        !string.IsNullOrEmpty(_filterType)    ||
-        !string.IsNullOrEmpty(_filterDateFrom)||
-        !string.IsNullOrEmpty(_filterDateTo);
+        !string.IsNullOrWhiteSpace(_filterAuthor)       ||
+        !string.IsNullOrWhiteSpace(_filterLabel)        ||
+        !string.IsNullOrWhiteSpace(_filterType)         ||
+        !string.IsNullOrWhiteSpace(_filterSpace)        ||
+        !string.IsNullOrWhiteSpace(_filterDateFrom)     ||
+        !string.IsNullOrWhiteSpace(_filterDateTo)       ||
+        !string.IsNullOrWhiteSpace(_filterEditedBefore);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

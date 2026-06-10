@@ -6,6 +6,36 @@ namespace Tempo.Blazor.E2E;
 [TestClass]
 public sealed class NotionAIE2ETests : NotionE2ETestBase
 {
+    private const string FormattingParagraphBlockId = "eb100000-0000-0000-0000-000000000003";
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("CF27: AI providerless mode hides AI affordances and captures the visual hidden state")]
+    public async Task CF27_AIProviderlessHiddenState_Baseline()
+    {
+        var page = await OpenNotionEditorAsync("?disableAIProvider=true");
+        await SeedTextFormattingPageAsync();
+
+        await page.Locator(".tm-npsm-trigger").ClickAsync();
+        var settingsMenu = page.Locator(".tm-npsm").First;
+        await settingsMenu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await AssertHiddenAsync(page, "[data-testid='notion-ai-summarize']");
+        await AssertHiddenAsync(page, "[data-testid='notion-ai-ask-page']");
+        await CaptureBaselineAsync("ai-inline", "cf27-providerless-settings-menu", settingsMenu);
+        await page.Keyboard.PressAsync("Escape");
+
+        await FocusBlockAndOpenSlashAsync(page);
+        await page.Locator(".tm-notion-slash__input").FillAsync("ai");
+        await AssertHiddenAsync(page, "[data-testid='notion-ai-slash-item']");
+        await CaptureBaselineAsync("ai-inline", "cf27-providerless-slash-menu", page.Locator(".tm-notion-slash").First);
+        await page.Keyboard.PressAsync("Escape");
+
+        await SelectLocatorContentsAsync(page, page.Locator(".tm-notion-paragraph[contenteditable='true']").First);
+        await AssertHiddenAsync(page, "[data-testid='notion-inline-ai']");
+
+        TestContext.WriteLine("UX CF27 review: there is no standalone AI provider status surface; providerless visual impact is the absence of AI affordances in page settings, slash menu, and inline selection. CF28 covers the active AI panels.");
+    }
+
     [TestMethod]
     [TestCategory("NotionUxBaseline")]
     [Description("CF28: AI generate, improve, summarize and ask work through the Notion editor UI and capture UX baselines")]
@@ -92,6 +122,7 @@ public sealed class NotionAIE2ETests : NotionE2ETestBase
         await page.Locator("[data-testid='notion-ai-run']").ClickAsync();
         var cancel = page.Locator("[data-testid='notion-ai-cancel']").First;
         await cancel.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await CaptureBaselineAsync("ai-inline", "generate-streaming-active", page.Locator("[data-testid='notion-ai-menu']").First);
         await cancel.ClickAsync();
         await page.Locator("[data-testid='notion-ai-cancel']").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Detached, Timeout = 10000 });
 
@@ -101,7 +132,9 @@ public sealed class NotionAIE2ETests : NotionE2ETestBase
         await ExpectTextAsync(page.Locator("[data-testid='notion-ai-output']"), "Demo AI completion");
         await page.Locator("[data-testid='notion-ai-discard']").ClickAsync();
 
-        await OpenInlineAIAsync(page, page.Locator(".tm-notion-paragraph[contenteditable='true']").First);
+        page = await OpenNotionEditorAsync();
+        await SeedTextFormattingPageAsync();
+        await OpenInlineAIAsync(page, page.Locator($"[data-block-id='{FormattingParagraphBlockId}'] .tm-notion-paragraph[contenteditable='true']").First);
         foreach (var mode in ImproveModeChecks)
         {
             await page.Locator($"[data-testid='{mode.TestId}']").ClickAsync();
@@ -116,12 +149,13 @@ public sealed class NotionAIE2ETests : NotionE2ETestBase
         await failing.Locator("[data-testid='notion-ai-prompt']").FillAsync("show provider error");
         await failing.Locator("[data-testid='notion-ai-run']").ClickAsync();
         await ExpectTextAsync(failing.Locator("[data-testid='notion-ai-error']"), "AI request failed");
+        await CaptureBaselineAsync("ai-inline", "provider-error", failing.Locator("[data-testid='notion-ai-menu']").First);
     }
 
     private static readonly (string TestId, string ExpectedText)[] ImproveModeChecks =
     [
-        ("notion-ai-improve-grammar", "Combined formatted selection"),
-        ("notion-ai-improve-shorten", "Combined formatted selection"),
+        ("notion-ai-improve-grammar", "Combined active inline toolbar state"),
+        ("notion-ai-improve-shorten", "Combined active inline toolbar state"),
         ("notion-ai-improve-lengthen", "Expanded version"),
         ("notion-ai-improve-tone", "Professional rewrite"),
         ("notion-ai-improve-simplify", "Simple version"),
@@ -160,7 +194,18 @@ public sealed class NotionAIE2ETests : NotionE2ETestBase
 
     private static async Task OpenInlineAIAsync(IPage page, ILocator editable)
     {
-        await SelectLocatorContentsAsync(page, editable);
+        await editable.ScrollIntoViewIfNeededAsync();
+        await editable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await editable.ClickAsync();
+        await page.Keyboard.PressAsync("Control+A");
+        await page.WaitForTimeoutAsync(300);
+
+        if (await page.Locator("[data-testid='notion-inline-ai']").First.CountAsync() == 0 ||
+            !await page.Locator("[data-testid='notion-inline-ai']").First.IsVisibleAsync())
+        {
+            await SelectLocatorContentsAsync(page, editable);
+        }
+
         var button = page.Locator("[data-testid='notion-inline-ai']").First;
         await button.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
         await button.EvaluateAsync("el => el.click()");

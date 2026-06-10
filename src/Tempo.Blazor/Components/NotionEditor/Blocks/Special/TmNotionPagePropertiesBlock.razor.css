@@ -76,8 +76,8 @@
 .tm-page-props__thead,
 .tm-page-props__row {
     display: grid;
-    grid-template-columns: minmax(9rem, 0.8fr) minmax(14rem, 1.4fr) auto;
-    min-width: 32rem;
+    grid-template-columns: minmax(7rem, 0.85fr) minmax(10rem, 1.5fr) 3rem;
+    width: 100%;
 }
 
 .tm-page-props__thead {

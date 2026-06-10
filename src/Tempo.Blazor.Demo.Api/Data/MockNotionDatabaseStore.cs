@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -36,6 +38,37 @@ public class MockNotionDatabaseStore : INotionDatabaseProvider
 
     public MockNotionDatabaseStore()
     {
+        Reset();
+    }
+
+    public void SeedE2E(string seed)
+    {
+        Reset();
+        if (string.Equals(seed, "empty", StringComparison.OrdinalIgnoreCase))
+        {
+            _records.Clear();
+        }
+        else if (string.Equals(seed, "one", StringComparison.OrdinalIgnoreCase))
+        {
+            var first = _records.Values
+                .OrderBy(r => GetFieldText(r, _fName), StringComparer.OrdinalIgnoreCase)
+                .Take(1)
+                .ToList();
+            _records.Clear();
+            foreach (var record in first)
+            {
+                _records[record.Id] = record;
+            }
+        }
+    }
+
+    private void Reset()
+    {
+        _fieldsByDb.Clear();
+        _viewsByDb.Clear();
+        _records.Clear();
+        _templatesByDb.Clear();
+
         _fieldsByDb[DbId]    = BuildFields();
         _viewsByDb[DbId]     = BuildViews();
         _templatesByDb[DbId] = BuildTemplates();
@@ -197,17 +230,205 @@ public class MockNotionDatabaseStore : INotionDatabaseProvider
         IEnumerable<NotionDatabaseSort>? sorts, NotionDatabaseGrouping? grouping,
         int page, int pageSize)
     {
-        var dbId  = Guid.Parse(databaseId);
-        var all   = _records.Values.Where(r => r.DatabaseId == dbId).ToList();
+        var dbId = Guid.Parse(databaseId);
+        var all = _records.Values
+            .Where(r => r.DatabaseId == dbId)
+            .Where(r => MatchesFilter(r, filter))
+            .ToList();
+
+        all = ApplySorts(all, sorts).ToList();
+
+        var safePage = Math.Max(1, page);
+        var safePageSize = Math.Clamp(pageSize, 1, 200);
         var total = all.Count;
-        var items = all.Skip((page - 1) * pageSize).Take(pageSize).Cast<IDatabaseRecord>().ToList();
+        var items = all.Skip((safePage - 1) * safePageSize).Take(safePageSize).Cast<IDatabaseRecord>().ToList();
         return Task.FromResult(new PagedResult<IDatabaseRecord>
         {
             Items      = items,
             TotalCount = total,
-            Page       = page,
-            PageSize   = pageSize
+            Page       = safePage,
+            PageSize   = safePageSize
         });
+    }
+
+    private static IEnumerable<DatabaseRecord> ApplySorts(IEnumerable<DatabaseRecord> records, IEnumerable<NotionDatabaseSort>? sorts)
+    {
+        IOrderedEnumerable<DatabaseRecord>? ordered = null;
+
+        foreach (var sort in sorts ?? [])
+        {
+            Func<DatabaseRecord, string> keySelector = record => GetFieldText(record, sort.FieldId);
+            ordered = ordered is null
+                ? sort.Direction == SortDirection.Descending
+                    ? records.OrderByDescending(keySelector, StringComparer.OrdinalIgnoreCase)
+                    : records.OrderBy(keySelector, StringComparer.OrdinalIgnoreCase)
+                : sort.Direction == SortDirection.Descending
+                    ? ordered.ThenByDescending(keySelector, StringComparer.OrdinalIgnoreCase)
+                    : ordered.ThenBy(keySelector, StringComparer.OrdinalIgnoreCase);
+        }
+
+        return ordered ?? records.OrderBy(record => GetFieldText(record, _fName), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool MatchesFilter(DatabaseRecord record, INotionDatabaseFilter? filter)
+    {
+        if (filter is null)
+        {
+            return true;
+        }
+
+        var results = filter.Conditions
+            .Select(condition => MatchesCondition(record, condition))
+            .Concat(filter.NestedFilters.Select(nested => MatchesFilter(record, nested)))
+            .ToList();
+
+        if (results.Count == 0)
+        {
+            return true;
+        }
+
+        return filter.Logic == FilterLogic.Or
+            ? results.Any(result => result)
+            : results.All(result => result);
+    }
+
+    private static bool MatchesCondition(DatabaseRecord record, NotionFilterCondition condition)
+    {
+        record.Fields.TryGetValue(condition.FieldId.ToString(), out var rawValue);
+        var value = NormalizeValue(rawValue);
+        var expected = NormalizeValue(condition.Value);
+        var valueText = ValueToText(value);
+        var expectedText = ValueToText(expected);
+
+        return condition.Operator switch
+        {
+            NotionFilterOperator.Equals => string.Equals(valueText, expectedText, StringComparison.OrdinalIgnoreCase),
+            NotionFilterOperator.NotEquals => !string.Equals(valueText, expectedText, StringComparison.OrdinalIgnoreCase),
+            NotionFilterOperator.Contains => valueText.Contains(expectedText, StringComparison.OrdinalIgnoreCase),
+            NotionFilterOperator.NotContains => !valueText.Contains(expectedText, StringComparison.OrdinalIgnoreCase),
+            NotionFilterOperator.StartsWith => valueText.StartsWith(expectedText, StringComparison.OrdinalIgnoreCase),
+            NotionFilterOperator.EndsWith => valueText.EndsWith(expectedText, StringComparison.OrdinalIgnoreCase),
+            NotionFilterOperator.IsEmpty => string.IsNullOrWhiteSpace(valueText),
+            NotionFilterOperator.IsNotEmpty => !string.IsNullOrWhiteSpace(valueText),
+            NotionFilterOperator.GreaterThan => TryCompare(value, expected, out var gt) && gt > 0,
+            NotionFilterOperator.GreaterThanOrEqual => TryCompare(value, expected, out var gte) && gte >= 0,
+            NotionFilterOperator.LessThan => TryCompare(value, expected, out var lt) && lt < 0,
+            NotionFilterOperator.LessThanOrEqual => TryCompare(value, expected, out var lte) && lte <= 0,
+            NotionFilterOperator.Before => TryCompareDate(value, expected, out var before) && before < 0,
+            NotionFilterOperator.After => TryCompareDate(value, expected, out var after) && after > 0,
+            NotionFilterOperator.OnOrBefore => TryCompareDate(value, expected, out var onOrBefore) && onOrBefore <= 0,
+            NotionFilterOperator.OnOrAfter => TryCompareDate(value, expected, out var onOrAfter) && onOrAfter >= 0,
+            NotionFilterOperator.IsChecked => value is bool checkedValue && checkedValue,
+            NotionFilterOperator.IsUnchecked => value is bool uncheckedValue && !uncheckedValue,
+            NotionFilterOperator.ThisWeek => IsDateInRange(value, DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek), 7),
+            NotionFilterOperator.PastWeek => IsDateInRange(value, DateTime.UtcNow.Date.AddDays(-7), 7),
+            NotionFilterOperator.PastMonth => IsDateInRange(value, DateTime.UtcNow.Date.AddMonths(-1), 31),
+            NotionFilterOperator.NextWeek => IsDateInRange(value, DateTime.UtcNow.Date, 7),
+            NotionFilterOperator.NextMonth => IsDateInRange(value, DateTime.UtcNow.Date, 31),
+            _ => true
+        };
+    }
+
+    private static object? NormalizeValue(object? value)
+    {
+        if (value is JsonElement json)
+        {
+            return json.ValueKind switch
+            {
+                JsonValueKind.String => json.GetString(),
+                JsonValueKind.Number => json.TryGetDouble(out var number) ? number : json.GetRawText(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Array => json.EnumerateArray().Select(item => NormalizeValue(item)).ToArray(),
+                JsonValueKind.Null or JsonValueKind.Undefined => null,
+                _ => json.GetRawText()
+            };
+        }
+
+        return value;
+    }
+
+    private static string ValueToText(object? value)
+    {
+        value = NormalizeValue(value);
+        return value switch
+        {
+            null => string.Empty,
+            string text => text,
+            DateTime date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            DateTimeOffset date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            string[] values => string.Join(" ", values),
+            IEnumerable<object?> values => string.Join(" ", values.Select(ValueToText)),
+            _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty
+        };
+    }
+
+    private static bool TryCompare(object? value, object? expected, out int comparison)
+    {
+        if (TryGetDouble(value, out var left) && TryGetDouble(expected, out var right))
+        {
+            comparison = left.CompareTo(right);
+            return true;
+        }
+
+        comparison = string.Compare(ValueToText(value), ValueToText(expected), StringComparison.OrdinalIgnoreCase);
+        return true;
+    }
+
+    private static bool TryCompareDate(object? value, object? expected, out int comparison)
+    {
+        comparison = 0;
+        if (!TryGetDate(value, out var left) || !TryGetDate(expected, out var right))
+        {
+            return false;
+        }
+
+        comparison = left.Date.CompareTo(right.Date);
+        return true;
+    }
+
+    private static bool TryGetDouble(object? value, out double number)
+    {
+        value = NormalizeValue(value);
+        return value switch
+        {
+            double d => (number = d) == d,
+            float f => (number = f) == f,
+            decimal m => (number = (double)m) == (double)m,
+            int i => (number = i) == i,
+            long l => (number = l) == l,
+            string text => double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out number),
+            _ => double.TryParse(ValueToText(value), NumberStyles.Any, CultureInfo.InvariantCulture, out number)
+        };
+    }
+
+    private static bool TryGetDate(object? value, out DateTime date)
+    {
+        value = NormalizeValue(value);
+        return value switch
+        {
+            DateTime dt => (date = dt) == dt,
+            DateTimeOffset dto => (date = dto.UtcDateTime) == dto.UtcDateTime,
+            string text => DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out date),
+            _ => DateTime.TryParse(ValueToText(value), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out date)
+        };
+    }
+
+    private static bool IsDateInRange(object? value, DateTime start, int days)
+    {
+        if (!TryGetDate(value, out var date))
+        {
+            return false;
+        }
+
+        var end = start.AddDays(days);
+        return date.Date >= start.Date && date.Date < end.Date;
+    }
+
+    private static string GetFieldText(DatabaseRecord record, Guid fieldId)
+    {
+        record.Fields.TryGetValue(fieldId.ToString(), out var value);
+        return ValueToText(value);
     }
 
     public Task<IDatabaseRecord> GetRecordAsync(string databaseId, string recordId)
@@ -497,7 +718,7 @@ public class MockNotionDatabaseStore : INotionDatabaseProvider
 
     private static List<DatabaseRecord> BuildRecords()
     {
-        var now = DateTime.UtcNow;
+        var now = new DateTime(2026, 6, 9, 12, 0, 0, DateTimeKind.Utc);
 
         DatabaseRecord Make(string name, string status, string priority,
             DateTime? due, string[] tags, int progress, bool done, string assignee)

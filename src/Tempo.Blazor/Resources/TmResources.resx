@@ -250,6 +250,16 @@
   <data name="TmRichEditor_Emoji" xml:space="preserve"><value>Emoji</value></data>
   <data name="TmRichEditor_Words" xml:space="preserve"><value>words</value></data>
   <data name="TmRichEditor_Characters" xml:space="preserve"><value>characters</value></data>
+  <data name="Notion_Todo_Toggle" xml:space="preserve"><value>Toggle action item</value></data>
+  <data name="Notion_Todo_Assign" xml:space="preserve"><value>Assign</value></data>
+  <data name="Notion_Todo_DueDate" xml:space="preserve"><value>Due date</value></data>
+  <data name="Notion_Todo_Overdue" xml:space="preserve"><value>Overdue</value></data>
+  <data name="Notion_Todo_Unassign" xml:space="preserve"><value>Unassign</value></data>
+  <data name="Notion_Todo_AssigneeSearch" xml:space="preserve"><value>Search people</value></data>
+  <data name="Notion_Todo_LoadingUsers" xml:space="preserve"><value>Loading people</value></data>
+  <data name="Notion_Todo_NoAssignees" xml:space="preserve"><value>No people found</value></data>
+  <data name="Notion_Todo_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Notion_Todo_Tomorrow" xml:space="preserve"><value>Tomorrow</value></data>
   <data name="TmRichEditor_ImageDialog_Title" xml:space="preserve"><value>Insert Image</value></data>
   <data name="TmRichEditor_ImageDialog_Url" xml:space="preserve"><value>Image URL</value></data>
   <data name="TmRichEditor_ImageDialog_Alt" xml:space="preserve"><value>Alt text</value></data>
@@ -1172,11 +1182,11 @@
   <data name="TmNotionEditor_NavigateBack"       xml:space="preserve"><value>Back</value></data>
   <data name="TmNotionEditor_Locked"             xml:space="preserve"><value>Read-only</value></data>
   <data name="TmNotionEditor_Loading"            xml:space="preserve"><value>Loading page…</value></data>
-  <data name="TmNotionEditor_LoadError"          xml:space="preserve"><value>Failed to load page. {0}</value></data>
+  <data name="TmNotionEditor_LoadError"          xml:space="preserve"><value>Failed to load page.</value></data>
   <data name="TmNotionEditor_Untitled"           xml:space="preserve"><value>Untitled</value></data>
   <data name="TmNotionPage_TitlePlaceholder"     xml:space="preserve"><value>Untitled</value></data>
   <data name="TmNotionPage_WriteHint"            xml:space="preserve"><value>Press Enter or click here to start writing…</value></data>
-  <data name="TmNotionPage_BlocksLoadError"      xml:space="preserve"><value>Failed to load content. {0}</value></data>
+  <data name="TmNotionPage_BlocksLoadError"      xml:space="preserve"><value>Failed to load content.</value></data>
   <data name="TmNotionPage_AddCover"             xml:space="preserve"><value>Add cover</value></data>
   <data name="TmNotionPage_AddIcon"              xml:space="preserve"><value>Add icon</value></data>
   <data name="TmNotionPage_ChangeCover"          xml:space="preserve"><value>Change cover</value></data>
@@ -1220,6 +1230,16 @@
   <data name="TmNotionTableBlock_DragRow"                    xml:space="preserve"><value>Drag to reorder</value></data>
   <data name="TmNotionTableBlock_ToggleHeaderRow"            xml:space="preserve"><value>Header row</value></data>
   <data name="TmNotionTableBlock_ToggleHeaderColumn"         xml:space="preserve"><value>Header column</value></data>
+  <data name="TmNotionTableBlock_Undo"                       xml:space="preserve"><value>Undo table change</value></data>
+  <data name="TmNotionTableBlock_SelectionTools"             xml:space="preserve"><value>Table selection tools</value></data>
+  <data name="TmNotionTableBlock_Merge"                      xml:space="preserve"><value>Merge cells</value></data>
+  <data name="TmNotionTableBlock_Split"                      xml:space="preserve"><value>Split cells</value></data>
+  <data name="TmNotionTableBlock_ColorYellow"                xml:space="preserve"><value>Highlight yellow</value></data>
+  <data name="TmNotionTableBlock_ColorGreen"                 xml:space="preserve"><value>Highlight green</value></data>
+  <data name="TmNotionTableBlock_ColorBlue"                  xml:space="preserve"><value>Highlight blue</value></data>
+  <data name="TmNotionTableBlock_ColorRed"                   xml:space="preserve"><value>Highlight red</value></data>
+  <data name="TmNotionTableBlock_ClearColor"                 xml:space="preserve"><value>Clear color</value></data>
+  <data name="TmNotionTableBlock_Sort"                       xml:space="preserve"><value>Sort column</value></data>
 
   <!-- Phase 60: Table of Contents Block -->
   <data name="TmNotionTableOfContentsBlock_Title"             xml:space="preserve"><value>Table of contents</value></data>
@@ -1290,6 +1310,8 @@
   <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Uploading…</value></data>
   <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Upload failed. Please try again.</value></data>
   <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>File upload is not configured.</value></data>
+  <data name="TmNotionMediaUploadDialog_InvalidFileType"     xml:space="preserve"><value>This file type is not supported for this block.</value></data>
+  <data name="TmNotionMediaUploadDialog_FileTooLarge"        xml:space="preserve"><value>The selected file is too large. Maximum size is {0}.</value></data>
   <data name="TmNotionMediaUploadDialog_TabLibrary"         xml:space="preserve"><value>Library</value></data>
   <data name="TmNotionMediaUploadDialog_LibrarySearch"      xml:space="preserve"><value>Search media…</value></data>
   <data name="TmNotionMediaUploadDialog_LibraryLoading"     xml:space="preserve"><value>Loading…</value></data>
@@ -1393,6 +1415,7 @@
   <data name="TmNotionBlockContextMenu_CopyLink"             xml:space="preserve"><value>Copy link to block</value></data>
   <data name="TmNotionBlockContextMenu_Comment"              xml:space="preserve"><value>Comment</value></data>
   <data name="TmNotionBlockContextMenu_NewThread"            xml:space="preserve"><value>New thread</value></data>
+  <data name="TmNotionBlockContextMenu_PanelType"            xml:space="preserve"><value>Panel type</value></data>
   <data name="TmNotionBlockContextMenu_Color"                xml:space="preserve"><value>Color</value></data>
   <data name="TmNotionBlockContextMenu_TextColor"            xml:space="preserve"><value>Color</value></data>
   <data name="TmNotionBlockContextMenu_Background"           xml:space="preserve"><value>Background</value></data>
@@ -1438,6 +1461,12 @@
   <data name="TmNotionSlashMenu_ItemName_Toggle"                xml:space="preserve"><value>Toggle list</value></data>
   <data name="TmNotionSlashMenu_ItemName_Quote"                 xml:space="preserve"><value>Quote</value></data>
   <data name="TmNotionSlashMenu_ItemName_Callout"               xml:space="preserve"><value>Callout</value></data>
+  <data name="TmNotionSlashMenu_ItemName_InfoPanel"             xml:space="preserve"><value>Info panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_NotePanel"             xml:space="preserve"><value>Note panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_WarningPanel"          xml:space="preserve"><value>Warning panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ErrorPanel"            xml:space="preserve"><value>Error panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_SuccessPanel"          xml:space="preserve"><value>Success panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Status"                xml:space="preserve"><value>Status</value></data>
   <data name="TmNotionSlashMenu_ItemName_Divider"               xml:space="preserve"><value>Divider</value></data>
   <data name="TmNotionSlashMenu_ItemName_Code"                  xml:space="preserve"><value>Code</value></data>
   <data name="TmNotionSlashMenu_ItemName_Equation"              xml:space="preserve"><value>Block equation</value></data>
@@ -1448,6 +1477,7 @@
   <data name="TmNotionSlashMenu_ItemName_Pdf"                   xml:space="preserve"><value>PDF</value></data>
   <data name="TmNotionSlashMenu_ItemName_Bookmark"              xml:space="preserve"><value>Web bookmark</value></data>
   <data name="TmNotionSlashMenu_ItemName_Embed"                 xml:space="preserve"><value>Embed</value></data>
+  <data name="TmNotionSlashMenu_ItemName_WorkItem"              xml:space="preserve"><value>Work item</value></data>
   <data name="TmNotionSlashMenu_ItemName_ChildPage"             xml:space="preserve"><value>Page</value></data>
   <data name="TmNotionSlashMenu_ItemName_LinkedPage"            xml:space="preserve"><value>Linked page</value></data>
   <data name="TmNotionSlashMenu_ItemName_TableOfContents"       xml:space="preserve"><value>Table of contents</value></data>
@@ -1457,6 +1487,7 @@
   <data name="TmNotionSlashMenu_ItemName_Table"                xml:space="preserve"><value>Table</value></data>
   <data name="TmNotionSlashMenu_ItemName_ColumnList"           xml:space="preserve"><value>2 Columns</value></data>
   <data name="TmNotionSlashMenu_ItemName_Breadcrumb"           xml:space="preserve"><value>Breadcrumb</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ContentByLabel"       xml:space="preserve"><value>Content by label</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Paragraph"             xml:space="preserve"><value>Just start writing with plain text</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading1"              xml:space="preserve"><value>Big section heading</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading2"              xml:space="preserve"><value>Medium section heading</value></data>
@@ -1467,6 +1498,12 @@
   <data name="TmNotionSlashMenu_ItemDesc_Toggle"                xml:space="preserve"><value>Toggles can hide and show content inside</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Quote"                 xml:space="preserve"><value>Capture a quote</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Callout"               xml:space="preserve"><value>Make your writing stand out</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_InfoPanel"             xml:space="preserve"><value>Highlight neutral information</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_NotePanel"             xml:space="preserve"><value>Add an editorial note</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_WarningPanel"          xml:space="preserve"><value>Call attention to a warning</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ErrorPanel"            xml:space="preserve"><value>Mark a critical issue</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_SuccessPanel"          xml:space="preserve"><value>Show a successful outcome</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Status"                xml:space="preserve"><value>Insert an inline status chip</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Divider"               xml:space="preserve"><value>Visually divide content with a line</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Code"                  xml:space="preserve"><value>Capture a code snippet</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Equation"              xml:space="preserve"><value>Display a math equation using LaTeX</value></data>
@@ -1477,6 +1514,7 @@
   <data name="TmNotionSlashMenu_ItemDesc_Pdf"                   xml:space="preserve"><value>Embed a PDF</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Bookmark"              xml:space="preserve"><value>Save a link as a visual bookmark</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Embed"                 xml:space="preserve"><value>Embed from any URL</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_WorkItem"              xml:space="preserve"><value>Link to a tracked issue or task</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_ChildPage"             xml:space="preserve"><value>Embed a sub-page inside this page</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_LinkedPage"            xml:space="preserve"><value>Link to an existing page</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_TableOfContents"       xml:space="preserve"><value>Show an outline of your page</value></data>
@@ -1488,6 +1526,44 @@
   <data name="TmNotionSlashMenu_ItemDesc_Table"                xml:space="preserve"><value>Insert a simple table</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_ColumnList"           xml:space="preserve"><value>Create a multi-column layout</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Breadcrumb"           xml:space="preserve"><value>Show a breadcrumb navigation path</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ContentByLabel"       xml:space="preserve"><value>List pages that share selected labels</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_AI"                   xml:space="preserve"><value>Draft, improve, summarize, or ask about this page</value></data>
+
+  <!-- Notion inline status -->
+  <data name="Notion_Status_Insert"                            xml:space="preserve"><value>Insert status</value></data>
+  <data name="Notion_Status_Placeholder"                       xml:space="preserve"><value>Status label</value></data>
+  <data name="Notion_Status_Color_Gray"                        xml:space="preserve"><value>Gray</value></data>
+  <data name="Notion_Status_Color_Blue"                        xml:space="preserve"><value>Blue</value></data>
+  <data name="Notion_Status_Color_Green"                       xml:space="preserve"><value>Green</value></data>
+  <data name="Notion_Status_Color_Yellow"                      xml:space="preserve"><value>Yellow</value></data>
+  <data name="Notion_Status_Color_Red"                         xml:space="preserve"><value>Red</value></data>
+  <data name="Notion_Status_Color_Purple"                      xml:space="preserve"><value>Purple</value></data>
+
+  <!-- Notion AI -->
+  <data name="Notion_AI_Assistant"                             xml:space="preserve"><value>AI assistant</value></data>
+  <data name="Notion_AI_Generate"                              xml:space="preserve"><value>Generate</value></data>
+  <data name="Notion_AI_Improve"                               xml:space="preserve"><value>Improve</value></data>
+  <data name="Notion_AI_Summarize"                             xml:space="preserve"><value>Summarize</value></data>
+  <data name="Notion_AI_Ask"                                   xml:space="preserve"><value>Ask</value></data>
+  <data name="Notion_AI_Accept"                                xml:space="preserve"><value>Accept</value></data>
+  <data name="Notion_AI_Discard"                               xml:space="preserve"><value>Discard</value></data>
+  <data name="Notion_AI_Retry"                                 xml:space="preserve"><value>Retry</value></data>
+  <data name="Notion_AI_Thinking"                              xml:space="preserve"><value>Thinking...</value></data>
+  <data name="Notion_AI_Error"                                 xml:space="preserve"><value>AI request failed</value></data>
+  <data name="Notion_AI_Run"                                   xml:space="preserve"><value>Run</value></data>
+  <data name="Notion_AI_Cancel"                                xml:space="preserve"><value>Cancel</value></data>
+  <data name="Notion_AI_OutputLabel"                           xml:space="preserve"><value>Result</value></data>
+  <data name="Notion_AI_PromptPlaceholder"                     xml:space="preserve"><value>Describe what should be written...</value></data>
+  <data name="Notion_AI_QuestionPlaceholder"                   xml:space="preserve"><value>Ask a question about this page...</value></data>
+  <data name="Notion_AI_SummarizeDescription"                  xml:space="preserve"><value>Create a concise summary of this page.</value></data>
+  <data name="Notion_AI_SourceEmpty"                           xml:space="preserve"><value>Select text in the editor before improving it.</value></data>
+  <data name="Notion_AI_EmptyPrompt"                           xml:space="preserve"><value>Enter a prompt first.</value></data>
+  <data name="Notion_AI_Mode_Grammar"                          xml:space="preserve"><value>Grammar</value></data>
+  <data name="Notion_AI_Mode_Shorten"                          xml:space="preserve"><value>Shorten</value></data>
+  <data name="Notion_AI_Mode_Lengthen"                         xml:space="preserve"><value>Lengthen</value></data>
+  <data name="Notion_AI_Mode_Tone"                             xml:space="preserve"><value>Tone</value></data>
+  <data name="Notion_AI_Mode_Simplify"                         xml:space="preserve"><value>Simplify</value></data>
+  <data name="Notion_AI_Mode_Translate"                        xml:space="preserve"><value>Translate</value></data>
 
   <!-- ═══════════════ NOTION INLINE TOOLBAR (Phase 44) ═══════════════ -->
   <data name="TmNotionInlineToolbar_Label"         xml:space="preserve"><value>Text formatting</value></data>
@@ -1582,6 +1658,7 @@
   <data name="TmNotionEmbedBlock_CaptionPlaceholder"  xml:space="preserve"><value>Add caption…</value></data>
   <data name="TmNotionEmbedBlock_Replace"             xml:space="preserve"><value>Replace</value></data>
   <data name="TmNotionEmbedBlock_OpenSource"          xml:space="preserve"><value>Open source</value></data>
+  <data name="TmNotionEmbedBlock_GenericProvider"     xml:space="preserve"><value>Generic embed</value></data>
   <data name="TmNotionEmbedBlock_ErrorInvalidUrl"     xml:space="preserve"><value>Please enter a valid URL.</value></data>
   <data name="TmNotionEmbedBlock_ErrorGeneric"        xml:space="preserve"><value>Could not embed this URL. Check the link and try again.</value></data>
 
@@ -1946,6 +2023,7 @@
   <data name="TmNotionSidebar_SearchPlaceholder" xml:space="preserve"><value>Search pages…</value></data>
   <data name="TmNotionSidebar_SearchNoResults"   xml:space="preserve"><value>No pages found</value></data>
   <data name="TmNotionSidebar_SearchLoading"     xml:space="preserve"><value>Searching…</value></data>
+  <data name="TmNotionSidebar_SearchError"       xml:space="preserve"><value>Search could not be completed</value></data>
   <data name="TmNotionSidebar_CloseSearch"       xml:space="preserve"><value>Close search</value></data>
   <data name="TmNotionSidebar_Favorites"         xml:space="preserve"><value>Favorites</value></data>
   <data name="TmNotionSidebar_Recent"            xml:space="preserve"><value>Recent</value></data>
@@ -1990,6 +2068,15 @@
   <data name="TmNotionPageTree_NoPages"          xml:space="preserve"><value>No pages yet. Click + to create one.</value></data>
   <data name="TmNotionPageTree_LoadingChildren"  xml:space="preserve"><value>Loading…</value></data>
   <data name="TmNotionPageTree_RenameHint"       xml:space="preserve"><value>Rename: {0}</value></data>
+  <data name="TmNotionPageTree_SelectPage"       xml:space="preserve"><value>Select {0}</value></data>
+  <data name="TmNotionPageTree_BulkToolbar"      xml:space="preserve"><value>Page bulk actions</value></data>
+  <data name="TmNotionPageTree_BulkSelected"     xml:space="preserve"><value>{0} selected</value></data>
+  <data name="TmNotionPageTree_Copy"             xml:space="preserve"><value>Copy</value></data>
+  <data name="TmNotionPageTree_BulkTargetTitle"  xml:space="preserve"><value>Select target page</value></data>
+  <data name="TmNotionPageTree_BulkDeleteTitle"  xml:space="preserve"><value>Delete selected pages</value></data>
+  <data name="TmNotionPageTree_BulkDeleteMessage" xml:space="preserve"><value>Selected pages will be moved to trash.</value></data>
+  <data name="TmNotionPageTree_BulkMoveDescendantError" xml:space="preserve"><value>Selected pages cannot be moved into their own descendants.</value></data>
+  <data name="TmNotionPageTree_BulkOperationError" xml:space="preserve"><value>Could not complete the bulk page operation.</value></data>
 
   <!-- ═══════════════ TmNotionSidebarFavorites + TmNotionSidebarRecent (Phase 82) ═══════════════ -->
   <data name="TmNotionSidebarFavorites_DragHint"     xml:space="preserve"><value>Drag to reorder</value></data>
@@ -2655,6 +2742,8 @@
   <data name="TmNotionPageHistory_NextPage"            xml:space="preserve"><value>Next page</value></data>
   <data name="TmNotionPageHistory_EmptyTitle"          xml:space="preserve"><value>Select a version</value></data>
   <data name="TmNotionPageHistory_EmptySub"            xml:space="preserve"><value>Click any version on the left to preview its content.</value></data>
+  <data name="TmNotionPageHistory_NoVersionsEmptyTitle" xml:space="preserve"><value>No history yet</value></data>
+  <data name="TmNotionPageHistory_NoVersionsEmptySub"   xml:space="preserve"><value>Versions will appear here after this page is edited and saved.</value></data>
   <data name="TmNotionPageHistory_PreviewLabel"        xml:space="preserve"><value>Version preview (read-only)</value></data>
   <data name="TmNotionPageHistory_LoadingPreview"      xml:space="preserve"><value>Loading preview…</value></data>
   <data name="TmNotionPageHistory_EmptySnapshot"       xml:space="preserve"><value>This version has no content.</value></data>
@@ -2674,10 +2763,13 @@
   <data name="TmNotionPageHistory_DiffRemoved"         xml:space="preserve"><value>Removed</value></data>
   <data name="TmNotionPageHistory_DiffModified"        xml:space="preserve"><value>Modified</value></data>
   <data name="TmNotionPageHistory_DiffMoved"           xml:space="preserve"><value>Moved</value></data>
+  <data name="TmNotionPageHistory_DiffModeInline"      xml:space="preserve"><value>Inline</value></data>
+  <data name="TmNotionPageHistory_DiffModeSideBySide"  xml:space="preserve"><value>Side by side</value></data>
   <data name="TmNotionPageHistory_DiffBefore"          xml:space="preserve"><value>Before</value></data>
   <data name="TmNotionPageHistory_DiffAfter"           xml:space="preserve"><value>After</value></data>
   <data name="TmNotionPageHistory_LoadingDiff"         xml:space="preserve"><value>Comparing versions…</value></data>
   <data name="TmNotionPageHistory_NoDiff"              xml:space="preserve"><value>No differences found between these versions.</value></data>
+  <data name="TmNotionDiffViewer_NotPresent"           xml:space="preserve"><value>Not present in this version</value></data>
   <data name="TmNotionPageHistory_BlockParagraph"      xml:space="preserve"><value>Paragraph</value></data>
   <data name="TmNotionPageHistory_BlockH1"             xml:space="preserve"><value>Heading 1</value></data>
   <data name="TmNotionPageHistory_BlockH2"             xml:space="preserve"><value>Heading 2</value></data>
@@ -2704,8 +2796,21 @@
   <data name="TmNotionPageSearch_FilterTitle"               xml:space="preserve"><value>Advanced filters</value></data>
   <data name="TmNotionPageSearch_FilterAuthorLabel"         xml:space="preserve"><value>Author</value></data>
   <data name="TmNotionPageSearch_FilterAuthorPlaceholder"   xml:space="preserve"><value>User ID or name</value></data>
+  <data name="TmNotionPageSearch_FilterLabelLabel"          xml:space="preserve"><value>Label</value></data>
+  <data name="TmNotionPageSearch_FilterLabelPlaceholder"    xml:space="preserve"><value>Page label</value></data>
+  <data name="TmNotionPageSearch_FilterTypeLabel"           xml:space="preserve"><value>Type</value></data>
+  <data name="TmNotionPageSearch_FilterTypeAll"             xml:space="preserve"><value>All types</value></data>
+  <data name="TmNotionPageSearch_FilterTypePage"            xml:space="preserve"><value>Page</value></data>
+  <data name="TmNotionPageSearch_FilterTypeParagraph"       xml:space="preserve"><value>Paragraph</value></data>
+  <data name="TmNotionPageSearch_FilterTypeHeading"         xml:space="preserve"><value>Heading</value></data>
+  <data name="TmNotionPageSearch_FilterTypeTodo"            xml:space="preserve"><value>Todo</value></data>
+  <data name="TmNotionPageSearch_FilterTypeMedia"           xml:space="preserve"><value>Media</value></data>
+  <data name="TmNotionPageSearch_FilterTypeTable"           xml:space="preserve"><value>Table</value></data>
+  <data name="TmNotionPageSearch_FilterSpaceLabel"          xml:space="preserve"><value>Space</value></data>
+  <data name="TmNotionPageSearch_FilterSpacePlaceholder"    xml:space="preserve"><value>Space name or ID</value></data>
   <data name="TmNotionPageSearch_FilterDateFromLabel"       xml:space="preserve"><value>Created after</value></data>
   <data name="TmNotionPageSearch_FilterDateToLabel"         xml:space="preserve"><value>Created before</value></data>
+  <data name="TmNotionPageSearch_FilterEditedBeforeLabel"   xml:space="preserve"><value>Edited before</value></data>
   <data name="TmNotionPageSearch_FilterClear"               xml:space="preserve"><value>Clear filters</value></data>
   <data name="TmNotionPageSearch_ResultsLabel"              xml:space="preserve"><value>Search results</value></data>
   <data name="TmNotionPageSearch_SectionPages"              xml:space="preserve"><value>Pages</value></data>
@@ -2728,10 +2833,24 @@
   <data name="TmNotionPageSettingsMenu_ExportMarkdown"            xml:space="preserve"><value>Export as Markdown</value></data>
   <data name="TmNotionPageSettingsMenu_ExportHtml"                xml:space="preserve"><value>Export as HTML</value></data>
   <data name="TmNotionPageSettingsMenu_ExportPdf"                 xml:space="preserve"><value>Export as PDF</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportDocx"                xml:space="preserve"><value>Export as DOCX</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportOdt"                 xml:space="preserve"><value>Export as ODT</value></data>
+  <data name="TmNotionPageSettingsMenu_IncludeSubpages"           xml:space="preserve"><value>Include subpages</value></data>
   <data name="TmNotionPageSettingsMenu_Import"                    xml:space="preserve"><value>Import</value></data>
   <data name="TmNotionPageSettingsMenu_ImportMarkdown"            xml:space="preserve"><value>Import Markdown (.md)</value></data>
   <data name="TmNotionPageSettingsMenu_ImportHtml"                xml:space="preserve"><value>Import HTML (.html)</value></data>
   <data name="TmNotionPageSettingsMenu_ImportWord"                xml:space="preserve"><value>Import Word (.docx)</value></data>
+  <data name="TmNotionPageSettingsMenu_AISummarize"               xml:space="preserve"><value>Summarize with AI</value></data>
+  <data name="TmNotionPageSettingsMenu_AIAskPage"                 xml:space="preserve"><value>Ask AI about page</value></data>
+  <data name="Notion_PageInfo_Title"                              xml:space="preserve"><value>Page info</value></data>
+  <data name="Notion_PageInfo_Open"                               xml:space="preserve"><value>Open page info</value></data>
+  <data name="Notion_PageInfo_Created"                            xml:space="preserve"><value>Created</value></data>
+  <data name="Notion_PageInfo_LastEdited"                         xml:space="preserve"><value>Last edited</value></data>
+  <data name="Notion_PageInfo_Words"                              xml:space="preserve"><value>Words</value></data>
+  <data name="Notion_PageInfo_ReadingTime"                        xml:space="preserve"><value>Reading time</value></data>
+  <data name="Notion_PageInfo_Views"                              xml:space="preserve"><value>Views</value></data>
+  <data name="Notion_PageInfo_UnknownUser"                        xml:space="preserve"><value>Unknown author</value></data>
+  <data name="Notion_PageInfo_Minutes"                            xml:space="preserve"><value>{0} min</value></data>
   <data name="TmNotionPageSettingsMenu_PageHistory"               xml:space="preserve"><value>Page history</value></data>
   <data name="TmNotionPageSettingsMenu_CopyLink"                  xml:space="preserve"><value>Copy link</value></data>
   <data name="TmNotionPageSettingsMenu_MoveTo"                    xml:space="preserve"><value>Move to</value></data>
@@ -4429,4 +4548,260 @@
   <data name="TmModelingSourcePanel_Stale" xml:space="preserve"><value>Stale</value></data>
   <data name="TmModelingSourcePanel_Unknown" xml:space="preserve"><value>Unknown</value></data>
   <data name="TmModelingSourcePanel_StaleWarning" xml:space="preserve"><value>Source data may be out of date. Load the model again before using this view for decisions.</value></data>
+  <data name="Notion_Templates_Title" xml:space="preserve"><value>Templates</value></data>
+  <data name="Notion_Templates_Subtitle" xml:space="preserve"><value>Start from a structure that matches the work.</value></data>
+  <data name="Notion_Templates_Search" xml:space="preserve"><value>Search templates</value></data>
+  <data name="Notion_Templates_Categories" xml:space="preserve"><value>Template categories</value></data>
+  <data name="Notion_Templates_Category_All" xml:space="preserve"><value>All</value></data>
+  <data name="Notion_Templates_Category_Blank" xml:space="preserve"><value>Blank</value></data>
+  <data name="Notion_Templates_Category_Team" xml:space="preserve"><value>Team</value></data>
+  <data name="Notion_Templates_Category_Planning" xml:space="preserve"><value>Planning</value></data>
+  <data name="Notion_Templates_Category_Knowledge" xml:space="preserve"><value>Knowledge</value></data>
+  <data name="Notion_Templates_Blank" xml:space="preserve"><value>Blank page</value></data>
+  <data name="Notion_Templates_BlankDescription" xml:space="preserve"><value>Start with an empty page.</value></data>
+  <data name="Notion_Templates_Use" xml:space="preserve"><value>Use template</value></data>
+  <data name="Notion_Templates_NoResults" xml:space="preserve"><value>No templates match the current filters.</value></data>
+  <data name="Notion_Templates_LoadError" xml:space="preserve"><value>Templates could not be loaded.</value></data>
+  <data name="Notion_Reading_Enter" xml:space="preserve"><value>Reading mode</value></data>
+  <data name="Notion_Reading_Exit" xml:space="preserve"><value>Exit reading mode</value></data>
+  <data name="Notion_Presentation_Enter" xml:space="preserve"><value>Presentation mode</value></data>
+  <data name="Notion_Blog_Title" xml:space="preserve"><value>Blog</value></data>
+  <data name="Notion_Blog_Count" xml:space="preserve"><value>{0} posts</value></data>
+  <data name="Notion_Blog_New" xml:space="preserve"><value>New post</value></data>
+  <data name="Notion_Blog_Publish" xml:space="preserve"><value>Publish</value></data>
+  <data name="Notion_Blog_Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Notion_Blog_Published" xml:space="preserve"><value>Published</value></data>
+  <data name="Notion_Blog_PublishedOn" xml:space="preserve"><value>Published {0}</value></data>
+  <data name="Notion_Blog_Empty" xml:space="preserve"><value>No blog posts in this space.</value></data>
+  <data name="Notion_Blog_LoadError" xml:space="preserve"><value>Blog posts could not be loaded.</value></data>
+  <data name="Notion_Blog_Paging" xml:space="preserve"><value>Blog paging</value></data>
+  <data name="Notion_Blog_Previous" xml:space="preserve"><value>Previous</value></data>
+  <data name="Notion_Blog_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Notion_Blog_Page" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="Notion_Blog_NoPostSelected" xml:space="preserve"><value>Select a post to read it.</value></data>
+  <data name="Notion_Blog_NewPostTitle" xml:space="preserve"><value>Untitled blog post</value></data>
+  <data name="Notion_Blog_NewPostBody" xml:space="preserve"><value>Draft the post body here.</value></data>
+  <data name="Notion_Analytics_Title" xml:space="preserve"><value>Analytics</value></data>
+  <data name="Notion_Analytics_Subtitle" xml:space="preserve"><value>Page traffic and top content</value></data>
+  <data name="Notion_Analytics_Views" xml:space="preserve"><value>Views</value></data>
+  <data name="Notion_Analytics_Unique" xml:space="preserve"><value>Unique visitors</value></data>
+  <data name="Notion_Analytics_TopPages" xml:space="preserve"><value>Top pages</value></data>
+  <data name="Notion_Analytics_LastViewed" xml:space="preserve"><value>Last viewed</value></data>
+  <data name="Notion_Analytics_Empty" xml:space="preserve"><value>No analytics data yet.</value></data>
+  <data name="Notion_Analytics_ViewsByDay" xml:space="preserve"><value>Views by day</value></data>
+  <data name="Notion_Analytics_NeverViewed" xml:space="preserve"><value>Never viewed</value></data>
+  <data name="Notion_Analytics_LoadError" xml:space="preserve"><value>Analytics could not be loaded.</value></data>
+  <data name="Notion_Analytics_UnknownPage" xml:space="preserve"><value>Unknown page</value></data>
+  <data name="Notion_Watch_Start" xml:space="preserve"><value>Watch page</value></data>
+  <data name="Notion_Watch_Stop" xml:space="preserve"><value>Unwatch</value></data>
+  <data name="Notion_Watch_IncludeChildren" xml:space="preserve"><value>Include child pages</value></data>
+  <data name="Notion_Notifications_Title" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Notion_Notifications_MarkAllRead" xml:space="preserve"><value>Mark all read</value></data>
+  <data name="Notion_Notifications_Empty" xml:space="preserve"><value>No notifications</value></data>
+  <data name="Notion_Notifications_JustNow" xml:space="preserve"><value>Just now</value></data>
+  <data name="Notion_Notifications_MinutesAgo" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="Notion_Notifications_HoursAgo" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="Notion_Notifications_DaysAgo" xml:space="preserve"><value>{0} d ago</value></data>
+  <data name="Notion_Space_Switch" xml:space="preserve"><value>Switch space</value></data>
+  <data name="Notion_Space_Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Notion_Space_Personal" xml:space="preserve"><value>Personal</value></data>
+  <data name="Notion_Space_Team" xml:space="preserve"><value>Team</value></data>
+  <data name="Notion_Space_Public" xml:space="preserve"><value>Public</value></data>
+  <data name="Notion_Space_Default" xml:space="preserve"><value>Pages</value></data>
+  <data name="Notion_Space_MoveHere" xml:space="preserve"><value>Move current page here</value></data>
+  <data name="Notion_Space_Empty" xml:space="preserve"><value>No root pages in this space.</value></data>
+  <data name="Notion_Space_Pages" xml:space="preserve"><value>Pages</value></data>
+  <data name="Notion_Space_PageCount" xml:space="preserve"><value>{0} pages</value></data>
+  <data name="Notion_Tasks_Title" xml:space="preserve"><value>My Tasks</value></data>
+  <data name="Notion_Tasks_Count" xml:space="preserve"><value>{0} tasks</value></data>
+  <data name="Notion_Tasks_Filters" xml:space="preserve"><value>Task filters</value></data>
+  <data name="Notion_Tasks_Filter_Assignee" xml:space="preserve"><value>Assignee filter</value></data>
+  <data name="Notion_Tasks_Filter_My" xml:space="preserve"><value>Mine</value></data>
+  <data name="Notion_Tasks_Filter_All" xml:space="preserve"><value>All</value></data>
+  <data name="Notion_Tasks_Filter_Status" xml:space="preserve"><value>Status filter</value></data>
+  <data name="Notion_Tasks_Filter_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Notion_Tasks_Filter_Completed" xml:space="preserve"><value>Done</value></data>
+  <data name="Notion_Tasks_Filter_AllStatuses" xml:space="preserve"><value>All statuses</value></data>
+  <data name="Notion_Tasks_Filter_Due" xml:space="preserve"><value>Due date filter</value></data>
+  <data name="Notion_Tasks_Filter_DueAll" xml:space="preserve"><value>Any due date</value></data>
+  <data name="Notion_Tasks_Filter_Overdue" xml:space="preserve"><value>Overdue</value></data>
+  <data name="Notion_Tasks_Filter_Upcoming" xml:space="preserve"><value>Upcoming</value></data>
+  <data name="Notion_Tasks_GroupBy" xml:space="preserve"><value>Group tasks by</value></data>
+  <data name="Notion_Tasks_GroupBy_DueDate" xml:space="preserve"><value>Due date</value></data>
+  <data name="Notion_Tasks_GroupBy_Page" xml:space="preserve"><value>Page</value></data>
+  <data name="Notion_Tasks_LoadError" xml:space="preserve"><value>Tasks could not be loaded.</value></data>
+  <data name="Notion_Tasks_Empty" xml:space="preserve"><value>No tasks match the current filters.</value></data>
+  <data name="Notion_Tasks_ToggleComplete" xml:space="preserve"><value>Toggle task completion</value></data>
+  <data name="Notion_Tasks_Group_Overdue" xml:space="preserve"><value>Overdue</value></data>
+  <data name="Notion_Tasks_Group_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Notion_Tasks_Group_Tomorrow" xml:space="preserve"><value>Tomorrow</value></data>
+  <data name="Notion_Tasks_Group_Later" xml:space="preserve"><value>Later</value></data>
+  <data name="Notion_Tasks_Group_NoDueDate" xml:space="preserve"><value>No due date</value></data>
+  <data name="Notion_Tasks_Due_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Notion_Tasks_Due_Tomorrow" xml:space="preserve"><value>Tomorrow</value></data>
+  <data name="Notion_Tasks_Due_Overdue" xml:space="preserve"><value>Overdue</value></data>
+  <data name="Notion_Reactions_Like" xml:space="preserve"><value>Like</value></data>
+  <data name="Notion_Reactions_AddReaction" xml:space="preserve"><value>Add reaction</value></data>
+  <data name="Notion_Reactions_Count" xml:space="preserve"><value>{0} reactions</value></data>
+  <data name="Notion_Reactions_PickerLabel" xml:space="preserve"><value>Choose page reaction</value></data>
+  <data name="Notion_IncludePage_Title" xml:space="preserve"><value>Include page</value></data>
+  <data name="Notion_IncludePage_Select" xml:space="preserve"><value>Select source page</value></data>
+  <data name="Notion_IncludePage_MissingSource" xml:space="preserve"><value>Missing source page</value></data>
+  <data name="Notion_IncludePage_NotFound" xml:space="preserve"><value>The included page could not be found.</value></data>
+  <data name="Notion_IncludePage_Cyclic" xml:space="preserve"><value>This include would create a page cycle, so it was stopped.</value></data>
+  <data name="Notion_IncludePage_TooDeep" xml:space="preserve"><value>This include is nested too deeply, so it was stopped.</value></data>
+  <data name="Notion_IncludePage_EditSource" xml:space="preserve"><value>Edit source</value></data>
+  <data name="Notion_IncludePage_Empty" xml:space="preserve"><value>The included page has no blocks.</value></data>
+  <data name="Notion_Children_Title" xml:space="preserve"><value>Children display</value></data>
+  <data name="Notion_Children_Empty" xml:space="preserve"><value>This page has no child pages.</value></data>
+  <data name="Notion_Children_SourceDeleted" xml:space="preserve"><value>The selected source page could not be found.</value></data>
+  <data name="Notion_Children_Configure" xml:space="preserve"><value>Configure children display</value></data>
+  <data name="Notion_Children_Depth" xml:space="preserve"><value>Depth</value></data>
+  <data name="Notion_Children_Root" xml:space="preserve"><value>Root page</value></data>
+  <data name="Notion_Children_CurrentPage" xml:space="preserve"><value>Current page</value></data>
+  <data name="Notion_Children_DepthAll" xml:space="preserve"><value>All levels</value></data>
+  <data name="Notion_Children_DepthLevel" xml:space="preserve"><value>{0} level(s)</value></data>
+  <data name="Notion_Children_ShowIcons" xml:space="preserve"><value>Show icons</value></data>
+  <data name="Notion_Children_Summary" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Notion_Excerpt_Title" xml:space="preserve"><value>Excerpt</value></data>
+  <data name="Notion_Excerpt_Placeholder" xml:space="preserve"><value>Write the reusable excerpt here...</value></data>
+  <data name="Notion_ExcerptInclude_Title" xml:space="preserve"><value>Excerpt include</value></data>
+  <data name="Notion_ExcerptInclude_Select" xml:space="preserve"><value>Select source page</value></data>
+  <data name="Notion_ExcerptInclude_MissingSource" xml:space="preserve"><value>Missing source page</value></data>
+  <data name="Notion_ExcerptInclude_NoExcerpt" xml:space="preserve"><value>The selected page has no excerpt.</value></data>
+  <data name="Notion_ExcerptInclude_NotFound" xml:space="preserve"><value>The excerpt source page could not be found.</value></data>
+  <data name="Notion_ExcerptInclude_EditSource" xml:space="preserve"><value>Open source</value></data>
+  <data name="Notion_PageProps_Title" xml:space="preserve"><value>Page properties</value></data>
+  <data name="Notion_PageProps_AddRow" xml:space="preserve"><value>Add row</value></data>
+  <data name="Notion_PageProps_Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Notion_PageProps_Value" xml:space="preserve"><value>Value</value></data>
+  <data name="Notion_PageProps_Empty" xml:space="preserve"><value>No properties yet</value></data>
+  <data name="Notion_PropsReport_Title" xml:space="preserve"><value>Properties report</value></data>
+  <data name="Notion_PropsReport_Configure" xml:space="preserve"><value>Configure report</value></data>
+  <data name="Notion_PropsReport_Labels" xml:space="preserve"><value>Labels</value></data>
+  <data name="Notion_PropsReport_Columns" xml:space="preserve"><value>Columns</value></data>
+  <data name="Notion_PropsReport_Empty" xml:space="preserve"><value>No pages match this report.</value></data>
+  <data name="Notion_PropsReport_MissingValue" xml:space="preserve"><value>Not set</value></data>
+  <data name="Notion_PropsReport_NoProvider" xml:space="preserve"><value>The properties report provider is not available.</value></data>
+  <data name="Notion_PropsReport_Page" xml:space="preserve"><value>Page</value></data>
+  <data name="Notion_Audit_Title" xml:space="preserve"><value>Audit log</value></data>
+  <data name="Notion_Audit_Count" xml:space="preserve"><value>{0} entries</value></data>
+  <data name="Notion_Audit_Filter" xml:space="preserve"><value>Filter</value></data>
+  <data name="Notion_Audit_User" xml:space="preserve"><value>User</value></data>
+  <data name="Notion_Audit_Action" xml:space="preserve"><value>Action</value></data>
+  <data name="Notion_Audit_Action_All" xml:space="preserve"><value>All actions</value></data>
+  <data name="Notion_Audit_Action_Create" xml:space="preserve"><value>Created</value></data>
+  <data name="Notion_Audit_Action_Edit" xml:space="preserve"><value>Edited</value></data>
+  <data name="Notion_Audit_Action_Delete" xml:space="preserve"><value>Deleted</value></data>
+  <data name="Notion_Audit_Action_Move" xml:space="preserve"><value>Moved</value></data>
+  <data name="Notion_Audit_Action_Restrict" xml:space="preserve"><value>Restricted</value></data>
+  <data name="Notion_Audit_From" xml:space="preserve"><value>From</value></data>
+  <data name="Notion_Audit_To" xml:space="preserve"><value>To</value></data>
+  <data name="Notion_Audit_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Notion_Audit_Export" xml:space="preserve"><value>Export CSV</value></data>
+  <data name="Notion_Audit_DownloadReady" xml:space="preserve"><value>Download ready</value></data>
+  <data name="Notion_Audit_LoadError" xml:space="preserve"><value>Audit entries could not be loaded.</value></data>
+  <data name="Notion_Audit_Empty" xml:space="preserve"><value>No audit entries match the current filters.</value></data>
+  <data name="Notion_Audit_Page" xml:space="preserve"><value>Audit pages</value></data>
+  <data name="Notion_Audit_Previous" xml:space="preserve"><value>Previous page</value></data>
+  <data name="Notion_Audit_Next" xml:space="preserve"><value>Next page</value></data>
+  <data name="Notion_Audit_PageStatus" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Notion_Audit_Timestamp" xml:space="preserve"><value>Timestamp</value></data>
+  <data name="Notion_Audit_Target" xml:space="preserve"><value>Target</value></data>
+  <data name="Notion_Audit_Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Notion_Restrictions_Title" xml:space="preserve"><value>Page restrictions</value></data>
+  <data name="Notion_Restrictions_Inherited" xml:space="preserve"><value>This page inherits restrictions from a parent page.</value></data>
+  <data name="Notion_Restrictions_Mode" xml:space="preserve"><value>Restriction mode</value></data>
+  <data name="Notion_Restrictions_ModeOpen" xml:space="preserve"><value>Open to everyone</value></data>
+  <data name="Notion_Restrictions_ModeReadOnlyForSome" xml:space="preserve"><value>Read-only for selected users</value></data>
+  <data name="Notion_Restrictions_ModeEditForSome" xml:space="preserve"><value>Only selected users can edit</value></data>
+  <data name="Notion_Restrictions_AddUser" xml:space="preserve"><value>Add user</value></data>
+  <data name="Notion_Restrictions_AddGroup" xml:space="preserve"><value>Add group</value></data>
+  <data name="Notion_Restrictions_SubjectType" xml:space="preserve"><value>Subject type</value></data>
+  <data name="Notion_Restrictions_User" xml:space="preserve"><value>User</value></data>
+  <data name="Notion_Restrictions_Group" xml:space="preserve"><value>Group</value></data>
+  <data name="Notion_Restrictions_Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Notion_Restrictions_SubjectPlaceholder" xml:space="preserve"><value>User or group id</value></data>
+  <data name="Notion_Restrictions_Permission" xml:space="preserve"><value>Permission</value></data>
+  <data name="Notion_Restrictions_View" xml:space="preserve"><value>View</value></data>
+  <data name="Notion_Restrictions_Comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="Notion_Restrictions_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Notion_Restrictions_Empty" xml:space="preserve"><value>No explicit restrictions.</value></data>
+  <data name="Notion_Restrictions_Explicit" xml:space="preserve"><value>Explicit</value></data>
+  <data name="Notion_Restrictions_Remove" xml:space="preserve"><value>Remove restriction</value></data>
+  <data name="Notion_Restrictions_LoadError" xml:space="preserve"><value>Restrictions could not be loaded.</value></data>
+  <data name="Notion_Restrictions_SaveError" xml:space="preserve"><value>Restrictions could not be saved.</value></data>
+  <data name="Notion_Restrictions_NoAccessTitle" xml:space="preserve"><value>No access</value></data>
+  <data name="Notion_Restrictions_NoAccess" xml:space="preserve"><value>You do not have permission to view this page.</value></data>
+  <data name="Notion_Share_Title" xml:space="preserve"><value>Public share</value></data>
+  <data name="Notion_Share_AnonymousReadOnly" xml:space="preserve"><value>Create a read-only public link for anonymous visitors.</value></data>
+  <data name="Notion_Share_AllowComments" xml:space="preserve"><value>Allow comments</value></data>
+  <data name="Notion_Share_Expires" xml:space="preserve"><value>Expires</value></data>
+  <data name="Notion_Share_PublicUrl" xml:space="preserve"><value>Public URL</value></data>
+  <data name="Notion_Share_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="Notion_Share_Revoke" xml:space="preserve"><value>Revoke link</value></data>
+  <data name="Notion_Share_CreateLink" xml:space="preserve"><value>Create link</value></data>
+  <data name="Notion_Share_Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Notion_Share_Expired" xml:space="preserve"><value>Public link has expired.</value></data>
+  <data name="Notion_Share_Disabled" xml:space="preserve"><value>Public sharing is disabled for this page.</value></data>
+  <data name="Notion_Share_LoadError" xml:space="preserve"><value>Share settings could not be loaded.</value></data>
+  <data name="Notion_Share_CreateError" xml:space="preserve"><value>The public link could not be created.</value></data>
+  <data name="Notion_Share_RevokeError" xml:space="preserve"><value>The public link could not be revoked.</value></data>
+  <data name="Notion_Share_NotFoundTitle" xml:space="preserve"><value>Shared page not available</value></data>
+  <data name="Notion_Share_PublicPage" xml:space="preserve"><value>Shared page</value></data>
+  <data name="Notion_Share_ReadOnlyNotice" xml:space="preserve"><value>This public view is read-only.</value></data>
+  <data name="Notion_Share_ExpiresOn" xml:space="preserve"><value>Expires on {0}</value></data>
+  <data name="Notion_Shortcuts_Title" xml:space="preserve"><value>Keyboard shortcuts</value></data>
+  <data name="Notion_Shortcuts_Subtitle" xml:space="preserve"><value>Fast commands for navigating and editing pages.</value></data>
+  <data name="Notion_Shortcuts_Close" xml:space="preserve"><value>Close shortcuts</value></data>
+  <data name="Notion_Shortcuts_Group_Navigation" xml:space="preserve"><value>Navigation</value></data>
+  <data name="Notion_Shortcuts_Group_Editing" xml:space="preserve"><value>Editing</value></data>
+  <data name="Notion_Shortcuts_Group_Insert" xml:space="preserve"><value>Insert</value></data>
+  <data name="Notion_Shortcuts_Group_Formatting" xml:space="preserve"><value>Formatting</value></data>
+  <data name="Notion_Shortcut_OpenPageSearch" xml:space="preserve"><value>Open page search</value></data>
+  <data name="Notion_Shortcut_OpenShortcuts" xml:space="preserve"><value>Open keyboard shortcuts</value></data>
+  <data name="Notion_Shortcut_ClosePanel" xml:space="preserve"><value>Close the active panel</value></data>
+  <data name="Notion_Shortcut_MoveFocusUp" xml:space="preserve"><value>Move focus up</value></data>
+  <data name="Notion_Shortcut_MoveFocusDown" xml:space="preserve"><value>Move focus down</value></data>
+  <data name="Notion_Shortcut_CreateBlockBelow" xml:space="preserve"><value>Create a block below</value></data>
+  <data name="Notion_Shortcut_InsertLineBreak" xml:space="preserve"><value>Insert a line break</value></data>
+  <data name="Notion_Shortcut_Indent" xml:space="preserve"><value>Indent block</value></data>
+  <data name="Notion_Shortcut_Outdent" xml:space="preserve"><value>Outdent block</value></data>
+  <data name="Notion_Shortcut_SlashMenu" xml:space="preserve"><value>Open the block menu</value></data>
+  <data name="Notion_Shortcut_MentionPerson" xml:space="preserve"><value>Mention a person</value></data>
+  <data name="Notion_Shortcut_LinkPage" xml:space="preserve"><value>Link a page</value></data>
+  <data name="Notion_Shortcut_InsertToken" xml:space="preserve"><value>Insert a token</value></data>
+  <data name="Notion_Shortcut_Bold" xml:space="preserve"><value>Bold selected text</value></data>
+  <data name="Notion_Shortcut_Italic" xml:space="preserve"><value>Italic selected text</value></data>
+  <data name="Notion_Shortcut_Underline" xml:space="preserve"><value>Underline selected text</value></data>
+  <data name="Notion_WorkItem_LoadError" xml:space="preserve"><value>Work item could not be refreshed.</value></data>
+  <data name="Notion_WorkItem_Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="Notion_WorkItem_Mode_Card" xml:space="preserve"><value>Card</value></data>
+  <data name="Notion_WorkItem_Mode_List" xml:space="preserve"><value>List</value></data>
+  <data name="Notion_WorkItem_Mode_Inline" xml:space="preserve"><value>Inline</value></data>
+  <data name="Notion_SmartLink_PasteAs_Inline" xml:space="preserve"><value>Paste as inline preview</value></data>
+  <data name="Notion_SmartLink_PasteAs_Card" xml:space="preserve"><value>Paste as card</value></data>
+  <data name="Notion_SmartLink_PasteAs_Plain" xml:space="preserve"><value>Paste as plain link</value></data>
+  <data name="Notion_Labels_Title" xml:space="preserve"><value>Page labels</value></data>
+  <data name="Notion_Labels_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Notion_Labels_Placeholder" xml:space="preserve"><value>Add label</value></data>
+  <data name="Notion_Labels_None" xml:space="preserve"><value>No labels</value></data>
+  <data name="Notion_Labels_Remove" xml:space="preserve"><value>Remove label</value></data>
+  <data name="Notion_Labels_Suggestions" xml:space="preserve"><value>Label suggestions</value></data>
+  <data name="Notion_Labels_FilterTitle" xml:space="preserve"><value>Pages labeled {0}</value></data>
+  <data name="Notion_Labels_FilterEmpty" xml:space="preserve"><value>No pages use this label.</value></data>
+  <data name="Notion_Labels_FilterResults" xml:space="preserve"><value>Pages with this label</value></data>
+  <data name="Notion_ContentByLabel_Title" xml:space="preserve"><value>Content by label</value></data>
+  <data name="Notion_ContentByLabel_Configure" xml:space="preserve"><value>Configure content by label</value></data>
+  <data name="Notion_ContentByLabel_SelectLabels" xml:space="preserve"><value>Select labels</value></data>
+  <data name="Notion_ContentByLabel_AddLabel" xml:space="preserve"><value>Add label</value></data>
+  <data name="Notion_ContentByLabel_MaxItems" xml:space="preserve"><value>Max items</value></data>
+  <data name="Notion_ContentByLabel_SortBy" xml:space="preserve"><value>Sort by</value></data>
+  <data name="Notion_ContentByLabel_Empty" xml:space="preserve"><value>No pages match these labels.</value></data>
+  <data name="Notion_ContentByLabel_Sort_LastEditedDesc" xml:space="preserve"><value>Recently edited</value></data>
+  <data name="Notion_ContentByLabel_Sort_LastEditedAsc" xml:space="preserve"><value>Oldest edited</value></data>
+  <data name="Notion_ContentByLabel_Sort_TitleAsc" xml:space="preserve"><value>Title A-Z</value></data>
+  <data name="Notion_ContentByLabel_Sort_TitleDesc" xml:space="preserve"><value>Title Z-A</value></data>
+  <data name="Notion_ContentByLabel_Sort_CreatedDesc" xml:space="preserve"><value>Newest created</value></data>
+  <data name="Notion_ContentByLabel_Sort_CreatedAsc" xml:space="preserve"><value>Oldest created</value></data>
 </root>

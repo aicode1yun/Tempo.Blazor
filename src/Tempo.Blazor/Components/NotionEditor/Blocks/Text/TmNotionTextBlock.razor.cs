@@ -48,6 +48,12 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when the element receives focus.</summary>
     [Parameter] public EventCallback                            OnFocused          { get; set; }
 
+    /// <summary>Fired when ArrowUp requests focus movement to the previous block.</summary>
+    [Parameter] public EventCallback                            OnMoveFocusPrevious { get; set; }
+
+    /// <summary>Fired when ArrowDown requests focus movement to the next block.</summary>
+    [Parameter] public EventCallback                            OnMoveFocusNext     { get; set; }
+
     /// <summary>Fired when '/' is typed in a trigger position. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu        { get; set; }
 
@@ -66,6 +72,7 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
     private DotNetObjectReference<TmNotionTextBlock>?  _dotNetRef;
     private bool                                       _kbInitialized;
     private bool                                       _dirty;
+    private bool                                       _lastIsFocused;
     private string?                                    _lastHtml;
     private ITextBlockContent?                         _lastContent;
 
@@ -99,6 +106,8 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
         if (ReadOnly) return;
 
         var html = Content?.Html ?? string.Empty;
+        var shouldFocus = IsFocused && !_lastIsFocused;
+        var focusedThisRender = false;
 
         if (!_kbInitialized)
         {
@@ -110,8 +119,11 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
             {
                 await JS.InvokeVoidAsync("tmNotionEditor.initKeyboardHandler", _editableRef, _dotNetRef);
                 await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html);
-                if (IsFocused)
+                if (shouldFocus)
+                {
                     await JS.InvokeVoidAsync("tmNotionEditor.focusAtStart", _editableRef);
+                    focusedThisRender = true;
+                }
             }
             catch { }
         }
@@ -121,6 +133,14 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
             try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
             catch { }
         }
+
+        if (_kbInitialized && shouldFocus && !focusedThisRender)
+        {
+            try { await JS.InvokeVoidAsync("tmNotionEditor.focusAtStart", _editableRef); }
+            catch { }
+        }
+
+        _lastIsFocused = IsFocused;
     }
 
     // ── Blur / focus ──────────────────────────────────────────────────────────
@@ -160,10 +180,10 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
     public async Task OnTabPressed(bool shiftKey) => await OnIndentChange.InvokeAsync(shiftKey);
 
     [JSInvokable]
-    public void OnArrowUp() { }
+    public async Task OnArrowUp() => await OnMoveFocusPrevious.InvokeAsync();
 
     [JSInvokable]
-    public void OnArrowDown() { }
+    public async Task OnArrowDown() => await OnMoveFocusNext.InvokeAsync();
 
     [JSInvokable]
     public async Task OnMarkdownShortcut(string shortcut) =>
@@ -185,6 +205,10 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
     public async Task OnTokenTriggered(double top, double left) =>
         await OnTokenMenu.InvokeAsync((top, left));
 
+    [JSInvokable]
+    public bool HasSmartLinkProvider() => Context?.SmartLinkProvider is not null;
+
+    [JSInvokable]
     public async Task OnSmartLinkPasteRequested(string rawUrl, string displayMode)
     {
         var url = NormalizeUrl(rawUrl);
@@ -220,7 +244,8 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
                 LastEditedAt = DateTime.UtcNow
             };
 
-            await Context.BlockProvider.CreateBlockAsync(Block.PageId.ToString("D"), bookmark, Block.Id.ToString("D"));
+            var created = await Context.BlockProvider.CreateBlockAsync(Block.PageId.ToString("D"), bookmark, Block.Id.ToString("D"));
+            await Context.RaiseBlockCreatedAsync(created);
             return;
         }
 
@@ -233,7 +258,16 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
                     _editableRef,
                     resolved.Url,
                     resolved.Title,
-                    resolved.FaviconUrl);
+                    resolved.FaviconUrl,
+                    resolved.ProviderName);
+            }
+            catch { }
+        }
+        else
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmNotionEditor.insertPlainSmartLink", _editableRef, url);
             }
             catch { }
         }

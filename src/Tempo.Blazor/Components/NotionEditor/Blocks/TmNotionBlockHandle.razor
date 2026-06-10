@@ -42,6 +42,7 @@
                 aria-label="@Loc["TmNotionBlockHandle_OpenMenu"]"
                 aria-haspopup="true"
                 aria-expanded="@_showMenu.ToString().ToLower()"
+                @ref="_menuButtonRef"
                 @onclick="ToggleMenu"
                 @onclick:stopPropagation="true">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -54,7 +55,7 @@
         @if (_showMenu)
         {
             <TmNotionBlockContextMenu Block="Block"
-                                      OnClose="CloseMenu"
+                                      OnClose="CloseMenuAsync"
                                       OnDelete="OnDelete"
                                       OnDuplicate="OnDuplicate"
                                       OnTurnInto="OnTurnInto"
@@ -62,6 +63,7 @@
                                       OnCopyLink="OnCopyLink"
                                       OnComment="OnComment"
                                       OnNewThread="OnNewThread"
+                                      OnCalloutVariantChange="OnCalloutVariantChange"
                                       OnTextColorChange="OnTextColorChange"
                                       OnBackgroundChange="OnBackgroundChange" />
         }

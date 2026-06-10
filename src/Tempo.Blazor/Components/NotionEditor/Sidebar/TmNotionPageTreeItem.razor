@@ -24,6 +24,14 @@
             <span class="tm-npt-indent" aria-hidden="true"></span>
         }
 
+        <input class="tm-npt-select"
+               type="checkbox"
+               data-testid="notion-page-select-@Page.Id.ToString("D")"
+               checked="@Tree.IsSelected(Page.Id.ToString("D"))"
+               aria-label="@string.Format(Loc["TmNotionPageTree_SelectPage"], PageTitle)"
+               @onchange="OnSelectionChangedAsync"
+               @onclick:stopPropagation="true" />
+
         @* expand / collapse toggle *@
         <button class="tm-npt-toggle"
                 type="button"

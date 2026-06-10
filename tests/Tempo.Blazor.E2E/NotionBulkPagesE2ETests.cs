@@ -12,7 +12,8 @@ public sealed class NotionBulkPagesE2ETests : NotionE2ETestBase
     private const string DeleteBId = "66666666-6666-6666-6666-666666666666";
 
     [TestMethod]
-    [Description("CF24: bulk page selection supports guarded move, deep copy, descendant delete confirmation, and baseline toolbar capture")]
+    [TestCategory("NotionUxBaseline")]
+    [Description("CF24: bulk page selection captures toolbar, guarded move error, delete confirmation, and refreshed tree state after actions.")]
     public async Task CF24_BulkPageOperations_WorkThroughSidebar()
     {
         var page = await OpenNotionEditorAsync();
@@ -28,6 +29,12 @@ public sealed class NotionBulkPagesE2ETests : NotionE2ETestBase
         await CaptureBaselineAsync("page-bulk-pages", "cf24-multi-select-toolbar", page.Locator(".tm-notion-sidebar").First);
 
         await page.Locator("[data-testid='notion-page-bulk-delete']").ClickAsync();
+        await page.Locator("[data-testid='notion-page-bulk-delete-confirm-button']").WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        await CaptureBaselineAsync("page-bulk-pages", "cf24-delete-confirm-dialog", page.Locator(".tm-notion-sidebar").First);
         await page.Locator("[data-testid='notion-page-bulk-delete-confirm-button']").ClickAsync();
         await ExpectTitleCountAsync(page, "CF24 Delete Candidate A", 0);
         await ExpectTitleCountAsync(page, "CF24 Delete Candidate B", 0);
@@ -39,12 +46,15 @@ public sealed class NotionBulkPagesE2ETests : NotionE2ETestBase
         await page.Locator("[data-testid='notion-page-bulk-move']").ClickAsync();
         await page.Locator("[data-testid='notion-page-bulk-target-search']").FillAsync("Grandchild A1");
         await page.Locator("[data-testid='notion-page-bulk-target-page']").First.ClickAsync();
-        await page.WaitForTimeoutAsync(800);
-        Assert.AreEqual(1, await page.Locator(".tm-npt-root > .tm-npt-item > .tm-npt-row .tm-npt-title").Filter(new LocatorFilterOptions { HasText = "CF24 Source Root" }).CountAsync());
-        if (await page.Locator("[data-testid='notion-page-bulk-error']").CountAsync() > 0)
+        var guardedMoveError = page.Locator("[data-testid='notion-page-bulk-error']").First;
+        await guardedMoveError.WaitForAsync(new LocatorWaitForOptions
         {
-            StringAssert.Contains(await page.Locator("[data-testid='notion-page-bulk-error']").InnerTextAsync(), "descendants");
-        }
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        Assert.AreEqual(1, await page.Locator(".tm-npt-root > .tm-npt-item > .tm-npt-row .tm-npt-title").Filter(new LocatorFilterOptions { HasText = "CF24 Source Root" }).CountAsync());
+        StringAssert.Contains(await guardedMoveError.InnerTextAsync(), "descendants");
+        await CaptureBaselineAsync("page-bulk-pages", "cf24-guarded-move-error", page.Locator(".tm-notion-sidebar").First);
         await page.Locator("[data-testid='notion-page-bulk-clear']").ClickAsync();
 
         await SelectPageByIdAsync(page, SourceRootId);

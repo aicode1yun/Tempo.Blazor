@@ -36,6 +36,8 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
     private string? _uploadError;
     private string  _embedUrl    = string.Empty;
 
+    private bool _focusTrapInitialized;
+    private ElementReference _dialogRef;
     private ElementReference _urlInputRef;
 
     // ── Library state ─────────────────────────────────────────────────────────
@@ -88,6 +90,7 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
     {
         if (!IsOpen)
         {
+            _focusTrapInitialized = false;
             ResetLibraryState();
             return;
         }
@@ -99,6 +102,13 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (IsOpen && !_focusTrapInitialized)
+        {
+            _focusTrapInitialized = true;
+            try { await JS.InvokeVoidAsync("tmNotionEditor.initFocusTrap", _dialogRef); }
+            catch { }
+        }
+
         if (IsOpen && _activeTab == "embed")
         {
             try { await JS.InvokeVoidAsync("tmNotionEditor.focus", _urlInputRef); }
@@ -136,13 +146,22 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
     private async Task HandleFileSelectedAsync(InputFileChangeEventArgs e)
     {
         if (Context?.FileProvider is null) return;
+        var file = e.File;
+        var validationKey = NotionMediaUploadValidation.Validate(MediaType, file.Name, file.ContentType, file.Size);
+        if (!string.IsNullOrEmpty(validationKey))
+        {
+            _uploadError = Loc[validationKey, NotionMediaUploadValidation.FormatMaxFileSize()];
+            _isUploading = false;
+            StateHasChanged();
+            return;
+        }
+
         _isUploading = true;
         _uploadError = null;
         StateHasChanged();
         try
         {
-            var file = e.File;
-            await using var stream = file.OpenReadStream(maxAllowedSize: 104_857_600);
+            await using var stream = file.OpenReadStream(maxAllowedSize: NotionMediaUploadValidation.MaxFileSizeBytes);
             var fileId = await Context.FileProvider.UploadFileAsync(stream, file.Name, file.ContentType);
             var url    = await Context.FileProvider.GetFileUrlAsync(fileId);
             await OnConfirmed.InvokeAsync((fileId, url));
@@ -171,6 +190,12 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
     {
         if (e.Key == "Enter")  await HandleEmbedConfirmAsync();
         if (e.Key == "Escape") await HandleCancelAsync();
+    }
+
+    private async Task HandleDialogKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (string.Equals(e.Key, "Escape", StringComparison.Ordinal))
+            await HandleCancelAsync();
     }
 
     private async Task HandleCancelAsync() => await OnCancelled.InvokeAsync();
@@ -237,10 +262,17 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _libraryCts?.Cancel();
         _libraryCts?.Dispose();
-        return ValueTask.CompletedTask;
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.destroyFocusTrap", _dialogRef);
+        }
+        catch
+        {
+        }
     }
 }

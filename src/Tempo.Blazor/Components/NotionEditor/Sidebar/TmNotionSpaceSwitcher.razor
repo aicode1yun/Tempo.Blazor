@@ -23,7 +23,7 @@
         <button class="tm-ns-space__current"
                 data-testid="notion-space-current"
                 type="button"
-                aria-expanded="@_listOpen"
+                aria-expanded="@_listOpen.ToString().ToLowerInvariant()"
                 aria-controls="@_listId"
                 title="@Loc["Notion_Space_Switch"]"
                 @onclick="ToggleList">
@@ -47,7 +47,7 @@
                             type="button"
                             role="option"
                             data-space-id="@space.Id"
-                            aria-selected="@IsSelected(space)"
+                            aria-selected="@IsSelected(space).ToString().ToLowerInvariant()"
                             @onclick="async () => await SelectSpaceAsync(space)">
                         <span class="tm-ns-space__avatar tm-ns-space__avatar--small" aria-hidden="true">@GetIcon(space)</span>
                         <span class="tm-ns-space__option-text">
@@ -64,7 +64,7 @@
             <button class="tm-ns-space__overview-toggle"
                     data-testid="notion-space-overview-toggle"
                     type="button"
-                    aria-expanded="@_overviewOpen"
+                    aria-expanded="@_overviewOpen.ToString().ToLowerInvariant()"
                     @onclick="ToggleOverviewAsync">
                 <span>@Loc["Notion_Space_Overview"]</span>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">

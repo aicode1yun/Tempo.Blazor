@@ -13,6 +13,12 @@ public class MockNotionMentionProvider : INotionMentionProvider
     private static readonly List<NotionMentionUser> _users = new()
     {
         new("alice",   "Alice Johnson",  "https://i.pravatar.cc/150?u=alice",  "alice@demo.com"),
+        new("ada",     "Ada Lovelace",   "https://i.pravatar.cc/150?u=ada",    "ada@demo.com"),
+        new("grace",   "Grace Hopper",   "https://i.pravatar.cc/150?u=grace",  "grace@demo.com"),
+        new("linus",   "Linus Torvalds", "https://i.pravatar.cc/150?u=linus",  "linus@demo.com"),
+        new("margaret","Margaret Hamilton", "https://i.pravatar.cc/150?u=margaret", "margaret@demo.com"),
+        new("alan",    "Alan Turing",    "https://i.pravatar.cc/150?u=alan",   "alan@demo.com"),
+        new("zaneta",  "Žaneta Černá",   null,                                  "zaneta.cerna@demo.com"),
         new("bob",     "Bob Smith",      "https://i.pravatar.cc/150?u=bob",    "bob@demo.com"),
         new("charlie", "Charlie Brown",  null,                                  "charlie@demo.com"),
         new("diana",   "Diana Prince",   "https://i.pravatar.cc/150?u=diana",  "diana@demo.com"),
@@ -29,6 +35,7 @@ public class MockNotionMentionProvider : INotionMentionProvider
         IEnumerable<IMentionUser> results = string.IsNullOrWhiteSpace(query)
             ? _users
             : _users.Where(u =>
+                u.UserId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 u.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 (u.Email?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
         return Task.FromResult(results);

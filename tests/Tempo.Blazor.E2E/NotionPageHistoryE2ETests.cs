@@ -186,3 +186,160 @@ public class NotionPageHistoryE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "history_closed");
     }
 }
+
+/// <summary>
+/// Screenshot and UX recovery coverage for EB13 page history states.
+/// </summary>
+[TestClass]
+public class NotionPageHistoryRecoveryE2ETests : NotionE2ETestBase
+{
+    [TestMethod]
+    [Description("EB13 captures the empty page history panel loaded from the HTTPS Demo API")]
+    public async Task EB13_EmptyHistoryPanel_IsCaptured()
+    {
+        var page = await OpenNotionEditorAsync(1280, 900);
+        await SeedHistoryEmptyPageAsync();
+
+        var panel = await OpenPageHistoryPanelAsync(page);
+
+        await Assertions.Expect(panel.Locator(".tm-nph__version-item")).ToHaveCountAsync(0);
+        await Assertions.Expect(panel.Locator(".tm-nph__status").First).ToBeVisibleAsync();
+        await Assertions.Expect(panel.Locator(".tm-nph__empty-state").First).ToBeVisibleAsync();
+        await Assertions.Expect(panel.GetByText("No history yet")).ToBeVisibleAsync();
+        await Assertions.Expect(panel.GetByText("Select a version")).ToHaveCountAsync(0);
+
+        await AssertNoHorizontalOverflowAsync(panel, "EB13 empty history panel");
+        await CaptureBaselineAsync("page-history", "empty-history-panel", panel);
+    }
+
+    [TestMethod]
+    [Description("EB13 captures many page history versions with readable preview and scrolled list state")]
+    public async Task EB13_ManyVersionsPreviewAndScrolled_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync(1280, 900);
+        await SeedHistoryManyPageAsync();
+
+        var panel = await OpenPageHistoryPanelAsync(page);
+        var versionItems = panel.Locator(".tm-nph__version-item");
+        await versionItems.First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+
+        Assert.AreEqual(20, await versionItems.CountAsync(), "The first history page should use the production page size and show 20 versions.");
+
+        await versionItems.Nth(1).ClickAsync();
+        await Assertions.Expect(panel.Locator(".tm-nph__preview").First).ToBeVisibleAsync();
+        await Assertions.Expect(panel.Locator(".tm-nph__preview-block").First).ToBeVisibleAsync();
+        await Assertions.Expect(panel.Locator(".tm-nph__toolbar-btn--primary").First).ToBeEnabledAsync();
+        await Assertions.Expect(panel.GetByText("EB13 History Version 45")).ToBeVisibleAsync();
+
+        await AssertNoHorizontalOverflowAsync(panel, "EB13 many versions preview");
+        await CaptureBaselineAsync("page-history", "many-versions-preview", panel);
+
+        await panel.Locator(".tm-nph__page-btn").Nth(1).ClickAsync();
+        await Assertions.Expect(panel.Locator(".tm-nph__page-info").First).ToContainTextAsync("2");
+        await panel.Locator(".tm-nph__version-list").EvaluateAsync("el => { el.scrollTop = el.scrollHeight; }");
+        await page.WaitForTimeoutAsync(300);
+
+        await AssertNoHorizontalOverflowAsync(panel, "EB13 many versions scrolled");
+        await CaptureBaselineAsync("page-history", "many-versions-scrolled", panel);
+    }
+
+    [TestMethod]
+    [Description("EB13 captures restore confirmation and verifies restored page content through the HTTPS Demo API")]
+    public async Task EB13_RestoreConfirmAndRestoredPageContent_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync(1280, 900);
+        await SeedHistoryManyPageAsync();
+
+        var panel = await OpenPageHistoryPanelAsync(page);
+        var versionItems = panel.Locator(".tm-nph__version-item");
+        await versionItems.First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+
+        await versionItems.Nth(1).ClickAsync();
+        var restoreButton = panel.Locator(".tm-nph__toolbar-btn--primary").First;
+        await restoreButton.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        await restoreButton.ClickAsync();
+
+        var confirmDialog = page.Locator(".tm-nph-confirm").First;
+        await confirmDialog.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await AssertNoHorizontalOverflowAsync(confirmDialog, "EB13 restore confirmation dialog");
+        await CaptureBaselineAsync("page-history", "restore-confirm", confirmDialog);
+
+        await confirmDialog.Locator(".tm-nph-confirm__ok").First.ClickAsync();
+        await panel.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Hidden,
+            Timeout = 15000
+        });
+
+        var restoredHeading = page.GetByText("EB13 History Version 45").First;
+        await restoredHeading.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 15000
+        });
+        await Assertions.Expect(page.GetByText("Restorable body snapshot for version 45")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("Checkpoint 45 keeps a deterministic preview")).ToBeVisibleAsync();
+
+        var restoredPage = page.Locator(".tm-notion-page").First;
+        await AssertNoHorizontalOverflowAsync(restoredPage, "EB13 restored page content");
+        await CaptureBaselineAsync("page-history", "restored-page-content", restoredPage);
+    }
+
+    private static async Task<ILocator> OpenPageHistoryPanelAsync(IPage page)
+    {
+        var trigger = page.Locator(".tm-npsm-trigger").First;
+        await trigger.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        await trigger.ClickAsync();
+
+        var menu = page.Locator(".tm-npsm").First;
+        await menu.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+
+        var historyItem = menu.Locator(".tm-npsm__item")
+            .Filter(new LocatorFilterOptions { HasText = "Page history" })
+            .First;
+        await historyItem.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await historyItem.ClickAsync();
+
+        var panel = page.Locator(".tm-nph").First;
+        await panel.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        return panel;
+    }
+
+    private static async Task AssertNoHorizontalOverflowAsync(ILocator locator, string label)
+    {
+        var hasOverflow = await locator.EvaluateAsync<bool>("el => el.scrollWidth > el.clientWidth + 1");
+        Assert.IsFalse(hasOverflow, $"{label} should not have unintended horizontal overflow.");
+    }
+}

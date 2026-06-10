@@ -2,7 +2,7 @@
     position: fixed;
     inset: 0;
     z-index: 10030;
-    background: color-mix(in srgb, var(--tm-color-neutral-950) 38%, transparent);
+    background: color-mix(in srgb, var(--tm-bg-overlay) 76%, transparent);
 }
 
 .tm-npsd {
@@ -18,7 +18,7 @@
     overflow: hidden;
     border: 1px solid var(--tm-border-color);
     border-radius: var(--tm-radius-lg);
-    background: var(--tm-bg-elevated);
+    background: var(--tm-bg-surface);
     color: var(--tm-text-primary);
     box-shadow: var(--tm-shadow-xl);
 }
@@ -89,12 +89,22 @@
 
 .tm-npsd__status--active {
     border-color: color-mix(in srgb, var(--tm-color-success) 42%, var(--tm-border-color));
-    background: color-mix(in srgb, var(--tm-color-success) 10%, var(--tm-bg-elevated));
+    background: color-mix(in srgb, var(--tm-color-success) 10%, var(--tm-bg-surface));
     color: var(--tm-color-success);
 }
 
 .tm-npsd__status--active .tm-npsd__status-dot {
     background: var(--tm-color-success);
+}
+
+.tm-npsd__status--expired {
+    border-color: color-mix(in srgb, var(--tm-color-warning) 48%, var(--tm-border-color));
+    background: color-mix(in srgb, var(--tm-color-warning) 12%, var(--tm-bg-surface));
+    color: var(--tm-color-warning-text);
+}
+
+.tm-npsd__status--expired .tm-npsd__status-dot {
+    background: var(--tm-color-warning);
 }
 
 .tm-npsd__field {
@@ -176,7 +186,7 @@
 .tm-npsd__primary {
     background: var(--tm-color-primary);
     border-color: var(--tm-color-primary);
-    color: var(--tm-color-on-primary);
+    color: var(--tm-text-inverse);
 }
 
 .tm-npsd__danger {

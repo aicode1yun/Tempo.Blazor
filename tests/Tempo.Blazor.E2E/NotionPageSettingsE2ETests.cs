@@ -1,5 +1,6 @@
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text.RegularExpressions;
 
 namespace Tempo.Blazor.E2E;
 
@@ -63,6 +64,15 @@ public class NotionPageSettingsE2ETests : WasmTestBase
         var menu = page.Locator(".tm-npsm").First;
         await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
         return menu;
+    }
+
+    private async Task<ILocator> GetOpenOrOpenPageSettingsAsync(IPage page)
+    {
+        var menu = page.Locator(".tm-npsm").First;
+        if (await menu.CountAsync() > 0 && await menu.IsVisibleAsync())
+            return menu;
+
+        return await OpenPageSettingsAsync(page);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -162,7 +172,11 @@ public class NotionPageSettingsE2ETests : WasmTestBase
         Assert.IsTrue(await page.Locator(".tm-notion-page--readonly").CountAsync() > 0,
             "Page should be locked after first toggle");
 
-        // Second click in the same open menu — unlock
+        menu = await GetOpenOrOpenPageSettingsAsync(page);
+        lockItem = menu.Locator(".tm-npsm__item")
+                       .Filter(new LocatorFilterOptions { HasText = "Lock page" })
+                       .First;
+        await lockItem.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
         await lockItem.ClickAsync();
         await page.WaitForTimeoutAsync(800);
 
@@ -259,5 +273,137 @@ public class NotionPageSettingsE2ETests : WasmTestBase
             $"Toast should say 'All comments marked as read', got '{toastText}'");
 
         await TakeScreenshotAsync(page, "pagesettings_mark_all_read");
+    }
+}
+
+/// <summary>
+/// Screenshot recovery coverage for page header settings: cover, icon, typography, and lock states.
+/// </summary>
+[TestClass]
+public class NotionPageSettingsRecoveryE2ETests : NotionE2ETestBase
+{
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB12: captures page header with cover, cover drag state, and no-cover state")]
+    public async Task EB12_CoverDragAndRemoveStates_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync(1280, 900);
+        await SeedPageSettingsPageAsync();
+        await WaitForTitleAsync("EB12 Page Settings");
+
+        var pageRegion = page.Locator(".tm-notion-page").First;
+        var cover = page.Locator(".tm-notion-header-cover").First;
+        await cover.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await AssertNoHorizontalOverflowAsync(page, ".tm-notion-editor", "EB12 page settings editor with cover");
+        await CaptureBaselineAsync("page-settings", "normal-with-cover", pageRegion);
+
+        await DragCoverAsync(page, cover, 64);
+        await Assertions.Expect(cover).ToHaveAttributeAsync("style", new Regex("background-position-y:(?!35\\.0%)"));
+        await cover.HoverAsync();
+        await CaptureBaselineAsync("page-settings", "cover-repositioned", cover);
+
+        var removeCover = page.Locator(".tm-notion-header-cover__btn--remove").First;
+        await removeCover.ClickAsync();
+        await Assertions.Expect(page.Locator(".tm-notion-header-cover")).ToHaveCountAsync(0);
+        await page.Locator(".tm-notion-header-meta").First.HoverAsync();
+        await Assertions.Expect(page.Locator(".tm-notion-header-meta__add-btn").Filter(new LocatorFilterOptions { HasText = "Add cover" }).First)
+            .ToBeVisibleAsync();
+        await AssertNoHorizontalOverflowAsync(page, ".tm-notion-editor", "EB12 page settings editor without cover");
+        await CaptureBaselineAsync("page-settings", "without-cover", pageRegion);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB12: captures emoji picker with recently used page icon state")]
+    public async Task EB12_EmojiPickerRecent_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync(1280, 900);
+        await page.EvaluateAsync("localStorage.removeItem('tm-notion-emoji-recent')");
+        await SeedPageSettingsPageAsync();
+        await WaitForTitleAsync("EB12 Page Settings");
+
+        await page.Locator(".tm-notion-header-icon").First.ClickAsync();
+        var picker = page.Locator(".tm-notion-emoji-picker").First;
+        await picker.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await picker.Locator(".tm-notion-emoji-picker__btn[title='rocket']").First.ClickAsync();
+        await Assertions.Expect(page.Locator(".tm-notion-header-icon").First).ToContainTextAsync("🚀");
+
+        await page.Locator(".tm-notion-header-icon").First.ClickAsync();
+        await picker.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await Assertions.Expect(picker.Locator(".tm-notion-emoji-picker__category--recent").First).ToBeVisibleAsync();
+        await Assertions.Expect(picker.Locator(".tm-notion-emoji-picker__category--recent .tm-notion-emoji-picker__btn").First)
+            .ToContainTextAsync("🚀");
+        await AssertNoHorizontalOverflowAsync(page, ".tm-notion-emoji-picker", "EB12 emoji picker recent");
+        await CaptureBaselineAsync("page-settings", "emoji-picker-recent", picker);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB12: captures full width, small text, and locked page feedback")]
+    public async Task EB12_FullWidthSmallTextLocked_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync(1280, 900);
+        await SeedPageSettingsPageAsync();
+        await WaitForTitleAsync("EB12 Page Settings");
+
+        var menu = await OpenPageSettingsAsync(page);
+        await ToggleMenuItemAsync(menu, "Full width");
+        await ToggleMenuItemAsync(menu, "Small text");
+        await ToggleMenuItemAsync(menu, "Lock page");
+
+        await Assertions.Expect(page.Locator(".tm-notion-page--full-width").First).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".tm-notion-page--small-text").First).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".tm-notion-page--readonly").First).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator(".tm-notion-locked-badge").First).ToBeVisibleAsync();
+
+        var editable = page.Locator("[data-block-id='eb120000-0000-0000-0000-000000000002'] .tm-notion-editable").First;
+        await Assertions.Expect(editable).ToHaveAttributeAsync("contenteditable", "false");
+        await AssertNoHorizontalOverflowAsync(page, ".tm-notion-editor", "EB12 full width small text locked editor");
+        await CaptureBaselineAsync("page-settings", "full-width-small-text-locked", page.Locator(".tm-notion-page").First);
+    }
+
+    private static async Task<ILocator> OpenPageSettingsAsync(IPage page)
+    {
+        var trigger = page.Locator(".tm-npsm-trigger").First;
+        await trigger.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await trigger.ClickAsync();
+
+        var menu = page.Locator(".tm-npsm").First;
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        return menu;
+    }
+
+    private static async Task ToggleMenuItemAsync(ILocator menu, string label)
+    {
+        var item = menu.Locator(".tm-npsm__item")
+            .Filter(new LocatorFilterOptions { HasText = label })
+            .First;
+        await item.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await item.ClickAsync();
+    }
+
+    private static async Task DragCoverAsync(IPage page, ILocator cover, float offsetY)
+    {
+        var box = await cover.BoundingBoxAsync();
+        Assert.IsNotNull(box, "Cover should have a bounding box before drag.");
+        var startX = box.X + box.Width / 2;
+        var startY = box.Y + box.Height / 2;
+        await page.Mouse.MoveAsync(startX, startY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync(startX, startY + offsetY, new MouseMoveOptions { Steps = 8 });
+        await page.Mouse.UpAsync();
+        await page.WaitForTimeoutAsync(500);
+    }
+
+    private async Task WaitForTitleAsync(string title)
+    {
+        await Assertions.Expect(Page.Locator(".tm-notion-header-title").First).ToContainTextAsync(title);
+    }
+
+    private static async Task AssertNoHorizontalOverflowAsync(IPage page, string selector, string label)
+    {
+        var overflow = await page.Locator(selector).First.EvaluateAsync<double>(
+            "el => Math.max(0, el.scrollWidth - el.clientWidth)");
+        Assert.IsTrue(overflow <= 2, $"{label} should not horizontally overflow. Overflow={overflow}.");
     }
 }

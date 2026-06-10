@@ -43,6 +43,10 @@
                     @onchange="HandleSourceChangedAsync"
                     @onclick:stopPropagation="true">
                 <option value="">@Loc["Notion_ExcerptInclude_Select"]</option>
+                @if (_notFound && Content?.SourcePageId is Guid missingSourcePageId)
+                {
+                    <option value="@missingSourcePageId.ToString("D")">@Loc["Notion_ExcerptInclude_MissingSource"]</option>
+                }
                 @foreach (var choice in _pageChoices)
                 {
                     <option value="@choice.Id.ToString("D")">@ChoiceLabel(choice)</option>

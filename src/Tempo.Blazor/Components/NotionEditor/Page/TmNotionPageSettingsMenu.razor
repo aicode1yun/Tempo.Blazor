@@ -4,7 +4,7 @@
 @using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.Components.NotionEditor.Services
 
-<div class="tm-npsm-wrap">
+<div class="tm-npsm-wrap" @onkeydown="HandleMenuKeyDownAsync">
 
     @* ── Trigger ─────────────────────────────────────────────────────────────── *@
     <button class="tm-npsm-trigger @(_open ? "tm-npsm-trigger--open" : "")"
@@ -31,6 +31,15 @@
     @if (_open)
     {
         <div class="tm-npsm" role="menu" aria-label="@Loc["TmNotionPageSettingsMenu_TriggerLabel"]">
+
+            @* ── Toast ────────────────────────────────────────────────────────── *@
+            @if (!string.IsNullOrEmpty(_toastMessage))
+            {
+                <div class="tm-npsm__toast @(_toastIsError ? "tm-npsm__toast--error" : "")"
+                     role="@(_toastIsError ? "alert" : "status")" aria-live="@(_toastIsError ? "assertive" : "polite")">
+                    @_toastMessage
+                </div>
+            }
 
             @* ════════════════════ Section 1 — View toggles ══════════════════════ *@
             <div class="tm-npsm__section">
@@ -119,12 +128,19 @@
 
                     @if (_exportOpen)
                     {
-                        <div class="tm-npsm__sub" role="group">
-                            <button class="tm-npsm__sub-item" type="button" @onclick="() => ExportAsync(NotionExportFormat.Markdown)">
+                        <div class="tm-npsm__sub" role="group" data-testid="notion-export-menu">
+                            <label class="tm-npsm__sub-toggle">
+                                <input type="checkbox"
+                                       checked="@_exportIncludeSubpages"
+                                       @onchange="HandleExportIncludeSubpagesChanged"
+                                       data-testid="notion-export-include-subpages" />
+                                <span>@Loc["TmNotionPageSettingsMenu_IncludeSubpages"]</span>
+                            </label>
+                            <button class="tm-npsm__sub-item" type="button" data-testid="notion-export-markdown" @onclick="() => ExportAsync(NotionExportFormat.Markdown)">
                                 <span class="tm-npsm__sub-icon" aria-hidden="true">MD</span>
                                 @Loc["TmNotionPageSettingsMenu_ExportMarkdown"]
                             </button>
-                            <button class="tm-npsm__sub-item" type="button" @onclick="() => ExportAsync(NotionExportFormat.Html)">
+                            <button class="tm-npsm__sub-item" type="button" data-testid="notion-export-html" @onclick="() => ExportAsync(NotionExportFormat.Html)">
                                 <span class="tm-npsm__sub-icon" aria-hidden="true">
                                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                                         <path d="M2 2l1.5 9L6.5 12l3-1 1.5-9H2z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
@@ -132,7 +148,7 @@
                                 </span>
                                 @Loc["TmNotionPageSettingsMenu_ExportHtml"]
                             </button>
-                            <button class="tm-npsm__sub-item" type="button" @onclick="() => ExportAsync(NotionExportFormat.Pdf)">
+                            <button class="tm-npsm__sub-item" type="button" data-testid="notion-export-pdf" @onclick="() => ExportAsync(NotionExportFormat.Pdf)">
                                 <span class="tm-npsm__sub-icon" aria-hidden="true">
                                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                                         <rect x="1.5" y="1.5" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.1"/>
@@ -140,6 +156,14 @@
                                     </svg>
                                 </span>
                                 @Loc["TmNotionPageSettingsMenu_ExportPdf"]
+                            </button>
+                            <button class="tm-npsm__sub-item" type="button" data-testid="notion-export-docx" @onclick="() => ExportAsync(NotionExportFormat.Docx)">
+                                <span class="tm-npsm__sub-icon" aria-hidden="true">W</span>
+                                @Loc["TmNotionPageSettingsMenu_ExportDocx"]
+                            </button>
+                            <button class="tm-npsm__sub-item" type="button" data-testid="notion-export-odt" @onclick="() => ExportAsync(NotionExportFormat.Odt)">
+                                <span class="tm-npsm__sub-icon" aria-hidden="true">ODT</span>
+                                @Loc["TmNotionPageSettingsMenu_ExportOdt"]
                             </button>
                         </div>
                     }
@@ -174,13 +198,15 @@
 
                     @if (_importOpen)
                     {
-                        <div class="tm-npsm__sub" role="group">
+                        <div class="tm-npsm__sub" role="group" data-testid="notion-import-menu">
                             <button class="tm-npsm__sub-item" type="button"
+                                    data-testid="notion-import-markdown"
                                     @onclick="() => ImportFormatSelected(NotionImportFormat.Markdown)">
                                 <span class="tm-npsm__sub-icon" aria-hidden="true">MD</span>
                                 @Loc["TmNotionPageSettingsMenu_ImportMarkdown"]
                             </button>
                             <button class="tm-npsm__sub-item" type="button"
+                                    data-testid="notion-import-html"
                                     @onclick="() => ImportFormatSelected(NotionImportFormat.Html)">
                                 <span class="tm-npsm__sub-icon" aria-hidden="true">
                                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -190,6 +216,7 @@
                                 @Loc["TmNotionPageSettingsMenu_ImportHtml"]
                             </button>
                             <button class="tm-npsm__sub-item" type="button"
+                                    data-testid="notion-import-word"
                                     @onclick="() => ImportFormatSelected(NotionImportFormat.Word)">
                                 <span class="tm-npsm__sub-icon" aria-hidden="true">W</span>
                                 @Loc["TmNotionPageSettingsMenu_ImportWord"]
@@ -207,6 +234,30 @@
 
             @* ════════════════════ Section 3 — Actions ═══════════════════════════ *@
             <div class="tm-npsm__section">
+
+                @if (Context.AIProvider is not null)
+                {
+                    <button class="tm-npsm__item" type="button" role="menuitem" data-testid="notion-ai-summarize" @onclick="OpenAISummarizeAsync">
+                        <span class="tm-npsm__item-icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M7 1.5l.95 2.9 2.9.95-2.9.95L7 9.2l-.95-2.9-2.9-.95 2.9-.95L7 1.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+                                <path d="M3.5 9.5l.45 1.35 1.35.45-1.35.45-.45 1.35-.45-1.35-1.35-.45 1.35-.45.45-1.35z" fill="currentColor"/>
+                            </svg>
+                        </span>
+                        <span class="tm-npsm__item-label">@Loc["TmNotionPageSettingsMenu_AISummarize"]</span>
+                    </button>
+
+                    <button class="tm-npsm__item" type="button" role="menuitem" data-testid="notion-ai-ask-page" @onclick="OpenAIAskPageAsync">
+                        <span class="tm-npsm__item-icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.15"/>
+                                <path d="M5.5 5.4A1.6 1.6 0 0 1 7 4.35c.95 0 1.65.58 1.65 1.4 0 .7-.38 1.08-.94 1.46-.45.3-.67.58-.67 1.08v.28" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/>
+                                <circle cx="7.02" cy="10.15" r=".55" fill="currentColor"/>
+                            </svg>
+                        </span>
+                        <span class="tm-npsm__item-label">@Loc["TmNotionPageSettingsMenu_AIAskPage"]</span>
+                    </button>
+                }
 
                 @if (Context.CommentProvider is not null)
                 {
@@ -231,6 +282,43 @@
                             </svg>
                         </span>
                         <span class="tm-npsm__item-label">@Loc["TmNotionPageSettingsMenu_PageHistory"]</span>
+                    </button>
+                }
+
+                <button class="tm-npsm__item" type="button" role="menuitem" @onclick="OpenPageInfoAsync">
+                    <span class="tm-npsm__item-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/>
+                            <path d="M7 6.5v3.25" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            <circle cx="7" cy="4.25" r=".7" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="tm-npsm__item-label">@Loc["Notion_PageInfo_Title"]</span>
+                </button>
+
+                @if (Context.PublicShareProvider is not null)
+                {
+                    <button class="tm-npsm__item" type="button" role="menuitem" data-testid="notion-share-open" @onclick="OpenShareAsync">
+                        <span class="tm-npsm__item-icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M5.5 8.5a3 3 0 0 0 4.24 0l1.42-1.42a3 3 0 0 0-4.24-4.24L5.5 4.26" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                                <path d="M8.5 5.5a3 3 0 0 0-4.24 0L2.84 6.92a3 3 0 0 0 4.24 4.24l1.42-1.42" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <span class="tm-npsm__item-label">@Loc["Notion_Share_Title"]</span>
+                    </button>
+                }
+
+                @if (Context.PermissionProvider is not null)
+                {
+                    <button class="tm-npsm__item" type="button" role="menuitem" @onclick="OpenRestrictionsAsync">
+                        <span class="tm-npsm__item-icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <rect x="2.5" y="6" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+                                <path d="M4.5 6V4.5a2.5 2.5 0 0 1 5 0V6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <span class="tm-npsm__item-label">@Loc["Notion_Restrictions_Title"]</span>
                     </button>
                 }
 
@@ -384,14 +472,4 @@
 
         </div>
     }
-
-    @* ── Toast ────────────────────────────────────────────────────────────────── *@
-    @if (!string.IsNullOrEmpty(_toastMessage))
-    {
-        <div class="tm-npsm__toast @(_toastIsError ? "tm-npsm__toast--error" : "")"
-             role="status" aria-live="polite">
-            @_toastMessage
-        </div>
-    }
-
 </div>

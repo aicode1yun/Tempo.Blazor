@@ -91,7 +91,8 @@
                         var captured = entry;
                         <div class="tm-nprd__entry" role="listitem">
                             <span class="tm-nprd__subject-kind">@SubjectTypeText(captured.SubjectType)</span>
-                            <span class="tm-nprd__subject">@captured.SubjectId</span>
+                            <span class="tm-nprd__subject" title="@captured.SubjectId">@captured.SubjectId</span>
+                            <span class="tm-nprd__source">@Loc["Notion_Restrictions_Explicit"]</span>
                             <select class="tm-nprd__select tm-nprd__select--entry"
                                     aria-label="@Loc["Notion_Restrictions_Permission"]"
                                     value="@captured.Permission"

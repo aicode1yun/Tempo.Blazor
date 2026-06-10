@@ -43,7 +43,28 @@ public sealed class NotionShortcutsE2ETests : NotionE2ETestBase
         var capture = await CaptureBaselineAsync("shortcuts", "cf18-shortcuts-panel-baseline", panel);
         TestContext.WriteLine($"UX CF18 baseline captured: {capture.FullPagePath} / {capture.RegionPath}");
 
+        await page.SetViewportSizeAsync(390, 844);
+        Assert.IsTrue(await panel.EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth + 1"), "Mobile shortcuts panel should not overflow horizontally.");
+        await CaptureBaselineAsync("shortcuts", "cf18-shortcuts-panel-mobile", panel);
+        await page.SetViewportSizeAsync(1280, 720);
+
         await page.Keyboard.PressAsync("Escape");
+        await page.Locator(".tm-nsp__dialog").WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Detached,
+            Timeout = 10000
+        });
+
+        await DispatchQuestionShortcutAsync(page);
+        await page.Locator(".tm-nsp__dialog").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        await page.Locator(".tm-nsp__scrim").First.ClickAsync(new LocatorClickOptions
+        {
+            Position = new Position { X = 8, Y = 8 }
+        });
         await page.Locator(".tm-nsp__dialog").WaitForAsync(new LocatorWaitForOptions
         {
             State = WaitForSelectorState.Detached,

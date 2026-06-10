@@ -105,7 +105,7 @@ public class MockNotionHistoryProvider : INotionHistoryProvider
     private static IReadOnlyList<IPageBlock> Snapshot(Guid pageId, params (BlockType Type, string Html)[] items)
         => items.Select((x, i) => (IPageBlock)new PageBlock
         {
-            Id           = Guid.NewGuid(),
+            Id           = StableBlockId(pageId, x.Type, x.Html),
             PageId       = pageId,
             Type         = x.Type,
             Order        = i,
@@ -120,6 +120,49 @@ public class MockNotionHistoryProvider : INotionHistoryProvider
             CreatedAt    = DateTime.UtcNow,
             LastEditedAt = DateTime.UtcNow
         }).ToList();
+
+    private static Guid StableBlockId(Guid pageId, BlockType type, string html)
+    {
+        var key = html switch
+        {
+            "A block-based editor with keyboard support." or
+                "A comprehensive block-based editor with full keyboard support and collaborative features."
+                => "editor-summary",
+            "Image, video, and file blocks added." or
+                "Image, video, file, code, and callout blocks."
+                => "phase-2-media-summary",
+            "Open the slash menu with /" or
+                "Slash menu with /"
+                => "slash-menu",
+            "Drag & drop reordering"
+                => "block-reordering",
+            _ => $"{type}:{html}"
+        };
+        return GuidFromStableKey($"{pageId:D}:{key}");
+    }
+
+    private static Guid GuidFromStableKey(string key)
+    {
+        const ulong offsetBasis = 14695981039346656037UL;
+        const ulong prime = 1099511628211UL;
+
+        var first = offsetBasis;
+        var second = offsetBasis ^ 0x9E3779B97F4A7C15UL;
+        foreach (var ch in key)
+        {
+            first ^= ch;
+            first *= prime;
+            second ^= (byte)(ch >> 8);
+            second *= prime;
+            second ^= (byte)ch;
+            second *= prime;
+        }
+
+        Span<byte> bytes = stackalloc byte[16];
+        BitConverter.TryWriteBytes(bytes[..8], first);
+        BitConverter.TryWriteBytes(bytes[8..], second);
+        return new Guid(bytes);
+    }
 
     // ── INotionHistoryProvider ────────────────────────────────────────────────
 

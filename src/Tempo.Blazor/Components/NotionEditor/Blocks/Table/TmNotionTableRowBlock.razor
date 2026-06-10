@@ -37,13 +37,26 @@
         </td>
     }
 
-    @for (var c = 0; c < ColumnCount; c++)
+    @for (var c = 0; c < _cells.Count; c++)
     {
         var colIdx     = c;
         var isHdrCol   = HasHeaderColumn && c == 0;
-        <td class="tm-notion-table__cell-td @(isHdrCol ? "tm-notion-table__cell-td--header-col" : "") @(IsHeaderRow ? "tm-notion-table__cell-td--header-row" : "")"
+        var cell       = _cells[c];
+        if (cell.IsMergeHidden)
+        {
+            continue;
+        }
+
+        <td class="tm-notion-table__cell-td @(isHdrCol ? "tm-notion-table__cell-td--header-col" : "") @(IsHeaderRow ? "tm-notion-table__cell-td--header-row" : "") @(IsSelected(colIdx) ? "tm-notion-table__cell-td--selected" : "")"
+            @key="colIdx"
             data-tm-row="@RowIndex"
-            data-tm-col="@colIdx">
+            data-tm-col="@colIdx"
+            colspan="@Math.Max(1, cell.ColSpan)"
+            rowspan="@Math.Max(1, cell.RowSpan)"
+            style="@CellStyle(cell)"
+            @onmousedown="args => OnCellMouseDownAsync(colIdx, args)"
+            @onmouseenter="args => OnCellMouseEnterAsync(colIdx, args)"
+            @onmouseup="args => OnCellMouseUpAsync(colIdx, args)">
             @if (!ReadOnly)
             {
                 <div class="tm-notion-table__cell"
@@ -53,6 +66,7 @@
                      @onblur="() => OnCellBlurAsync(colIdx)"
                      @onfocus="OnFocusedAsync"
                      @onclick:stopPropagation="true">
+                    @((MarkupString)cell.Html)
                 </div>
             }
             else
@@ -60,7 +74,7 @@
                 <div class="tm-notion-table__cell tm-notion-table__cell--readonly"
                      role="gridcell"
                      @ref="_cellRefs[colIdx]">
-                    @((MarkupString)(_cells.Count > colIdx ? _cells[colIdx] : string.Empty))
+                    @((MarkupString)cell.Html)
                 </div>
             }
         </td>

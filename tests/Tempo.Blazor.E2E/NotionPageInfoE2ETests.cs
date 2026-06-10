@@ -31,6 +31,7 @@ public sealed class NotionPageInfoE2ETests : NotionE2ETestBase
         Assert.AreEqual("128", (await panel.Locator(".tm-page-info__views .tm-page-info__metric-value").TextContentAsync())?.Trim());
         Assert.IsTrue(await panel.EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth + 1"), "Page Info panel should not overflow horizontally.");
 
+        await CaptureBaselineAsync("page-info", "cf16-page-info-metadata-stats-analytics", panel);
         var capture = await CaptureBaselineAsync("page-info", "cf16-page-info-panel-baseline", panel);
         TestContext.WriteLine($"UX CF16 baseline captured: {capture.FullPagePath} / {capture.RegionPath}");
 
@@ -46,6 +47,10 @@ public sealed class NotionPageInfoE2ETests : NotionE2ETestBase
         Assert.AreEqual("0", (await edgePanel.Locator(".tm-page-info__words .tm-page-info__metric-value").TextContentAsync())?.Trim());
         Assert.AreEqual("0 min", (await edgePanel.Locator(".tm-page-info__reading-time .tm-page-info__metric-value").TextContentAsync())?.Trim());
         Assert.AreEqual(0, await edgePanel.Locator(".tm-page-info__views").CountAsync());
+        Assert.IsTrue(await edgePanel.EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth + 1"), "Empty Page Info panel should not overflow horizontally.");
+
+        await CaptureBaselineAsync("page-info", "cf16-page-info-empty-no-analytics", edgePanel);
+        await CaptureBaselineAsync("page-info", "cf16-page-info-unknown-author-fallback", edgePanel.Locator(".tm-page-info__created").First);
     }
 
     private static async Task OpenPageInfoPanelAsync(IPage page)

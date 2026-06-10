@@ -4,6 +4,8 @@
 
 <div class="tm-notion-block-list"
      data-notion-block-list
+     data-page-id="@PageId?.ToString("D")"
+     data-parent-block-id="@ParentBlockId?.ToString("D")"
      @ref="_listRef">
 
     @for (var i = 0; i < Blocks.Count; i++)
@@ -37,6 +39,7 @@
                        OnMentionMenu="OnMentionMenu"
                        OnPageLinkMenu="OnPageLinkMenu"
                        OnTokenMenu="OnTokenMenu"
+                       OnMoveFocus="OnMoveFocus"
                        OnComment="() => OnComment.InvokeAsync(block.Id.ToString())"
                        OnNewThread="() => OnNewThread.InvokeAsync(block.Id.ToString())" />
     }

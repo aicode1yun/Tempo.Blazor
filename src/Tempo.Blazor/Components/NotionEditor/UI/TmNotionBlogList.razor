@@ -1,7 +1,7 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
 @using Tempo.Blazor.NotionEditor.Models
 
-<section class="tm-notion-blog @Class" aria-label="@Loc["Notion_Blog_Title"]" data-testid="notion-blog-panel">
+<section class="tm-notion-blog tm-notion-blog-panel @Class" aria-label="@Loc["Notion_Blog_Title"]" data-testid="notion-blog-panel">
     <header class="tm-notion-blog__header">
         <div class="tm-notion-blog__title-wrap">
             <h2 class="tm-notion-blog__title">@Loc["Notion_Blog_Title"]</h2>
@@ -72,7 +72,7 @@
                             @if (post.PublishedAt is not null)
                             {
                                 <time datetime="@post.PublishedAt.Value.ToString("O")">
-                                    @Loc["Notion_Blog_PublishedOn", post.PublishedAt.Value.ToString("d")]
+                                    @post.PublishedAt.Value.ToString("d")
                                 </time>
                             }
                         </span>

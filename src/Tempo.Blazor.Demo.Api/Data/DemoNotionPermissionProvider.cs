@@ -138,6 +138,12 @@ public sealed class DemoNotionPermissionProvider : INotionPermissionProvider
                     },
                     new PageRestrictionEntryDto
                     {
+                        SubjectType = PageRestrictionSubjectType.User,
+                        SubjectId = "demo",
+                        Permission = PageRestrictionPermission.Edit
+                    },
+                    new PageRestrictionEntryDto
+                    {
                         SubjectType = PageRestrictionSubjectType.Group,
                         SubjectId = "readers",
                         Permission = PageRestrictionPermission.View

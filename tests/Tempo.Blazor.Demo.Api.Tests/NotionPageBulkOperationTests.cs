@@ -1,12 +1,20 @@
+using System.Net;
+using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Demo.Api.Tests;
 
-public sealed class NotionPageBulkOperationTests
+public sealed class NotionPageBulkOperationTests : IClassFixture<WebApplicationFactory<Program>>
 {
+    private readonly HttpClient _client;
+
+    public NotionPageBulkOperationTests(WebApplicationFactory<Program> factory)
+        => _client = factory.CreateClient();
+
     [Fact]
     public async Task CopyPageTreeAsync_PreservesStructureAndCopiesBlocks()
     {
@@ -73,6 +81,56 @@ public sealed class NotionPageBulkOperationTests
         trashedIds.Should().Contain(MockNotionDataStore.Page2Id);
         trashedIds.Should().Contain(MockNotionDataStore.Page3Id);
         trashedIds.Should().NotContain(MockNotionDataStore.Page4Id);
+
+        var visibleRootIds = (await dataStore.GetChildPagesAsync(null))
+            .Select(page => page.Id)
+            .ToList();
+        var visibleSpaceIds = (await dataStore.GetPagesInSpaceAsync("cf24-source"))
+            .Select(page => page.Id)
+            .ToList();
+
+        visibleRootIds.Should().NotContain(MockNotionDataStore.Page1Id);
+        visibleSpaceIds.Should().NotContain(MockNotionDataStore.Page1Id);
+        visibleSpaceIds.Should().NotContain(MockNotionDataStore.Page2Id);
+        visibleSpaceIds.Should().NotContain(MockNotionDataStore.Page3Id);
+    }
+
+    [Fact]
+    public async Task BulkPageEndpoints_MoveCopyTreeAndDeleteThroughHttpContract()
+    {
+        var seed = await _client.PostAsync("/api/notion/e2e/seed/seedBulkPages", null);
+        seed.EnsureSuccessStatusCode();
+
+        var copy = await _client.PostAsJsonAsync(
+            $"/api/notion/pages/{MockNotionDataStore.Page1Id:D}/copy-tree",
+            new CopyPageTreeRequest(MockNotionDataStore.Page4Id.ToString("D")));
+        copy.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var copiedRoot = await copy.Content.ReadFromJsonAsync<NotionPage>();
+        copiedRoot.Should().NotBeNull();
+        copiedRoot!.ParentId.Should().Be(MockNotionDataStore.Page4Id);
+        copiedRoot.Title.Should().Be("CF24 Source Root (Copy)");
+
+        var copiedChildren = await _client.GetFromJsonAsync<List<NotionPage>>($"/api/notion/pages/{copiedRoot.Id:D}/children");
+        copiedChildren.Should().ContainSingle(page => page.Title == "CF24 Child A");
+
+        var delete = await _client.PostAsJsonAsync(
+            "/api/notion/pages/bulk/delete",
+            new BulkDeletePagesRequest([copiedRoot.Id.ToString("D")]));
+        delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var trash = await _client.GetFromJsonAsync<List<NotionPage>>("/api/notion/pages/trash");
+        trash.Should().Contain(page => page.Id == copiedRoot.Id);
+        trash.Should().Contain(page => page.Title == "CF24 Child A");
+
+        var move = await _client.PostAsJsonAsync(
+            "/api/notion/pages/bulk/move",
+            new BulkMovePagesRequest([MockNotionDataStore.Page2Id.ToString("D")], null));
+        move.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var moved = await _client.GetFromJsonAsync<NotionPage>($"/api/notion/pages/{MockNotionDataStore.Page2Id:D}");
+        moved.Should().NotBeNull();
+        moved!.ParentId.Should().BeNull();
     }
 
     private static async Task AssertSameTopLevelBlockCountAsync(MockNotionBlockStore blockStore, Guid sourcePageId, Guid copiedPageId)

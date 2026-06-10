@@ -17,6 +17,7 @@ public sealed class NotionReadingModeE2ETests : NotionE2ETestBase
         await page.Locator(".tm-notion-reading-toggle").ClickAsync();
         await WaitForViewModeAsync(page, "Reading");
         await AssertCleanReadSurfaceAsync(page, "desktop reading");
+        await AssertNoDuplicatedReadOnlyTextAsync(page, "desktop reading");
         await AssertReadableLineWidthAsync(page);
 
         var readingCapture = await CaptureBaselineAsync("reading-mode", "cf19-reading-mode-baseline", page.Locator(".tm-notion-page").First);
@@ -30,6 +31,7 @@ public sealed class NotionReadingModeE2ETests : NotionE2ETestBase
         await page.Locator(".tm-notion-presentation-toggle").ClickAsync();
         await WaitForViewModeAsync(page, "Presentation");
         await AssertCleanReadSurfaceAsync(page, "presentation");
+        await AssertNoDuplicatedReadOnlyTextAsync(page, "presentation");
         Assert.IsTrue(await page.Locator(".tm-notion-editor").EvaluateAsync<bool>("""
             el => {
                 const rect = el.getBoundingClientRect();
@@ -47,6 +49,7 @@ public sealed class NotionReadingModeE2ETests : NotionE2ETestBase
         await page.EvaluateAsync("() => document.querySelector('.tm-notion-reading-toggle')?.click()");
         await WaitForViewModeAsync(page, "Reading");
         await AssertCleanReadSurfaceAsync(page, "mobile reading");
+        await AssertNoDuplicatedReadOnlyTextAsync(page, "mobile reading");
         Assert.IsTrue(await page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth <= window.innerWidth + 1"),
             "Mobile reading mode should not overflow horizontally.");
 
@@ -98,5 +101,34 @@ public sealed class NotionReadingModeE2ETests : NotionE2ETestBase
                 return rect.width > 520 && rect.width < 860;
             }
             """), "Reading mode should keep a comfortable line width.");
+    }
+
+    private static async Task AssertNoDuplicatedReadOnlyTextAsync(IPage page, string label)
+    {
+        var heading = await page.Locator(".tm-notion-h1").First.InnerTextAsync();
+        AssertTextDoesNotRepeatItself(heading, label, "H1");
+
+        var paragraph = await page.Locator(".tm-notion-paragraph").First.InnerTextAsync();
+        AssertTextDoesNotRepeatItself(paragraph, label, "paragraph");
+
+        var firstBullet = await page.Locator(".tm-notion-bullet__body").First.InnerTextAsync();
+        AssertTextDoesNotRepeatItself(firstBullet, label, "list item");
+    }
+
+    private static void AssertTextDoesNotRepeatItself(string value, string label, string elementName)
+    {
+        var text = value.Trim();
+        Assert.IsFalse(string.IsNullOrWhiteSpace(text), $"{label}: {elementName} text should not be empty.");
+
+        if (text.Length % 2 != 0)
+        {
+            return;
+        }
+
+        var half = text.Length / 2;
+        Assert.AreNotEqual(
+            text[..half],
+            text[half..],
+            $"{label}: {elementName} text should render once without immediate duplication.");
     }
 }

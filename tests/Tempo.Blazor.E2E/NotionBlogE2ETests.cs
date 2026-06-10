@@ -19,6 +19,7 @@ public sealed class NotionBlogE2ETests : NotionE2ETestBase
         await Assertions.Expect(postItems.First).ToContainTextAsync("Launch notes for Tempo editor");
         await Assertions.Expect(postItems.Nth(1)).ToContainTextAsync("Knowledge base cleanup");
         await Assertions.Expect(page.GetByTestId("notion-blog-post")).ToContainTextAsync("Launch highlights");
+        await CaptureBaselineAsync("blog", "cf30-list-detail", page.Locator(".tm-notion-blog-panel").First);
 
         await page.GetByTestId("notion-blog-new").ClickAsync();
         await Assertions.Expect(page.GetByTestId("notion-blog-post")).ToContainTextAsync("Untitled blog post", new LocatorAssertionsToContainTextOptions
@@ -26,6 +27,7 @@ public sealed class NotionBlogE2ETests : NotionE2ETestBase
             Timeout = 10000
         });
         await Assertions.Expect(page.GetByTestId("notion-blog-post")).ToContainTextAsync("Draft");
+        await CaptureBaselineAsync("blog", "cf30-draft-post", page.Locator(".tm-notion-blog-panel").First);
 
         await page.GetByTestId("notion-blog-publish").ClickAsync();
         await Assertions.Expect(page.GetByTestId("notion-blog-post")).ToContainTextAsync("Published", new LocatorAssertionsToContainTextOptions
@@ -35,6 +37,7 @@ public sealed class NotionBlogE2ETests : NotionE2ETestBase
         await Assertions.Expect(page.GetByTestId("notion-blog-post")).ToContainTextAsync("Draft the post body here.");
 
         var capture = await CaptureBaselineAsync("blog", "cf30-list-post", page.Locator(".tm-notion-blog-panel").First);
+        await CaptureBaselineAsync("blog", "cf30-published-post", page.Locator(".tm-notion-blog-panel").First);
         TestContext.WriteLine($"UX CF30 blog baseline captured: {capture.FullPagePath} / {capture.RegionPath}");
         TestContext.WriteLine("UX CF30 review: the list/detail split keeps chronological scanning fast while the post body remains calm and page-like through the shared read-only block renderer.");
     }
@@ -50,6 +53,7 @@ public sealed class NotionBlogE2ETests : NotionE2ETestBase
         await SeedEmptyBlogPageAsync();
         await OpenBlogAsync(empty);
         await Assertions.Expect(empty.GetByTestId("notion-blog-empty")).ToContainTextAsync("No blog posts");
+        await CaptureBaselineAsync("blog", "cf30-empty-posts", empty.Locator(".tm-notion-blog-panel").First);
 
         var page = await OpenNotionEditorAsync();
         await SeedBlogPageAsync();
@@ -68,6 +72,7 @@ public sealed class NotionBlogE2ETests : NotionE2ETestBase
         {
             Timeout = 10000
         });
+        await CaptureBaselineAsync("blog", "cf30-pagination-page2", page.Locator(".tm-notion-blog-panel").First);
     }
 
     private static async Task OpenBlogAsync(IPage page)

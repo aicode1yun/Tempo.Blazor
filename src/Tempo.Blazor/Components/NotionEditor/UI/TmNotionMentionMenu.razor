@@ -12,7 +12,7 @@
     <div class="tm-nmm"
          role="dialog"
          aria-label="@(PagesOnly ? Loc["TmNotionMentionMenu_PagesSearchPlaceholder"] : Loc["TmNotionMentionMenu_SearchPlaceholder"])"
-         style="top:@(_top)px;left:@(_left)px"
+         style="@MenuStyle"
          @ref="_menuRef"
          @onkeydown:stopPropagation="true">
 

@@ -156,8 +156,8 @@
                         <circle cx="36" cy="36" r="8" fill="currentColor" opacity=".08"/>
                         <path d="M32 36h8M36 32v8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
                     </svg>
-                    <p class="tm-nph__empty-title">@Loc["TmNotionPageHistory_EmptyTitle"]</p>
-                    <p class="tm-nph__empty-sub">@Loc["TmNotionPageHistory_EmptySub"]</p>
+                    <p class="tm-nph__empty-title">@Loc[_totalCount == 0 && !_versionsLoading ? "TmNotionPageHistory_NoVersionsEmptyTitle" : "TmNotionPageHistory_EmptyTitle"]</p>
+                    <p class="tm-nph__empty-sub">@Loc[_totalCount == 0 && !_versionsLoading ? "TmNotionPageHistory_NoVersionsEmptySub" : "TmNotionPageHistory_EmptySub"]</p>
                 </div>
             }
 
@@ -245,6 +245,20 @@
                         </span>
                     </div>
                     <div class="tm-nph__toolbar-actions">
+                        <button class="tm-nph__toolbar-btn @(_diffViewMode == NotionDiffViewMode.Inline ? "tm-nph__toolbar-btn--active" : "")"
+                                type="button"
+                                data-testid="notion-diff-mode-inline"
+                                aria-pressed="@(_diffViewMode == NotionDiffViewMode.Inline)"
+                                @onclick="() => SetDiffViewMode(NotionDiffViewMode.Inline)">
+                            @Loc["TmNotionPageHistory_DiffModeInline"]
+                        </button>
+                        <button class="tm-nph__toolbar-btn @(_diffViewMode == NotionDiffViewMode.SideBySide ? "tm-nph__toolbar-btn--active" : "")"
+                                type="button"
+                                data-testid="notion-diff-mode-side-by-side"
+                                aria-pressed="@(_diffViewMode == NotionDiffViewMode.SideBySide)"
+                                @onclick="() => SetDiffViewMode(NotionDiffViewMode.SideBySide)">
+                            @Loc["TmNotionPageHistory_DiffModeSideBySide"]
+                        </button>
                         <button class="tm-nph__toolbar-btn tm-nph__toolbar-btn--secondary"
                                 type="button"
                                 @onclick="ExitDiff">
@@ -270,76 +284,9 @@
                 </div>
 
                 @* ── Diff content ──────────────────────────────────────────── *@
-                <div class="tm-nph__diff-content">
-                    @if (_diffLoading)
-                    {
-                        <div class="tm-nph__status">
-                            <span class="tm-nph__spinner" aria-hidden="true"></span>
-                            @Loc["TmNotionPageHistory_LoadingDiff"]
-                        </div>
-                    }
-                    else if (_diffs.Count == 0)
-                    {
-                        <div class="tm-nph__status">@Loc["TmNotionPageHistory_NoDiff"]</div>
-                    }
-                    else
-                    {
-                        @foreach (var diff in _diffs)
-                        {
-                            <div class="tm-nph__diff-entry tm-nph__diff-entry--@diff.DiffType.ToString().ToLowerInvariant()"
-                                 role="article"
-                                 aria-label="@GetDiffLabel(diff.DiffType)">
-                                <div class="tm-nph__diff-indicator" aria-hidden="true">
-                                    @GetDiffSymbol(diff.DiffType)
-                                </div>
-                                <div class="tm-nph__diff-body">
-                                    <span class="tm-nph__diff-type-label">
-                                        @GetBlockTypeLabel(diff.Before ?? diff.After)
-                                    </span>
-                                    @if (diff.DiffType == BlockDiffType.Added && diff.After is not null)
-                                    {
-                                        <div class="tm-nph__diff-block tm-nph__diff-block--after">
-                                            @((MarkupString)GetBlockHtml(diff.After))
-                                        </div>
-                                    }
-                                    else if (diff.DiffType == BlockDiffType.Removed && diff.Before is not null)
-                                    {
-                                        <div class="tm-nph__diff-block tm-nph__diff-block--before">
-                                            @((MarkupString)GetBlockHtml(diff.Before))
-                                        </div>
-                                    }
-                                    else if (diff.DiffType == BlockDiffType.Modified)
-                                    {
-                                        @if (diff.Before is not null)
-                                        {
-                                            <div class="tm-nph__diff-row">
-                                                <span class="tm-nph__diff-row-label">@Loc["TmNotionPageHistory_DiffBefore"]</span>
-                                                <div class="tm-nph__diff-block tm-nph__diff-block--before">
-                                                    @((MarkupString)GetBlockHtml(diff.Before))
-                                                </div>
-                                            </div>
-                                        }
-                                        @if (diff.After is not null)
-                                        {
-                                            <div class="tm-nph__diff-row">
-                                                <span class="tm-nph__diff-row-label">@Loc["TmNotionPageHistory_DiffAfter"]</span>
-                                                <div class="tm-nph__diff-block tm-nph__diff-block--after">
-                                                    @((MarkupString)GetBlockHtml(diff.After))
-                                                </div>
-                                            </div>
-                                        }
-                                    }
-                                    else if (diff.DiffType == BlockDiffType.Moved)
-                                    {
-                                        <div class="tm-nph__diff-block">
-                                            @((MarkupString)GetBlockHtml(diff.After ?? diff.Before!))
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    }
-                </div>
+                <TmNotionDiffViewer Diffs="_diffs"
+                                    ViewMode="_diffViewMode"
+                                    Loading="_diffLoading" />
             }
 
         </main>

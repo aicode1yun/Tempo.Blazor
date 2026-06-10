@@ -38,12 +38,17 @@ public sealed class NotionPublicShareE2ETests : NotionE2ETestBase
         await publicPage.WaitForSelectorAsync(".tm-notion-editor.tm-notion-editor--locked", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 60000 });
         Assert.AreEqual(0, await publicPage.Locator(".tm-notion-sidebar").CountAsync(), "Public route must not expose the private workspace sidebar.");
         await Assertions.Expect(publicPage.Locator("[contenteditable='true']")).ToHaveCountAsync(0);
+        await Assertions.Expect(publicPage.GetByTestId("notion-public-page")).ToContainTextAsync("CF33 Public Share Workspace");
+        await Assertions.Expect(publicPage.GetByTestId("notion-public-page")).ToContainTextAsync("public read-only link");
 
         var publicCapture = await CaptureExternalPageBaselineAsync(publicPage, "share", "cf33-public-page", publicPage.GetByTestId("notion-public-page"));
         TestContext.WriteLine($"UX CF33 public page baseline captured: {publicCapture.FullPagePath} / {publicCapture.RegionPath}");
 
         await dialog.GetByTestId("notion-share-revoke").ClickAsync();
         await Assertions.Expect(dialog.GetByTestId("notion-share-disabled")).ToBeVisibleAsync();
+        var revokedCapture = await CaptureBaselineAsync("share", "cf33-revoked-share-dialog", page.Locator(".tm-npsd").First);
+        TestContext.WriteLine($"UX CF33 revoked dialog baseline captured: {revokedCapture.FullPagePath} / {revokedCapture.RegionPath}");
+
         await publicPage.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
         await WaitForAppReadyAsync(publicPage);
         await Assertions.Expect(publicPage.GetByTestId("notion-public-not-found")).ToBeVisibleAsync();
@@ -52,12 +57,17 @@ public sealed class NotionPublicShareE2ETests : NotionE2ETestBase
     }
 
     [TestMethod]
+    [TestCategory("NotionUxBaseline")]
     [Description("CF33: providerless entry point is hidden and expired tokens render an unavailable public page.")]
-    public async Task CF33_PublicShare_EdgeCases_Work()
+    public async Task CF33_PublicShare_EdgeCases_Baseline()
     {
         var providerless = await OpenNotionEditorAsync("?disablePublicShareProvider=true");
         await providerless.Locator(".tm-npsm-trigger").First.ClickAsync();
+        var providerlessMenu = providerless.Locator(".tm-npsm").First;
+        await providerlessMenu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
         Assert.AreEqual(0, await providerless.GetByTestId("notion-share-open").CountAsync(), "Share entry point should be hidden when no public share provider is configured.");
+        var providerlessCapture = await CaptureBaselineAsync("share", "cf33-providerless-settings-menu", providerlessMenu);
+        TestContext.WriteLine($"UX CF33 providerless menu baseline captured: {providerlessCapture.FullPagePath} / {providerlessCapture.RegionPath}");
 
         var page = await OpenNotionEditorAsync();
         await SeedExpiredPublicSharePageAsync();
@@ -72,9 +82,15 @@ public sealed class NotionPublicShareE2ETests : NotionE2ETestBase
         });
         await WaitForAppReadyAsync(publicPage);
         await Assertions.Expect(publicPage.GetByTestId("notion-public-not-found")).ToBeVisibleAsync();
+        var expiredCapture = await CaptureExternalPageBaselineAsync(publicPage, "share", "cf33-expired-public-link", publicPage.GetByTestId("notion-public-not-found"));
+        TestContext.WriteLine($"UX CF33 expired public link baseline captured: {expiredCapture.FullPagePath} / {expiredCapture.RegionPath}");
 
         await OpenShareDialogAsync(page);
-        await Assertions.Expect(page.GetByTestId("notion-share-disabled")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByTestId("notion-share-expired")).ToBeVisibleAsync();
+        var expiredDialogCapture = await CaptureBaselineAsync("share", "cf33-expired-share-dialog", page.Locator(".tm-npsd").First);
+        TestContext.WriteLine($"UX CF33 expired dialog baseline captured: {expiredDialogCapture.FullPagePath} / {expiredDialogCapture.RegionPath}");
+
+        TestContext.WriteLine("UX CF33 edge review: providerless mode removes the share command from the private settings menu, and expired or revoked links resolve to the same unavailable public state without leaking private navigation.");
     }
 
     private static async Task OpenShareDialogAsync(IPage page)

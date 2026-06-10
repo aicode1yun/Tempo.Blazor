@@ -39,6 +39,7 @@
                 <div class="tm-calendar-view__day-cell">
                     <button class="@css"
                             type="button"
+                            data-date="@d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
                             tabindex="@(disabled || isOther ? "-1" : "0")"
                             disabled="@disabled"
                             aria-label="@d.ToString("d")"

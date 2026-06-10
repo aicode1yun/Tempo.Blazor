@@ -17,13 +17,31 @@ public sealed class NotionReadOnlyE2ETests : NotionE2ETestBase
     public async Task EB18_ReadOnly_RichPage_HidesEditControlsBlocksMutationAndAllowsCopy()
     {
         await SeedDatabaseAsync("many");
+        await SeedNotionScenarioAsync("seedRichPage");
         var page = await OpenNotionEditorAsync("?readonly=true");
-        await SeedRichPageAsync();
+        await WaitForReadOnlyPageAsync(page, ".tm-notion-callout, .tm-notion-code-block, .tm-notion-todo");
 
         await AssertReadOnlySurfaceAsync(page, "rich");
 
         var editable = page.Locator(".tm-notion-page .tm-notion-editable").First;
         await editable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+
+        var viewport = page.ViewportSize;
+        await page.Mouse.MoveAsync(24, Math.Max(24, (viewport?.Height ?? 720) - 24));
+        await page.EvaluateAsync("""
+            () => {
+                window.getSelection()?.removeAllRanges();
+                if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur();
+                }
+            }
+            """);
+        await page.WaitForFunctionAsync(
+            "() => Array.from(document.querySelectorAll('.tm-tooltip__content')).every(el => getComputedStyle(el).opacity === '0')",
+            new PageWaitForFunctionOptions { Timeout = 5000 });
+        var capture = await CaptureBaselineAsync("read-only", "eb18-rich-page", page.Locator(".tm-notion-page").First);
+        Assert.IsTrue(File.Exists(capture.FullPagePath), "Read-only full-page UX baseline should be written.");
+        Assert.IsTrue(File.Exists(capture.RegionPath), "Read-only page-region UX baseline should be written.");
 
         var beforeText = await editable.InnerTextAsync();
         await editable.ClickAsync();
@@ -42,10 +60,6 @@ public sealed class NotionReadOnlyE2ETests : NotionE2ETestBase
             "Typing '/' in read-only mode must not open the slash command menu.");
 
         await AssertSelectionAndClipboardCopyAsync(page, editable, beforeText);
-
-        var capture = await CaptureBaselineAsync("read-only", "eb18-rich-page", page.Locator(".tm-notion-page").First);
-        Assert.IsTrue(File.Exists(capture.FullPagePath), "Read-only full-page UX baseline should be written.");
-        Assert.IsTrue(File.Exists(capture.RegionPath), "Read-only page-region UX baseline should be written.");
     }
 
     [TestMethod]
@@ -55,22 +69,82 @@ public sealed class NotionReadOnlyE2ETests : NotionE2ETestBase
         await SeedDatabaseAsync("many");
         var page = await OpenNotionEditorAsync("?readonly=true");
 
-        var seedCases = new (string Name, Func<Task> Seed)[]
+        var seedCases = new (string Name, string Scenario, string WaitSelector)[]
         {
-            ("rich", SeedRichPageAsync),
-            ("text-formatting", SeedTextFormattingPageAsync),
-            ("lists", SeedListTodoPageAsync),
-            ("media", SeedMediaPageAsync),
-            ("tables", SeedTablePageAsync),
-            ("layout", SeedLayoutPageAsync),
-            ("special-blocks", SeedSpecialBlocksPageAsync),
-            ("drag-drop", SeedDragDropPageAsync)
+            ("rich", "seedRichPage", ".tm-notion-callout, .tm-notion-code-block, .tm-notion-todo"),
+            ("text-formatting", "seedTextFormattingPage", "[data-block-id='eb100000-0000-0000-0000-000000000011'] .tm-notion-code-block"),
+            ("lists", "seedListTodoPage", "[data-block-id='eb200000-0000-0000-0000-000000000010'] .tm-notion-toggle"),
+            ("media", "seedMediaPage", "[data-block-id='eb600000-0000-0000-0000-000000000021'] .tm-notion-image-block__img"),
+            ("tables", "seedTablePage", "[data-block-id='eb700000-0000-0000-0000-000000000010'] .tm-notion-table"),
+            ("layout", "seedLayoutPage", "[data-block-id='eb800000-0000-0000-0000-000000000010'] .tm-notion-column-list"),
+            ("special-blocks", "seedSpecialBlocksPage", "[data-block-id='eb150000-0000-0000-0000-000000000010'] .tm-notion-equation-block"),
+            ("drag-drop", "seedDragDropPage", "[data-block-id='eb160000-0000-0000-0000-000000000010'] .tm-notion-column-list")
         };
 
         foreach (var seedCase in seedCases)
         {
-            await seedCase.Seed();
+            await SeedNotionScenarioAsync(seedCase.Scenario);
+            await LoadReadOnlyPageAsync(page);
+            await page.WaitForSelectorAsync(seedCase.WaitSelector, new PageWaitForSelectorOptions
+            {
+                State = WaitForSelectorState.Visible,
+                Timeout = 60000
+            });
             await AssertReadOnlySurfaceAsync(page, seedCase.Name);
+        }
+    }
+
+    private static async Task SeedNotionScenarioAsync(string scenario)
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://localhost:5100")
+        };
+
+        using var response = await http.PostAsync($"/api/notion/e2e/seed/{Uri.EscapeDataString(scenario)}", null);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task LoadReadOnlyPageAsync(IPage page)
+    {
+        await page.GotoAsync($"{BaseUrl}/notion-editor?readonly=true", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60000
+        });
+        await WaitForReadOnlyPageAsync(page);
+    }
+
+    private async Task WaitForReadOnlyPageAsync(IPage page, string? seedSelector = null)
+    {
+        await WaitForAppReadyAsync(page);
+        await page.WaitForSelectorAsync(".tm-notion-editor", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+        await page.WaitForSelectorAsync(".tm-notion-page", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+        await page.WaitForSelectorAsync(".tm-notion-editor--locked", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+
+        if (!string.IsNullOrWhiteSpace(seedSelector))
+        {
+            await page.WaitForSelectorAsync(seedSelector, new PageWaitForSelectorOptions
+            {
+                State = WaitForSelectorState.Visible,
+                Timeout = 60000
+            });
         }
     }
 

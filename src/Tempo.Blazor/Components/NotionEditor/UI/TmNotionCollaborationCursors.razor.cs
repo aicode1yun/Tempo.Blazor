@@ -21,23 +21,60 @@ public partial class TmNotionCollaborationCursors : ComponentBase, IAsyncDisposa
 
     // userId → latest cursor — only remote users (own cursor filtered by sync)
     private readonly Dictionary<string, CollaboratorCursor> _cursors = new();
+    private string? _loadedPageId;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     protected override async Task OnInitializedAsync()
     {
         if (Context.CollaborationSync is not { } sync) return;
-        if (Context.CollaborationProvider is not { } provider) return;
 
         sync.RemoteCursorMoved += HandleCursorMoved;
+        await LoadActiveCollaboratorsAsync();
+    }
 
-        // Load users already on the page
+    protected override async Task OnParametersSetAsync()
+        => await LoadActiveCollaboratorsAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_cursors.Count > 0)
+            await PushCursorsToJsAsync();
+        else
+            await LoadActiveCollaboratorsAsync();
+    }
+
+    private async Task LoadActiveCollaboratorsAsync()
+    {
+        if (Context.CollaborationProvider is not { } provider)
+            return;
+
+        var pageId = Context.CurrentPageId;
+        if (string.IsNullOrWhiteSpace(pageId) ||
+            string.Equals(_loadedPageId, pageId, StringComparison.OrdinalIgnoreCase) && _cursors.Count > 0)
+            return;
+
+        _cursors.Clear();
         try
         {
-            var active = await provider.GetActiveCollaboratorsAsync(
-                Context.DataProvider is not null ? "" : "");
-            foreach (var c in active.Where(c => c.UserId != "demo"))
+            var active = (await provider.GetActiveCollaboratorsAsync(pageId)).ToArray();
+            if (active.Length == 0)
+            {
+                await Task.Delay(250);
+                active = (await provider.GetActiveCollaboratorsAsync(pageId)).ToArray();
+            }
+
+            foreach (var c in active.Where(c => !string.Equals(c.UserId, Context.CurrentUserId, StringComparison.OrdinalIgnoreCase)))
                 _cursors[c.UserId] = c;
+
+            if (_cursors.Count > 0)
+                _loadedPageId = pageId;
+
+            if (_cursors.Count > 0)
+            {
+                StateHasChanged();
+                await PushCursorsToJsAsync();
+            }
         }
         catch { }
     }
@@ -74,14 +111,35 @@ public partial class TmNotionCollaborationCursors : ComponentBase, IAsyncDisposa
 
     private static readonly string[] _palette =
     [
-        "#E03E3E", "#0F9B8E", "#6940A5", "#CF9300",
-        "#D9730D", "#2382E2", "#4DA64D", "#AD1A72"
+        "var(--tm-collab-color-1)",
+        "var(--tm-collab-color-2)",
+        "var(--tm-collab-color-3)",
+        "var(--tm-collab-color-4)",
+        "var(--tm-collab-color-5)",
+        "var(--tm-collab-color-6)",
+        "var(--tm-collab-color-7)",
+        "var(--tm-collab-color-8)"
     ];
 
     private static string GetColor(string userId)
     {
-        var idx = Math.Abs(userId.GetHashCode()) % _palette.Length;
+        var idx = StablePaletteIndex(userId);
         return _palette[idx];
+    }
+
+    private static int StablePaletteIndex(string userId)
+    {
+        const uint offsetBasis = 2166136261;
+        const uint prime = 16777619;
+
+        var hash = offsetBasis;
+        foreach (var ch in userId)
+        {
+            hash ^= char.ToUpperInvariant(ch);
+            hash *= prime;
+        }
+
+        return (int)(hash % _palette.Length);
     }
 
     private static string GetInitials(string displayName)

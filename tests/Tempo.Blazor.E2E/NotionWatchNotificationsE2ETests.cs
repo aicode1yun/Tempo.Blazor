@@ -37,21 +37,32 @@ public sealed class NotionWatchNotificationsE2ETests : NotionE2ETestBase
 
         var panelCapture = await CaptureBaselineAsync("watch", "cf21-notification-center", panel);
         TestContext.WriteLine($"UX CF21 notification center baseline captured: {panelCapture.FullPagePath} / {panelCapture.RegionPath}");
-        TestContext.WriteLine("UX CF21 review: the watch control stays compact in the editor topbar, while the notification panel keeps unread state, message context, and direct navigation in one scan-friendly surface.");
+
+        await CaptureBaselineAsync("watch", "cf21-notification-unread-state", panel);
+
+        await watcher.GetByTestId("notion-notification-mark-all").ClickAsync();
+        await Assertions.Expect(watcher.GetByTestId("notion-notification-badge")).ToHaveCountAsync(0);
+        await Assertions.Expect(panel.Locator(".tm-notification-bell__item--unread")).ToHaveCountAsync(0);
+        await CaptureBaselineAsync("watch", "cf21-notification-read-state", panel);
+
+        TestContext.WriteLine("UX CF21 review: the watch control stays compact in the editor topbar, while the notification panel keeps unread/read state, message context, and direct navigation in one scan-friendly surface.");
     }
 
     [TestMethod]
+    [TestCategory("NotionUxBaseline")]
     [Description("CF21: providerless UI is hidden; include-children and mark-all-read edge flows work.")]
     public async Task CF21_WatchNotifications_EdgeCases()
     {
         var providerless = await OpenNotionEditorAsync("?disableWatchProvider=true&user=demo");
         Assert.AreEqual(0, await providerless.GetByTestId("notion-watch-button").CountAsync(), "Watch button should be hidden when no watch provider is configured.");
+        await CaptureBaselineAsync("watch", "cf21-providerless-hidden-state", providerless.Locator(".tm-notion-topbar").First);
 
         var page = await OpenNotionEditorAsync("?user=demo");
         await SeedPageInfoPageAsync();
 
         await page.GetByTestId("notion-notification-toggle").ClickAsync();
         await Assertions.Expect(page.GetByTestId("notion-notification-empty")).ToBeVisibleAsync();
+        await CaptureBaselineAsync("watch", "cf21-notification-empty-state", page.GetByTestId("notion-notification-panel"));
         await page.GetByTestId("notion-notification-toggle").ClickAsync();
 
         await page.GetByTestId("notion-watch-toggle").ClickAsync();

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using System.Net;
 using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.Components.NotionEditor.UI;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -9,7 +11,7 @@ using Tempo.Blazor.NotionEditor.Models;
 namespace Tempo.Blazor.Components.NotionEditor.Page;
 
 /// <summary>Simple DOMRect wrapper for JS interop.</summary>
-internal sealed class DomRect
+public sealed class DomRect
 {
     public double Top    { get; set; }
     public double Left   { get; set; }
@@ -50,6 +52,14 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     [Parameter]
     public EventCallback<string> OnNavigateToPage { get; set; }
 
+    /// <summary>Effective permission for the current user on this page.</summary>
+    [Parameter]
+    public PageEffectivePermissionDto? EffectivePermission { get; set; }
+
+    /// <summary>Raised after page restrictions are saved.</summary>
+    [Parameter]
+    public EventCallback OnPermissionsChanged { get; set; }
+
     /// <summary>
     /// Called when the user clicks "Create token" in the token dropdown.
     /// Arg = current search query (may be empty). Return the newly created
@@ -69,6 +79,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     private ElementReference _pageRef;
     private bool             _historyVisible;
+    private bool             _pageInfoVisible;
+    private bool             _shareVisible;
+    private bool             _restrictionsVisible;
     private bool             _collabSubscribed;
 
     // ── Block comment panel state ─────────────────────────────────────────────
@@ -114,6 +127,29 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private double _slashMenuLeft;
     private string _slashBlockId = string.Empty;
 
+    // ── Inline status picker state ───────────────────────────────────────────
+
+    private bool              _statusPickerVisible;
+    private double            _statusPickerTop;
+    private double            _statusPickerLeft;
+    private string?           _statusInitialLabel;
+    private NotionStatusColor _statusInitialColor = NotionStatusColor.Gray;
+    private bool              _statusEditingExistingChip;
+    private string            _statusEditingBlockId = string.Empty;
+    private int               _statusEditingChipIndex = -1;
+
+    // ── AI menu state ───────────────────────────────────────────────────────
+
+    private bool             _aiMenuVisible;
+    private bool             _aiMenuPanel;
+    private double           _aiMenuTop;
+    private double           _aiMenuLeft;
+    private NotionAiMenuMode _aiMenuMode = NotionAiMenuMode.Generate;
+    private string           _aiSourceText = string.Empty;
+    private string           _aiContextHtml = string.Empty;
+    private string           _aiTargetBlockId = string.Empty;
+    private bool             _aiReplaceSavedSelection;
+
     // ── Token dropdown state ──────────────────────────────────────────────────
 
     private bool   _tokenDropdownVisible;
@@ -144,6 +180,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private string        _toolbarCurrentHref  = string.Empty;
     private TextAlignment _toolbarCurrentAlign  = TextAlignment.Left;
     private string        _toolbarBlockId       = string.Empty;
+    private string        _toolbarSelectedText  = string.Empty;
     private DotNetObjectReference<TmNotionPage>? _toolbarDotNetRef;
     private bool          _toolbarWatcherReady;
 
@@ -159,6 +196,8 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     protected override async Task OnParametersSetAsync()
     {
+        Context.BlockCreated = HandleExternalBlockCreatedAsync;
+
         if (!ReferenceEquals(Page, _lastPage))
         {
             _lastPage = Page;
@@ -214,9 +253,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             var result = await Context.BlockProvider.GetBlocksAsync(Page.Id.ToString());
             _blocks = [.. result.OrderBy(b => b.Order)];
         }
-        catch (Exception ex)
+        catch
         {
-            _loadBlocksError = ex.Message;
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
         }
         finally
         {
@@ -224,6 +263,20 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             await LoadPageUnresolvedCommentCountAsync();
             StateHasChanged();
         }
+    }
+
+    private async Task HandleExternalBlockCreatedAsync(IPageBlock block)
+    {
+        if (block.PageId != Page.Id || _blocks.Any(existing => existing.Id == block.Id))
+            return;
+
+        var insertIdx = _blocks.FindIndex(existing => existing.Order > block.Order);
+        if (insertIdx < 0)
+            insertIdx = _blocks.Count;
+
+        _blocks.Insert(Math.Clamp(insertIdx, 0, _blocks.Count), block);
+        _activeBlockId = block.Id;
+        await InvokeAsync(StateHasChanged);
     }
 
     /// <summary>Loads the total unresolved comment count for the current page (header badge).</summary>
@@ -274,9 +327,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             _activeBlockId = created.Id;
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch
         {
-            _loadBlocksError = ex.Message;
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
             StateHasChanged();
         }
     }
@@ -296,9 +349,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             if (_activeBlockId == block.Id) _activeBlockId = null;
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch
         {
-            _loadBlocksError = ex.Message;
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
             StateHasChanged();
         }
     }
@@ -364,6 +417,66 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         return Task.CompletedTask;
     }
 
+    private Task HandlePageInfoRequestedAsync()
+    {
+        _pageInfoVisible = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandlePageInfoVisibleChangedAsync(bool visible)
+    {
+        _pageInfoVisible = visible;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleShareRequestedAsync()
+    {
+        _shareVisible = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleShareVisibleChangedAsync(bool visible)
+    {
+        _shareVisible = visible;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleRestrictionsRequestedAsync()
+    {
+        _restrictionsVisible = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleRestrictionsVisibleChangedAsync(bool visible)
+    {
+        _restrictionsVisible = visible;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleRestrictionsSavedAsync()
+    {
+        await OnPermissionsChanged.InvokeAsync();
+        await RefreshAsync();
+    }
+
+    private Task HandleAISummarizeRequestedAsync()
+    {
+        OpenAIPagePanel(NotionAiMenuMode.Summarize);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleAIAskPageRequestedAsync()
+    {
+        OpenAIPagePanel(NotionAiMenuMode.Ask);
+        return Task.CompletedTask;
+    }
+
     private async Task HandleNavigateToImportedPageAsync(string pageId)
     {
         await OnNavigateToPage.InvokeAsync(pageId);
@@ -385,9 +498,55 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private async Task HandleBlockReorderAsync((int source, int target) args) =>
         await ReorderBlocksAsync(args.source, args.target);
 
+    private async Task HandleExternalBlockDroppedAsync(MoveNotionBlockRequest request)
+    {
+        if (ReadOnly) return;
+
+        try
+        {
+            await Context.BlockProvider.MoveBlockAsync(request);
+            var result = await Context.BlockProvider.GetBlocksAsync(Page.Id.ToString());
+            _blocks = [.. result.OrderBy(b => b.Order)];
+            StateHasChanged();
+        }
+        catch
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private Task HandleExternalBlockRemovedAsync(string blockId)
+    {
+        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
+        if (block is not null)
+        {
+            _blocks.Remove(block);
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
+
     private Task HandleBlockFocusedAsync(string blockId)
     {
         if (Guid.TryParse(blockId, out var id)) SetActiveBlock(id);
+        return Task.CompletedTask;
+    }
+
+    private Task HandleMoveFocusAsync((string BlockId, int Direction) request)
+    {
+        if (!Guid.TryParse(request.BlockId, out var id) || request.Direction == 0)
+            return Task.CompletedTask;
+
+        var index = _blocks.FindIndex(block => block.Id == id);
+        if (index < 0)
+            return Task.CompletedTask;
+
+        var targetIndex = Math.Clamp(index + request.Direction, 0, _blocks.Count - 1);
+        if (targetIndex == index)
+            return Task.CompletedTask;
+
+        SetActiveBlock(_blocks[targetIndex].Id);
         return Task.CompletedTask;
     }
 
@@ -417,9 +576,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             _activeBlockId = converted.Id;
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch
         {
-            _loadBlocksError = ex.Message;
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
             StateHasChanged();
         }
     }
@@ -453,9 +612,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
                 _blocks.Insert(Math.Clamp(insertIdx++, 0, _blocks.Count), b);
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch
         {
-            _loadBlocksError = ex.Message;
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
             StateHasChanged();
         }
     }
@@ -705,9 +864,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             _activeBlockId = created.Id;
             StateHasChanged();
         }
-        catch (Exception ex)
+        catch
         {
-            _loadBlocksError = ex.Message;
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
             StateHasChanged();
         }
     }
@@ -761,6 +920,8 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         BlockType.Table        => new TableBlockContent(),
         BlockType.ColumnList   => new ColumnListBlockContent(),
         BlockType.Breadcrumb   => new BreadcrumbBlockContent(),
+        BlockType.WorkItem     => new WorkItemBlockContent(),
+        BlockType.ContentByLabel => new ContentByLabelBlockContent(),
         _                      => new TextBlockContent  { Html = initialHtml }
     };
 
@@ -785,6 +946,55 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         _slashBlockId = string.Empty;
         StateHasChanged();
+    }
+
+    private async Task HandleSlashMenuItemSelectedAsync(SlashMenuItem item)
+    {
+        _slashMenuVisible = false;
+
+        if (item.Action == SlashMenuAction.InsertStatus)
+        {
+            _statusPickerTop = _slashMenuTop;
+            _statusPickerLeft = _slashMenuLeft;
+            _statusInitialLabel = null;
+            _statusInitialColor = NotionStatusColor.Gray;
+            _statusEditingExistingChip = false;
+            _statusPickerVisible = true;
+            StateHasChanged();
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(_slashBlockId))
+        {
+            if (item.CalloutVariant is { } variant)
+            {
+                await ConvertBlockToCalloutVariantAsync(_slashBlockId, variant);
+            }
+            else
+            {
+                await HandleConvertBlockAsync((_slashBlockId, item.Type));
+            }
+        }
+
+        _slashBlockId = string.Empty;
+        StateHasChanged();
+    }
+
+    private Task HandleSlashAISelectedAsync()
+    {
+        _slashMenuVisible = false;
+        _aiMenuVisible = true;
+        _aiMenuPanel = false;
+        _aiMenuMode = NotionAiMenuMode.Generate;
+        _aiMenuTop = _slashMenuTop;
+        _aiMenuLeft = _slashMenuLeft;
+        _aiSourceText = string.Empty;
+        _aiContextHtml = BuildPageContextHtml();
+        _aiTargetBlockId = _slashBlockId;
+        _aiReplaceSavedSelection = false;
+        _slashBlockId = string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private Task HandleSlashMenuClosedAsync()
@@ -944,7 +1154,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     public Task OnToolbarSelectionChanged(
         double top, double left,
         bool isBold, bool isItalic, bool isUnderline, bool isStrikethrough, bool isCode,
-        string currentHref, string blockId)
+        string currentHref, string blockId, string selectedText)
     {
         _toolbarVisible        = true;
         _toolbarTop            = top;
@@ -956,6 +1166,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         _toolbarIsCode         = isCode;
         _toolbarCurrentHref    = currentHref;
         _toolbarBlockId        = blockId;
+        _toolbarSelectedText   = selectedText;
 
         var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
         _toolbarCurrentAlign = block?.Content is ITextBlockContent tc ? tc.Alignment : TextAlignment.Left;
@@ -969,6 +1180,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     {
         if (!_toolbarVisible) return Task.CompletedTask;
         _toolbarVisible = false;
+        _toolbarSelectedText = string.Empty;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -1032,10 +1244,288 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
     }
 
+    private async Task HandleToolbarAIAsync()
+    {
+        if (Context.AIProvider is null) return;
+
+        _aiMenuVisible = true;
+        _aiMenuPanel = false;
+        _aiMenuMode = NotionAiMenuMode.Improve;
+        _aiMenuTop = _toolbarTop + 42;
+        _aiMenuLeft = _toolbarLeft;
+        _aiSourceText = string.IsNullOrWhiteSpace(_toolbarSelectedText)
+            ? await GetSelectedTextAsync()
+            : _toolbarSelectedText;
+        _aiContextHtml = GetBlockHtml(_toolbarBlockId);
+        _aiTargetBlockId = _toolbarBlockId;
+        _aiReplaceSavedSelection = true;
+        _toolbarVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task ConvertBlockToCalloutVariantAsync(string blockId, CalloutVariant variant)
+    {
+        if (ReadOnly) return;
+
+        var existing = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
+        var html = existing?.Content is ITextBlockContent text ? text.Html : string.Empty;
+
+        try
+        {
+            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(blockId, BlockType.Callout);
+            var content = converted.Content as ICalloutBlockContent;
+            var updated = new PageBlock
+            {
+                Id = converted.Id,
+                PageId = converted.PageId,
+                ParentBlockId = converted.ParentBlockId,
+                Type = BlockType.Callout,
+                Order = converted.Order,
+                CreatedAt = converted.CreatedAt,
+                LastEditedAt = DateTime.UtcNow,
+                Content = new CalloutBlockContent
+                {
+                    Html = content?.Html ?? html,
+                    IconEmoji = content?.IconEmoji,
+                    IconImageUrl = content?.IconImageUrl,
+                    Variant = variant,
+                    BackgroundColor = content?.BackgroundColor,
+                    TextColor = content?.TextColor,
+                    Alignment = content?.Alignment ?? TextAlignment.Left
+                }
+            };
+
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            var idx = _blocks.FindIndex(b => b.Id == updated.Id);
+            if (idx >= 0) _blocks[idx] = updated;
+            Context.RaiseBlockConverted(updated);
+            _activeBlockId = updated.Id;
+        }
+        catch
+        {
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+        }
+    }
+
+    private async Task HandleStatusInsertedAsync((string Label, NotionStatusColor Color) status)
+    {
+        var html = BuildStatusChipHtml(status.Label, status.Color);
+
+        try
+        {
+            if (_statusEditingExistingChip)
+            {
+                await JS.InvokeVoidAsync(
+                    "tmNotionEditor.replaceActiveStatusChip",
+                    html,
+                    _statusEditingBlockId,
+                    _statusEditingChipIndex);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("tmNotionEditor.insertSlashHtml", html);
+            }
+        }
+        catch { }
+
+        _statusPickerVisible = false;
+        _statusInitialLabel = null;
+        _statusInitialColor = NotionStatusColor.Gray;
+        _statusEditingExistingChip = false;
+        _statusEditingBlockId = string.Empty;
+        _statusEditingChipIndex = -1;
+        _slashBlockId = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task HandleStatusPickerClosedAsync()
+    {
+        _statusPickerVisible = false;
+        _statusInitialLabel = null;
+        _statusInitialColor = NotionStatusColor.Gray;
+        _statusEditingExistingChip = false;
+        _statusEditingBlockId = string.Empty;
+        _statusEditingChipIndex = -1;
+        try { await JS.InvokeVoidAsync("tmNotionEditor.cancelStatusEdit"); } catch { }
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public Task OnInlineStatusClicked(string blockId, string label, string color, DomRect rect, int chipIndex)
+    {
+        _statusPickerTop = rect.Top + rect.Height + 6;
+        _statusPickerLeft = rect.Left;
+        _statusInitialLabel = label;
+        _statusInitialColor = Enum.TryParse<NotionStatusColor>(color, ignoreCase: true, out var parsed)
+            ? parsed
+            : NotionStatusColor.Gray;
+        _statusEditingExistingChip = true;
+        _statusEditingBlockId = blockId;
+        _statusEditingChipIndex = chipIndex;
+        _statusPickerVisible = true;
+        _toolbarVisible = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private static string BuildStatusChipHtml(string label, NotionStatusColor color)
+    {
+        var trimmed = label.Trim();
+        var encoded = WebUtility.HtmlEncode(trimmed);
+        var cssColor = color.ToString().ToLowerInvariant();
+        return $"""<span contenteditable="false" class="tm-notion-status tm-notion-status--{cssColor}" data-status-label="{encoded}" data-status-color="{cssColor}"><span class="tm-notion-status__label">{encoded}</span></span>""";
+    }
+
+    private async Task HandleAIAcceptedAsync(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html)) return;
+
+        if (_aiReplaceSavedSelection)
+        {
+            try { await JS.InvokeVoidAsync("tmNotionEditor.replaceSavedSelectionWithHtml", html); }
+            catch { }
+        }
+        else if (!string.IsNullOrWhiteSpace(_aiTargetBlockId))
+        {
+            await ApplyHtmlToBlockAsync(_aiTargetBlockId, html);
+        }
+        else
+        {
+            await AddBlockAsync(BlockType.Paragraph, initialHtml: html);
+        }
+
+        await HandleAIClosedAsync();
+    }
+
+    private Task HandleAIClosedAsync()
+    {
+        _aiMenuVisible = false;
+        _aiMenuPanel = false;
+        _aiSourceText = string.Empty;
+        _aiContextHtml = string.Empty;
+        _aiTargetBlockId = string.Empty;
+        _aiReplaceSavedSelection = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void OpenAIPagePanel(NotionAiMenuMode mode)
+    {
+        if (Context.AIProvider is null) return;
+
+        _aiMenuVisible = true;
+        _aiMenuPanel = true;
+        _aiMenuMode = mode;
+        _aiMenuTop = 96;
+        _aiMenuLeft = 0;
+        _aiSourceText = string.Empty;
+        _aiContextHtml = BuildPageContextHtml();
+        _aiTargetBlockId = string.Empty;
+        _aiReplaceSavedSelection = false;
+        StateHasChanged();
+    }
+
+    private async Task<string> GetSelectedTextAsync()
+    {
+        try { return await JS.InvokeAsync<string>("tmNotionEditor.getSelectedText"); }
+        catch { return string.Empty; }
+    }
+
+    private string BuildPageContextHtml()
+        => string.Join("\n", _blocks.Select(block => GetBlockHtml(block.Id.ToString())).Where(html => !string.IsNullOrWhiteSpace(html)));
+
+    private string GetBlockHtml(string blockId)
+    {
+        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
+        return block?.Content switch
+        {
+            ITextBlockContent text => text.Html,
+            _ => string.Empty
+        };
+    }
+
+    private async Task ApplyHtmlToBlockAsync(string blockId, string html)
+    {
+        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
+        if (block is null)
+        {
+            await AddBlockAsync(BlockType.Paragraph, initialHtml: html);
+            return;
+        }
+
+        var applied = block.Content switch
+        {
+            TextBlockContent text => ApplyHtml(text, html),
+            HeadingBlockContent heading => ApplyHtml(heading, html),
+            ListBlockContent list => ApplyHtml(list, html),
+            TodoBlockContent todo => ApplyHtml(todo, html),
+            ToggleBlockContent toggle => ApplyHtml(toggle, html),
+            CalloutBlockContent callout => ApplyHtml(callout, html),
+            _ => false
+        };
+
+        if (!applied)
+        {
+            await AddBlockAsync(BlockType.Paragraph, blockId, html);
+            return;
+        }
+
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(block);
+            _blocks = [.._blocks];
+            StateHasChanged();
+        }
+        catch
+        {
+            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            StateHasChanged();
+        }
+    }
+
+    private static bool ApplyHtml(TextBlockContent content, string html)
+    {
+        content.Html = html;
+        return true;
+    }
+
+    private static bool ApplyHtml(HeadingBlockContent content, string html)
+    {
+        content.Html = html;
+        return true;
+    }
+
+    private static bool ApplyHtml(ListBlockContent content, string html)
+    {
+        content.Html = html;
+        return true;
+    }
+
+    private static bool ApplyHtml(TodoBlockContent content, string html)
+    {
+        content.Html = html;
+        return true;
+    }
+
+    private static bool ApplyHtml(ToggleBlockContent content, string html)
+    {
+        content.Html = html;
+        return true;
+    }
+
+    private static bool ApplyHtml(CalloutBlockContent content, string html)
+    {
+        content.Html = html;
+        return true;
+    }
+
     // ── Dispose ───────────────────────────────────────────────────────────────
 
     public async ValueTask DisposeAsync()
     {
+        if (Context.BlockCreated == HandleExternalBlockCreatedAsync)
+            Context.BlockCreated = null;
+
         if (_collabSubscribed && Context.CollaborationSync is { } sync)
             sync.RemoteBlockChanged -= OnRemoteBlockChanged;
 

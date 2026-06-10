@@ -3,7 +3,9 @@
 @using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.Components.NotionEditor.Shared
 
-<div class="tm-notion-callout @_bgClass" data-bg="@Content?.BackgroundColor">
+<div class="tm-notion-callout @_variantClass @_bgClass"
+     data-variant="@_variantName"
+     data-bg="@Content?.BackgroundColor">
 
     <div class="tm-notion-callout__icon-wrap">
         <button class="tm-notion-callout__icon"
@@ -25,15 +27,27 @@
         }
     </div>
 
-    <div class="tm-notion-callout__body tm-notion-editable @_alignClass"
-         contenteditable="@(!ReadOnly ? "true" : "false")"
-         data-placeholder="@Placeholder"
-         data-color="@Content?.TextColor"
-         spellcheck="true"
-         @ref="_editableRef"
-         @oninput="() => _dirty = true"
-         @onblur="OnBlurAsync"
-         @onfocus="HandleFocusAsync">
-    </div>
+    @if (ReadOnly)
+    {
+        <div @key="ReadOnly"
+             class="tm-notion-callout__body tm-notion-editable tm-notion-editable--readonly @_alignClass"
+             data-color="@Content?.TextColor">
+            @((MarkupString)(Content?.Html ?? string.Empty))
+        </div>
+    }
+    else
+    {
+        <div @key="ReadOnly"
+             class="tm-notion-callout__body tm-notion-editable @_alignClass"
+             contenteditable="true"
+             data-placeholder="@Placeholder"
+             data-color="@Content?.TextColor"
+             spellcheck="true"
+             @ref="_editableRef"
+             @oninput="() => _dirty = true"
+             @onblur="OnBlurAsync"
+             @onfocus="HandleFocusAsync">
+        </div>
+    }
 
 </div>

@@ -13,6 +13,7 @@ namespace Tempo.Blazor.Components.NotionEditor.Services;
 public sealed class NotionEditorContext
 {
     public string                      CurrentUserId        { get; init; } = "demo";
+    public string?                     CurrentPageId        { get; init; }
     public INotionDataProvider         DataProvider          { get; init; } = default!;
     public INotionBlockProvider        BlockProvider         { get; init; } = default!;
     public INotionSearchProvider?      SearchProvider        { get; init; }
@@ -22,13 +23,19 @@ public sealed class NotionEditorContext
     public INotionCollaborationProvider? CollaborationProvider { get; init; }
     public INotionMentionProvider?     MentionProvider       { get; init; }
     public INotionAIProvider?          AIProvider            { get; init; }
+    public INotionTaskProvider?        TaskProvider          { get; init; }
     public WorkItemProviderRegistry?   WorkItemProviders     { get; init; }
     public INotionReactionProvider?    ReactionProvider      { get; init; }
     public INotionAnalyticsProvider?   AnalyticsProvider     { get; init; }
+    public INotionBlogProvider?        BlogProvider          { get; init; }
+    public INotionWatchProvider?       WatchProvider         { get; init; }
+    public INotionSpaceProvider?       SpaceProvider         { get; init; }
     public INotionPagePropertiesProvider? PagePropertiesProvider { get; init; }
     public INotionTemplateProvider?      TemplateProvider         { get; init; }
     public ISmartLinkProvider?           SmartLinkProvider        { get; init; }
     public INotionPermissionProvider?    PermissionProvider       { get; init; }
+    public INotionPublicShareProvider?   PublicShareProvider      { get; init; }
+    public INotionAuditProvider?         AuditProvider            { get; init; }
     public IReadOnlyList<string>         CurrentUserGroupIds      { get; init; } = [];
     public INotionBookmarkProvider?      BookmarkProvider         { get; init; }
     public INotionFileProvider?          FileProvider             { get; init; }
@@ -49,6 +56,18 @@ public sealed class NotionEditorContext
     /// </summary>
     public Func<string, Task>?            NavigateTo               { get; init; }
 
+    /// <summary>Currently selected workspace/space identifier for sidebar-scoped navigation.</summary>
+    public string?                         SelectedSpaceId          { get; init; }
+
+    /// <summary>Raised by the sidebar space switcher when the active space changes.</summary>
+    public Func<string?, Task>?            SelectSpace              { get; init; }
+
+    /// <summary>Raised after the active page is moved to another space.</summary>
+    public Func<string, Task>?             CurrentPageMovedToSpace  { get; init; }
+
+    /// <summary>Opens the new-page template gallery from the sidebar.</summary>
+    public Func<Task>?                     OpenTemplateGallery      { get; init; }
+
     /// <summary>
     /// Raised when a block type is converted (e.g. via slash menu or toolbar).
     /// Nested components such as column blocks subscribe to keep their local
@@ -58,6 +77,12 @@ public sealed class NotionEditorContext
 
     /// <summary>Invokes <see cref="BlockConverted"/> if any subscriber is attached.</summary>
     public void RaiseBlockConverted(IPageBlock block) => BlockConverted?.Invoke(block);
+
+    /// <summary>Raised by nested blocks when they create a sibling block through the shared provider.</summary>
+    public Func<IPageBlock, Task>? BlockCreated { get; set; }
+
+    /// <summary>Invokes <see cref="BlockCreated"/> if the active page subscribed to sibling creation events.</summary>
+    public Task RaiseBlockCreatedAsync(IPageBlock block) => BlockCreated?.Invoke(block) ?? Task.CompletedTask;
 
     /// <summary>
     /// When non-null, only these block types are available in the slash menu and type

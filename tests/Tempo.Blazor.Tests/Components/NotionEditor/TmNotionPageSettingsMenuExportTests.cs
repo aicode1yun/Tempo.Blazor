@@ -87,9 +87,23 @@ public class TmNotionPageSettingsMenuExportTests : LocalizationTestBase
         });
     }
 
+    [Fact]
+    public void PageInfoItem_RaisesPageInfoRequested()
+    {
+        var requested = false;
+        var cut = RenderMenu(importExportProvider: null, onPageInfoRequested: () => requested = true);
+
+        cut.Find(".tm-npsm-trigger").Click();
+        cut.FindAll(".tm-npsm__item").First(item => item.TextContent.Contains("Page info")).Click();
+
+        requested.Should().BeTrue();
+        cut.FindAll(".tm-npsm").Should().BeEmpty();
+    }
+
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderMenu(
         FakeImportExportProvider? importExportProvider,
-        Action<string>? onNavigateToImportedPage = null)
+        Action<string>? onNavigateToImportedPage = null,
+        Action? onPageInfoRequested = null)
     {
         var context = new NotionEditorContext
         {
@@ -108,7 +122,8 @@ public class TmNotionPageSettingsMenuExportTests : LocalizationTestBase
                     CreatedAt = DateTime.UtcNow,
                     LastEditedAt = DateTime.UtcNow
                 })
-                .Add(p => p.OnNavigateToImportedPage, EventCallback.Factory.Create<string>(this, onNavigateToImportedPage ?? (_ => { })))));
+                .Add(p => p.OnNavigateToImportedPage, EventCallback.Factory.Create<string>(this, onNavigateToImportedPage ?? (_ => { })))
+                .Add(p => p.OnPageInfoRequested, EventCallback.Factory.Create(this, onPageInfoRequested ?? (() => { })))));
     }
 
     private sealed class FakeImportExportProvider : INotionImportExportProvider

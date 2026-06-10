@@ -34,6 +34,21 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
     /// <summary>Raised when user picks "Page history".</summary>
     [Parameter] public EventCallback OnPageHistoryRequested { get; set; }
 
+    /// <summary>Raised when user picks "Page info".</summary>
+    [Parameter] public EventCallback OnPageInfoRequested { get; set; }
+
+    /// <summary>Raised when user picks "Share".</summary>
+    [Parameter] public EventCallback OnShareRequested { get; set; }
+
+    /// <summary>Raised when user picks "Page restrictions".</summary>
+    [Parameter] public EventCallback OnRestrictionsRequested { get; set; }
+
+    /// <summary>Raised when user picks the AI page summary action.</summary>
+    [Parameter] public EventCallback OnAISummarizeRequested { get; set; }
+
+    /// <summary>Raised when user picks the AI page question action.</summary>
+    [Parameter] public EventCallback OnAIAskPageRequested { get; set; }
+
     /// <summary>Raised after a successful import — contains new page ID.</summary>
     [Parameter] public EventCallback<string> OnNavigateToImportedPage { get; set; }
 
@@ -44,6 +59,7 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
     private bool _importOpen;
     private bool _moveToOpen;
     private bool _deleteConfirm;
+    private bool _exportIncludeSubpages;
 
     private bool _exportLoading;
     private bool _importLoading;
@@ -76,6 +92,7 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
             _importOpen   = false;
             _moveToOpen   = false;
             _deleteConfirm = false;
+            _exportIncludeSubpages = false;
         }
         else
         {
@@ -95,7 +112,44 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
         _importOpen    = false;
         _moveToOpen    = false;
         _deleteConfirm = false;
+        _exportIncludeSubpages = false;
         StateHasChanged();
+    }
+
+    private void HandleMenuKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+            CloseMenu();
+    }
+
+    private async Task OpenPageInfoAsync()
+    {
+        CloseMenu();
+        await OnPageInfoRequested.InvokeAsync();
+    }
+
+    private async Task OpenShareAsync()
+    {
+        CloseMenu();
+        await OnShareRequested.InvokeAsync();
+    }
+
+    private async Task OpenRestrictionsAsync()
+    {
+        CloseMenu();
+        await OnRestrictionsRequested.InvokeAsync();
+    }
+
+    private async Task OpenAISummarizeAsync()
+    {
+        CloseMenu();
+        await OnAISummarizeRequested.InvokeAsync();
+    }
+
+    private async Task OpenAIAskPageAsync()
+    {
+        CloseMenu();
+        await OnAIAskPageRequested.InvokeAsync();
     }
 
     // ── Toggles ───────────────────────────────────────────────────────────────
@@ -184,6 +238,16 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
         StateHasChanged();
     }
 
+    private void HandleExportIncludeSubpagesChanged(ChangeEventArgs args)
+    {
+        _exportIncludeSubpages = args.Value switch
+        {
+            bool value => value,
+            string value => bool.TryParse(value, out var parsed) && parsed,
+            _ => false
+        };
+    }
+
     private async Task ExportAsync(NotionExportFormat format)
     {
         if (Context.ImportExportProvider is null || _exportLoading) return;
@@ -192,9 +256,12 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
 
         try
         {
-            var stream   = await Context.ImportExportProvider.ExportPageAsync(Page.Id.ToString("D"), format);
-            var ext      = format switch { NotionExportFormat.Markdown => "md", NotionExportFormat.Html => "html", _ => "pdf" };
-            var mime     = format switch { NotionExportFormat.Markdown => "text/markdown", NotionExportFormat.Html => "text/html", _ => "application/pdf" };
+            var pageId   = Page.Id.ToString("D");
+            var stream   = _exportIncludeSubpages
+                ? await Context.ImportExportProvider.ExportPageWithSubpagesAsync(pageId, format)
+                : await Context.ImportExportProvider.ExportPageAsync(pageId, format);
+            var ext      = GetExportExtension(format);
+            var mime     = GetExportMimeType(format);
             var fileName = $"{SanitizeFileName(Page.Title)}_{DateTime.Now:yyyyMMdd}.{ext}";
             var dotNetStream = new DotNetStreamReference(stream);
             await JS.InvokeVoidAsync("tmNotionEditor.downloadFileStream", fileName, dotNetStream, mime);
@@ -203,6 +270,26 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
         catch { await ShowToastErrorAsync(Loc["TmNotionPageSettingsMenu_ErrorExport"]); }
         finally { _exportLoading = false; StateHasChanged(); }
     }
+
+    private static string GetExportExtension(NotionExportFormat format) => format switch
+    {
+        NotionExportFormat.Markdown => "md",
+        NotionExportFormat.Html => "html",
+        NotionExportFormat.Pdf => "pdf",
+        NotionExportFormat.Docx => "docx",
+        NotionExportFormat.Odt => "odt",
+        _ => "bin"
+    };
+
+    private static string GetExportMimeType(NotionExportFormat format) => format switch
+    {
+        NotionExportFormat.Markdown => "text/markdown",
+        NotionExportFormat.Html => "text/html",
+        NotionExportFormat.Pdf => "application/pdf",
+        NotionExportFormat.Docx => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        NotionExportFormat.Odt => "application/vnd.oasis.opendocument.text",
+        _ => "application/octet-stream"
+    };
 
     // ── Import ────────────────────────────────────────────────────────────────
 

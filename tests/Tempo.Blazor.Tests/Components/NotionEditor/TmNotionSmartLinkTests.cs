@@ -46,6 +46,7 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
         invocation.Arguments[1].Should().Be("https://docs.tempo.local/notion/special-blocks");
         invocation.Arguments[2].Should().Be("Tempo Notion special blocks");
         invocation.Arguments[3].Should().Be("https://docs.tempo.local/favicon.ico");
+        invocation.Arguments[4].Should().Be("Tempo Docs");
         savedHtml.Should().Contain("tm-notion-smart-link");
     }
 

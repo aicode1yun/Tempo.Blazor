@@ -1534,3 +1534,461 @@ public class NotionCommentsE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "block_comment_multiple_threads_badge");
     }
 }
+
+[TestClass]
+public class NotionCommentsRecoveryE2ETests : NotionE2ETestBase
+{
+    private const string CommentBlockId = "eb100010-0000-0000-0000-000000000002";
+    private const string SecondaryBlockId = "eb100010-0000-0000-0000-000000000003";
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    public async Task EB10_BlockCommentStates_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedCommentsPageAsync();
+
+        var firstBlock = page.Locator($"[data-block-id='{CommentBlockId}']").First;
+        var secondBlock = page.Locator($"[data-block-id='{SecondaryBlockId}']").First;
+
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock, createNewThread: true);
+        await AddBlockCommentAsync(page, "First unresolved thread for EB10 margin review.");
+        await CloseBlockCommentPanelAsync(page);
+
+        await OpenBlockCommentPanelOnBlockAsync(page, secondBlock, createNewThread: true);
+        await AddBlockCommentAsync(page, "Second thread that will be resolved but still visible for review.");
+        await page.Locator(".tm-nbcp__resolve-btn").Filter(new LocatorFilterOptions { HasText = "Resolve" }).First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+        await CloseBlockCommentPanelAsync(page);
+
+        await firstBlock.Locator(".tm-notion-block__comment-thread").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await secondBlock.Locator(".tm-notion-block__comment-thread--resolved").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await CaptureBaselineAsync("comments", "margin-threads-unread-resolved", page.Locator(".tm-notion-page").First);
+
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock, createNewThread: true);
+        await AddBlockCommentAsync(page, "Additional EB10 thread for list density.");
+        await page.Locator(".tm-nbcp__back-btn").First.ClickAsync();
+        await page.Locator(".tm-nbcp__thread-card").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await CaptureBaselineAsync("comments", "block-panel-thread-list", page.Locator(".tm-nbcp").First);
+
+        await page.Locator(".tm-nbcp__thread-card").Filter(new LocatorFilterOptions { HasText = "First unresolved thread" }).First.ClickAsync();
+        await page.Locator(".tm-nbcp__entry").First.Locator(".tm-comment-reaction--add").First.ClickAsync();
+        await page.Locator(".tm-comment-reaction-picker__popover").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await page.Locator(".tm-comment-reaction-picker__item").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+        await CaptureBaselineAsync("comments", "block-panel-reactions", page.Locator(".tm-nbcp").First);
+
+        await AddNestedReplyAsync(page,
+            "Nested reply with a longer EB10 review note that verifies wrapping, indentation, author metadata and composer spacing inside a busy block comment panel.");
+        await AddNestedReplyAsync(page,
+            "Second nested reply keeps the thread tall enough to reveal vertical rhythm without forcing horizontal overflow.");
+        await CaptureBaselineAsync("comments", "block-panel-long-thread", page.Locator(".tm-nbcp").First);
+
+        await page.Locator(".tm-nbcp__resolve-btn").Filter(new LocatorFilterOptions { HasText = "Resolve" }).First.ClickAsync();
+        await page.Locator(".tm-nbcp__resolved-banner").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await CaptureBaselineAsync("comments", "block-panel-resolved", page.Locator(".tm-nbcp").First);
+
+        await page.Locator(".tm-nbcp__entry-action--danger").Last.ClickAsync();
+        await page.Locator(".tm-dialog-btn-ok").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await page.Locator(".tm-dialog-btn-ok").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+        await CaptureBaselineAsync("comments", "block-panel-after-delete", page.Locator(".tm-nbcp").First);
+
+        await AssertNoHorizontalOverflowAsync(page);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    public async Task EB10_TextAnchorPagePanelAndNoProviderStates_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedCommentsPageAsync();
+
+        var editable = page.Locator($"[data-block-id='{CommentBlockId}'] .tm-notion-editable").First;
+        await editable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await SelectLocatorContentsAsync(page, editable);
+        await ClickNotionToolbarButtonAsync(page, "Comment");
+        await page.Locator(".tm-ntcp").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await AddTextCommentAsync(page, "Inline EB10 anchor comment.");
+        await page.Locator("mark.tm-notion-comment-highlight").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await CaptureBaselineAsync("comments", "text-anchor-panel-and-mark", page.Locator(".tm-notion-editor").First);
+
+        await page.Locator(".tm-ntcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        await ExpandPageCommentPanelAsync(page);
+        await page.Locator(".tm-npcp__thread").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await CaptureBaselineAsync("comments", "page-comment-panel", page.Locator(".tm-npcp").First);
+
+        page = await OpenNotionEditorAsync("?disableCommentProvider=true");
+        await SeedCommentlessPageAsync();
+        Assert.AreEqual(0, await page.Locator(".tm-notion-page__comments").CountAsync(), "Page comment section should be absent without a comment provider.");
+
+        var block = page.Locator("[data-notion-block]").First;
+        await OpenBlockContextMenuAsync(page, block);
+        Assert.AreEqual(0, await page.Locator(".tm-notion-ctx__item").Filter(new LocatorFilterOptions { HasText = "Comment" }).CountAsync(),
+            "Block context menu should not offer comment actions without a comment provider.");
+        await CaptureBaselineAsync("comments", "no-comment-provider", page.Locator(".tm-notion-editor").First);
+
+        await AssertNoHorizontalOverflowAsync(page);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    public async Task CF10_PageCommentsStates_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync("?disableTemplateProvider=true");
+        await SeedCommentlessPageAsync();
+        await CreateBlankPageFromTemplateGalleryAsync(page);
+
+        await ExpandPageCommentPanelAsync(page);
+        await page.Locator(".tm-npcp__status").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        Assert.AreEqual(0, await page.Locator(".tm-npcp__thread").CountAsync(), "The empty page-comment baseline should not contain comment threads.");
+        await CaptureBaselineAsync("comments", "cf10-page-comments-empty", page.Locator(".tm-npcp").First);
+
+        await AddPageCommentAsync(page, "CF10 page-level comment separates page discussion from block annotations.");
+        var pageCommentPanel = page.Locator(".tm-npcp").First;
+        await pageCommentPanel.Locator(".tm-npcp__entry-text").Filter(new LocatorFilterOptions { HasText = "CF10 page-level comment" }).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+
+        await AddPageCommentReactionAsync(pageCommentPanel);
+        await AddPageThreadReplyAsync(pageCommentPanel, "Reply keeps the page-level conversation close to the page footer without looking like an inline block comment.");
+        await CaptureBaselineAsync("comments", "cf10-page-comments-section", pageCommentPanel);
+
+        await AddInlinePageReplyAsync(pageCommentPanel,
+            "Nested page reply with a longer CF10 review note that checks wrapping, indentation, author metadata and mention-capable composer spacing in a busy page-level thread.");
+        await AddInlinePageReplyAsync(pageCommentPanel,
+            "Second nested page reply keeps the thread tall enough for vertical rhythm review while preserving a calm footer layout.");
+        await SetViewportAsync(1280, 1100);
+        var pageCommentThread = pageCommentPanel.Locator(".tm-npcp__thread").First;
+        await CenterLocatorInViewportAsync(pageCommentThread);
+        await CaptureViewportClipBaselineAsync("comments", "cf10-page-comments-long-thread", pageCommentThread);
+
+        var resolveButton = pageCommentPanel.Locator(".tm-npcp__thread-action").Filter(new LocatorFilterOptions { HasText = "Resolve" }).First;
+        await resolveButton.ClickAsync();
+        await pageCommentPanel.Locator(".tm-npcp__thread--resolved").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        var resolvedThread = pageCommentPanel.Locator(".tm-npcp__thread--resolved").First;
+        await CenterLocatorInViewportAsync(resolvedThread);
+        await CaptureViewportClipBaselineAsync("comments", "cf10-page-comments-resolved", resolvedThread);
+        await SetViewportAsync(1280, 720);
+
+        var providerless = await OpenNotionEditorAsync("?disableCommentProvider=true");
+        await SeedCommentlessPageAsync();
+        Assert.AreEqual(0, await providerless.Locator(".tm-notion-page__comments").CountAsync(), "Page comment section should be hidden without a comment provider.");
+        await CaptureBaselineAsync("comments", "cf10-page-comments-providerless-hidden", providerless.Locator(".tm-notion-editor").First);
+
+        await AssertNoHorizontalOverflowAsync(page);
+        await AssertNoHorizontalOverflowAsync(providerless);
+        TestContext.WriteLine("UX CF10 review: page-level comments stay visually separated from block comments, empty/providerless states avoid misleading affordances, replies and reactions remain accessible, and resolved threads preserve readable context.");
+    }
+
+    private static async Task CreateBlankPageFromTemplateGalleryAsync(IPage page)
+    {
+        await page.Locator(".tm-ns-btn-new").First.ClickAsync();
+        await page.WaitForSelectorAsync(".tm-ntg", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+
+        await page.Locator("[data-template-id='blank'] .tm-ntg__use").ClickAsync();
+        await page.WaitForSelectorAsync(".tm-ntg", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Detached,
+            Timeout = 10000
+        });
+
+        await page.Locator(".tm-notion-page__empty-hint").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+    }
+
+    private static async Task CenterLocatorInViewportAsync(ILocator locator)
+    {
+        await locator.EvaluateAsync(
+            """
+            element => {
+                const main = element.closest('.tm-notion-main');
+                if (!main) {
+                    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+                    return;
+                }
+
+                const topbar = main.querySelector('.tm-notion-topbar');
+                const mainRect = main.getBoundingClientRect();
+                const elementRect = element.getBoundingClientRect();
+                const topbarHeight = topbar ? topbar.getBoundingClientRect().height : 0;
+                const topPadding = topbarHeight + 16;
+                main.scrollTop += elementRect.top - mainRect.top - topPadding;
+            }
+            """);
+        await locator.Page.WaitForTimeoutAsync(200);
+    }
+
+    private async Task<NotionBaselineCapture> CaptureViewportClipBaselineAsync(string area, string state, ILocator region)
+    {
+        var outputDir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            SanitizeBaselinePart(area)));
+        Directory.CreateDirectory(outputDir);
+
+        var safeState = SanitizeBaselinePart(state);
+        var fullPath = Path.Combine(outputDir, $"{safeState}.png");
+        var regionPath = Path.Combine(outputDir, $"{safeState}.region.png");
+
+        await Page.WaitForTimeoutAsync(250);
+        await Page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        var clip = await region.EvaluateAsync<ViewportClip>(
+            """
+            element => {
+                const rect = element.getBoundingClientRect();
+                const main = element.closest('.tm-notion-main');
+                const topbar = main ? main.querySelector('.tm-notion-topbar') : null;
+                const topbarRect = topbar ? topbar.getBoundingClientRect() : null;
+                const mainRect = main ? main.getBoundingClientRect() : null;
+                const topbarBottom = topbarRect ? topbarRect.bottom : 0;
+                const padding = 8;
+                const x = Math.max(0, rect.left);
+                const y = Math.max(0, Math.max(rect.top, topbarBottom + padding));
+                const right = Math.min(window.innerWidth, rect.right);
+                const bottom = Math.min(window.innerHeight, rect.bottom, mainRect ? mainRect.bottom - padding : window.innerHeight);
+
+                return {
+                    x,
+                    y,
+                    width: Math.max(1, right - x),
+                    height: Math.max(1, bottom - y)
+                };
+            }
+            """);
+
+        Assert.IsTrue(clip.Width > 1 && clip.Height > 1, $"Baseline region for {state} must have a visible viewport clip.");
+        await Page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            Clip = new Clip
+            {
+                X = (float)clip.X,
+                Y = (float)clip.Y,
+                Width = (float)clip.Width,
+                Height = (float)clip.Height
+            }
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+        return new NotionBaselineCapture(fullPath, regionPath);
+    }
+
+    private static string SanitizeBaselinePart(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value
+            .Select(character => invalid.Contains(character) || char.IsWhiteSpace(character) ? '-' : char.ToLowerInvariant(character))
+            .ToArray();
+        return new string(chars);
+    }
+
+    private sealed class ViewportClip
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+
+    private static async Task OpenBlockContextMenuAsync(IPage page, ILocator block)
+    {
+        await block.ScrollIntoViewIfNeededAsync();
+        await block.HoverAsync();
+        var menuButton = block.Locator(".tm-notion-handle__btn").Last;
+        await menuButton.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await menuButton.ClickAsync();
+        await page.Locator(".tm-notion-ctx").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task OpenBlockCommentPanelOnBlockAsync(IPage page, ILocator block, bool createNewThread = false)
+    {
+        await OpenBlockContextMenuAsync(page, block);
+        var actionText = createNewThread ? "New thread" : "Comment";
+        await page.Locator(".tm-notion-ctx__item").Filter(new LocatorFilterOptions { HasText = actionText }).First.ClickAsync();
+        await page.Locator(".tm-nbcp").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task CloseBlockCommentPanelAsync(IPage page)
+    {
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.Locator(".tm-nbcp").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Hidden,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task AddBlockCommentAsync(IPage page, string text)
+    {
+        var input = page.Locator(".tm-nbcp__reply-input").First;
+        await input.FillAsync(text);
+        await page.Locator(".tm-nbcp__reply-send").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+    }
+
+    private static async Task AddNestedReplyAsync(IPage page, string text)
+    {
+        await page.Locator(".tm-nbcp__entry-action").Filter(new LocatorFilterOptions { HasText = "Reply to this" }).First.ClickAsync();
+        var input = page.Locator(".tm-nbcp__inline-reply .tm-nbcp__reply-input").First;
+        await input.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await input.FillAsync(text);
+        await page.Locator(".tm-nbcp__inline-reply .tm-nbcp__reply-send").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+    }
+
+    private static async Task AddTextCommentAsync(IPage page, string text)
+    {
+        var input = page.Locator(".tm-ntcp__reply-input").First;
+        await input.FillAsync(text);
+        await page.Locator(".tm-ntcp__reply-send").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+    }
+
+    private static async Task AddPageCommentAsync(IPage page, string text)
+    {
+        var input = page.Locator(".tm-npcp__new-comment .tm-npcp__reply-input").First;
+        await input.FillAsync(text);
+        await page.Locator(".tm-npcp__new-comment .tm-npcp__reply-send").First.ClickAsync();
+        await page.Locator(".tm-npcp__entry-text").Filter(new LocatorFilterOptions { HasText = text }).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task AddPageThreadReplyAsync(ILocator panel, string text)
+    {
+        await panel.Locator(".tm-npcp__reply-trigger").First.ClickAsync();
+        var input = panel.Locator(".tm-npcp__thread-reply .tm-npcp__reply-input").First;
+        await input.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await input.FillAsync(text);
+        await panel.Locator(".tm-npcp__thread-reply .tm-npcp__reply-send").First.ClickAsync();
+        await panel.Locator(".tm-npcp__entry-text").Filter(new LocatorFilterOptions { HasText = text }).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task AddInlinePageReplyAsync(ILocator panel, string text)
+    {
+        await panel.Locator(".tm-npcp__entry-action").Filter(new LocatorFilterOptions { HasText = "Reply to this" }).First.ClickAsync();
+        var input = panel.Locator(".tm-npcp__inline-reply .tm-npcp__reply-input").First;
+        await input.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await input.FillAsync(text);
+        await panel.Locator(".tm-npcp__inline-reply .tm-npcp__reply-send").First.ClickAsync();
+        await panel.Locator(".tm-npcp__entry-text").Filter(new LocatorFilterOptions { HasText = text }).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task AddPageCommentReactionAsync(ILocator panel)
+    {
+        await panel.Locator(".tm-comment-reaction--add").First.ClickAsync();
+        await panel.Page.Locator(".tm-comment-reaction-picker__popover").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        await panel.Page.Locator(".tm-comment-reaction-picker__item").First.ClickAsync();
+        await panel.Locator(".tm-comment-reaction").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task ExpandPageCommentPanelAsync(IPage page)
+    {
+        await page.Locator(".tm-npcp__toggle").First.ClickAsync();
+        await page.Locator(".tm-npcp__body").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+
+    private static async Task AssertNoHorizontalOverflowAsync(IPage page)
+    {
+        var hasOverflow = await page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1");
+        Assert.IsFalse(hasOverflow, "EB10 comment screenshots should not introduce document-level horizontal overflow.");
+    }
+}

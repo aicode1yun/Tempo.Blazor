@@ -250,6 +250,16 @@
   <data name="TmRichEditor_Emoji" xml:space="preserve"><value>Emoji</value></data>
   <data name="TmRichEditor_Words" xml:space="preserve"><value>slov</value></data>
   <data name="TmRichEditor_Characters" xml:space="preserve"><value>znaků</value></data>
+  <data name="Notion_Todo_Toggle" xml:space="preserve"><value>Přepnout úkol</value></data>
+  <data name="Notion_Todo_Assign" xml:space="preserve"><value>Přiřadit</value></data>
+  <data name="Notion_Todo_DueDate" xml:space="preserve"><value>Termín</value></data>
+  <data name="Notion_Todo_Overdue" xml:space="preserve"><value>Po termínu</value></data>
+  <data name="Notion_Todo_Unassign" xml:space="preserve"><value>Zrušit přiřazení</value></data>
+  <data name="Notion_Todo_AssigneeSearch" xml:space="preserve"><value>Hledat lidi</value></data>
+  <data name="Notion_Todo_LoadingUsers" xml:space="preserve"><value>Načítám lidi</value></data>
+  <data name="Notion_Todo_NoAssignees" xml:space="preserve"><value>Nebyli nalezeni žádní lidé</value></data>
+  <data name="Notion_Todo_Today" xml:space="preserve"><value>Dnes</value></data>
+  <data name="Notion_Todo_Tomorrow" xml:space="preserve"><value>Zítra</value></data>
   <data name="TmRichEditor_ImageDialog_Title" xml:space="preserve"><value>Vložit obrázek</value></data>
   <data name="TmRichEditor_ImageDialog_Url" xml:space="preserve"><value>URL obrázku</value></data>
   <data name="TmRichEditor_ImageDialog_Alt" xml:space="preserve"><value>Alternativní text</value></data>
@@ -1167,6 +1177,12 @@
   <data name="TmNotionSlashMenu_ItemName_Toggle"                xml:space="preserve"><value>Rozbalovací seznam</value></data>
   <data name="TmNotionSlashMenu_ItemName_Quote"                 xml:space="preserve"><value>Citace</value></data>
   <data name="TmNotionSlashMenu_ItemName_Callout"               xml:space="preserve"><value>Výzva</value></data>
+  <data name="TmNotionSlashMenu_ItemName_InfoPanel"             xml:space="preserve"><value>Informační panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_NotePanel"             xml:space="preserve"><value>Poznámkový panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_WarningPanel"          xml:space="preserve"><value>Varovný panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ErrorPanel"            xml:space="preserve"><value>Chybový panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_SuccessPanel"          xml:space="preserve"><value>Úspěšný panel</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Status"                xml:space="preserve"><value>Stav</value></data>
   <data name="TmNotionSlashMenu_ItemName_Divider"               xml:space="preserve"><value>Oddělovač</value></data>
   <data name="TmNotionSlashMenu_ItemName_Code"                  xml:space="preserve"><value>Kód</value></data>
   <data name="TmNotionSlashMenu_ItemName_Equation"              xml:space="preserve"><value>Matematický výraz</value></data>
@@ -1177,6 +1193,7 @@
   <data name="TmNotionSlashMenu_ItemName_Pdf"                   xml:space="preserve"><value>PDF</value></data>
   <data name="TmNotionSlashMenu_ItemName_Bookmark"              xml:space="preserve"><value>Záložka</value></data>
   <data name="TmNotionSlashMenu_ItemName_Embed"                 xml:space="preserve"><value>Vložení</value></data>
+  <data name="TmNotionSlashMenu_ItemName_WorkItem"              xml:space="preserve"><value>Pracovní položka</value></data>
   <data name="TmNotionSlashMenu_ItemName_ChildPage"             xml:space="preserve"><value>Stránka</value></data>
   <data name="TmNotionSlashMenu_ItemName_LinkedPage"            xml:space="preserve"><value>Odkaz na stránku</value></data>
   <data name="TmNotionSlashMenu_ItemName_TableOfContents"       xml:space="preserve"><value>Obsah</value></data>
@@ -1186,6 +1203,7 @@
   <data name="TmNotionSlashMenu_ItemName_Table"                xml:space="preserve"><value>Tabulka</value></data>
   <data name="TmNotionSlashMenu_ItemName_ColumnList"           xml:space="preserve"><value>2 sloupce</value></data>
   <data name="TmNotionSlashMenu_ItemName_Breadcrumb"           xml:space="preserve"><value>Navigační cesta</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ContentByLabel"       xml:space="preserve"><value>Obsah podle štítku</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Paragraph"             xml:space="preserve"><value>Začněte psát prostý text</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading1"              xml:space="preserve"><value>Velký nadpis sekce</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading2"              xml:space="preserve"><value>Střední nadpis sekce</value></data>
@@ -1196,6 +1214,12 @@
   <data name="TmNotionSlashMenu_ItemDesc_Toggle"                xml:space="preserve"><value>Skryjte a zobrazte obsah uvnitř</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Quote"                 xml:space="preserve"><value>Zachyťte citát</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Callout"               xml:space="preserve"><value>Zvýrazněte svůj text</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_InfoPanel"             xml:space="preserve"><value>Zvýrazněte neutrální informaci</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_NotePanel"             xml:space="preserve"><value>Přidejte redakční poznámku</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_WarningPanel"          xml:space="preserve"><value>Upozorněte na varování</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ErrorPanel"            xml:space="preserve"><value>Označte kritický problém</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_SuccessPanel"          xml:space="preserve"><value>Zobrazte úspěšný výsledek</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Status"                xml:space="preserve"><value>Vložte inline stavový štítek</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Divider"               xml:space="preserve"><value>Vizuálně oddělte obsah</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Code"                  xml:space="preserve"><value>Zachyťte úryvek kódu</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Equation"              xml:space="preserve"><value>Zobrazte matematický výraz pomocí LaTeXu</value></data>
@@ -1206,6 +1230,7 @@
   <data name="TmNotionSlashMenu_ItemDesc_Pdf"                   xml:space="preserve"><value>Vložte PDF soubor</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Bookmark"              xml:space="preserve"><value>Uložte odkaz jako záložku</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Embed"                 xml:space="preserve"><value>Vložte obsah z libovolné URL</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_WorkItem"              xml:space="preserve"><value>Propojte sledovaný požadavek nebo úkol</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_ChildPage"             xml:space="preserve"><value>Vložte podstránku do této stránky</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_LinkedPage"            xml:space="preserve"><value>Odkaz na existující stránku</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_TableOfContents"       xml:space="preserve"><value>Zobrazí osnovu stránky</value></data>
@@ -1215,6 +1240,44 @@
   <data name="TmNotionSlashMenu_ItemDesc_Table"                xml:space="preserve"><value>Vloží jednoduchou tabulku</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_ColumnList"           xml:space="preserve"><value>Vytvoří vícesloupcové rozložení</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Breadcrumb"           xml:space="preserve"><value>Zobrazí navigační cestu stránky</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ContentByLabel"       xml:space="preserve"><value>Zobrazí stránky se zvolenými štítky</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_AI"                   xml:space="preserve"><value>Navrhnout, vylepšit, shrnout nebo se zeptat na stránku</value></data>
+
+  <!-- Notion inline status -->
+  <data name="Notion_Status_Insert"                            xml:space="preserve"><value>Vložit stav</value></data>
+  <data name="Notion_Status_Placeholder"                       xml:space="preserve"><value>Popisek stavu</value></data>
+  <data name="Notion_Status_Color_Gray"                        xml:space="preserve"><value>Šedá</value></data>
+  <data name="Notion_Status_Color_Blue"                        xml:space="preserve"><value>Modrá</value></data>
+  <data name="Notion_Status_Color_Green"                       xml:space="preserve"><value>Zelená</value></data>
+  <data name="Notion_Status_Color_Yellow"                      xml:space="preserve"><value>Žlutá</value></data>
+  <data name="Notion_Status_Color_Red"                         xml:space="preserve"><value>Červená</value></data>
+  <data name="Notion_Status_Color_Purple"                      xml:space="preserve"><value>Fialová</value></data>
+
+  <!-- Notion AI -->
+  <data name="Notion_AI_Assistant"                             xml:space="preserve"><value>AI asistent</value></data>
+  <data name="Notion_AI_Generate"                              xml:space="preserve"><value>Generovat</value></data>
+  <data name="Notion_AI_Improve"                               xml:space="preserve"><value>Vylepšit</value></data>
+  <data name="Notion_AI_Summarize"                             xml:space="preserve"><value>Shrnout</value></data>
+  <data name="Notion_AI_Ask"                                   xml:space="preserve"><value>Zeptat se</value></data>
+  <data name="Notion_AI_Accept"                                xml:space="preserve"><value>Přijmout</value></data>
+  <data name="Notion_AI_Discard"                               xml:space="preserve"><value>Zahodit</value></data>
+  <data name="Notion_AI_Retry"                                 xml:space="preserve"><value>Zkusit znovu</value></data>
+  <data name="Notion_AI_Thinking"                              xml:space="preserve"><value>Přemýšlím...</value></data>
+  <data name="Notion_AI_Error"                                 xml:space="preserve"><value>AI požadavek selhal</value></data>
+  <data name="Notion_AI_Run"                                   xml:space="preserve"><value>Spustit</value></data>
+  <data name="Notion_AI_Cancel"                                xml:space="preserve"><value>Zrušit</value></data>
+  <data name="Notion_AI_OutputLabel"                           xml:space="preserve"><value>Výsledek</value></data>
+  <data name="Notion_AI_PromptPlaceholder"                     xml:space="preserve"><value>Popište, co se má napsat...</value></data>
+  <data name="Notion_AI_QuestionPlaceholder"                   xml:space="preserve"><value>Zeptejte se na tuto stránku...</value></data>
+  <data name="Notion_AI_SummarizeDescription"                  xml:space="preserve"><value>Vytvoří stručné shrnutí této stránky.</value></data>
+  <data name="Notion_AI_SourceEmpty"                           xml:space="preserve"><value>Před vylepšením vyberte text v editoru.</value></data>
+  <data name="Notion_AI_EmptyPrompt"                           xml:space="preserve"><value>Nejprve zadejte prompt.</value></data>
+  <data name="Notion_AI_Mode_Grammar"                          xml:space="preserve"><value>Gramatika</value></data>
+  <data name="Notion_AI_Mode_Shorten"                          xml:space="preserve"><value>Zkrátit</value></data>
+  <data name="Notion_AI_Mode_Lengthen"                         xml:space="preserve"><value>Prodloužit</value></data>
+  <data name="Notion_AI_Mode_Tone"                             xml:space="preserve"><value>Tón</value></data>
+  <data name="Notion_AI_Mode_Simplify"                         xml:space="preserve"><value>Zjednodušit</value></data>
+  <data name="Notion_AI_Mode_Translate"                        xml:space="preserve"><value>Přeložit</value></data>
 
   <!-- ═══════════════ NOTION INLINE TOOLBAR (Phase 44) ═══════════════ -->
   <data name="TmNotionInlineToolbar_Label"         xml:space="preserve"><value>Formátování textu</value></data>
@@ -1287,6 +1350,8 @@
   <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Nahrávání…</value></data>
   <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Nahrávání selhalo. Zkuste to znovu.</value></data>
   <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>Nahrávání souborů není nakonfigurováno.</value></data>
+  <data name="TmNotionMediaUploadDialog_InvalidFileType"     xml:space="preserve"><value>Tento typ souboru není pro tento blok podporovaný.</value></data>
+  <data name="TmNotionMediaUploadDialog_FileTooLarge"        xml:space="preserve"><value>Vybraný soubor je příliš velký. Maximální velikost je {0}.</value></data>
   <data name="TmNotionMediaUploadDialog_TabLibrary"         xml:space="preserve"><value>Knihovna</value></data>
   <data name="TmNotionMediaUploadDialog_LibrarySearch"      xml:space="preserve"><value>Hledat v médiích…</value></data>
   <data name="TmNotionMediaUploadDialog_LibraryLoading"     xml:space="preserve"><value>Načítání…</value></data>
@@ -1426,6 +1491,16 @@
   <data name="TmNotionTableBlock_DragRow"                    xml:space="preserve"><value>Přetáhnout pro přeřazení</value></data>
   <data name="TmNotionTableBlock_ToggleHeaderRow"            xml:space="preserve"><value>Hlavičkový řádek</value></data>
   <data name="TmNotionTableBlock_ToggleHeaderColumn"         xml:space="preserve"><value>Hlavičkový sloupec</value></data>
+  <data name="TmNotionTableBlock_Undo"                       xml:space="preserve"><value>Vrátit změnu tabulky</value></data>
+  <data name="TmNotionTableBlock_SelectionTools"             xml:space="preserve"><value>Nástroje výběru tabulky</value></data>
+  <data name="TmNotionTableBlock_Merge"                      xml:space="preserve"><value>Sloučit buňky</value></data>
+  <data name="TmNotionTableBlock_Split"                      xml:space="preserve"><value>Rozdělit buňky</value></data>
+  <data name="TmNotionTableBlock_ColorYellow"                xml:space="preserve"><value>Zvýraznit žlutě</value></data>
+  <data name="TmNotionTableBlock_ColorGreen"                 xml:space="preserve"><value>Zvýraznit zeleně</value></data>
+  <data name="TmNotionTableBlock_ColorBlue"                  xml:space="preserve"><value>Zvýraznit modře</value></data>
+  <data name="TmNotionTableBlock_ColorRed"                   xml:space="preserve"><value>Zvýraznit červeně</value></data>
+  <data name="TmNotionTableBlock_ClearColor"                 xml:space="preserve"><value>Vymazat barvu</value></data>
+  <data name="TmNotionTableBlock_Sort"                       xml:space="preserve"><value>Seřadit sloupec</value></data>
 
   <!-- Phase 60: Table of Contents Block -->
   <data name="TmNotionTableOfContentsBlock_Title"             xml:space="preserve"><value>Obsah stránky</value></data>
@@ -1773,6 +1848,7 @@
   <data name="TmNotionSidebar_SearchPlaceholder" xml:space="preserve"><value>Hledat stránky…</value></data>
   <data name="TmNotionSidebar_SearchNoResults"   xml:space="preserve"><value>Žádné stránky nenalezeny</value></data>
   <data name="TmNotionSidebar_SearchLoading"     xml:space="preserve"><value>Hledám…</value></data>
+  <data name="TmNotionSidebar_SearchError"       xml:space="preserve"><value>Hledání se nepodařilo dokončit</value></data>
   <data name="TmNotionSidebar_CloseSearch"       xml:space="preserve"><value>Zavřít hledání</value></data>
   <data name="TmNotionSidebar_Favorites"         xml:space="preserve"><value>Oblíbené</value></data>
   <data name="TmNotionSidebar_Recent"            xml:space="preserve"><value>Nedávné</value></data>
@@ -1817,6 +1893,15 @@
   <data name="TmNotionPageTree_NoPages"          xml:space="preserve"><value>Zatím žádné stránky. Klikněte na + pro vytvoření.</value></data>
   <data name="TmNotionPageTree_LoadingChildren"  xml:space="preserve"><value>Načítání…</value></data>
   <data name="TmNotionPageTree_RenameHint"       xml:space="preserve"><value>Přejmenovat: {0}</value></data>
+  <data name="TmNotionPageTree_SelectPage"       xml:space="preserve"><value>Vybrat {0}</value></data>
+  <data name="TmNotionPageTree_BulkToolbar"      xml:space="preserve"><value>Hromadné akce se stránkami</value></data>
+  <data name="TmNotionPageTree_BulkSelected"     xml:space="preserve"><value>{0} vybráno</value></data>
+  <data name="TmNotionPageTree_Copy"             xml:space="preserve"><value>Kopírovat</value></data>
+  <data name="TmNotionPageTree_BulkTargetTitle"  xml:space="preserve"><value>Vyberte cílovou stránku</value></data>
+  <data name="TmNotionPageTree_BulkDeleteTitle"  xml:space="preserve"><value>Smazat vybrané stránky</value></data>
+  <data name="TmNotionPageTree_BulkDeleteMessage" xml:space="preserve"><value>Vybrané stránky budou přesunuty do koše.</value></data>
+  <data name="TmNotionPageTree_BulkMoveDescendantError" xml:space="preserve"><value>Vybrané stránky nelze přesunout do jejich vlastních potomků.</value></data>
+  <data name="TmNotionPageTree_BulkOperationError" xml:space="preserve"><value>Hromadnou operaci se stránkami se nepodařilo dokončit.</value></data>
 
   <!-- ═══════════════ TmNotionSidebarFavorites + TmNotionSidebarRecent (Phase 82) ═══════════════ -->
   <data name="TmNotionSidebarFavorites_DragHint"     xml:space="preserve"><value>Přetažením změňte pořadí</value></data>
@@ -2482,6 +2567,8 @@
   <data name="TmNotionPageHistory_NextPage"            xml:space="preserve"><value>Další strana</value></data>
   <data name="TmNotionPageHistory_EmptyTitle"          xml:space="preserve"><value>Vyberte verzi</value></data>
   <data name="TmNotionPageHistory_EmptySub"            xml:space="preserve"><value>Kliknutím na verzi vlevo zobrazíte náhled obsahu.</value></data>
+  <data name="TmNotionPageHistory_NoVersionsEmptyTitle" xml:space="preserve"><value>Historie zatím neexistuje</value></data>
+  <data name="TmNotionPageHistory_NoVersionsEmptySub"   xml:space="preserve"><value>Verze se zde zobrazí po úpravě a uložení této stránky.</value></data>
   <data name="TmNotionPageHistory_PreviewLabel"        xml:space="preserve"><value>Náhled verze (pouze pro čtení)</value></data>
   <data name="TmNotionPageHistory_LoadingPreview"      xml:space="preserve"><value>Načítám náhled…</value></data>
   <data name="TmNotionPageHistory_EmptySnapshot"       xml:space="preserve"><value>Tato verze neobsahuje žádný obsah.</value></data>
@@ -2501,10 +2588,13 @@
   <data name="TmNotionPageHistory_DiffRemoved"         xml:space="preserve"><value>Odstraněno</value></data>
   <data name="TmNotionPageHistory_DiffModified"        xml:space="preserve"><value>Upraveno</value></data>
   <data name="TmNotionPageHistory_DiffMoved"           xml:space="preserve"><value>Přesunuto</value></data>
+  <data name="TmNotionPageHistory_DiffModeInline"      xml:space="preserve"><value>V řádku</value></data>
+  <data name="TmNotionPageHistory_DiffModeSideBySide"  xml:space="preserve"><value>Vedle sebe</value></data>
   <data name="TmNotionPageHistory_DiffBefore"          xml:space="preserve"><value>Před</value></data>
   <data name="TmNotionPageHistory_DiffAfter"           xml:space="preserve"><value>Po</value></data>
   <data name="TmNotionPageHistory_LoadingDiff"         xml:space="preserve"><value>Porovnávám verze…</value></data>
   <data name="TmNotionPageHistory_NoDiff"              xml:space="preserve"><value>Mezi těmito verzemi nejsou žádné rozdíly.</value></data>
+  <data name="TmNotionDiffViewer_NotPresent"           xml:space="preserve"><value>V této verzi není obsaženo</value></data>
   <data name="TmNotionPageHistory_BlockParagraph"      xml:space="preserve"><value>Odstavec</value></data>
   <data name="TmNotionPageHistory_BlockH1"             xml:space="preserve"><value>Nadpis 1</value></data>
   <data name="TmNotionPageHistory_BlockH2"             xml:space="preserve"><value>Nadpis 2</value></data>
@@ -2532,7 +2622,7 @@
 
   <!-- Editor shell -->
   <data name="TmNotionEditor_Loading"                  xml:space="preserve"><value>Načítání stránky…</value></data>
-  <data name="TmNotionEditor_LoadError"                xml:space="preserve"><value>Stránku se nepodařilo načíst. {0}</value></data>
+  <data name="TmNotionEditor_LoadError"                xml:space="preserve"><value>Stránku se nepodařilo načíst.</value></data>
   <data name="TmNotionEditor_Locked"                   xml:space="preserve"><value>Pouze pro čtení</value></data>
   <data name="TmNotionEditor_NavigateBack"             xml:space="preserve"><value>Zpět</value></data>
   <data name="TmNotionEditor_SidebarLabel"             xml:space="preserve"><value>Navigace</value></data>
@@ -2559,6 +2649,7 @@
   <data name="TmNotionBlockContextMenu_Background"     xml:space="preserve"><value>Pozadí</value></data>
   <data name="TmNotionBlockContextMenu_Comment"        xml:space="preserve"><value>Komentář</value></data>
   <data name="TmNotionBlockContextMenu_NewThread"      xml:space="preserve"><value>Nové vlákno</value></data>
+  <data name="TmNotionBlockContextMenu_PanelType"      xml:space="preserve"><value>Typ panelu</value></data>
   <data name="TmNotionBlockContextMenu_Duplicate"      xml:space="preserve"><value>Duplikovat</value></data>
   <data name="TmNotionBlockContextMenu_CopyLink"       xml:space="preserve"><value>Kopírovat odkaz na blok</value></data>
   <data name="TmNotionBlockContextMenu_MoveTo"         xml:space="preserve"><value>Přesunout do</value></data>
@@ -2573,7 +2664,7 @@
   <data name="TmNotionPage_RemoveCover"                xml:space="preserve"><value>Odebrat obálku</value></data>
   <data name="TmNotionPage_IconLabel"                  xml:space="preserve"><value>Ikona stránky</value></data>
   <data name="TmNotionPage_CommentsLabel"              xml:space="preserve"><value>Komentáře</value></data>
-  <data name="TmNotionPage_BlocksLoadError"            xml:space="preserve"><value>Obsah se nepodařilo načíst. {0}</value></data>
+  <data name="TmNotionPage_BlocksLoadError"            xml:space="preserve"><value>Obsah se nepodařilo načíst.</value></data>
 
   <!-- Page header -->
   <data name="TmNotionPageHeader_AddDescription"       xml:space="preserve"><value>Přidat popis</value></data>
@@ -2631,6 +2722,7 @@
   <data name="TmNotionEmbedBlock_Confirm"              xml:space="preserve"><value>Vložit</value></data>
   <data name="TmNotionEmbedBlock_Replace"              xml:space="preserve"><value>Nahradit</value></data>
   <data name="TmNotionEmbedBlock_OpenSource"           xml:space="preserve"><value>Otevřít zdroj</value></data>
+  <data name="TmNotionEmbedBlock_GenericProvider"      xml:space="preserve"><value>Obecné vložení</value></data>
   <data name="TmNotionEmbedBlock_CaptionPlaceholder"   xml:space="preserve"><value>Přidat popisek…</value></data>
   <data name="TmNotionEmbedBlock_ErrorInvalidUrl"      xml:space="preserve"><value>Zadejte prosím platnou URL adresu.</value></data>
   <data name="TmNotionEmbedBlock_ErrorGeneric"         xml:space="preserve"><value>Tuto URL nelze vložit. Zkontrolujte odkaz a zkuste to znovu.</value></data>
@@ -2678,8 +2770,21 @@
   <data name="TmNotionPageSearch_FilterTitle"          xml:space="preserve"><value>Pokročilé filtry</value></data>
   <data name="TmNotionPageSearch_FilterAuthorLabel"    xml:space="preserve"><value>Autor</value></data>
   <data name="TmNotionPageSearch_FilterAuthorPlaceholder" xml:space="preserve"><value>ID uživatele nebo jméno</value></data>
+  <data name="TmNotionPageSearch_FilterLabelLabel"     xml:space="preserve"><value>Štítek</value></data>
+  <data name="TmNotionPageSearch_FilterLabelPlaceholder" xml:space="preserve"><value>Štítek stránky</value></data>
+  <data name="TmNotionPageSearch_FilterTypeLabel"      xml:space="preserve"><value>Typ</value></data>
+  <data name="TmNotionPageSearch_FilterTypeAll"        xml:space="preserve"><value>Všechny typy</value></data>
+  <data name="TmNotionPageSearch_FilterTypePage"       xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmNotionPageSearch_FilterTypeParagraph"  xml:space="preserve"><value>Odstavec</value></data>
+  <data name="TmNotionPageSearch_FilterTypeHeading"    xml:space="preserve"><value>Nadpis</value></data>
+  <data name="TmNotionPageSearch_FilterTypeTodo"       xml:space="preserve"><value>Úkol</value></data>
+  <data name="TmNotionPageSearch_FilterTypeMedia"      xml:space="preserve"><value>Média</value></data>
+  <data name="TmNotionPageSearch_FilterTypeTable"      xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmNotionPageSearch_FilterSpaceLabel"     xml:space="preserve"><value>Prostor</value></data>
+  <data name="TmNotionPageSearch_FilterSpacePlaceholder" xml:space="preserve"><value>Název nebo ID prostoru</value></data>
   <data name="TmNotionPageSearch_FilterDateFromLabel"  xml:space="preserve"><value>Vytvořeno po</value></data>
   <data name="TmNotionPageSearch_FilterDateToLabel"    xml:space="preserve"><value>Vytvořeno před</value></data>
+  <data name="TmNotionPageSearch_FilterEditedBeforeLabel" xml:space="preserve"><value>Upraveno před</value></data>
   <data name="TmNotionPageSearch_FilterClear"          xml:space="preserve"><value>Smazat filtry</value></data>
 
   <!-- Page settings menu -->
@@ -2694,10 +2799,24 @@
   <data name="TmNotionPageSettingsMenu_ExportMarkdown"       xml:space="preserve"><value>Exportovat jako Markdown</value></data>
   <data name="TmNotionPageSettingsMenu_ExportHtml"           xml:space="preserve"><value>Exportovat jako HTML</value></data>
   <data name="TmNotionPageSettingsMenu_ExportPdf"            xml:space="preserve"><value>Exportovat jako PDF</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportDocx"           xml:space="preserve"><value>Exportovat jako DOCX</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportOdt"            xml:space="preserve"><value>Exportovat jako ODT</value></data>
+  <data name="TmNotionPageSettingsMenu_IncludeSubpages"      xml:space="preserve"><value>Zahrnout podstránky</value></data>
   <data name="TmNotionPageSettingsMenu_Import"               xml:space="preserve"><value>Importovat</value></data>
   <data name="TmNotionPageSettingsMenu_ImportMarkdown"       xml:space="preserve"><value>Importovat Markdown (.md)</value></data>
   <data name="TmNotionPageSettingsMenu_ImportHtml"           xml:space="preserve"><value>Importovat HTML (.html)</value></data>
   <data name="TmNotionPageSettingsMenu_ImportWord"           xml:space="preserve"><value>Importovat Word (.docx)</value></data>
+  <data name="TmNotionPageSettingsMenu_AISummarize"          xml:space="preserve"><value>Shrnout pomocí AI</value></data>
+  <data name="TmNotionPageSettingsMenu_AIAskPage"            xml:space="preserve"><value>Zeptat se AI na stránku</value></data>
+  <data name="Notion_PageInfo_Title"                         xml:space="preserve"><value>Informace o stránce</value></data>
+  <data name="Notion_PageInfo_Open"                          xml:space="preserve"><value>Otevřít informace o stránce</value></data>
+  <data name="Notion_PageInfo_Created"                       xml:space="preserve"><value>Vytvořeno</value></data>
+  <data name="Notion_PageInfo_LastEdited"                    xml:space="preserve"><value>Naposledy upraveno</value></data>
+  <data name="Notion_PageInfo_Words"                         xml:space="preserve"><value>Slova</value></data>
+  <data name="Notion_PageInfo_ReadingTime"                   xml:space="preserve"><value>Doba čtení</value></data>
+  <data name="Notion_PageInfo_Views"                         xml:space="preserve"><value>Zobrazení</value></data>
+  <data name="Notion_PageInfo_UnknownUser"                   xml:space="preserve"><value>Neznámý autor</value></data>
+  <data name="Notion_PageInfo_Minutes"                       xml:space="preserve"><value>{0} min</value></data>
   <data name="TmNotionPageSettingsMenu_CopyLink"             xml:space="preserve"><value>Kopírovat odkaz</value></data>
   <data name="TmNotionPageSettingsMenu_LinkCopied"           xml:space="preserve"><value>Odkaz zkopírován do schránky</value></data>
   <data name="TmNotionPageSettingsMenu_MoveTo"               xml:space="preserve"><value>Přesunout do</value></data>
@@ -4368,4 +4487,260 @@
   <data name="TmModelingSourcePanel_Stale" xml:space="preserve"><value>Zastaralé</value></data>
   <data name="TmModelingSourcePanel_Unknown" xml:space="preserve"><value>Neznámé</value></data>
   <data name="TmModelingSourcePanel_StaleWarning" xml:space="preserve"><value>Zdrojová data mohou být zastaralá. Před rozhodováním model znovu načtěte.</value></data>
+  <data name="Notion_Templates_Title" xml:space="preserve"><value>Šablony</value></data>
+  <data name="Notion_Templates_Subtitle" xml:space="preserve"><value>Začněte strukturou, která odpovídá práci.</value></data>
+  <data name="Notion_Templates_Search" xml:space="preserve"><value>Hledat šablony</value></data>
+  <data name="Notion_Templates_Categories" xml:space="preserve"><value>Kategorie šablon</value></data>
+  <data name="Notion_Templates_Category_All" xml:space="preserve"><value>Vše</value></data>
+  <data name="Notion_Templates_Category_Blank" xml:space="preserve"><value>Prázdné</value></data>
+  <data name="Notion_Templates_Category_Team" xml:space="preserve"><value>Tým</value></data>
+  <data name="Notion_Templates_Category_Planning" xml:space="preserve"><value>Plánování</value></data>
+  <data name="Notion_Templates_Category_Knowledge" xml:space="preserve"><value>Znalosti</value></data>
+  <data name="Notion_Templates_Blank" xml:space="preserve"><value>Prázdná stránka</value></data>
+  <data name="Notion_Templates_BlankDescription" xml:space="preserve"><value>Začněte prázdnou stránkou.</value></data>
+  <data name="Notion_Templates_Use" xml:space="preserve"><value>Použít šablonu</value></data>
+  <data name="Notion_Templates_NoResults" xml:space="preserve"><value>Aktuálním filtrům neodpovídají žádné šablony.</value></data>
+  <data name="Notion_Templates_LoadError" xml:space="preserve"><value>Šablony se nepodařilo načíst.</value></data>
+  <data name="Notion_Reading_Enter" xml:space="preserve"><value>Režim čtení</value></data>
+  <data name="Notion_Reading_Exit" xml:space="preserve"><value>Ukončit čtení</value></data>
+  <data name="Notion_Presentation_Enter" xml:space="preserve"><value>Režim prezentace</value></data>
+  <data name="Notion_Blog_Title" xml:space="preserve"><value>Blog</value></data>
+  <data name="Notion_Blog_Count" xml:space="preserve"><value>{0} příspěvků</value></data>
+  <data name="Notion_Blog_New" xml:space="preserve"><value>Nový příspěvek</value></data>
+  <data name="Notion_Blog_Publish" xml:space="preserve"><value>Publikovat</value></data>
+  <data name="Notion_Blog_Draft" xml:space="preserve"><value>Koncept</value></data>
+  <data name="Notion_Blog_Published" xml:space="preserve"><value>Publikováno</value></data>
+  <data name="Notion_Blog_PublishedOn" xml:space="preserve"><value>Publikováno {0}</value></data>
+  <data name="Notion_Blog_Empty" xml:space="preserve"><value>V tomto prostoru nejsou žádné blogové příspěvky.</value></data>
+  <data name="Notion_Blog_LoadError" xml:space="preserve"><value>Blogové příspěvky se nepodařilo načíst.</value></data>
+  <data name="Notion_Blog_Paging" xml:space="preserve"><value>Stránkování blogu</value></data>
+  <data name="Notion_Blog_Previous" xml:space="preserve"><value>Předchozí</value></data>
+  <data name="Notion_Blog_Next" xml:space="preserve"><value>Další</value></data>
+  <data name="Notion_Blog_Page" xml:space="preserve"><value>Strana {0}</value></data>
+  <data name="Notion_Blog_NoPostSelected" xml:space="preserve"><value>Vyberte příspěvek ke čtení.</value></data>
+  <data name="Notion_Blog_NewPostTitle" xml:space="preserve"><value>Nepojmenovaný blogový příspěvek</value></data>
+  <data name="Notion_Blog_NewPostBody" xml:space="preserve"><value>Napište tělo konceptu zde.</value></data>
+  <data name="Notion_Analytics_Title" xml:space="preserve"><value>Analytika</value></data>
+  <data name="Notion_Analytics_Subtitle" xml:space="preserve"><value>Návštěvnost stránek a nejlepší obsah</value></data>
+  <data name="Notion_Analytics_Views" xml:space="preserve"><value>Zobrazení</value></data>
+  <data name="Notion_Analytics_Unique" xml:space="preserve"><value>Unikátní návštěvníci</value></data>
+  <data name="Notion_Analytics_TopPages" xml:space="preserve"><value>Nejčtenější stránky</value></data>
+  <data name="Notion_Analytics_LastViewed" xml:space="preserve"><value>Naposledy zobrazeno</value></data>
+  <data name="Notion_Analytics_Empty" xml:space="preserve"><value>Zatím nejsou žádná analytická data.</value></data>
+  <data name="Notion_Analytics_ViewsByDay" xml:space="preserve"><value>Zobrazení podle dnů</value></data>
+  <data name="Notion_Analytics_NeverViewed" xml:space="preserve"><value>Nikdy nezobrazeno</value></data>
+  <data name="Notion_Analytics_LoadError" xml:space="preserve"><value>Analytiku se nepodařilo načíst.</value></data>
+  <data name="Notion_Analytics_UnknownPage" xml:space="preserve"><value>Neznámá stránka</value></data>
+  <data name="Notion_Watch_Start" xml:space="preserve"><value>Sledovat stránku</value></data>
+  <data name="Notion_Watch_Stop" xml:space="preserve"><value>Přestat sledovat</value></data>
+  <data name="Notion_Watch_IncludeChildren" xml:space="preserve"><value>Zahrnout podstránky</value></data>
+  <data name="Notion_Notifications_Title" xml:space="preserve"><value>Oznámení</value></data>
+  <data name="Notion_Notifications_MarkAllRead" xml:space="preserve"><value>Označit vše jako přečtené</value></data>
+  <data name="Notion_Notifications_Empty" xml:space="preserve"><value>Žádná oznámení</value></data>
+  <data name="Notion_Notifications_JustNow" xml:space="preserve"><value>Právě teď</value></data>
+  <data name="Notion_Notifications_MinutesAgo" xml:space="preserve"><value>Před {0} min</value></data>
+  <data name="Notion_Notifications_HoursAgo" xml:space="preserve"><value>Před {0} h</value></data>
+  <data name="Notion_Notifications_DaysAgo" xml:space="preserve"><value>Před {0} d</value></data>
+  <data name="Notion_Space_Switch" xml:space="preserve"><value>Přepnout prostor</value></data>
+  <data name="Notion_Space_Overview" xml:space="preserve"><value>Přehled</value></data>
+  <data name="Notion_Space_Personal" xml:space="preserve"><value>Osobní</value></data>
+  <data name="Notion_Space_Team" xml:space="preserve"><value>Tým</value></data>
+  <data name="Notion_Space_Public" xml:space="preserve"><value>Veřejný</value></data>
+  <data name="Notion_Space_Default" xml:space="preserve"><value>Stránky</value></data>
+  <data name="Notion_Space_MoveHere" xml:space="preserve"><value>Přesunout aktuální stránku sem</value></data>
+  <data name="Notion_Space_Empty" xml:space="preserve"><value>V tomto prostoru nejsou žádné kořenové stránky.</value></data>
+  <data name="Notion_Space_Pages" xml:space="preserve"><value>Stránky</value></data>
+  <data name="Notion_Space_PageCount" xml:space="preserve"><value>{0} stránek</value></data>
+  <data name="Notion_Tasks_Title" xml:space="preserve"><value>Moje úkoly</value></data>
+  <data name="Notion_Tasks_Count" xml:space="preserve"><value>{0} úkolů</value></data>
+  <data name="Notion_Tasks_Filters" xml:space="preserve"><value>Filtry úkolů</value></data>
+  <data name="Notion_Tasks_Filter_Assignee" xml:space="preserve"><value>Filtr řešitele</value></data>
+  <data name="Notion_Tasks_Filter_My" xml:space="preserve"><value>Moje</value></data>
+  <data name="Notion_Tasks_Filter_All" xml:space="preserve"><value>Vše</value></data>
+  <data name="Notion_Tasks_Filter_Status" xml:space="preserve"><value>Filtr stavu</value></data>
+  <data name="Notion_Tasks_Filter_Open" xml:space="preserve"><value>Otevřené</value></data>
+  <data name="Notion_Tasks_Filter_Completed" xml:space="preserve"><value>Hotové</value></data>
+  <data name="Notion_Tasks_Filter_AllStatuses" xml:space="preserve"><value>Všechny stavy</value></data>
+  <data name="Notion_Tasks_Filter_Due" xml:space="preserve"><value>Filtr termínu</value></data>
+  <data name="Notion_Tasks_Filter_DueAll" xml:space="preserve"><value>Libovolný termín</value></data>
+  <data name="Notion_Tasks_Filter_Overdue" xml:space="preserve"><value>Po termínu</value></data>
+  <data name="Notion_Tasks_Filter_Upcoming" xml:space="preserve"><value>Nadcházející</value></data>
+  <data name="Notion_Tasks_GroupBy" xml:space="preserve"><value>Seskupit úkoly podle</value></data>
+  <data name="Notion_Tasks_GroupBy_DueDate" xml:space="preserve"><value>Termín</value></data>
+  <data name="Notion_Tasks_GroupBy_Page" xml:space="preserve"><value>Stránka</value></data>
+  <data name="Notion_Tasks_LoadError" xml:space="preserve"><value>Úkoly se nepodařilo načíst.</value></data>
+  <data name="Notion_Tasks_Empty" xml:space="preserve"><value>Aktuálním filtrům neodpovídají žádné úkoly.</value></data>
+  <data name="Notion_Tasks_ToggleComplete" xml:space="preserve"><value>Přepnout dokončení úkolu</value></data>
+  <data name="Notion_Tasks_Group_Overdue" xml:space="preserve"><value>Po termínu</value></data>
+  <data name="Notion_Tasks_Group_Today" xml:space="preserve"><value>Dnes</value></data>
+  <data name="Notion_Tasks_Group_Tomorrow" xml:space="preserve"><value>Zítra</value></data>
+  <data name="Notion_Tasks_Group_Later" xml:space="preserve"><value>Později</value></data>
+  <data name="Notion_Tasks_Group_NoDueDate" xml:space="preserve"><value>Bez termínu</value></data>
+  <data name="Notion_Tasks_Due_Today" xml:space="preserve"><value>Dnes</value></data>
+  <data name="Notion_Tasks_Due_Tomorrow" xml:space="preserve"><value>Zítra</value></data>
+  <data name="Notion_Tasks_Due_Overdue" xml:space="preserve"><value>Po termínu</value></data>
+  <data name="Notion_Reactions_Like" xml:space="preserve"><value>To se mi líbí</value></data>
+  <data name="Notion_Reactions_AddReaction" xml:space="preserve"><value>Přidat reakci</value></data>
+  <data name="Notion_Reactions_Count" xml:space="preserve"><value>{0} reakcí</value></data>
+  <data name="Notion_Reactions_PickerLabel" xml:space="preserve"><value>Vybrat reakci stránky</value></data>
+  <data name="Notion_IncludePage_Title" xml:space="preserve"><value>Vložená stránka</value></data>
+  <data name="Notion_IncludePage_Select" xml:space="preserve"><value>Vyberte zdrojovou stránku</value></data>
+  <data name="Notion_IncludePage_MissingSource" xml:space="preserve"><value>Chybějící zdrojová stránka</value></data>
+  <data name="Notion_IncludePage_NotFound" xml:space="preserve"><value>Vloženou stránku se nepodařilo najít.</value></data>
+  <data name="Notion_IncludePage_Cyclic" xml:space="preserve"><value>Toto vložení by vytvořilo cyklus stránek, proto bylo zastaveno.</value></data>
+  <data name="Notion_IncludePage_TooDeep" xml:space="preserve"><value>Toto vložení je zanořené příliš hluboko, proto bylo zastaveno.</value></data>
+  <data name="Notion_IncludePage_EditSource" xml:space="preserve"><value>Upravit zdroj</value></data>
+  <data name="Notion_IncludePage_Empty" xml:space="preserve"><value>Vložená stránka neobsahuje žádné bloky.</value></data>
+  <data name="Notion_Children_Title" xml:space="preserve"><value>Zobrazení podstránek</value></data>
+  <data name="Notion_Children_Empty" xml:space="preserve"><value>Tato stránka nemá žádné podstránky.</value></data>
+  <data name="Notion_Children_SourceDeleted" xml:space="preserve"><value>Vybranou zdrojovou stránku se nepodařilo najít.</value></data>
+  <data name="Notion_Children_Configure" xml:space="preserve"><value>Nastavit zobrazení podstránek</value></data>
+  <data name="Notion_Children_Depth" xml:space="preserve"><value>Hloubka</value></data>
+  <data name="Notion_Children_Root" xml:space="preserve"><value>Kořenová stránka</value></data>
+  <data name="Notion_Children_CurrentPage" xml:space="preserve"><value>Aktuální stránka</value></data>
+  <data name="Notion_Children_DepthAll" xml:space="preserve"><value>Všechny úrovně</value></data>
+  <data name="Notion_Children_DepthLevel" xml:space="preserve"><value>{0} úroveň/úrovní</value></data>
+  <data name="Notion_Children_ShowIcons" xml:space="preserve"><value>Zobrazit ikony</value></data>
+  <data name="Notion_Children_Summary" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Notion_Excerpt_Title" xml:space="preserve"><value>Výňatek</value></data>
+  <data name="Notion_Excerpt_Placeholder" xml:space="preserve"><value>Napište sem znovupoužitelný výňatek...</value></data>
+  <data name="Notion_ExcerptInclude_Title" xml:space="preserve"><value>Vložený výňatek</value></data>
+  <data name="Notion_ExcerptInclude_Select" xml:space="preserve"><value>Vyberte zdrojovou stránku</value></data>
+  <data name="Notion_ExcerptInclude_MissingSource" xml:space="preserve"><value>Chybějící zdrojová stránka</value></data>
+  <data name="Notion_ExcerptInclude_NoExcerpt" xml:space="preserve"><value>Vybraná stránka nemá žádný výňatek.</value></data>
+  <data name="Notion_ExcerptInclude_NotFound" xml:space="preserve"><value>Zdrojovou stránku výňatku se nepodařilo najít.</value></data>
+  <data name="Notion_ExcerptInclude_EditSource" xml:space="preserve"><value>Otevřít zdroj</value></data>
+  <data name="Notion_PageProps_Title" xml:space="preserve"><value>Vlastnosti stránky</value></data>
+  <data name="Notion_PageProps_AddRow" xml:space="preserve"><value>Přidat řádek</value></data>
+  <data name="Notion_PageProps_Key" xml:space="preserve"><value>Klíč</value></data>
+  <data name="Notion_PageProps_Value" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="Notion_PageProps_Empty" xml:space="preserve"><value>Zatím žádné vlastnosti</value></data>
+  <data name="Notion_PropsReport_Title" xml:space="preserve"><value>Přehled vlastností</value></data>
+  <data name="Notion_PropsReport_Configure" xml:space="preserve"><value>Nastavit přehled</value></data>
+  <data name="Notion_PropsReport_Labels" xml:space="preserve"><value>Štítky</value></data>
+  <data name="Notion_PropsReport_Columns" xml:space="preserve"><value>Sloupce</value></data>
+  <data name="Notion_PropsReport_Empty" xml:space="preserve"><value>Tomuto přehledu neodpovídají žádné stránky.</value></data>
+  <data name="Notion_PropsReport_MissingValue" xml:space="preserve"><value>Nevyplněno</value></data>
+  <data name="Notion_PropsReport_NoProvider" xml:space="preserve"><value>Provider přehledu vlastností není dostupný.</value></data>
+  <data name="Notion_PropsReport_Page" xml:space="preserve"><value>Stránka</value></data>
+  <data name="Notion_Audit_Title" xml:space="preserve"><value>Auditní log</value></data>
+  <data name="Notion_Audit_Count" xml:space="preserve"><value>{0} záznamů</value></data>
+  <data name="Notion_Audit_Filter" xml:space="preserve"><value>Filtrovat</value></data>
+  <data name="Notion_Audit_User" xml:space="preserve"><value>Uživatel</value></data>
+  <data name="Notion_Audit_Action" xml:space="preserve"><value>Akce</value></data>
+  <data name="Notion_Audit_Action_All" xml:space="preserve"><value>Všechny akce</value></data>
+  <data name="Notion_Audit_Action_Create" xml:space="preserve"><value>Vytvořeno</value></data>
+  <data name="Notion_Audit_Action_Edit" xml:space="preserve"><value>Upraveno</value></data>
+  <data name="Notion_Audit_Action_Delete" xml:space="preserve"><value>Smazáno</value></data>
+  <data name="Notion_Audit_Action_Move" xml:space="preserve"><value>Přesunuto</value></data>
+  <data name="Notion_Audit_Action_Restrict" xml:space="preserve"><value>Omezeno</value></data>
+  <data name="Notion_Audit_From" xml:space="preserve"><value>Od</value></data>
+  <data name="Notion_Audit_To" xml:space="preserve"><value>Do</value></data>
+  <data name="Notion_Audit_Clear" xml:space="preserve"><value>Vyčistit</value></data>
+  <data name="Notion_Audit_Export" xml:space="preserve"><value>Export CSV</value></data>
+  <data name="Notion_Audit_DownloadReady" xml:space="preserve"><value>Stažení je připravené</value></data>
+  <data name="Notion_Audit_LoadError" xml:space="preserve"><value>Auditní záznamy se nepodařilo načíst.</value></data>
+  <data name="Notion_Audit_Empty" xml:space="preserve"><value>Aktuálním filtrům neodpovídají žádné auditní záznamy.</value></data>
+  <data name="Notion_Audit_Page" xml:space="preserve"><value>Stránky auditu</value></data>
+  <data name="Notion_Audit_Previous" xml:space="preserve"><value>Předchozí stránka</value></data>
+  <data name="Notion_Audit_Next" xml:space="preserve"><value>Další stránka</value></data>
+  <data name="Notion_Audit_PageStatus" xml:space="preserve"><value>Stránka {0} z {1}</value></data>
+  <data name="Notion_Audit_Timestamp" xml:space="preserve"><value>Čas</value></data>
+  <data name="Notion_Audit_Target" xml:space="preserve"><value>Cíl</value></data>
+  <data name="Notion_Audit_Details" xml:space="preserve"><value>Detaily</value></data>
+  <data name="Notion_Restrictions_Title" xml:space="preserve"><value>Omezení stránky</value></data>
+  <data name="Notion_Restrictions_Inherited" xml:space="preserve"><value>Tato stránka dědí omezení z nadřazené stránky.</value></data>
+  <data name="Notion_Restrictions_Mode" xml:space="preserve"><value>Režim omezení</value></data>
+  <data name="Notion_Restrictions_ModeOpen" xml:space="preserve"><value>Otevřeno pro všechny</value></data>
+  <data name="Notion_Restrictions_ModeReadOnlyForSome" xml:space="preserve"><value>Jen pro čtení pro vybrané uživatele</value></data>
+  <data name="Notion_Restrictions_ModeEditForSome" xml:space="preserve"><value>Upravovat mohou jen vybraní uživatelé</value></data>
+  <data name="Notion_Restrictions_AddUser" xml:space="preserve"><value>Přidat uživatele</value></data>
+  <data name="Notion_Restrictions_AddGroup" xml:space="preserve"><value>Přidat skupinu</value></data>
+  <data name="Notion_Restrictions_SubjectType" xml:space="preserve"><value>Typ subjektu</value></data>
+  <data name="Notion_Restrictions_User" xml:space="preserve"><value>Uživatel</value></data>
+  <data name="Notion_Restrictions_Group" xml:space="preserve"><value>Skupina</value></data>
+  <data name="Notion_Restrictions_Subject" xml:space="preserve"><value>Subjekt</value></data>
+  <data name="Notion_Restrictions_SubjectPlaceholder" xml:space="preserve"><value>ID uživatele nebo skupiny</value></data>
+  <data name="Notion_Restrictions_Permission" xml:space="preserve"><value>Oprávnění</value></data>
+  <data name="Notion_Restrictions_View" xml:space="preserve"><value>Zobrazit</value></data>
+  <data name="Notion_Restrictions_Comment" xml:space="preserve"><value>Komentovat</value></data>
+  <data name="Notion_Restrictions_Edit" xml:space="preserve"><value>Upravovat</value></data>
+  <data name="Notion_Restrictions_Empty" xml:space="preserve"><value>Žádná explicitní omezení.</value></data>
+  <data name="Notion_Restrictions_Explicit" xml:space="preserve"><value>Explicitní</value></data>
+  <data name="Notion_Restrictions_Remove" xml:space="preserve"><value>Odebrat omezení</value></data>
+  <data name="Notion_Restrictions_LoadError" xml:space="preserve"><value>Omezení se nepodařilo načíst.</value></data>
+  <data name="Notion_Restrictions_SaveError" xml:space="preserve"><value>Omezení se nepodařilo uložit.</value></data>
+  <data name="Notion_Restrictions_NoAccessTitle" xml:space="preserve"><value>Bez přístupu</value></data>
+  <data name="Notion_Restrictions_NoAccess" xml:space="preserve"><value>Nemáte oprávnění zobrazit tuto stránku.</value></data>
+  <data name="Notion_Share_Title" xml:space="preserve"><value>Veřejné sdílení</value></data>
+  <data name="Notion_Share_AnonymousReadOnly" xml:space="preserve"><value>Vytvořte veřejný odkaz jen pro čtení pro anonymní návštěvníky.</value></data>
+  <data name="Notion_Share_AllowComments" xml:space="preserve"><value>Povolit komentáře</value></data>
+  <data name="Notion_Share_Expires" xml:space="preserve"><value>Platnost do</value></data>
+  <data name="Notion_Share_PublicUrl" xml:space="preserve"><value>Veřejná URL</value></data>
+  <data name="Notion_Share_Copy" xml:space="preserve"><value>Kopírovat</value></data>
+  <data name="Notion_Share_Revoke" xml:space="preserve"><value>Zrušit odkaz</value></data>
+  <data name="Notion_Share_CreateLink" xml:space="preserve"><value>Vytvořit odkaz</value></data>
+  <data name="Notion_Share_Active" xml:space="preserve"><value>Aktivní</value></data>
+  <data name="Notion_Share_Expired" xml:space="preserve"><value>Veřejný odkaz expiroval.</value></data>
+  <data name="Notion_Share_Disabled" xml:space="preserve"><value>Veřejné sdílení je pro tuto stránku vypnuté.</value></data>
+  <data name="Notion_Share_LoadError" xml:space="preserve"><value>Nastavení sdílení se nepodařilo načíst.</value></data>
+  <data name="Notion_Share_CreateError" xml:space="preserve"><value>Veřejný odkaz se nepodařilo vytvořit.</value></data>
+  <data name="Notion_Share_RevokeError" xml:space="preserve"><value>Veřejný odkaz se nepodařilo zrušit.</value></data>
+  <data name="Notion_Share_NotFoundTitle" xml:space="preserve"><value>Sdílená stránka není dostupná</value></data>
+  <data name="Notion_Share_PublicPage" xml:space="preserve"><value>Sdílená stránka</value></data>
+  <data name="Notion_Share_ReadOnlyNotice" xml:space="preserve"><value>Tento veřejný náhled je jen pro čtení.</value></data>
+  <data name="Notion_Share_ExpiresOn" xml:space="preserve"><value>Platí do {0}</value></data>
+  <data name="Notion_Shortcuts_Title" xml:space="preserve"><value>Klávesové zkratky</value></data>
+  <data name="Notion_Shortcuts_Subtitle" xml:space="preserve"><value>Rychlé příkazy pro navigaci a úpravy stránek.</value></data>
+  <data name="Notion_Shortcuts_Close" xml:space="preserve"><value>Zavřít zkratky</value></data>
+  <data name="Notion_Shortcuts_Group_Navigation" xml:space="preserve"><value>Navigace</value></data>
+  <data name="Notion_Shortcuts_Group_Editing" xml:space="preserve"><value>Úpravy</value></data>
+  <data name="Notion_Shortcuts_Group_Insert" xml:space="preserve"><value>Vkládání</value></data>
+  <data name="Notion_Shortcuts_Group_Formatting" xml:space="preserve"><value>Formátování</value></data>
+  <data name="Notion_Shortcut_OpenPageSearch" xml:space="preserve"><value>Otevřít vyhledávání stránek</value></data>
+  <data name="Notion_Shortcut_OpenShortcuts" xml:space="preserve"><value>Otevřít klávesové zkratky</value></data>
+  <data name="Notion_Shortcut_ClosePanel" xml:space="preserve"><value>Zavřít aktivní panel</value></data>
+  <data name="Notion_Shortcut_MoveFocusUp" xml:space="preserve"><value>Přesunout fokus nahoru</value></data>
+  <data name="Notion_Shortcut_MoveFocusDown" xml:space="preserve"><value>Přesunout fokus dolů</value></data>
+  <data name="Notion_Shortcut_CreateBlockBelow" xml:space="preserve"><value>Vytvořit blok pod aktuálním</value></data>
+  <data name="Notion_Shortcut_InsertLineBreak" xml:space="preserve"><value>Vložit zalomení řádku</value></data>
+  <data name="Notion_Shortcut_Indent" xml:space="preserve"><value>Odsadit blok</value></data>
+  <data name="Notion_Shortcut_Outdent" xml:space="preserve"><value>Zrušit odsazení bloku</value></data>
+  <data name="Notion_Shortcut_SlashMenu" xml:space="preserve"><value>Otevřít nabídku bloků</value></data>
+  <data name="Notion_Shortcut_MentionPerson" xml:space="preserve"><value>Zmínit osobu</value></data>
+  <data name="Notion_Shortcut_LinkPage" xml:space="preserve"><value>Propojit stránku</value></data>
+  <data name="Notion_Shortcut_InsertToken" xml:space="preserve"><value>Vložit token</value></data>
+  <data name="Notion_Shortcut_Bold" xml:space="preserve"><value>Tučné písmo pro výběr</value></data>
+  <data name="Notion_Shortcut_Italic" xml:space="preserve"><value>Kurzíva pro výběr</value></data>
+  <data name="Notion_Shortcut_Underline" xml:space="preserve"><value>Podtržení výběru</value></data>
+  <data name="Notion_WorkItem_LoadError" xml:space="preserve"><value>Pracovní položku se nepodařilo obnovit.</value></data>
+  <data name="Notion_WorkItem_Updated" xml:space="preserve"><value>Aktualizováno</value></data>
+  <data name="Notion_WorkItem_Mode_Card" xml:space="preserve"><value>Karta</value></data>
+  <data name="Notion_WorkItem_Mode_List" xml:space="preserve"><value>Seznam</value></data>
+  <data name="Notion_WorkItem_Mode_Inline" xml:space="preserve"><value>Inline</value></data>
+  <data name="Notion_SmartLink_PasteAs_Inline" xml:space="preserve"><value>Vložit jako inline náhled</value></data>
+  <data name="Notion_SmartLink_PasteAs_Card" xml:space="preserve"><value>Vložit jako kartu</value></data>
+  <data name="Notion_SmartLink_PasteAs_Plain" xml:space="preserve"><value>Vložit jako prostý odkaz</value></data>
+  <data name="Notion_Labels_Title" xml:space="preserve"><value>Štítky stránky</value></data>
+  <data name="Notion_Labels_Add" xml:space="preserve"><value>Přidat</value></data>
+  <data name="Notion_Labels_Placeholder" xml:space="preserve"><value>Přidat štítek</value></data>
+  <data name="Notion_Labels_None" xml:space="preserve"><value>Žádné štítky</value></data>
+  <data name="Notion_Labels_Remove" xml:space="preserve"><value>Odebrat štítek</value></data>
+  <data name="Notion_Labels_Suggestions" xml:space="preserve"><value>Návrhy štítků</value></data>
+  <data name="Notion_Labels_FilterTitle" xml:space="preserve"><value>Stránky se štítkem {0}</value></data>
+  <data name="Notion_Labels_FilterEmpty" xml:space="preserve"><value>Žádná stránka tento štítek nepoužívá.</value></data>
+  <data name="Notion_Labels_FilterResults" xml:space="preserve"><value>Stránky s tímto štítkem</value></data>
+  <data name="Notion_ContentByLabel_Title" xml:space="preserve"><value>Obsah podle štítku</value></data>
+  <data name="Notion_ContentByLabel_Configure" xml:space="preserve"><value>Nastavit obsah podle štítku</value></data>
+  <data name="Notion_ContentByLabel_SelectLabels" xml:space="preserve"><value>Vybrat štítky</value></data>
+  <data name="Notion_ContentByLabel_AddLabel" xml:space="preserve"><value>Přidat štítek</value></data>
+  <data name="Notion_ContentByLabel_MaxItems" xml:space="preserve"><value>Maximum položek</value></data>
+  <data name="Notion_ContentByLabel_SortBy" xml:space="preserve"><value>Řadit podle</value></data>
+  <data name="Notion_ContentByLabel_Empty" xml:space="preserve"><value>Těmto štítkům neodpovídá žádná stránka.</value></data>
+  <data name="Notion_ContentByLabel_Sort_LastEditedDesc" xml:space="preserve"><value>Nedávno upravené</value></data>
+  <data name="Notion_ContentByLabel_Sort_LastEditedAsc" xml:space="preserve"><value>Nejstarší úpravy</value></data>
+  <data name="Notion_ContentByLabel_Sort_TitleAsc" xml:space="preserve"><value>Název A-Z</value></data>
+  <data name="Notion_ContentByLabel_Sort_TitleDesc" xml:space="preserve"><value>Název Z-A</value></data>
+  <data name="Notion_ContentByLabel_Sort_CreatedDesc" xml:space="preserve"><value>Nejnověji vytvořené</value></data>
+  <data name="Notion_ContentByLabel_Sort_CreatedAsc" xml:space="preserve"><value>Nejstarší vytvořené</value></data>
 </root>

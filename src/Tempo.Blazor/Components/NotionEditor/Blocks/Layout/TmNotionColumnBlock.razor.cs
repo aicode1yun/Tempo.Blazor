@@ -131,6 +131,34 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
         catch { await LoadChildrenAsync(); }
     }
 
+    private async Task HandleExternalChildDroppedAsync(MoveNotionBlockRequest request)
+    {
+        try
+        {
+            await Context.BlockProvider.MoveBlockAsync(request);
+            _childrenLoaded = false;
+            await LoadChildrenAsync();
+        }
+        catch
+        {
+            _childrenLoaded = false;
+            await LoadChildrenAsync();
+        }
+    }
+
+    private Task HandleExternalChildRemovedAsync(string childId)
+    {
+        var child = _children.FirstOrDefault(b => b.Id.ToString() == childId);
+        if (child is not null)
+        {
+            _children.Remove(child);
+            if (_activeChildId == child.Id) _activeChildId = null;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
+
     // ── Child delete ──────────────────────────────────────────────────────────
 
     private async Task HandleChildDeletedAsync(string childId)

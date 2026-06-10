@@ -23,9 +23,11 @@
         <nav class="tm-toc__nav" aria-label="@Loc["TmNotionTableOfContentsBlock_Title"]">
             @foreach (var entry in _entries)
             {
-                <button class="tm-toc__item tm-toc__item--level@(entry.Level)"
+                <button class="@GetItemClass(entry)"
                         type="button"
                         style="--tm-toc-indent: @((entry.Level - 1) * 14)px"
+                        aria-current="@GetAriaCurrent(entry)"
+                        data-toc-target-id="@entry.BlockId.ToString("D")"
                         @onclick="() => HandleItemClickAsync(entry.BlockId)"
                         title="@entry.PlainText">
                     <span class="tm-toc__item-dot" aria-hidden="true"></span>

@@ -518,6 +518,16 @@ public class MockNotionBlockStore
         _blocks[id] = MakeBlock(id, pageId, null, type, order, content);
     }
 
+    private void AddTo(Guid id, Guid pageId, BlockType type, int order, IBlockContent content)
+    {
+        _blocks[id] = MakeBlock(id, pageId, null, type, order, content);
+    }
+
+    private void AddChildTo(Guid id, Guid pageId, Guid parentBlockId, BlockType type, int order, IBlockContent content)
+    {
+        _blocks[id] = MakeBlock(id, pageId, parentBlockId, type, order, content);
+    }
+
     private static PageBlock MakeBlock(Guid id, Guid pageId, Guid? parentBlockId,
         BlockType type, int order, IBlockContent content) => new()
     {
@@ -537,26 +547,26 @@ public class MockNotionBlockStore
     {
         RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id, MockNotionDataStore.Page4Id);
 
-        AddTo(MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        AddTo(Guid.Parse("cf220000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
         {
             Html = "The beacon rollout verifies engineering search filters across author, label, date, content type, and space."
         });
-        AddTo(MockNotionDataStore.Page1Id, BlockType.Heading2, 1, new HeadingBlockContent
+        AddTo(Guid.Parse("cf220000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Heading2, 1, new HeadingBlockContent
         {
             Level = 2,
             Html = "Operational notes"
         });
 
-        AddTo(MockNotionDataStore.Page2Id, BlockType.Paragraph, 0, new TextBlockContent
+        AddTo(Guid.Parse("cf220000-0000-0000-0000-000000000102"), MockNotionDataStore.Page2Id, BlockType.Paragraph, 0, new TextBlockContent
         {
-            Html = "Žluťoučký zlutoucky produktový souhrn pokrývá lokalizované dotazy bez ztráty diakritiky."
+            Html = "žluťoučký zlutoucky produktový souhrn pokrývá lokalizované dotazy bez ztráty diakritiky."
         });
 
-        AddTo(MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent
+        AddTo(Guid.Parse("cf220000-0000-0000-0000-000000000202"), MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent
         {
             Html = "Support space overview for triage knowledge."
         });
-        AddTo(MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent
+        AddTo(Guid.Parse("cf220000-0000-0000-0000-000000000302"), MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent
         {
             Html = "Customer escalation contains the customer timeline, owner notes, and next response window."
         });
@@ -582,14 +592,1149 @@ public class MockNotionBlockStore
     {
         RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id, MockNotionDataStore.Page4Id);
 
-        AddTo(MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent { Level = 1, Html = "CF24 Source Root" });
-        AddTo(MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent { Html = "Root copy source content." });
+        AddTo(Guid.Parse("cf240001-0000-0000-0000-000000000001"), MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent { Level = 1, Html = "CF24 Source Root" });
+        AddTo(Guid.Parse("cf240001-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent { Html = "Root copy source content." });
 
-        AddTo(MockNotionDataStore.Page2Id, BlockType.Heading2, 0, new HeadingBlockContent { Level = 2, Html = "CF24 Child A" });
-        AddTo(MockNotionDataStore.Page2Id, BlockType.TodoItem, 1, new TodoBlockContent { Html = "Child action", IsChecked = false });
+        AddTo(Guid.Parse("cf240002-0000-0000-0000-000000000001"), MockNotionDataStore.Page2Id, BlockType.Heading2, 0, new HeadingBlockContent { Level = 2, Html = "CF24 Child A" });
+        AddTo(Guid.Parse("cf240002-0000-0000-0000-000000000002"), MockNotionDataStore.Page2Id, BlockType.TodoItem, 1, new TodoBlockContent { Html = "Child action", IsChecked = false });
 
-        AddTo(MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent { Html = "Grandchild content." });
-        AddTo(MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent { Html = "Target destination." });
+        AddTo(Guid.Parse("cf240003-0000-0000-0000-000000000001"), MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent { Html = "Grandchild content." });
+        AddTo(Guid.Parse("cf240004-0000-0000-0000-000000000001"), MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent { Html = "Target destination." });
+    }
+
+    public void SeedE2ERestrictionsPage()
+    {
+        SeedE2EBulkPages();
+
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id);
+        AddTo(MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent { Level = 1, Html = "CF20 Restricted Workspace" });
+        AddTo(MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent { Html = "Root page used to verify explicit page restrictions, inherited read-only access, and no-view states." });
+
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Heading2, 0, new HeadingBlockContent { Level = 2, Html = "CF20 Child Inherits Restrictions" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Paragraph, 1, new TextBlockContent { Html = "This child page inherits the root restrictions." });
+
+        AddTo(MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent { Html = "Grandchild inherited restriction content." });
+    }
+
+    public void SeedE2EPageInfoLikePage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page4Id);
+
+        AddTo(Guid.Parse("cf160000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "One two three four five six seven eight nine ten"
+        });
+        AddTo(Guid.Parse("cf160000-0000-0000-0000-000000000003"), MockNotionDataStore.Page2Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Secondary analytics page content."
+        });
+        AddTo(Guid.Parse("cf160000-0000-0000-0000-000000000004"), MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Team metrics page content."
+        });
+    }
+
+    public void SeedE2EPublicSharePage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf330000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "This page is available through a public read-only link."
+        });
+        AddTo(Guid.Parse("cf330000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Callout, 1, new CalloutBlockContent
+        {
+            Html = "Visitors can read and comment without seeing the private workspace sidebar.",
+            IconEmoji = "🔒",
+            Variant = CalloutVariant.Info
+        });
+    }
+
+    public void SeedE2EEmptyPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb000000-0000-0000-0000-000000000001"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = string.Empty
+        });
+    }
+
+    public void SeedE2ECommentsPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb100010-0000-0000-0000-000000000001"), MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "EB10 Comments Workspace"
+        });
+        AddTo(Guid.Parse("eb100010-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "This paragraph is used for block and inline comment recovery screenshots with enough text to anchor a visible selection."
+        });
+        AddTo(Guid.Parse("eb100010-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 2, new TextBlockContent
+        {
+            Html = "The second paragraph keeps margin threads, resolved badges and long nested discussions visually separated from the page-level comments panel."
+        });
+        AddTo(Guid.Parse("eb100010-0000-0000-0000-000000000004"), MockNotionDataStore.Page1Id, BlockType.Callout, 3, new CalloutBlockContent
+        {
+            Html = "Comments should remain readable, actionable and close to the reviewed content.",
+            IconEmoji = "💬",
+            Variant = CalloutVariant.Note
+        });
+    }
+
+    public void SeedE2EExportPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id);
+
+        AddTo(Guid.Parse("cf250000-0000-0000-0000-000000000001"), MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "CF25 Export Bridge"
+        });
+        AddTo(Guid.Parse("cf250000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "Root export content proves Markdown, HTML, PDF, DOCX, and ODT generation through the demo API."
+        });
+
+        var tableId = Guid.Parse("cf250000-0000-0000-0000-000000000010");
+        AddTo(tableId, MockNotionDataStore.Page1Id, BlockType.Table, 2, new TableBlockContent
+        {
+            ColumnCount = 3,
+            HasHeaderRow = true
+        });
+        AddChildTo(Guid.Parse("cf250000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 0, new TableRowBlockContent
+        {
+            Cells = ["Format", "Status", "Evidence"]
+        });
+        AddChildTo(Guid.Parse("cf250000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 1, new TableRowBlockContent
+        {
+            Cells = ["DOCX", "Ready", "Table survives export"]
+        });
+
+        AddTo(Guid.Parse("cf250000-0000-0000-0000-000000000101"), MockNotionDataStore.Page2Id, BlockType.Heading2, 0, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "CF25 Export Child"
+        });
+        AddTo(Guid.Parse("cf250000-0000-0000-0000-000000000102"), MockNotionDataStore.Page2Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "Child page content is included when the export menu enables subpages."
+        });
+
+        AddTo(Guid.Parse("cf250000-0000-0000-0000-000000000201"), MockNotionDataStore.Page3Id, BlockType.Heading2, 0, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "CF25 Export Grandchild"
+        });
+        AddTo(Guid.Parse("cf250000-0000-0000-0000-000000000202"), MockNotionDataStore.Page3Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "Grandchild page content proves recursive subtree export."
+        });
+    }
+
+    public void SeedE2EEmptyPageInfoPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+    }
+
+    public void SeedE2ETextFormattingPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "<strong><em><u><s><code>Combined active inline toolbar state for bold, italic, underline, strikethrough, and inline code.</code></s></u></em></strong>"
+        });
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000004"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "SupercalifragilisticexpialidociousTempoBlazorNotionEditorLongUnbrokenLineWithoutSpacesForWrappingAndOverflowRegressionCoverage"
+        });
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000005"), MockNotionDataStore.Page1Id, BlockType.Heading1, 2, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "EB1 Heading One Baseline"
+        });
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000006"), MockNotionDataStore.Page1Id, BlockType.Heading2, 3, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "EB1 Heading Two Baseline"
+        });
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000007"), MockNotionDataStore.Page1Id, BlockType.Heading3, 4, new HeadingBlockContent
+        {
+            Level = 3,
+            Html = "EB1 Heading Three Baseline"
+        });
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000008"), MockNotionDataStore.Page1Id, BlockType.Quote, 5, new TextBlockContent
+        {
+            Html = "Quoted decision note with enough copy to prove readable spacing, left rule contrast, and multiline text rhythm."
+        });
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000009"), MockNotionDataStore.Page1Id, BlockType.Callout, 6, new CalloutBlockContent
+        {
+            IconEmoji = "i",
+            Html = "Callout baseline checks icon alignment, background contrast, body wrapping, and spacing against neighboring text blocks.",
+            BackgroundColor = "blue"
+        });
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.Divider, 7, new DividerBlockContent());
+        AddTo(Guid.Parse("eb100000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, BlockType.Code, 8, new CodeBlockContent
+        {
+            Language = "C#",
+            Code = """
+public sealed class Eb1BaselineRenderer
+{
+    public string Render() => "The quick baseline line keeps code text readable while horizontal scrolling protects the editor shell from overflow regression.";
+}
+"""
+        });
+    }
+
+    public void SeedE2EInlineToolbarPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb400000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "<strong><em><u><s><code>Inline toolbar active state target</code></s></u></em></strong>"
+        });
+        AddTo(Guid.Parse("eb400000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "Right edge selection target for color and turn into panels.",
+            Alignment = TextAlignment.Right
+        });
+
+        for (var i = 0; i < 10; i++)
+        {
+            AddTo(Guid.Parse($"eb400000-0000-0000-0000-{i + 100:000000000000}"), MockNotionDataStore.Page1Id, BlockType.Paragraph, i + 2, new TextBlockContent
+            {
+                Html = $"Inline toolbar spacer paragraph {i + 1:00} keeps the bottom-edge selection deterministic."
+            });
+        }
+
+        AddTo(Guid.Parse("eb400000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 12, new TextBlockContent
+        {
+            Html = "Bottom edge selection target for toolbar placement."
+        });
+    }
+
+    public void SeedE2EListTodoPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.BulletList, 0, new ListBlockContent
+        {
+            Html = "EB2 bullet parent item",
+            IndentLevel = 0
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.BulletList, 1, new ListBlockContent
+        {
+            Html = "EB2 bullet child item",
+            IndentLevel = 1
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000004"), MockNotionDataStore.Page1Id, BlockType.BulletList, 2, new ListBlockContent
+        {
+            Html = "EB2 bullet grandchild item",
+            IndentLevel = 2
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000005"), MockNotionDataStore.Page1Id, BlockType.BulletList, 3, new ListBlockContent
+        {
+            Html = "EB2 bullet third-level item",
+            IndentLevel = 3
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000006"), MockNotionDataStore.Page1Id, BlockType.BulletList, 4, new ListBlockContent
+        {
+            Html = "Convert this list item",
+            IndentLevel = 0
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000007"), MockNotionDataStore.Page1Id, BlockType.NumberedList, 5, new ListBlockContent
+        {
+            Html = "Numbered sequence first",
+            IndentLevel = 0
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000008"), MockNotionDataStore.Page1Id, BlockType.NumberedList, 6, new ListBlockContent
+        {
+            Html = "Numbered sequence nested",
+            IndentLevel = 1
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000009"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 7, new TodoBlockContent
+        {
+            Html = "Unchecked checklist item",
+            IsChecked = false
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.Toggle, 8, new ToggleBlockContent
+        {
+            Html = "Release notes checklist",
+            IsOpen = true
+        });
+        AddChildTo(Guid.Parse("eb200000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, Guid.Parse("eb200000-0000-0000-0000-000000000010"), BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Child paragraph inside the expanded toggle."
+        });
+        AddChildTo(Guid.Parse("eb200000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, Guid.Parse("eb200000-0000-0000-0000-000000000010"), BlockType.TodoItem, 1, new TodoBlockContent
+        {
+            Html = "Child todo inside the expanded toggle",
+            IsChecked = true
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.Toggle, 9, new ToggleBlockContent
+        {
+            Html = "Empty toggle ready for notes",
+            IsOpen = false
+        });
+        AddTo(Guid.Parse("eb200000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 10, new TodoBlockContent
+        {
+            Html = "Checked checklist item with a visible completed state",
+            IsChecked = true
+        });
+
+        for (var i = 0; i < 26; i++)
+        {
+            AddTo(Guid.Parse($"eb200000-0000-0000-0000-{i + 100:000000000000}"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 11 + i, new TodoBlockContent
+            {
+                Html = $"Long checklist row {i + 1:00} with enough text to verify wrapping, checkbox alignment, and vertical rhythm across a dense todo list.",
+                IsChecked = i % 5 == 0
+            });
+        }
+    }
+
+    public void SeedE2EActionItemsPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf300000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 0, new TodoBlockContent
+        {
+            Html = "Assign launch owner",
+            IsChecked = false
+        });
+        AddTo(Guid.Parse("cf300000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 1, new TodoBlockContent
+        {
+            Html = "Overdue task with an owner",
+            AssigneeId = "alice",
+            AssigneeDisplayName = "Alice Morgan",
+            DueDate = DateTime.Today.AddDays(-2),
+            IsChecked = false,
+            IsOverdue = true
+        });
+        AddTo(Guid.Parse("cf300000-0000-0000-0000-000000000004"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 2, new TodoBlockContent
+        {
+            Html = "Prepare tomorrow handoff",
+            AssigneeId = "bob",
+            AssigneeDisplayName = "Bob Stone",
+            DueDate = DateTime.Today.AddDays(1),
+            IsChecked = false
+        });
+        AddTo(Guid.Parse("cf300000-0000-0000-0000-000000000005"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 3, new TodoBlockContent
+        {
+            Html = "Completed historical action item",
+            AssigneeId = "clara",
+            AssigneeDisplayName = "Clara Dvorak",
+            DueDate = DateTime.Today.AddDays(-14),
+            IsChecked = true
+        });
+    }
+
+    public void SeedE2EMentionTokenPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb500000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Release status target"
+        });
+        AddTo(Guid.Parse("eb500000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "Invoice deadline <span contenteditable=\"false\" class=\"tm-notion-token tm-notion-token--unknown\" data-key=\"unknown.invoice_deadline\">{{unknown.invoice_deadline}}</span>"
+        });
+    }
+
+    public void SeedE2ETasksPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf400000-0000-0000-0000-000000000101"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 0, new TodoBlockContent
+        {
+            Html = "Prepare customer launch checklist",
+            AssigneeId = "demo",
+            AssigneeDisplayName = "Demo User",
+            DueDate = DateTime.Today.AddDays(-2),
+            IsChecked = false
+        });
+        AddTo(Guid.Parse("cf400000-0000-0000-0000-000000000102"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 1, new TodoBlockContent
+        {
+            Html = "Review onboarding copy",
+            AssigneeId = "demo",
+            AssigneeDisplayName = "Demo User",
+            DueDate = DateTime.Today,
+            IsChecked = false
+        });
+        AddTo(Guid.Parse("cf400000-0000-0000-0000-000000000103"), MockNotionDataStore.Page1Id, BlockType.TodoItem, 2, new TodoBlockContent
+        {
+            Html = "Archive completed launch note",
+            AssigneeId = "demo",
+            AssigneeDisplayName = "Demo User",
+            DueDate = DateTime.Today.AddDays(-7),
+            IsChecked = true
+        });
+    }
+
+    public void SeedE2EEmptyTasksPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf401000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "No assigned tasks on this page."
+        });
+    }
+
+    public void SeedE2EManyTasksPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        for (var i = 0; i < 12; i++)
+        {
+            AddTo(Guid.Parse($"cf402000-0000-0000-0000-{i + 100:000000000000}"), MockNotionDataStore.Page1Id, BlockType.TodoItem, i, new TodoBlockContent
+            {
+                Html = $"Follow-up task {i + 1:00}",
+                AssigneeId = "demo",
+                AssigneeDisplayName = "Demo User",
+                DueDate = i < 7 ? DateTime.Today.AddDays(-i - 1) : DateTime.Today.AddDays(i - 6),
+                IsChecked = false
+            });
+        }
+    }
+
+    public void SeedE2EWorkItemsPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 0, new WorkItemBlockContent
+        {
+            ProviderKey = "demo",
+            ExternalId = "DEMO-101",
+            DisplayMode = WorkItemDisplayMode.Card
+        });
+        AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 1, new WorkItemBlockContent
+        {
+            ProviderKey = "demo",
+            ExternalId = "DEMO-202",
+            DisplayMode = WorkItemDisplayMode.List
+        });
+        AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 2, new WorkItemBlockContent
+        {
+            ProviderKey = "demo",
+            ExternalId = "DEMO-303",
+            DisplayMode = WorkItemDisplayMode.Inline
+        });
+        AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000040"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 3, new WorkItemBlockContent
+        {
+            ProviderKey = "demo",
+            ExternalId = "DEMO-999",
+            DisplayMode = WorkItemDisplayMode.Card
+        });
+        AddTo(Guid.Parse("cf500000-0000-0000-0000-000000000050"), MockNotionDataStore.Page1Id, BlockType.WorkItem, 4, new WorkItemBlockContent
+        {
+            ProviderKey = "offline",
+            ExternalId = "OFFLINE-1",
+            DisplayMode = WorkItemDisplayMode.Card,
+            CachedSnapshot = new WorkItemDto
+            {
+                ProviderKey = "offline",
+                ExternalId = "OFFLINE-1",
+                Url = "https://tracker.demo.local/work/OFFLINE-1",
+                Title = "Cached fallback survives provider outage",
+                Status = "Cached",
+                StatusColor = "#64748b",
+                TypeLabel = "Incident",
+                AssigneeDisplayName = "Demo User",
+                Priority = "High",
+                UpdatedAt = new DateTimeOffset(2026, 6, 1, 11, 0, 0, TimeSpan.Zero)
+            }
+        });
+    }
+
+    public void SeedE2ESmartLinksPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf800000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = string.Empty
+        });
+        AddTo(Guid.Parse("cf800000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = string.Empty
+        });
+        AddTo(Guid.Parse("cf800000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 2, new TextBlockContent
+        {
+            Html = string.Empty
+        });
+    }
+
+    public void SeedE2EContentByLabelPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf700000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.ContentByLabel, 0, new ContentByLabelBlockContent());
+        AddTo(Guid.Parse("cf700000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.ContentByLabel, 1, new ContentByLabelBlockContent
+        {
+            Labels = ["release"],
+            MaxItems = 1,
+            SortBy = ContentByLabelSortBy.LastEditedDescending
+        });
+        AddTo(Guid.Parse("cf700000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.ContentByLabel, 2, new ContentByLabelBlockContent
+        {
+            Labels = ["missing"],
+            MaxItems = 5,
+            SortBy = ContentByLabelSortBy.TitleAscending
+        });
+    }
+
+    public void SeedE2ECollaborationPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+        AddTo(Guid.Parse("eb140000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Collaboration presence anchor paragraph."
+        });
+        AddTo(Guid.Parse("eb140000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "Long collaborator names remain readable on this paragraph."
+        });
+        AddTo(Guid.Parse("eb140000-0000-0000-0000-000000000004"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 2, new TextBlockContent
+        {
+            Html = "Overlapping remote cursors stack into one readable indicator."
+        });
+    }
+
+    public void SeedE2ESpecialBlocksPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page5Id);
+
+        var syncId = Guid.Parse("eb150000-0000-0000-0000-000000000900");
+        var originBlockId = Guid.Parse("eb150000-0000-0000-0000-000000000080");
+
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000001"), MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "EB15 Special Blocks"
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "This page verifies equation, bookmark, embed, Tempo, synced and navigation blocks through the HTTPS Demo API."
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Heading2, 2, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "Equations"
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.Equation, 3, new EquationBlockContent
+        {
+            Expression = @"\int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}"
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, BlockType.Equation, 4, new EquationBlockContent
+        {
+            Expression = @"\invalidcommand{missing"
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.Bookmark, 5, new BookmarkBlockContent
+        {
+            Url = "https://docs.tempo.local/notion/special-blocks",
+            Title = "Tempo Notion special blocks",
+            Description = "Production-ready blocks for equations, embeds, synced content and rich navigation.",
+            Domain = "docs.tempo.local",
+            FaviconUrl = "https://docs.tempo.local/favicon.ico",
+            CoverImageUrl = "https://docs.tempo.local/assets/notion-special-blocks.png",
+            Caption = "Resolved via Demo API bookmark provider."
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000021"), MockNotionDataStore.Page1Id, BlockType.Bookmark, 6, new BookmarkBlockContent
+        {
+            Url = "https://fallback.tempo.local/provider-timeout",
+            Domain = "fallback.tempo.local",
+            Caption = "Provider fallback keeps the URL usable."
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000022"), MockNotionDataStore.Page1Id, BlockType.Bookmark, 7, new BookmarkBlockContent
+        {
+            Url = "https://static.tempo.local/release-notes",
+            Title = "Static fallback release notes",
+            Domain = "static.tempo.local",
+            Caption = "Static metadata remains readable without a cover image."
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.Embed, 8, new EmbedBlockContent
+        {
+            Provider = EmbedProvider.CodePen,
+            Url = "https://codepen.io/alvaromontoro/embed/vYexLGV",
+            Width = 720,
+            Height = 320,
+            Caption = "CodePen provider is detected and embedded."
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000031"), MockNotionDataStore.Page1Id, BlockType.Embed, 9, new EmbedBlockContent
+        {
+            Provider = EmbedProvider.Generic,
+            Url = "https://unknown-provider.tempo.local/embed/demo",
+            Width = 720,
+            Height = 220,
+            Caption = "Unknown providers remain available as generic embeds."
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000040"), MockNotionDataStore.Page1Id, BlockType.Diagram, 10, new DiagramBlockContent());
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000050"), MockNotionDataStore.Page1Id, BlockType.Wireframe, 11, new WireframeBlockContent());
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000060"), MockNotionDataStore.Page1Id, BlockType.Spreadsheet, 12, new SpreadsheetBlockContent());
+        AddTo(originBlockId, MockNotionDataStore.Page1Id, BlockType.SyncedBlockOrigin, 13, new SyncedBlockOriginContent
+        {
+            SyncId = syncId
+        });
+        AddChildTo(Guid.Parse("eb150000-0000-0000-0000-000000000081"), MockNotionDataStore.Page1Id, originBlockId, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Synced origin content shared with references."
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000090"), MockNotionDataStore.Page1Id, BlockType.SyncedBlockRef, 14, new SyncedBlockRefContent
+        {
+            SyncId = syncId,
+            OriginPageId = MockNotionDataStore.Page1Id,
+            OriginBlockId = originBlockId
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000100"), MockNotionDataStore.Page1Id, BlockType.ChildPage, 15, new ChildPageBlockContent
+        {
+            ChildPageId = MockNotionDataStore.Page2Id,
+            Title = "Product Roadmap",
+            IconEmoji = "P"
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000101"), MockNotionDataStore.Page1Id, BlockType.LinkedPage, 16, new LinkedPageBlockContent
+        {
+            LinkedPageId = MockNotionDataStore.Page3Id,
+            Title = "Meeting Notes",
+            IconEmoji = "M"
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000102"), MockNotionDataStore.Page1Id, BlockType.Breadcrumb, 17, new BreadcrumbBlockContent());
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000110"), MockNotionDataStore.Page1Id, BlockType.TableOfContents, 18, new TableOfContentsBlockContent
+        {
+            MaxLevel = 3
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000120"), MockNotionDataStore.Page1Id, BlockType.TemplateButton, 19, new TemplateButtonBlockContent
+        {
+            Label = "Insert release checklist",
+            TemplateBlocks =
+            [
+                new PageBlock
+                {
+                    Id = Guid.Parse("eb150000-0000-0000-0000-000000000121"),
+                    PageId = MockNotionDataStore.Page1Id,
+                    Type = BlockType.Heading2,
+                    Order = 0,
+                    Content = new HeadingBlockContent { Level = 2, Html = "Release checklist" },
+                    CreatedAt = DateTime.UtcNow,
+                    LastEditedAt = DateTime.UtcNow
+                },
+                new PageBlock
+                {
+                    Id = Guid.Parse("eb150000-0000-0000-0000-000000000122"),
+                    PageId = MockNotionDataStore.Page1Id,
+                    Type = BlockType.TodoItem,
+                    Order = 1,
+                    Content = new TodoBlockContent { Html = "Verify screenshots and UX review notes.", IsChecked = false },
+                    CreatedAt = DateTime.UtcNow,
+                    LastEditedAt = DateTime.UtcNow
+                }
+            ]
+        });
+
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000501"), MockNotionDataStore.Page5Id, BlockType.Heading1, 0, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "Architecture Guide"
+        });
+        AddTo(Guid.Parse("eb150000-0000-0000-0000-000000000502"), MockNotionDataStore.Page5Id, BlockType.Breadcrumb, 1, new BreadcrumbBlockContent());
+    }
+
+    public void SeedE2EDragDropPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        var columnListId = Guid.Parse("eb160000-0000-0000-0000-000000000010");
+        var leftColumnId = Guid.Parse("eb160000-0000-0000-0000-000000000011");
+        var rightColumnId = Guid.Parse("eb160000-0000-0000-0000-000000000012");
+
+        AddTo(Guid.Parse("eb160000-0000-0000-0000-000000000001"), MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "EB16 Drag and Drop Recovery"
+        });
+        AddTo(Guid.Parse("eb160000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "Alpha top-level block stays readable after reorder."
+        });
+        AddTo(Guid.Parse("eb160000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 2, new TextBlockContent
+        {
+            Html = "Bravo top-level block moves down and into a column."
+        });
+        AddTo(Guid.Parse("eb160000-0000-0000-0000-000000000004"), MockNotionDataStore.Page1Id, BlockType.Callout, 3, new CalloutBlockContent
+        {
+            Html = "Context menu target for duplicate, delete and copy-link affordance.",
+            Variant = CalloutVariant.Info,
+            IconEmoji = "⋯"
+        });
+
+        AddTo(columnListId, MockNotionDataStore.Page1Id, BlockType.ColumnList, 4, new ColumnListBlockContent
+        {
+            ColumnCount = 2
+        });
+        AddChildTo(leftColumnId, MockNotionDataStore.Page1Id, columnListId, BlockType.Column, 0, new ColumnBlockContent
+        {
+            ColumnIndex = 0,
+            WidthPercent = 50
+        });
+        AddChildTo(rightColumnId, MockNotionDataStore.Page1Id, columnListId, BlockType.Column, 1, new ColumnBlockContent
+        {
+            ColumnIndex = 1,
+            WidthPercent = 50
+        });
+        AddChildTo(Guid.Parse("eb160000-0000-0000-0000-000000000101"), MockNotionDataStore.Page1Id, leftColumnId, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Left column child block accepts incoming top-level blocks."
+        });
+        AddChildTo(Guid.Parse("eb160000-0000-0000-0000-000000000102"), MockNotionDataStore.Page1Id, leftColumnId, BlockType.TodoItem, 1, new TodoBlockContent
+        {
+            Html = "Left column task remains stable during cross-column moves.",
+            IsChecked = false
+        });
+        AddChildTo(Guid.Parse("eb160000-0000-0000-0000-000000000201"), MockNotionDataStore.Page1Id, rightColumnId, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Right column child block receives cross-column drags."
+        });
+
+        AddTo(Guid.Parse("eb160000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 5, new TextBlockContent
+        {
+            Html = "Charlie top-level block receives content moved out of a column."
+        });
+    }
+
+    public void SeedE2EPageReactionsPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf170000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Page reaction anchor paragraph."
+        });
+    }
+
+    public void SeedE2ELayoutPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddColumnList(
+            Guid.Parse("eb800000-0000-0000-0000-000000000010"),
+            0,
+            [
+                ("Column one content", 50d),
+                ("Column two content", 50d)
+            ]);
+        AddChildTo(
+            Guid.Parse("eb800000-0000-0000-0002-000000000100"),
+            MockNotionDataStore.Page1Id,
+            Guid.Parse("eb800000-0000-0000-0000-000000000012"),
+            BlockType.Paragraph,
+            1,
+            new TextBlockContent { Html = string.Empty });
+        AddColumnList(
+            Guid.Parse("eb800000-0000-0000-0000-000000000030"),
+            1,
+            [
+                ("Mobile column one", 25d),
+                ("Mobile column two", 25d),
+                ("Mobile column three", 25d),
+                ("Mobile column four", 25d)
+            ]);
+
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000100"), MockNotionDataStore.Page1Id, BlockType.TableOfContents, 2, new TableOfContentsBlockContent
+        {
+            MaxLevel = 3
+        });
+
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000110"), MockNotionDataStore.Page1Id, BlockType.Heading1, 3, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "Layout Review"
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000111"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 4, new TextBlockContent
+        {
+            Html = "Column layout checks use production column blocks and the table of contents below tracks headings while the user scrolls."
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000112"), MockNotionDataStore.Page1Id, BlockType.Heading2, 5, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "Desktop Columns"
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000113"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 6, new TextBlockContent
+        {
+            Html = "Desktop widths must stay balanced, resizable, and readable after adding a third column."
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000114"), MockNotionDataStore.Page1Id, BlockType.Heading2, 7, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "Responsive Stacking"
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000115"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 8, new TextBlockContent
+        {
+            Html = "Small screens stack every column vertically and hide dividers to avoid cramped touch targets."
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000116"), MockNotionDataStore.Page1Id, BlockType.Heading3, 9, new HeadingBlockContent
+        {
+            Level = 3,
+            Html = "Resize Divider"
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000117"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 10, new TextBlockContent
+        {
+            Html = "The divider grip should remain visible without adding document-level horizontal overflow."
+        });
+        AddTo(Guid.Parse("eb800000-0000-0000-0000-000000000118"), MockNotionDataStore.Page1Id, BlockType.Heading3, 11, new HeadingBlockContent
+        {
+            Level = 3,
+            Html = "Table of Contents Scroll Spy"
+        });
+
+        for (var i = 0; i < 7; i++)
+        {
+            AddTo(Guid.Parse($"eb800000-0000-0000-0000-{i + 400:000000000000}"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 12 + i, new TextBlockContent
+            {
+                Html = $"Scroll-spy spacer paragraph {i + 1:00} keeps the EB8 page tall enough for a deterministic active table-of-contents state."
+            });
+        }
+    }
+
+    public void SeedE2EEmptyTocPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb810000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.TableOfContents, 0, new TableOfContentsBlockContent
+        {
+            MaxLevel = 3
+        });
+        AddTo(Guid.Parse("eb810000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "This page intentionally has no heading blocks, so the table of contents renders its empty state."
+        });
+    }
+
+    public void SeedE2ETablePage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+        var tableId = Guid.Parse("eb700000-0000-0000-0000-000000000010");
+        var wideTableId = Guid.Parse("eb700000-0000-0000-0000-000000000020");
+        var emptyTableId = Guid.Parse("eb700000-0000-0000-0000-000000000030");
+        var advancedTableId = Guid.Parse("cf110000-0000-0000-0000-000000000010");
+
+        AddTo(tableId, MockNotionDataStore.Page1Id, BlockType.Table, 0, new TableBlockContent
+        {
+            ColumnCount = 4,
+            HasHeaderRow = true
+        });
+        AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 0, new TableRowBlockContent
+        {
+            Cells = ["Name", "Status", "Owner", "Notes"]
+        });
+        AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 1, new TableRowBlockContent
+        {
+            Cells = ["Customer import", "In progress", "Nora", "Validates rows and columns against production table interactions."]
+        });
+        AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000013"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 2, new TableRowBlockContent
+        {
+            Cells =
+            [
+                "Billing audit",
+                "Blocked",
+                "Ivan",
+                "The content in this cell is intentionally long enough to wrap onto multiple lines in a fixed-width table cell while staying readable and preserving row controls."
+            ]
+        });
+
+        AddTo(wideTableId, MockNotionDataStore.Page1Id, BlockType.Table, 1, new TableBlockContent
+        {
+            ColumnCount = 8,
+            HasHeaderRow = true,
+            HasHeaderColumn = true
+        });
+        AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000021"), MockNotionDataStore.Page1Id, wideTableId, BlockType.TableRow, 0, new TableRowBlockContent
+        {
+            Cells = ["Metric", "Q1", "Q2", "Q3", "Q4", "Owner", "Risk", "Decision"]
+        });
+        AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000022"), MockNotionDataStore.Page1Id, wideTableId, BlockType.TableRow, 1, new TableRowBlockContent
+        {
+            Cells = ["Revenue", "$120k", "$144k", "$151k", "$172k", "Finance", "Low", "Scale"]
+        });
+        AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000023"), MockNotionDataStore.Page1Id, wideTableId, BlockType.TableRow, 2, new TableRowBlockContent
+        {
+            Cells = ["Support load", "42", "51", "58", "49", "Care", "Medium", "Watch"]
+        });
+
+        AddTo(emptyTableId, MockNotionDataStore.Page1Id, BlockType.Table, 2, new TableBlockContent
+        {
+            ColumnCount = 3,
+            HasHeaderRow = false
+        });
+
+        AddTo(advancedTableId, MockNotionDataStore.Page1Id, BlockType.Table, 3, new TableBlockContent
+        {
+            ColumnCount = 6,
+            HasHeaderRow = true,
+            HasHeaderColumn = true
+        });
+        AddChildTo(Guid.Parse("cf110000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, advancedTableId, BlockType.TableRow, 0, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                Cell("Roadmap summary", 2, 1, "color-mix(in srgb, var(--tm-color-primary) 18%, var(--tm-bg-surface))"),
+                Hidden(0, 0),
+                Cell("Status", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))"),
+                Cell("Owner", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))"),
+                Cell("Risk", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))"),
+                Cell("Decision", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))")
+            ]
+        });
+        AddChildTo(Guid.Parse("cf110000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, advancedTableId, BlockType.TableRow, 1, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                Cell("Discovery"),
+                Cell("Scope"),
+                Cell("Done", 1, 2, "color-mix(in srgb, var(--tm-color-success) 16%, var(--tm-bg-surface))"),
+                Cell("Nora"),
+                Cell("Low", 1, 1, "color-mix(in srgb, var(--tm-color-success) 12%, var(--tm-bg-surface))"),
+                Cell("Ship")
+            ]
+        });
+        AddChildTo(Guid.Parse("cf110000-0000-0000-0000-000000000013"), MockNotionDataStore.Page1Id, advancedTableId, BlockType.TableRow, 2, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                Cell("Implementation"),
+                Cell("API"),
+                Hidden(1, 2),
+                Cell("Ivan"),
+                Cell("Medium", 1, 1, "color-mix(in srgb, var(--tm-color-warning) 16%, var(--tm-bg-surface))"),
+                Cell("Watch")
+            ]
+        });
+        AddChildTo(Guid.Parse("cf110000-0000-0000-0000-000000000014"), MockNotionDataStore.Page1Id, advancedTableId, BlockType.TableRow, 3, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                Cell("Launch"),
+                Cell("Comms"),
+                Cell("Blocked", 1, 1, "color-mix(in srgb, var(--tm-color-danger) 14%, var(--tm-bg-surface))"),
+                Cell("Sara"),
+                Cell("High", 1, 1, "color-mix(in srgb, var(--tm-color-danger) 12%, var(--tm-bg-surface))"),
+                Cell("Escalate")
+            ]
+        });
+    }
+
+    private static NotionTableCell Cell(string html, int colSpan = 1, int rowSpan = 1, string? backgroundColor = null) => new()
+    {
+        Html = html,
+        ColSpan = colSpan,
+        RowSpan = rowSpan,
+        BackgroundColor = backgroundColor
+    };
+
+    private static NotionTableCell Hidden(int originRow, int originColumn) => new()
+    {
+        IsMergeHidden = true,
+        MergeOriginRow = originRow,
+        MergeOriginColumn = originColumn
+    };
+
+    public void SeedE2EMediaPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+        const string visiblePdfDataUrl = "data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggMzE3ID4+CnN0cmVhbQpCVAovRjEgMjQgVGYKNzIgNzMwIFRkCihFQjYgTWVkaWEgUERGIGJhc2VsaW5lKSBUagovRjEgMTIgVGYKMCAtMzYgVGQKKExvYWRlZCBQREYgYmxvY2sgd2l0aCB2aXNpYmxlIGNvbnRlbnQgZm9yIHNjcmVlbnNob3QgcmV2aWV3LikgVGoKMCAtMjQgVGQKKFVwbG9hZCwgb3BlbiBhbmQgZG93bmxvYWQgYWN0aW9ucyByZW1haW4gYXZhaWxhYmxlLikgVGoKRVQKMC4xMCAwLjQ1IDAuNzAgcmcKNzIgNjIwIDQ2OCAxOCByZSBmCjAuODggMC45NCAwLjk4IHJnCjcyIDU4MCAzMzAgMjQgcmUgZgo3MiA1NDAgNDEwIDI0IHJlIGYKNzIgNTAwIDI2MCAyNCByZSBmCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAowMDAwMDAwMjQxIDAwMDAwIG4gCjAwMDAwMDAzMTEgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgo2NzgKJSVFT0YK";
+
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, BlockType.Image, 0, new ImageBlockContent
+        {
+            Url = string.Empty,
+            Caption = "Upload target"
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000021"), MockNotionDataStore.Page1Id, BlockType.Image, 1, new ImageBlockContent
+        {
+            Url = "data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20900%20520%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20x2%3D%271%27%20y1%3D%270%27%20y2%3D%271%27%3E%3Cstop%20stop-color%3D%27%231f2937%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%230f766e%27/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%27900%27%20height%3D%27520%27%20rx%3D%2732%27%20fill%3D%27url%28%23g%29%27/%3E%3Crect%20x%3D%2790%27%20y%3D%2770%27%20width%3D%27720%27%20height%3D%27380%27%20rx%3D%2722%27%20fill%3D%27%23f8fafc%27%20opacity%3D%27.94%27/%3E%3Crect%20x%3D%27130%27%20y%3D%27120%27%20width%3D%27380%27%20height%3D%2730%27%20rx%3D%2715%27%20fill%3D%27%2314b8a6%27/%3E%3Crect%20x%3D%27130%27%20y%3D%27185%27%20width%3D%27640%27%20height%3D%2726%27%20rx%3D%2713%27%20fill%3D%27%23cbd5e1%27/%3E%3Crect%20x%3D%27130%27%20y%3D%27235%27%20width%3D%27570%27%20height%3D%2726%27%20rx%3D%2713%27%20fill%3D%27%23e2e8f0%27/%3E%3Crect%20x%3D%27130%27%20y%3D%27305%27%20width%3D%27170%27%20height%3D%2788%27%20rx%3D%2716%27%20fill%3D%27%23dbeafe%27/%3E%3Crect%20x%3D%27330%27%20y%3D%27305%27%20width%3D%27170%27%20height%3D%2788%27%20rx%3D%2716%27%20fill%3D%27%23ccfbf1%27/%3E%3Crect%20x%3D%27530%27%20y%3D%27305%27%20width%3D%27170%27%20height%3D%2788%27%20rx%3D%2716%27%20fill%3D%27%23fef3c7%27/%3E%3C/svg%3E",
+            AltText = "Developer workstation",
+            Caption = "Rendered image seed",
+            Width = 640
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000031"), MockNotionDataStore.Page1Id, BlockType.Video, 2, new VideoBlockContent
+        {
+            Url = string.Empty,
+            Caption = "Upload video target"
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000041"), MockNotionDataStore.Page1Id, BlockType.Video, 3, new VideoBlockContent
+        {
+            Provider = VideoProvider.YouTube,
+            Url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            Caption = "Rendered video seed",
+            Width = 640
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000051"), MockNotionDataStore.Page1Id, BlockType.Audio, 4, new AudioBlockContent
+        {
+            Url = string.Empty,
+            Caption = "Upload audio target"
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000061"), MockNotionDataStore.Page1Id, BlockType.Audio, 5, new AudioBlockContent
+        {
+            Provider = AudioProvider.Generic,
+            Url = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=",
+            Caption = "Rendered audio seed"
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000071"), MockNotionDataStore.Page1Id, BlockType.File, 6, new FileBlockContent
+        {
+            Url = string.Empty,
+            Caption = "Upload file target"
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000081"), MockNotionDataStore.Page1Id, BlockType.File, 7, new FileBlockContent
+        {
+            FileName = "EB6-media-brief.pdf",
+            FileSizeBytes = 861,
+            ContentType = "application/pdf",
+            Url = visiblePdfDataUrl,
+            Caption = "Rendered file seed"
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000091"), MockNotionDataStore.Page1Id, BlockType.Pdf, 8, new PdfBlockContent
+        {
+            Url = string.Empty,
+            Caption = "Upload PDF target"
+        });
+        AddTo(Guid.Parse("eb600000-0000-0000-0000-000000000101"), MockNotionDataStore.Page1Id, BlockType.Pdf, 9, new PdfBlockContent
+        {
+            Url = visiblePdfDataUrl,
+            Caption = "Rendered PDF seed"
+        });
+    }
+
+    public void SeedE2EIncludePage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id, MockNotionDataStore.Page4Id, MockNotionDataStore.Page5Id);
+
+        AddTo(Guid.Parse("cf120000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.IncludePage, 0, new IncludePageBlockContent());
+        AddTo(Guid.Parse("cf120000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.IncludePage, 1, new IncludePageBlockContent { SourcePageId = MockNotionDataStore.Page5Id });
+        AddTo(Guid.Parse("cf120000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.IncludePage, 2, new IncludePageBlockContent { SourcePageId = MockNotionDataStore.Page1Id });
+        AddTo(Guid.Parse("cf120000-0000-0000-0000-000000000040"), MockNotionDataStore.Page1Id, BlockType.IncludePage, 3, new IncludePageBlockContent { SourcePageId = MockNotionDataStore.Page3Id });
+        AddTo(Guid.Parse("cf120000-0000-0000-0000-000000000050"), MockNotionDataStore.Page1Id, BlockType.IncludePage, 4, new IncludePageBlockContent { SourcePageId = MockNotionDataStore.Page4Id });
+
+        AddTo(Guid.Parse("cf120000-0000-0000-0001-000000000001"), MockNotionDataStore.Page2Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Included source paragraph"
+        });
+        AddTo(Guid.Parse("cf120000-0000-0000-0001-000000000002"), MockNotionDataStore.Page4Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "CF12 deep child content"
+        });
+        AddTo(Guid.Parse("cf120000-0000-0000-0001-000000000003"), MockNotionDataStore.Page4Id, BlockType.IncludePage, 1, new IncludePageBlockContent
+        {
+            SourcePageId = MockNotionDataStore.Page2Id
+        });
+    }
+
+    public void SeedE2EChildrenDisplayPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("cf130000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.ChildrenDisplay, 0, new ChildrenDisplayBlockContent());
+        AddTo(Guid.Parse("cf130000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.ChildrenDisplay, 1, new ChildrenDisplayBlockContent
+        {
+            RootPageId = MockNotionDataStore.Page5Id
+        });
+        AddTo(Guid.Parse("cf130000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.ChildrenDisplay, 2, new ChildrenDisplayBlockContent
+        {
+            RootPageId = MockNotionDataStore.Page2Id,
+            Depth = 1
+        });
+        AddTo(Guid.Parse("cf130000-0000-0000-0000-000000000040"), MockNotionDataStore.Page1Id, BlockType.ChildrenDisplay, 3, new ChildrenDisplayBlockContent
+        {
+            RootPageId = MockNotionDataStore.Page2Id,
+            Depth = 0
+        });
+        AddTo(Guid.Parse("cf130000-0000-0000-0000-000000000050"), MockNotionDataStore.Page1Id, BlockType.ChildrenDisplay, 4, new ChildrenDisplayBlockContent
+        {
+            RootPageId = MockNotionDataStore.Page6Id,
+            Depth = 1,
+            ShowIcons = false
+        });
+    }
+
+    public void SeedE2EExcerptPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id, MockNotionDataStore.Page4Id);
+
+        AddTo(Guid.Parse("cf140000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.Excerpt, 0, new ExcerptBlockContent
+        {
+            Html = "CF14 target page reusable excerpt"
+        });
+        AddTo(Guid.Parse("cf140000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.ExcerptInclude, 1, new ExcerptIncludeBlockContent { SourcePageId = MockNotionDataStore.Page2Id });
+        AddTo(Guid.Parse("cf140000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.ExcerptInclude, 2, new ExcerptIncludeBlockContent { SourcePageId = MockNotionDataStore.Page3Id });
+        AddTo(Guid.Parse("cf140000-0000-0000-0000-000000000040"), MockNotionDataStore.Page1Id, BlockType.ExcerptInclude, 3, new ExcerptIncludeBlockContent { SourcePageId = MockNotionDataStore.Page4Id });
+
+        AddTo(Guid.Parse("cf140000-0000-0000-0001-000000000001"), MockNotionDataStore.Page2Id, BlockType.Excerpt, 0, new ExcerptBlockContent
+        {
+            Html = "CF14 reusable source excerpt"
+        });
+        AddTo(Guid.Parse("cf140000-0000-0000-0001-000000000002"), MockNotionDataStore.Page2Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "This body paragraph must not be rendered"
+        });
+        AddTo(Guid.Parse("cf140000-0000-0000-0002-000000000001"), MockNotionDataStore.Page3Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "Source without excerpt body."
+        });
+    }
+
+    public void SeedE2EPagePropertiesPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id, MockNotionDataStore.Page2Id, MockNotionDataStore.Page3Id, MockNotionDataStore.Page4Id);
+
+        AddTo(Guid.Parse("cf150000-0000-0000-0000-000000000010"), MockNotionDataStore.Page1Id, BlockType.PageProperties, 0, new PagePropertiesBlockContent
+        {
+            Rows =
+            [
+                new PagePropertyRow { Key = "Status", ValueHtml = "Green" },
+                new PagePropertyRow { Key = "Owner", ValueHtml = "Docs team" },
+                new PagePropertyRow { Key = "Risk", ValueHtml = "Low" }
+            ]
+        });
+        AddTo(Guid.Parse("cf150000-0000-0000-0000-000000000020"), MockNotionDataStore.Page1Id, BlockType.PageProperties, 1, new PagePropertiesBlockContent());
+        AddTo(Guid.Parse("cf150000-0000-0000-0000-000000000030"), MockNotionDataStore.Page1Id, BlockType.PagePropertiesReport, 2, new PagePropertiesReportBlockContent
+        {
+            Labels = ["cf15-report"],
+            Columns = ["Status", "Owner", "Risk"]
+        });
+        AddTo(Guid.Parse("cf150000-0000-0000-0000-000000000040"), MockNotionDataStore.Page1Id, BlockType.PagePropertiesReport, 3, new PagePropertiesReportBlockContent
+        {
+            Labels = ["cf15-empty"],
+            Columns = ["Status"]
+        });
+
+        AddTo(Guid.Parse("cf150000-0000-0000-0000-000000000101"), MockNotionDataStore.Page2Id, BlockType.PageProperties, 0, new PagePropertiesBlockContent
+        {
+            Rows =
+            [
+                new PagePropertyRow { Key = "Status", ValueHtml = "<strong>Green</strong>" },
+                new PagePropertyRow { Key = "Owner", ValueHtml = "Platform" },
+                new PagePropertyRow { Key = "Risk", ValueHtml = "Low" }
+            ]
+        });
+        AddTo(Guid.Parse("cf150000-0000-0000-0000-000000000102"), MockNotionDataStore.Page3Id, BlockType.PageProperties, 0, new PagePropertiesBlockContent
+        {
+            Rows =
+            [
+                new PagePropertyRow { Key = "Status", ValueHtml = "Amber" },
+                new PagePropertyRow { Key = "Risk", ValueHtml = "Medium" }
+            ]
+        });
+        AddTo(Guid.Parse("cf150000-0000-0000-0000-000000000103"), MockNotionDataStore.Page4Id, BlockType.PageProperties, 0, new PagePropertiesBlockContent
+        {
+            Rows =
+            [
+                new PagePropertyRow { Key = "Status", ValueHtml = "Archived" },
+                new PagePropertyRow { Key = "Owner", ValueHtml = "Records" }
+            ]
+        });
     }
 
     public void CopyBlocksForPages(IReadOnlyDictionary<Guid, Guid> pageIdMap)
@@ -762,6 +1907,118 @@ public class MockNotionBlockStore
             .ThenBy(block => block.Order)
             .ToArray();
 
+    public IReadOnlyList<PageBlock> GetSyncedChildBlocks(Guid syncId)
+    {
+        var originIds = _blocks.Values
+            .Where(block => block.Content is SyncedBlockOriginContent origin && origin.SyncId == syncId)
+            .Select(block => block.Id)
+            .ToHashSet();
+
+        return _blocks.Values
+            .Where(block => block.ParentBlockId.HasValue && originIds.Contains(block.ParentBlockId.Value))
+            .OrderBy(block => block.Order)
+            .ToArray();
+    }
+
+    public IReadOnlyList<SyncedBlockRefLocation> GetSyncedRefs(Guid syncId)
+        => _blocks.Values
+            .Where(block => block.Content is SyncedBlockRefContent reference && reference.SyncId == syncId)
+            .OrderBy(block => block.PageId)
+            .ThenBy(block => block.Order)
+            .Select(block => new SyncedBlockRefLocation(block.PageId.ToString("D"), block.Id.ToString("D")))
+            .ToArray();
+
+    public void UpdateSyncedChildBlocks(Guid syncId, IEnumerable<PageBlock> children)
+    {
+        var origin = _blocks.Values.FirstOrDefault(block => block.Content is SyncedBlockOriginContent content && content.SyncId == syncId);
+        if (origin is null)
+            throw new KeyNotFoundException($"Synced origin {syncId:D} not found.");
+
+        foreach (var id in _blocks.Values.Where(block => block.ParentBlockId == origin.Id).Select(block => block.Id).ToArray())
+            _blocks.Remove(id);
+
+        var order = 0;
+        foreach (var child in children)
+        {
+            var id = child.Id == Guid.Empty ? Guid.NewGuid() : child.Id;
+            while (_blocks.ContainsKey(id))
+                id = Guid.NewGuid();
+
+            _blocks[id] = new PageBlock
+            {
+                Id = id,
+                PageId = origin.PageId,
+                ParentBlockId = origin.Id,
+                Type = child.Type,
+                Order = order++,
+                Content = child.Content,
+                CreatedAt = child.CreatedAt == default ? DateTime.UtcNow : child.CreatedAt,
+                LastEditedAt = DateTime.UtcNow
+            };
+        }
+    }
+
+    public PageBlock CreateSyncedRef(Guid syncId, Guid targetPageId, Guid? afterBlockId)
+    {
+        var origin = _blocks.Values.FirstOrDefault(block => block.Content is SyncedBlockOriginContent content && content.SyncId == syncId);
+        if (origin is null)
+            throw new KeyNotFoundException($"Synced origin {syncId:D} not found.");
+
+        var order = afterBlockId.HasValue && _blocks.TryGetValue(afterBlockId.Value, out var after)
+            ? after.Order + 1
+            : GetNextOrder(targetPageId, null);
+
+        var block = MakeBlock(Guid.NewGuid(), targetPageId, null, BlockType.SyncedBlockRef, order, new SyncedBlockRefContent
+        {
+            SyncId = syncId,
+            OriginPageId = origin.PageId,
+            OriginBlockId = origin.Id
+        });
+        _blocks[block.Id] = block;
+        return block;
+    }
+
+    public PageBlock UnsyncSyncedRef(Guid blockId)
+    {
+        if (!_blocks.TryGetValue(blockId, out var source) || source.Content is not SyncedBlockRefContent reference)
+            throw new KeyNotFoundException($"Synced ref {blockId:D} not found.");
+
+        var firstChild = GetSyncedChildBlocks(reference.SyncId).FirstOrDefault();
+        var replacement = MakeBlock(
+            source.Id,
+            source.PageId,
+            source.ParentBlockId,
+            firstChild?.Type ?? BlockType.Paragraph,
+            source.Order,
+            firstChild?.Content ?? new TextBlockContent());
+        _blocks[source.Id] = replacement;
+        return replacement;
+    }
+
+    public void ReplacePageBlocks(Guid pageId, IEnumerable<PageBlock> blocks)
+    {
+        RemoveBlocksForPages(pageId);
+
+        foreach (var source in blocks.OrderBy(block => block.ParentBlockId.HasValue).ThenBy(block => block.Order))
+        {
+            var id = source.Id == Guid.Empty ? Guid.NewGuid() : source.Id;
+            while (_blocks.ContainsKey(id))
+                id = Guid.NewGuid();
+
+            _blocks[id] = new PageBlock
+            {
+                Id = id,
+                PageId = pageId,
+                ParentBlockId = source.ParentBlockId,
+                Type = source.Type,
+                Order = source.Order,
+                Content = source.Content,
+                CreatedAt = source.CreatedAt,
+                LastEditedAt = DateTime.UtcNow
+            };
+        }
+    }
+
     public async Task ReorderBlocksAsync(string pageId, IEnumerable<string> orderedBlockIds)
     {
         var order = 0;
@@ -776,18 +2033,60 @@ public class MockNotionBlockStore
         await Task.CompletedTask;
     }
 
+    public async Task MoveBlockAsync(MoveNotionBlockRequest request)
+    {
+        if (!Guid.TryParse(request.BlockId, out var blockId) || !_blocks.TryGetValue(blockId, out var block))
+            throw new KeyNotFoundException($"Block {request.BlockId} not found.");
+
+        if (!Guid.TryParse(request.TargetPageId, out var targetPageId))
+            throw new ArgumentException("TargetPageId must be a valid GUID.", nameof(request));
+
+        var sourceParentId = TryParseOptionalGuid(request.SourceParentBlockId);
+        var targetParentId = TryParseOptionalGuid(request.TargetParentBlockId);
+
+        if (targetParentId == blockId || IsDescendantOf(targetParentId, blockId))
+            throw new InvalidOperationException("A block cannot be moved into itself or one of its descendants.");
+
+        if (targetParentId.HasValue && !_blocks.ContainsKey(targetParentId.Value))
+            throw new KeyNotFoundException($"Target parent block {targetParentId.Value:D} not found.");
+
+        var sourcePageId = block.PageId;
+        var sourceParentFromStore = block.ParentBlockId;
+        var sourceChanged = sourcePageId != targetPageId || sourceParentFromStore != targetParentId;
+
+        var targetSiblings = GetSiblingBlocks(targetPageId, targetParentId)
+            .Where(candidate => candidate.Id != blockId)
+            .ToList();
+        var targetIndex = Math.Clamp(request.TargetIndex, 0, targetSiblings.Count);
+
+        block.PageId = targetPageId;
+        block.ParentBlockId = targetParentId;
+        block.Order = targetIndex;
+        block.LastEditedAt = DateTime.UtcNow;
+        targetSiblings.Insert(targetIndex, block);
+        RenumberSiblings(targetSiblings);
+
+        if (sourceChanged)
+            RenumberSiblings(GetSiblingBlocks(sourcePageId, sourceParentId ?? sourceParentFromStore).Where(candidate => candidate.Id != blockId));
+
+        await Task.CompletedTask;
+    }
+
     public async Task MoveBlockToPageAsync(string blockId, string targetPageId, string? afterBlockId)
     {
-        if (Guid.TryParse(blockId, out var bid) && Guid.TryParse(targetPageId, out var pid))
+        if (!Guid.TryParse(targetPageId, out var pid))
+            throw new ArgumentException("Target page id must be a valid GUID.", nameof(targetPageId));
+
+        var targetIndex = GetSiblingBlocks(pid, null).Count;
+        if (Guid.TryParse(afterBlockId, out var afterId))
         {
-            if (_blocks.TryGetValue(bid, out var block))
-            {
-                block.PageId = pid;
-                block.Order  = GetNextOrder(pid, null);
-                _blocks[bid] = block;
-            }
+            var ordered = GetSiblingBlocks(pid, null);
+            var afterIndex = ordered.FindIndex(block => block.Id == afterId);
+            if (afterIndex >= 0)
+                targetIndex = afterIndex + 1;
         }
-        await Task.CompletedTask;
+
+        await MoveBlockAsync(new MoveNotionBlockRequest(blockId, targetPageId, null, null, targetIndex));
     }
 
     public async Task<IPageBlock> DuplicateBlockAsync(string blockId)
@@ -818,7 +2117,7 @@ public class MockNotionBlockStore
         if (Guid.TryParse(blockId, out var id) && _blocks.TryGetValue(id, out var block))
         {
             block.Type          = newType;
-            block.Content       = CreateDefaultContent(newType);
+            block.Content       = CreateConvertedContent(newType, block.Content);
             block.LastEditedAt  = DateTime.UtcNow;
             _blocks[id]         = block;
 
@@ -879,6 +2178,46 @@ public class MockNotionBlockStore
         return Task.CompletedTask;
     }
 
+    public void SeedE2EPageSettingsPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb120000-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 0, new TextBlockContent
+        {
+            Html = "This editable block is used to verify that locking the page switches content into read-only mode."
+        });
+        AddTo(Guid.Parse("eb120000-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Heading2, 1, new HeadingBlockContent
+        {
+            Level = 2,
+            Html = "Settings states"
+        });
+        AddTo(Guid.Parse("eb120000-0000-0000-0000-000000000004"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 2, new TextBlockContent
+        {
+            Html = "Full width, small text and locked state should preserve a readable page header and clear menu feedback."
+        });
+    }
+
+    public void SeedE2EHistoryPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+
+        AddTo(Guid.Parse("eb130100-0000-0000-0000-000000000001"), MockNotionDataStore.Page1Id, BlockType.Heading1, 0, new HeadingBlockContent
+        {
+            Level = 1,
+            Html = "EB13 Version History"
+        });
+        AddTo(Guid.Parse("eb130100-0000-0000-0000-000000000002"), MockNotionDataStore.Page1Id, BlockType.Paragraph, 1, new TextBlockContent
+        {
+            Html = "This page verifies history timelines, previews, scrolling version lists, and restore flows through the HTTPS Demo API."
+        });
+        AddTo(Guid.Parse("eb130100-0000-0000-0000-000000000003"), MockNotionDataStore.Page1Id, BlockType.Callout, 2, new CalloutBlockContent
+        {
+            IconEmoji = "i",
+            Html = "Select an older version from Page history to preview and restore deterministic content.",
+            BackgroundColor = "blue"
+        });
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private int GetNextOrder(Guid pageId, Guid? parentBlockId)
@@ -896,6 +2235,66 @@ public class MockNotionBlockStore
             _blocks.Remove(id);
     }
 
+    private static Guid? TryParseOptionalGuid(string? value)
+        => Guid.TryParse(value, out var id) ? id : null;
+
+    private List<PageBlock> GetSiblingBlocks(Guid pageId, Guid? parentBlockId)
+        => [.. _blocks.Values
+            .Where(block => block.PageId == pageId && block.ParentBlockId == parentBlockId)
+            .OrderBy(block => block.Order)];
+
+    private void RenumberSiblings(IEnumerable<PageBlock> siblings)
+    {
+        var order = 0;
+        foreach (var sibling in siblings.OrderBy(block => block.Order).ToList())
+        {
+            sibling.Order = order++;
+            sibling.LastEditedAt = DateTime.UtcNow;
+            _blocks[sibling.Id] = sibling;
+        }
+    }
+
+    private bool IsDescendantOf(Guid? candidateParentId, Guid ancestorId)
+    {
+        var current = candidateParentId;
+        while (current.HasValue)
+        {
+            if (current.Value == ancestorId)
+                return true;
+
+            current = _blocks.TryGetValue(current.Value, out var parent)
+                ? parent.ParentBlockId
+                : null;
+        }
+
+        return false;
+    }
+
+    private void AddColumnList(Guid columnListId, int order, IReadOnlyList<(string Text, double Width)> columns)
+    {
+        AddTo(columnListId, MockNotionDataStore.Page1Id, BlockType.ColumnList, order, new ColumnListBlockContent
+        {
+            ColumnCount = columns.Count
+        });
+
+        for (var i = 0; i < columns.Count; i++)
+        {
+            var idPrefix = columnListId.ToString("D")[..24];
+            var suffixBase = Convert.ToInt64(columnListId.ToString("N")[20..], 16);
+            var columnId = Guid.Parse($"{idPrefix}{suffixBase + i + 1:x12}");
+            AddChildTo(columnId, MockNotionDataStore.Page1Id, columnListId, BlockType.Column, i, new ColumnBlockContent
+            {
+                ColumnIndex = i,
+                WidthPercent = columns[i].Width
+            });
+            var paragraphId = Guid.Parse($"{idPrefix}{suffixBase + i + 101:x12}");
+            AddChildTo(paragraphId, MockNotionDataStore.Page1Id, columnId, BlockType.Paragraph, 0, new TextBlockContent
+            {
+                Html = columns[i].Text
+            });
+        }
+    }
+
     private static IBlockContent CreateDefaultContent(BlockType type) => type switch
     {
         BlockType.Heading1                                          => new HeadingBlockContent { Level = 1 },
@@ -903,6 +2302,8 @@ public class MockNotionBlockStore
         BlockType.Heading3                                          => new HeadingBlockContent { Level = 3 },
         BlockType.Paragraph                                         => new TextBlockContent(),
         BlockType.BulletList or BlockType.NumberedList              => new ListBlockContent(),
+        BlockType.TodoItem                                          => new TodoBlockContent(),
+        BlockType.Toggle                                            => new ToggleBlockContent(),
         BlockType.Divider                                           => new DividerBlockContent(),
         BlockType.Code                                              => new CodeBlockContent { Language = "Plain Text" },
         BlockType.Image                                             => new ImageBlockContent(),
@@ -919,6 +2320,30 @@ public class MockNotionBlockStore
         BlockType.Diagram                                           => new DiagramBlockContent(),
         BlockType.Wireframe                                         => new WireframeBlockContent(),
         BlockType.Spreadsheet                                       => new SpreadsheetBlockContent(),
+        BlockType.WorkItem                                          => new WorkItemBlockContent(),
+        BlockType.ContentByLabel                                    => new ContentByLabelBlockContent(),
         _                                                           => new TextBlockContent()
     };
+
+    private static IBlockContent CreateConvertedContent(BlockType type, IBlockContent source)
+    {
+        var html = source is ITextBlockContent text ? text.Html : string.Empty;
+        var backgroundColor = source is ITextBlockContent bg ? bg.BackgroundColor : null;
+        var textColor = source is ITextBlockContent color ? color.TextColor : null;
+        var alignment = source is ITextBlockContent aligned ? aligned.Alignment : Tempo.Blazor.NotionEditor.Enums.TextAlignment.Left;
+
+        return type switch
+        {
+            BlockType.Heading1 => new HeadingBlockContent { Level = 1, Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.Heading2 => new HeadingBlockContent { Level = 2, Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.Heading3 => new HeadingBlockContent { Level = 3, Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.Paragraph => new TextBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.BulletList or BlockType.NumberedList => new ListBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.TodoItem => new TodoBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.Toggle => new ToggleBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.Quote => new TextBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            BlockType.Callout => new CalloutBlockContent { Html = html, BackgroundColor = backgroundColor, TextColor = textColor, Alignment = alignment },
+            _ => CreateDefaultContent(type)
+        };
+    }
 }

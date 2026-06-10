@@ -33,13 +33,24 @@ public partial class TmNotionShareDialog : ComponentBase
     private PublicShareDto? _share;
 
     private bool IsShareUsable => _share is { IsEnabled: true } share && !IsExpired(share);
+    private bool IsShareExpired => _share is { IsEnabled: true } share && IsExpired(share);
     private string ShareUrl => IsShareUsable ? $"{Navigation.BaseUri.TrimEnd('/')}/p/{Uri.EscapeDataString(_share!.Token)}" : string.Empty;
     private string ExpiresValue => _expiresDate?.ToString("yyyy-MM-dd") ?? string.Empty;
-    private string StatusClass => IsShareUsable ? "tm-npsd__status--active" : "tm-npsd__status--disabled";
-    private string StatusTestId => IsShareUsable ? "notion-share-active" : "notion-share-disabled";
+    private string StatusClass => IsShareUsable
+        ? "tm-npsd__status--active"
+        : IsShareExpired
+            ? "tm-npsd__status--expired"
+            : "tm-npsd__status--disabled";
+    private string StatusTestId => IsShareUsable
+        ? "notion-share-active"
+        : IsShareExpired
+            ? "notion-share-expired"
+            : "notion-share-disabled";
     private string StatusText => IsShareUsable
         ? Loc["Notion_Share_Active"]
-        : Loc["Notion_Share_Disabled"];
+        : IsShareExpired
+            ? Loc["Notion_Share_Expired"]
+            : Loc["Notion_Share_Disabled"];
 
     protected override async Task OnParametersSetAsync()
     {

@@ -9,6 +9,12 @@ public static class DatabaseEndpoints
     {
         var db = app.MapGroup("/api/notion/databases").WithTags("Notion Database");
 
+        db.MapPost("/e2e/seed/{seed}", (string seed, MockNotionDatabaseStore store) =>
+        {
+            store.SeedE2E(seed);
+            return Results.NoContent();
+        });
+
         // ── Fields ────────────────────────────────────────────────────────────
 
         db.MapGet("/{dbId}/fields", (string dbId, MockNotionDatabaseStore store) =>
@@ -75,6 +81,9 @@ public static class DatabaseEndpoints
 
         db.MapGet("/{dbId}/records", (string dbId, int page, int pageSize, MockNotionDatabaseStore store) =>
             Results.Ok(store.GetRecordsAsync(dbId, null, null, null, page, pageSize).Result));
+
+        db.MapPost("/{dbId}/records/query", (string dbId, DatabaseRecordsQueryRequest request, MockNotionDatabaseStore store) =>
+            Results.Ok(store.GetRecordsAsync(dbId, request.Filter, request.Sorts, request.Grouping, request.Page, request.PageSize).Result));
 
         db.MapGet("/{dbId}/records/{recordId}", (string dbId, string recordId, MockNotionDatabaseStore store) =>
         {

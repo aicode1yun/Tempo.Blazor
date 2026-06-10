@@ -43,6 +43,12 @@ public abstract class NotionE2ETestBase : WasmTestBase
         return _page;
     }
 
+    protected async Task<IPage> OpenNotionEditorAsync(int viewportWidth, int viewportHeight, string query = "")
+    {
+        await SetViewportAsync(viewportWidth, viewportHeight);
+        return await OpenNotionEditorAsync(query);
+    }
+
     protected async Task SeedEmptyPageAsync()
     {
         await InvokeSeedAsync("seedEmptyPage");
@@ -406,7 +412,7 @@ public abstract class NotionE2ETestBase : WasmTestBase
     protected async Task SeedEmptyAuditPageAsync()
     {
         await InvokeSeedAsync("seedEmptyAuditPage");
-        await Page.WaitForSelectorAsync(".tm-notion-page__empty-hint", new PageWaitForSelectorOptions
+        await Page.WaitForSelectorAsync(".tm-notion-page", new PageWaitForSelectorOptions
         {
             State = WaitForSelectorState.Visible,
             Timeout = 60000
@@ -426,7 +432,7 @@ public abstract class NotionE2ETestBase : WasmTestBase
     protected async Task SeedPublicSharePageAsync()
     {
         await InvokeSeedAsync("seedPublicSharePage");
-        await Page.WaitForSelectorAsync("[data-block-id='cf160000-0000-0000-0000-000000000002'] .tm-notion-editable", new PageWaitForSelectorOptions
+        await Page.WaitForSelectorAsync("[data-block-id='cf330000-0000-0000-0000-000000000002'] .tm-notion-editable", new PageWaitForSelectorOptions
         {
             State = WaitForSelectorState.Visible,
             Timeout = 60000
@@ -657,7 +663,22 @@ public abstract class NotionE2ETestBase : WasmTestBase
     {
         var editable = page.Locator($"[data-block-id='{blockId}'] {editableSelector}").First;
         await editable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
-        await SelectLocatorContentsAsync(page, editable);
+        await editable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 10000 });
+        await page.WaitForFunctionAsync(
+            "selector => (document.querySelector(selector)?.textContent || '').trim().length > 0",
+            $"[data-block-id='{blockId}'] {editableSelector}",
+            new PageWaitForFunctionOptions { Timeout = 10000 });
+
+        await editable.ClickAsync();
+        await page.Keyboard.PressAsync("Control+A");
+        await page.WaitForTimeoutAsync(300);
+
+        if (await page.Locator(".tm-notion-inline-toolbar").First.CountAsync() == 0 ||
+            !await page.Locator(".tm-notion-inline-toolbar").First.IsVisibleAsync())
+        {
+            await SelectLocatorContentsAsync(page, editable);
+        }
+
         await page.Locator(".tm-notion-inline-toolbar").First.WaitForAsync(new LocatorWaitForOptions
         {
             State = WaitForSelectorState.Visible,

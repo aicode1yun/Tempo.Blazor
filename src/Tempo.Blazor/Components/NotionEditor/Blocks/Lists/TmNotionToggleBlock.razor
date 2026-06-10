@@ -20,16 +20,28 @@
             </svg>
         </button>
 
-        <div class="tm-notion-toggle__text tm-notion-editable @_alignClass"
-             contenteditable="@(!ReadOnly ? "true" : "false")"
-             data-placeholder="@Placeholder"
-             data-color="@Content?.TextColor"
-             spellcheck="true"
-             @ref="_editableRef"
-             @oninput="() => _dirty = true"
-             @onblur="OnBlurAsync"
-             @onfocus="HandleFocusAsync">
-        </div>
+        @if (ReadOnly)
+        {
+            <div @key="ReadOnly"
+                 class="tm-notion-toggle__text tm-notion-editable tm-notion-editable--readonly @_alignClass"
+                 data-color="@Content?.TextColor">
+                @((MarkupString)(Content?.Html ?? string.Empty))
+            </div>
+        }
+        else
+        {
+            <div @key="ReadOnly"
+                 class="tm-notion-toggle__text tm-notion-editable @_alignClass"
+                 contenteditable="true"
+                 data-placeholder="@Placeholder"
+                 data-color="@Content?.TextColor"
+                 spellcheck="true"
+                 @ref="_editableRef"
+                 @oninput="() => _dirty = true"
+                 @onblur="OnBlurAsync"
+                 @onfocus="HandleFocusAsync">
+            </div>
+        }
 
     </div>
 

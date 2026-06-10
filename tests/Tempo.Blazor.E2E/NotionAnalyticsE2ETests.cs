@@ -33,6 +33,7 @@ public sealed class NotionAnalyticsE2ETests : NotionE2ETestBase
         Assert.IsTrue(secondViews > firstViews, $"Views should grow after reopening the page. Before: {firstViews}, after: {secondViews}.");
 
         var capture = await CaptureBaselineAsync("analytics", "cf31-analytics-panel", page.Locator(".tm-notion-analytics-panel").First);
+        await CaptureBaselineAsync("analytics", "cf31-top-pages-bars", page.Locator(".tm-notion-analytics__top").First);
         TestContext.WriteLine($"UX CF31 analytics baseline captured: {capture.FullPagePath} / {capture.RegionPath}");
         TestContext.WriteLine("UX CF31 review: metrics are grouped first, the daily sparkline has enough contrast, and top pages remain scannable through proportional bars.");
     }
@@ -43,6 +44,7 @@ public sealed class NotionAnalyticsE2ETests : NotionE2ETestBase
     {
         var providerless = await OpenNotionEditorAsync("?disableAnalyticsProvider=true");
         Assert.AreEqual(0, await providerless.GetByTestId("notion-analytics-open").CountAsync(), "Analytics entry point should be hidden when no provider is configured.");
+        await CaptureBaselineAsync("analytics", "cf31-providerless-hidden-state", providerless.Locator(".tm-notion-topbar").First);
 
         var empty = await OpenNotionEditorAsync();
         await SeedEmptyAnalyticsPageAsync();
@@ -50,6 +52,8 @@ public sealed class NotionAnalyticsE2ETests : NotionE2ETestBase
 
         await Assertions.Expect(empty.GetByTestId("notion-analytics-views")).ToContainTextAsync("0");
         await Assertions.Expect(empty.GetByTestId("notion-analytics-empty")).ToContainTextAsync("No analytics data yet.");
+        await CaptureBaselineAsync("analytics", "cf31-zero-views", empty.Locator(".tm-notion-analytics-panel").First);
+        await CaptureBaselineAsync("analytics", "cf31-empty-top-pages", empty.Locator(".tm-notion-analytics__top").First);
     }
 
     private static async Task OpenAnalyticsAsync(IPage page)

@@ -27,6 +27,8 @@ public sealed class NotionAuditLogE2ETests : NotionE2ETestBase
         await Assertions.Expect(panel.GetByTestId("notion-audit-list")).ToContainTextAsync("Moved");
         await Assertions.Expect(panel.GetByTestId("notion-audit-list")).ToContainTextAsync("Restricted");
 
+        var capture = await CaptureBaselineAsync("audit", "cf32-audit-panel", page.Locator(".tm-notion-audit-panel").First);
+
         await panel.GetByTestId("notion-audit-user-filter").FillAsync("demo");
         await panel.GetByTestId("notion-audit-action-filter").SelectOptionAsync("edit");
         await panel.GetByTestId("notion-audit-apply").ClickAsync();
@@ -34,8 +36,8 @@ public sealed class NotionAuditLogE2ETests : NotionE2ETestBase
 
         await panel.GetByTestId("notion-audit-export").ClickAsync();
         await Assertions.Expect(panel.GetByTestId("notion-audit-export-link")).ToHaveAttributeAsync("href", new Regex("^data:text/csv"));
+        await CaptureBaselineAsync("audit", "cf32-csv-export-ready", page.Locator(".tm-notion-audit__toolbar").First);
 
-        var capture = await CaptureBaselineAsync("audit", "cf32-audit-panel", page.Locator(".tm-notion-audit-panel").First);
         TestContext.WriteLine($"UX CF32 audit baseline captured: {capture.FullPagePath} / {capture.RegionPath}");
         TestContext.WriteLine("UX CF32 review: filters stay close to the log, action badges make high-risk events scannable, and paging/export remain reachable without covering entries.");
     }
@@ -46,6 +48,7 @@ public sealed class NotionAuditLogE2ETests : NotionE2ETestBase
     {
         var providerless = await OpenNotionEditorAsync("?disableAuditProvider=true");
         Assert.AreEqual(0, await providerless.GetByTestId("notion-audit-open").CountAsync(), "Audit entry point should be hidden when no provider is configured.");
+        await CaptureBaselineAsync("audit", "cf32-providerless-hidden-state", providerless.Locator(".tm-notion-topbar").First);
 
         var empty = await OpenNotionEditorAsync();
         await SeedEmptyAuditPageAsync();
@@ -55,6 +58,7 @@ public sealed class NotionAuditLogE2ETests : NotionE2ETestBase
         await empty.GetByTestId("notion-audit-user-filter").FillAsync("nobody");
         await empty.GetByTestId("notion-audit-apply").ClickAsync();
         await Assertions.Expect(empty.GetByTestId("notion-audit-empty")).ToBeVisibleAsync();
+        await CaptureBaselineAsync("audit", "cf32-filter-no-results", empty.Locator(".tm-notion-audit-panel").First);
 
         var many = await OpenNotionEditorAsync();
         await SeedManyAuditEntriesPageAsync();
@@ -62,6 +66,7 @@ public sealed class NotionAuditLogE2ETests : NotionE2ETestBase
         await Assertions.Expect(many.GetByTestId("notion-audit-page")).ToContainTextAsync("Page 1 of 3");
         await many.GetByTestId("notion-audit-next").ClickAsync();
         await Assertions.Expect(many.GetByTestId("notion-audit-page")).ToContainTextAsync("Page 2 of 3");
+        await CaptureBaselineAsync("audit", "cf32-many-entries-page2", many.Locator(".tm-notion-audit-panel").First);
     }
 
     private static async Task OpenAuditAsync(IPage page)

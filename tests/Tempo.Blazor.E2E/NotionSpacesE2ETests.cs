@@ -18,6 +18,7 @@ public sealed class NotionSpacesE2ETests : NotionE2ETestBase
             .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
 
         await OpenSpaceListAsync(page);
+        await CaptureBaselineAsync("spaces", "cf29-space-switcher-list", page.GetByTestId("notion-space-switcher").First);
         await page.Locator("[data-space-id='personal']").ClickAsync();
         await page.Locator(".tm-npt-title").Filter(new LocatorFilterOptions { HasText = "CF29 Personal Notes" }).First
             .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
@@ -49,6 +50,7 @@ public sealed class NotionSpacesE2ETests : NotionE2ETestBase
         {
             Timeout = 10000
         });
+        await CaptureBaselineAsync("spaces", "cf29-moved-to-archive", page.Locator(".tm-notion-sidebar").First);
     }
 
     [TestMethod]
@@ -68,6 +70,7 @@ public sealed class NotionSpacesE2ETests : NotionE2ETestBase
             Timeout = 10000
         });
         await Assertions.Expect(page.Locator(".tm-npt-empty").First).ToContainTextAsync("No pages");
+        await CaptureBaselineAsync("spaces", "cf29-empty-space", page.Locator(".tm-notion-sidebar").First);
 
         page = await OpenNotionEditorAsync();
         await SeedManySpacesPageAsync();
@@ -82,6 +85,7 @@ public sealed class NotionSpacesE2ETests : NotionE2ETestBase
             State = WaitForSelectorState.Visible,
             Timeout = 10000
         });
+        await CaptureBaselineAsync("spaces", "cf29-many-spaces-scroll", page.GetByTestId("notion-space-switcher").First);
     }
 
     private static async Task OpenSpaceListAsync(IPage page)

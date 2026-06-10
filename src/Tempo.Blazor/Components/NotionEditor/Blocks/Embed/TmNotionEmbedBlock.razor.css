@@ -115,6 +115,8 @@
 
 .tm-notion-embed-block__frame-wrap {
     position:     relative;
+    display:      flex;
+    flex-direction: column;
     width:        100%;
     min-height:   200px;
     border:       1px solid var(--tm-border-default, #e0e0e0);
@@ -123,11 +125,61 @@
     background:   var(--tm-notion-bg-block, #fafafa);
 }
 
+/* ── Source fallback strip ───────────────────────────────────── */
+
+.tm-notion-embed-block__source-bar {
+    display:        grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items:    center;
+    gap:            var(--tm-space-2);
+    padding:        var(--tm-space-2) var(--tm-space-3);
+    border-bottom:  1px solid var(--tm-color-border-subtle);
+    background:     color-mix(in srgb, var(--tm-color-surface-hover) 86%, transparent);
+    color:          var(--tm-text-secondary);
+    font-size:      var(--tm-font-size-xs);
+}
+
+.tm-notion-embed-block__source-provider {
+    display:       inline-flex;
+    align-items:   center;
+    min-height:    var(--tm-space-5);
+    padding:       0 var(--tm-space-2);
+    border-radius: var(--tm-radius-pill);
+    background:    color-mix(in srgb, var(--tm-color-primary) 10%, transparent);
+    color:         var(--tm-color-primary);
+    font-weight:   var(--tm-font-weight-semibold);
+    white-space:   nowrap;
+}
+
+.tm-notion-embed-block__source-url {
+    min-width:     0;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+}
+
+.tm-notion-embed-block__source-link {
+    color:           var(--tm-color-primary);
+    font-weight:     var(--tm-font-weight-medium);
+    text-decoration: none;
+    white-space:     nowrap;
+}
+
+.tm-notion-embed-block__source-link:hover {
+    text-decoration: underline;
+}
+
+.tm-notion-embed-block__source-link:focus-visible {
+    outline:    none;
+    box-shadow: var(--tm-shadow-focus);
+}
+
 /* ── iframe ───────────────────────────────────────────────────── */
 
 .tm-notion-embed-block__frame {
     display:    block;
     width:      100%;
+    flex:       1;
     height:     100%;
     min-height: 200px;
     border:     none;

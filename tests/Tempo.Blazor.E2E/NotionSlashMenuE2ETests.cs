@@ -346,4 +346,212 @@ public class NotionSlashMenuE2ETests : WasmTestBase
 
         await TakeScreenshotAsync(page, "slash_menu_insert_wireframe");
     }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB3: captures the default slash menu with categories, icons, hover, and selected states")]
+    public async Task EB3_DefaultMenuCategoriesIconsHover_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorForBaselineAsync();
+        await OpenSlashMenuAsync(page);
+
+        var menu = page.Locator(".tm-notion-slash").First;
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
+
+        var firstItem = menu.Locator(".tm-notion-slash__item").First;
+        await firstItem.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await firstItem.HoverAsync();
+        await page.WaitForTimeoutAsync(250);
+
+        Assert.IsTrue(await menu.Locator(".tm-notion-slash__group-label").CountAsync() >= 2,
+            "Default slash menu should show grouped categories.");
+        Assert.IsTrue(await menu.Locator(".tm-notion-slash__item-icon svg").CountAsync() >= 3,
+            "Default slash menu should render icons for command rows.");
+        Assert.IsTrue((await firstItem.GetAttributeAsync("class") ?? string.Empty).Contains("tm-notion-slash__item--selected", StringComparison.Ordinal),
+            "Hovered first slash item should keep a visible selected state.");
+
+        await CaptureBaselineAsync(page, "slash-menu", "default-categories-icons-hover", menu);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB3: captures slash no-results and keyboard-selected item baselines")]
+    public async Task EB3_NoResultsAndKeyboardSelection_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorForBaselineAsync();
+        await OpenSlashMenuAsync(page);
+
+        var menu = page.Locator(".tm-notion-slash").First;
+        var searchInput = menu.Locator(".tm-notion-slash__input").First;
+        await searchInput.FillAsync("no-such-block-for-eb3");
+
+        var empty = menu.Locator(".tm-notion-slash__empty").First;
+        await empty.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.AreEqual(0, await menu.Locator(".tm-notion-slash__item").CountAsync(),
+            "No-results menu should not render selectable command rows.");
+        await CaptureBaselineAsync(page, "slash-menu", "no-results-empty-state", menu);
+
+        await searchInput.FillAsync(string.Empty);
+        await menu.Locator(".tm-notion-slash__item").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.Keyboard.PressAsync("ArrowDown");
+        await page.WaitForTimeoutAsync(250);
+
+        var selected = menu.Locator(".tm-notion-slash__item--selected").First;
+        await selected.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await selected.IsVisibleAsync(), "Keyboard navigation should expose a selected slash menu row.");
+        await CaptureBaselineAsync(page, "slash-menu", "keyboard-selected-item", menu);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB3: captures recently used slash menu items after real selections")]
+    public async Task EB3_RecentItemsHover_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorForBaselineAsync(clearRecent: true);
+
+        await SelectSlashItemAsync(page, "quote", "Quote");
+        await OpenSlashMenuAsync(page);
+
+        var menu = page.Locator(".tm-notion-slash").First;
+        await menu.Locator(".tm-notion-slash__group-label").Filter(new LocatorFilterOptions { HasText = "Recent" })
+            .First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var recentItem = menu.Locator(".tm-notion-slash__item").Filter(new LocatorFilterOptions { HasText = "Quote" }).First;
+        await recentItem.HoverAsync();
+        await page.WaitForTimeoutAsync(250);
+        Assert.IsTrue((await recentItem.GetAttributeAsync("class") ?? string.Empty).Contains("tm-notion-slash__item--selected", StringComparison.Ordinal),
+            "Hovered recent item should render the same selected affordance as keyboard selection.");
+
+        await CaptureBaselineAsync(page, "slash-menu", "recent-items-hover", menu);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB3: captures checked todo markdown shortcut produced by typing [x] and Space")]
+    public async Task EB3_MarkdownShortcutCheckedTodo_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorForBaselineAsync();
+        await FocusFreshEditableBlockAsync(page);
+
+        await page.Keyboard.TypeAsync("[x] ");
+        var todo = page.Locator("[data-block-type='TodoItem'] .tm-notion-todo").Last;
+        await todo.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await page.WaitForFunctionAsync(
+            "() => Array.from(document.querySelectorAll('[data-block-type=\"TodoItem\"] .tm-notion-todo')).at(-1)?.classList.contains('tm-notion-todo--checked') === true",
+            new PageWaitForFunctionOptions { Timeout = 10000 });
+        await todo.Locator(".tm-notion-todo__text").First.ClickAsync();
+        await page.Keyboard.TypeAsync("Checked shortcut baseline");
+        await Assertions.Expect(todo.Locator(".tm-notion-todo__text").First).ToContainTextAsync("Checked shortcut baseline");
+
+        Assert.IsTrue((await todo.GetAttributeAsync("class") ?? string.Empty).Contains("tm-notion-todo--checked", StringComparison.Ordinal),
+            "The [x] markdown shortcut should create a checked todo item.");
+        await CaptureBaselineAsync(page, "slash-menu", "markdown-shortcut-checked-todo", todo);
+    }
+
+    private async Task<IPage> OpenNotionEditorForBaselineAsync(bool clearRecent = false)
+    {
+        var context = await CreateContextAsync();
+        await context.AddInitScriptAsync("window.localStorage.setItem('tm-demo-culture', 'en');");
+        if (clearRecent)
+        {
+            await context.AddInitScriptAsync("window.localStorage.removeItem('tm-notion-slash-recent');");
+        }
+
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1280, 720);
+        await page.GotoAsync($"{BaseUrl}/notion-editor", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60000
+        });
+        await WaitForAppReadyAsync(page);
+        await page.WaitForSelectorAsync(".tm-notion-editor", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 60000 });
+        await page.WaitForSelectorAsync(".tm-notion-page", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 60000 });
+        await SeedEmptyPageAsync(page);
+        return page;
+    }
+
+    private async Task SelectSlashItemAsync(IPage page, string searchTerm, string itemText)
+    {
+        await OpenSlashMenuAsync(page);
+        var menu = page.Locator(".tm-notion-slash").First;
+        await menu.Locator(".tm-notion-slash__input").FillAsync(searchTerm);
+        var item = menu.Locator(".tm-notion-slash__item").Filter(new LocatorFilterOptions { HasText = itemText }).First;
+        await item.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await item.ClickAsync();
+        await page.WaitForSelectorAsync(".tm-notion-slash", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
+        await page.WaitForTimeoutAsync(500);
+    }
+
+    private static async Task FocusFreshEditableBlockAsync(IPage page)
+    {
+        var para = page.Locator(".tm-notion-paragraph[contenteditable='true']").Last;
+        await para.WaitForAsync(new LocatorWaitForOptions { Timeout = 10000 });
+        await para.EvaluateAsync("""
+            el => {
+                el.innerHTML = '';
+                el.focus();
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            """);
+        await page.WaitForTimeoutAsync(250);
+    }
+
+    private static async Task SeedEmptyPageAsync(IPage page)
+    {
+        await page.WaitForFunctionAsync(
+            "methodName => window.tmNotionDemo && typeof window.tmNotionDemo[methodName] === 'function'",
+            "seedEmptyPage",
+            new PageWaitForFunctionOptions { Timeout = 60000 });
+        await page.EvaluateAsync("methodName => window.tmNotionDemo[methodName]()", "seedEmptyPage");
+        await page.WaitForSelectorAsync(".tm-notion-paragraph[contenteditable='true']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 60000 });
+    }
+
+    private async Task CaptureBaselineAsync(IPage page, string area, string state, ILocator region)
+    {
+        var outputDir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            SanitizePathPart(area)));
+        Directory.CreateDirectory(outputDir);
+
+        var safeState = SanitizePathPart(state);
+        var fullPath = Path.Combine(outputDir, $"{safeState}.png");
+        var regionPath = Path.Combine(outputDir, $"{safeState}.region.png");
+
+        await page.WaitForTimeoutAsync(250);
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        await region.ScreenshotAsync(new LocatorScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            OmitBackground = false
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+    }
+
+    private static string SanitizePathPart(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value.Select(ch => invalid.Contains(ch) || char.IsWhiteSpace(ch) ? '-' : char.ToLowerInvariant(ch)).ToArray();
+        return new string(chars);
+    }
 }

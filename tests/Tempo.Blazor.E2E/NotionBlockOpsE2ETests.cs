@@ -317,3 +317,55 @@ public class NotionBlockOpsE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "add_block_button");
     }
 }
+
+[TestClass]
+[DoNotParallelize]
+public class NotionBlockOpsRecoveryE2ETests : NotionE2ETestBase
+{
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB16: context menu, duplicate, delete, and copy-link affordance capture deterministic UX baselines.")]
+    public async Task EB16_ContextMenuDuplicateDelete_CapturesBaselines()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedDragDropPageAsync();
+
+        var callout = page.Locator("[data-block-id='eb160000-0000-0000-0000-000000000004']").First;
+        await OpenBlockMenuAsync(page, callout);
+
+        var menu = page.Locator(".tm-notion-ctx").First;
+        await Assertions.Expect(menu).ToBeVisibleAsync();
+        await Assertions.Expect(menu.GetByRole(AriaRole.Menuitem, new LocatorGetByRoleOptions { Name = "Duplicate" })).ToBeVisibleAsync();
+        await Assertions.Expect(menu.GetByRole(AriaRole.Menuitem, new LocatorGetByRoleOptions { Name = "Delete" })).ToBeVisibleAsync();
+        await Assertions.Expect(menu.GetByRole(AriaRole.Menuitem, new LocatorGetByRoleOptions { Name = "Copy link to block" })).ToBeVisibleAsync();
+        await CaptureBaselineAsync("drag-drop", "context-menu-copy-duplicate-delete", menu);
+
+        var blocks = page.Locator("[data-notion-block]");
+        var countBeforeDuplicate = await blocks.CountAsync();
+        await menu.GetByRole(AriaRole.Menuitem, new LocatorGetByRoleOptions { Name = "Duplicate" }).ClickAsync();
+        await page.WaitForTimeoutAsync(900);
+        var countAfterDuplicate = await blocks.CountAsync();
+        Assert.AreEqual(countBeforeDuplicate + 1, countAfterDuplicate, "Duplicate should add one block through the real block provider.");
+        await CaptureBaselineAsync("drag-drop", "context-menu-after-duplicate", page.Locator(".tm-notion-page").First);
+
+        await OpenBlockMenuAsync(page, page.Locator("[data-block-id='eb160000-0000-0000-0000-000000000004']").First);
+        await page.Locator(".tm-notion-ctx").First.GetByRole(AriaRole.Menuitem, new LocatorGetByRoleOptions { Name = "Delete" }).ClickAsync();
+        await page.WaitForTimeoutAsync(900);
+        var countAfterDelete = await blocks.CountAsync();
+        Assert.AreEqual(countBeforeDuplicate, countAfterDelete, "Delete should remove the original block after duplication.");
+        await CaptureBaselineAsync("drag-drop", "context-menu-after-delete", page.Locator(".tm-notion-page").First);
+    }
+
+    private static async Task OpenBlockMenuAsync(IPage page, ILocator block)
+    {
+        await block.ScrollIntoViewIfNeededAsync();
+        await block.HoverAsync();
+        var menuButton = block.Locator(".tm-notion-handle__menu-anchor > .tm-notion-handle__btn").First;
+        await menuButton.ClickAsync();
+        await page.Locator(".tm-notion-ctx").First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+    }
+}

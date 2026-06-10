@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Sidebar;
 
@@ -35,6 +36,7 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
     private IReadOnlyList<INotionPage> _recent     = [];
     private IReadOnlyList<INotionPage> _rootPages  = [];
     private int                        _trashCount = 0;
+    private string?                    _selectedSpaceId;
 
     private bool    _isLoading = true;
     private string? _loadError;
@@ -51,6 +53,7 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
     // ── State — new page ──────────────────────────────────────────────────────
 
     private bool _isCreatingPage = false;
+    private bool _localTemplateGalleryOpen = false;
 
     // ── Resize ───────────────────────────────────────────────────────────────
 
@@ -60,12 +63,20 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
     // ── Computed ──────────────────────────────────────────────────────────────
 
     private bool HasSearchProvider => Context.SearchProvider is not null;
+    private string? ActiveSelectedSpaceId => _selectedSpaceId ?? Context.SelectedSpaceId;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     protected override async Task OnInitializedAsync()
     {
+        _selectedSpaceId = Context.SelectedSpaceId;
         await LoadAllAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.Equals(_selectedSpaceId, Context.SelectedSpaceId, StringComparison.OrdinalIgnoreCase))
+            _selectedSpaceId = Context.SelectedSpaceId;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -87,7 +98,7 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
 
     // ── Data loading ──────────────────────────────────────────────────────────
 
-    private async Task LoadAllAsync()
+    internal async Task LoadAllAsync(string? selectedSpaceIdOverride = null)
     {
         _isLoading = true;
         _loadError = null;
@@ -97,7 +108,7 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
         {
             var tFav    = Context.DataProvider.GetFavoritesAsync();
             var tRecent = Context.DataProvider.GetRecentPagesAsync(10);
-            var tPages  = Context.DataProvider.GetChildPagesAsync(null);
+            var tPages  = GetRootPagesAsync(selectedSpaceIdOverride);
             var tTrash  = Context.DataProvider.GetTrashAsync();
 
             await Task.WhenAll(tFav, tRecent, tPages, tTrash);
@@ -107,9 +118,9 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
             _rootPages  = (await tPages).ToList();
             _trashCount = (await tTrash).Count();
         }
-        catch (Exception ex)
+        catch
         {
-            _loadError = ex.Message;
+            _loadError = Loc["TmNotionSidebar_LoadError"];
         }
         finally
         {
@@ -131,6 +142,20 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
     private async Task CreateNewPageAsync()
     {
         if (_isCreatingPage) return;
+
+        if (Context.OpenTemplateGallery is not null)
+        {
+            await Context.OpenTemplateGallery();
+            return;
+        }
+
+        if (Context.TemplateProvider is not null)
+        {
+            _localTemplateGalleryOpen = true;
+            StateHasChanged();
+            return;
+        }
+
         _isCreatingPage = true;
         StateHasChanged();
 
@@ -149,6 +174,57 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
             _isCreatingPage = false;
             StateHasChanged();
         }
+    }
+
+    private async Task CreatePageFromTemplateAsync(NotionTemplateDto template)
+    {
+        if (_isCreatingPage) return;
+        _isCreatingPage = true;
+        StateHasChanged();
+
+        try
+        {
+            var isBlank = string.Equals(template.Id, "blank", StringComparison.OrdinalIgnoreCase);
+            var title = isBlank
+                ? string.Empty
+                : string.IsNullOrWhiteSpace(template.Name) ? Loc["TmNotionSidebar_Untitled"] : template.Name;
+
+            var page = await Context.DataProvider.CreatePageAsync(null, title);
+
+            if (!isBlank && template.Blocks.Count > 0)
+            {
+                var blocks = template.Blocks.Select((block, index) => new PageBlock
+                {
+                    Id = Guid.NewGuid(),
+                    PageId = page.Id,
+                    ParentBlockId = null,
+                    Type = block.Type,
+                    Order = index,
+                    Content = block.Content,
+                    CreatedAt = DateTime.UtcNow,
+                    LastEditedAt = DateTime.UtcNow
+                }).ToArray();
+
+                await Context.BlockProvider.CreateBlocksAsync(page.Id.ToString("D"), blocks, null);
+            }
+
+            _localTemplateGalleryOpen = false;
+            _rootPages = _rootPages.Append(page).ToList();
+            StateHasChanged();
+
+            if (Context.NavigateTo is not null)
+                await Context.NavigateTo(page.Id.ToString("D"));
+        }
+        finally
+        {
+            _isCreatingPage = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseLocalTemplateGallery()
+    {
+        _localTemplateGalleryOpen = false;
     }
 
     // ── Search panel ──────────────────────────────────────────────────────────
@@ -198,9 +274,9 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
             var results = await Context.SearchProvider.SearchPagesAsync(_searchQuery, null);
             _searchResults = results.ToList();
         }
-        catch (Exception ex)
+        catch
         {
-            _searchError   = ex.Message;
+            _searchError   = Loc["TmNotionSidebar_SearchError"];
             _searchResults = [];
         }
         finally
@@ -224,6 +300,29 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
 
     private async Task OnTreeChangedAsync()     => await LoadAllAsync();
     private async Task OnFavoritesChangedAsync() => await LoadAllAsync();
+
+    private async Task OnSpaceSelectedAsync(string? spaceId)
+    {
+        _selectedSpaceId = string.IsNullOrWhiteSpace(spaceId) ? null : spaceId;
+
+        if (Context.SelectSpace is not null)
+            await Context.SelectSpace(spaceId);
+
+        await LoadAllAsync(_selectedSpaceId);
+
+        if (_rootPages.FirstOrDefault() is { } firstPage && !IsActivePage(firstPage))
+            await NavigateToAsync(firstPage);
+    }
+
+    private async Task OnCurrentPageMovedAsync(string spaceId)
+    {
+        _selectedSpaceId = string.IsNullOrWhiteSpace(spaceId) ? null : spaceId;
+
+        if (Context.CurrentPageMovedToSpace is not null)
+            await Context.CurrentPageMovedToSpace(spaceId);
+
+        await LoadAllAsync(_selectedSpaceId);
+    }
 
     // ── Trash ─────────────────────────────────────────────────────────────────
 
@@ -252,6 +351,18 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
     private bool IsActivePage(INotionPage page) =>
         ActivePageId is not null &&
         page.Id.ToString().Equals(ActivePageId, StringComparison.OrdinalIgnoreCase);
+
+    private async Task<IEnumerable<INotionPage>> GetRootPagesAsync(string? selectedSpaceIdOverride = null)
+    {
+        var selectedSpaceId = selectedSpaceIdOverride ?? ActiveSelectedSpaceId;
+        if (Context.SpaceProvider is not null && !string.IsNullOrWhiteSpace(selectedSpaceId))
+        {
+            var pages = await Context.SpaceProvider.GetPagesInSpaceAsync(selectedSpaceId);
+            return pages.Where(page => page.ParentId is null);
+        }
+
+        return await Context.DataProvider.GetChildPagesAsync(null);
+    }
 
     // ── JS interop callback ───────────────────────────────────────────────────
 

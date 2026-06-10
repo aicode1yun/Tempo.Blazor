@@ -57,6 +57,18 @@
                  style="@_sizeStyle"
                  @ref="_wrapRef">
 
+                <div class="tm-notion-embed-block__source-bar">
+                    <span class="tm-notion-embed-block__source-provider">@GetProviderLabel()</span>
+                    <span class="tm-notion-embed-block__source-url">@GetDisplayUrl()</span>
+                    <a class="tm-notion-embed-block__source-link"
+                       href="@Content.Url"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       @onclick:stopPropagation="true">
+                        @Loc["TmNotionEmbedBlock_OpenSource"]
+                    </a>
+                </div>
+
                 <iframe src="@_embedUrl"
                         class="tm-notion-embed-block__frame"
                         title="@(Content.Provider == EmbedProvider.Generic ? Content.Url : Content.Provider.ToString())"

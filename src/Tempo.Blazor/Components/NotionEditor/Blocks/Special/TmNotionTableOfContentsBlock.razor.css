@@ -70,6 +70,12 @@
     color:      var(--tm-text-primary);
 }
 
+.tm-toc__item--active,
+.tm-toc__item[aria-current="true"] {
+    background: var(--tm-color-primary-50);
+    color:      var(--tm-color-primary-700);
+}
+
 .tm-toc__item:focus-visible {
     outline:        2px solid var(--tm-color-primary-500);
     outline-offset: 1px;
@@ -111,6 +117,11 @@
 
 .tm-toc__item:hover .tm-toc__item-dot {
     opacity: 0.85;
+}
+
+.tm-toc__item--active .tm-toc__item-dot,
+.tm-toc__item[aria-current="true"] .tm-toc__item-dot {
+    opacity: 1;
 }
 
 /* ── Item text ───────────────────────────────────────────────── */

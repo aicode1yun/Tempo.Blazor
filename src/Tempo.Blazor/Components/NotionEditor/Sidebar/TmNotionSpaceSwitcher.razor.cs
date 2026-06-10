@@ -98,8 +98,11 @@ public partial class TmNotionSpaceSwitcher : ComponentBase
         try
         {
             await SpaceProvider.MovePageToSpaceAsync(CurrentPageId, targetSpaceId);
+            SelectedSpaceId = targetSpaceId;
+            ResolveSelectedSpace();
             _overviewPages.Clear();
             await LoadOverviewPagesAsync();
+            await SelectedSpaceIdChanged.InvokeAsync(targetSpaceId);
             await OnCurrentPageMoved.InvokeAsync(targetSpaceId);
         }
         catch

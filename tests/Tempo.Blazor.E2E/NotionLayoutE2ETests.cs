@@ -267,3 +267,116 @@ public class NotionLayoutE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "column_list_divider");
     }
 }
+
+[TestClass]
+public class NotionLayoutRecoveryE2ETests : NotionE2ETestBase
+{
+    private const string TwoColumnListId = "eb800000-0000-0000-0000-000000000010";
+    private const string FourColumnListId = "eb800000-0000-0000-0000-000000000030";
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    public async Task EB8_DesktopColumnsResizeAndTocStates_AreCaptured()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedLayoutPageAsync();
+
+        var twoColumnList = page.Locator($"[data-block-id='{TwoColumnListId}'] .tm-notion-column-list").First;
+        var fourColumnList = page.Locator($"[data-block-id='{FourColumnListId}'] .tm-notion-column-list").First;
+
+        await twoColumnList.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await fourColumnList.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        Assert.AreEqual(2, await twoColumnList.Locator(".tm-notion-column").CountAsync(), "EB8 two-column baseline should contain exactly 2 columns.");
+        Assert.AreEqual(4, await fourColumnList.Locator(".tm-notion-column").CountAsync(), "EB8 four-column baseline should contain exactly 4 columns.");
+
+        await AddColumnWithButtonAsync(twoColumnList);
+        Assert.AreEqual(3, await twoColumnList.Locator(".tm-notion-column").CountAsync(), "EB8 add-column action should create a 3-column visual state.");
+
+        await CaptureBaselineAsync("layout", "desktop-2-3-4-columns", page.Locator(".tm-notion-page").First);
+
+        await ResizeFirstDividerAsync(page, twoColumnList, 90);
+        await AssertColumnWidthsChangedAsync(twoColumnList);
+        await CaptureBaselineAsync("layout", "desktop-resized-divider", twoColumnList);
+
+        await SeedEmptyTocPageAsync();
+        var emptyToc = page.Locator("[data-block-id='eb810000-0000-0000-0000-000000000002'] .tm-toc").First;
+        await emptyToc.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await CaptureBaselineAsync("layout", "toc-empty-state", emptyToc);
+
+        await SeedLayoutPageAsync();
+        var toc = page.Locator(".tm-toc").First;
+        await toc.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await page.Locator(".tm-toc__item").Nth(3).ClickAsync();
+        await page.WaitForTimeoutAsync(600);
+        var activeItems = await page.Locator(".tm-toc__item--active, .tm-toc__item[aria-current='true']").CountAsync();
+        Assert.IsTrue(activeItems > 0, "EB8 TOC scroll-spy should expose an active state after navigating to a heading.");
+        await CaptureBaselineAsync("layout", "toc-many-headings-scroll-spy", toc);
+
+        await AssertNoHorizontalOverflowAsync(page);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    public async Task EB8_MobileColumnsStackWithoutOverflow_AreCaptured()
+    {
+        await SetViewportAsync(390, 844);
+        var page = await OpenNotionEditorAsync();
+        await SeedLayoutPageAsync();
+
+        var fourColumnList = page.Locator($"[data-block-id='{FourColumnListId}'] .tm-notion-column-list").First;
+        await fourColumnList.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+
+        var columns = fourColumnList.Locator(".tm-notion-column");
+        Assert.AreEqual(4, await columns.CountAsync(), "EB8 mobile baseline should use the deterministic 4-column block.");
+
+        var tops = await columns.EvaluateAllAsync<double[]>("els => els.map(el => Math.round(el.getBoundingClientRect().top))");
+        Assert.IsTrue(tops.Zip(tops.Skip(1), (previous, next) => next > previous).All(BooleanIdentity),
+            $"EB8 mobile columns should stack vertically. Tops: {string.Join(", ", tops)}");
+        Assert.AreEqual(0, await fourColumnList.Locator(".tm-notion-column-list__divider:visible").CountAsync(), "Mobile column dividers should be hidden.");
+
+        await CaptureBaselineAsync("layout", "mobile-columns-stacked", fourColumnList);
+        await AssertNoHorizontalOverflowAsync(page);
+    }
+
+    private static bool BooleanIdentity(bool value) => value;
+
+    private static async Task AddColumnWithButtonAsync(ILocator columnList)
+    {
+        var button = columnList.Locator(".tm-notion-column-list__add-col").First;
+        await button.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await button.ClickAsync();
+        await columnList.Page.WaitForTimeoutAsync(750);
+    }
+
+    private static async Task ResizeFirstDividerAsync(IPage page, ILocator columnList, int deltaX)
+    {
+        var divider = columnList.Locator(".tm-notion-column-list__divider").First;
+        await divider.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var box = await divider.BoundingBoxAsync();
+        Assert.IsNotNull(box, "EB8 resize divider should have a visible bounding box.");
+
+        var startX = box.X + box.Width / 2;
+        var startY = box.Y + box.Height / 2;
+        await page.Mouse.MoveAsync(startX, startY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync(startX + deltaX, startY, new MouseMoveOptions { Steps = 8 });
+        await page.Mouse.UpAsync();
+        await page.WaitForTimeoutAsync(900);
+    }
+
+    private static async Task AssertColumnWidthsChangedAsync(ILocator columnList)
+    {
+        var widths = await columnList.Locator(".tm-notion-column").EvaluateAllAsync<double[]>(
+            "els => els.slice(0, 2).map(el => Math.round(el.getBoundingClientRect().width))");
+        Assert.AreEqual(2, widths.Length, "EB8 resize check needs the first two columns.");
+        Assert.IsTrue(Math.Abs(widths[0] - widths[1]) > 24,
+            $"EB8 resize should visibly change the first two column widths. Widths: {string.Join(", ", widths)}");
+    }
+
+    private static async Task AssertNoHorizontalOverflowAsync(IPage page)
+    {
+        var hasOverflow = await page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1");
+        Assert.IsFalse(hasOverflow, "EB8 layout screenshots should not introduce document-level horizontal overflow.");
+    }
+}

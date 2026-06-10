@@ -18,6 +18,31 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
 {
     public TmNotionRestrictionsTests()
     {
+        UseCustomLocalization(new Dictionary<string, string>
+        {
+            ["Tm_Close"] = "Close",
+            ["Tm_Cancel"] = "Cancel",
+            ["Tm_Save"] = "Save",
+            ["Notion_Restrictions_Title"] = "Restricted",
+            ["Notion_Restrictions_Mode"] = "Mode",
+            ["Notion_Restrictions_ModeOpen"] = "Open",
+            ["Notion_Restrictions_ModeReadOnlyForSome"] = "Read-only for some",
+            ["Notion_Restrictions_ModeEditForSome"] = "Edit for some",
+            ["Notion_Restrictions_AddUser"] = "Add user",
+            ["Notion_Restrictions_SubjectType"] = "Subject type",
+            ["Notion_Restrictions_User"] = "User",
+            ["Notion_Restrictions_Group"] = "Group",
+            ["Notion_Restrictions_Subject"] = "Subject",
+            ["Notion_Restrictions_SubjectPlaceholder"] = "User or group",
+            ["Notion_Restrictions_Permission"] = "Permission",
+            ["Notion_Restrictions_View"] = "View",
+            ["Notion_Restrictions_Comment"] = "Comment",
+            ["Notion_Restrictions_Edit"] = "Edit",
+            ["Notion_Restrictions_Empty"] = "No restrictions",
+            ["Notion_Restrictions_Explicit"] = "Explicit",
+            ["Notion_Restrictions_LoadError"] = "Page restrictions could not be loaded."
+        });
+
         var notifications = new InMemoryNotificationStore();
         Services.AddSingleton<INotificationService>(notifications);
         Services.AddSingleton<INotificationBadgeState>(notifications);
@@ -47,6 +72,8 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
         await cut.Find(".tm-nprd__input").InputAsync(new ChangeEventArgs { Value = "readers" });
         await cut.FindAll(".tm-nprd__select")[2].ChangeAsync(new ChangeEventArgs { Value = PageRestrictionPermission.Edit.ToString() });
         await cut.Find(".tm-nprd__add-btn").ClickAsync(new MouseEventArgs());
+
+        cut.FindAll(".tm-nprd__source").Should().Contain(element => element.TextContent.Contains("Explicit"));
 
         await cut.Find(".tm-nprd__primary").ClickAsync(new MouseEventArgs());
 

@@ -458,3 +458,30 @@
 @keyframes tm-ns-spin {
     to { transform: rotate(360deg); }
 }
+
+@media (max-width: 1024px) {
+    .tm-ns-btn-search,
+    .tm-ns-btn-new,
+    .tm-ns-section__header,
+    .tm-ns-page-item,
+    .tm-ns-trash__btn,
+    .tm-ns-error__retry,
+    .tm-ns-search__close {
+        min-height: 44px;
+    }
+
+    .tm-ns-search__input {
+        min-height: 44px;
+    }
+
+    .tm-ns-content ::deep .tm-npt-row {
+        min-height: 44px;
+    }
+
+    .tm-ns-content ::deep .tm-npt-toggle,
+    .tm-ns-content ::deep .tm-npt-title,
+    .tm-ns-content ::deep .tm-npt-btn {
+        min-width:  44px;
+        min-height: 44px;
+    }
+}

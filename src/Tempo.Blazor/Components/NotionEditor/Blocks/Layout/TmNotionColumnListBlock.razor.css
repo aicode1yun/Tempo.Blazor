@@ -82,3 +82,27 @@
     color:        var(--tm-color-primary, #6c63ff);
     background:   rgba(108, 99, 255, 0.05);
 }
+
+@media (max-width: 640px) {
+    .tm-notion-column-list {
+        flex-direction: column;
+        gap:            var(--tm-space-3, 0.75rem);
+    }
+
+    .tm-notion-column-list ::deep .tm-notion-column {
+        flex-basis: 100% !important;
+        width:      100% !important;
+        min-width:  0 !important;
+        padding:    0;
+    }
+
+    .tm-notion-column-list__divider {
+        display: none;
+    }
+
+    .tm-notion-column-list__add-col {
+        width:      100%;
+        min-height: 44px;
+        margin:     var(--tm-space-2, 0.5rem) 0 0;
+    }
+}

@@ -1,5 +1,6 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Sidebar
 @using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.Components.NotionEditor.UI
 @using Tempo.Blazor.NotionEditor.Interfaces
 
 @if (_showTrash)
@@ -82,6 +83,15 @@ else if (_searchOpen)
 }
 else
 {
+    @if (Context.SpaceProvider is not null)
+    {
+        <TmNotionSpaceSwitcher SpaceProvider="Context.SpaceProvider"
+                               SelectedSpaceId="@ActiveSelectedSpaceId"
+                               CurrentPageId="@ActivePageId"
+                               SelectedSpaceIdChanged="OnSpaceSelectedAsync"
+                               OnCurrentPageMoved="OnCurrentPageMovedAsync" />
+    }
+
     @* ── Header ───────────────────────────────────────────────────────────── *@
 
     <header class="tm-ns-header">
@@ -145,7 +155,7 @@ else
                           stroke-linecap="round"/>
                 </svg>
                 <span>@Loc["TmNotionSidebar_LoadError"]</span>
-                <button class="tm-ns-error__retry" type="button" @onclick="LoadAllAsync">
+                <button class="tm-ns-error__retry" type="button" @onclick="async () => await LoadAllAsync()">
                     @Loc["Tm_Retry"]
                 </button>
             </div>
@@ -154,20 +164,14 @@ else
         {
             @* ── Favorites ──────────────────────────────────────────────── *@
 
-            @if (_favorites.Count > 0)
-            {
-                <TmNotionSidebarFavorites Pages="@_favorites"
-                                          ActivePageId="@ActivePageId"
-                                          OnChanged="OnFavoritesChangedAsync" />
-            }
+            <TmNotionSidebarFavorites Pages="@_favorites"
+                                      ActivePageId="@ActivePageId"
+                                      OnChanged="OnFavoritesChangedAsync" />
 
             @* ── Recent ─────────────────────────────────────────────────── *@
 
-            @if (_recent.Count > 0)
-            {
-                <TmNotionSidebarRecent Pages="@_recent"
-                                       ActivePageId="@ActivePageId" />
-            }
+            <TmNotionSidebarRecent Pages="@_recent"
+                                   ActivePageId="@ActivePageId" />
 
             @* ── Pages (root tree) ──────────────────────────────────────── *@
 
@@ -239,3 +243,8 @@ else
      aria-label="@Loc["TmNotionSidebar_ResizeHandle"]"
      title="@Loc["TmNotionSidebar_ResizeHandle"]">
 </div>
+
+<TmNotionTemplateGallery Visible="_localTemplateGalleryOpen"
+                         TemplateProvider="Context.TemplateProvider"
+                         OnTemplateSelected="CreatePageFromTemplateAsync"
+                         OnClosed="CloseLocalTemplateGallery" />

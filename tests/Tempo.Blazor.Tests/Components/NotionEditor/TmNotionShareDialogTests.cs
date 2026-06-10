@@ -34,6 +34,7 @@ public sealed class TmNotionShareDialogTests : LocalizationTestBase
             ["Notion_Share_Expires"] = "Expires",
             ["Notion_Share_Disabled"] = "This public link is disabled or expired.",
             ["Notion_Share_Active"] = "Public link is active",
+            ["Notion_Share_Expired"] = "Public link has expired.",
             ["Notion_Share_PublicUrl"] = "Public URL",
             ["Notion_Share_AnonymousReadOnly"] = "Anyone with the link can open this page in read-only mode.",
             ["Notion_Share_LoadError"] = "Public sharing could not be loaded.",
@@ -93,6 +94,28 @@ public sealed class TmNotionShareDialogTests : LocalizationTestBase
             provider.Share!.IsEnabled.Should().BeFalse();
             cut.Find("[data-testid='notion-share-disabled']").TextContent.Should().Contain("disabled");
             cut.FindAll("[data-testid='notion-share-url']").Should().BeEmpty();
+        });
+    }
+
+    [Fact]
+    public void ShareDialog_ShowsExpiredLinkStatus()
+    {
+        var provider = new FakePublicShareProvider();
+        provider.Seed(new PublicShareDto
+        {
+            PageId = PageId,
+            Token = "share-expired",
+            IsEnabled = true,
+            ExpiresAt = DateTime.UtcNow.AddDays(-1)
+        });
+
+        var cut = RenderDialog(provider);
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("[data-testid='notion-share-expired']").TextContent.Should().Contain("expired");
+            cut.FindAll("[data-testid='notion-share-url']").Should().BeEmpty();
+            cut.Find("[data-testid='notion-share-create']").Should().NotBeNull();
         });
     }
 

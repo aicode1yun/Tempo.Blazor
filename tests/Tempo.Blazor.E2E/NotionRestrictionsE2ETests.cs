@@ -33,14 +33,19 @@ public sealed class NotionRestrictionsE2ETests : NotionE2ETestBase
             await page.Locator(".tm-nprd").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Detached, Timeout = 10000 });
 
             await page.Locator(".tm-notion-restricted-badge").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            await page.Locator(".tm-notion-header-restricted-badge").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
             Assert.AreEqual(0, await page.Locator(".tm-notion-page--readonly").CountAsync(), "Alice should keep Edit access.");
 
-            var indicatorCapture = await CaptureBaselineAsync("restrictions", "cf20-restricted-indicator", page.Locator(".tm-notion-editor").First);
+            var restrictedBadge = page.Locator(".tm-notion-header-restricted-badge").First;
+            var indicatorCapture = await CaptureRestrictionClipBaselineAsync(page, "cf20-restricted-indicator", restrictedBadge, 260, 64);
             TestContext.WriteLine($"UX CF20 restricted indicator captured: {indicatorCapture.FullPagePath} / {indicatorCapture.RegionPath}");
 
             var bob = await OpenNotionEditorAsync("?user=bob&groups=readers");
             await bob.Locator(".tm-notion-page--readonly").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
             Assert.AreEqual(1, await bob.Locator(".tm-notion-restricted-badge").CountAsync(), "Bob should see the restricted indicator.");
+
+            var readOnlyCapture = await CaptureRestrictionBaselineAsync(bob, "cf20-read-only-state", bob.Locator(".tm-notion-editor").First);
+            TestContext.WriteLine($"UX CF20 read-only baseline captured: {readOnlyCapture.FullPagePath} / {readOnlyCapture.RegionPath}");
 
             await bob.Locator(".tm-npt-toggle").First.ClickAsync();
             await bob.Locator(".tm-npt-title").Filter(new() { HasText = "CF20 Child Inherits Restrictions" }).ClickAsync();
@@ -54,12 +59,19 @@ public sealed class NotionRestrictionsE2ETests : NotionE2ETestBase
             Assert.AreEqual(0, await providerless.Locator(".tm-notion-restricted-badge").CountAsync(), "Without a provider every page should be open.");
             Assert.AreEqual(0, await providerless.Locator(".tm-notion-page--readonly").CountAsync(), "Without a provider the page should remain editable.");
 
+            var providerlessCapture = await CaptureRestrictionBaselineAsync(providerless, "cf20-providerless-open-state", providerless.Locator(".tm-notion-editor").First);
+            TestContext.WriteLine($"UX CF20 providerless baseline captured: {providerlessCapture.FullPagePath} / {providerlessCapture.RegionPath}");
+
             await SetRestrictionsAsync(RootPageId, 2,
             [
                 new(0, "alice", 3)
             ]);
             var noView = await OpenNoAccessNotionEditorAsync("?user=bob&groups=readers");
             await noView.Locator(".tm-notion-no-access").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+
+            var noViewCapture = await CaptureRestrictionBaselineAsync(noView, "cf20-no-view-state", noView.Locator(".tm-notion-no-access").First);
+            TestContext.WriteLine($"UX CF20 no-view baseline captured: {noViewCapture.FullPagePath} / {noViewCapture.RegionPath}");
+
             var restrictedNavTitle = noView.Locator(".tm-npt-title").Filter(new() { HasText = "CF20 Restricted Workspace" });
             if (await restrictedNavTitle.CountAsync() > 0)
             {
@@ -130,6 +142,93 @@ public sealed class NotionRestrictionsE2ETests : NotionE2ETestBase
             })
         });
         response.EnsureSuccessStatusCode();
+    }
+
+    private async Task<NotionBaselineCapture> CaptureRestrictionBaselineAsync(IPage page, string state, ILocator region)
+    {
+        var outputDir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            "restrictions"));
+        Directory.CreateDirectory(outputDir);
+
+        var fullPath = Path.Combine(outputDir, $"{state}.png");
+        var regionPath = Path.Combine(outputDir, $"{state}.region.png");
+
+        await page.WaitForTimeoutAsync(250);
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        await region.ScreenshotAsync(new LocatorScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            OmitBackground = false
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+        return new NotionBaselineCapture(fullPath, regionPath);
+    }
+
+    private async Task<NotionBaselineCapture> CaptureRestrictionClipBaselineAsync(IPage page, string state, ILocator anchor, double width, double height)
+    {
+        var outputDir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            "restrictions"));
+        Directory.CreateDirectory(outputDir);
+
+        var fullPath = Path.Combine(outputDir, $"{state}.png");
+        var regionPath = Path.Combine(outputDir, $"{state}.region.png");
+
+        await page.WaitForTimeoutAsync(250);
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        var box = await anchor.BoundingBoxAsync();
+        Assert.IsNotNull(box, $"CF20 baseline anchor for {state} should have a visible bounding box.");
+        Assert.IsTrue(box.Width <= width, $"CF20 baseline anchor for {state} should fit inside the requested clip width.");
+        Assert.IsTrue(box.Height <= height, $"CF20 baseline anchor for {state} should fit inside the requested clip height.");
+
+        var viewport = page.ViewportSize ?? new() { Width = 1280, Height = 720 };
+        var x = Math.Max(0, box.X - 12);
+        var y = Math.Max(0, box.Y - 8);
+        var clipWidth = Math.Min(width, viewport.Width - x);
+        var clipHeight = Math.Min(height, viewport.Height - y);
+
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            Clip = new Clip
+            {
+                X = (float)x,
+                Y = (float)y,
+                Width = (float)clipWidth,
+                Height = (float)clipHeight
+            }
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+        return new NotionBaselineCapture(fullPath, regionPath);
     }
 
     private sealed record AclEntry(int SubjectType, string SubjectId, int Permission);

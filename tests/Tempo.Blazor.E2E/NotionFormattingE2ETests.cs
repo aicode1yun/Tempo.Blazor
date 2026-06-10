@@ -428,4 +428,259 @@ public class NotionFormattingE2ETests : WasmTestBase
         Assert.IsTrue(await h1.IsVisibleAsync(), "Block should be converted to H1 after Turn Into");
         await TakeScreenshotAsync(page, "inline_toolbar_turninto_h1");
     }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB4: captures all main inline toolbar buttons with active bold, italic, underline, strike, and code states")]
+    public async Task EB4_InlineToolbar_MainButtonsAndActiveStates_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedInlineToolbarPageAsync(page);
+
+        await OpenInlineToolbarForSelectorAsync(page, "[data-block-id='eb400000-0000-0000-0000-000000000002'] code");
+        await page.WaitForFunctionAsync(
+            "() => document.querySelectorAll('.tm-notion-inline-toolbar__btn--active').length >= 5",
+            new PageWaitForFunctionOptions { Timeout = 5000 });
+
+        foreach (var title in new[] { "Bold", "Italic", "Underline", "Strikethrough", "Inline code", "Link", "Color", "Turn into", "Align", "Comment", "Inline equation" })
+        {
+            Assert.AreEqual(1, await page.Locator($".tm-notion-inline-toolbar button[title='{title}']").CountAsync(), $"{title} should be present in the main inline toolbar.");
+        }
+
+        foreach (var title in new[] { "Bold", "Italic", "Underline", "Strikethrough", "Inline code" })
+        {
+            Assert.AreEqual(1, await page.Locator($".tm-notion-inline-toolbar__btn--active[title='{title}']").CountAsync(), $"{title} should render as active for the combined formatted selection.");
+        }
+
+        var linkButton = page.Locator(".tm-notion-inline-toolbar button[title='Link']").First;
+        await linkButton.HoverAsync();
+        await linkButton.FocusAsync();
+        await AssertWithinViewportAsync(page.Locator(".tm-notion-inline-toolbar").First, "EB4 main inline toolbar");
+        await CaptureBaselineAsync(page, "inline-toolbar", "main-buttons-active-states", page.Locator(".tm-notion-inline-toolbar").First);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB4: captures the inline toolbar above a selection near the viewport bottom")]
+    public async Task EB4_InlineToolbar_BottomEdge_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedInlineToolbarPageAsync(page);
+        await page.SetViewportSizeAsync(520, 360);
+
+        var block = page.Locator("[data-block-id='eb400000-0000-0000-0000-000000000020']").First;
+        await block.EvaluateAsync("el => el.scrollIntoView({ block: 'end', inline: 'nearest' })");
+        await page.WaitForTimeoutAsync(200);
+        await OpenInlineToolbarForSelectorAsync(page, "[data-block-id='eb400000-0000-0000-0000-000000000020'] .tm-notion-paragraph", "end");
+
+        var metrics = await page.EvaluateAsync<InlineToolbarBottomMetrics>("""
+            () => {
+                const toolbar = document.querySelector('.tm-notion-inline-toolbar').getBoundingClientRect();
+                const range = window.getSelection().getRangeAt(0).getBoundingClientRect();
+                return {
+                    ToolbarTop: toolbar.top,
+                    ToolbarBottom: toolbar.bottom,
+                    ToolbarLeft: toolbar.left,
+                    ToolbarRight: toolbar.right,
+                    SelectionTop: range.top,
+                    ViewportWidth: window.innerWidth,
+                    ViewportHeight: window.innerHeight
+                };
+            }
+            """);
+        Assert.IsTrue(metrics.ToolbarTop >= 0, $"Toolbar should stay inside the top viewport edge. Top={metrics.ToolbarTop}.");
+        Assert.IsTrue(metrics.ToolbarBottom <= metrics.SelectionTop + 1, $"Toolbar should be above the bottom-edge selection. ToolbarBottom={metrics.ToolbarBottom}, SelectionTop={metrics.SelectionTop}.");
+        Assert.IsTrue(metrics.ToolbarLeft >= 0 && metrics.ToolbarRight <= metrics.ViewportWidth, "Toolbar should be horizontally clamped in the viewport.");
+
+        await CaptureBaselineAsync(page, "inline-toolbar", "bottom-edge-above-selection", page.Locator(".tm-notion-inline-toolbar").First);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB4: captures the color panel clamped near the viewport edge with hover and focus-visible states")]
+    public async Task EB4_InlineToolbar_ColorPanelViewportEdge_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedInlineToolbarPageAsync(page);
+        await page.SetViewportSizeAsync(460, 640);
+
+        await OpenInlineToolbarForSelectorAsync(page, "[data-block-id='eb400000-0000-0000-0000-000000000003'] .tm-notion-paragraph");
+        var colorButton = page.Locator(".tm-notion-inline-toolbar button[title='Color']").First;
+        await colorButton.EvaluateAsync("el => el.click()");
+        var panel = page.Locator(".tm-notion-inline-toolbar__color-panel").First;
+        await panel.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var blueSwatch = panel.Locator("button[title='Blue']").First;
+        await blueSwatch.HoverAsync();
+        await blueSwatch.FocusAsync();
+        await AssertWithinViewportAsync(page.Locator(".tm-notion-inline-toolbar").First, "EB4 color panel");
+        await CaptureBaselineAsync(page, "inline-toolbar", "color-panel-viewport-edge", page.Locator(".tm-notion-inline-toolbar").First);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB4: captures the Turn Into panel clamped near the viewport edge")]
+    public async Task EB4_InlineToolbar_TurnIntoPanelViewportEdge_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedInlineToolbarPageAsync(page);
+        await page.SetViewportSizeAsync(460, 640);
+
+        await OpenInlineToolbarForSelectorAsync(page, "[data-block-id='eb400000-0000-0000-0000-000000000003'] .tm-notion-paragraph");
+        var turnIntoButton = page.Locator(".tm-notion-inline-toolbar button[title='Turn into']").First;
+        await turnIntoButton.EvaluateAsync("el => el.click()");
+        var panel = page.Locator(".tm-notion-inline-toolbar__turninto-panel").First;
+        await panel.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var todoItem = panel.Locator(".tm-notion-inline-toolbar__turninto-item").Filter(new LocatorFilterOptions { HasText = "To-do list" }).First;
+        await todoItem.HoverAsync();
+        await todoItem.FocusAsync();
+        await AssertWithinViewportAsync(page.Locator(".tm-notion-inline-toolbar").First, "EB4 Turn Into panel");
+        await CaptureBaselineAsync(page, "inline-toolbar", "turn-into-panel-viewport-edge", page.Locator(".tm-notion-inline-toolbar").First);
+    }
+
+    private async Task SeedInlineToolbarPageAsync(IPage page)
+    {
+        await page.WaitForFunctionAsync(
+            "methodName => window.tmNotionDemo && typeof window.tmNotionDemo[methodName] === 'function'",
+            "seedInlineToolbarPage",
+            new PageWaitForFunctionOptions { Timeout = 60000 });
+        await page.EvaluateAsync("async methodName => await window.tmNotionDemo[methodName]()", "seedInlineToolbarPage");
+        await page.ReloadAsync(new PageReloadOptions
+        {
+            WaitUntil = WaitUntilState.NetworkIdle,
+            Timeout = 60000
+        });
+        await WaitForAppReadyAsync(page);
+        await page.WaitForSelectorAsync("[data-block-id='eb400000-0000-0000-0000-000000000002'] code", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+    }
+
+    private async Task OpenInlineToolbarForSelectorAsync(IPage page, string selector, string scrollBlock = "center")
+    {
+        var target = page.Locator(selector).First;
+        await target.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await target.EvaluateAsync("(el, block) => el.scrollIntoView({ block, inline: 'nearest' })", scrollBlock);
+        await page.WaitForTimeoutAsync(150);
+        await target.EvaluateAsync("""
+            el => {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+                document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+            }
+            """);
+        await WaitForInlineToolbarAsync(page);
+        await page.WaitForTimeoutAsync(250);
+    }
+
+    private async Task CaptureBaselineAsync(IPage page, string area, string state, ILocator region)
+    {
+        var outputDir = GetBaselineDirectory(area);
+        var safeState = SanitizePathPart(state);
+        var fullPath = Path.Combine(outputDir, $"{safeState}.png");
+        var regionPath = Path.Combine(outputDir, $"{safeState}.region.png");
+
+        await page.WaitForTimeoutAsync(250);
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        await region.ScreenshotAsync(new LocatorScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            OmitBackground = false
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+    }
+
+    private static async Task AssertWithinViewportAsync(ILocator locator, string label)
+    {
+        var metrics = await locator.EvaluateAsync<ViewportBoxMetrics>("""
+            el => {
+                const rect = el.getBoundingClientRect();
+                return {
+                    Left: rect.left,
+                    Top: rect.top,
+                    Right: rect.right,
+                    Bottom: rect.bottom,
+                    ViewportWidth: window.innerWidth,
+                    ViewportHeight: window.innerHeight,
+                    ZIndex: Number.parseInt(getComputedStyle(el).zIndex || '0', 10)
+                };
+            }
+            """);
+        Assert.IsTrue(metrics.Left >= 0, $"{label} should not overflow the left viewport edge. Left={metrics.Left}.");
+        Assert.IsTrue(metrics.Top >= 0, $"{label} should not overflow the top viewport edge. Top={metrics.Top}.");
+        Assert.IsTrue(metrics.Right <= metrics.ViewportWidth, $"{label} should not overflow the right viewport edge. Right={metrics.Right}, Viewport={metrics.ViewportWidth}.");
+        Assert.IsTrue(metrics.Bottom <= metrics.ViewportHeight, $"{label} should not overflow the bottom viewport edge. Bottom={metrics.Bottom}, Viewport={metrics.ViewportHeight}.");
+        Assert.IsTrue(metrics.ZIndex >= 1000, $"{label} should render above editor content. z-index={metrics.ZIndex}.");
+    }
+
+    private static string GetBaselineDirectory(string area)
+    {
+        var dir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            SanitizePathPart(area)));
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizePathPart(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value.Select(ch => invalid.Contains(ch) || char.IsWhiteSpace(ch) ? '-' : char.ToLowerInvariant(ch)).ToArray();
+        return new string(chars);
+    }
+
+    private sealed class InlineToolbarBottomMetrics
+    {
+        public double ToolbarTop { get; set; }
+
+        public double ToolbarBottom { get; set; }
+
+        public double ToolbarLeft { get; set; }
+
+        public double ToolbarRight { get; set; }
+
+        public double SelectionTop { get; set; }
+
+        public double ViewportWidth { get; set; }
+
+        public double ViewportHeight { get; set; }
+    }
+
+    private sealed class ViewportBoxMetrics
+    {
+        public double Left { get; set; }
+
+        public double Top { get; set; }
+
+        public double Right { get; set; }
+
+        public double Bottom { get; set; }
+
+        public double ViewportWidth { get; set; }
+
+        public double ViewportHeight { get; set; }
+
+        public double ZIndex { get; set; }
+    }
 }

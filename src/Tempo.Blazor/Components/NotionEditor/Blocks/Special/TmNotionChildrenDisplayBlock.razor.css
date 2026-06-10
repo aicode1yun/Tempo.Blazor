@@ -126,7 +126,10 @@
 .tm-children__tree-wrap {
     min-width: 0;
     max-width: 100%;
-    overflow-x: hidden;
+    max-height: min(520px, 65vh);
+    overflow: hidden auto;
+    overscroll-behavior: contain;
+    padding-right: var(--tm-space-1);
 }
 
 .tm-children__tree,
@@ -172,6 +175,10 @@
     cursor: pointer;
 }
 
+.tm-children__page--no-icon {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .tm-children__page:hover {
     border-color: var(--tm-border-color);
     background: var(--tm-bg-subtle);
@@ -200,6 +207,83 @@
 }
 
 .tm-children__arrow {
+    color: var(--tm-text-tertiary);
+    flex: 0 0 auto;
+}
+
+.tm-children ::deep .tm-children__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-1);
+    min-width: 0;
+    margin: var(--tm-space-1) 0 0 var(--tm-space-3);
+    box-sizing: border-box;
+    max-width: calc(100% - var(--tm-space-3));
+    padding: 0 0 0 var(--tm-space-3);
+    border-left: 1px solid var(--tm-border-color);
+    list-style: none;
+}
+
+.tm-children ::deep .tm-children__item {
+    min-width: 0;
+}
+
+.tm-children ::deep .tm-children__page {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--tm-space-2);
+    width: 100%;
+    min-width: 0;
+    min-height: 32px;
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 1px solid transparent;
+    border-radius: var(--tm-radius-sm);
+    background: transparent;
+    color: var(--tm-text-primary);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+    text-align: left;
+    cursor: pointer;
+}
+
+.tm-children ::deep .tm-children__page--no-icon {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.tm-children ::deep .tm-children__page:hover {
+    border-color: var(--tm-border-color);
+    background: var(--tm-bg-subtle);
+}
+
+.tm-children ::deep .tm-children__page:focus-visible {
+    outline: 2px solid var(--tm-color-primary-500);
+    outline-offset: 2px;
+}
+
+.tm-children ::deep .tm-children__page-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-children ::deep .tm-children__page-icon--image {
+    border-radius: var(--tm-radius-xs);
+    object-fit: cover;
+}
+
+.tm-children ::deep .tm-children__page-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-children ::deep .tm-children__arrow {
     color: var(--tm-text-tertiary);
     flex: 0 0 auto;
 }

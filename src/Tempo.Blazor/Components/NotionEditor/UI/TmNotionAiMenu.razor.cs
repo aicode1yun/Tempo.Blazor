@@ -89,7 +89,7 @@ public partial class TmNotionAiMenu : ComponentBase, IAsyncDisposable
 
     private string PanelStyle => Panel
         ? "top:calc(var(--tm-space-8) + 48px);right:var(--tm-space-8);"
-        : $"top:clamp(var(--tm-space-2), {Top}px, calc(100vh - 26rem));left:clamp(var(--tm-space-2), {Left}px, calc(100vw - 28rem - var(--tm-space-2)));";
+        : "top:var(--tm-space-4);right:var(--tm-space-4);";
 
     protected override void OnParametersSet()
     {
@@ -134,9 +134,11 @@ public partial class TmNotionAiMenu : ComponentBase, IAsyncDisposable
 
     private async Task RetryAsync()
     {
-        if (_lastRequest is null || _isStreaming) return;
+        if (_lastRequest is null) return;
 
-        await ExecuteAsync(_lastRequest);
+        var snapshot = _lastRequest;
+        CancelStreaming();
+        await ExecuteAsync(snapshot);
     }
 
     private async Task ExecuteAsync(AIRequestSnapshot snapshot)

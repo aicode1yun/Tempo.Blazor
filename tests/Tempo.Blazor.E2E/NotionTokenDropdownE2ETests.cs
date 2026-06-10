@@ -360,4 +360,169 @@ public class NotionTokenDropdownE2ETests : WasmTestBase
 
         await TakeScreenshotAsync(page, "token_dropdown_no_results");
     }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB5: captures token menu and token no-results state")]
+    public async Task EB5_TokenMenuAndNoResults_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedMentionTokenPageAsync(page);
+        await TypeTriggerAsync(page, "{{");
+
+        var dropdown = page.Locator(".tm-notion-token-dropdown").First;
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+        await AssertWithinViewportAsync(dropdown, "EB5 token dropdown");
+        await CaptureBaselineAsync(page, "token-dropdown", "eb5-token-menu-open", dropdown);
+
+        var input = dropdown.Locator(".tm-notion-token-dropdown__input").First;
+        await input.FillAsync("definitely_no_token_match");
+        var empty = dropdown.Locator(".tm-notion-token-dropdown__empty").First;
+        await empty.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await empty.IsVisibleAsync(), "Token no-results state should be visible.");
+        await CaptureBaselineAsync(page, "token-dropdown", "eb5-token-no-results", dropdown);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB5: captures inserted token chip, edit menu, and unknown token fallback")]
+    public async Task EB5_TokenChipEditMenuAndUnknownFallback_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedMentionTokenPageAsync(page);
+
+        var unknownToken = page.Locator(".tm-notion-token.tm-notion-token--unknown[data-key='unknown.invoice_deadline']").First;
+        await unknownToken.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await CaptureBaselineAsync(page, "token-dropdown", "eb5-unknown-token-fallback", unknownToken);
+
+        await TypeTriggerAsync(page, "{{");
+        var dropdown = page.Locator(".tm-notion-token-dropdown").First;
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+
+        var input = dropdown.Locator(".tm-notion-token-dropdown__input").First;
+        await input.FillAsync("case number");
+        var caseNumberItem = dropdown.Locator(".tm-notion-token-dropdown__item").Filter(new LocatorFilterOptions { HasText = "Case number" }).First;
+        await caseNumberItem.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await JsClickAsync(page, caseNumberItem);
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 8000 });
+
+        var insertedToken = page.Locator(".tm-notion-token[data-key='case.number']").First;
+        await insertedToken.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await CaptureBaselineAsync(page, "token-dropdown", "eb5-token-chip-inserted", insertedToken);
+
+        await insertedToken.EvaluateAsync("""
+            el => el.dispatchEvent(new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+            }))
+            """);
+        dropdown = page.Locator(".tm-notion-token-dropdown").First;
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+        await AssertWithinViewportAsync(dropdown, "EB5 token edit dropdown");
+        await CaptureBaselineAsync(page, "token-dropdown", "eb5-token-edit-menu", dropdown);
+    }
+
+    private static async Task SeedMentionTokenPageAsync(IPage page)
+    {
+        await page.WaitForFunctionAsync(
+            "methodName => window.tmNotionDemo && typeof window.tmNotionDemo[methodName] === 'function'",
+            "seedMentionTokenPage",
+            new PageWaitForFunctionOptions { Timeout = 60000 });
+        await page.EvaluateAsync("async methodName => await window.tmNotionDemo[methodName]()", "seedMentionTokenPage");
+        await page.ReloadAsync(new PageReloadOptions
+        {
+            WaitUntil = WaitUntilState.NetworkIdle,
+            Timeout = 60000
+        });
+        await page.WaitForSelectorAsync("[data-block-id='eb500000-0000-0000-0000-000000000003'] .tm-notion-token[data-key='unknown.invoice_deadline']", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+    }
+
+    private async Task CaptureBaselineAsync(IPage page, string area, string state, ILocator region)
+    {
+        var outputDir = GetBaselineDirectory(area);
+        var safeState = SanitizePathPart(state);
+        var fullPath = Path.Combine(outputDir, $"{safeState}.png");
+        var regionPath = Path.Combine(outputDir, $"{safeState}.region.png");
+
+        await page.WaitForTimeoutAsync(250);
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        await region.ScreenshotAsync(new LocatorScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            OmitBackground = false
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+    }
+
+    private static async Task AssertWithinViewportAsync(ILocator locator, string label)
+    {
+        var metrics = await locator.EvaluateAsync<ViewportBoxMetrics>("""
+            el => {
+                const rect = el.getBoundingClientRect();
+                return {
+                    Left: rect.left,
+                    Top: rect.top,
+                    Right: rect.right,
+                    Bottom: rect.bottom,
+                    ViewportWidth: window.innerWidth,
+                    ViewportHeight: window.innerHeight
+                };
+            }
+            """);
+
+        Assert.IsTrue(metrics.Left >= 0, $"{label} should not overflow the left viewport edge. Left={metrics.Left}.");
+        Assert.IsTrue(metrics.Top >= 0, $"{label} should not overflow the top viewport edge. Top={metrics.Top}.");
+        Assert.IsTrue(metrics.Right <= metrics.ViewportWidth, $"{label} should not overflow the right viewport edge. Right={metrics.Right}, Viewport={metrics.ViewportWidth}.");
+        Assert.IsTrue(metrics.Bottom <= metrics.ViewportHeight, $"{label} should not overflow the bottom viewport edge. Bottom={metrics.Bottom}, Viewport={metrics.ViewportHeight}.");
+    }
+
+    private static string GetBaselineDirectory(string area)
+    {
+        var dir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            SanitizePathPart(area)));
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizePathPart(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value.Select(ch => invalid.Contains(ch) || char.IsWhiteSpace(ch) ? '-' : char.ToLowerInvariant(ch)).ToArray();
+        return new string(chars);
+    }
+
+    private sealed class ViewportBoxMetrics
+    {
+        public double Left { get; set; }
+
+        public double Top { get; set; }
+
+        public double Right { get; set; }
+
+        public double Bottom { get; set; }
+
+        public double ViewportWidth { get; set; }
+
+        public double ViewportHeight { get; set; }
+    }
 }

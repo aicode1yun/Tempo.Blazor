@@ -18,60 +18,67 @@
 
     @if (_isExpanded)
     {
-        <ul class="tm-nsf-list" role="list">
-            @for (int i = 0; i < _orderedItems.Count; i++)
-            {
-                var idx  = i;
-                var page = _orderedItems[i];
+        @if (_orderedItems.Count == 0)
+        {
+            <div class="tm-nsf-empty">@Loc["TmNotionSidebar_NoFavorites"]</div>
+        }
+        else
+        {
+            <ul class="tm-nsf-list" role="list">
+                @for (int i = 0; i < _orderedItems.Count; i++)
+                {
+                    var idx  = i;
+                    var page = _orderedItems[i];
 
-                <li class="tm-nsf-item @(IsActive(page) ? "tm-nsf-item--active" : "") @(_dragSource == idx ? "tm-nsf-item--dragging" : "") @(_dragOver == idx ? "tm-nsf-item--drag-over" : "")"
-                    role="listitem"
-                    draggable="true"
-                    @ondragstart="e => OnDragStart(idx, e)"
-                    @ondragend="OnDragEnd"
-                    @ondragover:preventDefault
-                    @ondragover="e => OnDragOver(idx, e)"
-                    @ondragleave="() => OnDragLeave(idx)"
-                    @ondrop:preventDefault
-                    @ondrop="e => OnDrop(idx, e)">
+                    <li class="tm-nsf-item @(IsActive(page) ? "tm-nsf-item--active" : "") @(_dragSource == idx ? "tm-nsf-item--dragging" : "") @(_dragOver == idx ? "tm-nsf-item--drag-over" : "")"
+                        role="listitem"
+                        draggable="true"
+                        @ondragstart="e => OnDragStart(idx, e)"
+                        @ondragend="OnDragEnd"
+                        @ondragover:preventDefault
+                        @ondragover="e => OnDragOver(idx, e)"
+                        @ondragleave="() => OnDragLeave(idx)"
+                        @ondrop:preventDefault
+                        @ondrop="e => OnDrop(idx, e)">
 
-                    <span class="tm-nsf-item__drag"
-                          title="@Loc["TmNotionSidebarFavorites_DragHint"]"
-                          aria-hidden="true">
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                            <circle cx="3.5" cy="2.5" r="1"/>
-                            <circle cx="6.5" cy="2.5" r="1"/>
-                            <circle cx="3.5" cy="5"   r="1"/>
-                            <circle cx="6.5" cy="5"   r="1"/>
-                            <circle cx="3.5" cy="7.5" r="1"/>
-                            <circle cx="6.5" cy="7.5" r="1"/>
-                        </svg>
-                    </span>
+                        <span class="tm-nsf-item__drag"
+                              title="@Loc["TmNotionSidebarFavorites_DragHint"]"
+                              aria-hidden="true">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                                <circle cx="3.5" cy="2.5" r="1"/>
+                                <circle cx="6.5" cy="2.5" r="1"/>
+                                <circle cx="3.5" cy="5"   r="1"/>
+                                <circle cx="6.5" cy="5"   r="1"/>
+                                <circle cx="3.5" cy="7.5" r="1"/>
+                                <circle cx="6.5" cy="7.5" r="1"/>
+                            </svg>
+                        </span>
 
-                    <button class="tm-nsf-item__row"
-                            type="button"
-                            title="@GetTitle(page)"
-                            aria-current="@(IsActive(page) ? "page" : null)"
-                            @onclick="() => NavigateAsync(page)">
-                        <span class="tm-nsf-item__icon" aria-hidden="true">@GetIcon(page)</span>
-                        <span class="tm-nsf-item__title">@GetTitle(page)</span>
-                    </button>
+                        <button class="tm-nsf-item__row"
+                                type="button"
+                                title="@GetTitle(page)"
+                                aria-current="@(IsActive(page) ? "page" : null)"
+                                @onclick="() => NavigateAsync(page)">
+                            <span class="tm-nsf-item__icon" aria-hidden="true">@GetIcon(page)</span>
+                            <span class="tm-nsf-item__title">@GetTitle(page)</span>
+                        </button>
 
-                    <button class="tm-nsf-item__remove"
-                            type="button"
-                            title="@Loc["TmNotionSidebar_Unfavorite"]"
-                            aria-label="@Loc["TmNotionSidebar_Unfavorite"]"
-                            @onclick:stopPropagation="true"
-                            @onclick="() => UnfavoriteAsync(page)">
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-                            <path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.5"
-                                  stroke-linecap="round"/>
-                        </svg>
-                    </button>
+                        <button class="tm-nsf-item__remove"
+                                type="button"
+                                title="@Loc["TmNotionSidebar_Unfavorite"]"
+                                aria-label="@Loc["TmNotionSidebar_Unfavorite"]"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => UnfavoriteAsync(page)">
+                            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+                                <path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.5"
+                                      stroke-linecap="round"/>
+                            </svg>
+                        </button>
 
-                </li>
-            }
-        </ul>
+                    </li>
+                }
+            </ul>
+        }
     }
 
 </section>

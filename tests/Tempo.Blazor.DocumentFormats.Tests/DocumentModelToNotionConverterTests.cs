@@ -78,6 +78,40 @@ public class DocumentModelToNotionConverterTests
     }
 
     [Fact]
+    public void ConvertDocument_StandaloneDrawingParagraphMapsToImageBlock()
+    {
+        var document = Dm.DocumentEditorDocument.Empty();
+        document.Blocks.Add(new Dm.DocumentBlock
+        {
+            Type = Dm.DocumentBlockType.Paragraph,
+            Content = new Dm.ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new Dm.DocumentDrawingRun
+                    {
+                        Source = Dm.DocumentImageSource.Url,
+                        Url = "data:image/svg+xml;base64,PHN2Zy8+",
+                        AltText = "Imported drawing",
+                        Caption = "Imported drawing caption",
+                        Size = new Dm.DocumentImageSize { Width = 320, Height = 180 }
+                    }
+                ]
+            }
+        });
+
+        var result = DocumentModelToNotionConverter.ConvertDocument(document, Guid.NewGuid());
+
+        result.Warnings.Should().BeEmpty();
+        var block = result.Blocks.Should().ContainSingle(item => item.Type == BlockType.Image).Subject;
+        var image = (ImageBlockContent)block.Content;
+        image.Url.Should().Be("data:image/svg+xml;base64,PHN2Zy8+");
+        image.AltText.Should().Be("Imported drawing");
+        image.Caption.Should().Be("Imported drawing caption");
+        image.Width.Should().Be(320);
+    }
+
+    [Fact]
     public void MarkdownImporter_ReadsDocumentStructuresForNotionBridge()
     {
         const string markdown = """

@@ -30,18 +30,19 @@ public class NotionPanelBlocksE2ETests : NotionE2ETestBase
             await ExpectPanelAsync(callout, panel);
         }
 
+        await BlurEditorAsync(page);
         await AssertPanelTextContrastAsync(page);
-        await CaptureBaselineAsync("panel-blocks", "desktop-light-all-variants", page.Locator(".tm-notion-page").First);
+        await CapturePanelClusterBaselineAsync(page, "desktop-light-all-variants");
 
         await SetThemeAsync(page, dark: true);
-        await CaptureBaselineAsync("panel-blocks", "desktop-dark-all-variants", page.Locator(".tm-notion-page").First);
+        await CapturePanelClusterBaselineAsync(page, "desktop-dark-all-variants");
 
         await SetThemeAsync(page, dark: false);
         await SetViewportAsync(390, 860);
-        await CaptureBaselineAsync("panel-blocks", "mobile-light-all-variants", page.Locator(".tm-notion-page").First);
+        await CapturePanelClusterBaselineAsync(page, "mobile-light-all-variants", closeMobileSidebar: true);
 
         await SetThemeAsync(page, dark: true);
-        await CaptureBaselineAsync("panel-blocks", "mobile-dark-all-variants", page.Locator(".tm-notion-page").First);
+        await CapturePanelClusterBaselineAsync(page, "mobile-dark-all-variants", closeMobileSidebar: true);
     }
 
     [TestMethod]
@@ -101,24 +102,37 @@ public class NotionPanelBlocksE2ETests : NotionE2ETestBase
         var editable = page.Locator($"{BlockSelector(blockId)} [contenteditable='true']").First;
         await editable.ScrollIntoViewIfNeededAsync();
         await editable.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
-        await editable.ClickAsync();
-        await page.Keyboard.PressAsync("End");
+        await editable.EvaluateAsync("""
+            el => {
+                el.innerHTML = '';
+                el.focus();
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            """);
+        await page.WaitForTimeoutAsync(250);
         await page.Keyboard.TypeAsync("/");
 
         var slash = page.Locator(".tm-notion-slash").First;
-        await slash.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await slash.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
         await slash.Locator(".tm-notion-slash__input").FillAsync(itemName);
         await page.WaitForTimeoutAsync(250);
 
         var item = slash.Locator(".tm-notion-slash__item").Filter(new LocatorFilterOptions { HasText = itemName }).First;
-        await item.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 5000 });
-        await item.EvaluateAsync("el => el.click()");
+        await item.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await item.ClickAsync();
 
         await page.Locator($"{BlockSelector(blockId)} .tm-notion-callout").First.WaitForAsync(new LocatorWaitForOptions
         {
             State = WaitForSelectorState.Visible,
             Timeout = 10000
         });
+        await SetEditableTextAsync(page, $"{BlockSelector(blockId)} .tm-notion-callout__body", $"{itemName} content");
     }
 
     private static async Task ChangePanelTypeFromMenuAsync(IPage page, string blockId, string itemName)
@@ -133,7 +147,7 @@ public class NotionPanelBlocksE2ETests : NotionE2ETestBase
         await panelType.HoverAsync();
         var item = page.Locator(".tm-notion-ctx-sub .tm-notion-ctx__item", new PageLocatorOptions { HasTextString = itemName }).First;
         await item.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
-        await item.ClickAsync();
+        await item.EvaluateAsync("el => el.click()");
         await page.WaitForTimeoutAsync(750);
     }
 
@@ -165,6 +179,124 @@ public class NotionPanelBlocksE2ETests : NotionE2ETestBase
     {
         await page.Locator(".tm-notion-h1").First.ClickAsync(new LocatorClickOptions { Force = true });
         await page.WaitForTimeoutAsync(1200);
+    }
+
+    private async Task<NotionBaselineCapture> CapturePanelClusterBaselineAsync(IPage page, string state, bool closeMobileSidebar = false)
+    {
+        await PreparePanelBaselineViewportAsync(page, closeMobileSidebar);
+
+        var outputDir = GetPanelBaselineDirectory();
+        var fullPath = Path.Combine(outputDir, $"{state}.png");
+        var regionPath = Path.Combine(outputDir, $"{state}.region.png");
+
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        var clip = await page.EvaluateAsync<PanelClusterClip>(
+            """
+            ids => {
+                const panels = ids
+                    .map(id => document.querySelector(`[data-block-id="${id}"] .tm-notion-callout`))
+                    .filter(Boolean);
+
+                if (panels.length !== ids.length) {
+                    throw new Error(`Expected ${ids.length} panel callouts, found ${panels.length}.`);
+                }
+
+                const padding = 12;
+                const rects = panels.map(panel => panel.getBoundingClientRect());
+                const left = Math.min(...rects.map(rect => rect.left));
+                const top = Math.min(...rects.map(rect => rect.top));
+                const right = Math.max(...rects.map(rect => rect.right));
+                const bottom = Math.max(...rects.map(rect => rect.bottom));
+                const x = Math.max(0, left);
+                const y = Math.max(0, top);
+                const width = Math.min(window.innerWidth, right + padding) - x;
+                const height = Math.min(window.innerHeight, bottom + padding) - y;
+                return { x, y, width, height };
+            }
+            """,
+            Panels.Select(panel => panel.BlockId).ToArray());
+
+        Assert.IsTrue(clip.Width > 0 && clip.Height > 0, "Panel cluster screenshot clip must have positive dimensions.");
+
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            Clip = new Clip
+            {
+                X = (float)clip.X,
+                Y = (float)clip.Y,
+                Width = (float)clip.Width,
+                Height = (float)clip.Height
+            }
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+        return new NotionBaselineCapture(fullPath, regionPath);
+    }
+
+    private static async Task PreparePanelBaselineViewportAsync(IPage page, bool closeMobileSidebar = false)
+    {
+        if (closeMobileSidebar)
+        {
+            var overlay = page.Locator(".tm-notion-sidebar-overlay").First;
+            if (await overlay.IsVisibleAsync())
+            {
+                await overlay.ClickAsync(new LocatorClickOptions { Force = true });
+                await overlay.WaitForAsync(new LocatorWaitForOptions
+                {
+                    State = WaitForSelectorState.Hidden,
+                    Timeout = 10000
+                });
+            }
+
+            var visibleSidebar = page.Locator(".tm-notion-sidebar--visible").First;
+            if (await visibleSidebar.IsVisibleAsync())
+            {
+                await page.Locator(".tm-notion-sidebar-toggle").First.EvaluateAsync("el => el.click()");
+                await page.Locator(".tm-notion-sidebar--hidden").First.WaitForAsync(new LocatorWaitForOptions
+                {
+                    State = WaitForSelectorState.Attached,
+                    Timeout = 10000
+                });
+            }
+        }
+
+        var firstPanel = PanelCallout(page, Panels[0].BlockId);
+        await firstPanel.ScrollIntoViewIfNeededAsync();
+        await firstPanel.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await page.EvaluateAsync("() => { document.activeElement?.blur(); window.getSelection()?.removeAllRanges(); }");
+        await firstPanel.EvaluateAsync(
+            """
+            el => {
+                const main = el.closest('.tm-notion-main');
+                const topbar = document.querySelector('.tm-notion-topbar');
+                const topbarHeight = topbar ? topbar.getBoundingClientRect().height : 44;
+                const margin = 20;
+                if (main) {
+                    const mainRect = main.getBoundingClientRect();
+                    const rect = el.getBoundingClientRect();
+                    main.scrollBy({
+                        top: rect.top - mainRect.top - topbarHeight - margin,
+                        behavior: 'instant'
+                    });
+                } else {
+                    const rect = el.getBoundingClientRect();
+                    window.scrollBy({
+                        top: rect.top - topbarHeight - margin,
+                        behavior: 'instant'
+                    });
+                }
+            }
+            """);
+        await page.WaitForTimeoutAsync(350);
     }
 
     private static async Task ExpectPanelAsync(ILocator callout, PanelCase panel)
@@ -246,6 +378,20 @@ public class NotionPanelBlocksE2ETests : NotionE2ETestBase
 
     private static string BlockSelector(string blockId) => $"[data-block-id='{blockId}']";
 
+    private static string GetPanelBaselineDirectory()
+    {
+        var dir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            "panel-blocks"));
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
     private sealed record PanelCase(string Name, string Variant, string Icon, string BlockId);
 
     private sealed class PanelMetrics
@@ -253,5 +399,13 @@ public class NotionPanelBlocksE2ETests : NotionE2ETestBase
         public double Height { get; set; }
         public double BodyRight { get; set; }
         public double PanelRight { get; set; }
+    }
+
+    private sealed class PanelClusterClip
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
     }
 }

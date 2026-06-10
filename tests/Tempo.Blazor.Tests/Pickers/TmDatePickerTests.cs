@@ -109,6 +109,17 @@ public class TmDatePickerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void DatePicker_DayButtonsExposeIsoDateForAutomation()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var cut = RenderComponent<TmDatePicker>();
+        cut.Find(".tm-date-picker-trigger").Click();
+
+        cut.Find($".tm-cal-day[data-date='{today:yyyy-MM-dd}']")
+            .TextContent.Should().Be(today.Day.ToString());
+    }
+
+    [Fact]
     public void DatePicker_SelectedDate_Highlighted()
     {
         var today = DateOnly.FromDateTime(DateTime.Today);

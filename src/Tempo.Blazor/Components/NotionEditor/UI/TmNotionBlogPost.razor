@@ -12,7 +12,7 @@
                 @if (Post.PublishedAt is not null)
                 {
                     <time datetime="@Post.PublishedAt.Value.ToString("O")">
-                        @Loc["Notion_Blog_PublishedOn", Post.PublishedAt.Value.ToString("d")]
+                        @Post.PublishedAt.Value.ToString("d")
                     </time>
                 }
                 <span>@Post.AuthorId</span>
@@ -33,7 +33,6 @@
 
     <div class="tm-notion-blog-post__body">
         <TmNotionBlockList Blocks="PostBlocks"
-                           PageId="@Post.Id"
                            ReadOnly="true" />
     </div>
 </article>

@@ -131,9 +131,11 @@
 }
 
 .tm-notion-status {
+    --tm-notion-status-max-label-width: 24ch;
+
     display: inline-flex;
     align-items: baseline;
-    max-width: min(calc(var(--tm-space-16) * 3), 42ch);
+    max-width: min(calc(var(--tm-space-16, 4rem) * 3), var(--tm-notion-status-max-label-width));
     padding: calc(var(--tm-space-1) / 2) var(--tm-space-2);
     border-radius: var(--tm-radius-full);
     border: var(--tm-border-width-1, 1px) solid var(--tm-status-border);
@@ -150,6 +152,9 @@
 }
 
 .tm-notion-status__label {
+    display: block;
+    min-width: 0;
+    max-width: var(--tm-notion-status-max-label-width);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

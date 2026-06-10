@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using System.Globalization;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -43,6 +44,7 @@ public partial class TmNotionMentionMenu : ComponentBase
     private double     _left;
     private bool       _loading;
     private bool       _needsFocus;
+    private bool       _needsPositionAdjustment;
     private int        _selectedIndex;
 
     private IReadOnlyList<IMentionUser> _people = [];
@@ -50,6 +52,10 @@ public partial class TmNotionMentionMenu : ComponentBase
 
     private ElementReference _menuRef;
     private ElementReference _inputRef;
+
+    private string MenuStyle => string.Create(
+        CultureInfo.InvariantCulture,
+        $"--tm-nmm-anchor-top:{_top}px;--tm-nmm-anchor-left:{_left}px;top:max(8px,min({_top}px,calc(100vh - 360px - 8px)));left:max(8px,min({_left}px,calc(100vw - 280px - 8px)))");
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -65,6 +71,7 @@ public partial class TmNotionMentionMenu : ComponentBase
             _pages         = [];
             _tab           = PagesOnly ? MentionTab.Pages : MentionTab.People;
             _needsFocus    = true;
+            _needsPositionAdjustment = true;
             await SearchAsync();
         }
         else if (!Visible && _wasVisible)
@@ -85,8 +92,14 @@ public partial class TmNotionMentionMenu : ComponentBase
             try
             {
                 await _inputRef.FocusAsync();
-                await JS.InvokeVoidAsync("tmNotionEditor.adjustSlashMenuPosition", _menuRef);
             }
+            catch { /* SSR / test */ }
+        }
+
+        if (_needsPositionAdjustment && Visible)
+        {
+            _needsPositionAdjustment = false;
+            try { await JS.InvokeVoidAsync("tmNotionEditor.adjustSlashMenuPosition", _menuRef); }
             catch { /* SSR / test */ }
         }
     }
@@ -128,6 +141,7 @@ public partial class TmNotionMentionMenu : ComponentBase
         finally
         {
             _loading = false;
+            _needsPositionAdjustment = true;
             StateHasChanged();
         }
     }

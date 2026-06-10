@@ -40,10 +40,9 @@
                             CommentProvider="@(_share.AllowComments ? CommentProvider : null)"
                             InitialPageId="@_share.PageId.ToString("D")"
                             ShowSidebar="false"
-                            ReadOnly="true"
-                            RecordAnalyticsViews="false"
+                            ReadOnly="@true"
                             CurrentUserId="anonymous"
-                            Class="tm-npp__editor-inner" />
+                            Class="tm-npp__editor-inner tm-notion-editor--locked" />
         </div>
     }
 </section>

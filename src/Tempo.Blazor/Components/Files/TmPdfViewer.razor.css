@@ -146,13 +146,14 @@
     overflow: auto;
     display: flex;
     align-items: flex-start;
-    justify-content: center;
+    justify-content: flex-start;
     background: var(--tm-bg-subtle, #f3f4f6);
     padding: var(--tm-space-4, 16px);
 }
 
 .tm-pdf-viewer__canvas {
     display: block;
+    margin-inline: auto;
     background: var(--tm-surface, #ffffff);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     border-radius: var(--tm-radius-sm, 4px);

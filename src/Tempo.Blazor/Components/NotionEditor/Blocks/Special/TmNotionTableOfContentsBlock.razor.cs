@@ -19,6 +19,9 @@ public partial class TmNotionTableOfContentsBlock : ComponentBase
     [CascadingParameter(Name = "TmPageBlocks")]
     private IReadOnlyList<IPageBlock>? AllPageBlocks { get; set; }
 
+    [CascadingParameter(Name = "TmActiveHeadingBlockId")]
+    private string? ActiveHeadingBlockId { get; set; }
+
     // ── Parameters ───────────────────────────────────────────────────────────
 
     [Parameter] public ITableOfContentsBlockContent? Content   { get; set; }
@@ -33,6 +36,7 @@ public partial class TmNotionTableOfContentsBlock : ComponentBase
 
     private List<HeadingEntry>        _entries    = [];
     private IReadOnlyList<IPageBlock>? _lastBlocks;
+    private Guid?                     _navigatedBlockId;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -60,6 +64,7 @@ public partial class TmNotionTableOfContentsBlock : ComponentBase
 
     private async Task HandleItemClickAsync(Guid blockId)
     {
+        _navigatedBlockId = blockId;
         await OnFocused.InvokeAsync();
         try
         {
@@ -67,6 +72,18 @@ public partial class TmNotionTableOfContentsBlock : ComponentBase
         }
         catch { }
     }
+
+    private string GetItemClass(HeadingEntry entry)
+    {
+        var activeClass = IsActive(entry.BlockId) ? " tm-toc__item--active" : string.Empty;
+        return $"tm-toc__item tm-toc__item--level{entry.Level}{activeClass}";
+    }
+
+    private string? GetAriaCurrent(HeadingEntry entry) => IsActive(entry.BlockId) ? "true" : null;
+
+    private bool IsActive(Guid blockId) =>
+        string.Equals(ActiveHeadingBlockId, blockId.ToString("D"), StringComparison.OrdinalIgnoreCase)
+        || _navigatedBlockId == blockId;
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

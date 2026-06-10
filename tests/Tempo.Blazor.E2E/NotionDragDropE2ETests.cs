@@ -268,3 +268,147 @@ public class NotionDragDropE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "drag_drop_indicator");
     }
 }
+
+[TestClass]
+[DoNotParallelize]
+public class NotionDragDropRecoveryE2ETests : NotionE2ETestBase
+{
+    private const string TopListSelector = ".tm-notion-page__blocks > .tm-notion-block-list";
+    private const string LeftColumnListSelector = ".tm-notion-block-list[data-parent-block-id='eb160000-0000-0000-0000-000000000011']";
+    private const string RightColumnListSelector = ".tm-notion-block-list[data-parent-block-id='eb160000-0000-0000-0000-000000000012']";
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB16: drag indicator, Escape cancel, and top-level reorder capture deterministic UX baselines.")]
+    public async Task EB16_DragIndicatorEscapeAndTopLevelReorder_CapturesBaselines()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedDragDropPageAsync();
+
+        await BeginDragOverAsync(
+            page,
+            "[data-block-id='eb160000-0000-0000-0000-000000000002']",
+            "[data-block-id='eb160000-0000-0000-0000-000000000003']",
+            dropBelow: true);
+
+        await Assertions.Expect(page.Locator(".tm-notion-drop-indicator")).ToBeVisibleAsync();
+        await CaptureBaselineAsync("drag-drop", "drag-indicator", page.Locator("body"));
+
+        await page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(page.Locator(".tm-notion-drop-indicator")).ToBeHiddenAsync(new LocatorAssertionsToBeHiddenOptions { Timeout = 5000 });
+        var draggingCount = await page.Locator(".tm-notion-dragging").CountAsync();
+        Assert.AreEqual(0, draggingCount, "Escape should cancel the drag visual state without reordering blocks.");
+
+        await DragDropAsync(
+            page,
+            "[data-block-id='eb160000-0000-0000-0000-000000000002']",
+            "[data-block-id='eb160000-0000-0000-0000-000000000003']",
+            dropBelow: true);
+
+        await Assertions.Expect(page.Locator($"{TopListSelector} > [data-block-id='eb160000-0000-0000-0000-000000000002']")).ToBeVisibleAsync();
+        var topOrder = await ReadDirectBlockIdsAsync(page, TopListSelector);
+        Assert.IsTrue(
+            Array.IndexOf(topOrder, "eb160000-0000-0000-0000-000000000003") < Array.IndexOf(topOrder, "eb160000-0000-0000-0000-000000000002"),
+            $"Bravo should move below Alpha. Actual order: {string.Join(", ", topOrder)}");
+
+        await CaptureBaselineAsync("drag-drop", "top-level-reordered", page.Locator(".tm-notion-page").First);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB16: moving blocks into a column, across columns, and out of a column captures production drag/drop states.")]
+    public async Task EB16_ColumnMoves_CapturesIntoOutAndCrossColumnBaselines()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedDragDropPageAsync();
+
+        await DragDropAsync(
+            page,
+            "[data-block-id='eb160000-0000-0000-0000-000000000003']",
+            "[data-block-id='eb160000-0000-0000-0000-000000000101']",
+            dropBelow: false);
+        await Assertions.Expect(page.Locator($"{LeftColumnListSelector} > [data-block-id='eb160000-0000-0000-0000-000000000003']")).ToBeVisibleAsync();
+        await CaptureBaselineAsync("drag-drop", "moved-into-column", page.Locator("[data-block-id='eb160000-0000-0000-0000-000000000010']").First);
+
+        await DragDropAsync(
+            page,
+            "[data-block-id='eb160000-0000-0000-0000-000000000003']",
+            "[data-block-id='eb160000-0000-0000-0000-000000000201']",
+            dropBelow: true);
+        await Assertions.Expect(page.Locator($"{RightColumnListSelector} > [data-block-id='eb160000-0000-0000-0000-000000000003']")).ToBeVisibleAsync();
+        await CaptureBaselineAsync("drag-drop", "cross-column-moved", page.Locator("[data-block-id='eb160000-0000-0000-0000-000000000010']").First);
+
+        await DragDropAsync(
+            page,
+            "[data-block-id='eb160000-0000-0000-0000-000000000003']",
+            "[data-block-id='eb160000-0000-0000-0000-000000000020']",
+            dropBelow: false);
+        await Assertions.Expect(page.Locator($"{TopListSelector} > [data-block-id='eb160000-0000-0000-0000-000000000003']")).ToBeVisibleAsync();
+        await CaptureBaselineAsync("drag-drop", "moved-out-of-column", page.Locator(".tm-notion-page").First);
+    }
+
+    private static async Task BeginDragOverAsync(IPage page, string sourceSelector, string targetSelector, bool dropBelow)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ sourceSelector, targetSelector, dropBelow }) => {
+                const source = document.querySelector(sourceSelector);
+                const target = document.querySelector(targetSelector);
+                if (!source || !target) throw new Error(`Missing drag source or target: ${sourceSelector} -> ${targetSelector}`);
+
+                const handle = source.querySelector('[data-notion-drag-handle]');
+                if (!handle) throw new Error(`Missing drag handle for ${sourceSelector}`);
+
+                const rect = target.getBoundingClientRect();
+                const clientY = dropBelow ? rect.bottom - 2 : rect.top + 2;
+                const clientX = rect.left + rect.width / 2;
+                const dataTransfer = new DataTransfer();
+                if (typeof dataTransfer.setDragImage !== 'function') dataTransfer.setDragImage = function() {};
+
+                handle.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer }));
+                target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, clientX, clientY, dataTransfer }));
+            }
+            """,
+            new { sourceSelector, targetSelector, dropBelow });
+        await page.WaitForTimeoutAsync(250);
+    }
+
+    private static async Task DragDropAsync(IPage page, string sourceSelector, string targetSelector, bool dropBelow)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ sourceSelector, targetSelector, dropBelow }) => {
+                const source = document.querySelector(sourceSelector);
+                const target = document.querySelector(targetSelector);
+                if (!source || !target) throw new Error(`Missing drag source or target: ${sourceSelector} -> ${targetSelector}`);
+
+                const handle = source.querySelector('[data-notion-drag-handle]');
+                if (!handle) throw new Error(`Missing drag handle for ${sourceSelector}`);
+
+                const rect = target.getBoundingClientRect();
+                const clientY = dropBelow ? rect.bottom - 2 : rect.top + 2;
+                const clientX = rect.left + rect.width / 2;
+                const dataTransfer = new DataTransfer();
+                if (typeof dataTransfer.setDragImage !== 'function') dataTransfer.setDragImage = function() {};
+
+                handle.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer }));
+                target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, clientX, clientY, dataTransfer }));
+                target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, clientX, clientY, dataTransfer }));
+                handle.dispatchEvent(new DragEvent('dragend', { bubbles: true, cancelable: true, dataTransfer }));
+            }
+            """,
+            new { sourceSelector, targetSelector, dropBelow });
+        await page.WaitForTimeoutAsync(900);
+    }
+
+    private static async Task<string[]> ReadDirectBlockIdsAsync(IPage page, string listSelector)
+    {
+        return await page.EvaluateAsync<string[]>(
+            """
+            selector => Array.from(document.querySelector(selector)?.children ?? [])
+                .filter(child => child.matches?.('[data-notion-block]'))
+                .map(child => child.getAttribute('data-block-id') || '')
+            """,
+            listSelector);
+    }
+}

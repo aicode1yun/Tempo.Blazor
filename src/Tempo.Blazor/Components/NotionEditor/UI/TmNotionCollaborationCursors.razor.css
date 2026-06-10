@@ -1,23 +1,33 @@
 /* ── Avatar bar ──────────────────────────────────────────────────────────── */
 
 .tm-collab-bar {
+    --tm-collab-avatar-size: calc(var(--tm-space-3) + var(--tm-space-4));
+    --tm-collab-avatar-overlap: calc(var(--tm-space-2) * -0.75);
+    --tm-collab-color-1: var(--tm-color-danger);
+    --tm-collab-color-2: var(--tm-color-info);
+    --tm-collab-color-3: var(--tm-color-primary-700);
+    --tm-collab-color-4: var(--tm-color-warning);
+    --tm-collab-color-5: var(--tm-color-warning-hover);
+    --tm-collab-color-6: var(--tm-color-primary);
+    --tm-collab-color-7: var(--tm-color-success);
+    --tm-collab-color-8: var(--tm-color-danger-text);
+
     display:     flex;
     align-items: center;
-    gap:         -6px;         /* avatars overlap */
     flex-shrink: 0;
-    padding:     0 4px;
+    padding:     0 var(--tm-space-1);
 }
 
 .tm-collab-avatar {
     position:        relative;
-    width:           28px;
-    height:          28px;
+    width:           var(--tm-collab-avatar-size);
+    height:          var(--tm-collab-avatar-size);
     border-radius:   50%;
-    border:          2px solid var(--collab-color, #888);
-    background:      var(--collab-color, #888);
+    border:          calc(var(--tm-space-1) / 2) solid var(--collab-color, var(--tm-color-secondary));
+    background:      var(--collab-color, var(--tm-color-secondary));
     cursor:          default;
-    overflow:        hidden;
-    margin-left:     -6px;
+    overflow:        visible;
+    margin-left:     var(--tm-collab-avatar-overlap);
     transition:      transform 0.15s ease, z-index 0s;
     z-index:         0;
 }
@@ -36,21 +46,26 @@
 .tm-collab-avatar::after {
     content:          attr(title);
     position:         absolute;
-    top:              calc(100% + 6px);
+    top:              calc(100% + var(--tm-space-2));
     left:             50%;
     transform:        translateX(-50%);
-    background:       rgba(15, 15, 15, 0.85);
-    color:            #fff;
-    font-size:        11px;
+    width:            max-content;
+    max-inline-size:  min(18rem, 70vw);
+    background:       var(--tm-color-gray-900);
+    color:            var(--tm-text-inverse);
+    font-size:        var(--tm-font-size-xs);
     font-weight:      500;
-    line-height:      1;
-    padding:          4px 8px;
-    border-radius:    4px;
-    white-space:      nowrap;
+    line-height:      var(--tm-line-height-tight);
+    padding:          var(--tm-space-1) var(--tm-space-2);
+    border-radius:    var(--tm-radius-sm);
+    white-space:      normal;
+    text-align:       center;
+    overflow-wrap:    anywhere;
     pointer-events:   none;
     opacity:          0;
     transition:       opacity 0.12s ease;
-    z-index:          50;
+    z-index:          var(--tm-z-tooltip);
+    box-shadow:       var(--tm-shadow-md);
 }
 
 .tm-collab-avatar:hover::after {
@@ -64,7 +79,8 @@
     height:       100%;
     object-fit:   cover;
     display:      block;
-    border-radius: 50%;
+    overflow:     hidden;
+    border-radius: inherit;
 }
 
 /* ── Avatar initials ─────────────────────────────────────────────────────── */
@@ -75,10 +91,12 @@
     justify-content: center;
     width:           100%;
     height:          100%;
-    color:           #fff;
-    font-size:       11px;
+    overflow:        hidden;
+    border-radius:   inherit;
+    color:           var(--tm-text-inverse);
+    font-size:       var(--tm-font-size-xs);
     font-weight:     600;
-    letter-spacing:  0.02em;
+    letter-spacing:  0;
     user-select:     none;
     text-transform:  uppercase;
 }

@@ -11,23 +11,34 @@ public sealed class NotionSmartLinksE2ETests : NotionE2ETestBase
     private const string ResolverFailUrl = "https://resolver-fail.tempo.local/failure";
 
     [TestMethod]
+    [TestCategory("NotionUxBaseline")]
     [Description("Smart Links paste menu inserts inline previews, creates bookmark cards, and falls back to plain links for invalid/providerless/failing resolver cases.")]
     public async Task SmartLinks_PasteInlineCardAndFallbacks()
     {
         var page = await OpenNotionEditorAsync();
         await SeedSmartLinksPageAsync();
+        await DelaySmartLinkResolverAsync(page);
 
         var inlineBlock = page.Locator("[data-block-id='cf800000-0000-0000-0000-000000000010'] .tm-notion-editable").First;
         await PasteTextAsync(inlineBlock, KnownUrl);
-        await page.Locator(".tm-notion-smart-link-menu").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
-        Assert.IsTrue(await page.Locator(".tm-notion-smart-link-menu").EvaluateAsync<bool>("menu => menu.parentElement === document.body"),
+        var pasteMenu = page.Locator(".tm-notion-smart-link-menu").First;
+        await pasteMenu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        Assert.IsTrue(await pasteMenu.EvaluateAsync<bool>("menu => menu.parentElement === document.body"),
             "Paste-as menu should be rendered outside the contenteditable block.");
+        await CaptureBaselineAndAssertAsync("cf8-paste-menu", pasteMenu);
+
         await page.Locator(".tm-notion-smart-link-menu__item").Filter(new() { HasText = "Paste as inline preview" }).ClickAsync();
+        await page.Locator(".tm-notion-smart-link-menu--loading").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await CaptureBaselineAndAssertAsync("cf8-paste-menu-loading", pasteMenu);
+
         var inlineChip = inlineBlock.Locator(".tm-notion-smart-link").Filter(new() { HasText = "Tempo Notion special blocks" });
         await inlineChip.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await page.UnrouteAsync("**/api/notion/smart-links/resolve");
         Assert.AreEqual(1, await inlineChip.Locator(".tm-notion-smart-link__favicon").CountAsync());
         Assert.IsTrue(await inlineChip.EvaluateAsync<bool>("el => el.scrollWidth <= el.clientWidth + 1"), "Inline smart link should truncate instead of overflowing.");
         Assert.AreEqual(0, await page.Locator(".tm-notion-smart-link-menu").CountAsync());
+        await CaptureBaselineAndAssertAsync("cf8-inline-preview-chip", inlineBlock);
+
         var inlineHtml = await inlineBlock.EvaluateAsync<string>("el => el.innerHTML");
         Assert.IsFalse(inlineHtml.Contains("tm-notion-smart-link-menu", StringComparison.Ordinal),
             "Smart-link menu markup must not be persisted inside the editable block.");
@@ -38,6 +49,7 @@ public sealed class NotionSmartLinksE2ETests : NotionE2ETestBase
         var card = page.Locator(".tm-notion-bookmark-block__card").Filter(new() { HasText = "Tempo Notion special blocks" }).First;
         await card.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
         Assert.IsTrue(await card.Locator(".tm-notion-bookmark-block__favicon").IsVisibleAsync());
+        await CaptureBaselineAndAssertAsync("cf8-card-preview", card);
 
         var fallbackBlock = page.Locator("[data-block-id='cf800000-0000-0000-0000-000000000030'] .tm-notion-editable").First;
         await PasteTextAsync(fallbackBlock, "not a valid url");
@@ -45,7 +57,13 @@ public sealed class NotionSmartLinksE2ETests : NotionE2ETestBase
 
         await PasteTextAsync(fallbackBlock, ResolverFailUrl);
         await page.Locator(".tm-notion-smart-link-menu__item").Filter(new() { HasText = "Paste as inline preview" }).ClickAsync();
-        await fallbackBlock.Locator($"a[href='{ResolverFailUrl}']").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        var resolverFallback = fallbackBlock.Locator($"a[href='{ResolverFailUrl}']");
+        await resolverFallback.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await Assertions.Expect(fallbackBlock).ToContainTextAsync($"not a valid url {ResolverFailUrl}", new LocatorAssertionsToContainTextOptions
+        {
+            Timeout = 10000
+        });
+        await CaptureBaselineAndAssertAsync("cf8-resolver-error-fallback", fallbackBlock);
 
         await PasteTextAsync(fallbackBlock, LongTitleUrl);
         await page.Locator(".tm-notion-smart-link-menu").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
@@ -89,6 +107,7 @@ public sealed class NotionSmartLinksE2ETests : NotionE2ETestBase
     }
 
     [TestMethod]
+    [TestCategory("NotionUxBaseline")]
     [Description("When Smart Link provider is disabled, pasted URLs are inserted as plain links without opening the paste-as menu.")]
     public async Task SmartLinks_WithoutProvider_PastesPlainLink()
     {
@@ -101,6 +120,24 @@ public sealed class NotionSmartLinksE2ETests : NotionE2ETestBase
         await block.Locator($"a[href='{KnownUrl}']").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
         Assert.AreEqual(0, await page.Locator(".tm-notion-smart-link-menu").CountAsync());
         Assert.AreEqual(0, await block.Locator(".tm-notion-smart-link").CountAsync());
+        await CaptureBaselineAndAssertAsync("cf8-no-provider-plain-link", block);
+    }
+
+    private static async Task DelaySmartLinkResolverAsync(IPage page)
+    {
+        await page.RouteAsync("**/api/notion/smart-links/resolve", async route =>
+        {
+            await Task.Delay(5000);
+            await route.ContinueAsync();
+        });
+    }
+
+    private async Task CaptureBaselineAndAssertAsync(string state, ILocator region)
+    {
+        await region.ScrollIntoViewIfNeededAsync();
+        var capture = await CaptureBaselineAsync("smart-links", state, region);
+        Assert.IsTrue(File.Exists(capture.FullPagePath), $"CF8 full-page baseline should be written for {state}.");
+        Assert.IsTrue(File.Exists(capture.RegionPath), $"CF8 region baseline should be written for {state}.");
     }
 
     private static async Task PasteTextAsync(ILocator editable, string text)

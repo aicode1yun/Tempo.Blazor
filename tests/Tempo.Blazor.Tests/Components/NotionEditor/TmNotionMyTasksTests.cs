@@ -2,6 +2,7 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using AngleSharp.Dom;
 using Tempo.Blazor.Components.NotionEditor.UI;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -134,6 +135,36 @@ public class TmNotionMyTasksTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task StatusAndDueFilters_CountMatchesVisibleTasksForEveryCombination()
+    {
+        var tasks = SampleFilterMatrixTasks();
+        var scenarios =
+            from status in new[] { "Open", "Done", "All statuses" }
+            from due in new[] { "Any due date", "Overdue", "Upcoming" }
+            select (Status: status, Due: due);
+
+        foreach (var scenario in scenarios)
+        {
+            var cut = RenderTasks(new FakeTaskProvider(tasks));
+
+            await ClickSegmentFilterAsync(cut, 1, scenario.Status);
+            await ClickSegmentFilterAsync(cut, 2, scenario.Due);
+
+            var expected = tasks
+                .Where(task => string.Equals(task.AssigneeId, "alice", StringComparison.OrdinalIgnoreCase))
+                .Where(task => MatchesStatus(task, scenario.Status))
+                .Where(task => MatchesDue(task, scenario.Due))
+                .Count();
+
+            cut.WaitForAssertion(() =>
+            {
+                cut.Find(".tm-my-tasks__count").TextContent.Should().Be($"{expected} tasks");
+                cut.FindAll(".tm-my-tasks__item").Should().HaveCount(expected);
+            });
+        }
+    }
+
+    [Fact]
     public void LoadError_UsesLocalizedMessageInsteadOfProviderException()
     {
         var provider = new ThrowingTaskProvider("database-password-leaked");
@@ -168,6 +199,36 @@ public class TmNotionMyTasksTests : LocalizationTestBase
             .Add(component => component.TaskProvider, provider)
             .Add(component => component.CurrentUserId, "alice")
             .Add(component => component.OnNavigateToBlock, navigateCallback));
+
+    private static Task ClickSegmentFilterAsync(
+        IRenderedComponent<TmNotionMyTasks> cut,
+        int segmentIndex,
+        string label)
+    {
+        var segment = cut.FindAll(".tm-my-tasks__segment")[segmentIndex];
+        var button = segment.QuerySelectorAll("button")
+            .Single(item => item.TextContent.Trim() == label);
+
+        return button.ClickAsync(new MouseEventArgs());
+    }
+
+    private static bool MatchesStatus(NotionTaskDto task, string status) => status switch
+    {
+        "Open" => !task.IsCompleted,
+        "Done" => task.IsCompleted,
+        _ => true
+    };
+
+    private static bool MatchesDue(NotionTaskDto task, string due)
+    {
+        var today = DateTime.Today;
+        return due switch
+        {
+            "Overdue" => task.DueDate is DateTime date && date.Date < today,
+            "Upcoming" => task.DueDate is DateTime date && date.Date >= today,
+            _ => true
+        };
+    }
 
     private static IReadOnlyList<NotionTaskDto> SampleTasks()
     {
@@ -256,6 +317,104 @@ public class TmNotionMyTasksTests : LocalizationTestBase
         });
 
         return tasks;
+    }
+
+    private static IReadOnlyList<NotionTaskDto> SampleFilterMatrixTasks()
+    {
+        var today = DateTime.Today;
+        return
+        [
+            new()
+            {
+                Id = "open-overdue",
+                PageId = "page-a",
+                PageTitle = "Planning",
+                BlockId = "block-open-overdue",
+                Text = "Open overdue",
+                AssigneeId = "alice",
+                DueDate = today.AddDays(-2),
+                CreatedAt = today.AddDays(-4)
+            },
+            new()
+            {
+                Id = "open-today",
+                PageId = "page-a",
+                PageTitle = "Planning",
+                BlockId = "block-open-today",
+                Text = "Open today",
+                AssigneeId = "alice",
+                DueDate = today,
+                CreatedAt = today.AddDays(-3)
+            },
+            new()
+            {
+                Id = "open-future",
+                PageId = "page-a",
+                PageTitle = "Planning",
+                BlockId = "block-open-future",
+                Text = "Open future",
+                AssigneeId = "alice",
+                DueDate = today.AddDays(5),
+                CreatedAt = today.AddDays(-2)
+            },
+            new()
+            {
+                Id = "open-no-due",
+                PageId = "page-a",
+                PageTitle = "Planning",
+                BlockId = "block-open-no-due",
+                Text = "Open no due date",
+                AssigneeId = "alice",
+                CreatedAt = today.AddDays(-1)
+            },
+            new()
+            {
+                Id = "done-overdue",
+                PageId = "page-b",
+                PageTitle = "Release",
+                BlockId = "block-done-overdue",
+                Text = "Done overdue",
+                AssigneeId = "alice",
+                DueDate = today.AddDays(-1),
+                IsCompleted = true,
+                CreatedAt = today.AddDays(-5)
+            },
+            new()
+            {
+                Id = "done-today",
+                PageId = "page-b",
+                PageTitle = "Release",
+                BlockId = "block-done-today",
+                Text = "Done today",
+                AssigneeId = "alice",
+                DueDate = today,
+                IsCompleted = true,
+                CreatedAt = today.AddDays(-4)
+            },
+            new()
+            {
+                Id = "done-future",
+                PageId = "page-b",
+                PageTitle = "Release",
+                BlockId = "block-done-future",
+                Text = "Done future",
+                AssigneeId = "alice",
+                DueDate = today.AddDays(2),
+                IsCompleted = true,
+                CreatedAt = today.AddDays(-3)
+            },
+            new()
+            {
+                Id = "other-user",
+                PageId = "page-c",
+                PageTitle = "Hidden",
+                BlockId = "block-other-user",
+                Text = "Other user task",
+                AssigneeId = "bob",
+                DueDate = today,
+                CreatedAt = today
+            }
+        ];
     }
 
     private sealed class FakeTaskProvider : INotionTaskProvider

@@ -28,7 +28,9 @@ public class DemoNotionAnalyticsProvider : INotionAnalyticsProvider
 
         lock (_syncRoot)
         {
-            var state = GetOrCreateState(pageId);
+            if (!_analytics.TryGetValue(pageId, out var state))
+                return Task.CompletedTask;
+
             state.Views++;
             state.LastViewedAt = now;
             state.UniqueVisitors.Add(visitorId);

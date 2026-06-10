@@ -7,38 +7,57 @@
 /* ── Block cursor highlight ──────────────────────────────────────────────── */
 
 [data-block-id].tm-collab-active {
+    --tm-notion-collab-line-offset: calc(var(--tm-space-2) * -1);
+    --tm-notion-collab-line-width: calc(var(--tm-space-1) / 2);
+    --tm-notion-collab-label-offset: var(--tm-space-1);
+    --tm-notion-collab-label-width: clamp(6rem, 18vw, 8.5rem);
+
     position: relative;
+}
+
+[data-block-id].tm-collab-active > .tm-notion-editable,
+[data-block-id].tm-collab-active > :not(.tm-notion-block__thread-wrap) .tm-notion-editable:first-child {
+    padding-left: calc(var(--tm-notion-collab-label-width) + var(--tm-space-3));
 }
 
 /* Coloured left border indicating a remote collaborator is on this block */
 [data-block-id].tm-collab-active::before {
     content:          '';
     position:         absolute;
-    left:             -3px;
-    top:              2px;
-    bottom:           2px;
-    width:            2px;
-    border-radius:    1px;
-    background:       var(--collab-color, #888);
+    left:             var(--tm-notion-collab-line-offset);
+    top:              var(--tm-space-1);
+    bottom:           var(--tm-space-1);
+    width:            var(--tm-notion-collab-line-width);
+    border-radius:    var(--tm-radius-full);
+    background:       var(--collab-color, var(--tm-color-secondary));
     pointer-events:   none;
-    z-index:          5;
+    z-index:          var(--tm-z-sticky);
 }
 
 /* Name label shown at the top of the block's left border */
 [data-block-id].tm-collab-active::after {
     content:          attr(data-collab-user);
     position:         absolute;
-    left:             -2px;
-    top:              -18px;
-    background:       var(--collab-color, #888);
-    color:            #fff;
-    font-size:        10px;
+    left:             var(--tm-notion-collab-line-offset);
+    top:              var(--tm-notion-collab-label-offset);
+    display:          block;
+    width:            var(--tm-notion-collab-label-width);
+    overflow:         hidden;
+    text-overflow:    ellipsis;
+    background:       var(--collab-color, var(--tm-color-secondary));
+    color:            var(--tm-text-inverse);
+    font-size:        var(--tm-font-size-xs);
     font-weight:      600;
-    line-height:      1;
-    padding:          2px 6px 3px;
-    border-radius:    3px 3px 3px 0;
+    line-height:      var(--tm-line-height-tight);
+    padding:          calc(var(--tm-space-1) / 2) var(--tm-space-2);
+    border-radius:    var(--tm-radius-sm) var(--tm-radius-sm) var(--tm-radius-sm) 0;
     white-space:      nowrap;
     pointer-events:   none;
-    z-index:          6;
-    opacity:          0.92;
+    z-index:          var(--tm-z-tooltip);
+    opacity:          0.96;
+    box-shadow:       var(--tm-shadow-sm);
+}
+
+[data-block-id].tm-collab-active--overlap {
+    --tm-notion-collab-label-width: clamp(8rem, 24vw, 12rem);
 }

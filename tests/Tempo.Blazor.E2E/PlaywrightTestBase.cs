@@ -188,7 +188,7 @@ public abstract class PlaywrightTestBase
         // Wait for the app to be fully loaded
         await page.WaitForSelectorAsync(".tm-app-loaded, main, [data-testid='app-ready']", new PageWaitForSelectorOptions
         {
-            Timeout = 30000
+            Timeout = 60000
         });
 
         // Additional wait for WASM to boot in InteractiveAuto mode

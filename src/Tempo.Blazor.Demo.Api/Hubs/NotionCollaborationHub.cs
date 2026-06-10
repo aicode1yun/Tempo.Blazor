@@ -13,6 +13,7 @@ public class NotionCollaborationHub : Hub
 {
     // connectionId → (pageId, cursor)
     private static readonly Dictionary<string, (string PageId, CollaboratorCursor Cursor)> _connected = new();
+    private static readonly Dictionary<string, List<CollaboratorCursor>> _seeded = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Lock _lock = new();
 
     // ── Join / Leave ──────────────────────────────────────────────────────────
@@ -81,8 +82,49 @@ public class NotionCollaborationHub : Hub
         {
             var cursors = _connected.Values
                 .Where(e => e.PageId == pageId)
-                .Select(e => e.Cursor);
+                .Select(e => e.Cursor)
+                .Concat(_seeded.TryGetValue(pageId, out var seeded) ? seeded : []);
             return Task.FromResult(cursors);
+        }
+    }
+
+    public static void ClearE2ESeeds()
+    {
+        lock (_lock)
+        {
+            _seeded.Clear();
+        }
+    }
+
+    public static void SeedE2ECursors(string scenario, string pageId)
+    {
+        lock (_lock)
+        {
+            _seeded[pageId] = scenario switch
+            {
+                "showCollaborationOneCursor" =>
+                [
+                    Cursor("ada", "Ada Lovelace", "eb140000-0000-0000-0000-000000000002", 4)
+                ],
+                "showCollaborationManyCursors" =>
+                [
+                    Cursor("ada", "Ada Lovelace", "eb140000-0000-0000-0000-000000000002", 4),
+                    Cursor("ben", "Ben Carter", "eb140000-0000-0000-0000-000000000003", 6),
+                    Cursor("camila", "Camila Reyes", "eb140000-0000-0000-0000-000000000004", 8)
+                ],
+                "showCollaborationLongNames" =>
+                [
+                    Cursor("alexandria", "Alexandria Catherine Montgomery-Smythe", "eb140000-0000-0000-0000-000000000003", 3),
+                    Cursor("maximilian", "Maximilian Theophilus Abernathy-Jones", "eb140000-0000-0000-0000-000000000004", 5)
+                ],
+                "showCollaborationOverlappingCursors" =>
+                [
+                    Cursor("morgan", "Morgan Lee", "eb140000-0000-0000-0000-000000000004", 2),
+                    Cursor("priya", "Priya Shah", "eb140000-0000-0000-0000-000000000004", 9),
+                    Cursor("tomas", "Tomas Urban", "eb140000-0000-0000-0000-000000000004", 14)
+                ],
+                _ => []
+            };
         }
     }
 
@@ -115,6 +157,9 @@ public class NotionCollaborationHub : Hub
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static string PageGroup(string pageId) => $"page:{pageId}";
+
+    private static CollaboratorCursor Cursor(string userId, string displayName, string blockId, int offset)
+        => new(userId, displayName, null, GetColor(userId), Guid.Parse(blockId), offset);
 
     private static readonly string[] _palette =
     [

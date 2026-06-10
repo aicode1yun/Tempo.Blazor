@@ -42,6 +42,7 @@ public partial class TmNotionPageHistory : ComponentBase, IAsyncDisposable
     private IPageVersion?           _compareFromVersion;
     private IPageVersion?           _compareToVersion;
     private IReadOnlyList<BlockDiff> _diffs             = [];
+    private NotionDiffViewMode      _diffViewMode       = NotionDiffViewMode.Inline;
 
     private bool                    _compareMode;
     private bool                    _showRestoreConfirm;
@@ -66,6 +67,7 @@ public partial class TmNotionPageHistory : ComponentBase, IAsyncDisposable
             _compareFromVersion = null;
             _compareToVersion   = null;
             _compareMode        = false;
+            _diffViewMode       = NotionDiffViewMode.Inline;
             _view               = HistoryView.Empty;
             _error              = string.Empty;
             _success            = string.Empty;
@@ -239,6 +241,7 @@ public partial class TmNotionPageHistory : ComponentBase, IAsyncDisposable
 
         _compareToVersion = version;
         _compareMode      = false;
+        _diffViewMode     = NotionDiffViewMode.Inline;
         await LoadDiffAsync();
     }
 
@@ -276,6 +279,12 @@ public partial class TmNotionPageHistory : ComponentBase, IAsyncDisposable
         _compareFromVersion = null;
         _compareToVersion   = null;
         _diffs              = [];
+        _diffViewMode       = NotionDiffViewMode.Inline;
+    }
+
+    private void SetDiffViewMode(NotionDiffViewMode viewMode)
+    {
+        _diffViewMode = viewMode;
     }
 
     // ── Close ─────────────────────────────────────────────────────────────────

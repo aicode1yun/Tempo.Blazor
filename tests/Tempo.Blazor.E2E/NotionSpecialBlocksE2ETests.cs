@@ -167,3 +167,62 @@ public class NotionSpecialBlocksE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "special_template_label");
     }
 }
+
+[TestClass]
+public class NotionSpecialBlocksRecoveryE2ETests : NotionE2ETestBase
+{
+    private static ILocator Block(IPage page, string id) =>
+        page.Locator($"[data-block-id='{id}']").First;
+
+    private static async Task<ILocator> VisibleBlockAsync(IPage page, string id, string selector)
+    {
+        var block = Block(page, id);
+        await block.Locator(selector).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+        await block.ScrollIntoViewIfNeededAsync();
+        await page.WaitForTimeoutAsync(350);
+        return block;
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB15 recovery baseline for equation, bookmark, embed and template button special blocks.")]
+    public async Task EB15_SpecialBlocks_EquationBookmarkEmbedTemplate_CapturesBaselines()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedSpecialBlocksPageAsync();
+
+        var validEquation = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000010", ".tm-notion-equation-block");
+        await CaptureBaselineAsync("special-blocks", "equation-valid", validEquation);
+
+        var invalidEquation = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000011", ".tm-notion-equation-block");
+        await CaptureBaselineAsync("special-blocks", "equation-invalid-fallback", invalidEquation);
+
+        var resolvedBookmark = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000020", ".tm-notion-bookmark-block");
+        await resolvedBookmark.Locator(".tm-notion-bookmark-block__title").Filter(new LocatorFilterOptions { HasText = "Tempo Notion special blocks" }).First.WaitForAsync();
+        await CaptureBaselineAsync("special-blocks", "bookmark-og-resolved", resolvedBookmark);
+
+        var providerFallback = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000021", ".tm-notion-bookmark-block");
+        await providerFallback.Locator(".tm-notion-bookmark-block__domain").Filter(new LocatorFilterOptions { HasText = "fallback.tempo.local" }).First.WaitForAsync();
+        await CaptureBaselineAsync("special-blocks", "bookmark-provider-fallback", providerFallback);
+
+        var staticFallback = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000022", ".tm-notion-bookmark-block");
+        await staticFallback.Locator(".tm-notion-bookmark-block__title").Filter(new LocatorFilterOptions { HasText = "Static fallback release notes" }).First.WaitForAsync();
+        await CaptureBaselineAsync("special-blocks", "bookmark-static-fallback", staticFallback);
+
+        var codePenEmbed = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000030", ".tm-notion-embed-block");
+        await codePenEmbed.Locator("iframe").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 30000 });
+        await CaptureBaselineAsync("special-blocks", "embed-codepen-detected", codePenEmbed);
+
+        var genericEmbed = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000031", ".tm-notion-embed-block");
+        await genericEmbed.Locator("iframe").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 30000 });
+        await CaptureBaselineAsync("special-blocks", "embed-generic-unknown", genericEmbed);
+
+        var templateButton = await VisibleBlockAsync(page, "eb150000-0000-0000-0000-000000000120", ".tm-template-btn");
+        await templateButton.Locator(".tm-template-btn__trigger").Filter(new LocatorFilterOptions { HasText = "Insert release checklist" }).First.WaitForAsync();
+        await CaptureBaselineAsync("special-blocks", "template-button", templateButton);
+    }
+}

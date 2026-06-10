@@ -87,6 +87,9 @@ public partial class TmNotionBlock : ComponentBase
     /// <summary>Raised when a TemplateButton block requests insertion of its template blocks after itself.</summary>
     [Parameter] public EventCallback<IReadOnlyList<IPageBlock>> OnInsertTemplateBlocks { get; set; }
 
+    /// <summary>Raised when a text block requests keyboard focus movement to a sibling block.</summary>
+    [Parameter] public EventCallback<(string BlockId, int Direction)> OnMoveFocus { get; set; }
+
     /// <summary>Raised when the user clicks the Comment button in the block handle menu.</summary>
     [Parameter] public EventCallback OnComment { get; set; }
 
@@ -163,6 +166,12 @@ public partial class TmNotionBlock : ComponentBase
 
     private async Task OnFocusedAsync() => await OnFocused.InvokeAsync();
 
+    private Task MoveFocusPreviousAsync() =>
+        OnMoveFocus.InvokeAsync((Block.Id.ToString(), -1));
+
+    private Task MoveFocusNextAsync() =>
+        OnMoveFocus.InvokeAsync((Block.Id.ToString(), 1));
+
     // ── Todo (TmNotionTodoBlock) callbacks ───────────────────────────────────
 
     private async Task HandleTodoCheckedChangedAsync(bool isChecked)
@@ -174,7 +183,7 @@ public partial class TmNotionBlock : ComponentBase
             AssigneeId      = todo.AssigneeId,
             AssigneeDisplayName = todo.AssigneeDisplayName,
             DueDate         = todo.DueDate,
-            IsOverdue       = todo.IsOverdue,
+            IsOverdue       = IsTodoOverdue(todo.DueDate, isChecked),
             Html            = todo.Html,
             BackgroundColor = todo.BackgroundColor,
             TextColor       = todo.TextColor,
@@ -197,7 +206,31 @@ public partial class TmNotionBlock : ComponentBase
             AssigneeId = string.IsNullOrWhiteSpace(assignee.AssigneeId) ? null : assignee.AssigneeId,
             AssigneeDisplayName = string.IsNullOrWhiteSpace(assignee.AssigneeDisplayName) ? null : assignee.AssigneeDisplayName,
             DueDate = todo.DueDate,
-            IsOverdue = todo.IsOverdue,
+            IsOverdue = IsTodoOverdue(todo.DueDate, todo.IsChecked),
+            Html = todo.Html,
+            BackgroundColor = todo.BackgroundColor,
+            TextColor = todo.TextColor,
+            Alignment = todo.Alignment
+        });
+
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
+
+    private async Task HandleTodoDueDateChangedAsync(DateTime? dueDate)
+    {
+        if (Block.Content is not ITodoBlockContent todo) return;
+        var updated = BuildBlockWithContent(Block, new TodoBlockContent
+        {
+            IsChecked = todo.IsChecked,
+            AssigneeId = todo.AssigneeId,
+            AssigneeDisplayName = todo.AssigneeDisplayName,
+            DueDate = dueDate,
+            IsOverdue = IsTodoOverdue(dueDate, todo.IsChecked),
             Html = todo.Html,
             BackgroundColor = todo.BackgroundColor,
             TextColor = todo.TextColor,
@@ -724,6 +757,50 @@ public partial class TmNotionBlock : ComponentBase
         catch { }
     }
 
+    // ── Special content blocks ───────────────────────────────────────────────
+
+    private async Task HandleChildrenDisplayContentChangedAsync(ChildrenDisplayBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleExcerptContentChangedAsync(ExcerptBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandlePagePropertiesContentChangedAsync(PagePropertiesBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandlePagePropertiesReportContentChangedAsync(PagePropertiesReportBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleContentByLabelContentChangedAsync(ContentByLabelBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleWorkItemContentChangedAsync(WorkItemBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
     // ── Handle button ─────────────────────────────────────────────────────────
 
     private Task HandleAddClickedAsync() =>
@@ -752,6 +829,31 @@ public partial class TmNotionBlock : ComponentBase
 
     private async Task HandleParagraphMarkdownShortcutAsync(string shortcut)
     {
+        if (shortcut == "todoDone")
+        {
+            try
+            {
+                var converted = await Context.BlockProvider.ConvertBlockTypeAsync(Block.Id.ToString(), BlockType.TodoItem);
+                var updated = new PageBlock
+                {
+                    Id            = converted.Id,
+                    PageId        = converted.PageId,
+                    ParentBlockId = converted.ParentBlockId,
+                    Type          = BlockType.TodoItem,
+                    Order         = converted.Order,
+                    Content       = new TodoBlockContent { Html = string.Empty, IsChecked = true },
+                    CreatedAt     = converted.CreatedAt,
+                    LastEditedAt  = DateTime.UtcNow
+                };
+
+                await Context.BlockProvider.UpdateBlockAsync(updated);
+                await OnUpdated.InvokeAsync(updated);
+            }
+            catch { }
+
+            return;
+        }
+
         var newType = shortcut switch
         {
             "heading1"  => BlockType.Heading1,
@@ -760,7 +862,6 @@ public partial class TmNotionBlock : ComponentBase
             "bullet"    => BlockType.BulletList,
             "numbered"  => BlockType.NumberedList,
             "todo"      => BlockType.TodoItem,
-            "todoDone"  => BlockType.TodoItem,
             "quote"     => BlockType.Quote,
             "code"      => BlockType.Code,
             "divider"   => BlockType.Divider,
@@ -925,6 +1026,7 @@ public partial class TmNotionBlock : ComponentBase
             Html            = cc.Html,
             IconEmoji       = emoji,
             IconImageUrl    = cc.IconImageUrl,
+            Variant         = cc.Variant,
             BackgroundColor = cc.BackgroundColor,
             TextColor       = cc.TextColor,
             Alignment       = cc.Alignment
@@ -1089,6 +1191,29 @@ public partial class TmNotionBlock : ComponentBase
 
     private Task HandleCommentThreadClickedAsync() => OnComment.InvokeAsync();
 
+    private async Task HandleCalloutVariantChangedAsync(CalloutVariant variant)
+    {
+        if (Block.Content is not ICalloutBlockContent cc) return;
+
+        var updated = BuildBlockWithContent(Block, new CalloutBlockContent
+        {
+            Html = cc.Html,
+            IconEmoji = cc.IconEmoji,
+            IconImageUrl = cc.IconImageUrl,
+            Variant = variant,
+            BackgroundColor = cc.BackgroundColor,
+            TextColor = cc.TextColor,
+            Alignment = cc.Alignment
+        });
+
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
+
     private async Task HandleTextColorChangeAsync(string? color)
     {
         if (Block.Content is not ITextBlockContent tc) return;
@@ -1126,6 +1251,7 @@ public partial class TmNotionBlock : ComponentBase
         ICalloutBlockContent cc  => new CalloutBlockContent
         {
             Html = cc.Html, IconEmoji = cc.IconEmoji, IconImageUrl = cc.IconImageUrl,
+            Variant = cc.Variant,
             TextColor = textColor ?? cc.TextColor,
             BackgroundColor = backgroundColor ?? cc.BackgroundColor,
             Alignment = cc.Alignment
@@ -1140,6 +1266,10 @@ public partial class TmNotionBlock : ComponentBase
         ITodoBlockContent tc2    => new TodoBlockContent
         {
             Html = tc2.Html, IsChecked = tc2.IsChecked,
+            AssigneeId = tc2.AssigneeId,
+            AssigneeDisplayName = tc2.AssigneeDisplayName,
+            DueDate = tc2.DueDate,
+            IsOverdue = IsTodoOverdue(tc2.DueDate, tc2.IsChecked),
             TextColor = textColor ?? tc2.TextColor,
             BackgroundColor = backgroundColor ?? tc2.BackgroundColor,
             Alignment = tc2.Alignment
@@ -1187,6 +1317,7 @@ public partial class TmNotionBlock : ComponentBase
             ICalloutBlockContent cc => new CalloutBlockContent
             {
                 Html = html, IconEmoji = cc.IconEmoji, IconImageUrl = cc.IconImageUrl,
+                Variant = cc.Variant,
                 BackgroundColor = cc.BackgroundColor, TextColor = cc.TextColor, Alignment = cc.Alignment
             },
             IListBlockContent lc => new ListBlockContent
@@ -1200,7 +1331,7 @@ public partial class TmNotionBlock : ComponentBase
                 AssigneeId = tc.AssigneeId,
                 AssigneeDisplayName = tc.AssigneeDisplayName,
                 DueDate = tc.DueDate,
-                IsOverdue = tc.IsOverdue,
+                IsOverdue = IsTodoOverdue(tc.DueDate, tc.IsChecked),
                 BackgroundColor = tc.BackgroundColor, TextColor = tc.TextColor, Alignment = tc.Alignment
             },
             IToggleBlockContent tg => new ToggleBlockContent
@@ -1237,5 +1368,8 @@ public partial class TmNotionBlock : ComponentBase
         if (bytes >= 1_024)         return $"{bytes / 1_024.0:F1} KB";
         return $"{bytes} B";
     }
+
+    private static bool IsTodoOverdue(DateTime? dueDate, bool isChecked) =>
+        !isChecked && dueDate is DateTime date && date.Date < DateTime.Today;
 
 }

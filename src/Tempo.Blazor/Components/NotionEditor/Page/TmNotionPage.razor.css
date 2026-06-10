@@ -76,12 +76,78 @@
     background: var(--tm-notion-bg-block-hover);
 }
 
+/* ── Inline status chips inserted into editable HTML ──────────── */
+
+.tm-notion-page ::deep .tm-notion-status {
+    --tm-notion-status-max-label-width: 24ch;
+    --tm-status-bg: var(--tm-color-gray-100);
+    --tm-status-text: var(--tm-color-gray-800);
+    --tm-status-border: var(--tm-color-gray-200);
+
+    display: inline-flex;
+    align-items: baseline;
+    max-width: min(calc(var(--tm-space-16, 4rem) * 3), var(--tm-notion-status-max-label-width));
+    padding: calc(var(--tm-space-1) / 2) var(--tm-space-2);
+    border-radius: var(--tm-radius-full);
+    border: var(--tm-border-width-1, 1px) solid var(--tm-status-border);
+    background: var(--tm-status-bg);
+    color: var(--tm-status-text);
+    font-size: 0.78em;
+    font-weight: var(--tm-font-weight-semibold);
+    line-height: 1.35;
+    text-transform: uppercase;
+    vertical-align: baseline;
+    white-space: nowrap;
+    user-select: none;
+    cursor: pointer;
+}
+
+.tm-notion-page ::deep .tm-notion-status--blue {
+    --tm-status-bg: var(--tm-color-primary-100);
+    --tm-status-text: var(--tm-color-primary-800);
+    --tm-status-border: var(--tm-color-primary-200);
+}
+
+.tm-notion-page ::deep .tm-notion-status--green {
+    --tm-status-bg: var(--tm-color-success-subtle);
+    --tm-status-text: var(--tm-color-success-text);
+    --tm-status-border: var(--tm-color-success-soft-border);
+}
+
+.tm-notion-page ::deep .tm-notion-status--yellow {
+    --tm-status-bg: var(--tm-color-warning-subtle);
+    --tm-status-text: var(--tm-color-warning-text);
+    --tm-status-border: var(--tm-color-warning-soft-border);
+}
+
+.tm-notion-page ::deep .tm-notion-status--red {
+    --tm-status-bg: var(--tm-color-danger-subtle);
+    --tm-status-text: var(--tm-color-danger-text);
+    --tm-status-border: var(--tm-color-danger-soft-border);
+}
+
+.tm-notion-page ::deep .tm-notion-status--purple {
+    --tm-status-bg: var(--tm-notion-bg-purple);
+    --tm-status-text: var(--tm-notion-text-purple);
+    --tm-status-border: var(--tm-notion-text-purple);
+}
+
+.tm-notion-page ::deep .tm-notion-status__label {
+    display: block;
+    min-width: 0;
+    max-width: var(--tm-notion-status-max-label-width);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ── Comments section ─────────────────────────────────────────── */
 
 .tm-notion-page__comments {
     margin-top:  var(--tm-space-12);
     padding-top: var(--tm-space-6);
     border-top:  1px solid var(--tm-notion-border, var(--tm-border-color));
+    scroll-margin-top: calc(var(--tm-notion-header-height) + var(--tm-space-4));
 }
 
 /* ── Full-width mode ──────────────────────────────────────────── */

@@ -130,7 +130,7 @@
             </button>
             <button class="tm-notion-ai__btn"
                     type="button"
-                    disabled="@(_isStreaming || _lastRequest is null)"
+                    disabled="@(_lastRequest is null)"
                     data-testid="notion-ai-retry"
                     @onclick="RetryAsync">
                 @Loc["Notion_AI_Retry"]

@@ -6,7 +6,7 @@
     <button class="tm-nsr-header"
             type="button"
             aria-expanded="@_isExpanded"
-            @onclick="() => _isExpanded = !_isExpanded">
+            @onclick="ToggleExpanded">
         <svg class="tm-nsr-header__chevron @(_isExpanded ? "tm-nsr-header__chevron--open" : "")"
              width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
             <path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.25"
@@ -17,27 +17,34 @@
 
     @if (_isExpanded)
     {
-        <ul class="tm-nsr-list" role="list">
-            @foreach (var page in Pages)
-            {
-                <li role="listitem">
-                    <button class="tm-nsr-item @(IsActive(page) ? "tm-nsr-item--active" : "")"
-                            type="button"
-                            title="@GetTitle(page)"
-                            aria-current="@(IsActive(page) ? "page" : null)"
-                            @onclick="() => NavigateAsync(page)">
-                        <span class="tm-nsr-item__icon" aria-hidden="true">@GetIcon(page)</span>
-                        <span class="tm-nsr-item__body">
-                            <span class="tm-nsr-item__title">@GetTitle(page)</span>
-                            <time class="tm-nsr-item__time"
-                                  datetime="@(page.LastEditedAt.ToString("yyyy-MM-ddTHH:mm:ssZ"))">
-                                @GetRelativeTime(page.LastEditedAt)
-                            </time>
-                        </span>
-                    </button>
-                </li>
-            }
-        </ul>
+        @if (Pages.Count == 0)
+        {
+            <div class="tm-nsr-empty">@Loc["TmNotionSidebar_NoRecent"]</div>
+        }
+        else
+        {
+            <ul class="tm-nsr-list" role="list">
+                @foreach (var page in Pages)
+                {
+                    <li role="listitem">
+                        <button class="tm-nsr-item @(IsActive(page) ? "tm-nsr-item--active" : "")"
+                                type="button"
+                                title="@GetTitle(page)"
+                                aria-current="@(IsActive(page) ? "page" : null)"
+                                @onclick="() => NavigateAsync(page)">
+                            <span class="tm-nsr-item__icon" aria-hidden="true">@GetIcon(page)</span>
+                            <span class="tm-nsr-item__body">
+                                <span class="tm-nsr-item__title">@GetTitle(page)</span>
+                                <time class="tm-nsr-item__time"
+                                      datetime="@(page.LastEditedAt.ToString("yyyy-MM-ddTHH:mm:ssZ"))">
+                                    @GetRelativeTime(page.LastEditedAt)
+                                </time>
+                            </span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
     }
 
 </section>

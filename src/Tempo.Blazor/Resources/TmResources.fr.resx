@@ -1723,6 +1723,8 @@
   <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Téléversement…</value></data>
   <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Échec du téléversement. Veuillez réessayer.</value></data>
   <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>Le téléversement de fichiers n'est pas configuré.</value></data>
+  <data name="TmNotionMediaUploadDialog_InvalidFileType"     xml:space="preserve"><value>Ce type de fichier n'est pas pris en charge pour ce bloc.</value></data>
+  <data name="TmNotionMediaUploadDialog_FileTooLarge"        xml:space="preserve"><value>Le fichier sélectionné est trop volumineux. Taille maximale : {0}.</value></data>
   <data name="TmNotionMediaUploadDialog_TabLibrary"         xml:space="preserve"><value>Bibliothèque</value></data>
   <data name="TmNotionMediaUploadDialog_LibrarySearch"      xml:space="preserve"><value>Rechercher des médias…</value></data>
   <data name="TmNotionMediaUploadDialog_LibraryLoading"     xml:space="preserve"><value>Chargement…</value></data>
@@ -1822,6 +1824,18 @@
   <data name="TmNotionTableBlock_DeleteColumn"               xml:space="preserve"><value>Supprimer la colonne</value></data>
   <data name="TmNotionTableBlock_DeleteRow"                  xml:space="preserve"><value>Supprimer la ligne</value></data>
   <data name="TmNotionTableBlock_DragRow"                    xml:space="preserve"><value>Glisser pour réorganiser</value></data>
+  <data name="TmNotionTableBlock_ToggleHeaderRow"            xml:space="preserve"><value>Ligne d'en-tête</value></data>
+  <data name="TmNotionTableBlock_ToggleHeaderColumn"         xml:space="preserve"><value>Colonne d'en-tête</value></data>
+  <data name="TmNotionTableBlock_Undo"                       xml:space="preserve"><value>Annuler la modification du tableau</value></data>
+  <data name="TmNotionTableBlock_SelectionTools"             xml:space="preserve"><value>Outils de sélection du tableau</value></data>
+  <data name="TmNotionTableBlock_Merge"                      xml:space="preserve"><value>Fusionner les cellules</value></data>
+  <data name="TmNotionTableBlock_Split"                      xml:space="preserve"><value>Scinder les cellules</value></data>
+  <data name="TmNotionTableBlock_ColorYellow"                xml:space="preserve"><value>Surligner en jaune</value></data>
+  <data name="TmNotionTableBlock_ColorGreen"                 xml:space="preserve"><value>Surligner en vert</value></data>
+  <data name="TmNotionTableBlock_ColorBlue"                  xml:space="preserve"><value>Surligner en bleu</value></data>
+  <data name="TmNotionTableBlock_ColorRed"                   xml:space="preserve"><value>Surligner en rouge</value></data>
+  <data name="TmNotionTableBlock_ClearColor"                 xml:space="preserve"><value>Effacer la couleur</value></data>
+  <data name="TmNotionTableBlock_Sort"                       xml:space="preserve"><value>Trier la colonne</value></data>
 
   <!-- Phase 60: Table of Contents Block -->
   <data name="TmNotionTableOfContentsBlock_Title"             xml:space="preserve"><value>Table des matières</value></data>
@@ -2159,6 +2173,7 @@
   <data name="TmNotionSidebar_SearchPlaceholder" xml:space="preserve"><value>Rechercher des pages…</value></data>
   <data name="TmNotionSidebar_SearchNoResults"   xml:space="preserve"><value>Aucune page trouvée</value></data>
   <data name="TmNotionSidebar_SearchLoading"     xml:space="preserve"><value>Recherche…</value></data>
+  <data name="TmNotionSidebar_SearchError"       xml:space="preserve"><value>La recherche n'a pas pu aboutir</value></data>
   <data name="TmNotionSidebar_CloseSearch"       xml:space="preserve"><value>Fermer la recherche</value></data>
   <data name="TmNotionSidebar_Favorites"         xml:space="preserve"><value>Favoris</value></data>
   <data name="TmNotionSidebar_Recent"            xml:space="preserve"><value>Récent</value></data>
@@ -2202,6 +2217,15 @@
   <data name="TmNotionPageTree_NoPages"         xml:space="preserve"><value>Aucune page. Cliquez sur + pour en créer une.</value></data>
   <data name="TmNotionPageTree_LoadingChildren" xml:space="preserve"><value>Chargement…</value></data>
   <data name="TmNotionPageTree_RenameHint"      xml:space="preserve"><value>Renommer : {0}</value></data>
+  <data name="TmNotionPageTree_SelectPage"      xml:space="preserve"><value>Sélectionner {0}</value></data>
+  <data name="TmNotionPageTree_BulkToolbar"     xml:space="preserve"><value>Actions groupées sur les pages</value></data>
+  <data name="TmNotionPageTree_BulkSelected"    xml:space="preserve"><value>{0} sélectionné(s)</value></data>
+  <data name="TmNotionPageTree_Copy"            xml:space="preserve"><value>Copier</value></data>
+  <data name="TmNotionPageTree_BulkTargetTitle" xml:space="preserve"><value>Sélectionner la page cible</value></data>
+  <data name="TmNotionPageTree_BulkDeleteTitle" xml:space="preserve"><value>Supprimer les pages sélectionnées</value></data>
+  <data name="TmNotionPageTree_BulkDeleteMessage" xml:space="preserve"><value>Les pages sélectionnées seront déplacées vers la corbeille.</value></data>
+  <data name="TmNotionPageTree_BulkMoveDescendantError" xml:space="preserve"><value>Les pages sélectionnées ne peuvent pas être déplacées dans leurs propres descendants.</value></data>
+  <data name="TmNotionPageTree_BulkOperationError" xml:space="preserve"><value>Impossible de terminer l'opération groupée sur les pages.</value></data>
 
   <!-- ═══════════════ TmNotionSidebarFavorites + TmNotionSidebarRecent (Phase 82) ═══════════════ -->
   <data name="TmNotionSidebarFavorites_DragHint"     xml:space="preserve"><value>Glisser pour réorganiser</value></data>
@@ -2381,6 +2405,8 @@
   <data name="TmNotionPageHistory_NextPage"            xml:space="preserve"><value>Page suivante</value></data>
   <data name="TmNotionPageHistory_EmptyTitle"          xml:space="preserve"><value>Sélectionnez une version</value></data>
   <data name="TmNotionPageHistory_EmptySub"            xml:space="preserve"><value>Cliquez sur une version à gauche pour prévisualiser son contenu.</value></data>
+  <data name="TmNotionPageHistory_NoVersionsEmptyTitle" xml:space="preserve"><value>Aucun historique pour le moment</value></data>
+  <data name="TmNotionPageHistory_NoVersionsEmptySub"   xml:space="preserve"><value>Les versions apparaîtront ici après modification et enregistrement de cette page.</value></data>
   <data name="TmNotionPageHistory_PreviewLabel"        xml:space="preserve"><value>Aperçu de la version (lecture seule)</value></data>
   <data name="TmNotionPageHistory_LoadingPreview"      xml:space="preserve"><value>Chargement de l'aperçu…</value></data>
   <data name="TmNotionPageHistory_EmptySnapshot"       xml:space="preserve"><value>Cette version ne contient aucun contenu.</value></data>
@@ -2400,10 +2426,13 @@
   <data name="TmNotionPageHistory_DiffRemoved"         xml:space="preserve"><value>Supprimé</value></data>
   <data name="TmNotionPageHistory_DiffModified"        xml:space="preserve"><value>Modifié</value></data>
   <data name="TmNotionPageHistory_DiffMoved"           xml:space="preserve"><value>Déplacé</value></data>
+  <data name="TmNotionPageHistory_DiffModeInline"      xml:space="preserve"><value>En ligne</value></data>
+  <data name="TmNotionPageHistory_DiffModeSideBySide"  xml:space="preserve"><value>Côte à côte</value></data>
   <data name="TmNotionPageHistory_DiffBefore"          xml:space="preserve"><value>Avant</value></data>
   <data name="TmNotionPageHistory_DiffAfter"           xml:space="preserve"><value>Après</value></data>
   <data name="TmNotionPageHistory_LoadingDiff"         xml:space="preserve"><value>Comparaison des versions…</value></data>
   <data name="TmNotionPageHistory_NoDiff"              xml:space="preserve"><value>Aucune différence entre ces versions.</value></data>
+  <data name="TmNotionDiffViewer_NotPresent"           xml:space="preserve"><value>Absent de cette version</value></data>
   <data name="TmNotionPageHistory_BlockParagraph"      xml:space="preserve"><value>Paragraphe</value></data>
   <data name="TmNotionPageHistory_BlockH1"             xml:space="preserve"><value>Titre 1</value></data>
   <data name="TmNotionPageHistory_BlockH2"             xml:space="preserve"><value>Titre 2</value></data>
@@ -3579,4 +3608,9 @@
   <data name="TmSpreadsheet_Hyperlink_SelectNamedRange" xml:space="preserve"><value>Sélectionner le nom</value></data>
   <data name="TmSpreadsheet_Hyperlink_Save" xml:space="preserve"><value>OK</value></data>
   <data name="TmSpreadsheet_Hyperlink_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Notion_SmartLink_PasteAs_Inline" xml:space="preserve"><value>Coller comme aperçu inline</value></data>
+  <data name="Notion_SmartLink_PasteAs_Card" xml:space="preserve"><value>Coller comme carte</value></data>
+  <data name="Notion_SmartLink_PasteAs_Plain" xml:space="preserve"><value>Coller comme lien simple</value></data>
+  <data name="TmNotionEditor_LoadError" xml:space="preserve"><value>Impossible de charger la page.</value></data>
+  <data name="TmNotionPage_BlocksLoadError" xml:space="preserve"><value>Impossible de charger le contenu.</value></data>
 </root>

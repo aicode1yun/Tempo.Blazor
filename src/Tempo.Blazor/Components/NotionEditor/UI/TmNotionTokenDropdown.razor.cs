@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using System.Globalization;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Interfaces;
 
@@ -43,6 +44,7 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
     private double           _left;
     private bool             _wasVisible;
     private bool             _needsFocus;
+    private bool             _needsPositionAdjustment;
     private bool             _isLoading;
     private List<IToken>     _items         = [];
     private CancellationTokenSource? _cts;
@@ -50,6 +52,10 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
     private ElementReference _menuRef;
     private ElementReference _inputRef;
     private ElementReference _listRef;
+
+    private string MenuStyle => string.Create(
+        CultureInfo.InvariantCulture,
+        $"--tm-nmm-anchor-top:{_top}px;--tm-nmm-anchor-left:{_left}px;top:max(8px,min({_top}px,calc(100vh - 360px - 8px)));left:max(8px,min({_left}px,calc(100vw - 360px - 8px)))");
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -62,6 +68,7 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
             _top           = Top;
             _left          = Left;
             _needsFocus    = true;
+            _needsPositionAdjustment = true;
             _items         = [];
             await SearchAsync(string.Empty);
         }
@@ -79,6 +86,13 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
             _needsFocus = false;
             try { await JS.InvokeVoidAsync("eval", "void 0"); } catch { }
             try { await _inputRef.FocusAsync(); } catch { }
+        }
+
+        if (_needsPositionAdjustment && Visible)
+        {
+            _needsPositionAdjustment = false;
+            try { await JS.InvokeVoidAsync("tmNotionEditor.adjustSlashMenuPosition", _menuRef); }
+            catch { }
         }
     }
 
@@ -112,6 +126,7 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
                     _selectedIndex = 0;
                 }
                 _isLoading = false;
+                _needsPositionAdjustment = true;
                 StateHasChanged();
             }
         }
@@ -121,6 +136,7 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
             if (!token.IsCancellationRequested)
             {
                 _isLoading = false;
+                _needsPositionAdjustment = true;
                 StateHasChanged();
             }
         }

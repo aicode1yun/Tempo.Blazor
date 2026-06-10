@@ -1,6 +1,7 @@
 namespace Tempo.Blazor.NotionEditor.Interfaces;
 
 using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Models;
 
 public interface INotionBlockProvider
 {
@@ -11,6 +12,7 @@ public interface INotionBlockProvider
     Task UpdateBlockAsync(IPageBlock block);
     Task DeleteBlockAsync(string blockId);
     Task ReorderBlocksAsync(string pageId, IEnumerable<string> orderedBlockIds);
+    Task MoveBlockAsync(MoveNotionBlockRequest request);
     Task MoveBlockToPageAsync(string blockId, string targetPageId, string? afterBlockId);
     Task<IPageBlock> DuplicateBlockAsync(string blockId);
     Task<IPageBlock> ConvertBlockTypeAsync(string blockId, BlockType newType);

@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.NotionEditor.Interfaces;
 
@@ -9,7 +10,10 @@ public class ApiSpreadsheetDocumentProvider : ISpreadsheetDocumentProvider
 {
     private readonly HttpClient _http;
 
-    private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web)
+    {
+        ReferenceHandler = ReferenceHandler.IgnoreCycles
+    };
 
     public ApiSpreadsheetDocumentProvider(IHttpClientFactory factory)
         => _http = factory.CreateClient("DemoApi");
@@ -18,8 +22,8 @@ public class ApiSpreadsheetDocumentProvider : ISpreadsheetDocumentProvider
     {
         var response = await _http.PostAsync("/api/notion/spreadsheets", null);
         response.EnsureSuccessStatusCode();
-        var result = await response.Content.ReadFromJsonAsync<CreateResult>(_json);
-        return (result!.Id, result.Workbook);
+        var result = await response.Content.ReadFromJsonAsync<SpreadsheetDocumentCreateResult>(_json);
+        return (result!.Id, NormalizeWorkbook(result.Workbook));
     }
 
     public async Task<SpreadsheetWorkbook?> GetSpreadsheetDocumentAsync(Guid documentId)
@@ -28,15 +32,32 @@ public class ApiSpreadsheetDocumentProvider : ISpreadsheetDocumentProvider
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             return null;
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<SpreadsheetWorkbook>(_json);
+        var workbook = await response.Content.ReadFromJsonAsync<SpreadsheetWorkbook>(_json);
+        return NormalizeWorkbook(workbook);
     }
 
     public async Task<SpreadsheetWorkbook> SaveSpreadsheetDocumentAsync(Guid documentId, SpreadsheetWorkbook workbook)
     {
-        var response = await _http.PutAsJsonAsync($"/api/notion/spreadsheets/{documentId}", workbook, _json);
+        var response = await _http.PutAsJsonAsync($"/api/notion/spreadsheets/{documentId}", NormalizeWorkbook(workbook), _json);
         response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<SpreadsheetWorkbook>(_json))!;
+        return NormalizeWorkbook(await response.Content.ReadFromJsonAsync<SpreadsheetWorkbook>(_json));
     }
 
-    private sealed record CreateResult(Guid Id, SpreadsheetWorkbook Workbook);
+    private static SpreadsheetWorkbook NormalizeWorkbook(SpreadsheetWorkbook? workbook)
+    {
+        var normalized = workbook ?? new SpreadsheetWorkbook();
+        if (normalized.Sheets.Count == 0)
+            normalized.AddSheet("Sheet1");
+
+        if (normalized.ActiveSheetIndex < 0 || normalized.ActiveSheetIndex >= normalized.Sheets.Count)
+            normalized.ActiveSheetIndex = 0;
+
+        for (var i = 0; i < normalized.Sheets.Count; i++)
+        {
+            normalized.Sheets[i].Workbook = normalized;
+            normalized.Sheets[i].SheetIndexInWorkbook = i;
+        }
+
+        return normalized;
+    }
 }

@@ -102,9 +102,10 @@
 
 .tm-props-report__table {
     width: 100%;
-    min-width: 38rem;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: var(--tm-font-size-sm);
+    table-layout: fixed;
 }
 
 .tm-props-report__table th,
@@ -113,6 +114,11 @@
     border-bottom: 1px solid var(--tm-color-border);
     text-align: left;
     vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.tm-props-report__table th:first-child {
+    width: 42%;
 }
 
 .tm-props-report__table thead th {
@@ -140,6 +146,10 @@
     padding: 0;
     cursor: pointer;
     text-align: left;
+}
+
+.tm-props-report__table th:first-child .tm-props-report__page-link {
+    max-width: 100%;
 }
 
 .tm-props-report__page-link:hover {

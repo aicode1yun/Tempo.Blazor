@@ -101,7 +101,7 @@ public class DemoNotionDataProvider : INotionDataProvider
 
     public async Task PermanentlyDeletePageAsync(string pageId)
     {
-        var response = await _http.DeleteAsync($"/api/notion/pages/{pageId}");
+        var response = await _http.DeleteAsync($"/api/notion/pages/{pageId}/permanent");
         response.EnsureSuccessStatusCode();
     }
 
@@ -113,7 +113,8 @@ public class DemoNotionDataProvider : INotionDataProvider
 
     public async Task MovePageAsync(string pageId, string? newParentId)
     {
-        await _http.PostAsJsonAsync($"/api/notion/pages/{pageId}/move", new { newParentId });
+        var response = await _http.PostAsJsonAsync($"/api/notion/pages/{pageId}/move", new MovePageRequest(newParentId));
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task<INotionPage> DuplicatePageAsync(string pageId)
@@ -122,5 +123,34 @@ public class DemoNotionDataProvider : INotionDataProvider
         response.EnsureSuccessStatusCode();
         var page = await response.Content.ReadFromJsonAsync<NotionPage>();
         return page ?? throw new Exception("Failed to duplicate page");
+    }
+
+    public async Task MovePagesAsync(IReadOnlyList<string> pageIds, string? newParentId, CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            "/api/notion/pages/bulk/move",
+            new BulkMovePagesRequest(pageIds, newParentId),
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task DeletePagesAsync(IReadOnlyList<string> pageIds, CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            "/api/notion/pages/bulk/delete",
+            new BulkDeletePagesRequest(pageIds),
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<INotionPage> CopyPageTreeAsync(string pageId, string? newParentId, CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PostAsJsonAsync(
+            $"/api/notion/pages/{pageId}/copy-tree",
+            new CopyPageTreeRequest(newParentId),
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var page = await response.Content.ReadFromJsonAsync<NotionPage>(cancellationToken);
+        return page ?? throw new Exception("Failed to copy page tree");
     }
 }

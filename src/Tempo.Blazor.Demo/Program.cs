@@ -48,27 +48,41 @@ builder.Services.AddScoped<DemoNotionMediaLibraryProvider>();
 builder.Services.AddScoped<DemoNotionFileProvider>();
 builder.Services.AddScoped<DemoNotionTokenProvider>();
 builder.Services.AddScoped<DemoNotionAIProvider>();
+builder.Services.AddScoped<DemoNotionTaskProvider>();
 builder.Services.AddScoped<DemoNotionReactionProvider>();
 builder.Services.AddScoped<DemoNotionAnalyticsProvider>();
 builder.Services.AddScoped<DemoNotionPagePropertiesProvider>();
+builder.Services.AddScoped<DemoNotionTemplateProvider>();
+builder.Services.AddScoped<DemoNotionSpaceProvider>();
+builder.Services.AddScoped<DemoNotionBlogProvider>();
+builder.Services.AddScoped<DemoNotionWatchProvider>();
+builder.Services.AddScoped<DemoNotionPermissionProvider>();
+builder.Services.AddScoped<DemoNotionPublicShareProvider>();
+builder.Services.AddScoped<DemoNotionAuditProvider>();
+builder.Services.AddScoped<DemoSmartLinkProvider>();
+builder.Services.AddScoped<DemoNotionDatabaseProvider>();
 builder.Services.AddScoped<IWorkItemProvider, DemoWorkItemProvider>();
 builder.Services.AddScoped<IWorkItemProvider, DemoOpsWorkItemProvider>();
 builder.Services.AddScoped<WorkItemProviderRegistry>();
 builder.Services.AddScoped<MockNotionDatabaseProvider>();
 builder.Services.AddScoped<MockNotionCommentProvider>();
 builder.Services.AddScoped<MockNotionHistoryProvider>();
+builder.Services.AddScoped<DemoNotionHistoryProvider>();
 builder.Services.AddScoped<MockNotionMentionProvider>();
 builder.Services.AddScoped<MockNotionSearchProvider>();
 builder.Services.AddScoped<MockNotionWireframeDocumentProvider>();
 builder.Services.AddScoped<MockNotionDiagramDocumentProvider>();
 builder.Services.AddScoped<ApiSpreadsheetDocumentProvider>();
-builder.Services.AddScoped<MockNotionImportExportProvider>();
+builder.Services.AddScoped<DemoNotionImportExportProvider>();
 builder.Services.AddScoped<SignalRCollaborationProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
 builder.Services.AddSingleton<IModelingNotationProfile, ErdNotationProfile>();
 builder.Services.AddInMemoryNotifications();
+builder.Services.AddScoped<DemoNotionNotificationService>();
+builder.Services.AddScoped<INotificationService>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
+builder.Services.AddScoped<INotificationBadgeState>(sp => sp.GetRequiredService<DemoNotionNotificationService>());
 
 // Register Dashboard services
 builder.Services.AddSingleton<IWidgetRegistry, InMemoryWidgetRegistry>();

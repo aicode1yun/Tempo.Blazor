@@ -52,6 +52,8 @@ builder.Services.AddScoped<DemoNotionAIProvider>();
 builder.Services.AddScoped<DemoNotionReactionProvider>();
 builder.Services.AddScoped<DemoNotionAnalyticsProvider>();
 builder.Services.AddScoped<DemoNotionPagePropertiesProvider>();
+builder.Services.AddScoped<DemoSmartLinkProvider>();
+builder.Services.AddScoped<DemoNotionDatabaseProvider>();
 builder.Services.AddScoped<IWorkItemProvider, DemoWorkItemProvider>();
 builder.Services.AddScoped<IWorkItemProvider, DemoOpsWorkItemProvider>();
 builder.Services.AddScoped<WorkItemProviderRegistry>();

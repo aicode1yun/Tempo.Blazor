@@ -9,6 +9,8 @@
              role="dialog"
              aria-modal="true"
              aria-labelledby="tm-media-dialog-title"
+             @ref="_dialogRef"
+             @onkeydown="HandleDialogKeyDownAsync"
              @onclick:stopPropagation="true">
 
             <div class="tm-media-dialog__header">
@@ -55,6 +57,12 @@
             </div>
 
             <div class="tm-media-dialog__body">
+                @if (!CanUpload)
+                {
+                    <div class="tm-media-dialog__notice" role="status">
+                        @Loc["TmNotionMediaUploadDialog_NoProvider"]
+                    </div>
+                }
 
                 @if (_activeTab == "upload")
                 {

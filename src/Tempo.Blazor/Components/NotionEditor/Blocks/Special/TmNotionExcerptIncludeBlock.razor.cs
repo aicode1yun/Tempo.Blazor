@@ -37,7 +37,11 @@ public partial class TmNotionExcerptIncludeBlock : ComponentBase
     private bool _notFound;
 
     private string SourceSummary
-        => _sourcePage is not null ? PageTitle(_sourcePage) : Loc["Notion_ExcerptInclude_Select"];
+        => _sourcePage is not null
+            ? PageTitle(_sourcePage)
+            : Content?.SourcePageId is not null && _notFound
+                ? Loc["Notion_ExcerptInclude_MissingSource"]
+                : Loc["Notion_ExcerptInclude_Select"];
 
     protected override async Task OnParametersSetAsync()
     {

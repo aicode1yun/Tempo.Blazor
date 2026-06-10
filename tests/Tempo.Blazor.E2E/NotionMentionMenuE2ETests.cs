@@ -269,4 +269,181 @@ public class NotionMentionMenuE2ETests : WasmTestBase
 
         await TakeScreenshotAsync(page, "pagelink_menu_escaped");
     }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB5: captures @ mention menu, no-results state, diacritics search, and inserted user chip")]
+    public async Task EB5_MentionMenuNoResultsDiacriticsAndUserChip_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedMentionTokenPageAsync(page);
+
+        await TypeTriggerAsync(page, "@");
+        var menu = page.Locator(".tm-nmm").First;
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+        await AssertWithinViewportAsync(menu, "EB5 @ mention menu");
+        await CaptureBaselineAsync(page, "mention-menu", "eb5-at-menu-open", menu);
+
+        var input = menu.Locator(".tm-nmm__search-input").First;
+        await input.FillAsync("definitely-no-mention-match");
+        var emptyState = menu.Locator(".tm-nmm__status").First;
+        await emptyState.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await emptyState.IsVisibleAsync(), "@ mention no-results state should be visible.");
+        await CaptureBaselineAsync(page, "mention-menu", "eb5-at-no-results", menu);
+
+        await input.FillAsync("Žaneta");
+        var zaneta = menu.Locator(".tm-nmm__item").Filter(new LocatorFilterOptions { HasText = "Žaneta Černá" }).First;
+        await zaneta.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.Keyboard.PressAsync("Enter");
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 8000 });
+
+        var chip = page.Locator(".tm-notion-mention.tm-notion-mention--user").Filter(new LocatorFilterOptions { HasText = "Žaneta Černá" }).First;
+        await chip.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await CaptureBaselineAsync(page, "mention-menu", "eb5-user-chip", chip);
+    }
+
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("EB5: captures [[ page-link menu, no-results state, and long page title chip truncation")]
+    public async Task EB5_PageLinkMenuNoResultsAndLongTitleChip_CaptureBaseline()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedMentionTokenPageAsync(page);
+
+        await TypeTriggerAsync(page, "[[");
+        var menu = page.Locator(".tm-nmm").First;
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+        Assert.AreEqual(0, await menu.Locator(".tm-nmm__tabs").CountAsync(), "Page-link menu should not show mention tabs.");
+        await AssertWithinViewportAsync(menu, "EB5 page-link menu");
+        await CaptureBaselineAsync(page, "mention-menu", "eb5-page-link-menu-open", menu);
+
+        var input = menu.Locator(".tm-nmm__search-input").First;
+        await input.FillAsync("definitely-no-page-match");
+        var emptyState = menu.Locator(".tm-nmm__status").First;
+        await emptyState.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await emptyState.IsVisibleAsync(), "Page-link no-results state should be visible.");
+        await CaptureBaselineAsync(page, "mention-menu", "eb5-page-link-no-results", menu);
+
+        await page.Keyboard.PressAsync("Escape");
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 8000 });
+
+        await TypeTriggerAsync(page, "[[");
+        menu = page.Locator(".tm-nmm").First;
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+        input = menu.Locator(".tm-nmm__search-input").First;
+        await input.FillAsync("Very Long Page Link");
+        var longPageItem = menu.Locator(".tm-nmm__item").Filter(new LocatorFilterOptions { HasText = "Very Long Page Link Title" }).First;
+        await longPageItem.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.Keyboard.PressAsync("Enter");
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 8000 });
+
+        var chip = page.Locator(".tm-notion-mention.tm-notion-mention--page").Filter(new LocatorFilterOptions { HasText = "Very Long Page Link Title" }).First;
+        await chip.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var chipFits = await chip.EvaluateAsync<bool>("el => el.getBoundingClientRect().right <= window.innerWidth && el.scrollWidth <= Math.max(el.clientWidth, el.getBoundingClientRect().width) + 1");
+        Assert.IsTrue(chipFits, "Long page-link chip should stay inside the viewport without widening the editor shell.");
+        await CaptureBaselineAsync(page, "mention-menu", "eb5-long-page-chip", chip);
+    }
+
+    private static async Task SeedMentionTokenPageAsync(IPage page)
+    {
+        await page.WaitForFunctionAsync(
+            "methodName => window.tmNotionDemo && typeof window.tmNotionDemo[methodName] === 'function'",
+            "seedMentionTokenPage",
+            new PageWaitForFunctionOptions { Timeout = 60000 });
+        await page.EvaluateAsync("async methodName => await window.tmNotionDemo[methodName]()", "seedMentionTokenPage");
+        await page.ReloadAsync(new PageReloadOptions
+        {
+            WaitUntil = WaitUntilState.NetworkIdle,
+            Timeout = 60000
+        });
+        await page.WaitForSelectorAsync("[data-block-id='eb500000-0000-0000-0000-000000000003'] .tm-notion-token[data-key='unknown.invoice_deadline']", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+    }
+
+    private async Task CaptureBaselineAsync(IPage page, string area, string state, ILocator region)
+    {
+        var outputDir = GetBaselineDirectory(area);
+        var safeState = SanitizePathPart(state);
+        var fullPath = Path.Combine(outputDir, $"{safeState}.png");
+        var regionPath = Path.Combine(outputDir, $"{safeState}.region.png");
+
+        await page.WaitForTimeoutAsync(250);
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = fullPath,
+            Type = ScreenshotType.Png,
+            FullPage = true
+        });
+
+        await region.ScreenshotAsync(new LocatorScreenshotOptions
+        {
+            Path = regionPath,
+            Type = ScreenshotType.Png,
+            OmitBackground = false
+        });
+
+        TestContext.AddResultFile(fullPath);
+        TestContext.AddResultFile(regionPath);
+    }
+
+    private static async Task AssertWithinViewportAsync(ILocator locator, string label)
+    {
+        var metrics = await locator.EvaluateAsync<ViewportBoxMetrics>("""
+            el => {
+                const rect = el.getBoundingClientRect();
+                return {
+                    Left: rect.left,
+                    Top: rect.top,
+                    Right: rect.right,
+                    Bottom: rect.bottom,
+                    ViewportWidth: window.innerWidth,
+                    ViewportHeight: window.innerHeight
+                };
+            }
+            """);
+
+        Assert.IsTrue(metrics.Left >= 0, $"{label} should not overflow the left viewport edge. Left={metrics.Left}.");
+        Assert.IsTrue(metrics.Top >= 0, $"{label} should not overflow the top viewport edge. Top={metrics.Top}.");
+        Assert.IsTrue(metrics.Right <= metrics.ViewportWidth, $"{label} should not overflow the right viewport edge. Right={metrics.Right}, Viewport={metrics.ViewportWidth}.");
+        Assert.IsTrue(metrics.Bottom <= metrics.ViewportHeight, $"{label} should not overflow the bottom viewport edge. Bottom={metrics.Bottom}, Viewport={metrics.ViewportHeight}.");
+    }
+
+    private static string GetBaselineDirectory(string area)
+    {
+        var dir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            SanitizePathPart(area)));
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static string SanitizePathPart(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value.Select(ch => invalid.Contains(ch) || char.IsWhiteSpace(ch) ? '-' : char.ToLowerInvariant(ch)).ToArray();
+        return new string(chars);
+    }
+
+    private sealed class ViewportBoxMetrics
+    {
+        public double Left { get; set; }
+
+        public double Top { get; set; }
+
+        public double Right { get; set; }
+
+        public double Bottom { get; set; }
+
+        public double ViewportWidth { get; set; }
+
+        public double ViewportHeight { get; set; }
+    }
 }

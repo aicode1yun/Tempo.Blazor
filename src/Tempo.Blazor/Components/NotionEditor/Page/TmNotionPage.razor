@@ -11,18 +11,27 @@
          @ref="_pageRef">
 
     @* ── Page settings button (top-right corner) ────────────────────────────── *@
-    <div class="tm-notion-page__settings-btn">
-        <TmNotionPageSettingsMenu Page="Page"
-                                  ReadOnly="ReadOnly"
-                                  OnPageUpdated="OnPageSettingsUpdated"
-                                  OnPageDeleted="HandlePageDeletedAsync"
-                                  OnPageHistoryRequested="HandlePageHistoryRequestedAsync"
-                                  OnNavigateToImportedPage="HandleNavigateToImportedPageAsync" />
-    </div>
+    @if (!ReadOnly || Page.IsLocked)
+    {
+        <div class="tm-notion-page__settings-btn">
+            <TmNotionPageSettingsMenu Page="Page"
+                                      ReadOnly="ReadOnly"
+                                      OnPageUpdated="OnPageSettingsUpdated"
+                                      OnPageDeleted="HandlePageDeletedAsync"
+                                      OnPageHistoryRequested="HandlePageHistoryRequestedAsync"
+                                      OnPageInfoRequested="HandlePageInfoRequestedAsync"
+                                      OnShareRequested="HandleShareRequestedAsync"
+                                      OnRestrictionsRequested="HandleRestrictionsRequestedAsync"
+                                      OnAISummarizeRequested="HandleAISummarizeRequestedAsync"
+                                      OnAIAskPageRequested="HandleAIAskPageRequestedAsync"
+                                      OnNavigateToImportedPage="HandleNavigateToImportedPageAsync" />
+        </div>
+    }
 
     @* ── Page header (cover + icon + title + description) ──────────────────── *@
     <TmNotionPageHeader Page="Page"
                         ReadOnly="ReadOnly"
+                        ShowRestrictedIndicator="@(EffectivePermission is { Mode: not PageRestrictionMode.Open })"
                         UnresolvedCommentCount="_pageUnresolvedCommentCount"
                         OnPageUpdated="OnPageUpdated"
                         OnTitleEnterPressed="HandleTitleEnterPressedAsync"
@@ -56,7 +65,7 @@
                               stroke-linecap="round"/>
                     </svg>
                     <span class="tm-notion-load-error__message">
-                        @Loc["TmNotionPage_BlocksLoadError", _loadBlocksError]
+                        @_loadBlocksError
                     </span>
                     <button type="button" class="tm-notion-load-error__retry" @onclick="RefreshAsync">
                         @Loc["Tm_Retry"]
@@ -78,10 +87,13 @@
             {
                 <CascadingValue Value="(IReadOnlyList<IPageBlock>)_blocks" Name="TmPageBlocks" IsFixed="false">
                     <TmNotionBlockList Blocks="_blocks"
+                                       PageId="Page.Id"
                                        ReadOnly="ReadOnly"
                                        ActiveBlockId="_activeBlockId"
                                        BlockCommentCounts="_blockCommentCounts"
                                        OnReorder="HandleBlockReorderAsync"
+                                       OnExternalBlockDropped="HandleExternalBlockDroppedAsync"
+                                       OnExternalBlockRemoved="HandleExternalBlockRemovedAsync"
                                        OnBlockFocused="HandleBlockFocusedAsync"
                                        OnBlockDeleted="HandleBlockDeletedAsync"
                                        OnBlockUpdated="HandleBlockUpdatedAsync"
@@ -94,12 +106,15 @@
                                        OnMentionMenu="HandleMentionMenuOpenedAsync"
                                        OnPageLinkMenu="HandlePageLinkMenuOpenedAsync"
                                        OnTokenMenu="HandleTokenMenuOpenedAsync"
+                                       OnMoveFocus="HandleMoveFocusAsync"
                                        OnComment="HandleBlockCommentAsync"
                                        OnNewThread="HandleBlockNewThreadAsync" />
                 </CascadingValue>
             }
 
         </div>
+
+        <TmNotionPageReactions PageId="Page.Id" />
 
         @* ── Page comments panel ──────────────────────────────────────────── *@
         @if (Context.CommentProvider is not null)
@@ -122,7 +137,17 @@
                    Top="_slashMenuTop"
                    Left="_slashMenuLeft"
                    OnItemSelected="HandleSlashItemSelectedAsync"
+                   OnSlashItemSelected="HandleSlashMenuItemSelectedAsync"
+                   OnAISelected="HandleSlashAISelectedAsync"
                    OnClosed="HandleSlashMenuClosedAsync" />
+
+<TmNotionStatusPicker Visible="_statusPickerVisible"
+                      Top="_statusPickerTop"
+                      Left="_statusPickerLeft"
+                      InitialLabel="@_statusInitialLabel"
+                      InitialColor="_statusInitialColor"
+                      OnInserted="HandleStatusInsertedAsync"
+                      OnClosed="HandleStatusPickerClosedAsync" />
 
 @* ── Mention menu (portal — position:fixed, outside scroll) *@
 <TmNotionMentionMenu Visible="_mentionMenuVisible"
@@ -152,6 +177,24 @@
                      OnClosed="() => { _historyVisible = false; StateHasChanged(); }"
                      OnRestored="HandleHistoryRestoredAsync" />
 
+@* ── Page info panel (portal — position:fixed) *@
+<TmNotionPageInfoPanel Page="Page"
+                       Blocks="_blocks"
+                       Visible="_pageInfoVisible"
+                       VisibleChanged="HandlePageInfoVisibleChangedAsync" />
+
+<TmNotionShareDialog PageId="Page.Id"
+                     Provider="Context.PublicShareProvider"
+                     Visible="_shareVisible"
+                     VisibleChanged="HandleShareVisibleChangedAsync" />
+
+<TmNotionRestrictionsDialog PageId="Page.Id"
+                            Provider="Context.PermissionProvider"
+                            EffectivePermission="EffectivePermission"
+                            Visible="_restrictionsVisible"
+                            VisibleChanged="HandleRestrictionsVisibleChangedAsync"
+                            OnSaved="HandleRestrictionsSavedAsync" />
+
 @* ── Inline formatting toolbar (portal — position:fixed, outside scroll) *@
 <TmNotionInlineToolbar Visible="_toolbarVisible"
                        Top="_toolbarTop"
@@ -166,8 +209,21 @@
                        OnTurnInto="HandleToolbarTurnIntoAsync"
                        OnAlignChange="HandleToolbarAlignAsync"
                        OnComment="HandleTextCommentAsync"
+                       ShowAI="@(Context.AIProvider is not null)"
+                       OnAI="HandleToolbarAIAsync"
                        BlockId="@_toolbarBlockId"
                        DotNetRef="@_toolbarDotNetRef" />
+
+<TmNotionAiMenu Visible="_aiMenuVisible"
+                Top="_aiMenuTop"
+                Left="_aiMenuLeft"
+                Panel="_aiMenuPanel"
+                InitialMode="_aiMenuMode"
+                PageId="@Page.Id.ToString("D")"
+                SourceText="@_aiSourceText"
+                ContextHtml="@_aiContextHtml"
+                OnAccepted="HandleAIAcceptedAsync"
+                OnClosed="HandleAIClosedAsync" />
 
 @* ── Block comment panel (portal — position:fixed) *@
 <TmNotionBlockCommentPanel Visible="@_blockCommentVisible"

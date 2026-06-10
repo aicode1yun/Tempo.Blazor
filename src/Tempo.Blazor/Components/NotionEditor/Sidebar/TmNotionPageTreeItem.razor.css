@@ -42,6 +42,14 @@
     width: 12px;
 }
 
+.tm-npt-select {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin: 0 var(--tm-space-1) 0 0;
+    accent-color: var(--tm-color-primary);
+}
+
 /* ── Expand toggle ───────────────────────────────────────────────────────── */
 
 .tm-npt-toggle {
@@ -62,6 +70,7 @@
 }
 
 .tm-npt-row:hover .tm-npt-toggle,
+.tm-npt-row:focus-within .tm-npt-toggle,
 .tm-npt-item--active > .tm-npt-row .tm-npt-toggle {
     opacity: 1;
 }
@@ -137,6 +146,7 @@
 }
 
 .tm-npt-row:hover .tm-npt-actions,
+.tm-npt-row:focus-within .tm-npt-actions,
 .tm-npt-item--active > .tm-npt-row .tm-npt-actions {
     opacity: 1;
 }
@@ -250,6 +260,13 @@
     border: none;
     border-top: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.08));
     margin: 4px 0;
+}
+
+@media (hover: none) {
+    .tm-npt-toggle,
+    .tm-npt-actions {
+        opacity: 1;
+    }
 }
 
 /* ── Delete confirmation ─────────────────────────────────────────────────── */

@@ -56,6 +56,24 @@ public partial class TmNotionEmbedBlock : ComponentBase, IAsyncDisposable
         }
     }
 
+    private string GetProviderLabel()
+    {
+        if (Content?.Provider == EmbedProvider.Generic)
+            return Loc["TmNotionEmbedBlock_GenericProvider"];
+
+        return Content?.Provider.ToString() ?? Loc["TmNotionEmbedBlock_GenericProvider"];
+    }
+
+    private string GetDisplayUrl()
+    {
+        if (string.IsNullOrWhiteSpace(Content?.Url))
+            return string.Empty;
+
+        return Uri.TryCreate(Content.Url, UriKind.Absolute, out var uri)
+            ? uri.Host
+            : Content.Url;
+    }
+
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
     protected override void OnParametersSet()

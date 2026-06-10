@@ -103,7 +103,7 @@
                 disabled="@ReadOnly"
                 aria-label="@Loc["TmNotionPage_IconLabel"]"
                 title="@Loc["TmNotionPage_IconLabel"]"
-                @onclick="ToggleIconPicker">
+                @onclick="ToggleIconPickerAsync">
             @Page.IconEmoji
         </button>
     }
@@ -113,7 +113,7 @@
                 type="button"
                 disabled="@ReadOnly"
                 aria-label="@Loc["TmNotionPage_IconLabel"]"
-                @onclick="ToggleIconPicker">
+                @onclick="ToggleIconPickerAsync">
             <img src="@Page.IconImageUrl" alt="" aria-hidden="true" />
         </button>
     }
@@ -124,7 +124,7 @@
         <div class="tm-notion-header-meta__add-row" aria-hidden="true">
             @if (string.IsNullOrEmpty(Page.IconEmoji) && string.IsNullOrEmpty(Page.IconImageUrl))
             {
-                <button class="tm-notion-header-meta__add-btn" type="button" @onclick="ToggleIconPicker">
+                <button class="tm-notion-header-meta__add-btn" type="button" @onclick="ToggleIconPickerAsync">
                     @Loc["TmNotionPage_AddIcon"]
                 </button>
             }
@@ -169,6 +169,21 @@
             </button>
         }
     </div>
+
+    @if (ShowRestrictedIndicator)
+    {
+        <div class="tm-notion-header-permissions">
+            <span class="tm-notion-header-restricted-badge"
+                  role="status"
+                  aria-label="@Loc["Notion_Restrictions_Title"]">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+                    <path d="M3.25 5.5V4.1a3.25 3.25 0 1 1 6.5 0v1.4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+                    <rect x="2.25" y="5.4" width="8.5" height="6.1" rx="1.6" fill="currentColor" opacity=".78"/>
+                </svg>
+                @Loc["Notion_Restrictions_Title"]
+            </span>
+        </div>
+    }
 
     @* Description *@
     @if (_showDescription || !string.IsNullOrEmpty(Page.Description))
@@ -220,6 +235,25 @@
             </button>
         </div>
         <div class="tm-notion-emoji-picker__body">
+            @if (_recentEmojis.Count > 0 && string.IsNullOrWhiteSpace(_emojiSearch))
+            {
+                <div class="tm-notion-emoji-picker__category tm-notion-emoji-picker__category--recent">
+                    <div class="tm-notion-emoji-picker__category-label">@Loc["TmNotionEmojiPicker_RecentlyUsed"]</div>
+                    <div class="tm-notion-emoji-picker__grid">
+                        @foreach (var recent in _recentEmojis)
+                        {
+                            var captured = recent;
+                            <button class="tm-notion-emoji-picker__btn"
+                                    type="button"
+                                    title="@captured"
+                                    aria-label="@captured"
+                                    @onclick="() => SelectEmojiAsync(captured)">
+                                @captured
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
             @foreach (var cat in FilteredCategories)
             {
                 <div class="tm-notion-emoji-picker__category">

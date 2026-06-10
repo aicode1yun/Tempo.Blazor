@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using System.Net;
+using System.Text.RegularExpressions;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -42,6 +44,10 @@ public partial class TmNotionTableBlock : ComponentBase
     private ElementReference _containerRef;
     private ElementReference _tableRef;
     private (int StartRow, int StartColumn, int EndRow, int EndColumn)? _selection;
+    private (int Row, int Column)? _selectionAnchor;
+    private bool _isSelecting;
+    private bool _dragSelectionActivated;
+    private readonly Stack<List<RowSnapshot>> _undoStack = new();
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -65,7 +71,12 @@ public partial class TmNotionTableBlock : ComponentBase
             Math.Min(startColumn, endColumn),
             Math.Max(startRow, endRow),
             Math.Max(startColumn, endColumn));
+        StateHasChanged();
     }
+
+    private bool HasRangeSelection =>
+        _selection is { } selection &&
+        (selection.StartRow != selection.EndRow || selection.StartColumn != selection.EndColumn);
 
     // ── Row loading ───────────────────────────────────────────────────────────
 
@@ -237,9 +248,9 @@ public partial class TmNotionTableBlock : ComponentBase
 
     // ── Cell edit ─────────────────────────────────────────────────────────────
 
-    private async Task HandleCellsChangedAsync(IPageBlock row, IReadOnlyList<string> cells)
+    private async Task HandleCellsChangedAsync(IPageBlock row, IReadOnlyList<NotionTableCell> cells)
     {
-        var updated = BuildRowBlock(row, new TableRowBlockContent { Cells = cells.ToList() });
+        var updated = BuildRowBlock(row, BuildRowContent(cells));
         var idx = _rows.FindIndex(r => r.Id == row.Id);
         try
         {
@@ -247,6 +258,180 @@ public partial class TmNotionTableBlock : ComponentBase
             if (idx >= 0) _rows[idx] = updated;
         }
         catch { }
+    }
+
+    // ── Selection and advanced table operations ──────────────────────────────
+
+    private void HandleCellMouseDown(TableCellSelectionRequest request)
+    {
+        _selectionAnchor = (request.RowIndex, request.ColumnIndex);
+        _isSelecting = true;
+        _dragSelectionActivated = false;
+    }
+
+    private void HandleCellMouseEnter(TableCellSelectionRequest request)
+    {
+        if (!_isSelecting || _selectionAnchor is not { } anchor)
+            return;
+
+        if (anchor.Row == request.RowIndex && anchor.Column == request.ColumnIndex)
+            return;
+
+        _dragSelectionActivated = true;
+        SetTableSelection(anchor.Row, anchor.Column, request.RowIndex, request.ColumnIndex);
+    }
+
+    private void HandleCellMouseUp(TableCellSelectionRequest request)
+    {
+        if (_isSelecting && _dragSelectionActivated && _selectionAnchor is { } anchor)
+            SetTableSelection(anchor.Row, anchor.Column, request.RowIndex, request.ColumnIndex);
+        else if (!_dragSelectionActivated)
+            _selection = null;
+
+        _isSelecting = false;
+        _selectionAnchor = null;
+        _dragSelectionActivated = false;
+        StateHasChanged();
+    }
+
+    private bool IsCellSelected(int rowIndex, int columnIndex)
+        => _selection is { } selection &&
+           rowIndex >= selection.StartRow &&
+           rowIndex <= selection.EndRow &&
+           columnIndex >= selection.StartColumn &&
+           columnIndex <= selection.EndColumn;
+
+    private async Task MergeSelectionAsync()
+    {
+        if (!HasRangeSelection || _selection is not { } selection)
+            return;
+
+        var grid = BuildGrid();
+        if (!SelectionWithinGrid(selection, grid))
+            return;
+
+        PushUndoSnapshot();
+        SplitIntersectingMergedCells(grid, selection);
+
+        var origin = grid[selection.StartRow][selection.StartColumn];
+        origin.ColSpan = selection.EndColumn - selection.StartColumn + 1;
+        origin.RowSpan = selection.EndRow - selection.StartRow + 1;
+        origin.IsMergeHidden = false;
+        origin.MergeOriginRow = -1;
+        origin.MergeOriginColumn = -1;
+
+        for (var row = selection.StartRow; row <= selection.EndRow; row++)
+        {
+            for (var column = selection.StartColumn; column <= selection.EndColumn; column++)
+            {
+                if (row == selection.StartRow && column == selection.StartColumn)
+                    continue;
+
+                grid[row][column] = new NotionTableCell
+                {
+                    IsMergeHidden = true,
+                    MergeOriginRow = selection.StartRow,
+                    MergeOriginColumn = selection.StartColumn
+                };
+            }
+        }
+
+        await PersistGridAsync(grid);
+    }
+
+    private async Task SplitSelectionAsync()
+    {
+        if (_selection is not { } selection)
+            return;
+
+        var grid = BuildGrid();
+        if (!SelectionWithinGrid(selection, grid))
+            return;
+
+        PushUndoSnapshot();
+        var origins = GetSelectedOrigins(grid, selection);
+        foreach (var (row, column) in origins)
+            SplitOrigin(grid, row, column);
+
+        await PersistGridAsync(grid);
+    }
+
+    private async Task ApplySelectionColorAsync(string backgroundColor)
+    {
+        if (_selection is not { } selection)
+            return;
+
+        var grid = BuildGrid();
+        if (!SelectionWithinGrid(selection, grid))
+            return;
+
+        PushUndoSnapshot();
+        foreach (var (row, column) in GetSelectedOrigins(grid, selection))
+            grid[row][column].BackgroundColor = backgroundColor;
+
+        await PersistGridAsync(grid);
+    }
+
+    private async Task ClearSelectionColorAsync()
+    {
+        if (_selection is not { } selection)
+            return;
+
+        var grid = BuildGrid();
+        if (!SelectionWithinGrid(selection, grid))
+            return;
+
+        PushUndoSnapshot();
+        foreach (var (row, column) in GetSelectedOrigins(grid, selection))
+            grid[row][column].BackgroundColor = null;
+
+        await PersistGridAsync(grid);
+    }
+
+    private async Task UndoTableChangeAsync()
+    {
+        if (_undoStack.Count == 0)
+            return;
+
+        var snapshot = _undoStack.Pop();
+        foreach (var item in snapshot)
+        {
+            var index = _rows.FindIndex(row => row.Id == item.Row.Id);
+            if (index < 0)
+                continue;
+
+            var updated = BuildRowBlock(item.Row, BuildRowContent(item.Cells));
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            _rows[index] = updated;
+        }
+
+        _selection = null;
+        StateHasChanged();
+    }
+
+    private async Task SortSelectedColumnAsync()
+    {
+        if (_rows.Count <= 1)
+            return;
+
+        var column = Math.Clamp(_selection?.StartColumn ?? 0, 0, Math.Max(0, _columnCount - 1));
+        var headerRows = _hasHeaderRow ? _rows.Take(1).ToList() : [];
+        var bodyRows = _rows.Skip(headerRows.Count)
+            .Select((row, index) => new { Row = row, Index = index, Text = GetSortText(row, column) })
+            .OrderBy(item => item.Text, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(item => item.Index)
+            .Select(item => item.Row)
+            .ToList();
+
+        _rows = [.. headerRows, .. bodyRows];
+
+        try
+        {
+            await Context.BlockProvider.ReorderBlocksAsync(Block.PageId.ToString(), _rows.Select(row => row.Id.ToString()));
+        }
+        catch { }
+
+        StateHasChanged();
     }
 
     // ── Tab navigation ────────────────────────────────────────────────────────
@@ -309,6 +494,146 @@ public partial class TmNotionTableBlock : ComponentBase
         return Task.CompletedTask;
     }
 
+    private void PushUndoSnapshot()
+    {
+        _undoStack.Push(_rows
+            .Select(row => new RowSnapshot(row, NormalizeRow(row).Select(cell => cell.Clone()).ToList()))
+            .ToList());
+    }
+
+    private List<List<NotionTableCell>> BuildGrid()
+        => _rows.Select(NormalizeRow).ToList();
+
+    private List<NotionTableCell> NormalizeRow(IPageBlock row)
+    {
+        var content = row.Content as ITableRowBlockContent;
+        if (content?.RichCells is { Count: > 0 })
+        {
+            var rich = content.RichCells.Select(cell => cell.Clone()).ToList();
+            while (rich.Count < _columnCount)
+                rich.Add(new NotionTableCell());
+            return rich.Take(_columnCount).ToList();
+        }
+
+        var legacy = content?.Cells ?? [];
+        return Enumerable.Range(0, _columnCount)
+            .Select(index => new NotionTableCell
+            {
+                Html = index < legacy.Count ? legacy[index] : string.Empty
+            })
+            .ToList();
+    }
+
+    private async Task PersistGridAsync(List<List<NotionTableCell>> grid)
+    {
+        if (!NotionTableGridValidator.TryValidate(grid, _columnCount, out _))
+            return;
+
+        for (var index = 0; index < Math.Min(_rows.Count, grid.Count); index++)
+        {
+            var updated = BuildRowBlock(_rows[index], BuildRowContent(grid[index]));
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            _rows[index] = updated;
+        }
+
+        StateHasChanged();
+    }
+
+    private static TableRowBlockContent BuildRowContent(IReadOnlyList<NotionTableCell> cells)
+        => new()
+        {
+            Cells = cells.Select(cell => cell.IsMergeHidden ? string.Empty : cell.Html).ToList(),
+            RichCells = cells.Select(cell => cell.Clone()).ToList()
+        };
+
+    private static bool SelectionWithinGrid(
+        (int StartRow, int StartColumn, int EndRow, int EndColumn) selection,
+        IReadOnlyList<IReadOnlyList<NotionTableCell>> grid)
+        => selection.StartRow >= 0 &&
+           selection.StartColumn >= 0 &&
+           selection.EndRow < grid.Count &&
+           grid.Count > 0 &&
+           selection.EndColumn < grid[selection.StartRow].Count;
+
+    private static void SplitIntersectingMergedCells(
+        List<List<NotionTableCell>> grid,
+        (int StartRow, int StartColumn, int EndRow, int EndColumn) selection)
+    {
+        var origins = GetSelectedOrigins(grid, selection);
+        foreach (var (row, column) in origins)
+            SplitOrigin(grid, row, column);
+    }
+
+    private static IReadOnlyList<(int Row, int Column)> GetSelectedOrigins(
+        List<List<NotionTableCell>> grid,
+        (int StartRow, int StartColumn, int EndRow, int EndColumn) selection)
+    {
+        var origins = new HashSet<(int Row, int Column)>();
+        for (var row = selection.StartRow; row <= selection.EndRow; row++)
+        {
+            for (var column = selection.StartColumn; column <= selection.EndColumn; column++)
+            {
+                var origin = GetOrigin(grid, row, column);
+                origins.Add(origin);
+            }
+        }
+
+        return origins.ToList();
+    }
+
+    private static (int Row, int Column) GetOrigin(List<List<NotionTableCell>> grid, int row, int column)
+    {
+        var cell = grid[row][column];
+        if (!cell.IsMergeHidden)
+            return (row, column);
+
+        if (cell.MergeOriginRow >= 0 &&
+            cell.MergeOriginRow < grid.Count &&
+            cell.MergeOriginColumn >= 0 &&
+            cell.MergeOriginColumn < grid[cell.MergeOriginRow].Count)
+            return (cell.MergeOriginRow, cell.MergeOriginColumn);
+
+        return (row, column);
+    }
+
+    private static void SplitOrigin(List<List<NotionTableCell>> grid, int row, int column)
+    {
+        var origin = grid[row][column];
+        var rowSpan = Math.Max(1, origin.RowSpan);
+        var colSpan = Math.Max(1, origin.ColSpan);
+        origin.RowSpan = 1;
+        origin.ColSpan = 1;
+        origin.IsMergeHidden = false;
+        origin.MergeOriginRow = -1;
+        origin.MergeOriginColumn = -1;
+
+        for (var r = row; r < Math.Min(grid.Count, row + rowSpan); r++)
+        {
+            for (var c = column; c < Math.Min(grid[r].Count, column + colSpan); c++)
+            {
+                if (r == row && c == column)
+                    continue;
+
+                if (grid[r][c].IsMergeHidden &&
+                    grid[r][c].MergeOriginRow == row &&
+                    grid[r][c].MergeOriginColumn == column)
+                    grid[r][c] = new NotionTableCell();
+            }
+        }
+    }
+
+    private string GetSortText(IPageBlock row, int column)
+    {
+        var cells = NormalizeRow(row);
+        if (column < 0 || column >= cells.Count)
+            return string.Empty;
+
+        return WebUtility.HtmlDecode(StripHtml(cells[column].Html)).Trim();
+    }
+
+    private static string StripHtml(string html)
+        => Regex.Replace(html, "<.*?>", string.Empty, RegexOptions.Singleline);
+
     // ── Block builders ────────────────────────────────────────────────────────
 
     private static PageBlock BuildRowBlock(IPageBlock src, TableRowBlockContent content) => new()
@@ -334,4 +659,6 @@ public partial class TmNotionTableBlock : ComponentBase
         CreatedAt     = src.CreatedAt,
         LastEditedAt  = DateTime.UtcNow
     };
+
+    private sealed record RowSnapshot(IPageBlock Row, IReadOnlyList<NotionTableCell> Cells);
 }

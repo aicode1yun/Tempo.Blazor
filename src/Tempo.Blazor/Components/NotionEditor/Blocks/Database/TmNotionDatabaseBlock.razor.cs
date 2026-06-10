@@ -792,17 +792,7 @@ public partial class TmNotionDatabaseBlock : ComponentBase
         if (!record.Fields.TryGetValue(field.Id.ToString(), out var val) || val is null)
             return string.Empty;
 
-        return val switch
-        {
-            bool b                   => b ? "✓" : string.Empty,
-            double d                 => d.ToString("G"),
-            float f                  => f.ToString("G"),
-            int i                    => i.ToString(),
-            DateTime dt              => dt.ToString("yyyy-MM-dd"),
-            string[] arr             => string.Join(", ", arr),
-            IEnumerable<string> list => string.Join(", ", list),
-            _                        => val.ToString() ?? string.Empty
-        };
+        return NotionDatabaseValueFormatter.Format(val);
     }
 
     private static MarkupString ViewTypeIcon(DatabaseViewType type) => (MarkupString)(type switch

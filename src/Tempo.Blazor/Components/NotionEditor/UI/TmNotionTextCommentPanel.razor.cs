@@ -89,7 +89,12 @@ public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
         if (firstRender)
         {
             _dotNetRef = DotNetObjectReference.Create(this);
+        }
+
+        if (Visible)
+        {
             try { await JS.InvokeVoidAsync("tmNotionEditor.initMentionClickHandler", _panelRef, _dotNetRef); } catch { /* best-effort */ }
+            try { await JS.InvokeVoidAsync("tmNotionEditor.clampFixedElementToViewport", _panelRef, 12); } catch { /* best-effort */ }
         }
     }
 

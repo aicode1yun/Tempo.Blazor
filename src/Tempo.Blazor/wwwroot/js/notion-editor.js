@@ -40,6 +40,7 @@ window.tmNotionEditor = (function () {
     let _tokenAnchorNode = null; // text node position just before '{{'
     let _tokenAnchorOff  = 0;
     let _chipBeingEdited = null; // chip span being replaced via click-to-edit
+    let _statusChipBeingEdited = null; // inline status chip being replaced via click-to-edit
 
     // ── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -110,6 +111,13 @@ window.tmNotionEditor = (function () {
             .replace(/"/g, '&quot;');
     }
 
+    function _truncateInlineChipText(value, maxLength = 56) {
+        const text = String(value ?? '').trim();
+        const chars = Array.from(text);
+        if (chars.length <= maxLength) return text;
+        return chars.slice(0, Math.max(1, maxLength - 1)).join('').trimEnd() + '\u2026';
+    }
+
     function _detectMarkdownShortcut(text) {
         if (/^# $/.test(text))          return 'heading1';
         if (/^## $/.test(text))         return 'heading2';
@@ -153,6 +161,30 @@ window.tmNotionEditor = (function () {
         element?.focus();
     }
 
+    function initEditorKeyHandler(element, dotNetRef) {
+        if (!element || !dotNetRef) return;
+        destroyEditorKeyHandler(element);
+
+        const onKeyDown = (event) => {
+            if (event.key !== 'Escape') return;
+            const mode = element.getAttribute('data-view-mode');
+            if (mode !== 'Reading' && mode !== 'Presentation') return;
+
+            dotNetRef.invokeMethodAsync('OnEditorEscapeAsync').catch(console.error);
+        };
+
+        document.addEventListener('keydown', onKeyDown, true);
+        element.__tmNotionEditorKeyHandler = { onKeyDown };
+    }
+
+    function destroyEditorKeyHandler(element) {
+        const state = element?.__tmNotionEditorKeyHandler;
+        if (!state) return;
+
+        document.removeEventListener('keydown', state.onKeyDown, true);
+        delete element.__tmNotionEditorKeyHandler;
+    }
+
     function focusAtEnd(element) {
         if (element) _setCursorAtEnd(element);
     }
@@ -163,6 +195,60 @@ window.tmNotionEditor = (function () {
 
     function focusAtOffset(element, offset) {
         if (element) _setCursorAtOffset(element, offset);
+    }
+
+    const _focusTraps = new WeakMap();
+
+    function _getFocusableElements(container) {
+        if (!container) return [];
+        return Array.from(container.querySelectorAll([
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])'
+        ].join(','))).filter(el => {
+            const style = window.getComputedStyle(el);
+            return style.visibility !== 'hidden' && style.display !== 'none';
+        });
+    }
+
+    function initFocusTrap(container) {
+        if (!container) return;
+        destroyFocusTrap(container);
+
+        const onKeyDown = (event) => {
+            if (event.key !== 'Tab') return;
+
+            const focusable = _getFocusableElements(container);
+            if (focusable.length === 0) {
+                event.preventDefault();
+                container.focus({ preventScroll: true });
+                return;
+            }
+
+            const currentIndex = focusable.indexOf(document.activeElement);
+            const nextIndex = event.shiftKey
+                ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+                : (currentIndex < 0 || currentIndex >= focusable.length - 1 ? 0 : currentIndex + 1);
+
+            event.preventDefault();
+            focusable[nextIndex].focus({ preventScroll: true });
+        };
+
+        container.addEventListener('keydown', onKeyDown);
+        _focusTraps.set(container, onKeyDown);
+
+        const initialFocus = _getFocusableElements(container)[0] || container;
+        initialFocus.focus({ preventScroll: true });
+    }
+
+    function destroyFocusTrap(container) {
+        const onKeyDown = _focusTraps.get(container);
+        if (!container || !onKeyDown) return;
+        container.removeEventListener('keydown', onKeyDown);
+        _focusTraps.delete(container);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -379,14 +465,15 @@ window.tmNotionEditor = (function () {
             indicator = document.createElement('div');
             indicator.className = 'tm-notion-drop-indicator';
             indicator.style.cssText =
-                'position:fixed;height:2px;background:var(--tm-primary,#2383e2);border-radius:1px;' +
+                'position:fixed;height:3px;background:var(--tm-color-primary,var(--tm-primary));border-radius:999px;' +
+                'box-shadow:0 0 0 3px color-mix(in srgb,var(--tm-color-primary,var(--tm-primary)) 18%,transparent);' +
                 'pointer-events:none;z-index:9999;display:none;transition:top .06s;';
             document.body.appendChild(indicator);
             return indicator;
         }
 
         function _blocks(container) {
-            return Array.from(container.querySelectorAll('[data-notion-block]'));
+            return Array.from(container.children).filter(child => child.matches?.('[data-notion-block]'));
         }
 
         function _blockAt(y) {
@@ -404,7 +491,17 @@ window.tmNotionEditor = (function () {
             if (!e.target.closest('[data-notion-drag-handle]')) return;
             const b = e.target.closest('[data-notion-block]');
             if (!b) return;
+            if (!_blocks(containerElement).includes(b)) return;
+            e.stopPropagation();
             dragSrc = b;
+            window.__tmNotionBlockDrag = {
+                blockId: b.getAttribute('data-block-id') || '',
+                sourceParentBlockId: containerElement.getAttribute('data-parent-block-id') || '',
+                sourcePageId: containerElement.getAttribute('data-page-id') || '',
+                sourceContainer: containerElement,
+                sourceDotNetRef: dotNetRef,
+                sourceBlock: b
+            };
             dragSrc.classList.add('tm-notion-dragging');
             dragGhost = b.cloneNode(true);
             Object.assign(dragGhost.style, {
@@ -419,11 +516,13 @@ window.tmNotionEditor = (function () {
         }
 
         function _onDragOver(e) {
-            if (!dragSrc) return; // not a block drag — let diagram/wireframe stencil drops work
+            const activeDrag = window.__tmNotionBlockDrag;
+            if (!activeDrag?.blockId) return; // not a block drag — let diagram/wireframe stencil drops work
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             const b = _blockAt(e.clientY);
-            if (!b || b === dragSrc) { _indicator().style.display = 'none'; return; }
+            if (!b || b === activeDrag.sourceBlock) { _indicator().style.display = 'none'; return; }
+            e.stopPropagation();
             dropTarget = b;
             const rect  = b.getBoundingClientRect();
             const after = e.clientY > rect.top + rect.height / 2;
@@ -444,23 +543,51 @@ window.tmNotionEditor = (function () {
         }
 
         function _onDrop(e) {
-            if (!dragSrc) return; // not a block drag — let diagram/wireframe stencil drops work
+            const activeDrag = window.__tmNotionBlockDrag;
+            if (!activeDrag?.blockId) return; // not a block drag — let diagram/wireframe stencil drops work
             e.preventDefault();
             _indicator().style.display = 'none';
-            if (!dropTarget || dropTarget === dragSrc) return;
-            const src = _indexOf(dragSrc);
+            if (!dropTarget || dropTarget === activeDrag.sourceBlock) return;
+            e.stopPropagation();
+            const src = _indexOf(activeDrag.sourceBlock);
             const rect = dropTarget.getBoundingClientRect();
+            const after = e.clientY > rect.top + rect.height / 2;
             let dst  = _indexOf(dropTarget);
-            if (e.clientY > rect.top + rect.height / 2) dst++;
-            if (src !== -1 && dst !== -1 && src !== dst) {
+            if (after) dst++;
+            if (activeDrag.sourceContainer === containerElement && src !== -1 && dst !== -1 && src !== dst) {
                 dotNetRef.invokeMethodAsync('OnBlockReordered', src, dst).catch(console.error);
+            } else if (activeDrag.sourceContainer !== containerElement && dst !== -1) {
+                const targetPageId = containerElement.getAttribute('data-page-id') || activeDrag.sourcePageId || '';
+                const targetParentBlockId = containerElement.getAttribute('data-parent-block-id') || '';
+                dotNetRef.invokeMethodAsync(
+                    'OnExternalBlockDropped',
+                    activeDrag.blockId,
+                    targetPageId,
+                    activeDrag.sourceParentBlockId || null,
+                    targetParentBlockId || null,
+                    dst
+                )
+                    .then(() => activeDrag.sourceDotNetRef?.invokeMethodAsync('OnExternalBlockRemoved', activeDrag.blockId))
+                    .catch(console.error);
             }
         }
 
         function _onDragEnd() {
             dragSrc?.classList.remove('tm-notion-dragging');
+            window.__tmNotionBlockDrag?.sourceBlock?.classList?.remove('tm-notion-dragging');
             dragGhost?.parentNode?.removeChild(dragGhost);
             if (indicator) indicator.style.display = 'none';
+            if (window.__tmNotionBlockDrag?.sourceContainer === containerElement)
+                window.__tmNotionBlockDrag = null;
+            dragSrc = dragGhost = dropTarget = null;
+        }
+
+        function _onKeyDown(e) {
+            if (e.key !== 'Escape' || !window.__tmNotionBlockDrag?.blockId) return;
+            window.__tmNotionBlockDrag.sourceBlock?.classList?.remove('tm-notion-dragging');
+            dragGhost?.parentNode?.removeChild(dragGhost);
+            if (indicator) indicator.style.display = 'none';
+            window.__tmNotionBlockDrag = null;
             dragSrc = dragGhost = dropTarget = null;
         }
 
@@ -469,6 +596,7 @@ window.tmNotionEditor = (function () {
         containerElement.addEventListener('dragleave',  _onDragLeave);
         containerElement.addEventListener('drop',       _onDrop);
         containerElement.addEventListener('dragend',    _onDragEnd);
+        document.addEventListener('keydown', _onKeyDown);
 
         _dragContainers.set(containerElement, {
             cleanup() {
@@ -477,6 +605,7 @@ window.tmNotionEditor = (function () {
                 containerElement.removeEventListener('dragleave',  _onDragLeave);
                 containerElement.removeEventListener('drop',       _onDrop);
                 containerElement.removeEventListener('dragend',    _onDragEnd);
+                document.removeEventListener('keydown', _onKeyDown);
                 indicator?.parentNode?.removeChild(indicator);
                 indicator = null;
             }
@@ -522,6 +651,320 @@ window.tmNotionEditor = (function () {
         return pre.toString();
     }
 
+    let _smartLinkMenu = null;
+    let _smartLinkState = null;
+
+    function isSmartLinkCandidate(text) {
+        const value = String(text || '').trim();
+        if (!value || /\s/.test(value)) return false;
+        try {
+            const url = /^https?:\/\//i.test(value) ? new URL(value) : new URL(`https://${value}`);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+        } catch {
+            return false;
+        }
+    }
+
+    function normalizeSmartLinkUrl(text) {
+        const value = String(text || '').trim();
+        return /^https?:\/\//i.test(value) ? value : `https://${value.replace(/^\/+/, '')}`;
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    function restoreSmartLinkRange(element) {
+        let range = _smartLinkState?.range;
+        const selection = window.getSelection?.();
+        if (!element || !range || !selection) return false;
+        if (!element.contains(range.startContainer) || !element.contains(range.endContainer)) return false;
+
+        if (range.collapsed &&
+            range.startContainer === element &&
+            range.startOffset === 0 &&
+            element.textContent?.length > 0) {
+            range = document.createRange();
+            range.selectNodeContents(element);
+            range.collapse(false);
+            _smartLinkState.range = range;
+        }
+
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return true;
+    }
+
+    function insertHtmlAtCurrentRange(element, html) {
+        if (!element) return;
+        element.focus();
+        restoreSmartLinkRange(element);
+
+        const selection = window.getSelection?.();
+        let range = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
+        if (!range || !element.contains(range.commonAncestorContainer)) {
+            range = document.createRange();
+            range.selectNodeContents(element);
+            range.collapse(false);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+        }
+
+        range.deleteContents();
+        const template = document.createElement('template');
+        template.innerHTML = html;
+        const fragment = template.content;
+        const last = fragment.lastChild;
+        range.insertNode(fragment);
+
+        if (last) {
+            range = document.createRange();
+            range.setStartAfter(last);
+            range.collapse(true);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+        }
+
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function insertPlainTextAtCurrentRange(element, text) {
+        insertHtmlAtCurrentRange(element, escapeHtml(text).replace(/\n/g, '<br>'));
+    }
+
+    function sanitizePastedHtml(html) {
+        const template = document.createElement('template');
+        template.innerHTML = String(html || '');
+
+        const allowedInlineTags = new Set(['A', 'B', 'BR', 'CODE', 'EM', 'I', 'MARK', 'S', 'SPAN', 'STRONG', 'U']);
+        const blockTags = new Set(['ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DIV', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'LI', 'MAIN', 'P', 'PRE', 'SECTION', 'TD', 'TH', 'TR']);
+        const rejectedTags = new Set(['IFRAME', 'LINK', 'META', 'OBJECT', 'SCRIPT', 'STYLE']);
+
+        function clean(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return document.createTextNode(node.textContent || '');
+            }
+
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                return document.createDocumentFragment();
+            }
+
+            const tag = node.tagName.toUpperCase();
+            const fragment = document.createDocumentFragment();
+            if (rejectedTags.has(tag)) {
+                return fragment;
+            }
+
+            const target = allowedInlineTags.has(tag)
+                ? document.createElement(tag.toLowerCase())
+                : fragment;
+
+            if (tag === 'A') {
+                const href = node.getAttribute('href') || '';
+                if (/^https?:\/\//i.test(href) || /^mailto:/i.test(href)) {
+                    target.setAttribute('href', href);
+                    target.setAttribute('target', '_blank');
+                    target.setAttribute('rel', 'noopener noreferrer');
+                }
+            }
+
+            node.childNodes.forEach(child => target.appendChild(clean(child)));
+
+            if (blockTags.has(tag) && fragment.childNodes.length > 0) {
+                fragment.appendChild(document.createElement('br'));
+            }
+
+            return target;
+        }
+
+        const cleanFragment = document.createDocumentFragment();
+        template.content.childNodes.forEach(child => cleanFragment.appendChild(clean(child)));
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(cleanFragment);
+        return wrapper.innerHTML.replace(/(<br>\s*)+$/i, '');
+    }
+
+    function insertPlainSmartLink(element, rawUrl) {
+        const url = normalizeSmartLinkUrl(rawUrl);
+        restoreSmartLinkRange(element);
+        const prefix = shouldPrefixInlineInsertWithSpace(element) ? ' ' : '';
+        insertHtmlAtCurrentRange(
+            element,
+            `${prefix}<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`
+        );
+    }
+
+    function insertSmartLinkChip(element, rawUrl, title, faviconUrl, providerName) {
+        const url = normalizeSmartLinkUrl(rawUrl);
+        const safeTitle = escapeHtml(title || url);
+        const safeUrl = escapeHtml(url);
+        const domain = providerName || hostFromUrl(url);
+        const domainMarkup = domain
+            ? `<span class="tm-notion-smart-link__domain">${escapeHtml(domain)}</span>`
+            : '';
+        restoreSmartLinkRange(element);
+        const prefix = shouldPrefixInlineInsertWithSpace(element) ? ' ' : '';
+        const favicon = faviconUrl
+            ? `<img class="tm-notion-smart-link__favicon" src="${escapeHtml(faviconUrl)}" alt="" loading="lazy" />`
+            : '<span class="tm-notion-smart-link__favicon" aria-hidden="true"></span>';
+
+        insertHtmlAtCurrentRange(
+            element,
+            `${prefix}<a class="tm-notion-smart-link" href="${safeUrl}" target="_blank" rel="noopener noreferrer" contenteditable="false">${favicon}<span class="tm-notion-smart-link__title">${safeTitle}</span>${domainMarkup}</a>`
+        );
+    }
+
+    function hostFromUrl(rawUrl) {
+        try {
+            return new URL(normalizeSmartLinkUrl(rawUrl)).host;
+        } catch {
+            return '';
+        }
+    }
+
+    function shouldPrefixInlineInsertWithSpace(element) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return false;
+
+        const range = selection.getRangeAt(0);
+        const before = range.cloneRange();
+        before.selectNodeContents(element);
+        try {
+            before.setEnd(range.startContainer, range.startOffset);
+        } catch {
+            return false;
+        }
+
+        const text = before.toString();
+        return text.length > 0 && !/\s$/.test(text);
+    }
+
+    function closeSmartLinkMenu() {
+        if (!_smartLinkMenu) return;
+        document.removeEventListener('keydown', onSmartLinkMenuKeyDown, true);
+        document.removeEventListener('pointerdown', onSmartLinkMenuPointerDown, true);
+        _smartLinkMenu.remove();
+        _smartLinkMenu = null;
+        _smartLinkState = null;
+    }
+
+    function onSmartLinkMenuKeyDown(event) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeSmartLinkMenu();
+        }
+    }
+
+    function onSmartLinkMenuPointerDown(event) {
+        if (_smartLinkMenu && !_smartLinkMenu.contains(event.target)) {
+            closeSmartLinkMenu();
+        }
+    }
+
+    function smartLinkLabel(element, name) {
+        const value = element?.dataset?.[name];
+        return value && !/^\[.+\]$/.test(value) ? value : name;
+    }
+
+    function showSmartLinkMenu(element, dotNetRef, rawUrl, anchorRange) {
+        closeSmartLinkMenu();
+
+        _smartLinkState = { element, url: rawUrl, range: anchorRange };
+        const menu = document.createElement('div');
+        menu.className = 'tm-notion-smart-link-menu';
+        menu.setAttribute('role', 'menu');
+
+        const actions = [
+            ['Inline', smartLinkLabel(element, 'smartLinkInlineLabel')],
+            ['Card', smartLinkLabel(element, 'smartLinkCardLabel')],
+            ['Plain', smartLinkLabel(element, 'smartLinkPlainLabel')]
+        ];
+
+        for (const [mode, label] of actions) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'tm-notion-smart-link-menu__item';
+            item.setAttribute('role', 'menuitem');
+            item.textContent = label;
+            item.addEventListener('click', async event => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (mode === 'Plain') {
+                    insertPlainSmartLink(element, rawUrl);
+                } else {
+                    menu.classList.add('tm-notion-smart-link-menu--loading');
+                    menu.setAttribute('aria-busy', 'true');
+                    for (const button of menu.querySelectorAll('.tm-notion-smart-link-menu__item')) {
+                        button.disabled = true;
+                    }
+                    item.classList.add('tm-notion-smart-link-menu__item--loading');
+                    restoreSmartLinkRange(element);
+                    await dotNetRef.invokeMethodAsync('OnSmartLinkPasteRequested', rawUrl, mode);
+                }
+
+                closeSmartLinkMenu();
+            });
+            menu.appendChild(item);
+        }
+
+        document.body.appendChild(menu);
+        const rect = anchorRange?.getBoundingClientRect?.();
+        const hostRect = element.getBoundingClientRect();
+        const top = Math.max(8, (rect?.bottom || hostRect.bottom) + window.scrollY + 6);
+        const left = Math.max(8, Math.min((rect?.left || hostRect.left) + window.scrollX, window.scrollX + document.documentElement.clientWidth - 260));
+        menu.style.top = `${top}px`;
+        menu.style.left = `${left}px`;
+
+        _smartLinkMenu = menu;
+        setTimeout(() => {
+            document.addEventListener('keydown', onSmartLinkMenuKeyDown, true);
+            document.addEventListener('pointerdown', onSmartLinkMenuPointerDown, true);
+        }, 0);
+    }
+
+    async function handleSmartLinkPaste(element, dotNetRef, event) {
+        const cd = event.clipboardData || window.clipboardData;
+        const text = cd?.getData?.('text/plain') || '';
+        const html = cd?.getData?.('text/html') || '';
+        if (!text && !html) return false;
+
+        event.preventDefault();
+        const range = _range()?.cloneRange();
+        const trimmed = text.trim();
+
+        if (html.trim() && !isSmartLinkCandidate(trimmed)) {
+            insertHtmlAtCurrentRange(element, sanitizePastedHtml(html));
+            return true;
+        }
+
+        if (!isSmartLinkCandidate(trimmed) || element.dataset.smartLinkEnabled !== 'true') {
+            insertPlainTextAtCurrentRange(element, text);
+            return true;
+        }
+
+        const url = normalizeSmartLinkUrl(trimmed);
+        let hasProvider = false;
+        try {
+            hasProvider = await dotNetRef.invokeMethodAsync('HasSmartLinkProvider');
+        } catch {
+            hasProvider = false;
+        }
+
+        if (hasProvider) {
+            showSmartLinkMenu(element, dotNetRef, url, range);
+        } else {
+            insertPlainSmartLink(element, url);
+        }
+
+        return true;
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // 26.5 — Keyboard handler
     // ═══════════════════════════════════════════════════════════════════════════
@@ -555,6 +998,16 @@ window.tmNotionEditor = (function () {
         }
 
         const onKeyDown = (e) => {
+            if (e.key === 'Backspace' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                const chip = _statusChipBeforeCaret(element);
+                if (chip) {
+                    e.preventDefault();
+                    chip.remove();
+                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                    return;
+                }
+            }
+
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 const { before, after } = _htmlAroundCaret();
@@ -580,8 +1033,8 @@ window.tmNotionEditor = (function () {
         };
 
         const onInput = () => {
-            const text = element.textContent || '';
-            console.log('onInput text:', text);
+            const text = getTextBeforeCaret(element);
+            console.log('onInput text:', element.textContent || '');
 
             const shortcut = _detectMarkdownShortcut(text);
             if (shortcut) {
@@ -636,9 +1089,38 @@ window.tmNotionEditor = (function () {
             }
         };
 
+        const onClick = (e) => {
+            const chip = e.target?.closest?.('.tm-notion-status');
+            if (!chip || !element.contains(chip)) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelectorAll('.tm-notion-status[data-tm-status-editing="true"]')
+                .forEach(existing => delete existing.dataset.tmStatusEditing);
+            chip.dataset.tmStatusEditing = 'true';
+            _statusChipBeingEdited = chip;
+
+            const rect = chip.getBoundingClientRect();
+            const block = chip.closest('[data-block-id]');
+            const chipIndex = Array.from(element.querySelectorAll('.tm-notion-status')).indexOf(chip);
+            const color = chip.dataset.statusColor || _statusColorFromClass(chip) || 'gray';
+            const label = chip.dataset.statusLabel || chip.textContent?.trim() || '';
+
+            _pageDotNetRef?.invokeMethodAsync(
+                'OnInlineStatusClicked',
+                block?.dataset?.blockId || '',
+                label,
+                color,
+                { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+                chipIndex
+            ).catch(console.error);
+        };
+
         state.listeners.push(
             _on(element, 'keydown', onKeyDown),
-            _on(element, 'input',   onInput)
+            _on(element, 'input',   onInput),
+            _on(element, 'click',   onClick),
+            _on(element, 'paste',   event => { handleSmartLinkPaste(element, dotNetRef, event).catch(console.error); })
         );
     }
 
@@ -991,7 +1473,22 @@ window.tmNotionEditor = (function () {
 
     function scrollToBlock(blockId) {
         const el = document.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+        setActiveTocItem(blockId);
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function setActiveTocItem(blockId) {
+        document.querySelectorAll('.tm-toc__item--active, .tm-toc__item[aria-current="true"]').forEach(item => {
+            item.classList.remove('tm-toc__item--active');
+            item.removeAttribute('aria-current');
+        });
+        if (!blockId) return;
+
+        const item = document.querySelector(`.tm-toc__item[data-toc-target-id="${CSS.escape(String(blockId))}"]`);
+        if (!item) return;
+
+        item.classList.add('tm-toc__item--active');
+        item.setAttribute('aria-current', 'true');
     }
 
     // ── 91.1  Collaboration cursor overlays ──────────────────────────────────
@@ -999,26 +1496,68 @@ window.tmNotionEditor = (function () {
     function updateCollabCursors(cursors) {
         // Clear previous markers
         document.querySelectorAll('[data-collab-user]').forEach(el => {
-            el.classList.remove('tm-collab-active');
+            el.classList.remove('tm-collab-active', 'tm-collab-active--overlap');
             el.removeAttribute('data-collab-user');
+            el.removeAttribute('data-collab-count');
             el.style.removeProperty('--collab-color');
         });
         if (!cursors || !cursors.length) return;
-        cursors.forEach(({ blockId, displayName, color }) => {
+        const byBlock = new Map();
+        cursors.forEach(cursor => {
+            if (!cursor || !cursor.blockId) return;
+            const key = String(cursor.blockId);
+            if (!byBlock.has(key)) byBlock.set(key, []);
+            byBlock.get(key).push(cursor);
+        });
+        byBlock.forEach((blockCursors, blockId) => {
             const blockEl = document.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
             if (!blockEl) return;
+            const names = blockCursors
+                .map(cursor => String(cursor.displayName || '').trim())
+                .filter(Boolean);
+            const first = blockCursors[0] || {};
             blockEl.classList.add('tm-collab-active');
-            blockEl.setAttribute('data-collab-user', displayName);
-            blockEl.style.setProperty('--collab-color', color);
+            if (blockCursors.length > 1) blockEl.classList.add('tm-collab-active--overlap');
+            blockEl.setAttribute('data-collab-user', names.join(', '));
+            blockEl.setAttribute('data-collab-count', String(blockCursors.length));
+            blockEl.style.setProperty('--collab-color', first.color || 'var(--tm-color-secondary)');
         });
     }
 
     function clearCollabCursors() {
         document.querySelectorAll('[data-collab-user]').forEach(el => {
-            el.classList.remove('tm-collab-active');
+            el.classList.remove('tm-collab-active', 'tm-collab-active--overlap');
             el.removeAttribute('data-collab-user');
+            el.removeAttribute('data-collab-count');
             el.style.removeProperty('--collab-color');
         });
+    }
+
+    function _isEditableShortcutTarget(target) {
+        const el = target instanceof Element ? target : target?.parentElement;
+        return !!el?.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""], [role="textbox"]');
+    }
+
+    function registerShortcuts(dotNetRef) {
+        unregisterShortcuts();
+        const handler = event => {
+            if ((event.key !== '?' && event.key !== 'Escape') || _isEditableShortcutTarget(event.target)) return;
+            if (event.key === '?') {
+                event.preventDefault();
+                dotNetRef.invokeMethodAsync('OnNotionShortcutKey', '?').catch(console.error);
+                return;
+            }
+            dotNetRef.invokeMethodAsync('OnNotionShortcutKey', 'Escape').catch(console.error);
+        };
+        document.addEventListener('keydown', handler, true);
+        document._tmNotionShortcutsHandler = handler;
+    }
+
+    function unregisterShortcuts() {
+        const handler = document._tmNotionShortcutsHandler;
+        if (!handler) return;
+        document.removeEventListener('keydown', handler, true);
+        delete document._tmNotionShortcutsHandler;
     }
 
     function initSmoothScrollSpy(containerElement, dotNetRef) {
@@ -1044,19 +1583,24 @@ window.tmNotionEditor = (function () {
                 const newId = current?.dataset.blockId ?? null;
                 if (newId !== activeId) {
                     activeId = newId;
+                    setActiveTocItem(newId);
                     dotNetRef.invokeMethodAsync('OnScrollSpyBlockChanged', newId).catch(console.error);
                 }
             });
         };
 
-        const scrollRoot = containerElement.closest('[data-notion-scroll-root]') ?? containerElement;
-        scrollRoot.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('scroll',    onScroll, { passive: true });
+        const scrollTargets = new Set([
+            containerElement,
+            containerElement.closest('[data-notion-scroll-root]'),
+            window
+        ].filter(Boolean));
+
+        scrollTargets.forEach(target => target.addEventListener('scroll', onScroll, { passive: true }));
+        onScroll();
 
         _scrollSpies.set(containerElement, {
             cleanup() {
-                scrollRoot.removeEventListener('scroll', onScroll);
-                window.removeEventListener('scroll',    onScroll);
+                scrollTargets.forEach(target => target.removeEventListener('scroll', onScroll));
             }
         });
     }
@@ -1119,24 +1663,82 @@ window.tmNotionEditor = (function () {
         } catch { /* private browsing / storage full */ }
     }
 
-    function clearSlashQuery() {
-        if (!_slashElement) return;
-        try {
-            // Build a range from the anchor (before '/') to end of the editable
-            const sel   = window.getSelection();
-            const range = document.createRange();
-            if (_slashAnchorNode && _slashElement.contains(_slashAnchorNode)) {
-                range.setStart(_slashAnchorNode, _slashAnchorOff);
+    function _slashTriggerRange() {
+        if (!_slashElement) return null;
+        const range = document.createRange();
+        if (_slashAnchorNode && _slashElement.contains(_slashAnchorNode)) {
+            range.setStart(_slashAnchorNode, _slashAnchorOff);
+            if (_slashAnchorNode.nodeType === Node.TEXT_NODE) {
+                range.setEnd(_slashAnchorNode, Math.min(_slashAnchorOff + 1, _slashAnchorNode.textContent.length));
+            } else {
+                const child = _slashAnchorNode.childNodes[_slashAnchorOff];
+                if (child) range.setEndAfter(child);
+                else range.setEnd(_slashAnchorNode, _slashAnchorOff);
+            }
+        } else {
+            const walker = document.createTreeWalker(_slashElement, NodeFilter.SHOW_TEXT);
+            let slashNode = null;
+            let slashOffset = -1;
+            while (walker.nextNode()) {
+                const idx = walker.currentNode.textContent.lastIndexOf('/');
+                if (idx >= 0) {
+                    slashNode = walker.currentNode;
+                    slashOffset = idx;
+                }
+            }
+
+            if (slashNode) {
+                range.setStart(slashNode, slashOffset);
+                range.setEnd(slashNode, slashOffset + 1);
             } else {
                 range.selectNodeContents(_slashElement);
                 range.collapse(false);
-                range.setStart(_slashElement, 0);
             }
-            // Extend to end of editable content
-            const endRange = document.createRange();
-            endRange.selectNodeContents(_slashElement);
-            range.setEnd(endRange.endContainer, endRange.endOffset);
+        }
+        return range;
+    }
 
+    function _fragmentFromHtml(html) {
+        const template = document.createElement('template');
+        template.innerHTML = html || '';
+        return template.content;
+    }
+
+    function _replaceRangeWithHtml(range, html) {
+        const fragment = _fragmentFromHtml(html);
+        const last = fragment.lastChild;
+        range.deleteContents();
+        range.insertNode(fragment);
+        if (last) {
+            const caret = document.createRange();
+            caret.setStartAfter(last);
+            caret.collapse(true);
+            _applyRange(caret);
+        }
+        return last;
+    }
+
+    function insertSlashHtml(html) {
+        if (!_slashElement) return;
+        try {
+            _slashElement.focus();
+            const range = _slashTriggerRange();
+            if (range) {
+                _replaceRangeWithHtml(range, html);
+                _slashElement.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        } catch { /* ignore edge cases */ }
+        _slashElement = null;
+        _slashAnchorNode = null;
+        _slashAnchorOff = 0;
+    }
+
+    function clearSlashQuery() {
+        if (!_slashElement) return;
+        try {
+            const sel   = window.getSelection();
+            const range = _slashTriggerRange();
+            if (!range) return;
             sel.removeAllRanges();
             sel.addRange(range);
             document.execCommand('delete');
@@ -1144,6 +1746,74 @@ window.tmNotionEditor = (function () {
         _slashElement    = null;
         _slashAnchorNode = null;
         _slashAnchorOff  = 0;
+    }
+
+    function _statusColorFromClass(chip) {
+        const match = Array.from(chip.classList || [])
+            .map(cls => cls.match(/^tm-notion-status--(gray|blue|green|yellow|red|purple)$/i))
+            .find(Boolean);
+        return match ? match[1].toLowerCase() : null;
+    }
+
+    function _previousMeaningfulSibling(node) {
+        let current = node;
+        while (current) {
+            current = current.previousSibling;
+            if (!current) return null;
+            if (current.nodeType === Node.TEXT_NODE && current.textContent.length === 0) continue;
+            return current;
+        }
+        return null;
+    }
+
+    function _statusChipBeforeCaret(element) {
+        const range = _range();
+        if (!range || !range.collapsed || !element.contains(range.startContainer)) return null;
+
+        let candidate = null;
+        if (range.startContainer.nodeType === Node.TEXT_NODE) {
+            if (range.startOffset > 0) return null;
+            candidate = _previousMeaningfulSibling(range.startContainer);
+        } else {
+            candidate = range.startContainer.childNodes[range.startOffset - 1] || null;
+        }
+
+        return candidate?.classList?.contains('tm-notion-status') ? candidate : null;
+    }
+
+    function replaceActiveStatusChip(html, blockId, chipIndex) {
+        let chip = _statusChipBeingEdited
+            || document.querySelector('.tm-notion-status[data-tm-status-editing="true"]');
+        if ((!chip || !chip.isConnected) && blockId && Number.isInteger(chipIndex) && chipIndex >= 0) {
+            const block = document.querySelector(`[data-block-id="${CSS.escape(blockId)}"] [contenteditable="true"]`);
+            chip = block?.querySelectorAll('.tm-notion-status')?.[chipIndex] || null;
+        }
+        if (!chip) return;
+        const editor = chip.closest('[contenteditable="true"]');
+        if (!editor) return;
+
+        try {
+            const range = document.createRange();
+            range.selectNode(chip);
+            const inserted = _replaceRangeWithHtml(range, html);
+            if (inserted) {
+                const caret = document.createRange();
+                caret.setStartAfter(inserted);
+                caret.collapse(true);
+                _applyRange(caret);
+            }
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch { /* ignore edge cases */ }
+
+        _statusChipBeingEdited = null;
+        document.querySelectorAll('.tm-notion-status[data-tm-status-editing="true"]')
+            .forEach(existing => delete existing.dataset.tmStatusEditing);
+    }
+
+    function cancelStatusEdit() {
+        _statusChipBeingEdited = null;
+        document.querySelectorAll('.tm-notion-status[data-tm-status-editing="true"]')
+            .forEach(existing => delete existing.dataset.tmStatusEditing);
     }
 
     function refocusSlashElement() {
@@ -1181,7 +1851,9 @@ window.tmNotionEditor = (function () {
             chip.className = 'tm-notion-mention tm-notion-mention--' + mentionType;
             chip.dataset.type = mentionType;
             chip.dataset.id   = String(mentionId);
-            chip.textContent  = displayText;
+            chip.textContent  = _truncateInlineChipText(displayText);
+            chip.title        = String(displayText ?? '');
+            chip.setAttribute('aria-label', String(displayText ?? ''));
 
             const curSel   = window.getSelection();
             const curRange = curSel.getRangeAt(0);
@@ -1221,6 +1893,11 @@ window.tmNotionEditor = (function () {
         chip.contentEditable = 'false';
         chip.className = 'tm-notion-token' + (colorClass ? ' ' + colorClass : '');
         chip.dataset.key = key;
+        if (!colorClass) {
+            chip.style.background = 'var(--tm-color-primary-700)';
+            chip.style.borderColor = 'var(--tm-color-primary-800)';
+            chip.style.color = 'var(--tm-color-white)';
+        }
 
         const text = document.createElement('span');
         text.className = 'tm-notion-token__text';
@@ -1342,26 +2019,86 @@ window.tmNotionEditor = (function () {
         };
     }
 
+    function clampFixedElementToViewport(element, margin) {
+        if (!element) return;
+
+        const spacing = Number.isFinite(Number(margin)) ? Number(margin) : 8;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        if (viewportWidth <= 0 || viewportHeight <= 0) return;
+
+        element.style.maxHeight = `${Math.max(120, viewportHeight - spacing * 2)}px`;
+
+        const rect = element.getBoundingClientRect();
+        const width = rect.width || element.offsetWidth || 0;
+        const height = rect.height || element.offsetHeight || 0;
+        const currentTop = Number.parseFloat(element.style.top);
+        const currentLeft = Number.parseFloat(element.style.left);
+        const rawTop = Number.isFinite(currentTop) ? currentTop : rect.top;
+        const rawLeft = Number.isFinite(currentLeft) ? currentLeft : rect.left;
+
+        const maxTop = Math.max(spacing, viewportHeight - height - spacing);
+        const maxLeft = Math.max(spacing, viewportWidth - width - spacing);
+        const nextTop = Math.min(Math.max(spacing, rawTop), maxTop);
+        const nextLeft = Math.min(Math.max(spacing, rawLeft), maxLeft);
+
+        element.style.top = `${nextTop}px`;
+        element.style.left = `${nextLeft}px`;
+    }
+
     function adjustSlashMenuPosition(menuEl) {
         if (!menuEl) return;
-        const rect   = menuEl.getBoundingClientRect();
-        const vw     = window.innerWidth;
-        const vh     = window.innerHeight;
-        const margin = 8;
 
-        let top  = parseFloat(menuEl.style.top)  || 0;
-        let left = parseFloat(menuEl.style.left) || 0;
+        const vw        = window.innerWidth;
+        const vh        = window.innerHeight;
+        const margin    = 8;
+        const anchorGap = 28;
 
-        // Flip above caret if menu overflows bottom
-        if (rect.bottom > vh - margin) {
-            top = top - rect.height - 28; // 28 = approx line height
-            menuEl.style.top = Math.max(margin, top) + 'px';
+        menuEl.style.maxHeight = '';
+
+        const initialRect = menuEl.getBoundingClientRect();
+        const anchorTop   = Number.parseFloat(menuEl.style.top) || initialRect.top || margin;
+        let top           = anchorTop;
+        let left          = Number.parseFloat(menuEl.style.left) || initialRect.left || margin;
+        const height      = Math.min(initialRect.height || 0, vh - (margin * 2));
+        const below       = Math.max(96, vh - anchorTop - margin);
+        const above       = Math.max(96, anchorTop - margin - anchorGap);
+        let maxHeight     = Math.min(height, below);
+
+        if (anchorTop + height > vh - margin && above > below) {
+            maxHeight = Math.min(height, above);
+            top = Math.max(margin, anchorTop - maxHeight - anchorGap);
+        } else if (anchorTop + height > vh - margin) {
+            top = Math.max(margin, vh - margin - maxHeight);
         }
-        // Clamp right edge
-        if (rect.right > vw - margin) {
-            left = vw - rect.width - margin;
-            menuEl.style.left = Math.max(margin, left) + 'px';
+
+        if (initialRect.right > vw - margin) {
+            left = vw - initialRect.width - margin;
         }
+
+        top = Math.max(margin, top);
+        left = Math.max(margin, left);
+        maxHeight = Math.max(96, Math.min(maxHeight, vh - top - margin));
+
+        const listEl = menuEl.querySelector('.tm-nmm__list, .tm-notion-token-dropdown__list');
+        if (listEl) {
+            menuEl.style.maxHeight = `${maxHeight}px`;
+            menuEl.style.setProperty('--tm-floating-menu-max-height', `${maxHeight}px`);
+
+            const chromeHeight = Array.from(menuEl.children)
+                .filter(child => child !== listEl)
+                .reduce((total, child) => total + child.getBoundingClientRect().height, 0);
+            const listMaxHeight = Math.max(64, maxHeight - chromeHeight);
+            listEl.style.maxHeight = `${listMaxHeight}px`;
+            listEl.style.overflowY = 'auto';
+        } else {
+            menuEl.style.maxHeight = '';
+            menuEl.style.removeProperty('--tm-floating-menu-max-height');
+        }
+
+        menuEl.style.top = `${top}px`;
+        menuEl.style.left = `${left}px`;
+        menuEl.style.setProperty('--tm-nmm-anchor-top', `${top}px`);
     }
 
     // 47.1
@@ -1493,7 +2230,19 @@ window.tmNotionEditor = (function () {
                 dotNetRef.invokeMethodAsync('OnToolbarSelectionCleared').catch(() => {});
                 return;
             }
-            const rect = range.getBoundingClientRect();
+            const selectionHost = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+                ? range.commonAncestorContainer.parentElement?.closest('[contenteditable="true"]')
+                : range.commonAncestorContainer.closest?.('[contenteditable="true"]');
+            if (selectionHost?.closest?.('.tm-notion-table-block')) {
+                dotNetRef.invokeMethodAsync('OnToolbarSelectionCleared').catch(() => {});
+                return;
+            }
+            const selectionRects = Array.from(range.getClientRects())
+                .filter(r => r.width > 0 && r.height > 0);
+            let rect = selectionRects[0] ?? range.getBoundingClientRect();
+            if (rect.width === 0 && selectionHost && (sel.toString() || selectionHost.textContent || '').trim().length > 0) {
+                rect = selectionHost.getBoundingClientRect();
+            }
             if (rect.width === 0) {
                 dotNetRef.invokeMethodAsync('OnToolbarSelectionCleared').catch(() => {});
                 return;
@@ -1503,7 +2252,7 @@ window.tmNotionEditor = (function () {
                 ? range.commonAncestorContainer.parentElement?.closest('[data-notion-block]')
                 : range.commonAncestorContainer.closest?.('[data-notion-block]');
 
-            const blockId = blockEl?.dataset?.notionBlock ?? '';
+            const blockId = blockEl?.dataset?.blockId || blockEl?.dataset?.notionBlock || '';
             const isBold          = document.queryCommandState('bold');
             const isItalic        = document.queryCommandState('italic');
             const isUnderline     = document.queryCommandState('underline');
@@ -1523,17 +2272,17 @@ window.tmNotionEditor = (function () {
             }
             const currentHref = linkEl?.href ?? '';
 
-            // Detect inline code by checking if selection is within a <code> element
-            const codeEl   = sel.anchorNode?.parentElement?.closest('code');
+            // Detect inline code by checking if selection is within a <code> element.
+            const codeEl   = _closestInlineCode(sel.anchorNode);
             const isCode   = !!codeEl && !codeEl.closest('pre');
 
             // Toolbar appears just above the selection
-            const top  = rect.top + window.scrollY - 40;
-            const left = rect.left + window.scrollX + rect.width / 2 - 160;
+            const top  = rect.top - 40;
+            const left = rect.left + rect.width / 2 - 160;
 
             dotNetRef.invokeMethodAsync('OnToolbarSelectionChanged',
                 top, left, isBold, isItalic, isUnderline, isStrikeThrough, isCode,
-                currentHref, blockId
+                currentHref, blockId, sel.toString() || ''
             ).catch(() => {});
         }
 
@@ -1583,6 +2332,14 @@ window.tmNotionEditor = (function () {
             `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`);
     }
 
+    function _closestInlineCode(node) {
+        if (!node) return null;
+        const element = node.nodeType === Node.TEXT_NODE
+            ? node.parentElement
+            : (node.nodeType === Node.ELEMENT_NODE ? node : null);
+        return element?.closest?.('code') ?? null;
+    }
+
     function applyInlineColor(scope, colorValue) {
         if (scope === 'text') {
             if (!colorValue) {
@@ -1603,7 +2360,7 @@ window.tmNotionEditor = (function () {
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
         const r = sel.getRangeAt(0);
-        const codeEl = sel.anchorNode?.parentElement?.closest('code');
+        const codeEl = _closestInlineCode(sel.anchorNode);
         if (codeEl && !codeEl.closest('pre')) {
             // Unwrap: replace <code> with its text content
             const parent = codeEl.parentNode;
@@ -1641,6 +2398,7 @@ window.tmNotionEditor = (function () {
         if (!toolbarEl) return;
         const rect   = toolbarEl.getBoundingClientRect();
         const vw     = window.innerWidth;
+        const vh     = window.innerHeight;
         const margin = 8;
         if (rect.right > vw - margin) {
             const shift = rect.right - (vw - margin);
@@ -1649,6 +2407,72 @@ window.tmNotionEditor = (function () {
         if (rect.left < margin) {
             toolbarEl.style.left = margin + 'px';
         }
+        let nextRect = toolbarEl.getBoundingClientRect();
+        const selectionTop = getSelectionViewportTop();
+        if (Number.isFinite(selectionTop) && nextRect.bottom > selectionTop - margin) {
+            const aboveSelectionTop = selectionTop - nextRect.height - margin;
+            toolbarEl.style.top = Math.max(margin, aboveSelectionTop) + 'px';
+            nextRect = toolbarEl.getBoundingClientRect();
+        }
+        if (nextRect.bottom > vh - margin) {
+            const shift = nextRect.bottom - (vh - margin);
+            toolbarEl.style.top = (parseFloat(toolbarEl.style.top) - shift) + 'px';
+        }
+        if (toolbarEl.getBoundingClientRect().top < margin) {
+            toolbarEl.style.top = margin + 'px';
+        }
+    }
+
+    function getSelectionViewportTop() {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return Number.NaN;
+
+        const range = sel.getRangeAt(0);
+        const rects = Array.from(range.getClientRects())
+            .filter(r => r.width > 0 && r.height > 0);
+        if (rects.length > 0) {
+            return Math.min(...rects.map(r => r.top));
+        }
+
+        const rect = range.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 ? rect.top : Number.NaN;
+    }
+
+    function getSelectedText() {
+        const sel = window.getSelection();
+        return sel ? (sel.toString() || '') : '';
+    }
+
+    function replaceSavedSelectionWithHtml(html) {
+        if (!_savedRange || typeof html !== 'string') return;
+
+        const range = _savedRange.cloneRange();
+        range.deleteContents();
+
+        const template = document.createElement('template');
+        template.innerHTML = html;
+        const fragment = template.content;
+        const lastNode = fragment.lastChild;
+        range.insertNode(fragment);
+
+        const sel = window.getSelection();
+        if (sel) {
+            sel.removeAllRanges();
+            const nextRange = document.createRange();
+            if (lastNode) {
+                nextRange.setStartAfter(lastNode);
+            } else {
+                nextRange.setStart(range.endContainer, range.endOffset);
+            }
+            nextRange.collapse(true);
+            sel.addRange(nextRange);
+        }
+
+        const block = range.startContainer.nodeType === Node.TEXT_NODE
+            ? range.startContainer.parentElement?.closest?.('[data-notion-block]')
+            : range.startContainer.closest?.('[data-notion-block]');
+        block?.dispatchEvent(new Event('input', { bubbles: true }));
+        _savedRange = null;
     }
 
     // ── 32.1 Copy block link ───────────────────────────────────────────────────
@@ -1913,11 +2737,18 @@ window.tmNotionEditor = (function () {
         setTimeout(() => block.classList.remove('tm-notion-block--highlight-flash'), 1200);
     }
 
+    function isNarrowViewport(maxWidth) {
+        const width = Number(maxWidth) || 1024;
+        return window.matchMedia(`(max-width: ${width}px)`).matches;
+    }
+
     // ── Public API ─────────────────────────────────────────────────────────────
     return {
         // 26.1
         initBlock, destroyBlock, getHtml, setHtml,
         focus, focusAtEnd, focusAtStart, focusAtOffset,
+        initFocusTrap, destroyFocusTrap,
+        initEditorKeyHandler, destroyEditorKeyHandler,
         // 26.2
         getSelectionRange, getSelectionRect, applyFormat,
         queryFormatState, insertHtml, insertLink, wrapSelectionWithComment,
@@ -1928,7 +2759,7 @@ window.tmNotionEditor = (function () {
         // 26.4
         getCaretCoords, getTextBeforeCaret,
         // 26.5
-        initKeyboardHandler,
+        initKeyboardHandler, insertSmartLinkChip, insertPlainSmartLink,
         // 26.6
         renderEquation, renderInlineMath,
         // 26.7
@@ -1943,9 +2774,10 @@ window.tmNotionEditor = (function () {
         initColumnResize, destroyColumnResize,
         // 26.9
         scrollToBlock, initSmoothScrollSpy, destroyScrollSpy,
-        scrollToFirstUnresolvedComment,
+        scrollToFirstUnresolvedComment, isNarrowViewport,
         // 91.1
         updateCollabCursors, clearCollabCursors,
+        registerShortcuts, unregisterShortcuts,
         // 30.1
         startCoverDrag,
         // 32.1
@@ -1958,7 +2790,8 @@ window.tmNotionEditor = (function () {
         initTableRowKeyboardHandler, destroyTableRowKeyboardHandler, tableFocusCell,
         // 43.1
         getRecentSlashItems, addRecentSlashItem,
-        clearSlashQuery, refocusSlashElement,
+        clearSlashQuery, refocusSlashElement, insertSlashHtml,
+        replaceActiveStatusChip, cancelStatusEdit,
         insertMentionChip, cancelMentionTrigger,
         insertNotionToken, replaceNotionToken, cancelTokenTrigger, cancelChipEdit,
         adjustSlashMenuPosition, scrollSlashItemIntoView,
@@ -1967,6 +2800,7 @@ window.tmNotionEditor = (function () {
         saveSelection, insertLinkOnSavedSelection,
         applyInlineColor, toggleInlineCode,
         insertInlineMath, adjustInlineToolbarPosition,
+        getSelectedText, replaceSavedSelectionWithHtml,
         // 45.1
         adjustColorPickerPosition,
         // 46.1
@@ -1981,7 +2815,7 @@ window.tmNotionEditor = (function () {
         downloadFileStream, copyToClipboard, getPageUrl,
         // 26.11
         initMentionClickHandler, destroyMentionClickHandler,
-        getMentionDropdownPosition
+        getMentionDropdownPosition, clampFixedElementToViewport
     };
 })();
 

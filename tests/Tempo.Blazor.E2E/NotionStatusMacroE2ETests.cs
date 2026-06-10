@@ -41,6 +41,7 @@ public class NotionStatusMacroE2ETests : NotionE2ETestBase
         Assert.AreEqual("IN PROGRESS", await edited.GetAttributeAsync("data-status-label"), "Editing should replace the chip label.");
         Assert.AreEqual("blue", await edited.GetAttributeAsync("data-status-color"), "Editing should replace the chip color.");
         Assert.AreEqual(1, await page.Locator($"{StatusBlockSelector} .tm-notion-status").CountAsync(), "Editing should replace the existing chip, not insert a duplicate.");
+        StringAssert.DoesNotMatch(await page.Locator(StatusBlockSelector).First.InnerTextAsync(), new System.Text.RegularExpressions.Regex("/"));
 
         await BlurEditorAsync(page);
         var persistedHtml = await FetchStatusBlockHtmlAsync(page);
@@ -50,7 +51,7 @@ public class NotionStatusMacroE2ETests : NotionE2ETestBase
         var contrast = await MinimumStatusContrastAsync(page);
         Assert.IsTrue(contrast >= 3.0, $"Status chip contrast should be at least 3:1 for inline UI text. Actual: {contrast:0.00}");
 
-        await CaptureBaselineAsync("status-macro", "inline-chip-edited", page.Locator(".tm-notion-page").First);
+        await CaptureBaselineAsync("status-macro", "inline-chip-edited", page.Locator(StatusBlockSelector).First);
     }
 
     [TestMethod]
@@ -122,7 +123,8 @@ public class NotionStatusMacroE2ETests : NotionE2ETestBase
         Assert.AreEqual("baseline", metrics.VerticalAlign, "Status chip should align to the text baseline.");
         Assert.IsTrue(metrics.ChipHeight <= metrics.ParagraphHeight + 6, "Status chip should not disrupt the paragraph line height.");
 
-        await CaptureBaselineAsync("status-macro", "middle-of-text-chip", page.Locator(".tm-notion-page").First);
+        await BlurEditorAsync(page);
+        await CaptureBaselineAsync("status-macro", "middle-of-text-chip", page.Locator(StatusBlockSelector).First);
     }
 
     private async Task<IPage> OpenStatusEditorAsync()
@@ -159,6 +161,23 @@ public class NotionStatusMacroE2ETests : NotionE2ETestBase
             """,
             new { selector = StatusBlockSelector, text, offset });
         await page.WaitForTimeoutAsync(250);
+        await page.EvaluateAsync(
+            """
+            args => {
+                const el = document.querySelector(args.selector);
+                if (!el) throw new Error('Status test editable block was not found after input sync.');
+                el.focus();
+                const node = el.firstChild || document.createTextNode('');
+                if (!node.parentNode) el.appendChild(node);
+                const range = document.createRange();
+                range.setStart(node, Math.min(args.offset, node.textContent.length));
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            """,
+            new { selector = StatusBlockSelector, offset });
     }
 
     private static async Task OpenStatusPickerAsync(IPage page)

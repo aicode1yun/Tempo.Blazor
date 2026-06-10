@@ -43,7 +43,7 @@ public partial class TmNotionDbListView : ComponentBase
         var pf = PrimaryField;
         if (pf is null) return string.Empty;
         return record.Fields.TryGetValue(pf.Id.ToString(), out var v)
-            ? v?.ToString() ?? string.Empty
+            ? NotionDatabaseValueFormatter.Format(v, "MMM d")
             : string.Empty;
     }
 
@@ -102,26 +102,10 @@ public partial class TmNotionDbListView : ComponentBase
 
             default:
             {
-                var formatted = FormatScalar(v, field);
+                var formatted = NotionDatabaseValueFormatter.Format(v, "MMM d");
                 return formatted.Length > 0 ? [(formatted, null)] : [];
             }
         }
-    }
-
-    private static string FormatScalar(object v, IDatabaseField field)
-    {
-        return v switch
-        {
-            bool bv                  => bv ? "✓" : string.Empty,
-            double dv                => dv.ToString("G", CultureInfo.CurrentCulture),
-            float fv                 => fv.ToString("G", CultureInfo.CurrentCulture),
-            int iv                   => iv.ToString(),
-            DateTime dt              => dt.ToString("MMM d", CultureInfo.CurrentCulture),
-            DateOnly d               => d.ToString("MMM d", CultureInfo.CurrentCulture),
-            string[] arr             => string.Join(", ", arr),
-            IEnumerable<string> list => string.Join(", ", list),
-            _                        => v.ToString() ?? string.Empty
-        };
     }
 
     // ── Event handlers ────────────────────────────────────────────────────────

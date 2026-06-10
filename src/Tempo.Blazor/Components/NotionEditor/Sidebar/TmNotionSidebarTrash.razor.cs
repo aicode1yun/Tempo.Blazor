@@ -88,7 +88,7 @@ public partial class TmNotionSidebarTrash : ComponentBase
 
     // ── Data loading ──────────────────────────────────────────────────────────
 
-    private async Task LoadAsync()
+    internal async Task LoadAsync()
     {
         _isLoading = true;
         _loadError = null;
@@ -101,9 +101,9 @@ public partial class TmNotionSidebarTrash : ComponentBase
                 .OrderByDescending(p => p.DeletedAt ?? DateTime.MinValue)
                 .ToList();
         }
-        catch (Exception ex)
+        catch
         {
-            _loadError = ex.Message;
+            _loadError = Loc["TmNotionSidebarTrash_LoadError"];
         }
         finally
         {

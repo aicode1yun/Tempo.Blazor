@@ -22,6 +22,12 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     [Parameter, EditorRequired]
     public IReadOnlyList<IPageBlock> Blocks { get; set; } = [];
 
+    /// <summary>Page ID owned by this rendered list.</summary>
+    [Parameter] public Guid? PageId { get; set; }
+
+    /// <summary>Parent block ID for nested lists. Null means the top-level page list.</summary>
+    [Parameter] public Guid? ParentBlockId { get; set; }
+
     [Parameter] public bool ReadOnly { get; set; }
 
     [Parameter] public Guid? ActiveBlockId { get; set; }
@@ -31,6 +37,12 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
 
     /// <summary>Fired when blocks are reordered via drag-and-drop (sourceIndex, targetIndex).</summary>
     [Parameter] public EventCallback<(int, int)> OnReorder { get; set; }
+
+    /// <summary>Fired when a block from another list is dropped into this list.</summary>
+    [Parameter] public EventCallback<MoveNotionBlockRequest> OnExternalBlockDropped { get; set; }
+
+    /// <summary>Fired when a block was moved out of this list after a successful external drop.</summary>
+    [Parameter] public EventCallback<string> OnExternalBlockRemoved { get; set; }
 
     /// <summary>Fired when a block receives focus. Arg is the block ID string.</summary>
     [Parameter] public EventCallback<string> OnBlockFocused { get; set; }
@@ -64,6 +76,9 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
 
     /// <summary>Fired when '{{' token syntax is typed in a block (blockId, top, left).</summary>
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnTokenMenu { get; set; }
+
+    /// <summary>Fired when a block requests keyboard focus movement within this list.</summary>
+    [Parameter] public EventCallback<(string BlockId, int Direction)> OnMoveFocus { get; set; }
 
     /// <summary>Fired when a template button block inserts its template blocks after itself.</summary>
     [Parameter] public EventCallback<(string AfterBlockId, IReadOnlyList<IPageBlock> Blocks)> OnInsertTemplateBlocksAfter { get; set; }
@@ -101,6 +116,27 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnBlockReordered(int sourceIndex, int targetIndex) =>
         await OnReorder.InvokeAsync((sourceIndex, targetIndex));
+
+    [JSInvokable("OnExternalBlockDropped")]
+    public async Task HandleExternalBlockDroppedFromJsAsync(string blockId, string targetPageId, string? sourceParentBlockId, string? targetParentBlockId, int targetIndex)
+    {
+        if (!OnExternalBlockDropped.HasDelegate)
+            return;
+
+        await OnExternalBlockDropped.InvokeAsync(new MoveNotionBlockRequest(
+            blockId,
+            targetPageId,
+            string.IsNullOrWhiteSpace(sourceParentBlockId) ? null : sourceParentBlockId,
+            string.IsNullOrWhiteSpace(targetParentBlockId) ? null : targetParentBlockId,
+            targetIndex));
+    }
+
+    [JSInvokable("OnExternalBlockRemoved")]
+    public async Task HandleExternalBlockRemovedFromJsAsync(string blockId)
+    {
+        if (OnExternalBlockRemoved.HasDelegate)
+            await OnExternalBlockRemoved.InvokeAsync(blockId);
+    }
 
     // ── Comment info helper ──────────────────────────────────────────────────
 

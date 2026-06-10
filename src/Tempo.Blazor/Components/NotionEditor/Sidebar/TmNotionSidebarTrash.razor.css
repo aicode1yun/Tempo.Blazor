@@ -246,7 +246,8 @@
     transition: opacity 0.15s;
 }
 
-.tm-nst-item:hover .tm-nst-item__actions {
+.tm-nst-item:hover .tm-nst-item__actions,
+.tm-nst-item:focus-within .tm-nst-item__actions {
     opacity: 1;
 }
 
@@ -316,7 +317,7 @@
     cursor: pointer;
     border: none;
     background: var(--tm-color-danger, #dc2626);
-    color: #fff;
+    color: var(--tm-color-on-danger, #fff);
     transition: opacity 0.1s;
 }
 
@@ -338,4 +339,10 @@
 
 .tm-nst-item__confirm-no:hover {
     background: var(--tm-color-hover, rgba(0, 0, 0, 0.05));
+}
+
+@media (hover: none) {
+    .tm-nst-item__actions {
+        opacity: 1;
+    }
 }

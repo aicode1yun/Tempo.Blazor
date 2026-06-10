@@ -49,6 +49,9 @@ public static class DocumentModelToNotionConverter
     {
         switch (block.Content)
         {
+            case Dm.ParagraphBlockContent paragraph when TryCreateImageFromStandaloneDrawing(paragraph.Inlines, out var image):
+                AppendImage(result, pageId, order, image, block, warnings);
+                break;
             case Dm.ParagraphBlockContent paragraph:
                 result.Add(CreateBlock(pageId, null, BlockType.Paragraph, order, new Nm.TextBlockContent
                 {
@@ -94,6 +97,32 @@ public static class DocumentModelToNotionConverter
                 }));
                 break;
         }
+    }
+
+    private static bool TryCreateImageFromStandaloneDrawing(
+        IReadOnlyList<Dm.InlineContent> inlines,
+        out Dm.ImageBlockContent image)
+    {
+        image = new Dm.ImageBlockContent();
+        if (inlines.Count != 1 || inlines[0] is not Dm.DocumentDrawingRun drawing || drawing.Kind != Dm.DocumentDrawingKind.Image)
+        {
+            return false;
+        }
+
+        image = new Dm.ImageBlockContent
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size,
+            NaturalSize = drawing.NaturalSize,
+            Layout = drawing.Layout,
+            LinkUrl = drawing.LinkUrl
+        };
+        return true;
     }
 
     private static void AppendListBlock(

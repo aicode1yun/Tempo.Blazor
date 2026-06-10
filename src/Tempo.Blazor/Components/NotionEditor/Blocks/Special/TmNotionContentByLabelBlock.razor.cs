@@ -217,9 +217,6 @@ public partial class TmNotionContentByLabelBlock : ComponentBase, IDisposable
     private static string PageTitle(INotionPage page)
         => string.IsNullOrWhiteSpace(page.Title) ? page.Id.ToString("D") : page.Title;
 
-    private static string PageLabels(INotionPage page)
-        => string.Join(", ", page.Labels);
-
     private async Task NavigateToPageAsync(INotionPage page)
     {
         await OnFocused.InvokeAsync();

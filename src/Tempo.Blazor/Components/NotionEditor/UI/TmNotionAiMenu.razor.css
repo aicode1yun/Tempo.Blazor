@@ -3,6 +3,8 @@
     z-index: calc(var(--tm-z-tooltip) + 9000);
     width: min(28rem, calc(100vw - var(--tm-space-4)));
     max-height: calc(100vh - var(--tm-space-6));
+    overflow-y: auto;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: var(--tm-space-3);
@@ -31,6 +33,7 @@
 .tm-notion-ai__header {
     justify-content: space-between;
     gap: var(--tm-space-2);
+    flex: 0 0 auto;
 }
 
 .tm-notion-ai__title {
@@ -82,6 +85,7 @@
     padding: var(--tm-space-1);
     background: var(--tm-bg-muted);
     border-radius: var(--tm-radius-lg);
+    flex: 0 0 auto;
 }
 
 .tm-notion-ai__tab {
@@ -158,6 +162,7 @@
     display: grid;
     gap: var(--tm-space-1);
     min-height: 0;
+    flex: 1 1 auto;
 }
 
 .tm-notion-ai__output-label {
@@ -171,6 +176,7 @@
     min-height: 4.5rem;
     max-height: 12rem;
     overflow: auto;
+    overflow-wrap: anywhere;
     padding: var(--tm-space-3);
     white-space: pre-wrap;
     background: var(--tm-bg-muted);
@@ -196,6 +202,7 @@
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: var(--tm-space-2);
+    flex: 0 0 auto;
 }
 
 .tm-notion-ai__btn {

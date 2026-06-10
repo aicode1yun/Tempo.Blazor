@@ -4,25 +4,36 @@
 @using Tempo.Blazor.Demo.Services
 @inject ITmLocalizer Loc
 @inject Microsoft.JSInterop.IJSRuntime JS
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
 @inject DemoNotionDataProvider DataProvider
 @inject DemoNotionBlockProvider BlockProvider
 @inject MockNotionCommentProvider CommentProvider
-@inject MockNotionHistoryProvider HistoryProvider
+@inject DemoNotionHistoryProvider HistoryProvider
 @inject MockNotionMentionProvider MentionProvider
 @inject MockNotionSearchProvider SearchProvider
 @inject SignalRCollaborationProvider CollaborationProvider
-@inject MockNotionDatabaseProvider DatabaseProvider
+@inject DemoNotionDatabaseProvider DatabaseProvider
 @inject MockNotionWireframeDocumentProvider WireframeDocumentProvider
 @inject MockNotionDiagramDocumentProvider DiagramDocumentProvider
 @inject ApiSpreadsheetDocumentProvider SpreadsheetDocumentProvider
-@inject MockNotionImportExportProvider ImportExportProvider
+@inject DemoNotionImportExportProvider ImportExportProvider
 @inject DemoNotionMediaLibraryProvider MediaLibraryProvider
 @inject DemoNotionFileProvider FileProvider
 @inject DemoNotionTokenProvider TokenProvider
 @inject DemoNotionAIProvider AIProvider
+@inject DemoNotionTaskProvider TaskProvider
 @inject DemoNotionReactionProvider ReactionProvider
 @inject DemoNotionAnalyticsProvider AnalyticsProvider
 @inject DemoNotionPagePropertiesProvider PagePropertiesProvider
+@inject DemoNotionTemplateProvider TemplateProvider
+@inject DemoNotionSpaceProvider SpaceProvider
+@inject DemoNotionBlogProvider BlogProvider
+@inject DemoNotionWatchProvider WatchProvider
+@inject DemoNotionPermissionProvider PermissionProvider
+@inject DemoNotionPublicShareProvider PublicShareProvider
+@inject DemoNotionAuditProvider AuditProvider
+@inject DemoSmartLinkProvider SmartLinkProvider
 @inject WorkItemProviderRegistry WorkItemProviders
 
 <PageTitle>Notion Editor – Tempo.Blazor</PageTitle>
@@ -71,27 +82,39 @@
     else if (_currentPage != null)
     {
         <div style="height: 600px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: hidden; background: white;">
-            <TmNotionEditor DataProvider="@DataProvider"
+            <TmNotionEditor @key="_editorRefreshKey"
+                            DataProvider="@DataProvider"
                             BlockProvider="@BlockProvider"
-                            CommentProvider="@CommentProvider"
+                            CommentProvider="@(IsProviderDisabled("disableCommentProvider") ? null : CommentProvider)"
                             HistoryProvider="@HistoryProvider"
-                            MentionProvider="@MentionProvider"
+                            MentionProvider="@(IsProviderDisabled("disableMentionProvider") ? null : MentionProvider)"
                             SearchProvider="@SearchProvider"
                             CollaborationProvider="@CollaborationProvider"
-                            DatabaseProvider="@DatabaseProvider"
+                            DatabaseProvider="@(IsProviderDisabled("disableDatabaseProvider") ? null : DatabaseProvider)"
                             WireframeDocumentProvider="@WireframeDocumentProvider"
                             DiagramDocumentProvider="@DiagramDocumentProvider"
                             SpreadsheetDocumentProvider="@SpreadsheetDocumentProvider"
-                            ImportExportProvider="@ImportExportProvider"
+                            ImportExportProvider="@(IsProviderDisabled("disableImportExportProvider") ? null : ImportExportProvider)"
                             MediaLibraryProvider="@MediaLibraryProvider"
-                            FileProvider="@FileProvider"
+                            FileProvider="@(IsProviderDisabled("disableFileProvider") ? null : FileProvider)"
                             TokenProvider="@TokenProvider"
-                            AIProvider="@AIProvider"
-                            WorkItemProviders="@WorkItemProviders"
-                            ReactionProvider="@ReactionProvider"
-                            AnalyticsProvider="@AnalyticsProvider"
+                            AIProvider="@(IsProviderDisabled("disableAIProvider") ? null : AIProvider)"
+                            TaskProvider="@(IsProviderDisabled("disableTaskProvider") ? null : TaskProvider)"
+                            WorkItemProviders="@(IsProviderDisabled("disableWorkItemProvider") ? null : WorkItemProviders)"
+                            ReactionProvider="@(IsProviderDisabled("disableReactionProvider") ? null : ReactionProvider)"
+                            AnalyticsProvider="@(IsProviderDisabled("disableAnalyticsProvider") ? null : AnalyticsProvider)"
+                            BlogProvider="@(IsProviderDisabled("disableBlogProvider") ? null : BlogProvider)"
+                            WatchProvider="@(IsProviderDisabled("disableWatchProvider") ? null : WatchProvider)"
+                            PermissionProvider="@(IsProviderDisabled("disablePermissionProvider") ? null : PermissionProvider)"
+                            PublicShareProvider="@(IsProviderDisabled("disablePublicShareProvider") ? null : PublicShareProvider)"
+                            AuditProvider="@(IsProviderDisabled("disableAuditProvider") ? null : AuditProvider)"
+                            SmartLinkProvider="@(IsProviderDisabled("disableSmartLinkProvider") ? null : SmartLinkProvider)"
+                            SpaceProvider="@(IsProviderDisabled("disableSpaceProvider") ? null : SpaceProvider)"
                             PagePropertiesProvider="@PagePropertiesProvider"
-                            CurrentUserId="demo"
+                            TemplateProvider="@(IsProviderDisabled("disableTemplateProvider") ? null : TemplateProvider)"
+                            CurrentUserId="@CurrentUserId"
+                            CurrentUserGroupIds="@CurrentUserGroupIds"
+                            ReadOnly="@IsQueryFlagEnabled("readonly")"
                             InitialPageId="@_currentPage.Id.ToString()"
                             ShowSidebar="true"
                             OnCreateTokenRequested="@CreateTokenAsync"
@@ -614,19 +637,126 @@
     private string _statusMessage = "";
     private bool _statusIsError = false;
     private bool _isLoading = true;
+    private int _editorRefreshKey;
+
+    private static readonly string[] E2ESeedMethods =
+    [
+        "seedActionItemsPage",
+        "seedAnalyticsPage",
+        "seedAuditPage",
+        "seedBlogPage",
+        "seedBulkPages",
+        "seedChildrenDisplayPage",
+        "seedCollaborationPage",
+        "seedCommentlessPage",
+        "seedCommentsPage",
+        "seedContentByLabelPage",
+        "seedDragDropPage",
+        "seedEmptyAnalyticsPage",
+        "seedEmptyAuditPage",
+        "seedEmptyBlogPage",
+        "seedEmptyPage",
+        "seedEmptyPageInfoPage",
+        "seedEmptyTasksPage",
+        "seedEmptyTocPage",
+        "seedExcerptPage",
+        "seedExpiredPublicSharePage",
+        "seedExportPage",
+        "seedHistoryDiffPage",
+        "seedHistoryEmptyPage",
+        "seedHistoryManyPage",
+        "seedIncludePagePage",
+        "seedInlineToolbarPage",
+        "seedLabelsPage",
+        "seedLayoutPage",
+        "seedListTodoPage",
+        "seedManyAuditEntriesPage",
+        "seedManyBlogPostsPage",
+        "seedManySpacesPage",
+        "seedManyTasksPage",
+        "seedMediaPage",
+        "seedMentionTokenPage",
+        "seedPageInfoPage",
+        "seedPagePropertiesPage",
+        "seedPageReactionsEmptyPage",
+        "seedPageReactionsManyPage",
+        "seedPageSettingsPage",
+        "seedPublicSharePage",
+        "seedRestrictionsPage",
+        "seedRichPage",
+        "seedSearchPage",
+        "seedSidebarDeepPage",
+        "seedSidebarEmptyPage",
+        "seedSidebarTrashPage",
+        "seedSmartLinksPage",
+        "seedSpacesPage",
+        "seedSpecialBlocksPage",
+        "seedTablePage",
+        "seedTasksPage",
+        "seedTextFormattingPage",
+        "seedWatchPage",
+        "seedWorkItemsPage",
+        "showCollaborationLongNames",
+        "showCollaborationManyCursors",
+        "showCollaborationNoUsers",
+        "showCollaborationOneCursor",
+        "showCollaborationOverlappingCursors"
+    ];
 
     protected override async Task OnInitializedAsync()
     {
+        ConfigureAIProvider();
         await LoadEditorDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var apiBase = HttpClientFactory.CreateClient("DemoApi").BaseAddress?.ToString().TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(apiBase))
+        {
+            return;
+        }
+
+        var apiBaseJson = System.Text.Json.JsonSerializer.Serialize(apiBase);
+        var methodsJson = System.Text.Json.JsonSerializer.Serialize(E2ESeedMethods);
+        var script = $$"""
+            (() => {
+                const apiBase = {{apiBaseJson}};
+                const methods = {{methodsJson}};
+                const seed = async (scenario) => {
+                    const response = await fetch(`${apiBase}/api/notion/e2e/seed/${encodeURIComponent(scenario)}`, {
+                        method: 'POST'
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Notion E2E seed '${scenario}' failed with ${response.status}`);
+                    }
+                    window.setTimeout(() => window.location.reload(), 0);
+                    return true;
+                };
+                window.tmNotionDemo = window.tmNotionDemo || {};
+                for (const method of methods) {
+                    window.tmNotionDemo[method] = () => seed(method);
+                }
+            })();
+            """;
+
+        await JS.InvokeVoidAsync("eval", script);
     }
 
     private async Task LoadEditorDataAsync()
     {
         try
         {
+            ConfigureAIProvider();
             _isLoading     = true;
             _statusMessage = "";
             _currentPage   = await DataProvider.GetPageAsync("11111111-1111-1111-1111-111111111111");
+            _editorRefreshKey++;
             _statusMessage = "Editor loaded successfully";
         }
         catch (Exception ex)
@@ -641,6 +771,80 @@
     }
 
     private async Task RefreshData() => await LoadEditorDataAsync();
+
+    private void ConfigureAIProvider()
+    {
+        AIProvider.SlowResponses = IsProviderDisabled("slowAIProvider");
+        AIProvider.FailRequests = IsProviderDisabled("failAIProvider");
+    }
+
+    private bool IsProviderDisabled(string key)
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return false;
+        }
+
+        foreach (var part in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var pieces = part.Split('=', 2);
+            var name = Uri.UnescapeDataString(pieces[0]);
+            if (!string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (pieces.Length == 1)
+            {
+                return true;
+            }
+
+            var value = Uri.UnescapeDataString(pieces[1]);
+            return string.IsNullOrWhiteSpace(value) || bool.TryParse(value, out var parsed) && parsed;
+        }
+
+        return false;
+    }
+
+    private bool IsQueryFlagEnabled(string key)
+        => GetQueryValue(key) is { } value &&
+           (string.IsNullOrWhiteSpace(value) || bool.TryParse(value, out var parsed) && parsed);
+
+    private string CurrentUserId => GetQueryValue("user") switch
+    {
+        { Length: > 0 } user => user,
+        _ => "demo"
+    };
+
+    private IReadOnlyList<string> CurrentUserGroupIds => GetQueryValue("groups") switch
+    {
+        { Length: > 0 } groups => groups.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+        _ => []
+    };
+
+    private string? GetQueryValue(string key)
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        foreach (var part in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var pieces = part.Split('=', 2);
+            var name = Uri.UnescapeDataString(pieces[0]);
+            if (!string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return pieces.Length == 1 ? string.Empty : Uri.UnescapeDataString(pieces[1]);
+        }
+
+        return null;
+    }
 
     private async Task<(string Key, string DisplayName, string? ColorClass)?> CreateTokenAsync(string query)
     {

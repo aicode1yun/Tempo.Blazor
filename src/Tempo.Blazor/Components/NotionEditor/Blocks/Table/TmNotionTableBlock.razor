@@ -40,71 +40,157 @@
                     </svg>
                     <span>@Loc["TmNotionTableBlock_ToggleHeaderColumn"]</span>
                 </button>
+                <button class="tm-notion-table-block__tool"
+                        type="button"
+                        title="@Loc["TmNotionTableBlock_Undo"]"
+                        aria-label="@Loc["TmNotionTableBlock_Undo"]"
+                        disabled="@(_undoStack.Count == 0)"
+                        @onclick="UndoTableChangeAsync"
+                        @onclick:stopPropagation="true">
+                    @Loc["TmNotionTableBlock_Undo"]
+                </button>
+                @if (_selection is not null)
+                {
+                    <div class="tm-notion-table-block__selection-tools" role="toolbar" aria-label="@Loc["TmNotionTableBlock_SelectionTools"]">
+                        <button class="tm-notion-table-block__tool"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_Merge"]"
+                                disabled="@(!HasRangeSelection)"
+                                @onclick="MergeSelectionAsync"
+                                @onclick:stopPropagation="true">
+                            @Loc["TmNotionTableBlock_Merge"]
+                        </button>
+                        <button class="tm-notion-table-block__tool"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_Split"]"
+                                @onclick="SplitSelectionAsync"
+                                @onclick:stopPropagation="true">
+                            @Loc["TmNotionTableBlock_Split"]
+                        </button>
+                        <button class="tm-notion-table-block__swatch tm-notion-table-block__swatch--yellow"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_ColorYellow"]"
+                                aria-label="@Loc["TmNotionTableBlock_ColorYellow"]"
+                                @onclick="@(() => ApplySelectionColorAsync("color-mix(in srgb, var(--tm-color-warning) 16%, var(--tm-bg-surface))"))"
+                                @onclick:stopPropagation="true"></button>
+                        <button class="tm-notion-table-block__swatch tm-notion-table-block__swatch--green"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_ColorGreen"]"
+                                aria-label="@Loc["TmNotionTableBlock_ColorGreen"]"
+                                @onclick="@(() => ApplySelectionColorAsync("color-mix(in srgb, var(--tm-color-success) 16%, var(--tm-bg-surface))"))"
+                                @onclick:stopPropagation="true"></button>
+                        <button class="tm-notion-table-block__swatch tm-notion-table-block__swatch--blue"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_ColorBlue"]"
+                                aria-label="@Loc["TmNotionTableBlock_ColorBlue"]"
+                                @onclick="@(() => ApplySelectionColorAsync("color-mix(in srgb, var(--tm-color-primary) 14%, var(--tm-bg-surface))"))"
+                                @onclick:stopPropagation="true"></button>
+                        <button class="tm-notion-table-block__swatch tm-notion-table-block__swatch--red"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_ColorRed"]"
+                                aria-label="@Loc["TmNotionTableBlock_ColorRed"]"
+                                @onclick="@(() => ApplySelectionColorAsync("color-mix(in srgb, var(--tm-color-danger) 14%, var(--tm-bg-surface))"))"
+                                @onclick:stopPropagation="true"></button>
+                        <button class="tm-notion-table-block__tool"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_ClearColor"]"
+                                @onclick="ClearSelectionColorAsync"
+                                @onclick:stopPropagation="true">
+                            @Loc["TmNotionTableBlock_ClearColor"]
+                        </button>
+                        <button class="tm-notion-table-block__tool"
+                                type="button"
+                                title="@Loc["TmNotionTableBlock_Sort"]"
+                                @onclick="SortSelectedColumnAsync"
+                                @onclick:stopPropagation="true">
+                            @Loc["TmNotionTableBlock_Sort"]
+                        </button>
+                    </div>
+                }
             </div>
         }
 
         <div class="tm-notion-table-block__wrapper">
-            <table class="tm-notion-table @(_hasHeaderRow ? "tm-notion-table--has-header-row" : "") @(_hasHeaderColumn ? "tm-notion-table--has-header-col" : "")"
-                   role="grid"
-                   aria-label="@Loc["TmNotionTableBlock_TableLabel"]"
-                   @ref="_tableRef">
+            <div class="tm-notion-table-block__table-shell">
+                <table class="tm-notion-table @(_hasHeaderRow ? "tm-notion-table--has-header-row" : "") @(_hasHeaderColumn ? "tm-notion-table--has-header-col" : "")"
+                       role="grid"
+                       aria-label="@Loc["TmNotionTableBlock_TableLabel"]"
+                       @ref="_tableRef">
 
-                @if (!ReadOnly && _columnCount > 0)
-                {
-                    <thead>
-                        <tr class="tm-notion-table__ctrl-row" aria-hidden="true">
-                            <th class="tm-notion-table__corner-cell"></th>
-                            @for (var c = 0; c < _columnCount; c++)
-                            {
-                                var colIdx = c;
-                                <th class="tm-notion-table__col-ctrl-cell">
-                                    @if (_columnCount > 1)
-                                    {
-                                        <button class="tm-notion-table__col-delete"
-                                                type="button"
-                                                title="@Loc["TmNotionTableBlock_DeleteColumn"]"
-                                                aria-label="@Loc["TmNotionTableBlock_DeleteColumn"]"
-                                                @onclick="() => DeleteColumnAsync(colIdx)"
-                                                @onclick:stopPropagation="true">
-                                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
-                                                <line x1="1" y1="1" x2="7" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                                <line x1="7" y1="1" x2="1" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                            </svg>
-                                        </button>
-                                    }
-                                </th>
-                            }
-                        </tr>
-                    </thead>
-                }
-
-                <tbody>
-                    @for (var r = 0; r < _rows.Count; r++)
+                    @if (!ReadOnly && _columnCount > 0)
                     {
-                        var row     = _rows[r];
-                        var rowIdx  = r;
-                        var isHeader = _hasHeaderRow && r == 0;
-                        <TmNotionTableRowBlock Row="row"
-                                               RowIndex="rowIdx"
-                                               ColumnCount="_columnCount"
-                                               IsHeaderRow="isHeader"
-                                               HasHeaderColumn="_hasHeaderColumn"
-                                               ReadOnly="ReadOnly"
-                                               IsDragging="_dragSourceIndex == rowIdx"
-                                               IsDragOver="_dragOverIndex == rowIdx && _dragOverIndex != _dragSourceIndex"
-                                               CanDelete="_rows.Count > 1"
-                                               OnCellsChanged="cells => HandleCellsChangedAsync(row, cells)"
-                                               OnDeleteRequested="() => DeleteRowAsync(rowIdx)"
-                                               OnFocused="OnFocused"
-                                               OnTabFromLastCell="() => FocusCellAsync(rowIdx + 1, 0)"
-                                               OnShiftTabFromFirstCell="() => FocusCellAsync(rowIdx - 1, _columnCount - 1)"
-                                               OnDragStart="() => HandleRowDragStartAsync(rowIdx)"
-                                               OnDragOver="() => HandleRowDragOverAsync(rowIdx)"
-                                               OnDrop="HandleRowDropAsync"
-                                               OnDragEnd="HandleRowDragEndAsync" />
+                        <thead>
+                            <tr class="tm-notion-table__ctrl-row" aria-hidden="true">
+                                <th class="tm-notion-table__corner-cell"></th>
+                                @for (var c = 0; c < _columnCount; c++)
+                                {
+                                    var colIdx = c;
+                                    <th class="tm-notion-table__col-ctrl-cell">
+                                        @if (_columnCount > 1)
+                                        {
+                                            <button class="tm-notion-table__col-delete"
+                                                    type="button"
+                                                    title="@Loc["TmNotionTableBlock_DeleteColumn"]"
+                                                    aria-label="@Loc["TmNotionTableBlock_DeleteColumn"]"
+                                                    @onclick="() => DeleteColumnAsync(colIdx)"
+                                                    @onclick:stopPropagation="true">
+                                                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                                                    <line x1="1" y1="1" x2="7" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                                    <line x1="7" y1="1" x2="1" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                                </svg>
+                                            </button>
+                                        }
+                                    </th>
+                                }
+                            </tr>
+                        </thead>
                     }
-                </tbody>
-            </table>
+
+                    <tbody>
+                        @for (var r = 0; r < _rows.Count; r++)
+                        {
+                            var row     = _rows[r];
+                            var rowIdx  = r;
+                            var isHeader = _hasHeaderRow && r == 0;
+                            <TmNotionTableRowBlock Row="row"
+                                                   RowIndex="rowIdx"
+                                                   ColumnCount="_columnCount"
+                                                   IsHeaderRow="isHeader"
+                                                   HasHeaderColumn="_hasHeaderColumn"
+                                                   ReadOnly="ReadOnly"
+                                                   IsDragging="_dragSourceIndex == rowIdx"
+                                                   IsDragOver="_dragOverIndex == rowIdx && _dragOverIndex != _dragSourceIndex"
+                                                   CanDelete="_rows.Count > 1"
+                                                   OnCellsChanged="cells => HandleCellsChangedAsync(row, cells)"
+                                                   OnDeleteRequested="() => DeleteRowAsync(rowIdx)"
+                                                   OnFocused="OnFocused"
+                                                   OnTabFromLastCell="() => FocusCellAsync(rowIdx + 1, 0)"
+                                                   OnShiftTabFromFirstCell="() => FocusCellAsync(rowIdx - 1, _columnCount - 1)"
+                                                   OnDragStart="() => HandleRowDragStartAsync(rowIdx)"
+                                                   OnDragOver="() => HandleRowDragOverAsync(rowIdx)"
+                                                   OnDrop="HandleRowDropAsync"
+                                                   OnDragEnd="HandleRowDragEndAsync"
+                                                   OnCellMouseDown="HandleCellMouseDown"
+                                                   OnCellMouseEnter="HandleCellMouseEnter"
+                                                   OnCellMouseUp="HandleCellMouseUp"
+                                                   IsCellSelected="IsCellSelected" />
+                        }
+                    </tbody>
+                </table>
+
+                @if (_rows.Count == 0 && _columnCount > 0)
+                {
+                    <div class="tm-notion-table-block__empty-grid"
+                         style="--tm-notion-table-empty-columns: @_columnCount"
+                         aria-hidden="true">
+                        <span class="tm-notion-table-block__empty-handle"></span>
+                        @for (var c = 0; c < _columnCount; c++)
+                        {
+                            <span class="tm-notion-table-block__empty-cell"></span>
+                        }
+                    </div>
+                }
+            </div>
 
             @if (!ReadOnly)
             {

@@ -20,10 +20,15 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
         _blockProvider = blockProvider;
     }
 
+    public bool SlowResponses { get; set; }
+
+    public bool FailRequests { get; set; }
+
     public async IAsyncEnumerable<string> GenerateAsync(
         AiCompletionRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        ThrowIfFailureRequested();
         ValidatePrompt(request);
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -56,6 +61,7 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
         AiImproveMode mode,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        ThrowIfFailureRequested();
         ValidateText(text, nameof(text));
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -77,6 +83,7 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
 
     public async Task<string> SummarizePageAsync(string pageId, CancellationToken cancellationToken)
     {
+        ThrowIfFailureRequested();
         ValidateText(pageId, nameof(pageId));
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -104,6 +111,7 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
         string? scopePageId,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        ThrowIfFailureRequested();
         ValidateText(question, nameof(question));
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -115,7 +123,7 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
             yield return chunk;
     }
 
-    private static async IAsyncEnumerable<string> StreamChunksAsync(
+    private async IAsyncEnumerable<string> StreamChunksAsync(
         string text,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -123,11 +131,19 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
         while (index < text.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (SlowResponses)
+                await Task.Delay(80, cancellationToken);
             var length = Math.Min(ChunkSize, text.Length - index);
             yield return text.Substring(index, length);
             index += length;
             await Task.Yield();
         }
+    }
+
+    private void ThrowIfFailureRequested()
+    {
+        if (FailRequests)
+            throw new InvalidOperationException("AI request failed.");
     }
 
     private static string ExtractBlockText(IBlockContent content)

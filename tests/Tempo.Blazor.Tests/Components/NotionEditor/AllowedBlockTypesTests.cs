@@ -61,6 +61,27 @@ public class AllowedBlockTypesTests : LocalizationTestBase
             .Should().BeGreaterThan(filtered.SelectMany(g => g.Items).Count());
     }
 
+    [Fact]
+    public void SlashMenuRegistry_ContainsPanelVariantsAndInlineStatusAction()
+    {
+        var items = SlashMenuRegistry.All;
+
+        items.Where(i => i.CalloutVariant is not null)
+            .Select(i => i.CalloutVariant)
+            .Should().BeEquivalentTo(new[]
+            {
+                CalloutVariant.Info,
+                CalloutVariant.Note,
+                CalloutVariant.Warning,
+                CalloutVariant.Error,
+                CalloutVariant.Success
+            });
+
+        var status = items.Single(i => i.Action == SlashMenuAction.InsertStatus);
+        status.Type.Should().Be(BlockType.Paragraph);
+        status.Name.Should().Be("TmNotionSlashMenu_ItemName_Status");
+    }
+
     // ── ABT-03: IsBlockTypeAllowed returns false when type not in AllowedBlockTypes ─
 
     [Fact]
