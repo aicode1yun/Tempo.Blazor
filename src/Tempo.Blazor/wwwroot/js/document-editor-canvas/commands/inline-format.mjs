@@ -132,17 +132,34 @@ export function queryInlineFormattingState(model, selection, state = createInlin
     return result;
 }
 
-export function marksForInsertion(state = createInlineFormatState(), templateMarks = []) {
+// Merges tri-state pending overrides onto a template (the inherited run marks at the caret). An add-override
+// sets/replaces the mark for its type; a remove-override ({ type, remove: true }) deletes the inherited mark,
+// which is how "turn bold OFF at the caret" suppresses an inherited bold. Other inherited marks are preserved,
+// so a pending colour does not wipe an inherited bold.
+export function mergeMarkOverrides(templateMarks = [], overrides = []) {
     const byType = new Map();
     for (const mark of Array.isArray(templateMarks) ? templateMarks : []) {
         byType.set(normalizeMarkType(mark?.type), cloneMark(mark));
     }
 
-    for (const mark of state.pendingMarks || []) {
-        byType.set(normalizeMarkType(mark?.type), cloneMark(mark));
+    for (const override of Array.isArray(overrides) ? overrides : []) {
+        const type = normalizeMarkType(override?.type);
+        if (!type) {
+            continue;
+        }
+
+        if (override?.remove === true) {
+            byType.delete(type);
+        } else {
+            byType.set(type, cloneMark(override));
+        }
     }
 
     return Array.from(byType.values());
+}
+
+export function marksForInsertion(state = createInlineFormatState(), templateMarks = []) {
+    return mergeMarkOverrides(templateMarks, state.pendingMarks || []);
 }
 
 export function linkAtPosition(model, position) {
@@ -172,7 +189,7 @@ export function linkAtPosition(model, position) {
 
 function applyToggleMark(model, selection, markType, state) {
     if (isCollapsedSelection(selection)) {
-        togglePendingMark(state, { type: markType });
+        togglePendingMark(state, { type: markType }, inheritedMarksAtCaret(model, selection));
         return { changed: false, dirtyBlockIds: [] };
     }
 
@@ -206,7 +223,14 @@ function applyFontSizeStep(model, selection, direction, state) {
 
 function applyRemoveMark(model, selection, markType, state) {
     if (isCollapsedSelection(selection)) {
-        removePendingMark(state, markType);
+        const inheritedOn = inheritedMarksAtCaret(model, selection)
+            .some(mark => normalizeMarkType(mark?.type) === normalizeMarkType(markType));
+        if (inheritedOn) {
+            setRemovePendingMark(state, markType);
+        } else {
+            removePendingMark(state, markType);
+        }
+
         return { changed: false, dirtyBlockIds: [] };
     }
 
@@ -388,6 +412,10 @@ function collectSelectedMarkValues(model, selection, markType, pending) {
     if (isCollapsedSelection(selection)) {
         const pendingMark = pending.find(mark => normalizeMarkType(mark?.type) === markType);
         if (pendingMark) {
+            if (pendingMark.remove === true) {
+                return { total: 1, marked: 0, values: [] };
+            }
+
             return { total: 1, marked: 1, values: [markValue(pendingMark)] };
         }
 
@@ -470,14 +498,31 @@ function markValue(mark) {
     return mark?.link?.href || mark?.href || mark?.value || null;
 }
 
-function togglePendingMark(state, mark) {
+// Tri-state toggle at a collapsed caret. The effective state is the inherited run mark overridden by any
+// pending entry. Turning a mark OFF that is inherited records a remove-override (so typed text drops it);
+// turning OFF a mark that is only pending-on just clears that add-override. Turning ON clears a remove-override
+// (restoring the inherited mark) or adds an override when nothing is inherited.
+function togglePendingMark(state, mark, inheritedMarks = []) {
     const type = normalizeMarkType(mark.type);
-    if ((state.pendingMarks || []).some(item => normalizeMarkType(item?.type) === type)) {
-        removePendingMark(state, type);
+    const inheritedOn = (Array.isArray(inheritedMarks) ? inheritedMarks : [])
+        .some(item => normalizeMarkType(item?.type) === type);
+    const pendingMark = (state.pendingMarks || []).find(item => normalizeMarkType(item?.type) === type);
+    const effectiveOn = pendingMark ? pendingMark.remove !== true : inheritedOn;
+    if (effectiveOn) {
+        if (inheritedOn) {
+            setRemovePendingMark(state, type);
+        } else {
+            removePendingMark(state, type);
+        }
+
         return;
     }
 
-    setPendingMark(state, mark);
+    if (inheritedOn) {
+        removePendingMark(state, type);
+    } else {
+        setPendingMark(state, mark);
+    }
 }
 
 function setPendingMark(state, mark) {
@@ -487,9 +532,20 @@ function setPendingMark(state, mark) {
     state.pendingMarks.push(cloneMark(mark));
 }
 
+function setRemovePendingMark(state, markType) {
+    removePendingMark(state, markType);
+    state.pendingMarks.push({ type: markType, remove: true });
+}
+
 function removePendingMark(state, markType) {
     const type = normalizeMarkType(markType);
     state.pendingMarks = (state.pendingMarks || []).filter(mark => normalizeMarkType(mark?.type) !== type);
+}
+
+function inheritedMarksAtCaret(model, selection) {
+    const block = findEditableBlock(model, selection?.focus?.blockId);
+    const run = runAtOffset(block, selection?.focus?.offset);
+    return Array.isArray(run?.marks) ? run.marks : [];
 }
 
 function runAtOffset(block, offset) {

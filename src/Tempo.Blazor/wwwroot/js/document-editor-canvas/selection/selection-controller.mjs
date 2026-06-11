@@ -10,6 +10,7 @@ import {
     OBJECT_CONNECTOR_END_HANDLE_NAME,
     OBJECT_CONNECTOR_START_HANDLE_NAME,
     OBJECT_ROTATE_HANDLE_NAME,
+    cursorForObjectHandle,
     imageObjectAtPoint,
     isObjectConnectorEndpointHandle,
     moveRect,
@@ -57,6 +58,8 @@ export function createCanvasSelectionController(options = {}) {
     let pointerState = null;
     let selectionRevision = 0;
     let unsubscribeInput = null;
+    let hoverCursorScheduled = false;
+    let lastHoverEvent = null;
 
     const root = canvasStack?.root || null;
     const onMouseDown = event => handlePointerDown(event);
@@ -172,6 +175,7 @@ export function createCanvasSelectionController(options = {}) {
                 previewRotation: Number(target.rotation || 0) || 0,
                 handle: objectHandle?.handle || null,
             };
+            applyDragCursor(pointerState.mode, pointerState.handle);
             renderOverlay();
             return;
         }
@@ -252,7 +256,13 @@ export function createCanvasSelectionController(options = {}) {
     }
 
     function handlePointerMove(event) {
-        if (!pointerState?.active || !layout) {
+        if (!pointerState?.active) {
+            // No active drag: give hover affordance over a selected object's handles/body (and table borders).
+            updateHoverCursor(event);
+            return;
+        }
+
+        if (!layout) {
             return;
         }
 
@@ -364,6 +374,75 @@ export function createCanvasSelectionController(options = {}) {
         root.style.cursor = tableResizeHandleAt(layout, point.pageIndex, point.x, point.y) ? 'col-resize' : '';
     }
 
+    // Hover-cursor feedback, throttled to one hit-test per animation frame so rapid mousemove does not re-run
+    // the object/table hit-tests dozens of times per frame.
+    function updateHoverCursor(event) {
+        lastHoverEvent = event;
+        if (hoverCursorScheduled) {
+            return;
+        }
+
+        hoverCursorScheduled = true;
+        const view = root?.ownerDocument?.defaultView || doc?.defaultView || globalThis;
+        const raf = typeof view.requestAnimationFrame === 'function'
+            ? view.requestAnimationFrame.bind(view)
+            : (callback => (view.setTimeout || setTimeout)(callback, 16));
+        raf(() => {
+            hoverCursorScheduled = false;
+            applyHoverCursor(lastHoverEvent);
+        });
+    }
+
+    function applyHoverCursor(event) {
+        if (!root?.style || !layout || !event) {
+            return;
+        }
+
+        const pageElement = findPageElement(event.target);
+        const point = normalizePointerPoint(event, pageElement);
+        if (!point) {
+            root.style.cursor = '';
+            return;
+        }
+
+        // A selected object: resize/rotate/connector cursor over its handles, move over its body.
+        if (objectSelection) {
+            const handle = objectResizeHandleAt(layout, objectSelection, point.pageIndex, point.x, point.y);
+            if (handle?.handle) {
+                root.style.cursor = cursorForObjectHandle(handle.handle, Number(objectSelection.rotation || 0) || 0);
+                return;
+            }
+
+            const objectHit = imageObjectAtPoint(layout, point.pageIndex, point.x, point.y);
+            if (objectHit && String(objectHit.objectId || '') === String(objectSelection.objectId || '')) {
+                root.style.cursor = 'move';
+                return;
+            }
+        }
+
+        if (tableResizeHandleAt(layout, point.pageIndex, point.x, point.y)) {
+            root.style.cursor = 'col-resize';
+            return;
+        }
+
+        root.style.cursor = '';
+    }
+
+    // Cursor shown WHILE an object drag is in progress (resize direction / grabbing for move + rotate).
+    function applyDragCursor(mode, handle) {
+        if (!root?.style) {
+            return;
+        }
+
+        if (mode === 'object-resize' && handle) {
+            root.style.cursor = cursorForObjectHandle(handle, Number(pointerState?.object?.rotation || 0) || 0);
+        } else if (mode === 'object-rotate' || mode === 'object-move') {
+            root.style.cursor = 'grabbing';
+        } else if (mode === 'object-connector-endpoint') {
+            root.style.cursor = 'crosshair';
+        }
+    }
+
     function handlePointerUp(event) {
         if (!pointerState?.active) {
             return;
@@ -386,17 +465,33 @@ export function createCanvasSelectionController(options = {}) {
 
         if ((pointerState.mode === 'object-move' || pointerState.mode === 'object-resize') && pointerState.dragging) {
             const rect = pointerState.previewRect || pointerState.startRect || {};
-            const body = pageBodyForIndex(pointerState.object?.pageIndex || 0);
+            const startRect = pointerState.startRect || rect;
             syncObjectSnapLastAttributes(pointerState.snap || null);
-            executeCommand?.('updateImageLayout', {
+            // Move the object by the VISUAL drag delta (page coords) instead of re-deriving an absolute
+            // body-relative offset. The resolved position is frameOrigin + storedOffset for every reference
+            // frame (paragraph/page/margin), so nudging the stored offset by the drag delta lands the object
+            // exactly under the pointer regardless of frame. The old body-relative offset only worked for
+            // body/page-relative objects and pushed paragraph-anchored objects down by (paragraphFlowY − bodyY).
+            // dx/dy are sent only when non-zero so a single-axis drag/resize never materialises a spurious 0 on
+            // the untouched axis (which would pin an alignment-positioned object to the frame origin).
+            const dx = (Number(rect.x || 0) || 0) - (Number(startRect.x || 0) || 0);
+            const dy = (Number(rect.y || 0) || 0) - (Number(startRect.y || 0) || 0);
+            const payload = {
                 objectId: pointerState.object?.objectId || '',
                 blockId: pointerState.object?.blockId || '',
                 runId: pointerState.object?.runId || '',
-                x: (Number(rect.x || 0) || 0) - (Number(body.x || 0) || 0),
-                y: (Number(rect.y || 0) || 0) - (Number(body.y || 0) || 0),
                 width: Math.max(24, Number(rect.width || 0) || 24),
                 height: Math.max(24, Number(rect.height || 0) || 24),
-            });
+            };
+            if (Math.abs(dx) > 0.001) {
+                payload.dx = dx;
+            }
+
+            if (Math.abs(dy) > 0.001) {
+                payload.dy = dy;
+            }
+
+            executeCommand?.('updateImageLayout', payload);
         }
 
         if (pointerState.mode === 'object-connector-endpoint' && pointerState.dragging) {
@@ -870,7 +965,11 @@ export function createCanvasSelectionController(options = {}) {
             root?.setAttribute?.('data-canvas-object-wrap-mode', objectSelection.wrapMode || '');
             root?.setAttribute?.('data-canvas-object-rotation', String(Number(objectSelection.rotation || 0) || 0));
             const handles = objectInteractionHandleRects(objectSelection);
-            root?.setAttribute?.('data-canvas-object-handle-count', String(handles.length));
+            // handle-count is the count of directional RESIZE handles (8) — the rotate + connector handles are
+            // reported separately — so it stays 8 for an image/shape regardless of the rotate handle.
+            const resizeHandleCount = handles.filter(item =>
+                item.name !== OBJECT_ROTATE_HANDLE_NAME && !isObjectConnectorEndpointHandle(item.name)).length;
+            root?.setAttribute?.('data-canvas-object-handle-count', String(resizeHandleCount));
             root?.setAttribute?.('data-canvas-object-connector-handle-count', String(handles.filter(item => isObjectConnectorEndpointHandle(item.name)).length));
             root?.setAttribute?.('data-canvas-object-alt-warning', String(!objectSelection.altText));
         } else {
@@ -1203,6 +1302,29 @@ export function createCanvasSelectionController(options = {}) {
             return;
         }
 
+        const scale = pageScale(pageIndex);
+        const rect = object.rect || {};
+        const rotation = Number(object.rotation || 0) || 0;
+        // Outline AND handles live in ONE container that rotates about the object centre, so the handles sit on
+        // the rotated frame (not a second, un-rotated set beside it). The canvas-layer paintObjectSelection
+        // rotates the same way, so both overlays agree.
+        const container = doc.createElement('div');
+        container.setAttribute('aria-hidden', 'true');
+        container.style.position = 'absolute';
+        container.style.left = '0';
+        container.style.top = '0';
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.pointerEvents = 'none';
+        if (Math.abs(rotation) > 0.001) {
+            const centerX = (Number(rect.x || 0) || 0) + (Number(rect.width || 0) || 0) / 2;
+            const centerY = (Number(rect.y || 0) || 0) + (Number(rect.height || 0) || 0) / 2;
+            container.style.transformOrigin = `${centerX * scale}px ${centerY * scale}px`;
+            container.style.transform = `rotate(${rotation}deg)`;
+        }
+
+        overlay.appendChild(container);
+
         const outline = doc.createElement('div');
         outline.className = 'tm-document-canvas-object-selection';
         outline.setAttribute('data-testid', 'document-canvas-object-selection');
@@ -1210,13 +1332,10 @@ export function createCanvasSelectionController(options = {}) {
         outline.setAttribute('data-object-id', object.objectId || '');
         outline.setAttribute('aria-hidden', 'true');
         outline.style.position = 'absolute';
-        const scale = pageScale(pageIndex);
         assignScaledRectStyle(outline, object.rect, scale, 1);
         outline.style.outline = `1.5px solid ${OBJECT_SELECTION_STROKE}`;
-        outline.style.transform = `rotate(${Number(object.rotation || 0) || 0}deg)`;
-        outline.style.transformOrigin = 'center';
         outline.style.pointerEvents = 'none';
-        overlay.appendChild(outline);
+        container.appendChild(outline);
 
         if (options.handles === false) {
             return;
@@ -1240,6 +1359,10 @@ export function createCanvasSelectionController(options = {}) {
                     : `document-canvas-object-resize-handle-${handle.name}`);
             if (isConnectorEndpoint) {
                 element.setAttribute('data-canvas-object-connector-handle', handle.name);
+            } else if (isRotate) {
+                // The rotate handle is NOT a resize handle; labelling it data-canvas-object-resize-handle made
+                // the resize-handle count read 9 instead of 8 (the long-standing Phase 15 selection mismatch).
+                element.setAttribute('data-canvas-object-rotate-handle', handle.name);
             } else {
                 element.setAttribute('data-canvas-object-resize-handle', handle.name);
             }
@@ -1252,7 +1375,7 @@ export function createCanvasSelectionController(options = {}) {
             element.style.borderRadius = isRotate || isConnectorEndpoint ? '999px' : '0';
             element.style.boxSizing = 'border-box';
             element.style.pointerEvents = 'none';
-            overlay.appendChild(element);
+            container.appendChild(element);
         }
     }
 

@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Tempo.Blazor.Components.DocumentEditor;
+using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.Tests.Localization;
@@ -129,6 +130,60 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
             invocation.Arguments[0]?.ToString() == "canvas-host-test-handle")
             .Should()
             .BeTrue();
+    }
+
+    [Fact]
+    public void CanvasEngineHost_ResolvesProviderAssetUrls_IntoMountedModel()
+    {
+        var module = SetupCanvasModule();
+        var resolver = new CountingImageUrlResolver { UrlToReturn = "data:image/png;base64,RESOLVEDBITMAP" };
+        var document = DocumentEditorDocument.Empty("canvas-host-assets");
+        document.Assets.Add(new DocumentImageAsset { Id = "asset-1", Source = DocumentImageSource.Asset });
+
+        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.ImageUrlResolver, resolver)
+            .Add(p => p.AriaLabel, "Document editor")
+            .Add(p => p.InputAriaLabel, "Document editor"));
+
+        cut.WaitForAssertion(() => cut.Instance.IsReady.Should().BeTrue());
+
+        var mountCall = module.Invocations.First(invocation => invocation.Identifier == "mount");
+        var modelJson = mountCall.Arguments[2]?.ToString() ?? string.Empty;
+        modelJson.Should().Contain("data:image/png;base64,RESOLVEDBITMAP",
+            because: "the host must resolve provider asset URLs into the model the engine renders");
+        resolver.CallCount.Should().Be(1, because: "each asset URL is resolved once and cached");
+        // The seed asset carried no URL of its own — proof the value came from the resolver.
+        document.Assets[0].Url.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public void CanvasEngineHost_WithoutResolver_MountsWithoutResolvingAssets()
+    {
+        var module = SetupCanvasModule();
+        var document = DocumentEditorDocument.Empty("canvas-host-assets-no-resolver");
+        document.Assets.Add(new DocumentImageAsset { Id = "asset-1", Source = DocumentImageSource.Asset });
+
+        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+            .Add(p => p.Document, document)
+            .Add(p => p.AriaLabel, "Document editor")
+            .Add(p => p.InputAriaLabel, "Document editor"));
+
+        cut.WaitForAssertion(() => cut.Instance.IsReady.Should().BeTrue());
+        module.Invocations.Any(invocation => invocation.Identifier == "mount").Should().BeTrue();
+    }
+
+    private sealed class CountingImageUrlResolver : IDocumentImageUrlResolver
+    {
+        public int CallCount;
+
+        public string UrlToReturn { get; set; } = "data:image/png;base64,RESOLVED";
+
+        public Task<string> ResolveUrlAsync(string documentId, string assetId, CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref CallCount);
+            return Task.FromResult(UrlToReturn);
+        }
     }
 
     private BunitJSModuleInterop SetupCanvasModule()

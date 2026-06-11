@@ -7,8 +7,8 @@ export function createCanvasHistoryController(options = {}) {
     let revision = 0;
     let lastTransaction = null;
 
-    function push(transaction) {
-        const normalized = normalizeTransaction(transaction);
+    function push(transaction, options = {}) {
+        const normalized = normalizeTransaction(transaction, options.cloneSnapshots !== false);
         if (!normalized) {
             return snapshot();
         }
@@ -116,7 +116,7 @@ export function createCanvasHistoryController(options = {}) {
     };
 }
 
-function normalizeTransaction(transaction) {
+function normalizeTransaction(transaction, cloneSnapshots = true) {
     if (!transaction || typeof transaction !== 'object') {
         throw new Error('History transaction must be an object.');
     }
@@ -125,12 +125,16 @@ function normalizeTransaction(transaction) {
         return null;
     }
 
+    // Callers may opt out of the defensive deep clone when they guarantee the snapshots are immutable — the
+    // canvas command pipeline produces fresh per-command model objects and never mutates an existing model in
+    // place (every mutator clones first), so re-cloning here would just duplicate two full models per command
+    // (perf phase 2.3). The default stays clone:true for callers that pass live/shared references.
     return {
         id: String(transaction.id || `canvas-transaction-${Date.now()}`),
         kind: String(transaction.kind || 'command'),
         commandId: transaction.commandId == null ? null : String(transaction.commandId),
-        before: clone(transaction.before),
-        after: clone(transaction.after),
+        before: cloneSnapshots ? clone(transaction.before) : transaction.before,
+        after: cloneSnapshots ? clone(transaction.after) : transaction.after,
         dirtyBlockIds: unique(transaction.dirtyBlockIds || []),
         typing: transaction.typing ? { ...transaction.typing } : null,
     };

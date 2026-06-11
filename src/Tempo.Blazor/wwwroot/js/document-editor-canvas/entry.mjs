@@ -125,7 +125,7 @@ export class CanvasDocumentEngine {
             getModel: () => this.modelStore.getModel(),
             commit: change => this.commitInputChange(change),
             afterCommit: input => this.publishInputDiagnostics(input),
-            getPendingMarks: () => this.commandRuntime.getPendingMarks(),
+            getPendingMarkOverrides: () => this.commandRuntime.getPendingMarkOverrides(),
             getTrackChangesState: () => ({ enabled: this.trackChangesEnabled, author: this.author }),
             executeCommand: (commandId, argument) => {
                 const result = this.execCommand(commandId, argument);

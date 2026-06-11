@@ -245,6 +245,7 @@
 
         _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", InteropModulePath);
         _selfRef = DotNetObjectReference.Create(this);
+        await EnsureAssetUrlsResolvedAsync();
         _lastModelJson = JsonSerializer.Serialize(BuildCanvasModel(), CanvasJsonOptions);
         _lastParameterModelJson = _lastModelJson;
         _lastMountedDocumentRef = Document;
@@ -834,8 +835,74 @@
         return JsonSerializer.Deserialize<TState>(json, CanvasJsonOptions) ?? fallback;
     }
 
+    // Cache of provider-resolved display URLs keyed by asset id (perf phase 3.1) so repeated model builds and
+    // re-renders never re-hit the resolver. A resolved-but-empty result is cached too, so a missing asset is
+    // not retried on every render.
+    private readonly Dictionary<string, string> _resolvedAssetUrls = new(StringComparer.OrdinalIgnoreCase);
+
     private CanvasDocumentModel BuildCanvasModel()
-        => CanvasDocumentModelConverter.ToCanvasModel(Document ?? DocumentEditorDocument.Empty());
+    {
+        var model = CanvasDocumentModelConverter.ToCanvasModel(Document ?? DocumentEditorDocument.Empty());
+        ApplyResolvedAssetUrls(model);
+        return model;
+    }
+
+    // Fills the canvas model's asset URLs from the resolver cache so the engine paints real bitmaps instead of
+    // the grey placeholder. Provider-managed assets carry an id but no Url (the URL is resolved on demand via
+    // IDocumentImageUrlResolver); without this the engine had no source to draw (the host previously only told
+    // the engine whether a resolver existed).
+    private void ApplyResolvedAssetUrls(CanvasDocumentModel model)
+    {
+        if (_resolvedAssetUrls.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var asset in model.Assets)
+        {
+            if (!string.IsNullOrWhiteSpace(asset.Url) || string.IsNullOrWhiteSpace(asset.Id))
+            {
+                continue;
+            }
+
+            if (_resolvedAssetUrls.TryGetValue(asset.Id, out var url) && !string.IsNullOrWhiteSpace(url))
+            {
+                asset.Url = url;
+            }
+        }
+    }
+
+    // Resolves display URLs for every document asset that still lacks one, through IDocumentImageUrlResolver,
+    // caching the result per asset id. No-op when no resolver is configured (URLs stay as authored).
+    private async Task EnsureAssetUrlsResolvedAsync()
+    {
+        if (ImageUrlResolver is null || Document is null)
+        {
+            return;
+        }
+
+        var documentId = Document.DocumentId ?? string.Empty;
+        foreach (var asset in Document.Assets)
+        {
+            var id = asset.Id;
+            if (string.IsNullOrWhiteSpace(id)
+                || !string.IsNullOrWhiteSpace(asset.Url)
+                || _resolvedAssetUrls.ContainsKey(id))
+            {
+                continue;
+            }
+
+            try
+            {
+                var url = await ImageUrlResolver.ResolveUrlAsync(documentId, id);
+                _resolvedAssetUrls[id] = url ?? string.Empty;
+            }
+            catch
+            {
+                _resolvedAssetUrls[id] = string.Empty;
+            }
+        }
+    }
 
     private static int CountDocumentMathRuns(DocumentEditorDocument? document)
         => document?.Blocks.Sum(block => block.Content switch
@@ -885,6 +952,7 @@
 
         _lastMountedDocumentRef = Document;
 
+        await EnsureAssetUrlsResolvedAsync();
         var modelJson = JsonSerializer.Serialize(BuildCanvasModel(), CanvasJsonOptions);
         if (string.Equals(_lastParameterModelJson, modelJson, StringComparison.Ordinal))
         {
@@ -1279,6 +1347,12 @@
 
         /// <summary>Executed command identifier.</summary>
         public string CommandId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Primitives-only UI snapshot bundled with the command response (perf phase 2.2) so the toolbar can
+        /// update pressed-state / dirty / undo without a follow-up batch of interop pulls.
+        /// </summary>
+        public CanvasEngineUiState? UiState { get; set; }
     }
 
     /// <summary>Canvas engine command query state exposed to Blazor callers.</summary>

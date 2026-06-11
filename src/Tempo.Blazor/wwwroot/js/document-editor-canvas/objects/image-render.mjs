@@ -702,18 +702,21 @@ export function objectExclusionIntervals(objects, page, y, lineHeight) {
     const rowBottom = rowTop + Math.max(1, Number(lineHeight || 16) || 16);
     const exclusions = (objects || [])
         .filter(layout => (layout?.object?.isFloating ?? layout?.isFloating) && shouldExcludeText(layout))
-        .filter(layout => {
+        // Use the axis-aligned bounding box of the (possibly rotated) object so text reserves space for the
+        // rotated corners instead of flowing over them.
+        .map(layout => ({ layout, aabb: aabbOfRotatedRect(layout.rect || {}, layout.object?.rotation) }))
+        .filter(({ layout, aabb }) => {
             const object = layout.object || {};
-            const top = layout.rect.y - Number(object.distanceTop || 0);
+            const top = aabb.y - Number(object.distanceTop || 0);
             const contentBottom = layout.captionRect
                 ? layout.captionRect.y + layout.captionRect.height
-                : layout.rect.y + layout.rect.height;
+                : aabb.y + aabb.height;
             const bottom = contentBottom + Number(object.distanceBottom || 0);
             return rowBottom >= top && rowTop <= bottom;
         })
-        .map(layout => ({
-            x: layout.rect.x - Number(layout.object?.distanceLeft || 0),
-            width: layout.rect.width + Number(layout.object?.distanceLeft || 0) + Number(layout.object?.distanceRight || 0),
+        .map(({ layout, aabb }) => ({
+            x: aabb.x - Number(layout.object?.distanceLeft || 0),
+            width: aabb.width + Number(layout.object?.distanceLeft || 0) + Number(layout.object?.distanceRight || 0),
         }))
         .sort((left, right) => left.x - right.x);
     if (exclusions.length === 0) {
@@ -737,6 +740,27 @@ export function objectExclusionIntervals(objects, page, y, lineHeight) {
     }
 
     return intervals.length > 0 ? intervals : [{ x: body.x, width: body.width }];
+}
+
+// Axis-aligned bounding box of a rect rotated about its centre. Returns the rect unchanged when not rotated.
+export function aabbOfRotatedRect(rect, rotation) {
+    const x = Number(rect?.x || 0) || 0;
+    const y = Number(rect?.y || 0) || 0;
+    const width = Math.max(0, Number(rect?.width || 0) || 0);
+    const height = Math.max(0, Number(rect?.height || 0) || 0);
+    const degrees = Number(rotation) || 0;
+    if (Math.abs(degrees) < 0.001) {
+        return { x, y, width, height };
+    }
+
+    const rad = degrees * Math.PI / 180;
+    const cos = Math.abs(Math.cos(rad));
+    const sin = Math.abs(Math.sin(rad));
+    const aabbWidth = width * cos + height * sin;
+    const aabbHeight = width * sin + height * cos;
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    return { x: centerX - aabbWidth / 2, y: centerY - aabbHeight / 2, width: aabbWidth, height: aabbHeight };
 }
 
 export function shouldExcludeText(imageLayout) {

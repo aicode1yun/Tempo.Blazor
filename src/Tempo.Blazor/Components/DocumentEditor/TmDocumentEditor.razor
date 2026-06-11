@@ -12,6 +12,9 @@
      data-blazor-render-count="@NextBlazorRenderCount"
      data-render-engine="@EffectiveRenderEngine.ToString()"
      data-render-engine-requested="@RenderEngine.ToString()"
+     data-canvas-route-exec-ms="@_routeExecMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
+     data-canvas-route-apply-ms="@_routeApplyMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
+     data-canvas-route-focus-ms="@_routeFocusMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
      @onkeydown="HandleEditorKeyDownAsync"
      @onclick="CloseFloatingUi"
      @attributes="AdditionalAttributes">

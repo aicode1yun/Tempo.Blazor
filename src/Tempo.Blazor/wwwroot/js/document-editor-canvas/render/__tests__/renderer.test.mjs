@@ -246,4 +246,95 @@ class RecordingContext {
     setLineDash(...args) {
         this.calls.push({ name: 'setLineDash', args });
     }
+
+    drawImage(...args) {
+        this.calls.push({ name: 'drawImage', args });
+    }
+
+    arc(...args) {
+        this.calls.push({ name: 'arc', args });
+    }
+
+    fill(...args) {
+        this.calls.push({ name: 'fill', args });
+    }
+
+    translate(...args) {
+        this.calls.push({ name: 'translate', args });
+    }
+
+    rotate(...args) {
+        this.calls.push({ name: 'rotate', args });
+    }
+
+    scale(...args) {
+        this.calls.push({ name: 'scale', args });
+    }
 }
+
+// Layer whose 2d context exposes a `canvas` back-reference with an Image constructor, so paintImageObject's
+// resolveCachedImage can build/cache an image. `loaded` controls whether the bitmap reports itself decoded.
+test('imageObject applies a rotation transform (translate + rotate about the centre) (P4)', () => {
+    const rotated = createImageLayer(false);
+    paintDisplayList(new Map([['objects', rotated]]), {
+        commands: [{
+            id: 'rot-img', type: 'imageObject', layer: 'objects',
+            x: 100, y: 100, width: 200, height: 120,
+            rotation: 30, fill: '#e2e8f0', stroke: '#94a3b8', altText: 'x',
+        }],
+    });
+    const calls = rotated.context.calls;
+    const rotate = calls.find(call => call.name === 'rotate');
+    assert.ok(rotate, 'a rotated image issues a canvas rotate()');
+    assert.ok(Math.abs(rotate.args[0] - (30 * Math.PI / 180)) < 1e-6, 'rotates by the command angle in radians');
+    // Translate to the rect centre (200,160) before rotating, then back.
+    assert.ok(calls.some(call => call.name === 'translate' && Math.abs(call.args[0] - 200) < 1e-6 && Math.abs(call.args[1] - 160) < 1e-6),
+        'translates to the rect centre before rotating');
+
+    const upright = createImageLayer(false);
+    paintDisplayList(new Map([['objects', upright]]), {
+        commands: [{ id: 'up-img', type: 'imageObject', layer: 'objects', x: 100, y: 100, width: 200, height: 120, altText: 'x' }],
+    });
+    assert.equal(upright.context.calls.some(call => call.name === 'rotate'), false, 'an un-rotated image issues no rotate()');
+});
+
+function createImageLayer(loaded) {
+    const context = new RecordingContext();
+    const view = {
+        Image: function ImageStub() {
+            return { decoding: '', onload: null, set src(_value) {}, complete: loaded === true, naturalWidth: loaded ? 16 : 0 };
+        },
+    };
+    context.canvas = { ownerDocument: { defaultView: view }, __tmCanvasRepaint: null };
+    return {
+        context,
+        getContext(type) {
+            assert.equal(type, '2d');
+            return this.context;
+        },
+    };
+}
+
+test('imageObject paints a grey placeholder until the bitmap is ready, then the bitmap with no fill beneath', () => {
+    const loading = createImageLayer(false);
+    paintDisplayList(new Map([['objects', loading]]), {
+        commands: [{
+            id: 'loading-img', type: 'imageObject', layer: 'objects',
+            x: 10, y: 10, width: 50, height: 40,
+            url: 'data:image/png;base64,LOADINGPLACEHOLDER', fill: '#e2e8f0', stroke: '#94a3b8', altText: 'x',
+        }],
+    });
+    assert.ok(loading.context.calls.some(call => call.name === 'fillRect'), 'placeholder fill drawn while loading');
+    assert.equal(loading.context.calls.some(call => call.name === 'drawImage'), false, 'no bitmap drawn before it is ready');
+
+    const ready = createImageLayer(true);
+    paintDisplayList(new Map([['objects', ready]]), {
+        commands: [{
+            id: 'ready-img', type: 'imageObject', layer: 'objects',
+            x: 10, y: 10, width: 50, height: 40,
+            url: 'data:image/png;base64,READYBITMAP', fill: '#e2e8f0', stroke: '#94a3b8', altText: 'x',
+        }],
+    });
+    assert.ok(ready.context.calls.some(call => call.name === 'drawImage'), 'bitmap drawn once ready');
+    assert.equal(ready.context.calls.some(call => call.name === 'fillRect'), false, 'no grey fill beneath the loaded bitmap');
+});

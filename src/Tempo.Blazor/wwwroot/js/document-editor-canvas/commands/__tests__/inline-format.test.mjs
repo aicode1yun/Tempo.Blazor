@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createCanvasCommandRuntime } from '../dispatcher.mjs';
-import { applyInlineFormatCommand, createInlineFormatState, queryInlineFormattingState } from '../inline-format.mjs';
+import { applyInlineFormatCommand, createInlineFormatState, marksForInsertion, queryInlineFormattingState } from '../inline-format.mjs';
 import { applyCanvasTextEdit, canvasBlockText } from '../../input/text-editing.mjs';
 import { createHistoryStore } from '../../history/history-store.mjs';
 
@@ -61,6 +61,48 @@ test('collapsed inline command stores pending formatting for the next inserted t
     assert.ok(newRun.marks.some(mark => mark.type === 'bold'));
 });
 
+test('P1: toggling bold off at the end of a bold run suppresses inherited bold for typed text', () => {
+    const model = boldModel();
+    const state = createInlineFormatState();
+    const toggled = applyInlineFormatCommand(model, collapsed(4), 'bold', null, state);
+
+    assert.equal(toggled.changed, false);
+    // The caret inherits bold, so toggling OFF records a remove-override, not another add-override.
+    assert.deepEqual(toggled.state.pendingMarks, [{ type: 'bold', remove: true }]);
+    // The toolbar pressed-state must read OFF.
+    assert.equal(toggled.formattingState.commands.bold.state, 'inactive');
+    // The merged insertion marks drop the inherited bold.
+    assert.equal(marksForInsertion(toggled.state, [{ type: 'bold' }]).some(mark => mark.type === 'bold'), false);
+
+    const inserted = applyCanvasTextEdit(model, collapsed(4), {
+        type: 'insertText',
+        text: 'X',
+        pendingMarks: toggled.state.pendingMarks,
+    });
+    const newRun = inserted.model.body.blocks[0].content.runs.find(run => run.text === 'X');
+    assert.ok(newRun, 'inserted run exists');
+    assert.equal((newRun.marks || []).some(mark => mark.type === 'bold'), false, 'typed text after toggle-off is not bold');
+});
+
+test('P1: toggling bold off then on restores the inherited bold', () => {
+    const model = boldModel();
+    const off = applyInlineFormatCommand(model, collapsed(4), 'bold', null, createInlineFormatState());
+    const on = applyInlineFormatCommand(model, collapsed(4), 'bold', null, off.state);
+
+    assert.equal(on.state.pendingMarks.some(mark => mark.type === 'bold'), false, 'remove-override is cleared');
+    assert.equal(on.formattingState.commands.bold.state, 'active');
+    assert.equal(marksForInsertion(on.state, [{ type: 'bold' }]).some(mark => mark.type === 'bold'), true);
+});
+
+test('P1: a pending value mark does not drop other inherited marks', () => {
+    const model = boldModel();
+    const colored = applyInlineFormatCommand(model, collapsed(4), 'textcolor', '#dc2626', createInlineFormatState());
+    const merged = marksForInsertion(colored.state, [{ type: 'bold' }]);
+
+    assert.equal(merged.some(mark => mark.type === 'bold'), true, 'inherited bold survives a color override');
+    assert.equal(merged.some(mark => mark.type === 'textColor' && mark.value === '#dc2626'), true, 'color override is applied');
+});
+
 test('inline format state tolerates missing history snapshots', () => {
     assert.deepEqual(createInlineFormatState(null), { pendingMarks: [] });
     assert.deepEqual(createInlineFormatState(undefined), { pendingMarks: [] });
@@ -114,6 +156,12 @@ function createModel(text) {
         },
         sections: [{ id: 'section-1', blocks: [] }],
     };
+}
+
+function boldModel() {
+    const model = createModel('Bold');
+    model.body.blocks[0].content.runs[0].marks = [{ type: 'bold' }];
+    return model;
 }
 
 function collapsed(offset) {

@@ -7642,6 +7642,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private Task<bool> RouteToCanvasEngineAsync(string command, object? argument = null)
         => RouteToCanvasEngineAsync(command, argument, focus: false);
 
+    // Perf-phase-2 instrumentation: last toolbar-route breakdown (ms), published on the root for the FixP2 gate.
+    private double _routeExecMs;
+    private double _routeApplyMs;
+    private double _routeFocusMs;
+
     private async Task<bool> RouteToCanvasEngineAsync(string command, object? argument, bool focus)
     {
         if (!UsingCanvasEngine)
@@ -7649,13 +7654,19 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return false;
         }
 
-        await _canvasHost!.ExecCommandAsync(command, argument);
-        await SyncCanvasEngineStateAsync();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var result = await _canvasHost!.ExecCommandAsync(command, argument);
+        _routeExecMs = sw.Elapsed.TotalMilliseconds;
+        sw.Restart();
+        await ApplyCanvasUiStateFastAsync(result.UiState);
+        _routeApplyMs = sw.Elapsed.TotalMilliseconds;
+        sw.Restart();
         if (focus)
         {
             await _canvasHost.FocusAsync();
         }
 
+        _routeFocusMs = sw.Elapsed.TotalMilliseconds;
         return true;
     }
 
@@ -7871,6 +7882,54 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var fmt = await _canvasHost.GetFormattingStateAsync();
         ApplyCanvasFormattingState(fmt);
 
+        await SyncCanvasNavigationAsync();
+        await SyncCanvasContentControlPopoverAsync();
+        await RefreshCommandRegistryAsync();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Fast toolbar-command sync (perf phase 2.2/2.4). Applies the UI snapshot the engine already bundled with
+    /// the command response — formatting pressed-state, dirty and undo availability — so a toolbar command costs
+    /// ZERO follow-up interop pulls (the previous path fired five sequential round-trips). Navigation (outline)
+    /// is pulled lazily only when the outline panel is open; the content-control popover is selection-driven and
+    /// already kept current by the selection sync, so it is not re-pulled per command. Falls back to the full
+    /// <see cref="SyncCanvasEngineStateAsync"/> when the engine did not return a snapshot.
+    /// </summary>
+    private async Task ApplyCanvasUiStateFastAsync(TmDocumentCanvasEngineHost.CanvasEngineUiState? uiState)
+    {
+        if (_canvasHost is null)
+        {
+            return;
+        }
+
+        if (uiState?.Formatting is null)
+        {
+            await SyncCanvasEngineStateAsync();
+            return;
+        }
+
+        _isDirty = uiState.IsDirty;
+        _canvasCanUndo = uiState.CanUndo;
+        _canvasCanRedo = uiState.CanRedo;
+        ApplyCanvasFormattingState(uiState.Formatting);
+
+        await SyncCanvasNavigationAsync();
+        await RefreshCommandRegistryAsync();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Pulls the document outline from the engine ONLY when the outline panel is showing (perf phase 2.2). The
+    /// outline walk is O(document); skipping it when nothing displays it keeps toolbar commands O(selection).
+    /// </summary>
+    private async Task SyncCanvasNavigationAsync()
+    {
+        if (_canvasHost is null || ActiveSidePanelTab != DocumentSidePanelTab.Outline)
+        {
+            return;
+        }
+
         var navigation = await _canvasHost.GetNavigationStateAsync();
         if (navigation.Outline.Count > 0)
         {
@@ -7880,10 +7939,6 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
                 _activeHeadingBlockId = _documentOutline[0].BlockId;
             }
         }
-
-        await SyncCanvasContentControlPopoverAsync();
-        await RefreshCommandRegistryAsync();
-        StateHasChanged();
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ import { nextGraphemeBoundary, prevGraphemeBoundary } from '../../document-edito
 import { canEditRestrictedSelection } from '../annotations/restricted-editing.mjs';
 import { appendRevision, applyDeletionRevision, createRevision, revisionMark } from '../annotations/track-changes.mjs';
 import { createCanvasRunText } from '../layout/canvas-text-style.mjs';
+import { mergeMarkOverrides } from '../commands/inline-format.mjs';
 
 const EDITABLE_BLOCK_TYPES = new Set(['paragraph', 'heading', 'list', 'quote']);
 
@@ -420,13 +421,30 @@ function createTextRun(block, text, offset, edit) {
         id: uniqueRunId(block, offset),
         type: 'text',
         text,
-        marks: Array.isArray(edit?.marks) ? edit.marks.map(clone) : clone(template?.marks || []),
+        marks: resolveInsertionMarks(template, edit),
         field: null,
         token: null,
         noteReference: null,
         drawing: null,
         preserve: {},
     };
+}
+
+// Resolves the marks for a freshly inserted run. An explicit `edit.marks` (clipboard/programmatic) wins as a
+// full replacement; otherwise the inherited template marks are merged with any pending tri-state overrides
+// (`edit.pendingMarks`) so sticky formatting — including "bold turned OFF at the caret" — is honoured without
+// dropping the run's other inherited marks. With no overrides the run plainly inherits the template.
+function resolveInsertionMarks(template, edit) {
+    if (Array.isArray(edit?.marks)) {
+        return edit.marks.map(clone);
+    }
+
+    const templateMarks = clone(template?.marks || []);
+    if (Array.isArray(edit?.pendingMarks) && edit.pendingMarks.length > 0) {
+        return mergeMarkOverrides(templateMarks, edit.pendingMarks);
+    }
+
+    return templateMarks;
 }
 
 function styleRunForInsertion(block, offset) {

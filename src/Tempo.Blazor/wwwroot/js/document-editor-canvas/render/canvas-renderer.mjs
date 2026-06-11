@@ -448,15 +448,20 @@ function paintImageObject(context, command) {
     const width = Math.max(1, Number(command.width || 0) || 1);
     const height = Math.max(1, Number(command.height || 0) || 1);
     const url = String(command.url || '');
+    const image = url ? resolveCachedImage(context, url) : null;
+    const ready = image?.complete === true && image.naturalWidth > 0;
 
     context.save?.();
-    context.fillStyle = command.fill || 'rgba(226, 232, 240, 0.48)';
-    context.fillRect(x, y, width, height);
-    if (url) {
-        const image = resolveCachedImage(context, url);
-        if (image?.complete && image.naturalWidth > 0) {
-            context.drawImage?.(image, x, y, width, height);
-        }
+    // Rotate/flip the image about its centre (same transform watermarks use) so the bitmap, border and
+    // alt-warning dot all turn together — previously paintImageObject ignored command.rotation entirely.
+    applyObjectTransform(context, { x, y, width, height }, command);
+    if (ready) {
+        // Draw the real bitmap edge-to-edge — no grey fill beneath it (that placeholder is only for the
+        // not-yet-decoded state). The image.onload hook (resolveCachedImage) repaints once the bitmap arrives.
+        context.drawImage?.(image, x, y, width, height);
+    } else {
+        context.fillStyle = command.fill || 'rgba(226, 232, 240, 0.48)';
+        context.fillRect(x, y, width, height);
     }
 
     context.strokeStyle = command.stroke || '#94a3b8';

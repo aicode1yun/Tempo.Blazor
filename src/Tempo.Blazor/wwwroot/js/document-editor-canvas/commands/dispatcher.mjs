@@ -179,6 +179,10 @@ export function createCanvasCommandRuntime(options = {}) {
         : () => ({ enabled: false, author: null });
 
     let formatState = createInlineFormatState();
+    // Caret position where the current sticky (pending) formatting was established. Pending marks persist while
+    // typing advances forward in the same block, but are discarded once the caret navigates elsewhere (Word
+    // behaviour) — see reconcilePendingMarks.
+    let pendingAnchor = null;
     let paragraphState = createParagraphCommandState(options.paragraphState);
     let formatPainterState = createFormatPainterState();
     let canvasViewState = createCanvasViewState(options.viewState);
@@ -520,8 +524,38 @@ export function createCanvasCommandRuntime(options = {}) {
         // Outline + bookmark extraction walks the whole document. The toolbar formatting readback (polled
         // after every typing burst) does NOT need navigation, so callers can opt out to keep it O(selection).
         const includeNavigation = !(options && options.includeNavigation === false);
+        // A toolbar/state poll happens on selection change too — reconcile so a caret that moved away from the
+        // sticky-format anchor clears pending before the pressed-state is read.
+        reconcilePendingMarks();
         const inline = queryInlineFormattingState(getModel(), getSelection(), formatState);
         const paragraph = queryParagraphCommandState(getModel(), getSelection(), paragraphState);
+
+        // Fast path for the toolbar UI snapshot (buildUiState / getFormattingStateJson): it only consumes the
+        // inline + paragraph + image + view groups, so skip the table/field/math/forms/format-painter/symbol/
+        // search/navigation queries — each of which walks the model — that the full state would also compute
+        // (perf phase 2.3). This is the per-toolbar-command hot path.
+        if (options && options.formattingOnly === true) {
+            const imageOnly = queryImageCommandState(getModel(), getSelection());
+            const canvasViewOnly = queryCanvasViewCommandState(canvasViewState);
+            return {
+                ...inline,
+                commands: {
+                    ...(inline.commands || {}),
+                    ...(paragraph.commands || {}),
+                    ...(imageOnly.commands || {}),
+                    ...(canvasViewOnly.commands || {}),
+                },
+                paragraph: paragraph.paragraph,
+                image: imageOnly.image,
+                view: {
+                    ...(paragraph.view || {}),
+                    ...(canvasViewOnly.view || {}),
+                },
+                revision,
+                lastCommand,
+            };
+        }
+
         const table = queryTableCommandState(getModel(), getSelection());
         const image = queryImageCommandState(getModel(), getSelection());
         const fields = queryFieldCommandState(getModel(), getSelection());
@@ -572,6 +606,39 @@ export function createCanvasCommandRuntime(options = {}) {
         return marksForInsertion(formatState);
     }
 
+    // Raw tri-state pending overrides (add + remove entries) for the input pipeline to merge onto the inherited
+    // run marks at the insertion point. Reconciles first so stale pending from a different caret is dropped.
+    function getPendingMarkOverrides() {
+        reconcilePendingMarks();
+        return (formatState.pendingMarks || []).map(mark => clone(mark));
+    }
+
+    // Discards sticky pending formatting when the caret has navigated away from where it was set. Typing
+    // forward in the same block keeps it (and advances the anchor); a jump to another block or backwards
+    // clears it. Cheap, so it can run on every pending read and command/state query.
+    function reconcilePendingMarks() {
+        const pending = formatState.pendingMarks || [];
+        if (pending.length === 0) {
+            pendingAnchor = null;
+            return;
+        }
+
+        const focus = getSelection()?.focus;
+        if (!pendingAnchor || !focus) {
+            return;
+        }
+
+        const sameBlock = String(focus.blockId || '') === String(pendingAnchor.blockId || '');
+        const forward = sameBlock && Number(focus.offset || 0) >= Number(pendingAnchor.offset || 0);
+        if (!forward) {
+            formatState = createInlineFormatState();
+            pendingAnchor = null;
+            return;
+        }
+
+        pendingAnchor = { blockId: String(focus.blockId || ''), offset: Number(focus.offset || 0) };
+    }
+
     function getViewState() {
         return queryCommandState().view || {};
     }
@@ -584,6 +651,12 @@ export function createCanvasCommandRuntime(options = {}) {
         const before = captureSnapshot();
         const result = applyInlineFormatCommand(getModel(), getSelection(), commandId, argument, formatState);
         formatState = result.state;
+        // Anchor the sticky formatting to the caret it was set at so it survives forward typing but is dropped
+        // once the caret navigates away (reconcilePendingMarks).
+        const pendingFocus = getSelection()?.focus;
+        pendingAnchor = (formatState.pendingMarks || []).length > 0 && pendingFocus
+            ? { blockId: String(pendingFocus.blockId || ''), offset: Number(pendingFocus.offset || 0) }
+            : null;
         revision += 1;
         lastCommand = {
             id: normalizeCommandId(commandId),
@@ -605,7 +678,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 formatState,
                 paragraphState: createParagraphCommandState(paragraphState),
             };
-            history?.push?.({
+            pushHistory({
                 id: `canvas-format-${revision}`,
                 kind: 'inline-format',
                 commandId: normalizeCommandId(commandId),
@@ -651,7 +724,7 @@ export function createCanvasCommandRuntime(options = {}) {
                     formatState: createInlineFormatState(formatState),
                     paragraphState,
                 };
-                history?.push?.({
+                pushHistory({
                     id: `canvas-paragraph-${revision}`,
                     kind: 'paragraph-format',
                     commandId: normalizeCommandId(commandId),
@@ -744,7 +817,7 @@ export function createCanvasCommandRuntime(options = {}) {
                     formatState: createInlineFormatState(formatState),
                     paragraphState: createParagraphCommandState(paragraphState),
                 };
-                history?.push?.({
+                pushHistory({
                     id: `canvas-table-${revision}`,
                     kind: 'table',
                     commandId: normalizeCommandId(commandId),
@@ -795,7 +868,7 @@ export function createCanvasCommandRuntime(options = {}) {
                     formatState: createInlineFormatState(formatState),
                     paragraphState: createParagraphCommandState(paragraphState),
                 };
-                history?.push?.({
+                pushHistory({
                     id: `canvas-image-${revision}`,
                     kind: 'image',
                     commandId: normalizeCommandId(commandId),
@@ -846,7 +919,7 @@ export function createCanvasCommandRuntime(options = {}) {
                     formatState: createInlineFormatState(formatState),
                     paragraphState: createParagraphCommandState(paragraphState),
                 };
-                history?.push?.({
+                pushHistory({
                     id: `canvas-fields-${revision}`,
                     kind: 'fields-notes-page',
                     commandId: normalizeCommandId(commandId),
@@ -897,7 +970,7 @@ export function createCanvasCommandRuntime(options = {}) {
                     formatState: createInlineFormatState(formatState),
                     paragraphState: createParagraphCommandState(paragraphState),
                 };
-                history?.push?.({
+                pushHistory({
                     id: `canvas-math-${revision}`,
                     kind: 'math-equation',
                     commandId: normalizeCommandId(commandId),
@@ -952,7 +1025,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 paragraphState: createParagraphCommandState(paragraphState),
             };
             if (result.changed) {
-                history?.push?.({
+                pushHistory({
                     id: `canvas-content-control-${revision}`,
                     kind: 'content-control-form-fill',
                     commandId: normalizeCommandId(commandId),
@@ -1009,7 +1082,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 paragraphState: createParagraphCommandState(paragraphState),
                 formatPainterState: createFormatPainterState(formatPainterState),
             };
-            history?.push?.({
+            pushHistory({
                 id: `canvas-format-painter-${revision}`,
                 kind: 'format-painter',
                 commandId: normalizeCommandId(commandId),
@@ -1057,7 +1130,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 paragraphState: createParagraphCommandState(paragraphState),
                 formatPainterState: createFormatPainterState(formatPainterState),
             };
-            history?.push?.({
+            pushHistory({
                 id: `canvas-symbol-${revision}`,
                 kind: 'insert-symbol',
                 commandId: normalizeCommandId(commandId),
@@ -1168,7 +1241,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 formatState: createInlineFormatState(formatState),
                 paragraphState: createParagraphCommandState(paragraphState),
             };
-            history?.push?.({
+            pushHistory({
                 id: `canvas-spellcheck-${revision}`,
                 kind: 'spellcheck-replace',
                 commandId: 'replacerange',
@@ -1274,7 +1347,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 formatState: createInlineFormatState(formatState),
                 paragraphState: createParagraphCommandState(paragraphState),
             };
-            history?.push?.({
+            pushHistory({
                 id: `canvas-find-replace-${revision}`,
                 kind: 'find-replace',
                 commandId: 'replacecurrent',
@@ -1313,7 +1386,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 formatState: createInlineFormatState(formatState),
                 paragraphState: createParagraphCommandState(paragraphState),
             };
-            history?.push?.({
+            pushHistory({
                 id: `canvas-find-replace-all-${revision}`,
                 kind: 'find-replace',
                 commandId: 'replaceall',
@@ -1345,7 +1418,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 formatState: createInlineFormatState(formatState),
                 paragraphState: createParagraphCommandState(paragraphState),
             };
-            history?.push?.({
+            pushHistory({
                 id: `canvas-toc-${revision}`,
                 kind: 'table-of-contents',
                 commandId: normalizeCommandId(commandId),
@@ -1426,7 +1499,7 @@ export function createCanvasCommandRuntime(options = {}) {
             formatState: createInlineFormatState(formatState),
             paragraphState: createParagraphCommandState(paragraphState),
         };
-        history?.push?.({
+        pushHistory({
             id: `canvas-bookmark-${revision}`,
             kind: 'bookmark',
             commandId: 'insertbookmark',
@@ -1506,13 +1579,23 @@ export function createCanvasCommandRuntime(options = {}) {
     }
 
     function captureSnapshot() {
+        // The model is referenced, not cloned: the canvas command pipeline never mutates an existing model in
+        // place (every mutator clones first) and the live model is only ever swapped out by setModel, so this
+        // reference is a stable immutable "before" snapshot. History persists it via pushHistory (which opts out
+        // of re-cloning), so the previous per-command full clone here was pure waste (perf phase 2.3).
         return {
-            model: clone(getModel()),
+            model: getModel(),
             selection: clone(getSelection()),
             formatState: createInlineFormatState(formatState),
             paragraphState: createParagraphCommandState(paragraphState),
             formatPainterState: createFormatPainterState(formatPainterState),
         };
+    }
+
+    // Pushes a transaction whose before/after snapshots are already immutable (see captureSnapshot + the fresh
+    // result.model each command produces), so history need not defensively re-clone them.
+    function pushHistory(transaction) {
+        return history && history.push ? history.push(transaction, { cloneSnapshots: false }) : undefined;
     }
 
     return {
@@ -1529,6 +1612,7 @@ export function createCanvasCommandRuntime(options = {}) {
         queryCommand,
         queryCommandState,
         getPendingMarks,
+        getPendingMarkOverrides,
         getSearchState,
         getViewState,
         openLinkAtPosition(position) {

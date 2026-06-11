@@ -16,7 +16,7 @@ export function createCanvasInputController(options = {}) {
     const commit = requiredFunction(options.commit, 'Canvas input controller requires commit.');
     const afterCommit = typeof options.afterCommit === 'function' ? options.afterCommit : null;
     const autocorrectOptions = normalizeAutocorrectOptions(options.autocorrect || options.autocorrectOptions || {});
-    const getPendingMarks = typeof options.getPendingMarks === 'function' ? options.getPendingMarks : () => [];
+    const getPendingMarkOverrides = typeof options.getPendingMarkOverrides === 'function' ? options.getPendingMarkOverrides : () => [];
     const getTrackChangesState = typeof options.getTrackChangesState === 'function'
         ? options.getTrackChangesState
         : () => ({ enabled: false, author: null });
@@ -665,9 +665,12 @@ export function createCanvasInputController(options = {}) {
             return next;
         }
 
-        const pendingMarks = getPendingMarks();
+        // Forward the tri-state pending overrides (add + remove) so the inserted run MERGES them onto its
+        // inherited marks (createTextRun/resolveInsertionMarks) instead of replacing them — this is what lets
+        // "bold OFF at the caret" suppress inherited bold without dropping the run's other marks.
+        const pendingMarks = getPendingMarkOverrides();
         return Array.isArray(pendingMarks) && pendingMarks.length > 0
-            ? { ...next, marks: pendingMarks }
+            ? { ...next, pendingMarks }
             : next;
     }
 

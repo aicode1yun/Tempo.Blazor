@@ -105,6 +105,11 @@ export function pageSignature(displayList, pageIndex) {
             command.text || '',
             command.fill || '',
             command.stroke || '',
+            // Rotation/flip do not change the axis-aligned x/y/width/height, so without them a rotate (or flip)
+            // yielded an identical signature and the page was never repainted (the bitmap stayed upright).
+            Math.round(Number(command.rotation || 0) * 100) / 100,
+            command.flipHorizontal === true ? 'fh' : '',
+            command.flipVertical === true ? 'fv' : '',
         ].join(':'))
         .join('|');
 }

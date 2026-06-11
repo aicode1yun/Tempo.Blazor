@@ -241,9 +241,17 @@ export function focus(handle) {
 export function execCommand(handle, commandId, argumentJson = null) {
     const state = getInstance(handle);
     const argument = parseJson(argumentJson, null);
-    const result = state.engine.execCommand(commandId, argument);
+    const result = state.engine.execCommand(commandId, argument) || {};
     state.dirty = isDirtyForState(state);
     notifyChanged(state);
+    // Bundle the primitives-only UI snapshot (formatting pressed-state, dirty, undo availability, page count)
+    // INTO the command response so the .NET toolbar can update from this single round-trip instead of firing
+    // a follow-up batch of interop pulls (getFormattingStateJson/getUndoStateJson/isDirty/...). Cheap: it is
+    // the same O(selection) readback the pull did. (Perf phase 2.2.)
+    if (result && typeof result === 'object') {
+        result.uiState = buildUiState(state);
+    }
+
     return JSON.stringify(result);
 }
 
@@ -290,7 +298,7 @@ function readFormattingState(state) {
     // queryCommandState({ includeNavigation: false }) inspects only the current selection (no outline /
     // bookmark walk over the whole document) — far cheaper than the full engine snapshot.
     const formatting = (typeof state.engine.commandRuntime?.queryCommandState === 'function'
-        ? state.engine.commandRuntime.queryCommandState({ includeNavigation: false })
+        ? state.engine.commandRuntime.queryCommandState({ includeNavigation: false, formattingOnly: true })
         : state.engine.getSnapshot().formatting) || {};
     return buildFormattingState(formatting);
 }

@@ -7,6 +7,9 @@ export const OBJECT_CONNECTOR_ENDPOINT_HANDLE_NAMES = Object.freeze([
     OBJECT_CONNECTOR_END_HANDLE_NAME,
 ]);
 const HANDLE_SIZE = 8;
+const HANDLE_HIT_PADDING = 2;
+// Edge-direction angle (degrees) of each resize handle, used to rotate the resize cursor with the object.
+const RESIZE_HANDLE_ANGLES = Object.freeze({ e: 0, ne: 45, n: 90, nw: 135, w: 180, sw: 225, s: 270, se: 315 });
 const ROTATE_HANDLE_OFFSET = 24;
 const CONNECTOR_HIT_TOLERANCE = 7;
 
@@ -31,7 +34,10 @@ export function imageObjectAtPoint(layout, pageIndex, x, y) {
 
     for (const object of objects) {
         const rect = object.rect || {};
-        if (pointInRect(x, y, rect)) {
+        // Hit-test in the object's LOCAL (un-rotated) frame: inverse-rotate the pointer about the object centre
+        // so a rotated image is grabbable on the bitmap the user actually sees, not its axis-aligned bounds.
+        const local = inverseRotatePoint(x, y, rect, objectRotation(object));
+        if (pointInRect(local.x, local.y, rect)) {
             return objectSelectionInfo(object);
         }
     }
@@ -45,8 +51,13 @@ export function objectResizeHandleAt(layout, selection, pageIndex, x, y) {
         return null;
     }
 
+    // Handles are laid out axis-aligned around the object rect, then rotated for display; inverse-rotate the
+    // pointer into that local frame before testing so the rotated handles are grabbable where they appear.
+    const local = inverseRotatePoint(x, y, selected.rect || {}, objectRotation(selected));
     for (const handle of objectInteractionHandleRects(selected)) {
-        if (pointInRect(x, y, handle.rect)) {
+        // Hit-test with a small padding so the 8px visual handles are comfortable to grab (~12px target)
+        // without enlarging how they paint.
+        if (pointInRect(local.x, local.y, padRect(handle.rect, HANDLE_HIT_PADDING))) {
             return {
                 ...objectSelectionInfo(selected),
                 handle: handle.name,
@@ -56,6 +67,44 @@ export function objectResizeHandleAt(layout, selection, pageIndex, x, y) {
     }
 
     return null;
+}
+
+// Maps an object handle to the cursor that signals its drag affordance (resize direction, rotate, connector
+// endpoint, or move over the body). Pure + exported so it is unit-testable and shared by the hover + drag
+// cursor feedback in the selection controller.
+export function cursorForObjectHandle(handle, rotation = 0) {
+    const name = String(handle || '');
+    if (name === OBJECT_ROTATE_HANDLE_NAME) {
+        return 'grab';
+    }
+
+    if (name === OBJECT_CONNECTOR_START_HANDLE_NAME || name === OBJECT_CONNECTOR_END_HANDLE_NAME) {
+        return 'crosshair';
+    }
+
+    // Resize handles point along the edge they sit on; when the object is rotated the edge direction rotates
+    // with it, so the bidirectional resize cursor is the handle's base angle + the object rotation, snapped to
+    // 45°. (At rotation 0 this reproduces the plain axis-aligned mapping.)
+    const baseAngle = RESIZE_HANDLE_ANGLES[name];
+    if (baseAngle === undefined) {
+        return 'move';
+    }
+
+    let angle = (baseAngle + (Number(rotation) || 0)) % 180;
+    if (angle < 0) {
+        angle += 180;
+    }
+
+    switch (Math.round(angle / 45) * 45 % 180) {
+        case 45:
+            return 'nesw-resize';
+        case 90:
+            return 'ns-resize';
+        case 135:
+            return 'nwse-resize';
+        default:
+            return 'ew-resize';
+    }
 }
 
 export function objectHandleRects(objectLayout) {
@@ -352,4 +401,37 @@ function pointInRect(x, y, rect) {
     const width = Math.max(1, Number(rect?.width || 0) || 1);
     const height = Math.max(1, Number(rect?.height || 0) || 1);
     return x >= left && x <= left + width && y >= top && y <= top + height;
+}
+
+function objectRotation(objectLayout) {
+    return Number(objectLayout?.object?.rotation ?? objectLayout?.rotation ?? 0) || 0;
+}
+
+// Maps a page-space point into an object's LOCAL (un-rotated) frame by rotating it about the object centre by
+// the inverse of the object's rotation. Used so hit-testing a rotated object/handle works against the
+// axis-aligned rects the object is laid out with.
+function inverseRotatePoint(x, y, rect, degrees) {
+    const rotation = Number(degrees) || 0;
+    if (Math.abs(rotation) < 0.001) {
+        return { x, y };
+    }
+
+    const cx = (Number(rect?.x || 0) || 0) + (Number(rect?.width || 0) || 0) / 2;
+    const cy = (Number(rect?.y || 0) || 0) + (Number(rect?.height || 0) || 0) / 2;
+    const rad = -rotation * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const dx = (Number(x) || 0) - cx;
+    const dy = (Number(y) || 0) - cy;
+    return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+}
+
+function padRect(rect, padding) {
+    const pad = Number(padding) || 0;
+    return {
+        x: (Number(rect?.x || 0) || 0) - pad,
+        y: (Number(rect?.y || 0) || 0) - pad,
+        width: (Math.max(1, Number(rect?.width || 0) || 1)) + pad * 2,
+        height: (Math.max(1, Number(rect?.height || 0) || 1)) + pad * 2,
+    };
 }

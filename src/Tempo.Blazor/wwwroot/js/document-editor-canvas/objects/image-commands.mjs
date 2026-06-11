@@ -81,27 +81,27 @@ export function applyImageCommand(model, selection, commandId, payload = null) {
     ensureBody(working);
 
     if (command === 'insertImage') {
-        return insertImage(working, selection, payload);
+        return finalizeImageResult(insertImage(working, selection, payload));
     }
 
     if (command === 'insertDrawing') {
-        return insertDrawing(working, selection, commandId, payload);
+        return finalizeImageResult(insertDrawing(working, selection, commandId, payload));
     }
 
     if (command === 'groupObjects') {
-        return groupObjects(working, selection, payload);
+        return finalizeImageResult(groupObjects(working, selection, payload));
     }
 
     if (command === 'ungroupObjects') {
-        return ungroupObjects(working, selection, payload);
+        return finalizeImageResult(ungroupObjects(working, selection, payload));
     }
 
     if (command === 'alignObjects') {
-        return alignObjects(working, selection, payload);
+        return finalizeImageResult(alignObjects(working, selection, payload));
     }
 
     if (command === 'distributeObjects') {
-        return distributeObjects(working, selection, payload);
+        return finalizeImageResult(distributeObjects(working, selection, payload));
     }
 
     const target = findImageTarget(working, payload, selection);
@@ -156,6 +156,7 @@ export function applyImageCommand(model, selection, commandId, payload = null) {
     }
 
     working.version = Number(working.version || 0) + 1;
+    synchronizeSectionsWithBody(working);
     return {
         changed: true,
         model: working,
@@ -165,6 +166,32 @@ export function applyImageCommand(model, selection, commandId, payload = null) {
         removedBlockIds: result.removedBlockIds || [],
         object: result.object || objectSummary(target),
     };
+}
+
+// Rebuilds each section's block list from the body so the section flows the layout reads stay in sync with an
+// image/drawing mutation. Without this an object transform (move/resize/rotate) lands in body.blocks but the
+// layout — which iterates sections[].blocks — keeps painting the pre-edit geometry (the section blocks are a
+// separate clone after the model copy). Mirrors the same helper used by the text/table/clipboard commands.
+function synchronizeSectionsWithBody(model) {
+    if (!model || !Array.isArray(model.sections)) {
+        return;
+    }
+
+    const blocks = Array.isArray(model.body?.blocks) ? model.body.blocks : [];
+    for (const section of model.sections) {
+        const sectionId = String(section?.id || '');
+        section.blocks = blocks.filter(block => String(block.sectionId || '') === sectionId);
+    }
+}
+
+// Syncs section flows for the early-return image commands (insert/group/align/...) that produce their own
+// result object, so their body mutations are reflected in the layout's section blocks too.
+function finalizeImageResult(result) {
+    if (result && result.changed === true && result.model) {
+        synchronizeSectionsWithBody(result.model);
+    }
+
+    return result;
 }
 
 export function queryImageCommandState(model, selection) {
@@ -372,12 +399,19 @@ function updateImageLayout(target, payload) {
     const nextHeight = Number(payload?.height ?? payload?.Height);
     const dx = Number(payload?.dx ?? payload?.Dx ?? 0) || 0;
     const dy = Number(payload?.dy ?? payload?.Dy ?? 0) || 0;
+    const hasDx = payload?.dx != null || payload?.Dx != null;
+    const hasDy = payload?.dy != null || payload?.Dy != null;
     const currentWidth = Number(current.transform.width || source.size?.width || 220) || 220;
     const currentHeight = Number(current.transform.height || source.size?.height || 124) || 124;
     const width = Math.max(24, Number.isFinite(nextWidth) ? nextWidth : currentWidth);
     const height = Math.max(24, Number.isFinite(nextHeight) ? nextHeight : currentHeight);
     const x = Number(payload?.x ?? payload?.X);
     const y = Number(payload?.y ?? payload?.Y);
+    // x/y resolution preserving absence: an explicit move wins; a keyboard delta nudges from the current
+    // offset; otherwise the current value (possibly absent) is kept so a rotation/resize does not pin an
+    // alignment-positioned object to 0,0.
+    const nextX = Number.isFinite(x) ? x : (hasDx ? (current.position.x ?? 0) + dx : current.position.x);
+    const nextY = Number.isFinite(y) ? y : (hasDy ? (current.position.y ?? 0) + dy : current.position.y);
     const wrapMode = payload?.wrapMode ?? payload?.WrapMode ?? current.wrap.mode;
     const zIndex = payload?.zIndex ?? payload?.ZIndex ?? current.stacking.zIndex;
     const requestedRotation = Number(payload?.rotation ?? payload?.Rotation);
@@ -406,13 +440,16 @@ function updateImageLayout(target, payload) {
         width,
         height,
         wrapMode,
-        x: Number.isFinite(x) ? x : current.position.x + dx,
-        y: Number.isFinite(y) ? y : current.position.y + dy,
+        x: nextX,
+        y: nextY,
         zIndex,
         rotation,
         flipHorizontal,
         flipVertical,
-        horizontalAlignment,
+        horizontalRelativeTo: current.position.horizontalRelativeTo,
+        verticalRelativeTo: current.position.verticalRelativeTo,
+        horizontalAlignment: horizontalAlignment ?? current.position.horizontalAlignment,
+        verticalAlignment: current.position.verticalAlignment,
         lockAspectRatio: payload?.lockAspectRatio ?? payload?.LockAspectRatio ?? current.transform.lockAspectRatio,
         distanceLeft: payload?.distanceLeft ?? payload?.DistanceLeft ?? current.wrap.distanceLeft,
         distanceRight: payload?.distanceRight ?? payload?.DistanceRight ?? current.wrap.distanceRight,
@@ -1276,6 +1313,26 @@ function findImageTarget(model, payload, selection) {
 
 function createLayoutPayload(options) {
     const mode = normalizeWrapModeName(options.wrapMode);
+    // Reference frame + alignment default to column/paragraph/Left/centre ONLY when the caller has nothing to
+    // preserve (a fresh insert). updateImageLayout passes the object's current values so a rebuild keeps them.
+    const position = {
+        horizontalRelativeTo: options.horizontalRelativeTo ?? 2,
+        verticalRelativeTo: options.verticalRelativeTo ?? 3,
+        horizontalAlignment: alignmentValue(options.horizontalAlignment ?? 'Left'),
+        verticalAlignment: options.verticalAlignment ?? 1,
+    };
+    // Only materialise an explicit x/y when one is actually provided — an alignment-positioned object must keep
+    // NO x/y so the layout resolves it from its alignment, not from a spurious 0 offset.
+    const px = numberOrNull(options.x);
+    const py = numberOrNull(options.y);
+    if (px != null) {
+        position.x = px;
+    }
+
+    if (py != null) {
+        position.y = py;
+    }
+
     return {
         kind: mode === 'Inline' ? 0 : 1,
         anchor: {
@@ -1286,14 +1343,7 @@ function createLayoutPayload(options) {
             fixedOnPage: options.fixedOnPage === true,
             lockAnchor: options.lockAnchor === true,
         },
-        position: {
-            horizontalRelativeTo: 2,
-            verticalRelativeTo: 3,
-            horizontalAlignment: alignmentValue(options.horizontalAlignment ?? 'Left'),
-            verticalAlignment: 1,
-            x: Number(options.x || 0) || 0,
-            y: Number(options.y || 0) || 0,
-        },
+        position,
         wrap: {
             mode: wrapModeValue(mode),
             side: 0,
@@ -1336,8 +1386,15 @@ function normalizeLayout(layout) {
             flipVertical: boolValue(transform.flip?.vertical ?? transform.Flip?.Vertical ?? transform.flipV ?? transform.FlipV, false),
         },
         position: {
-            x: Number(position.x ?? position.X ?? 0) || 0,
-            y: Number(position.y ?? position.Y ?? 0) || 0,
+            // x/y preserve ABSENCE (null) so an alignment-positioned object is not silently pinned to 0,0 by a
+            // rotation/resize that does not move it. The reference frame + alignment are read so they survive a
+            // layout rebuild instead of being reset to the column/paragraph/Left defaults.
+            x: numberOrNull(position.x ?? position.X),
+            y: numberOrNull(position.y ?? position.Y),
+            horizontalRelativeTo: position.horizontalRelativeTo ?? position.HorizontalRelativeTo ?? null,
+            verticalRelativeTo: position.verticalRelativeTo ?? position.VerticalRelativeTo ?? null,
+            horizontalAlignment: position.horizontalAlignment ?? position.HorizontalAlignment ?? null,
+            verticalAlignment: position.verticalAlignment ?? position.VerticalAlignment ?? null,
         },
         wrap: {
             mode: wrap.mode ?? wrap.Mode ?? 'Inline',
@@ -1701,6 +1758,17 @@ function normalizeRotation(value) {
     }
 
     return Math.round(normalized * 1000) / 1000;
+}
+
+// Coerces a value to a finite number, or null when it is absent/non-numeric — used to preserve the ABSENCE of
+// an explicit x/y (an alignment-positioned object) through a layout rebuild rather than coercing it to 0.
+function numberOrNull(value) {
+    if (value == null) {
+        return null;
+    }
+
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
 }
 
 function boolValue(value, fallback = false) {
