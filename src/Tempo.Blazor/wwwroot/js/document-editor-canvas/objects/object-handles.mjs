@@ -283,6 +283,18 @@ function selectedImageBlock(layout, selection) {
         || (blockId && String(block?.blockId || '') === blockId)) || null;
 }
 
+// Resolve the object-selection info for an object by id (test/programmatic seam — the same shape the
+// pointer-down path builds via imageObjectAtPoint, so the engine can select an object without a synthetic
+// click, which is unreliable on the full editor).
+export function imageObjectById(layout, objectId) {
+    const id = String(objectId || '');
+    if (!id) return null;
+    const object = imageBlocks(layout).find(block =>
+        String(block?.objectId || block?.object?.objectId || '') === id
+        || String(block?.blockId || '') === id);
+    return object ? objectSelectionInfo(object) : null;
+}
+
 function imageBlocks(layout) {
     return (layout?.blocks || []).filter(block => block?.type === 'image' && block?.rect);
 }

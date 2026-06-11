@@ -71,11 +71,19 @@ export function caretStopAt(layout, position) {
     const blockId = pos.blockId;
     const offset = Number(pos.offset || 0) || 0;
     const affinity = pos.affinity || 'after';
+    const lineId = pos.lineId || null;
     const matches = collectCaretStops(layout).filter(function (stop) {
         return stop.blockId === blockId && (Number(stop.offset || 0) || 0) === offset;
     });
     if (!matches.length) return null;
     if (matches.length === 1) return matches[0];
+    // At a soft-wrap boundary the same offset is the END of line N AND the START of line N+1, both with
+    // affinity 'after' — only the lineId distinguishes them. Honour it first so Home/clicks land on the
+    // requested visual line instead of the previous line's end (B1).
+    if (lineId) {
+        const byLine = matches.find(function (stop) { return stop.lineId === lineId; });
+        if (byLine) return byLine;
+    }
     // Run-boundary duplicate (before/after affinity): pick by affinity, else first.
     const byAffinity = matches.find(function (stop) { return stop.affinity === affinity; });
     return byAffinity || matches[0];

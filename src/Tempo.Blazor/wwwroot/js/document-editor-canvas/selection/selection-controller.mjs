@@ -234,6 +234,17 @@ export function createCanvasSelectionController(options = {}) {
             return;
         }
 
+        // B6: a header/footer is entered ONLY by a double-click in its band (Word parity). A single click in
+        // the band while editing the body is ignored so the body caret is not disturbed; clicking the body
+        // while editing a header/footer falls through normally and exits back to the body.
+        const caretInHeaderFooter = selection?.focus
+            ? editableRegionForBlock(model, selection.focus.blockId).kind === 'headerFooter'
+            : false;
+        const hitInHeaderFooter = editableRegionForBlock(model, hit.blockId).kind === 'headerFooter';
+        if (hitInHeaderFooter && !caretInHeaderFooter && (Number(event.detail) || 0) < 2) {
+            return;
+        }
+
         const gesture = classifyPointerGesture(event, { hasAnchor: !!selection?.anchor });
         let nextSelection;
         if (gesture === 'word') {
@@ -536,6 +547,114 @@ export function createCanvasSelectionController(options = {}) {
         }
     }
 
+    // B6: while a header/footer is being edited, dim the page body and frame the active slot with a dashed
+    // border + label (Word parity) so it is clear which region the caret is editing.
+    function renderHeaderFooterEditOverlay() {
+        if (!selection?.focus) {
+            return;
+        }
+
+        const region = editableRegionForBlock(model, selection.focus.blockId);
+        if (region.kind !== 'headerFooter') {
+            return;
+        }
+
+        const caret = caretRectForPosition(layout, selection.focus);
+        if (!caret?.rect) {
+            return;
+        }
+
+        const pageIndex = Number(caret.pageIndex || 0) || 0;
+        const overlay = ensureDomOverlay(pageIndex);
+        if (!overlay) {
+            return;
+        }
+
+        const scale = pageScale(pageIndex);
+        const page = canvasStack.pages.get(String(pageIndex));
+        const body = page?.layout?.body || null;
+        const pageWidth = Number(page?.layout?.width || 0) || (body ? body.x * 2 + body.width : caret.rect.x + 200);
+        const bandX = body ? body.x : Math.max(0, caret.rect.x - 8);
+        const bandWidth = body ? body.width : Math.max(120, pageWidth - 2 * bandX);
+
+        // Dim the body content (the area the caret is NOT editing).
+        if (body) {
+            const dim = doc.createElement('div');
+            dim.setAttribute('data-canvas-hf-dim', 'true');
+            dim.setAttribute('aria-hidden', 'true');
+            dim.style.position = 'absolute';
+            assignScaledRectStyle(dim, body, scale);
+            dim.style.background = 'rgba(100, 116, 139, 0.16)';
+            dim.style.pointerEvents = 'none';
+            overlay.appendChild(dim);
+        }
+
+        // Dashed frame around the active header/footer slot line.
+        const band = {
+            x: bandX,
+            y: Math.max(0, (Number(caret.rect.y) || 0) - 4),
+            width: bandWidth,
+            height: Math.max(18, Number(caret.rect.height) || 16) + 8,
+        };
+        const frame = doc.createElement('div');
+        frame.setAttribute('data-canvas-hf-frame', region.region);
+        frame.setAttribute('aria-hidden', 'true');
+        frame.style.position = 'absolute';
+        assignScaledRectStyle(frame, band, scale);
+        frame.style.border = '1px dashed rgba(37, 99, 235, 0.85)';
+        frame.style.borderRadius = '2px';
+        frame.style.pointerEvents = 'none';
+        overlay.appendChild(frame);
+
+        // Slot label badge above the frame.
+        const label = doc.createElement('div');
+        label.setAttribute('data-testid', 'document-canvas-hf-label');
+        label.setAttribute('data-canvas-hf-region', region.region);
+        label.setAttribute('aria-hidden', 'true');
+        label.style.position = 'absolute';
+        label.style.left = `${band.x * scale}px`;
+        label.style.top = `${Math.max(0, band.y - 15) * scale}px`;
+        label.style.font = '600 10px Aptos, Arial, sans-serif';
+        label.style.letterSpacing = '0.04em';
+        label.style.textTransform = 'uppercase';
+        label.style.color = '#2563eb';
+        label.style.background = 'rgba(255, 255, 255, 0.92)';
+        label.style.padding = '1px 5px';
+        label.style.borderRadius = '3px';
+        label.style.pointerEvents = 'none';
+        label.textContent = region.region === 'Footer' ? 'Footer' : 'Header';
+        overlay.appendChild(label);
+    }
+
+    // B6: place the caret at the start of the first body block (exit header/footer editing).
+    function exitHeaderFooterToBody() {
+        const block = (model?.body?.blocks || [])[0];
+        if (!block?.id) {
+            return false;
+        }
+
+        const pos = { blockId: String(block.id), offset: 0 };
+        setSelection(createSelection(pos, pos));
+        inputBridge?.focus?.();
+        return true;
+    }
+
+    // B6: place the caret in the first header/footer block of the given type ('Header' | 'Footer').
+    function enterHeaderFooter(type) {
+        const target = normalizeHeaderFooterType(type);
+        const headerFooter = (Array.isArray(model?.headersFooters) ? model.headersFooters : [])
+            .find(item => normalizeHeaderFooterType(item?.type ?? item?.Type) === target);
+        const block = (headerFooter?.blocks || headerFooter?.Blocks || [])[0];
+        if (!block?.id && !block?.Id) {
+            return false;
+        }
+
+        const pos = { blockId: String(block.id || block.Id), offset: 0 };
+        setSelection(createSelection(pos, pos));
+        inputBridge?.focus?.();
+        return true;
+    }
+
     function handleKeyDown(event) {
         if (!layout || !selection) {
             return;
@@ -546,6 +665,15 @@ export function createCanvasSelectionController(options = {}) {
         }
 
         if (selection?.math && handleMathKeyDown(event)) {
+            return;
+        }
+
+        // B6: Escape exits header/footer editing back to the body (Word parity).
+        if (event.key === 'Escape'
+            && selection?.focus
+            && editableRegionForBlock(model, selection.focus.blockId).kind === 'headerFooter'
+            && exitHeaderFooterToBody()) {
+            event.preventDefault?.();
             return;
         }
 
@@ -885,6 +1013,8 @@ export function createCanvasSelectionController(options = {}) {
                 appendCaret(rect.pageIndex, rect.rect);
             }
         }
+
+        renderHeaderFooterEditOverlay();
 
         if (mathVisual) {
             for (const item of mathVisual.selectionRects) {
@@ -1931,6 +2061,8 @@ export function createCanvasSelectionController(options = {}) {
         update,
         destroy,
         setSelection,
+        enterHeaderFooter,
+        exitHeaderFooterToBody,
         setCompositionRange(range) {
             compositionRange = range ? normalizeSelection(range) : null;
             renderOverlay();
@@ -1953,10 +2085,15 @@ export function createCanvasSelectionController(options = {}) {
                 : [];
             const boundingRect = boundingRectForSelectionRects(rects);
             const tableCell = selection ? findTableCellByBlockId(model, selection.focus.blockId) : null;
+            // B6: the editable region of the caret (body / header / footer) so the host can light up the
+            // Header & Footer contextual tab + enable field commands when editing a header/footer.
+            const editRegion = selection ? editableRegionForBlock(model, selection.focus.blockId) : { kind: 'body' };
             return {
                 isCollapsed: collapsed,
                 anchor: selection?.anchor || null,
                 focus: selection?.focus || null,
+                region: editRegion.kind === 'headerFooter' ? editRegion.region : 'Body',
+                headerFooterScope: editRegion.kind === 'headerFooter' ? (editRegion.scope || '') : '',
                 pageIndex: caret?.pageIndex ?? rects[0]?.pageIndex ?? 0,
                 caretRect: caret?.rect || null,
                 selectionRectCount: rects.length,
@@ -2414,7 +2551,7 @@ function allEditableBlocks(model) {
     return blocks;
 }
 
-function editableRegionForBlock(model, blockId) {
+export function editableRegionForBlock(model, blockId) {
     const target = String(blockId || '');
     for (const headerFooter of Array.isArray(model?.headersFooters) ? model.headersFooters : []) {
         if ((headerFooter?.blocks || []).some(block => String(block?.id || '') === target)) {
@@ -2493,10 +2630,18 @@ function normalizeSelection(selection) {
 }
 
 function clonePosition(position) {
-    return {
+    const cloned = {
         blockId: String(position?.blockId || ''),
         offset: Math.max(0, Number(position?.offset || 0) || 0),
     };
+    // Preserve the lineId at a soft-wrap boundary so the rendered caret resolves to the intended visual line
+    // (a boundary offset is shared by the previous line's end and the next line's start — B1). Carried by
+    // clicks (hitTestPoint) and keyboard moves (moveCaretByKey Home/End/Up/Down).
+    if (position?.lineId) {
+        cloned.lineId = position.lineId;
+    }
+
+    return cloned;
 }
 
 function normalizeMathPath(value) {

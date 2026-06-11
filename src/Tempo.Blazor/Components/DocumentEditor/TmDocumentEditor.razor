@@ -16,7 +16,7 @@
      data-canvas-route-apply-ms="@_routeApplyMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
      data-canvas-route-focus-ms="@_routeFocusMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
      @onkeydown="HandleEditorKeyDownAsync"
-     @onclick="CloseFloatingUi"
+     @onclick="CloseContextMenusFromRootClick"
      @attributes="AdditionalAttributes">
     <TmDocumentEditorLiveRegion Message="@LiveRegionMessage" />
 
@@ -896,7 +896,38 @@
         <div class="tm-document-editor__floating-root"
              data-testid="document-floating-root"
              @onclick:stopPropagation="true">
-            @if (_miniToolbar is { IsVisible: true })
+            @if (_miniToolbar is { IsVisible: true } && IsObjectMiniToolbar && _coreActiveImage is { } objectImage)
+            {
+                @* B3: floating image toolbar (Word/GDocs parity) anchored above the selected object. *@
+                <div class="tm-document-editor__mini-toolbar tm-document-editor__mini-toolbar--object"
+                     style="@MiniToolbarFloatingStyle(_miniToolbar)"
+                     data-testid="document-mini-toolbar"
+                     data-human-testid="document-floating-toolbar"
+                     data-mini-toolbar-mode="object"
+                     @onpointerdown:preventDefault="true"
+                     @onpointerdown:stopPropagation="true"
+                     @onclick:stopPropagation="true">
+                    <TmDocumentImageWrapPanel CurrentWrapMode="@objectImage.Layout.Wrap.Mode"
+                                              DistanceLeft="@objectImage.Layout.Wrap.DistanceLeft"
+                                              DistanceRight="@objectImage.Layout.Wrap.DistanceRight"
+                                              DistanceTop="@objectImage.Layout.Wrap.DistanceTop"
+                                              DistanceBottom="@objectImage.Layout.Wrap.DistanceBottom"
+                                              LockAnchor="@(objectImage.Layout.Anchor?.LockAnchor ?? false)"
+                                              OnWrapModeChanged="SetActiveImageWrapModeFromPanelAsync"
+                                              OnHorizontalPositionChanged="SetActiveImageHorizontalPositionFromPanelAsync"
+                                              OnDistanceLeftChanged="value => SetActiveImageWrapDistanceFromPanelAsync(nameof(DocumentObjectWrap.DistanceLeft), value)"
+                                              OnDistanceRightChanged="value => SetActiveImageWrapDistanceFromPanelAsync(nameof(DocumentObjectWrap.DistanceRight), value)"
+                                              OnDistanceTopChanged="value => SetActiveImageWrapDistanceFromPanelAsync(nameof(DocumentObjectWrap.DistanceTop), value)"
+                                              OnDistanceBottomChanged="value => SetActiveImageWrapDistanceFromPanelAsync(nameof(DocumentObjectWrap.DistanceBottom), value)"
+                                              OnLockAnchorChanged="SetActiveImageLockAnchorFromPanelAsync"
+                                              OnCaptionToggle="ToggleActiveImageCaptionFromPanelAsync"
+                                              OnReplaceRequested="FocusActiveImageOptionsFromMiniToolbarAsync"
+                                              OnDelete="DeleteActiveImageFromPanelAsync"
+                                              OnAltTextRequested="FocusActiveImageOptionsFromMiniToolbarAsync"
+                                              OnMoreOptionsRequested="FocusActiveImageOptionsFromMiniToolbarAsync" />
+                </div>
+            }
+            else if (_miniToolbar is { IsVisible: true })
             {
                 <section class="tm-document-editor__mini-toolbar"
                          style="@MiniToolbarFloatingStyle(_miniToolbar)"
@@ -1031,6 +1062,48 @@
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "clearFormatting", null, false)'>
                         <TmIcon Name="eraser" Size="IconSize.Sm" />
                     </button>
+
+                    @* B8: table quick-actions shown when the selection mini toolbar is anchored inside a table cell. *@
+                    @if (MiniToolbarInTable)
+                    {
+                        <span class="tm-document-editor__mini-separator" role="separator"></span>
+                        <button type="button"
+                                data-testid="document-mini-table-row-after"
+                                aria-label="@Loc["TmDocumentEditor_InsertRow"]"
+                                title="@Loc["TmDocumentEditor_InsertRow"]"
+                                @onpointerdown:preventDefault="true"
+                                @onmousedown:preventDefault="true"
+                                @onclick="InsertTableRowFromContextAsync">
+                            <TmIcon Name="between-horizontal-end" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                data-testid="document-mini-table-column-after"
+                                aria-label="@Loc["TmDocumentEditor_InsertColumn"]"
+                                title="@Loc["TmDocumentEditor_InsertColumn"]"
+                                @onpointerdown:preventDefault="true"
+                                @onmousedown:preventDefault="true"
+                                @onclick="InsertTableColumnFromContextAsync">
+                            <TmIcon Name="between-vertical-end" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                data-testid="document-mini-table-delete-row"
+                                aria-label="@Loc["TmDocumentEditor_DeleteRow"]"
+                                title="@Loc["TmDocumentEditor_DeleteRow"]"
+                                @onpointerdown:preventDefault="true"
+                                @onmousedown:preventDefault="true"
+                                @onclick="DeleteTableRowFromContextAsync">
+                            <TmIcon Name="rows-3" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                data-testid="document-mini-table-delete-column"
+                                aria-label="@Loc["TmDocumentEditor_DeleteColumn"]"
+                                title="@Loc["TmDocumentEditor_DeleteColumn"]"
+                                @onpointerdown:preventDefault="true"
+                                @onmousedown:preventDefault="true"
+                                @onclick="DeleteTableColumnFromContextAsync">
+                            <TmIcon Name="columns-3" Size="IconSize.Sm" />
+                        </button>
+                    }
                 </section>
             }
 
@@ -1059,8 +1132,9 @@
                     <button type="button"
                             role="menuitem"
                             data-testid="document-context-cut"
-                            disabled="true"
-                            aria-disabled="true">
+                            disabled="@(!CanCutTextContextSelection)"
+                            aria-disabled="@((!CanCutTextContextSelection).ToString().ToLowerInvariant())"
+                            @onclick="CutTextContextSelectionAsync">
                         <TmIcon Name="scissors" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Cut"]</span>
                     </button>
@@ -1076,8 +1150,9 @@
                     <button type="button"
                             role="menuitem"
                             data-testid="document-context-paste"
-                            disabled="true"
-                            aria-disabled="true">
+                            disabled="@(!CanPasteTextContextSelection)"
+                            aria-disabled="@((!CanPasteTextContextSelection).ToString().ToLowerInvariant())"
+                            @onclick="PasteTextContextSelectionAsync">
                         <TmIcon Name="clipboard" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_Paste"]</span>
                     </button>

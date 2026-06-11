@@ -2533,6 +2533,45 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             RunId = ActiveImageCommandRunId
         });
 
+    // B3: the canvas selection mini toolbar renders the floating image toolbar (TmDocumentImageWrapPanel) for
+    // an object selection. These adapters route its callbacks onto the existing canvas image commands.
+    private bool IsObjectMiniToolbar =>
+        _miniToolbar?.Selection?.ObjectSelection?.ObjectId is { Length: > 0 };
+
+    private Task DeleteActiveImageFromPanelAsync() =>
+        ExecuteImageRuntimeCommandAsync("deleteImage", new
+        {
+            ObjectId = ActiveImageCommandObjectId,
+            BlockId = ActiveImageCommandBlockId,
+            RunId = ActiveImageCommandRunId
+        });
+
+    private Task SetActiveImageWrapDistanceFromPanelAsync(string axis, double value) =>
+        ExecuteImageRuntimeCommandAsync("updateImageLayout", new
+        {
+            ObjectId = ActiveImageCommandObjectId,
+            BlockId = ActiveImageCommandBlockId,
+            RunId = ActiveImageCommandRunId,
+            DistanceLeft = axis == nameof(DocumentObjectWrap.DistanceLeft) ? value : (double?)null,
+            DistanceRight = axis == nameof(DocumentObjectWrap.DistanceRight) ? value : (double?)null,
+            DistanceTop = axis == nameof(DocumentObjectWrap.DistanceTop) ? value : (double?)null,
+            DistanceBottom = axis == nameof(DocumentObjectWrap.DistanceBottom) ? value : (double?)null
+        });
+
+    private Task SetActiveImageHorizontalPositionFromPanelAsync(DocumentImageHorizontalPosition position) =>
+        SetActiveImageAlignmentFromPanelAsync(position switch
+        {
+            DocumentImageHorizontalPosition.Left => DocumentImageAlignment.Start,
+            DocumentImageHorizontalPosition.Right => DocumentImageAlignment.End,
+            _ => DocumentImageAlignment.Center
+        });
+
+    private Task FocusActiveImageOptionsFromMiniToolbarAsync()
+    {
+        OpenSidePanel(DocumentSidePanelTab.Properties);
+        return InvokeAsync(StateHasChanged);
+    }
+
     private async Task BringActiveImageForwardFromPanelAsync()
     {
         if (UsingCoreEngine && _coreHost is not null)
@@ -2708,7 +2747,21 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task InsertPageBreakAsync()
     {
-        if (_wysiwygHost is null || EffectiveReadOnly)
+        if (EffectiveReadOnly)
+        {
+            return;
+        }
+
+        // B7: canvas engine path. The legacy branch below builds the page-break blocks in C#; the canvas
+        // engine owns the model, so route to its `insertPageBreak` command (it resolves the insertion target
+        // from the current selection, falling back to the document start when nothing is selected).
+        if (UsingCanvasEngine && _canvasHost is not null)
+        {
+            await RouteToCanvasEngineAsync("insertPageBreak", null, focus: true);
+            return;
+        }
+
+        if (_wysiwygHost is null)
         {
             return;
         }
@@ -3938,6 +3991,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private Task HandleMiniToolbarChangedAsync(WysiwygMiniToolbarRequest? request)
     {
+        // An open context menu is the active floating UI the user explicitly invoked (right-click). A racing
+        // selection push (e.g. the debounced toolbar sync over the still-non-collapsed selection) must NOT
+        // steal focus by showing the mini toolbar — doing so cleared `_textContextMenu` and made the context
+        // menu flicker shut right after opening (B11/B12). Ignore mini toolbar changes while a menu is open.
+        if (_textContextMenu is not null || _tableContextMenu is not null)
+        {
+            return Task.CompletedTask;
+        }
+
         if (ShouldPreserveMiniToolbarDuringFloatingInteraction(request))
         {
             return Task.CompletedTask;
@@ -3985,9 +4047,17 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return InvokeAsync(StateHasChanged);
     }
 
-    private static bool IsVisibleRangeMiniToolbarRequest(WysiwygMiniToolbarRequest? request)
+    internal static bool IsVisibleRangeMiniToolbarRequest(WysiwygMiniToolbarRequest? request)
         => request?.IsVisible == true
-        && request.Selection?.IsCollapsed == false;
+        && (request.Selection?.IsCollapsed == false
+            // B3: an object (image/drawing) selection has a collapsed text selection but still anchors a
+            // floating toolbar above the object (Word/GDocs parity); the engine pushes it with an
+            // ObjectSelection payload + a 'canvas-object-selection' reason.
+            || IsObjectMiniToolbarRequest(request));
+
+    internal static bool IsObjectMiniToolbarRequest(WysiwygMiniToolbarRequest? request)
+        => request?.IsVisible == true
+        && !string.IsNullOrWhiteSpace(request.Selection?.ObjectSelection?.ObjectId);
 
     private bool ShouldPreserveMiniToolbarDuringFloatingInteraction(WysiwygMiniToolbarRequest? request)
     {
@@ -4135,9 +4205,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _textContextMenu is { BlockId: { Length: > 0 } }
         && string.Equals(_textContextMenu.BlockType, "PageBreak", StringComparison.OrdinalIgnoreCase);
 
+    // B11: context-menu Copy/Cut require a non-empty selection. Canvas routes to the engine's clipboard
+    // controller; the legacy host uses its own clipboard path.
     private bool CanCopyTextContextSelection =>
         _textContextMenu?.Selection is { IsCollapsed: false }
-        && _wysiwygHost is not null;
+        && (UsingCanvasEngine || _wysiwygHost is not null);
+
+    private bool CanCutTextContextSelection =>
+        CanCopyTextContextSelection && !EffectiveReadOnly;
+
+    // B12: Paste is available wherever editing is allowed (the async Clipboard API supplies the content).
+    private bool CanPasteTextContextSelection =>
+        _textContextMenu is not null
+        && !EffectiveReadOnly
+        && (UsingCanvasEngine || _wysiwygHost is not null);
 
     private async Task DeletePageBreakFromContextAsync()
     {
@@ -4167,10 +4248,73 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private async Task CopyTextContextSelectionAsync()
     {
         var selection = _textContextMenu?.Selection;
-        if (_wysiwygHost is not null && selection is { IsCollapsed: false })
+        if (selection is { IsCollapsed: false })
+        {
+            if (UsingCanvasEngine && _canvasHost is not null)
+            {
+                await _canvasHost.CopySelectionAsync();
+            }
+            else if (_wysiwygHost is not null)
+            {
+                await _wysiwygHost.RestoreSelectionAsync(selection);
+                await _wysiwygHost.CopySelectionToClipboardAsync();
+            }
+        }
+
+        CloseFloatingUi();
+    }
+
+    private async Task CutTextContextSelectionAsync()
+    {
+        if (EffectiveReadOnly)
+        {
+            CloseFloatingUi();
+            return;
+        }
+
+        var selection = _textContextMenu?.Selection;
+        if (selection is { IsCollapsed: false })
+        {
+            if (UsingCanvasEngine && _canvasHost is not null)
+            {
+                await _canvasHost.CutSelectionAsync();
+                await SyncCanvasEngineStateAsync();
+            }
+            else if (_wysiwygHost is not null)
+            {
+                await _wysiwygHost.RestoreSelectionAsync(selection);
+                await _wysiwygHost.ExecuteEditorCommandAsync("cut", new { Selection = selection });
+            }
+        }
+
+        CloseFloatingUi();
+    }
+
+    private async Task PasteTextContextSelectionAsync()
+    {
+        if (EffectiveReadOnly)
+        {
+            CloseFloatingUi();
+            return;
+        }
+
+        var selection = _textContextMenu?.Selection;
+        if (UsingCanvasEngine && _canvasHost is not null)
+        {
+            // The engine pastes at its current selection (the right-click did not move it), so no restore needed.
+            var result = await _canvasHost.PasteFromSystemClipboardAsync();
+            await SyncCanvasEngineStateAsync();
+            if (!result.Handled && string.Equals(result.Reason, "permission", StringComparison.OrdinalIgnoreCase))
+            {
+                // The browser denied async clipboard read — guide the user to the keyboard shortcut (GDocs UX).
+                _runtimeMessage = Loc["TmDocumentEditor_PasteUseKeyboard"];
+                _runtimeFailed = false;
+            }
+        }
+        else if (_wysiwygHost is not null && selection is not null)
         {
             await _wysiwygHost.RestoreSelectionAsync(selection);
-            await _wysiwygHost.CopySelectionToClipboardAsync();
+            await _wysiwygHost.ExecuteEditorCommandAsync("paste", new { Selection = selection });
         }
 
         CloseFloatingUi();
@@ -4271,7 +4415,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private WysiwygSelectionSnapshot? NormalizeTableContextSelection()
     {
-        var selection = _tableContextMenu?.Selection;
+        // B8: table quick-actions can also be triggered from the selection mini toolbar (not just the
+        // right-click context menu), so fall back to the mini toolbar's selection when no context menu is open.
+        var selection = _tableContextMenu?.Selection ?? _miniToolbar?.Selection;
         if (selection is not null
             && string.IsNullOrWhiteSpace(selection.ActiveTableCellId)
             && !string.IsNullOrWhiteSpace(_tableContextMenu?.CellId))
@@ -4285,6 +4431,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
         return selection;
     }
+
+    // B8: whether the selection mini toolbar is anchored inside a table cell (drives the table quick-actions
+    // group shown alongside the inline-formatting buttons).
+    private bool MiniToolbarInTable =>
+        _miniToolbar?.Selection is { } selection
+        && (!string.IsNullOrWhiteSpace(selection.ActiveTableCellId)
+            || string.Equals(selection.Region, "TableCell", StringComparison.OrdinalIgnoreCase));
 
     private async Task<WysiwygSelectionSnapshot> ResolveActiveTableSelectionAsync(WysiwygSelectionSnapshot fallback)
     {
@@ -4592,6 +4745,24 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
         _floatingLayerStack.Remove(FloatingLayerId.TableContextMenu);
         _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
+        _focusManager.PushRestoreTarget("surface");
+    }
+
+    // B2: a click anywhere in the editor must NOT dismiss the selection mini toolbar — its lifecycle is driven
+    // by the engine's selection pushes (a collapsed-caret push hides it, a range push shows it). Closing it on
+    // the trailing click of a mouse drag-selection made it only flicker. The root click still dismisses the
+    // (open) context menus, matching Word/GDocs where the bubble toolbar persists until the selection changes.
+    private void CloseContextMenusFromRootClick()
+    {
+        if (_textContextMenu is null && _tableContextMenu is null)
+        {
+            return;
+        }
+
+        _textContextMenu = null;
+        _tableContextMenu = null;
+        _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
+        _floatingLayerStack.Remove(FloatingLayerId.TableContextMenu);
         _focusManager.PushRestoreTarget("surface");
     }
 
@@ -5072,8 +5243,52 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private async Task NavigateToPageAsync(int pageIndex)
     {
         _activePageIndex = Math.Max(0, pageIndex);
+        if (UsingCanvasEngine && _canvasHost is not null)
+        {
+            await _canvasHost.ScrollToPageAsync(_activePageIndex);
+            return;
+        }
+
         if (_wysiwygHost is not null)
             await _wysiwygHost.ScrollToPageAsync(_activePageIndex);
+    }
+
+    // B6: pull the caret's editable region (Body/Header/Footer) from the canvas engine into
+    // _activeWysiwygRegion. This lights up the (existing, ActiveRegion-driven) Header & Footer contextual
+    // ribbon tab + field-command enablement and disables body-only commands (page break, footnote, …) while a
+    // header/footer is being edited.
+    private async Task SyncCanvasActiveRegionAsync()
+    {
+        if (_canvasHost is null || !UsingCanvasEngine)
+        {
+            return;
+        }
+
+        var selection = await _canvasHost.GetSelectionStateAsync();
+        var region = (selection.Region ?? "Body").Trim();
+        _activeWysiwygRegion = string.Equals(region, "Header", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(region, "Footer", StringComparison.OrdinalIgnoreCase)
+                ? region
+                : "Body";
+    }
+
+    // B9: pull page metrics (total/per-page/active) from the canvas engine into the navigator + status bar.
+    private async Task SyncCanvasPageMetricsAsync()
+    {
+        if (_canvasHost is null || !UsingCanvasEngine)
+        {
+            return;
+        }
+
+        var metrics = await _canvasHost.GetPageMetricsAsync();
+        if (metrics.TotalPages > 0)
+        {
+            _pageMetrics = metrics;
+            _activePageIndex = Math.Max(0, metrics.ActivePageIndex);
+            // Keep the status-bar page count (driven by _canvasPushedPageCount) consistent with the navigator —
+            // the engine's lightweight uiState.pageCount can lag the real paginated total (B9).
+            _canvasPushedPageCount = metrics.TotalPages;
+        }
     }
 
     private Task HandlePageMetricsChangedAsync(WysiwygPageMetrics metrics)
@@ -5836,10 +6051,21 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         await BroadcastCollaborationCursorAsync();
     }
 
-    private Task SetSidePanelTabAsync(DocumentSidePanelTab tab)
+    private async Task SetSidePanelTabAsync(DocumentSidePanelTab tab)
     {
         OpenSidePanel(tab, manual: true);
-        return InvokeAsync(StateHasChanged);
+        // B9: the page navigator + outline are pulled lazily when their tab is opened (the canvas-ready sync can
+        // run before the first layout exists, so the metrics there are empty). Refresh on activation.
+        if (tab == DocumentSidePanelTab.Pages)
+        {
+            await SyncCanvasPageMetricsAsync();
+        }
+        else if (tab == DocumentSidePanelTab.Outline)
+        {
+            await SyncCanvasNavigationAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private Task OpenSidePanelAsync()
@@ -5956,6 +6182,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _selection.Region = "Body";
         _selection.HeaderFooterId = null;
         _selection.PageIndex = null;
+
+        // B6: canvas engine — move the caret back to the body and refresh the region (hides the H/F tab).
+        if (UsingCanvasEngine && _canvasHost is not null)
+        {
+            await _canvasHost.CloseHeaderFooterAsync();
+            await _canvasHost.FocusAsync();
+            await SyncCanvasEngineStateAsync();
+            return;
+        }
 
         if (_wysiwygHost is not null)
         {
@@ -7882,6 +8117,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         var fmt = await _canvasHost.GetFormattingStateAsync();
         ApplyCanvasFormattingState(fmt);
 
+        await SyncCanvasActiveRegionAsync();
+        await SyncCanvasPageMetricsAsync();
         await SyncCanvasNavigationAsync();
         await SyncCanvasContentControlPopoverAsync();
         await RefreshCommandRegistryAsync();

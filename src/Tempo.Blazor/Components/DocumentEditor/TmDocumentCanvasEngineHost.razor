@@ -497,6 +497,79 @@
         return DeserializeState(json, new CanvasEngineCommandResult { CommandId = commandId });
     }
 
+    /// <summary>Copies the current selection to the system clipboard (B11 context-menu Copy / programmatic copy).</summary>
+    public async Task<CanvasEngineClipboardResult> CopySelectionAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineClipboardResult();
+        }
+
+        var json = await _module.InvokeAsync<string?>("copySelection", _handle);
+        return DeserializeState(json, new CanvasEngineClipboardResult());
+    }
+
+    /// <summary>Cuts the current selection to the system clipboard (B11 context-menu Cut).</summary>
+    public async Task<CanvasEngineClipboardResult> CutSelectionAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineClipboardResult();
+        }
+
+        var json = await _module.InvokeAsync<string?>("cutSelection", _handle);
+        return DeserializeState(json, new CanvasEngineClipboardResult());
+    }
+
+    /// <summary>Pastes from the system clipboard via the async Clipboard API (B12 context-menu Paste).</summary>
+    public async Task<CanvasEngineClipboardResult> PasteFromSystemClipboardAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return new CanvasEngineClipboardResult();
+        }
+
+        var json = await _module.InvokeAsync<string?>("pasteFromSystemClipboard", _handle);
+        return DeserializeState(json, new CanvasEngineClipboardResult());
+    }
+
+    /// <summary>Enters header/footer editing (places the caret in the first header/footer of the type) (B6).</summary>
+    public async Task EnterHeaderFooterAsync(string type)
+    {
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await _module.InvokeVoidAsync("editHeaderFooter", _handle, type);
+    }
+
+    /// <summary>Closes header/footer editing (moves the caret back to the body) (B6).</summary>
+    public async Task CloseHeaderFooterAsync()
+    {
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await _module.InvokeVoidAsync("closeHeaderFooter", _handle);
+    }
+
+    /// <summary>Reads page metrics (total pages, per-page list, active page) for the navigator + status bar (B9).</summary>
+    public Task<WysiwygPageMetrics> GetPageMetricsAsync()
+        => ReadStateAsync("getPageMetricsJson", new WysiwygPageMetrics { TotalPages = 1, RenderedPages = 1, Pages = [new WysiwygPageMetric { PageIndex = 0, PageNumber = 1 }] });
+
+    /// <summary>Scrolls a page into view from the navigator (handles virtualized pages) (B9).</summary>
+    public async Task ScrollToPageAsync(int pageIndex)
+    {
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await _module.InvokeVoidAsync("scrollToPage", _handle, pageIndex);
+    }
+
     /// <summary>Queries a command state through the canvas engine dispatcher.</summary>
     public Task<CanvasEngineCommandState> QueryCommandAsync(string commandId)
         => ReadStateAsync<CanvasEngineCommandState>("queryCommand", new CanvasEngineCommandState(), commandId);
@@ -1355,6 +1428,19 @@
         public CanvasEngineUiState? UiState { get; set; }
     }
 
+    /// <summary>Result of a programmatic clipboard operation (B11/B12 context-menu copy/cut/paste).</summary>
+    public sealed class CanvasEngineClipboardResult
+    {
+        /// <summary>Whether the clipboard operation succeeded.</summary>
+        public bool Handled { get; set; }
+
+        /// <summary>Operation name (copy / cut / paste-*).</summary>
+        public string Operation { get; set; } = string.Empty;
+
+        /// <summary>Failure reason when not handled (e.g. "permission", "unsupported").</summary>
+        public string? Reason { get; set; }
+    }
+
     /// <summary>Canvas engine command query state exposed to Blazor callers.</summary>
     public sealed class CanvasEngineCommandState
     {
@@ -1559,6 +1645,12 @@
 
         /// <summary>Zero-based focused table cell index.</summary>
         public int CellIndex { get; set; }
+
+        /// <summary>Editable region of the caret: "Body", "Header" or "Footer" (B6).</summary>
+        public string Region { get; set; } = "Body";
+
+        /// <summary>Header/footer scope (Primary/First/Even) when the caret is in a header/footer (B6).</summary>
+        public string HeaderFooterScope { get; set; } = string.Empty;
     }
 
     /// <summary>Canvas engine diagnostics exposed to Blazor callers.</summary>

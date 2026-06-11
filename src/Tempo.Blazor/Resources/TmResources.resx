@@ -3077,6 +3077,7 @@
   <data name="TmDocumentEditor_Cut"                    xml:space="preserve"><value>Cut</value></data>
   <data name="TmDocumentEditor_Copy"                   xml:space="preserve"><value>Copy</value></data>
   <data name="TmDocumentEditor_Paste"                  xml:space="preserve"><value>Paste</value></data>
+  <data name="TmDocumentEditor_PasteUseKeyboard"       xml:space="preserve"><value>Use Ctrl+V to paste — the browser blocked clipboard access.</value></data>
   <data name="TmDocumentEditor_Bold"                   xml:space="preserve"><value>Bold</value></data>
   <data name="TmDocumentEditor_Italic"                 xml:space="preserve"><value>Italic</value></data>
   <data name="TmDocumentEditor_Underline"              xml:space="preserve"><value>Underline</value></data>

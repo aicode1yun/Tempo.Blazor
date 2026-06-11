@@ -95,6 +95,12 @@ export function createCanvasClipboardController(options = {}) {
         }
 
         writeFragmentToClipboard(dataTransfer, fragment);
+        return finishCut(before, fragment, objectFragment);
+    }
+
+    // The delete half of a cut (shared by the clipboard-event path and the programmatic system-clipboard
+    // path): removes the selected object or text range and commits a single undoable change.
+    function finishCut(before, fragment, objectFragment) {
         if (objectFragment) {
             const result = removeSelectedObject(before.model, before.selection);
             if (!result.changed) {
@@ -128,6 +134,117 @@ export function createCanvasClipboardController(options = {}) {
         });
         captureDebug({ operation: 'cut', fragment });
         return { handled: true, operation: 'cut', fragment, change };
+    }
+
+    // Resolve the browser clipboard object (programmatic copy/paste from a context menu has no clipboard event).
+    function systemClipboard() {
+        const view = root?.ownerDocument?.defaultView || input?.ownerDocument?.defaultView || globalThis;
+        return { view, clip: view?.navigator?.clipboard || null };
+    }
+
+    async function writeFragmentToSystemClipboard(fragment) {
+        const { view, clip } = systemClipboard();
+        if (!clip) {
+            return false;
+        }
+
+        const normalized = normalizeFragment(fragment);
+        const html = fragmentToHtml(normalized);
+        const text = fragmentToPlainText(normalized);
+        try {
+            if (typeof clip.write === 'function' && typeof view.ClipboardItem === 'function') {
+                const item = new view.ClipboardItem({
+                    'text/html': new view.Blob([html], { type: 'text/html' }),
+                    'text/plain': new view.Blob([text], { type: 'text/plain' }),
+                });
+                await clip.write([item]);
+                return true;
+            }
+
+            if (typeof clip.writeText === 'function') {
+                await clip.writeText(text);
+                return true;
+            }
+        } catch {
+            // permission denied / unsupported — fall through to a writeText attempt, then report failure.
+            try {
+                if (typeof clip.writeText === 'function') {
+                    await clip.writeText(text);
+                    return true;
+                }
+            } catch {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    // Programmatic copy to the system clipboard (context-menu "Copy" — no clipboard event to hook).
+    async function copyToSystemClipboard() {
+        const fragment = selectedObjectFragment(getModel(), getSelection()) || selectedFragment(getModel(), getSelection());
+        if (!fragmentHasContent(fragment)) {
+            return { handled: false, operation: 'copy' };
+        }
+
+        const wrote = await writeFragmentToSystemClipboard(fragment);
+        captureDebug({ operation: 'copy', fragment });
+        return { handled: wrote, operation: 'copy', fragment, reason: wrote ? undefined : 'permission' };
+    }
+
+    // Programmatic cut to the system clipboard (context-menu "Cut").
+    async function cutToSystemClipboard() {
+        const before = captureSnapshot();
+        const objectFragment = selectedObjectFragment(before.model, before.selection);
+        const fragment = objectFragment || selectedFragment(before.model, before.selection);
+        if (!fragmentHasContent(fragment)) {
+            return { handled: false, operation: 'cut' };
+        }
+
+        const wrote = await writeFragmentToSystemClipboard(fragment);
+        if (!wrote) {
+            return { handled: false, operation: 'cut', reason: 'permission' };
+        }
+
+        return finishCut(before, fragment, objectFragment);
+    }
+
+    // Programmatic paste from the system clipboard (context-menu "Paste" — async Clipboard API, user gesture).
+    async function pasteFromSystemClipboard() {
+        const { clip } = systemClipboard();
+        if (!clip) {
+            return { handled: false, operation: 'paste', reason: 'unsupported' };
+        }
+
+        try {
+            if (typeof clip.read === 'function') {
+                const items = await clip.read();
+                for (const item of items) {
+                    if (item.types?.includes?.('text/html')) {
+                        const html = await (await item.getType('text/html')).text();
+                        const plain = item.types.includes('text/plain') ? await (await item.getType('text/plain')).text() : '';
+                        return pasteFragment(normalizeClipboardHtml(html, plain), 'paste-html');
+                    }
+                }
+                for (const item of items) {
+                    if (item.types?.includes?.('text/plain')) {
+                        const text = await (await item.getType('text/plain')).text();
+                        return pasteFragment(createPlainTextFragment(text), 'paste-plain');
+                    }
+                }
+            }
+
+            if (typeof clip.readText === 'function') {
+                const text = await clip.readText();
+                if (text) {
+                    return pasteFragment(createPlainTextFragment(text), 'paste-plain');
+                }
+            }
+
+            return { handled: false, operation: 'paste' };
+        } catch {
+            return { handled: false, operation: 'paste', reason: 'permission' };
+        }
     }
 
     async function pasteFromClipboardData(dataTransfer = null) {
@@ -332,6 +449,9 @@ export function createCanvasClipboardController(options = {}) {
         destroy,
         copy,
         cut,
+        copyToSystemClipboard,
+        cutToSystemClipboard,
+        pasteFromSystemClipboard,
         pasteFromClipboardData,
         pasteFragment,
         pasteUrl,

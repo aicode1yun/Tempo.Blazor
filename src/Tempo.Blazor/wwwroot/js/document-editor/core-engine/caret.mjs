@@ -78,7 +78,10 @@ export function moveCaretByKey(layout, position, key, opts) {
         const stops = lineCaretStops(layout, cur ? cur.lineId : null);
         if (!stops.length) return { blockId, offset };
         const target = key === 'Home' ? stops[0] : stops[stops.length - 1];
-        return { blockId: target.blockId, offset: Number(target.offset || 0) || 0 };
+        // Carry the lineId so the rendered caret resolves to THIS visual line: a wrap-boundary offset is
+        // shared with the adjacent line's end/start, and without the lineId the lookup picks the wrong one
+        // (Home would jump to the previous line's end — B1).
+        return { blockId: target.blockId, offset: Number(target.offset || 0) || 0, lineId: target.lineId || null };
     }
     if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'PageUp' || key === 'PageDown') {
         const lines = linesOrdered(layout);
@@ -97,7 +100,7 @@ export function moveCaretByKey(layout, position, key, opts) {
             if (targetIdx === idx) {
                 const edgeStops = lines[up ? 0 : lines.length - 1].stops;
                 const edge = up ? edgeStops[0] : edgeStops[edgeStops.length - 1];
-                return edge ? { blockId: edge.blockId, offset: Number(edge.offset || 0) || 0 } : { blockId, offset };
+                return edge ? { blockId: edge.blockId, offset: Number(edge.offset || 0) || 0, lineId: edge.lineId || null } : { blockId, offset };
             }
         }
         const x = cur ? (Number(cur.rect.x || 0) || 0) : 0;
@@ -106,7 +109,8 @@ export function moveCaretByKey(layout, position, key, opts) {
             const dx = Math.abs((Number(stop.rect.x || 0) || 0) - x);
             if (dx < bestDx) { bestDx = dx; best = stop; }
         });
-        return best ? { blockId: best.blockId, offset: Number(best.offset || 0) || 0 } : { blockId, offset };
+        // Carry the target line id so the rendered caret stays on the destination line at a wrap boundary (B1).
+        return best ? { blockId: best.blockId, offset: Number(best.offset || 0) || 0, lineId: best.lineId || null } : { blockId, offset };
     }
     return { blockId, offset };
 }

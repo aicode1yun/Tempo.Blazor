@@ -191,6 +191,7 @@ export function layoutCanvasDocument(model, options = {}) {
                 objectRole: 'imageBlock',
             });
             const imageLayout = layoutCanvasImageObject(imageObject, {
+                fontMetrics: metrics,
                 page: ensurePage(currentPageIndex, currentSection),
                 // Always pass the current flow position; layoutCanvasImageObject applies the
                 // object's vertical offset relative to its reference frame (paragraph/page/margin).
@@ -202,6 +203,7 @@ export function layoutCanvasDocument(model, options = {}) {
             if (cursorY > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).y && imageLayout.rect.y + imageLayout.rect.height > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).bottom) {
                 moveToNextColumnOrPage(currentSection);
                 Object.assign(imageLayout, layoutCanvasImageObject(imageObject, {
+                fontMetrics: metrics,
                     page: ensurePage(currentPageIndex, currentSection),
                     y: cursorY,
                     sequence: imageLayout.sequence,
@@ -229,6 +231,7 @@ export function layoutCanvasDocument(model, options = {}) {
                 objectRole: 'drawingRun',
             });
             const imageLayout = layoutCanvasImageObject(imageObject, {
+                fontMetrics: metrics,
                 page: ensurePage(currentPageIndex, currentSection),
                 // Always pass the current flow position; layoutCanvasImageObject applies the
                 // object's vertical offset relative to its reference frame (paragraph/page/margin).

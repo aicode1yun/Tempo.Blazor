@@ -278,6 +278,55 @@ export function selectRevision(handle, revisionId) {
     return JSON.stringify(state.engine.selectRevision(revisionId) || {});
 }
 
+// Programmatic object selection (test/automation seam) — selects an image/drawing by id without a synthetic
+// pointer click, then the normal selection push surfaces the object mini toolbar.
+export function selectObject(handle, objectId) {
+    const state = getInstance(handle);
+    return JSON.stringify(state.engine.selectObjectById(objectId) || {});
+}
+
+// Programmatic text-range selection (test/automation seam) — selects blockId[start..end] without a synthetic
+// drag, then the normal selection push surfaces the mini toolbar (e.g. inside a table cell).
+export function selectTextRange(handle, blockId, startOffset, endOffset) {
+    const state = getInstance(handle);
+    return JSON.stringify(state.engine.selectTextRange(blockId, startOffset, endOffset) || {});
+}
+
+// B6: enter/exit header-footer editing programmatically (ribbon "Edit header/footer" + "Close" buttons).
+export function editHeaderFooter(handle, type) {
+    const state = getInstance(handle);
+    return JSON.stringify(state.engine.editHeaderFooter(type) || {});
+}
+
+export function closeHeaderFooter(handle) {
+    const state = getInstance(handle);
+    return JSON.stringify(state.engine.closeHeaderFooter() || {});
+}
+
+// Diagnostic seam: the last mini toolbar payload the engine pushed (for tests to inspect placement/visibility).
+export function getLastMiniToolbarPayloadJson(handle) {
+    const state = getInstance(handle);
+    return JSON.stringify(state.engine.lastMiniToolbarPayload || null);
+}
+
+// B11/B12: programmatic clipboard operations for the context menu (no clipboard event to hook). Copy/cut write
+// the selected fragment to the system clipboard; paste reads it via the async Clipboard API. Async — the
+// caller awaits the JSON result ({ handled, operation, reason? }).
+export async function copySelection(handle) {
+    const state = getInstance(handle);
+    return JSON.stringify((await state.engine.clipboardController.copyToSystemClipboard()) || {});
+}
+
+export async function cutSelection(handle) {
+    const state = getInstance(handle);
+    return JSON.stringify((await state.engine.clipboardController.cutToSystemClipboard()) || {});
+}
+
+export async function pasteFromSystemClipboard(handle) {
+    const state = getInstance(handle);
+    return JSON.stringify((await state.engine.clipboardController.pasteFromSystemClipboard()) || {});
+}
+
 export function captureCommentAnchorJson(handle) {
     const state = getInstance(handle);
     const selection = state.engine.getSnapshot().selection || {};
@@ -361,6 +410,8 @@ export function getSelectionStateJson(handle) {
         focusBlockId: selection.focus?.blockId || '',
         focusOffset: Number(selection.focus?.offset || 0) || 0,
         selectionRectCount: Number(selection.selectionRectCount || 0) || 0,
+        region: selection.region || 'Body',
+        headerFooterScope: selection.headerFooterScope || '',
         inTable: selection.table?.inTable === true,
         tableId: selection.table?.tableId || '',
         cellId: selection.table?.cellId || '',
@@ -439,6 +490,46 @@ export function getNavigationStateJson(handle) {
     const state = getInstance(handle);
     const formatting = state.engine.getSnapshot().formatting || {};
     return JSON.stringify(formatting.navigation || { outline: [], bookmarks: [] });
+}
+
+// B9: page metrics for the side-panel navigator + status bar. Total pages come from the laid-out document;
+// the active page is the topmost currently-visible (virtualized) page.
+export function getPageMetricsJson(handle) {
+    const state = getInstance(handle);
+    const snapshot = state.engine.getSnapshot();
+    // The TOTAL page count is the render's allRenderPages (= displayList.pages = data-canvas-page-count), NOT
+    // the pre-pagination layout.pages.
+    const renderPages = Array.isArray(snapshot.render?.displayList?.pages) ? snapshot.render.displayList.pages : [];
+    const total = Number(snapshot.render?.pageCount ?? renderPages.length) || renderPages.length;
+    const visible = Array.isArray(snapshot.render?.virtualization?.visiblePageIndexes)
+        ? snapshot.render.virtualization.visiblePageIndexes.map(Number)
+        : [];
+    const activePageIndex = visible.length ? Math.max(0, Math.min(Math.max(0, total - 1), visible[0])) : 0;
+    const indexOf = (page, ordinal) => Number(page?.index ?? ordinal);
+    const pages = total > 0
+        ? Array.from({ length: total }, (_, ordinal) => {
+            const pageIndex = renderPages.length > ordinal ? (indexOf(renderPages[ordinal], ordinal) || ordinal) : ordinal;
+            return {
+                pageIndex,
+                pageNumber: pageIndex + 1,
+                label: '',
+                isVirtual: visible.length ? !visible.includes(pageIndex) : false,
+            };
+        })
+        : [];
+    return JSON.stringify({
+        totalPages: total,
+        renderedPages: visible.length || total,
+        virtualizedPages: Math.max(0, total - (visible.length || total)),
+        activePageIndex,
+        pages,
+    });
+}
+
+// B9: scroll a page into view from the navigator (works for virtualized/unmounted pages too).
+export function scrollToPage(handle, pageIndex) {
+    const state = getInstance(handle);
+    return JSON.stringify(state.engine.scrollToPage(pageIndex) || {});
 }
 
 export function getClipboardDebugSnapshotJson(handle) {

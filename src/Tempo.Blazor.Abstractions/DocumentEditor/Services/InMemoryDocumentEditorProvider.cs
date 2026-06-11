@@ -174,10 +174,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
             "contract-header-primary",
             DocumentHeaderFooterType.Header,
             "Tempo Legal - Service agreement"));
-        document.HeadersFooters.Add(CreateSeedHeaderFooter(
-            "contract-footer-primary",
-            DocumentHeaderFooterType.Footer,
-            "Confidential - Page 1"));
+        document.HeadersFooters.Add(CreateSeedFooterWithPageFields("contract-footer-primary"));
         document.Revisions.Add(new DocumentRevision
         {
             Id = "contract-revision-scope",
@@ -1273,6 +1270,39 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         }
 
         return entry;
+    }
+
+    // B10: the demo footer must use real page-number / page-count fields (it printed the literal "Page 1" on
+    // every page). The field engine resolves PageNumber/PageCount per rendered page.
+    private static DocumentHeaderFooter CreateSeedFooterWithPageFields(string id)
+    {
+        InlineMark FontSize() => new() { Type = InlineMarkType.FontSize, Value = "9pt" };
+        return new DocumentHeaderFooter
+        {
+            Id = id,
+            Type = DocumentHeaderFooterType.Footer,
+            Scope = DocumentHeaderFooterScope.Primary,
+            SectionId = "contract-section-main",
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = $"{id}-block",
+                    SectionId = "contract-section-main",
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines =
+                        [
+                            new TextRun { Id = $"{id}-prefix", Text = "Confidential · Page ", Marks = [FontSize()] },
+                            new DocumentFieldRun { Id = $"{id}-page", FieldType = DocumentFieldType.PageNumber, FallbackText = "1", Marks = [FontSize()] },
+                            new TextRun { Id = $"{id}-sep", Text = " of ", Marks = [FontSize()] },
+                            new DocumentFieldRun { Id = $"{id}-count", FieldType = DocumentFieldType.PageCount, FallbackText = "1", Marks = [FontSize()] }
+                        ]
+                    }
+                }
+            ]
+        };
     }
 
     private static DocumentHeaderFooter CreateSeedHeaderFooter(string id, DocumentHeaderFooterType type, string text)

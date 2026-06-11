@@ -20,13 +20,14 @@ test('canvas image render resolves URLs, captions, alt warnings and inline drawi
     const layout = layoutCanvasDocument(model, { fontMetrics: metrics() });
     const display = buildDisplayList(model, layout, { fontMetrics: metrics() });
     const imageCommands = display.commands.filter(command => command.type === 'imageObject');
-    const caption = display.commands.find(command => command.type === 'imageCaption');
+    // B4: a caption now wraps into one display command per line, so join them to recover the full text.
+    const captionText = display.commands.filter(command => command.type === 'imageCaption').map(command => command.text).join(' ').trim();
     const selected = imageObjectAtPoint(layout, imageCommands[0].pageIndex, imageCommands[0].x + 4, imageCommands[0].y + 4);
 
     assert.equal(imageCommands.length, 2);
     assert.equal(imageCommands[0].url.startsWith('data:image/png;base64,'), true);
     assert.equal(imageCommands.some(command => command.role === 'drawingRun'), true);
-    assert.equal(caption.text, 'Canvas image caption');
+    assert.equal(captionText, 'Canvas image caption');
     assert.equal(imageCommands[1].altText, '');
     assert.equal(imageCommands[1].stroke, '#f59e0b');
     assert.equal(selected.objectId, 'phase15-image-block');

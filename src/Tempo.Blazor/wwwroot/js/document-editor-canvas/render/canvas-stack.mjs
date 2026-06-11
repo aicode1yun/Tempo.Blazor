@@ -115,7 +115,7 @@ export function createCanvasStack(options = {}) {
             layers.set(kind, canvas);
         }
 
-        insertBeforeBottomSpacer(root, pageElement, bottomSpacer);
+        insertPageInDomOrder(root, pageElement, Number(pageLayout.index || 0) || 0, pages, bottomSpacer);
         const page = { pageElement, layers, layout: pageLayout, needsFirstPaint: true };
         pages.set(key, page);
         return page;
@@ -439,13 +439,26 @@ function createSpacer(doc, testId) {
     return spacer;
 }
 
-function insertBeforeBottomSpacer(root, pageElement, bottomSpacer) {
-    if (typeof root.insertBefore === 'function') {
-        root.insertBefore(pageElement, bottomSpacer);
+// Mount a page so the DOM keeps ascending page-index order regardless of scroll direction (B5). Inserting
+// before the next-higher mounted page (rather than always before the bottom spacer) keeps page 0 above page
+// 1 when an upward scroll mounts the lower page while the higher one is still mounted.
+function insertPageInDomOrder(root, pageElement, pageIndex, pages, bottomSpacer) {
+    if (typeof root.insertBefore !== 'function') {
+        root.appendChild(pageElement);
         return;
     }
 
-    root.appendChild(pageElement);
+    let nextElement = null;
+    let nextIndex = Infinity;
+    for (const [key, page] of pages) {
+        const mountedIndex = Number(key);
+        if (mountedIndex > pageIndex && mountedIndex < nextIndex && page?.pageElement?.parentNode === root) {
+            nextIndex = mountedIndex;
+            nextElement = page.pageElement;
+        }
+    }
+
+    root.insertBefore(pageElement, nextElement || bottomSpacer);
 }
 
 function createIncrementalPlan(displayList, options = {}) {

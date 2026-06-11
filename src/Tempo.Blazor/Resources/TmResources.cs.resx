@@ -3638,6 +3638,7 @@
   <data name="TmDocumentEditor_PasteReportShowDetails" xml:space="preserve"><value>Detaily</value></data>
   <data name="TmDocumentEditor_PasteReportHideDetails" xml:space="preserve"><value>Skrýt</value></data>
   <data name="TmDocumentEditor_PasteReportClose"       xml:space="preserve"><value>Zavřít report vložení</value></data>
+  <data name="TmDocumentEditor_PasteUseKeyboard"       xml:space="preserve"><value>Použijte Ctrl+V pro vložení — prohlížeč zablokoval přístup ke schránce.</value></data>
   <data name="TmDocumentEditor_ImageWrapPanelLabel"    xml:space="preserve"><value>Možnosti obtékání obrázku</value></data>
   <data name="TmDocumentEditor_ImageWrapMode"          xml:space="preserve"><value>Obtékat text</value></data>
   <data name="TmDocumentEditor_ImageWrapInline"        xml:space="preserve"><value>Vložený</value></data>

@@ -175,12 +175,106 @@ export function resolveImageUrl(model, source) {
     return String(asset?.url ?? asset?.Url ?? '');
 }
 
+// B4 caption layout constants (must match the imageCaption display command style: 12px italic).
+const CAPTION_FONT_SIZE = 12;
+const CAPTION_FONT_FAMILY = 'Aptos, Arial, sans-serif';
+const CAPTION_LINE_HEIGHT = 15;
+const CAPTION_PADDING_X = 2;
+const CAPTION_PADDING_Y = 7;
+
+// Greedy word-wrap of a caption to a maximum pixel width. Falls back to a per-character estimate when no
+// font-metrics service is available (so a unit test without metrics still wraps deterministically).
+function wrapCaptionLines(text, maxWidth, fontMetrics) {
+    const trimmed = String(text || '').trim();
+    if (!trimmed) {
+        return [];
+    }
+
+    const measure = candidate => {
+        if (fontMetrics && typeof fontMetrics.measureRun === 'function') {
+            const result = fontMetrics.measureRun({ text: candidate, fontSize: CAPTION_FONT_SIZE, fontFamily: CAPTION_FONT_FAMILY, italic: true });
+            return Number(result?.width || 0) || 0;
+        }
+
+        return candidate.length * CAPTION_FONT_SIZE * 0.5;
+    };
+
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    const lines = [];
+    let current = '';
+    for (const word of words) {
+        const candidate = current ? `${current} ${word}` : word;
+        if (!current || measure(candidate) <= maxWidth) {
+            current = candidate;
+        } else {
+            lines.push(current);
+            current = word;
+        }
+    }
+
+    if (current) {
+        lines.push(current);
+    }
+
+    return lines;
+}
+
+// B4: emit one imageCaption display command per wrapped caption line (the renderer paints single-line text),
+// so a long caption no longer overflows to the right and collides with the wrapping body text. Returns the
+// advanced sequence counter.
+function pushCaptionCommands(commands, imageLayout, object, sequence) {
+    if (!imageLayout.captionRect) {
+        return sequence;
+    }
+
+    const captionLines = Array.isArray(imageLayout.captionLines) && imageLayout.captionLines.length > 0
+        ? imageLayout.captionLines
+        : [object.caption || ''];
+    const style = {
+        fontFamily: CAPTION_FONT_FAMILY,
+        fontSize: CAPTION_FONT_SIZE,
+        color: '#475569',
+        fontStyle: 'italic',
+        fontWeight: '400',
+    };
+    let seq = sequence;
+    captionLines.forEach((lineText, lineIndex) => {
+        const lineY = imageLayout.captionRect.y + lineIndex * CAPTION_LINE_HEIGHT;
+        commands.push({
+            id: `${imageLayout.objectId || imageLayout.blockId}-caption${lineIndex > 0 ? `-${lineIndex}` : ''}`,
+            type: 'imageCaption',
+            layer: 'content',
+            pageIndex: Number(imageLayout.pageIndex || 0) || 0,
+            blockId: imageLayout.blockId || '',
+            objectId: imageLayout.objectId || '',
+            text: lineText,
+            x: imageLayout.captionRect.x,
+            y: lineY,
+            width: imageLayout.captionRect.width,
+            height: CAPTION_LINE_HEIGHT,
+            baseline: lineY + 12,
+            style,
+            sequence: seq++,
+        });
+    });
+    return seq;
+}
+
 export function layoutCanvasImageObject(object, context) {
     const page = context?.page || {};
     const body = page.body || { x: 72, y: 72, width: 480, height: 680 };
     const fallbackY = Number(context?.y ?? body.y);
     const y = resolveObjectY(object, page, body, fallbackY);
-    const captionHeight = object.caption ? 22 : 0;
+    const captionX = Math.max(body.x, Math.min(body.x + body.width - object.width, Number(object.x || body.x) || body.x));
+    const captionWidth = Math.min(body.width, Math.max(24, object.width));
+    // B4: wrap the caption to the image width (it used to be a single un-clipped line that overflowed to the
+    // right and collided with the wrapping body text). captionRect grows to fit the wrapped lines.
+    const captionLines = object.caption
+        ? wrapCaptionLines(String(object.caption), Math.max(8, captionWidth - 2 * CAPTION_PADDING_X), context?.fontMetrics)
+        : [];
+    const captionHeight = captionLines.length > 0
+        ? captionLines.length * CAPTION_LINE_HEIGHT + CAPTION_PADDING_Y
+        : 0;
     return {
         id: object.id,
         blockId: object.blockId,
@@ -191,15 +285,16 @@ export function layoutCanvasImageObject(object, context) {
         pageIndex: Number(page.index || 0) || 0,
         sequence: Number(context?.sequence || 0) || 0,
         rect: {
-            x: Math.max(body.x, Math.min(body.x + body.width - object.width, Number(object.x || body.x) || body.x)),
+            x: captionX,
             y,
-            width: Math.min(body.width, Math.max(24, object.width)),
+            width: captionWidth,
             height: Math.max(24, object.height),
         },
+        captionLines,
         captionRect: object.caption ? {
-            x: Math.max(body.x, Math.min(body.x + body.width - object.width, Number(object.x || body.x) || body.x)),
+            x: captionX,
             y: y + object.height + 4,
-            width: Math.min(body.width, Math.max(24, object.width)),
+            width: captionWidth,
             height: captionHeight,
         } : null,
         object: {
@@ -252,30 +347,7 @@ export function imageDisplayCommands(imageLayout, sequenceStart = 0, options = {
         lineWidth: object.altText || object.isDecorative ? 1 : 1.5,
         sequence: sequence++,
     });
-    if (imageLayout.captionRect) {
-        commands.push({
-            id: `${imageLayout.objectId || imageLayout.blockId}-caption`,
-            type: 'imageCaption',
-            layer: 'content',
-            pageIndex: Number(imageLayout.pageIndex || 0) || 0,
-            blockId: imageLayout.blockId || '',
-            objectId: imageLayout.objectId || '',
-            text: object.caption || '',
-            x: imageLayout.captionRect.x,
-            y: imageLayout.captionRect.y,
-            width: imageLayout.captionRect.width,
-            height: imageLayout.captionRect.height,
-            baseline: imageLayout.captionRect.y + 15,
-            style: {
-                fontFamily: 'Aptos, Arial, sans-serif',
-                fontSize: 12,
-                color: '#475569',
-                fontStyle: 'italic',
-                fontWeight: '400',
-            },
-            sequence: sequence++,
-        });
-    }
+    sequence = pushCaptionCommands(commands, imageLayout, object, sequence);
 
     return commands;
 }
@@ -331,30 +403,7 @@ export function drawingDisplayCommands(imageLayout, sequenceStart = 0, options =
     commands.push(...textCommands);
     sequence += textCommands.length;
 
-    if (imageLayout.captionRect) {
-        commands.push({
-            id: `${imageLayout.objectId || imageLayout.blockId}-caption`,
-            type: 'imageCaption',
-            layer: 'content',
-            pageIndex: Number(imageLayout.pageIndex || 0) || 0,
-            blockId: imageLayout.blockId || '',
-            objectId: imageLayout.objectId || '',
-            text: object.caption || '',
-            x: imageLayout.captionRect.x,
-            y: imageLayout.captionRect.y,
-            width: imageLayout.captionRect.width,
-            height: imageLayout.captionRect.height,
-            baseline: imageLayout.captionRect.y + 15,
-            style: {
-                fontFamily: 'Aptos, Arial, sans-serif',
-                fontSize: 12,
-                color: '#475569',
-                fontStyle: 'italic',
-                fontWeight: '400',
-            },
-            sequence: sequence++,
-        });
-    }
+    sequence = pushCaptionCommands(commands, imageLayout, object, sequence);
 
     return commands;
 }

@@ -18,6 +18,7 @@ import { createCanvasHistoryController } from './history/history-controller.mjs'
 import { createHiddenInputBridge } from './input/hidden-input-bridge.mjs';
 import { createCanvasInputController } from './input/input-controller.mjs';
 import { createLayoutService } from './layout/page-geometry.mjs';
+import { imageObjectById } from './objects/object-handles.mjs';
 import { createModelStore } from './model/model-store.mjs';
 import { createRecalcInfo } from './perf/recalc-info.mjs';
 import { createPerformanceMetrics } from './perf/runtime-metrics.mjs';
@@ -832,6 +833,61 @@ export class CanvasDocumentEngine {
         return marker;
     }
 
+    // Programmatic object selection by id (test/automation seam). A synthetic pointer click is unreliable on
+    // the full editor (canvas reflow), so this selects the object directly — building the same selection the
+    // pointer-down path produces — and lets the normal selection notification push the object mini toolbar.
+    selectObjectById(objectId) {
+        const layout = this.lastRender?.selectionLayout || this.lastLayout;
+        const info = imageObjectById(layout, objectId);
+        if (!info) {
+            return { selected: false, objectId: String(objectId || '') };
+        }
+
+        this.focusInput();
+        this.selectionController.setSelection({
+            anchor: { blockId: info.blockId, offset: 0 },
+            focus: { blockId: info.blockId, offset: 0 },
+            object: info,
+        });
+        return { selected: true, objectId: info.objectId, blockId: info.blockId };
+    }
+
+    // Programmatic text-range selection by block id + offsets (test/automation seam) — selects a range
+    // (e.g. inside a table cell) without a synthetic drag, then the normal selection push surfaces the mini
+    // toolbar. Returns whether the resulting selection is non-collapsed and in a table.
+    selectTextRange(blockId, startOffset, endOffset) {
+        const id = String(blockId || '');
+        if (!id) {
+            return { selected: false };
+        }
+
+        this.focusInput();
+        this.selectionController.setSelection({
+            anchor: { blockId: id, offset: Math.max(0, Number(startOffset) || 0) },
+            focus: { blockId: id, offset: Math.max(0, Number(endOffset) || 0) },
+        });
+        const state = this.selectionController.getState();
+        return {
+            selected: state.isCollapsed === false,
+            inTable: state.table?.inTable === true,
+            blockId: id,
+        };
+    }
+
+    // B6: enter header/footer editing (place the caret in the first header/footer block of the type) — the
+    // host calls this for the ribbon "Edit header / Edit footer" entries; the dim/label visual + contextual
+    // tab follow from the caret region.
+    editHeaderFooter(type) {
+        const entered = this.selectionController.enterHeaderFooter(type);
+        return { entered, region: entered ? (String(type || '').toLowerCase() === 'footer' ? 'Footer' : 'Header') : 'Body' };
+    }
+
+    // B6: close header/footer editing (move the caret back to the body).
+    closeHeaderFooter() {
+        const closed = this.selectionController.exitHeaderFooterToBody();
+        return { closed };
+    }
+
     reviewRevision(revisionId, action) {
         const before = this.modelStore.getModel();
         const result = applyReviewDecision(before, revisionId, action);
@@ -939,6 +995,7 @@ export class CanvasDocumentEngine {
 
     notifySelectionChanged(state) {
         const payload = buildMiniToolbarPayload(this.canvasStack, state);
+        this.lastMiniToolbarPayload = payload;
         this.rulerOverlay?.update?.(this.lastLayout, this.modelStore.getModel(), {
             ...this.commandRuntime.getViewState(),
             selection: this.selectionController.getSelection(),
@@ -1358,6 +1415,41 @@ export class CanvasDocumentEngine {
         const page = this.canvasStack.pages.get(String(marker?.pageIndex ?? 0));
         page?.pageElement?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     }
+
+    // B9: scroll a page into view from the navigator. A mounted page scrolls directly; a virtualized
+    // (unmounted) page is reached by scrolling the host/window to the page's estimated top, then re-planning
+    // virtualization for the new viewport so it mounts.
+    scrollToPage(pageIndex) {
+        const pages = Array.isArray(this.lastRender?.displayList?.pages) && this.lastRender.displayList.pages.length > 0
+            ? this.lastRender.displayList.pages
+            : (Array.isArray(this.lastLayout?.pages) ? this.lastLayout.pages : []);
+        if (!pages.length) {
+            return { scrolled: false, pageIndex: 0 };
+        }
+
+        const idx = Math.max(0, Math.min(pages.length - 1, Number(pageIndex) || 0));
+        const mounted = this.canvasStack.pages.get(String(idx));
+        if (mounted?.pageElement?.scrollIntoView) {
+            mounted.pageElement.scrollIntoView({ block: 'start', inline: 'nearest' });
+            return { scrolled: true, pageIndex: idx, mounted: true };
+        }
+
+        // Estimate the page's top in scroll coordinates (uniform page stride: height + gap, plus top padding).
+        const pageHeight = Math.max(1, Number(pages[0]?.height) || 1123);
+        const gap = 24;
+        const padding = 24;
+        const top = padding + idx * (pageHeight + gap);
+        const host = this.host;
+        const view = this.document?.defaultView || globalThis;
+        if (host && Number(host.scrollHeight || 0) > Number(host.clientHeight || 0)) {
+            host.scrollTop = top;
+        } else if (typeof view.scrollTo === 'function') {
+            view.scrollTo(0, top);
+        }
+
+        this.handleScroll();
+        return { scrolled: true, pageIndex: idx, mounted: false };
+    }
 }
 
 function affectedBlockIds(batch) {
@@ -1465,8 +1557,12 @@ function toWysiwygSelectionSnapshot(selectionState) {
     const focus = selectionState.focus;
     const inTable = selectionState.table?.inTable === true;
     const object = selectionState.object || null;
+    // B6: header/footer caret reports its region so the host enables the Header & Footer contextual tab.
+    const headerFooterRegion = selectionState.region === 'Header' || selectionState.region === 'Footer'
+        ? selectionState.region
+        : null;
     return {
-        region: inTable ? 'TableCell' : 'Body',
+        region: headerFooterRegion || (inTable ? 'TableCell' : 'Body'),
         selectionMode: object ? 'Object' : 'Text',
         pageIndex: Number(selectionState.pageIndex || 0) || 0,
         anchorBlockId: String(anchor.blockId || ''),

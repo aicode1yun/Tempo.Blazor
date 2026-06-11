@@ -3036,6 +3036,7 @@
   <data name="TmDocumentEditor_PasteReportShowDetails" xml:space="preserve"><value>Détails</value></data>
   <data name="TmDocumentEditor_PasteReportHideDetails" xml:space="preserve"><value>Masquer</value></data>
   <data name="TmDocumentEditor_PasteReportClose"       xml:space="preserve"><value>Fermer le rapport de collage</value></data>
+  <data name="TmDocumentEditor_PasteUseKeyboard"       xml:space="preserve"><value>Utilisez Ctrl+V pour coller — le navigateur a bloqué l'accès au presse-papiers.</value></data>
   <data name="TmDocumentEditor_ImageWrapPanelLabel"    xml:space="preserve"><value>Options d'habillage de l'image</value></data>
   <data name="TmDocumentEditor_ImageWrapMode"          xml:space="preserve"><value>Habiller le texte</value></data>
   <data name="TmDocumentEditor_ImageWrapInline"        xml:space="preserve"><value>Intégré</value></data>

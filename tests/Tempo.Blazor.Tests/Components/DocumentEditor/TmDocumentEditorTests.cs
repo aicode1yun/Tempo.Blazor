@@ -2061,9 +2061,12 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-text-context-menu']").Should().NotBeNull());
 
-        cut.Find("[data-testid='document-context-cut']").HasAttribute("disabled").Should().BeTrue();
+        // B11/B12 (UX fix 2026-06-11): clipboard commands were previously hard-disabled. They are now truthful —
+        // with a non-empty selection in an editable document, Cut and Copy are enabled, and Paste is offered
+        // (the async Clipboard API supplies the content, falling back to a Ctrl+V hint if the browser blocks it).
+        cut.Find("[data-testid='document-context-cut']").HasAttribute("disabled").Should().BeFalse();
         cut.Find("[data-testid='document-context-copy']").HasAttribute("disabled").Should().BeFalse();
-        cut.Find("[data-testid='document-context-paste']").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("[data-testid='document-context-paste']").HasAttribute("disabled").Should().BeFalse();
 
         var hiddenContextCommands = new[]
         {
