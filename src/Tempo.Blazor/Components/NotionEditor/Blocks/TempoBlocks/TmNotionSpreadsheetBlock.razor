@@ -1,15 +1,28 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.Files
 @using Tempo.Blazor.Components.Spreadsheet
 @using Tempo.Blazor.Components.Spreadsheet.Enums
 
 <div class="tm-notion-spreadsheet-block" @onfocus="HandleFocusAsync">
 
-    @if (Content is null || Content.SpreadsheetDocumentId == Guid.Empty)
+    @if (_notFound)
+    {
+        <div class="tm-notion-tempo-block__not-found" role="status">
+            <span>@Loc["TmNotionBlock_DocumentNotFound"]</span>
+            @if (!ReadOnly)
+            {
+                <button type="button" class="tm-notion-tempo-block__remove"
+                        @onclick="HandleRemoveAsync">@Loc["TmNotionBlock_RemoveBlock"]</button>
+            }
+        </div>
+    }
+    else if (Content is null || Content.SpreadsheetDocumentId == Guid.Empty)
     {
         @if (!ReadOnly)
         {
+            <div class="tm-notion-tempo-block__placeholder-actions">
             <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--spreadsheet"
                     type="button"
                     aria-label="@Loc["TmNotionSpreadsheetBlock_Create"]"
@@ -28,6 +41,15 @@
                 }
                 <span>@Loc["TmNotionSpreadsheetBlock_Create"]</span>
             </button>
+            @if (Context.DocumentLibraryProvider is not null)
+            {
+                <button class="tm-notion-tempo-block__insert-existing"
+                        type="button"
+                        @onclick="() => _insertDialogOpen = true">
+                    @Loc["TmNotionBlock_InsertExisting"]
+                </button>
+            }
+            </div>
         }
         else
         {
@@ -105,6 +127,15 @@
                                       Provider="Context.SpreadsheetDocumentProvider"
                                       OnSaved="HandleEditorSavedAsync"
                                       OnDiscarded="HandleEditorDiscardedAsync" />
+    }
+
+    @if (Context.DocumentLibraryProvider is not null)
+    {
+        <TmDocumentOpenDialog Provider="Context.DocumentLibraryProvider"
+                              Kind="Tempo.Blazor.DocumentLibrary.TempoDocumentKind.Spreadsheet"
+                              ShowModeToggle="true"
+                              @bind-Open="_insertDialogOpen"
+                              OnSelected="HandleInsertSelectedAsync" />
     }
 
 </div>

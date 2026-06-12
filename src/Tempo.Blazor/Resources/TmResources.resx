@@ -4805,4 +4805,32 @@
   <data name="Notion_ContentByLabel_Sort_TitleDesc" xml:space="preserve"><value>Title Z-A</value></data>
   <data name="Notion_ContentByLabel_Sort_CreatedDesc" xml:space="preserve"><value>Newest created</value></data>
   <data name="Notion_ContentByLabel_Sort_CreatedAsc" xml:space="preserve"><value>Oldest created</value></data>
+  <data name="TmDocumentOpenDialog_Title" xml:space="preserve"><value>Open document</value></data>
+  <data name="TmDocumentOpenDialog_Search" xml:space="preserve"><value>Search documents</value></data>
+  <data name="TmDocumentOpenDialog_NewFolder" xml:space="preserve"><value>New folder</value></data>
+  <data name="TmDocumentOpenDialog_Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="TmDocumentOpenDialog_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="TmDocumentOpenDialog_DeleteConfirm" xml:space="preserve"><value>Delete {0}? This cannot be undone.</value></data>
+  <data name="TmDocumentOpenDialog_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="TmDocumentOpenDialog_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmDocumentOpenDialog_LinkMode" xml:space="preserve"><value>Link to file</value></data>
+  <data name="TmDocumentOpenDialog_CopyMode" xml:space="preserve"><value>Insert a copy</value></data>
+  <data name="TmDocumentOpenDialog_LinkModeHint" xml:space="preserve"><value>Stays in sync with the original document.</value></data>
+  <data name="TmDocumentOpenDialog_CopyModeHint" xml:space="preserve"><value>Creates an independent copy that will not change.</value></data>
+  <data name="TmDocumentOpenDialog_Empty" xml:space="preserve"><value>This folder is empty.</value></data>
+  <data name="TmDocumentOpenDialog_Error" xml:space="preserve"><value>Could not load documents.</value></data>
+  <data name="TmDocumentOpenDialog_Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="TmDocumentOpenDialog_Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="TmDocumentOpenDialog_ColumnName" xml:space="preserve"><value>Name</value></data>
+  <data name="TmDocumentOpenDialog_ColumnModified" xml:space="preserve"><value>Modified</value></data>
+  <data name="TmDocumentOpenDialog_ColumnAuthor" xml:space="preserve"><value>Author</value></data>
+  <data name="TmDocumentOpenDialog_ListView" xml:space="preserve"><value>List view</value></data>
+  <data name="TmDocumentOpenDialog_GridView" xml:space="preserve"><value>Grid view</value></data>
+  <data name="TmDocumentOpenDialog_LoadMore" xml:space="preserve"><value>Load more</value></data>
+  <data name="TmDocumentOpenDialog_RootFolder" xml:space="preserve"><value>All documents</value></data>
+  <data name="TmDocumentOpenDialog_NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="TmDocumentOpenDialog_NewFolderName" xml:space="preserve"><value>Folder name</value></data>
+  <data name="TmNotionBlock_InsertExisting" xml:space="preserve"><value>Insert existing…</value></data>
+  <data name="TmNotionBlock_DocumentNotFound" xml:space="preserve"><value>Document not found</value></data>
+  <data name="TmNotionBlock_RemoveBlock" xml:space="preserve"><value>Remove</value></data>
 </root>

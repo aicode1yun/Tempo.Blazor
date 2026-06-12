@@ -1,14 +1,27 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.Files
 @using Tempo.Blazor.Components.Diagram.Models
 
 <div class="tm-notion-diagram-block" @onfocus="HandleFocusAsync">
 
-    @if (Content is null || Content.DiagramDocumentId == Guid.Empty)
+    @if (_notFound)
+    {
+        <div class="tm-notion-tempo-block__not-found" role="status">
+            <span>@Loc["TmNotionBlock_DocumentNotFound"]</span>
+            @if (!ReadOnly)
+            {
+                <button type="button" class="tm-notion-tempo-block__remove"
+                        @onclick="HandleRemoveAsync">@Loc["TmNotionBlock_RemoveBlock"]</button>
+            }
+        </div>
+    }
+    else if (Content is null || Content.DiagramDocumentId == Guid.Empty)
     {
         @if (!ReadOnly)
         {
+            <div class="tm-notion-tempo-block__placeholder-actions">
             <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--diagram"
                     type="button"
                     aria-label="@Loc["TmNotionDiagramBlock_CreateDiagram"]"
@@ -29,6 +42,15 @@
                 }
                 <span>@Loc["TmNotionDiagramBlock_CreateDiagram"]</span>
             </button>
+            @if (Context.DocumentLibraryProvider is not null)
+            {
+                <button class="tm-notion-tempo-block__insert-existing"
+                        type="button"
+                        @onclick="() => _insertDialogOpen = true">
+                    @Loc["TmNotionBlock_InsertExisting"]
+                </button>
+            }
+            </div>
         }
         else
         {
@@ -51,10 +73,10 @@
                  style="@_sizeStyle"
                  @ref="_previewWrapRef">
 
-                @if (!string.IsNullOrEmpty(Content.SvgPreviewCache))
+                @if (!string.IsNullOrEmpty(_effectivePreview))
                 {
                     <div class="tm-notion-diagram-block__svg-container">
-                        @((MarkupString)Content.SvgPreviewCache)
+                        @((MarkupString)_effectivePreview)
                     </div>
                 }
                 else
@@ -109,6 +131,15 @@
                                    ExportService="_exportService"
                                    OnSaved="HandleEditorSavedAsync"
                                    OnDiscarded="HandleEditorDiscardedAsync" />
+    }
+
+    @if (Context.DocumentLibraryProvider is not null)
+    {
+        <TmDocumentOpenDialog Provider="Context.DocumentLibraryProvider"
+                              Kind="Tempo.Blazor.DocumentLibrary.TempoDocumentKind.Diagram"
+                              ShowModeToggle="true"
+                              @bind-Open="_insertDialogOpen"
+                              OnSelected="HandleInsertSelectedAsync" />
     }
 
 </div>

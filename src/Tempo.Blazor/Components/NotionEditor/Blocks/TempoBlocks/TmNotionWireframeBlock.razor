@@ -1,14 +1,27 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.Files
 @using Tempo.Blazor.Components.Wireframe.Models
 
 <div class="tm-notion-wireframe-block" @onfocus="HandleFocusAsync">
 
-    @if (Content is null || Content.WireframeDocumentId == Guid.Empty)
+    @if (_notFound)
+    {
+        <div class="tm-notion-tempo-block__not-found" role="status">
+            <span>@Loc["TmNotionBlock_DocumentNotFound"]</span>
+            @if (!ReadOnly)
+            {
+                <button type="button" class="tm-notion-tempo-block__remove"
+                        @onclick="HandleRemoveAsync">@Loc["TmNotionBlock_RemoveBlock"]</button>
+            }
+        </div>
+    }
+    else if (Content is null || Content.WireframeDocumentId == Guid.Empty)
     {
         @if (!ReadOnly)
         {
+            <div class="tm-notion-tempo-block__placeholder-actions">
             <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--wireframe"
                     type="button"
                     aria-label="@Loc["TmNotionWireframeBlock_CreateWireframe"]"
@@ -30,6 +43,15 @@
                 }
                 <span>@Loc["TmNotionWireframeBlock_CreateWireframe"]</span>
             </button>
+            @if (Context.DocumentLibraryProvider is not null)
+            {
+                <button class="tm-notion-tempo-block__insert-existing"
+                        type="button"
+                        @onclick="() => _insertDialogOpen = true">
+                    @Loc["TmNotionBlock_InsertExisting"]
+                </button>
+            }
+            </div>
         }
         else
         {
@@ -53,10 +75,10 @@
                  style="@_sizeStyle"
                  @ref="_previewWrapRef">
 
-                @if (!string.IsNullOrEmpty(Content.SvgPreviewCache))
+                @if (!string.IsNullOrEmpty(_effectivePreview))
                 {
                     <div class="tm-notion-wireframe-block__svg-container">
-                        @((MarkupString)Content.SvgPreviewCache)
+                        @((MarkupString)_effectivePreview)
                     </div>
                 }
                 else
@@ -111,6 +133,15 @@
                                     Provider="Context.WireframeDocumentProvider"
                                     OnSaved="HandleEditorSavedAsync"
                                     OnDiscarded="HandleEditorDiscardedAsync" />
+    }
+
+    @if (Context.DocumentLibraryProvider is not null)
+    {
+        <TmDocumentOpenDialog Provider="Context.DocumentLibraryProvider"
+                              Kind="Tempo.Blazor.DocumentLibrary.TempoDocumentKind.Wireframe"
+                              ShowModeToggle="true"
+                              @bind-Open="_insertDialogOpen"
+                              OnSelected="HandleInsertSelectedAsync" />
     }
 
 </div>

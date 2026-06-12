@@ -3614,4 +3614,32 @@
   <data name="Notion_SmartLink_PasteAs_Plain" xml:space="preserve"><value>Coller comme lien simple</value></data>
   <data name="TmNotionEditor_LoadError" xml:space="preserve"><value>Impossible de charger la page.</value></data>
   <data name="TmNotionPage_BlocksLoadError" xml:space="preserve"><value>Impossible de charger le contenu.</value></data>
+  <data name="TmDocumentOpenDialog_Title" xml:space="preserve"><value>Ouvrir un document</value></data>
+  <data name="TmDocumentOpenDialog_Search" xml:space="preserve"><value>Rechercher des documents</value></data>
+  <data name="TmDocumentOpenDialog_NewFolder" xml:space="preserve"><value>Nouveau dossier</value></data>
+  <data name="TmDocumentOpenDialog_Rename" xml:space="preserve"><value>Renommer</value></data>
+  <data name="TmDocumentOpenDialog_Delete" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmDocumentOpenDialog_DeleteConfirm" xml:space="preserve"><value>Supprimer {0} ? Cette action est irréversible.</value></data>
+  <data name="TmDocumentOpenDialog_Open" xml:space="preserve"><value>Ouvrir</value></data>
+  <data name="TmDocumentOpenDialog_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmDocumentOpenDialog_LinkMode" xml:space="preserve"><value>Lier au fichier</value></data>
+  <data name="TmDocumentOpenDialog_CopyMode" xml:space="preserve"><value>Insérer une copie</value></data>
+  <data name="TmDocumentOpenDialog_LinkModeHint" xml:space="preserve"><value>Reste synchronisé avec le document d'origine.</value></data>
+  <data name="TmDocumentOpenDialog_CopyModeHint" xml:space="preserve"><value>Crée une copie indépendante qui ne changera pas.</value></data>
+  <data name="TmDocumentOpenDialog_Empty" xml:space="preserve"><value>Ce dossier est vide.</value></data>
+  <data name="TmDocumentOpenDialog_Error" xml:space="preserve"><value>Impossible de charger les documents.</value></data>
+  <data name="TmDocumentOpenDialog_Loading" xml:space="preserve"><value>Chargement…</value></data>
+  <data name="TmDocumentOpenDialog_Retry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="TmDocumentOpenDialog_ColumnName" xml:space="preserve"><value>Nom</value></data>
+  <data name="TmDocumentOpenDialog_ColumnModified" xml:space="preserve"><value>Modifié</value></data>
+  <data name="TmDocumentOpenDialog_ColumnAuthor" xml:space="preserve"><value>Auteur</value></data>
+  <data name="TmDocumentOpenDialog_ListView" xml:space="preserve"><value>Affichage en liste</value></data>
+  <data name="TmDocumentOpenDialog_GridView" xml:space="preserve"><value>Affichage en grille</value></data>
+  <data name="TmDocumentOpenDialog_LoadMore" xml:space="preserve"><value>Charger plus</value></data>
+  <data name="TmDocumentOpenDialog_RootFolder" xml:space="preserve"><value>Tous les documents</value></data>
+  <data name="TmDocumentOpenDialog_NameRequired" xml:space="preserve"><value>Le nom est obligatoire.</value></data>
+  <data name="TmDocumentOpenDialog_NewFolderName" xml:space="preserve"><value>Nom du dossier</value></data>
+  <data name="TmNotionBlock_InsertExisting" xml:space="preserve"><value>Insérer un existant…</value></data>
+  <data name="TmNotionBlock_DocumentNotFound" xml:space="preserve"><value>Document introuvable</value></data>
+  <data name="TmNotionBlock_RemoveBlock" xml:space="preserve"><value>Supprimer</value></data>
 </root>

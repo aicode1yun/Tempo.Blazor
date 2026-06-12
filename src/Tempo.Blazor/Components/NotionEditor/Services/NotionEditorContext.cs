@@ -47,6 +47,18 @@ public sealed class NotionEditorContext
     public INotionMediaLibraryProvider?   MediaLibraryProvider       { get; init; }
     public ITokenDataProvider?            TokenProvider              { get; init; }
 
+    /// <summary>
+    /// Optional document library used by the Tempo blocks (wireframe/diagram/spreadsheet) to offer
+    /// "Insert existing…", render previews and refresh them. When null, only "Create" is offered.
+    /// </summary>
+    public Tempo.Blazor.DocumentLibrary.ITempoDocumentLibraryProvider? DocumentLibraryProvider { get; init; }
+
+    /// <summary>
+    /// Optional live-change notifier. When present, embedded Tempo blocks subscribe to their
+    /// linked document and refresh automatically when it changes elsewhere.
+    /// </summary>
+    public Tempo.Blazor.DocumentLibrary.ITempoDocumentChangeNotifier? DocumentChangeNotifier { get; init; }
+
     /// <summary>Active collaboration sync service (null when CollaborationProvider is absent).</summary>
     public NotionCollaborationSync?        CollaborationSync         { get; init; }
 

@@ -48,7 +48,8 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 25. [Activity](#activity-komentáře-přílohy-rich-editor) — TmActivityLog, TmActivityComments, TmActivityAttachments, TmActivityTimeline, TmRichEditorFull, TmRichEditorSimple, TokenAutocomplete
 26. [AI Tools](#ai-tools) — TmAIPrompt
 27. [Chat](#chat) — TmChat
-28. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
+28. [Knihovna dokumentů](#knihovna-dokumentů-document-library) — ITempoDocumentLibraryProvider, TmDocumentOpenDialog, ITempoDocumentChangeNotifier, NotionEditor insert-existing, MCP
+29. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
 
 ---
 
@@ -6902,4 +6903,122 @@ Dialog pro import CSV dat a generování diagramů (organizační struktura, flo
 
 ---
 
-*Dokumentace komponent byla aktualizována o Diagram Editor.*
+## Knihovna dokumentů (Document Library)
+
+Sdílená vrstva pro procházení, otevírání a vkládání dokumentů vytvořených editory wireframů,
+diagramů a tabulek. Umožňuje znovupoužít existující dokument jako blok jinde (např. v NotionEditoru)
+a poskytuje stejnou abstrakci nástrojům MCP (`Tempo.Blazor.Mcp`).
+
+### ITempoDocumentLibraryProvider
+
+Generický poskytovatel **metadat** a organizace dokumentů (z `Tempo.Blazor.Abstractions`,
+namespace `Tempo.Blazor.DocumentLibrary`). Pracuje pouze s metadaty — vlastní obsah dokumentu se
+načítá/ukládá přes kind-specifické providery (`IWireframeDocumentProvider` atd.).
+
+| Člen | Typ | Popis |
+|------|-----|-------|
+| `Capabilities` | `DocumentLibraryCapabilities` | Které management operace provider podporuje (flagy). |
+| `GetFolderTreeAsync` | `Task<DocumentLibraryFolder>` | Strom složek pro daný `kind` (ploché úložiště vrátí kořen bez potomků). |
+| `BrowseAsync` | `Task<DocumentLibraryPage>` | Jedna stránka záznamů odpovídající `DocumentLibraryQuery`. |
+| `GetEntryAsync` | `Task<DocumentLibraryEntry?>` | Metadata jednoho dokumentu (vč. `PreviewSvg` a `ModifiedAt`) nebo `null`, pokud už neexistuje. |
+| `CreateFolderAsync` | `Task<DocumentLibraryFolder>` | Vytvoří složku (vyžaduje `CreateFolder`). |
+| `RenameDocumentAsync` / `RenameFolderAsync` | `Task` | Přejmenování (vyžaduje `Rename`). |
+| `DeleteDocumentsAsync` / `DeleteFolderAsync` | `Task` | Smazání (vyžaduje `Delete`). |
+
+`DocumentLibraryCapabilities` (Flags): `None`, `CreateFolder`, `Rename`, `Delete`, `Search`, `All`.
+Read-only úložiště vrací `None` a dialog nabídne jen procházení/otevření.
+
+`TempoDocumentKind`: `Wireframe`, `Diagram`, `Spreadsheet` (serializuje se jako camelCase string
+pro čitelnost AI/MCP).
+
+> Mazání dokumentu neodstraní odkazy na něj jinde (např. bloky v NotionEditoru) — takové odkazy
+> degradují do stavu „nenalezeno".
+
+### TmDocumentOpenDialog
+
+Dialog „Otevřít dokument" ve stylu Wordu nad `ITempoDocumentLibraryProvider`: strom složek,
+drobečková navigace, prohledávatelný seznam/mřížka dokumentů, volitelná správa složek/dokumentů
+a volba **odkaz vs. kopie**. Po potvrzení vyvolá `DocumentOpenResult`.
+
+#### Parametry
+
+| Parametr | Typ | Výchozí | Popis |
+|----------|-----|---------|-------|
+| `Provider` | `ITempoDocumentLibraryProvider` | **povinný** | Procházená knihovna. |
+| `Kind` | `TempoDocumentKind` | `Wireframe` | Druh dokumentů k zobrazení. |
+| `Open` | `bool` | `false` | Zda je dialog zobrazen. |
+| `OpenChanged` | `EventCallback<bool>` | — | Otevření/zavření dialogu (dvousměrná vazba). |
+| `ShowModeToggle` | `bool` | `true` | Nabídnout volbu odkaz/kopie. |
+| `DefaultMode` | `DocumentOpenMode` | `Link` | Výchozí režim vložení (`Link` nebo `Copy`). |
+| `OnSelected` | `EventCallback<DocumentOpenResult>` | — | Vyvoláno s vybraným dokumentem po potvrzení. |
+| `OnCancelled` | `EventCallback` | — | Vyvoláno při zrušení. |
+| `PageSize` | `int` | `50` | Velikost stránky při procházení. |
+| `SearchDebounceMs` | `int` | `300` | Debounce vyhledávání v ms (0 v testech). |
+
+`DocumentOpenResult`: `DocumentId` (Guid), `Kind` (`TempoDocumentKind`), `Mode`
+(`DocumentOpenMode`), `Name` (string?).
+
+`DocumentOpenMode`:
+
+- **`Link`** — odkaz na původní dokument; konzument zůstává v synchronizaci s pozdějšími úpravami.
+- **`Copy`** — vloží nezávislou kopii; konzument není pozdějšími úpravami originálu dotčen.
+
+#### Použití
+
+```razor
+<TmDocumentOpenDialog Provider="@LibraryProvider"
+                      Kind="TempoDocumentKind.Wireframe"
+                      @bind-Open="_openDialogVisible"
+                      OnSelected="HandleSelectedAsync" />
+```
+
+### Vkládání existujících dokumentů v NotionEditoru
+
+Bloky `TmNotionWireframeBlock`, `TmNotionDiagramBlock` a `TmNotionSpreadsheetBlock` umí kromě
+tvorby nového dokumentu vložit i **existující** dokument z knihovny. Když je editoru předán
+`DocumentLibraryProvider`, prázdný blok nabídne akci „Vložit existující…", která otevře
+`TmDocumentOpenDialog`. Podle zvoleného režimu blok buď **odkáže** na původní dokument (a živě se
+obnovuje při jeho změnách), nebo vloží jeho **hlubokou kopii**.
+
+`TmNotionEditor` / `NotionEditorContext` přijímá:
+
+| Parametr | Typ | Popis |
+|----------|-----|-------|
+| `DocumentLibraryProvider` | `ITempoDocumentLibraryProvider?` | Knihovna pro vkládání existujících dokumentů (bez ní se akce „Vložit existující" nezobrazí). |
+| `DocumentChangeNotifier` | `ITempoDocumentChangeNotifier?` | Volitelné živé obnovení odkazovaných bloků. |
+
+Odkazovaný blok zobrazuje serverový SVG náhled a obnoví ho, když přijde změna pro jeho dokument.
+Pokud byl odkazovaný dokument smazán, blok degraduje do stavu „nenalezeno" s možností odstranění.
+
+### ITempoDocumentChangeNotifier — živé obnovení
+
+Klientská abstrakce (z `Tempo.Blazor.Abstractions`) pro odběr změn konkrétních dokumentů bez
+pollingu. Otevřený editor nebo vložený blok se přihlásí k odběru těch dokumentů, které zobrazuje,
+a obnoví se, když `Changed` nastane pro některý z nich.
+
+| Člen | Popis |
+|------|-------|
+| `event Func<TempoDocumentChange, CancellationToken, Task>? Changed` | Vyvoláno při změně odebíraného dokumentu. |
+| `SubscribeAsync(kind, documentId, ct)` | Začne přijímat změny daného dokumentu. |
+| `UnsubscribeAsync(kind, documentId, ct)` | Přestane přijímat změny. |
+
+`TempoDocumentChange` nese `Kind`, `DocumentId`, `ChangeType` (`Saved`/`Deleted`/…), `ModifiedAt`
+a volitelný `Origin` (např. `"mcp"`), aby odběratel mohl ignorovat ozvěny vlastních zápisů.
+
+`Tempo.Blazor.Collaboration` poskytuje `SignalRTempoDocumentChangeNotifier` (klientská strana přes
+SignalR hub) a publikaci na straně serveru přes `ITempoDocumentChangePublisher`. Pro testy a
+single-process scénáře je k dispozici `InProcessTempoDocumentChangeBus`.
+
+> Změny publikuje **úložiště** po úspěšném uložení, nikoli MCP nástroje — tím se zabrání dvojímu
+> obnovení.
+
+### MCP nástroje pro wireframe
+
+Balíček `Tempo.Blazor.Mcp` vystavuje wireframe knihovnu jako nástroje Model Context Protocolu, aby
+LLM mohl navrhovat a číst wireframy (procházení komponent, dávkové operace, validace, implementační
+brief). Hostuje se přes `AddTempoWireframeMcpTools()` + `AddMcpServer().WithToolsFromAssembly(…)`.
+Detaily, kontrakt výsledků a optimistický concurrency model viz `src/Tempo.Blazor.Mcp/README.md`.
+
+---
+
+*Dokumentace komponent byla aktualizována o Diagram Editor a Knihovnu dokumentů (Document Library + TmDocumentOpenDialog + MCP).*

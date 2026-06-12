@@ -74,6 +74,14 @@ builder.Services.AddScoped<MockNotionSearchProvider>();
 builder.Services.AddScoped<MockNotionWireframeDocumentProvider>();
 builder.Services.AddScoped<MockNotionDiagramDocumentProvider>();
 builder.Services.AddScoped<ApiSpreadsheetDocumentProvider>();
+builder.Services.AddScoped<ApiWireframeDocumentProvider>();
+builder.Services.AddScoped<ApiDiagramDocumentProvider>();
+builder.Services.AddScoped<Tempo.Blazor.DocumentLibrary.ITempoDocumentLibraryProvider, ApiTempoDocumentLibraryProvider>();
+builder.Services.AddScoped<Tempo.Blazor.DocumentLibrary.ITempoDocumentChangeNotifier>(sp =>
+{
+    var baseUri = sp.GetRequiredService<IHttpClientFactory>().CreateClient("DemoApi").BaseAddress!.ToString().TrimEnd('/');
+    return new Tempo.Blazor.DocumentLibrary.Collaboration.SignalRTempoDocumentChangeNotifier($"{baseUri}/hubs/document-library");
+});
 builder.Services.AddScoped<DemoNotionImportExportProvider>();
 builder.Services.AddScoped<SignalRCollaborationProvider>();
 

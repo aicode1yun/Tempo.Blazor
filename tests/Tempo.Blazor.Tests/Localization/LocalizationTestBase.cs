@@ -57,6 +57,36 @@ public abstract class LocalizationTestBase : TestContext
 
     private static MockTmLocalizer BuildEnglishLocalizer() => new(new Dictionary<string, string>
     {
+        // Document open dialog
+        ["TmDocumentOpenDialog_Title"]          = "Open document",
+        ["TmDocumentOpenDialog_Search"]         = "Search documents",
+        ["TmDocumentOpenDialog_NewFolder"]      = "New folder",
+        ["TmDocumentOpenDialog_Rename"]         = "Rename",
+        ["TmDocumentOpenDialog_Delete"]         = "Delete",
+        ["TmDocumentOpenDialog_DeleteConfirm"]  = "Delete {0}? This cannot be undone.",
+        ["TmDocumentOpenDialog_Open"]           = "Open",
+        ["TmDocumentOpenDialog_Cancel"]         = "Cancel",
+        ["TmDocumentOpenDialog_LinkMode"]       = "Link to file",
+        ["TmDocumentOpenDialog_CopyMode"]       = "Insert a copy",
+        ["TmDocumentOpenDialog_LinkModeHint"]   = "Stays in sync with the original document.",
+        ["TmDocumentOpenDialog_CopyModeHint"]   = "Creates an independent copy that will not change.",
+        ["TmDocumentOpenDialog_Empty"]          = "This folder is empty.",
+        ["TmDocumentOpenDialog_Error"]          = "Could not load documents.",
+        ["TmDocumentOpenDialog_Loading"]        = "Loading…",
+        ["TmDocumentOpenDialog_Retry"]          = "Retry",
+        ["TmDocumentOpenDialog_ColumnName"]     = "Name",
+        ["TmDocumentOpenDialog_ColumnModified"] = "Modified",
+        ["TmDocumentOpenDialog_ColumnAuthor"]   = "Author",
+        ["TmDocumentOpenDialog_ListView"]       = "List view",
+        ["TmDocumentOpenDialog_GridView"]       = "Grid view",
+        ["TmDocumentOpenDialog_LoadMore"]       = "Load more",
+        ["TmDocumentOpenDialog_RootFolder"]     = "All documents",
+        ["TmDocumentOpenDialog_NameRequired"]   = "Name is required.",
+        ["TmDocumentOpenDialog_NewFolderName"]  = "Folder name",
+        ["TmNotionBlock_InsertExisting"]        = "Insert existing…",
+        ["TmNotionBlock_DocumentNotFound"]      = "Document not found",
+        ["TmNotionBlock_RemoveBlock"]           = "Remove",
+
         // Shared
         ["Tm_Loading"]          = "Loading...",
         ["Tm_Close"]            = "Close",

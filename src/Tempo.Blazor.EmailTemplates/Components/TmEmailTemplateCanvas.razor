@@ -166,8 +166,22 @@
 
     private static string BlockKey(EmailBlockBase block) => block.Type.ToString().ToLowerInvariant();
 
+    // Render columns proportionally to their declared width so the row always fits the canvas
+    // (basis 0 + grow ratio absorbs the gaps). A fixed `flex:0 0 {width}` could not shrink, so
+    // adding columns pushed the row past the editor edge.
     private static string ColumnFlex(EmailColumn column)
-        => column.Width is null ? "flex:1 1 0" : $"flex:0 0 {column.Width}";
+    {
+        var grow = ColumnGrow(column.Width);
+        return $"flex:{grow.ToString(System.Globalization.CultureInfo.InvariantCulture)} 1 0;min-inline-size:0";
+    }
+
+    private static double ColumnGrow(string? width)
+    {
+        if (string.IsNullOrWhiteSpace(width)) return 1;
+        var digits = new string(width.TakeWhile(c => char.IsDigit(c) || c is '.' or ',').ToArray()).Replace(',', '.');
+        return double.TryParse(digits, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var value) && value > 0 ? value : 1;
+    }
 
     private Task SelectAsync(Guid id) => SelectedIdChanged.InvokeAsync(id);
 

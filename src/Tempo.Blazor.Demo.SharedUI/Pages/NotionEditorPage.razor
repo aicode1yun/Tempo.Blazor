@@ -14,9 +14,11 @@
 @inject MockNotionSearchProvider SearchProvider
 @inject SignalRCollaborationProvider CollaborationProvider
 @inject DemoNotionDatabaseProvider DatabaseProvider
-@inject MockNotionWireframeDocumentProvider WireframeDocumentProvider
-@inject MockNotionDiagramDocumentProvider DiagramDocumentProvider
+@inject ApiWireframeDocumentProvider WireframeDocumentProvider
+@inject ApiDiagramDocumentProvider DiagramDocumentProvider
 @inject ApiSpreadsheetDocumentProvider SpreadsheetDocumentProvider
+@inject Tempo.Blazor.DocumentLibrary.ITempoDocumentLibraryProvider LibraryProvider
+@inject Tempo.Blazor.DocumentLibrary.ITempoDocumentChangeNotifier ChangeNotifier
 @inject DemoNotionImportExportProvider ImportExportProvider
 @inject DemoNotionMediaLibraryProvider MediaLibraryProvider
 @inject DemoNotionFileProvider FileProvider
@@ -94,6 +96,8 @@
                             WireframeDocumentProvider="@WireframeDocumentProvider"
                             DiagramDocumentProvider="@DiagramDocumentProvider"
                             SpreadsheetDocumentProvider="@SpreadsheetDocumentProvider"
+                            DocumentLibraryProvider="@LibraryProvider"
+                            DocumentChangeNotifier="@ChangeNotifier"
                             ImportExportProvider="@(IsProviderDisabled("disableImportExportProvider") ? null : ImportExportProvider)"
                             MediaLibraryProvider="@MediaLibraryProvider"
                             FileProvider="@(IsProviderDisabled("disableFileProvider") ? null : FileProvider)"

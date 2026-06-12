@@ -4744,4 +4744,32 @@
   <data name="Notion_ContentByLabel_Sort_TitleDesc" xml:space="preserve"><value>Název Z-A</value></data>
   <data name="Notion_ContentByLabel_Sort_CreatedDesc" xml:space="preserve"><value>Nejnověji vytvořené</value></data>
   <data name="Notion_ContentByLabel_Sort_CreatedAsc" xml:space="preserve"><value>Nejstarší vytvořené</value></data>
+  <data name="TmDocumentOpenDialog_Title" xml:space="preserve"><value>Otevřít dokument</value></data>
+  <data name="TmDocumentOpenDialog_Search" xml:space="preserve"><value>Hledat dokumenty</value></data>
+  <data name="TmDocumentOpenDialog_NewFolder" xml:space="preserve"><value>Nová složka</value></data>
+  <data name="TmDocumentOpenDialog_Rename" xml:space="preserve"><value>Přejmenovat</value></data>
+  <data name="TmDocumentOpenDialog_Delete" xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmDocumentOpenDialog_DeleteConfirm" xml:space="preserve"><value>Smazat {0}? Akci nelze vrátit zpět.</value></data>
+  <data name="TmDocumentOpenDialog_Open" xml:space="preserve"><value>Otevřít</value></data>
+  <data name="TmDocumentOpenDialog_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmDocumentOpenDialog_LinkMode" xml:space="preserve"><value>Odkaz na soubor</value></data>
+  <data name="TmDocumentOpenDialog_CopyMode" xml:space="preserve"><value>Vložit kopii</value></data>
+  <data name="TmDocumentOpenDialog_LinkModeHint" xml:space="preserve"><value>Zůstává synchronizovaný s původním dokumentem.</value></data>
+  <data name="TmDocumentOpenDialog_CopyModeHint" xml:space="preserve"><value>Vytvoří nezávislou kopii, která se nebude měnit.</value></data>
+  <data name="TmDocumentOpenDialog_Empty" xml:space="preserve"><value>Tato složka je prázdná.</value></data>
+  <data name="TmDocumentOpenDialog_Error" xml:space="preserve"><value>Dokumenty se nepodařilo načíst.</value></data>
+  <data name="TmDocumentOpenDialog_Loading" xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmDocumentOpenDialog_Retry" xml:space="preserve"><value>Zkusit znovu</value></data>
+  <data name="TmDocumentOpenDialog_ColumnName" xml:space="preserve"><value>Název</value></data>
+  <data name="TmDocumentOpenDialog_ColumnModified" xml:space="preserve"><value>Změněno</value></data>
+  <data name="TmDocumentOpenDialog_ColumnAuthor" xml:space="preserve"><value>Autor</value></data>
+  <data name="TmDocumentOpenDialog_ListView" xml:space="preserve"><value>Zobrazení seznamu</value></data>
+  <data name="TmDocumentOpenDialog_GridView" xml:space="preserve"><value>Zobrazení mřížky</value></data>
+  <data name="TmDocumentOpenDialog_LoadMore" xml:space="preserve"><value>Načíst další</value></data>
+  <data name="TmDocumentOpenDialog_RootFolder" xml:space="preserve"><value>Všechny dokumenty</value></data>
+  <data name="TmDocumentOpenDialog_NameRequired" xml:space="preserve"><value>Název je povinný.</value></data>
+  <data name="TmDocumentOpenDialog_NewFolderName" xml:space="preserve"><value>Název složky</value></data>
+  <data name="TmNotionBlock_InsertExisting" xml:space="preserve"><value>Vložit existující…</value></data>
+  <data name="TmNotionBlock_DocumentNotFound" xml:space="preserve"><value>Dokument nenalezen</value></data>
+  <data name="TmNotionBlock_RemoveBlock" xml:space="preserve"><value>Odebrat</value></data>
 </root>

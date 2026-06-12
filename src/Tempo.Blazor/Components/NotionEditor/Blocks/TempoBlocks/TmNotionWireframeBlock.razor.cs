@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.Files;
 using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Components.Wireframe.Models;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -25,11 +27,18 @@ public partial class TmNotionWireframeBlock : ComponentBase, IAsyncDisposable
 
     [Parameter] public EventCallback<WireframeBlockContent> OnContentSaved { get; set; }
     [Parameter] public EventCallback                        OnFocused      { get; set; }
+    [Parameter] public EventCallback                        OnRemoveRequested { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
     private bool                                      _creating;
     private bool                                      _editorOpen;
+    private bool                                      _insertDialogOpen;
+    private bool                                      _notFound;
+    private string?                                   _effectivePreview;
+    private Guid                                      _refreshedId = Guid.Empty;
+    private Guid                                      _subscribedId = Guid.Empty;
+    private bool                                      _changeHandlerRegistered;
     private ElementReference                          _previewWrapRef;
     private ElementReference                          _captionRef;
     private DotNetObjectReference<TmNotionWireframeBlock>? _dotNetRef;
@@ -62,7 +71,184 @@ public partial class TmNotionWireframeBlock : ComponentBase, IAsyncDisposable
         _resizeInitialized  = false;
         _captionInitialized = false;
         _captionDirty       = false;
+        _effectivePreview   = Content?.SvgPreviewCache;
+        _notFound           = false;
     }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Stale-preview refresh: when this block links to a stored document, re-fetch its
+        // current preview from the library so edits made elsewhere show up (and detect deletion).
+        if (Content is not null
+            && Content.WireframeDocumentId != Guid.Empty
+            && Context.DocumentLibraryProvider is not null
+            && _refreshedId != Content.WireframeDocumentId)
+        {
+            _refreshedId = Content.WireframeDocumentId;
+            await RefreshPreviewAsync(Content.WireframeDocumentId);
+        }
+
+        // Subscribe independently of the refresh guard so inserted blocks (which pre-seed
+        // _refreshedId to skip the immediate refetch) still receive live updates.
+        await EnsureSubscribedAsync();
+    }
+
+    private async Task EnsureSubscribedAsync()
+    {
+        var notifier = Context.DocumentChangeNotifier;
+        if (notifier is null || Content is null)
+        {
+            return;
+        }
+
+        var id = Content.WireframeDocumentId;
+        if (id == _subscribedId)
+        {
+            return;
+        }
+
+        if (!_changeHandlerRegistered)
+        {
+            notifier.Changed += OnRemoteChangedAsync;
+            _changeHandlerRegistered = true;
+        }
+
+        if (_subscribedId != Guid.Empty)
+        {
+            await notifier.UnsubscribeAsync(DocumentLibrary.TempoDocumentKind.Wireframe, _subscribedId);
+        }
+
+        _subscribedId = id;
+        if (id != Guid.Empty)
+        {
+            await notifier.SubscribeAsync(DocumentLibrary.TempoDocumentKind.Wireframe, id);
+        }
+    }
+
+    private async Task OnRemoteChangedAsync(DocumentLibrary.TempoDocumentChange change, CancellationToken ct)
+    {
+        if (change.Kind != DocumentLibrary.TempoDocumentKind.Wireframe || change.DocumentId != _subscribedId)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            _refreshedId = Guid.Empty; // force re-fetch
+            await RefreshPreviewAsync(change.DocumentId);
+        });
+    }
+
+    private async Task RefreshPreviewAsync(Guid documentId)
+    {
+        DocumentLibrary.DocumentLibraryEntry? entry;
+        try
+        {
+            entry = await Context.DocumentLibraryProvider!.GetEntryAsync(
+                DocumentLibrary.TempoDocumentKind.Wireframe, documentId);
+        }
+        catch
+        {
+            return;
+        }
+
+        if (entry is null)
+        {
+            _notFound = true;
+            StateHasChanged();
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(entry.PreviewSvg) && entry.PreviewSvg != _effectivePreview)
+        {
+            _effectivePreview = entry.PreviewSvg;
+            StateHasChanged();
+
+            // Persist the refreshed preview only on an editable page.
+            if (!ReadOnly && Content is not null)
+            {
+                await OnContentSaved.InvokeAsync(new WireframeBlockContent
+                {
+                    WireframeDocumentId = Content.WireframeDocumentId,
+                    SvgPreviewCache     = entry.PreviewSvg,
+                    Width               = Content.Width,
+                    Height              = Content.Height,
+                    Caption             = Content.Caption
+                });
+            }
+        }
+    }
+
+    private async Task HandleInsertSelectedAsync(DocumentOpenResult result)
+    {
+        _insertDialogOpen = false;
+        if (result.Mode == DocumentOpenMode.Copy)
+        {
+            await InsertCopyAsync(result);
+        }
+        else
+        {
+            await InsertLinkAsync(result);
+        }
+    }
+
+    private async Task InsertLinkAsync(DocumentOpenResult result)
+    {
+        string? preview = null;
+        if (Context.DocumentLibraryProvider is not null)
+        {
+            var entry = await Context.DocumentLibraryProvider.GetEntryAsync(
+                DocumentLibrary.TempoDocumentKind.Wireframe, result.DocumentId);
+            preview = entry?.PreviewSvg;
+        }
+
+        _refreshedId = result.DocumentId; // already fresh; skip immediate re-refresh
+        _effectivePreview = preview;
+        await OnContentSaved.InvokeAsync(new WireframeBlockContent
+        {
+            WireframeDocumentId = result.DocumentId,
+            SvgPreviewCache     = preview
+        });
+    }
+
+    private async Task InsertCopyAsync(DocumentOpenResult result)
+    {
+        if (Context.WireframeDocumentProvider is null)
+        {
+            // No document provider to copy through — fall back to linking.
+            await InsertLinkAsync(result);
+            return;
+        }
+
+        var source = await Context.WireframeDocumentProvider.GetWireframeDocumentAsync(result.DocumentId);
+        if (source is null)
+        {
+            return;
+        }
+
+        // Deep copy via serialization round-trip so the copy is fully independent.
+        var copy = WireframeSerializer.Deserialize(WireframeSerializer.Serialize(source));
+        var (newId, _) = await Context.WireframeDocumentProvider.CreateWireframeDocumentAsync(copy.Title);
+        await Context.WireframeDocumentProvider.SaveWireframeDocumentAsync(newId, copy);
+
+        string? preview = null;
+        if (Context.DocumentLibraryProvider is not null)
+        {
+            var entry = await Context.DocumentLibraryProvider.GetEntryAsync(
+                DocumentLibrary.TempoDocumentKind.Wireframe, result.DocumentId);
+            preview = entry?.PreviewSvg;
+        }
+
+        _refreshedId = newId;
+        _effectivePreview = preview;
+        await OnContentSaved.InvokeAsync(new WireframeBlockContent
+        {
+            WireframeDocumentId = newId,
+            SvgPreviewCache     = preview
+        });
+    }
+
+    private async Task HandleRemoveAsync() => await OnRemoveRequested.InvokeAsync();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -202,6 +388,20 @@ public partial class TmNotionWireframeBlock : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        var notifier = Context?.DocumentChangeNotifier;
+        if (notifier is not null)
+        {
+            if (_changeHandlerRegistered)
+            {
+                notifier.Changed -= OnRemoteChangedAsync;
+            }
+            if (_subscribedId != Guid.Empty)
+            {
+                try { await notifier.UnsubscribeAsync(DocumentLibrary.TempoDocumentKind.Wireframe, _subscribedId); }
+                catch { }
+            }
+        }
+
         if (_resizeInitialized)
         {
             try { await JS.InvokeVoidAsync("tmNotionEditor.destroyResizeHandle", _previewWrapRef); }

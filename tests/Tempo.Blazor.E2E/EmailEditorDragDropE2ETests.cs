@@ -109,6 +109,36 @@ public sealed class EmailEditorDragDropE2ETests : EmailTemplateE2ETestBase
             new() { Timeout = 15000 });
     }
 
+    // ── Adding many columns must not overflow the canvas ──────────────────────────────────────
+
+    [TestMethod]
+    public async Task AddColumns_UpToSix_DoesNotOverflowCanvas()
+    {
+        var page = await OpenEditorAsync(WelcomeTemplateId);
+
+        // Select the section, then add columns until there are six.
+        await page.Locator("[data-tm-section]").First.ClickAsync();
+        for (var i = 0; i < 5; i++)
+        {
+            await page.Locator("[data-tm-section-action='add-column']").First.ClickAsync();
+            await page.WaitForTimeoutAsync(150);
+        }
+
+        var columnCount = await page.Locator("[data-tm-column]").CountAsync();
+        columnCount.Should().BeGreaterThanOrEqualTo(6);
+
+        // Every column must stay within the canvas bounds (no horizontal overflow past the editor).
+        var overflow = await page.EvaluateAsync<bool>(@"() => {
+            const canvas = document.querySelector('[data-tm-canvas-doc]');
+            const right = canvas.getBoundingClientRect().right;
+            return Array.from(document.querySelectorAll('[data-tm-column]'))
+                .some(c => c.getBoundingClientRect().right > right + 1);
+        }");
+        overflow.Should().BeFalse("columns shrink proportionally and never spill past the canvas edge");
+
+        await SaveNamedScreenshotAsync(page, "13-many-columns.png");
+    }
+
     // ── Click-to-add still works ──────────────────────────────────────────────────────────────
 
     [TestMethod]

@@ -1,0 +1,61 @@
+@page "/document-open-dialog"
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.DocumentLibrary
+@inject ITempoDocumentLibraryProvider LibraryProvider
+
+<PageTitle>Document Open Dialog – Tempo.Blazor</PageTitle>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Document Open Dialog</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        A Word-like open dialog over the document library. Browse folders, search, switch between
+        list and grid, manage folders/documents, and pick a document to link or copy.
+    </p>
+</div>
+
+<section class="demo-section mb-10">
+    <div class="flex items-center gap-3 mb-4">
+        <label class="text-sm text-slate-600 dark:text-slate-300">Document kind:</label>
+        <select class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                @bind="_kind" data-testid="kind-select">
+            <option value="@TempoDocumentKind.Wireframe">Wireframe</option>
+            <option value="@TempoDocumentKind.Diagram">Diagram</option>
+            <option value="@TempoDocumentKind.Spreadsheet">Spreadsheet</option>
+        </select>
+
+        <button class="px-4 py-1.5 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                data-testid="open-dialog-btn"
+                @onclick="() => _open = true">
+            Open…
+        </button>
+    </div>
+
+    @if (_result is not null)
+    {
+        <div class="rounded border border-slate-200 dark:border-slate-700 p-4 text-sm" data-testid="open-result">
+            <div><span class="font-semibold">Picked:</span> <span data-testid="result-name">@_result.Name</span></div>
+            <div><span class="font-semibold">Kind:</span> @_result.Kind</div>
+            <div><span class="font-semibold">Mode:</span> <span data-testid="result-mode">@_result.Mode</span></div>
+            <div><span class="font-semibold">Id:</span> <code>@_result.DocumentId</code></div>
+        </div>
+    }
+    else
+    {
+        <p class="text-sm text-slate-500 dark:text-slate-400" data-testid="open-empty">
+            No document picked yet.
+        </p>
+    }
+</section>
+
+<TmDocumentOpenDialog Provider="LibraryProvider"
+                      Kind="_kind"
+                      @bind-Open="_open"
+                      OnSelected="HandleSelected" />
+
+@code {
+    private bool _open;
+    private TempoDocumentKind _kind = TempoDocumentKind.Wireframe;
+    private DocumentOpenResult? _result;
+
+    private void HandleSelected(DocumentOpenResult result) => _result = result;
+}

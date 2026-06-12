@@ -1,0 +1,434 @@
+using Bunit;
+using FluentAssertions;
+using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Components.Files;
+using Tempo.Blazor.DocumentLibrary;
+using Tempo.Blazor.Tests.Fixtures;
+using Tempo.Blazor.Tests.Localization;
+
+namespace Tempo.Blazor.Tests.Files;
+
+/// <summary>
+/// bUnit tests for <see cref="TmDocumentOpenDialog"/> — the Word-like open dialog over the
+/// document library. Built up test-first across phase 1 of the document-library plan.
+/// </summary>
+public class TmDocumentOpenDialogTests : LocalizationTestBase
+{
+    private static InMemoryDocumentLibraryProvider Seeded(
+        DocumentLibraryCapabilities caps = DocumentLibraryCapabilities.All)
+    {
+        var p = new InMemoryDocumentLibraryProvider(caps);
+        p.AddFolder(TempoDocumentKind.Wireframe, "/Designs");
+        p.AddFolder(TempoDocumentKind.Wireframe, "/Designs/Mobile");
+        p.AddFolder(TempoDocumentKind.Wireframe, "/Archive");
+        p.AddDocument(TempoDocumentKind.Wireframe, "Home page", "/Designs",
+            modifiedAt: new DateTime(2026, 1, 3, 0, 0, 0, DateTimeKind.Utc));
+        p.AddDocument(TempoDocumentKind.Wireframe, "Checkout", "/Designs",
+            modifiedAt: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        p.AddDocument(TempoDocumentKind.Wireframe, "Login screen", "/Designs/Mobile",
+            modifiedAt: new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Utc));
+        return p;
+    }
+
+    // ── 1.2 Skeleton & open/closed ────────────────────────────────────────────
+
+    [Fact]
+    public void Closed_RendersNothing()
+    {
+        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+            .Add(c => c.Provider, Seeded())
+            .Add(c => c.Kind, TempoDocumentKind.Wireframe)
+            .Add(c => c.Open, false));
+
+        cut.FindAll(".tm-document-open-dialog").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Open_RendersModalWithLocalisedTitle()
+    {
+        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+            .Add(c => c.Provider, Seeded())
+            .Add(c => c.Kind, TempoDocumentKind.Wireframe)
+            .Add(c => c.Open, true));
+
+        cut.FindAll(".tm-document-open-dialog").Should().NotBeEmpty();
+        cut.Markup.Should().Contain("Open document");
+    }
+
+    private IRenderedComponent<TmDocumentOpenDialog> RenderOpen(
+        InMemoryDocumentLibraryProvider provider,
+        Action<ComponentParameterCollectionBuilder<TmDocumentOpenDialog>>? extra = null)
+        => RenderComponent<TmDocumentOpenDialog>(p =>
+        {
+            p.Add(c => c.Provider, provider);
+            p.Add(c => c.Kind, TempoDocumentKind.Wireframe);
+            p.Add(c => c.Open, true);
+            p.Add(c => c.SearchDebounceMs, 0);
+            extra?.Invoke(p);
+        });
+
+    // ── 1.3 Folder tree + loading ─────────────────────────────────────────────
+
+    [Fact]
+    public void Open_LoadsFolderTree()
+    {
+        var cut = RenderOpen(Seeded());
+
+        var tree = cut.Find(".tm-dod-tree");
+        tree.TextContent.Should().Contain("All documents");
+        tree.TextContent.Should().Contain("Designs");
+        tree.TextContent.Should().Contain("Archive");
+    }
+
+    [Fact]
+    public void Loading_ShowsSpinner_UntilProviderCompletes()
+    {
+        var gate = new TaskCompletionSource();
+        var provider = new GatedLibraryProvider(Seeded(), gate.Task);
+
+        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+            .Add(c => c.Provider, provider)
+            .Add(c => c.Kind, TempoDocumentKind.Wireframe)
+            .Add(c => c.Open, true));
+
+        cut.FindAll(".tm-dod-loading").Should().NotBeEmpty();
+
+        gate.SetResult();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-loading").Count == 0);
+        cut.FindAll(".tm-dod-loading").Should().BeEmpty();
+    }
+
+    // ── 1.4 Folder navigation ─────────────────────────────────────────────────
+
+    [Fact]
+    public void ClickingFolder_BrowsesIntoIt()
+    {
+        var cut = RenderOpen(Seeded());
+
+        // Root shows nothing (documents live in subfolders); navigate into Designs.
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs"))
+            .Click();
+
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+        cut.Markup.Should().Contain("Home page").And.Contain("Checkout");
+    }
+
+    // ── 1.5 Breadcrumb ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Breadcrumb_ReflectsCurrentFolder_AndNavigatesUp()
+    {
+        var cut = RenderOpen(Seeded());
+
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Mobile"))
+            .Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Any(r => r.TextContent.Contains("Login screen")));
+
+        var crumbs = cut.FindAll(".tm-dod-crumb");
+        crumbs.Should().HaveCountGreaterThanOrEqualTo(2);
+
+        // Click the "Designs" crumb to go up one level.
+        crumbs.First(c => c.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+        cut.Markup.Should().Contain("Home page");
+    }
+
+    // ── 1.6 List view + sorting ───────────────────────────────────────────────
+
+    [Fact]
+    public void ListView_SortsByName_ThenTogglesDescending()
+    {
+        var cut = RenderOpen(Seeded());
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.FindAll(".tm-dod-row").Select(r => r.GetAttribute("data-name"))
+            .Should().ContainInOrder("Checkout", "Home page");
+
+        cut.Find(".tm-dod-col-name").Click();
+        cut.WaitForState(() =>
+            cut.FindAll(".tm-dod-row").First().GetAttribute("data-name") == "Home page");
+        cut.FindAll(".tm-dod-row").Select(r => r.GetAttribute("data-name"))
+            .Should().ContainInOrder("Home page", "Checkout");
+    }
+
+    // ── 1.7 Grid view ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GridView_Toggle_RendersCards()
+    {
+        var cut = RenderOpen(Seeded());
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.Find(".tm-dod-view-grid").Click();
+
+        cut.FindAll(".tm-dod-card").Should().HaveCount(2);
+        cut.FindAll(".tm-dod-row").Should().BeEmpty();
+    }
+
+    // ── 1.8 Search ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Search_FiltersAcrossFolders()
+    {
+        var cut = RenderOpen(Seeded());
+
+        cut.Find(".tm-dod-search").Input("screen");
+
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 1);
+        cut.Markup.Should().Contain("Login screen");
+    }
+
+    [Fact]
+    public void Search_Hidden_WhenCapabilityAbsent()
+    {
+        var caps = DocumentLibraryCapabilities.CreateFolder | DocumentLibraryCapabilities.Rename
+                   | DocumentLibraryCapabilities.Delete;
+        var cut = RenderOpen(Seeded(caps));
+
+        cut.FindAll(".tm-dod-search").Should().BeEmpty();
+    }
+
+    // ── 1.9 Paging ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Paging_LoadMore_AppendsNextPage()
+    {
+        var provider = Seeded();
+        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+            .Add(c => c.Provider, provider)
+            .Add(c => c.Kind, TempoDocumentKind.Wireframe)
+            .Add(c => c.Open, true)
+            .Add(c => c.SearchDebounceMs, 0)
+            .Add(c => c.PageSize, 1));
+
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 1);
+
+        cut.Find(".tm-dod-load-more").Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+    }
+
+    // ── 1.10 Selection + double-click ─────────────────────────────────────────
+
+    [Fact]
+    public void SelectingRow_EnablesOpen_AndConfirms()
+    {
+        DocumentOpenResult? result = null;
+        var cut = RenderOpen(Seeded(), p => p.Add(c => c.OnSelected,
+            (DocumentOpenResult r) => result = r));
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.Find(".tm-dod-open").HasAttribute("disabled").Should().BeTrue();
+
+        cut.FindAll(".tm-dod-row").First(r => r.GetAttribute("data-name") == "Home page").Click();
+        cut.Find(".tm-dod-open").HasAttribute("disabled").Should().BeFalse();
+
+        cut.Find(".tm-dod-open").Click();
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Home page");
+        result.Kind.Should().Be(TempoDocumentKind.Wireframe);
+    }
+
+    [Fact]
+    public void DoubleClickingRow_ConfirmsImmediately()
+    {
+        DocumentOpenResult? result = null;
+        var cut = RenderOpen(Seeded(), p => p.Add(c => c.OnSelected,
+            (DocumentOpenResult r) => result = r));
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.FindAll(".tm-dod-row").First(r => r.GetAttribute("data-name") == "Checkout")
+            .DoubleClick();
+
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Checkout");
+    }
+
+    // ── 1.11 Link/Copy toggle ─────────────────────────────────────────────────
+
+    [Fact]
+    public void ModeToggle_DefaultsToLink_AndReportsChosenMode()
+    {
+        DocumentOpenResult? result = null;
+        var cut = RenderOpen(Seeded(), p => p.Add(c => c.OnSelected,
+            (DocumentOpenResult r) => result = r));
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.Find(".tm-dod-mode-copy").Change(true);
+        cut.FindAll(".tm-dod-row").First().Click();
+        cut.Find(".tm-dod-open").Click();
+
+        result!.Mode.Should().Be(DocumentOpenMode.Copy);
+    }
+
+    [Fact]
+    public void ModeToggle_Hidden_WhenShowModeToggleFalse()
+    {
+        var cut = RenderOpen(Seeded(), p => p.Add(c => c.ShowModeToggle, false));
+
+        cut.FindAll(".tm-dod-mode").Should().BeEmpty();
+    }
+
+    // ── 1.12 Cancel ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Cancel_RaisesOnCancelled_AndClosesDialog()
+    {
+        var cancelled = false;
+        var openChanged = true;
+        var cut = RenderOpen(Seeded(), p =>
+        {
+            p.Add(c => c.OnCancelled, () => cancelled = true);
+            p.Add(c => c.OpenChanged, (bool v) => openChanged = v);
+        });
+
+        cut.Find(".tm-dod-cancel").Click();
+
+        cancelled.Should().BeTrue();
+        openChanged.Should().BeFalse();
+    }
+
+    // ── 1.13 New folder ───────────────────────────────────────────────────────
+
+    [Fact]
+    public void NewFolder_CreatesFolderViaProvider()
+    {
+        var provider = Seeded();
+        var cut = RenderOpen(provider);
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+
+        cut.Find(".tm-dod-new-folder").Click();
+        cut.Find(".tm-dod-new-folder-input").Change("Desktop");
+        cut.Find(".tm-dod-new-folder-confirm").Click();
+
+        cut.WaitForState(() => cut.Find(".tm-dod-tree").TextContent.Contains("Desktop"));
+    }
+
+    [Fact]
+    public void NewFolder_Hidden_WhenCapabilityAbsent()
+    {
+        var cut = RenderOpen(Seeded(DocumentLibraryCapabilities.Search));
+
+        cut.FindAll(".tm-dod-new-folder").Should().BeEmpty();
+    }
+
+    // ── 1.14 Rename ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Rename_Document_UpdatesName()
+    {
+        var provider = Seeded();
+        var cut = RenderOpen(provider);
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.FindAll(".tm-dod-row").First(r => r.GetAttribute("data-name") == "Checkout").Click();
+        cut.Find(".tm-dod-rename").Click();
+        cut.Find(".tm-dod-rename-input").Change("Cart");
+        cut.Find(".tm-dod-rename-confirm").Click();
+
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Any(r => r.GetAttribute("data-name") == "Cart"));
+        cut.Markup.Should().NotContain("Checkout");
+    }
+
+    [Fact]
+    public void Rename_EmptyName_ShowsValidationMessage()
+    {
+        var cut = RenderOpen(Seeded());
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.FindAll(".tm-dod-row").First().Click();
+        cut.Find(".tm-dod-rename").Click();
+        cut.Find(".tm-dod-rename-input").Change("   ");
+        cut.Find(".tm-dod-rename-confirm").Click();
+
+        cut.Markup.Should().Contain("Name is required.");
+    }
+
+    // ── 1.15 Delete ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Delete_Document_RemovesItAfterConfirm()
+    {
+        var provider = Seeded();
+        var cut = RenderOpen(provider);
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        cut.FindAll(".tm-dod-row").First(r => r.GetAttribute("data-name") == "Checkout").Click();
+        cut.Find(".tm-dod-delete").Click();
+        cut.Find(".tm-dod-delete-confirm-ok").Click();
+
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 1);
+        cut.Markup.Should().NotContain("Checkout");
+    }
+
+    [Fact]
+    public void Delete_Hidden_WhenCapabilityAbsent()
+    {
+        var cut = RenderOpen(Seeded(DocumentLibraryCapabilities.Search));
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+
+        cut.FindAll(".tm-dod-delete").Should().BeEmpty();
+    }
+
+    // ── 1.16 Error + empty ────────────────────────────────────────────────────
+
+    [Fact]
+    public void Error_ShowsMessageAndRetry()
+    {
+        var provider = new ThrowingLibraryProvider();
+        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+            .Add(c => c.Provider, provider)
+            .Add(c => c.Kind, TempoDocumentKind.Wireframe)
+            .Add(c => c.Open, true));
+
+        cut.WaitForState(() => cut.FindAll(".tm-dod-error").Count > 0);
+        cut.Markup.Should().Contain("Could not load documents.");
+        cut.FindAll(".tm-dod-retry").Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Empty_Folder_ShowsEmptyState()
+    {
+        var cut = RenderOpen(Seeded());
+
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Archive")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-empty").Count > 0);
+        cut.Markup.Should().Contain("This folder is empty.");
+    }
+
+    // ── 1.17 Accessibility ────────────────────────────────────────────────────
+
+    [Fact]
+    public void OpenButton_HasAccessibleName()
+    {
+        var cut = RenderOpen(Seeded());
+
+        cut.Find(".tm-dod-open").GetAttribute("aria-label").Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public void Rows_AreKeyboardFocusable_AndEnterConfirms()
+    {
+        DocumentOpenResult? result = null;
+        var cut = RenderOpen(Seeded(), p => p.Add(c => c.OnSelected,
+            (DocumentOpenResult r) => result = r));
+        cut.FindAll(".tm-dod-tree-node").First(n => n.TextContent.Contains("Designs")).Click();
+        cut.WaitForState(() => cut.FindAll(".tm-dod-row").Count == 2);
+
+        var row = cut.FindAll(".tm-dod-row").First(r => r.GetAttribute("data-name") == "Home page");
+        row.GetAttribute("tabindex").Should().Be("0");
+
+        row.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Home page");
+    }
+}

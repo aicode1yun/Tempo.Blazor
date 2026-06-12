@@ -1,0 +1,165 @@
+{
+  "scenario": "orders-dashboard",
+  "title": "Správa objednávek",
+  "discoveredVia": [
+    "wireframe_list_components(compact, category)",
+    "wireframe_get_component_schema"
+  ],
+  "operations": [
+    {
+      "op": "setCanvasSize",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "op": "setTitle",
+      "title": "Správa objednávek"
+    },
+    {
+      "op": "addElement",
+      "id": "header",
+      "type": "TmTopBar",
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 64
+    },
+    {
+      "op": "addElement",
+      "id": "sidebar",
+      "type": "TmSidebar",
+      "x": 0,
+      "y": 64,
+      "w": 200,
+      "h": 836
+    },
+    {
+      "op": "addElement",
+      "id": "kpi1",
+      "type": "TmStatCard",
+      "x": 224,
+      "y": 88,
+      "w": 232,
+      "h": 96,
+      "props": {
+        "title": "Objednávky dnes",
+        "value": "128",
+        "trend": "up"
+      }
+    },
+    {
+      "op": "addElement",
+      "id": "kpi2",
+      "type": "TmStatCard",
+      "x": 472,
+      "y": 88,
+      "w": 232,
+      "h": 96,
+      "props": {
+        "title": "Tržby",
+        "value": "94 320 Kč",
+        "trend": "up"
+      }
+    },
+    {
+      "op": "addElement",
+      "id": "kpi3",
+      "type": "TmStatCard",
+      "x": 720,
+      "y": 88,
+      "w": 232,
+      "h": 96,
+      "props": {
+        "title": "Čeká na vyřízení",
+        "value": "17",
+        "trend": "neutral"
+      }
+    },
+    {
+      "op": "addElement",
+      "id": "kpi4",
+      "type": "TmStatCard",
+      "x": 968,
+      "y": 88,
+      "w": 232,
+      "h": 96,
+      "props": {
+        "title": "Stornováno",
+        "value": "3",
+        "trend": "down"
+      }
+    },
+    {
+      "op": "addElement",
+      "id": "filters",
+      "type": "TmColumnFilter",
+      "x": 224,
+      "y": 208,
+      "w": 976,
+      "h": 40
+    },
+    {
+      "op": "addElement",
+      "id": "ordersTable",
+      "type": "TmDataTable",
+      "x": 224,
+      "y": 260,
+      "w": 976,
+      "h": 420,
+      "props": {
+        "title": "Objednávky",
+        "columns": [
+          "Číslo",
+          "Zákazník",
+          "Datum",
+          "Stav",
+          "Částka"
+        ],
+        "rows": 8,
+        "showSearch": true,
+        "showPagination": true
+      }
+    },
+    {
+      "op": "addElement",
+      "id": "pager",
+      "type": "TmPagination",
+      "x": 224,
+      "y": 696,
+      "w": 320,
+      "h": 36
+    },
+    {
+      "op": "addElement",
+      "id": "detailBtn",
+      "type": "TmButton",
+      "x": 960,
+      "y": 696,
+      "w": 110,
+      "h": 36,
+      "props": {
+        "label": "Detail",
+        "variant": "primary"
+      }
+    },
+    {
+      "op": "addElement",
+      "id": "cancelBtn",
+      "type": "TmButton",
+      "x": 1080,
+      "y": 696,
+      "w": 120,
+      "h": 36,
+      "props": {
+        "label": "Storno",
+        "variant": "danger"
+      }
+    },
+    {
+      "op": "addConnector",
+      "fromId": "ordersTable",
+      "toId": "detailBtn",
+      "label": "Otevřít detail objednávky"
+    }
+  ]
+}

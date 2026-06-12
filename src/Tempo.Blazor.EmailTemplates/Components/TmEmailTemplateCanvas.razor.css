@@ -52,12 +52,14 @@
     align-items: center;
     justify-content: center;
     min-block-size: 5rem;
-    padding: var(--tm-space-4, 1rem);
+    min-inline-size: 0;
+    padding: var(--tm-space-2, 0.5rem);
     border: 2px dashed var(--tm-color-border, #e2e2e2);
     border-radius: var(--tm-radius-sm, 0.25rem);
     text-align: center;
     font-size: var(--tm-font-size-xs, 0.75rem);
     color: var(--tm-color-text-muted, #6b7280);
+    overflow-wrap: anywhere;
     transition: border-color var(--tm-transition-fast, 150ms) ease, background var(--tm-transition-fast, 150ms) ease;
 }
 

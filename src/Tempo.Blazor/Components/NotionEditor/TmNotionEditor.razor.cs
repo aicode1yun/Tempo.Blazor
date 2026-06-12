@@ -58,6 +58,8 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; set; }
     [Parameter] public IWireframeDocumentProvider?   WireframeDocumentProvider   { get; set; }
     [Parameter] public ISpreadsheetDocumentProvider? SpreadsheetDocumentProvider { get; set; }
+    [Parameter] public Tempo.Blazor.DocumentLibrary.ITempoDocumentLibraryProvider? DocumentLibraryProvider { get; set; }
+    [Parameter] public Tempo.Blazor.DocumentLibrary.ITempoDocumentChangeNotifier? DocumentChangeNotifier { get; set; }
     [Parameter] public INotionSyncedBlockProvider?   SyncedBlockProvider         { get; set; }
     [Parameter] public INotionMediaLibraryProvider?  MediaLibraryProvider        { get; set; }
     [Parameter] public ITokenDataProvider?           TokenProvider               { get; set; }
@@ -591,6 +593,8 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         DiagramDocumentProvider   = DiagramDocumentProvider,
         WireframeDocumentProvider   = WireframeDocumentProvider,
         SpreadsheetDocumentProvider = SpreadsheetDocumentProvider,
+        DocumentLibraryProvider     = DocumentLibraryProvider,
+        DocumentChangeNotifier      = DocumentChangeNotifier,
         SyncedBlockProvider         = SyncedBlockProvider,
         MediaLibraryProvider        = MediaLibraryProvider,
         TokenProvider               = TokenProvider,
