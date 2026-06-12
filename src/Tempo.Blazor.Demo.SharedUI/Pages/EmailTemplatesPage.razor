@@ -1,0 +1,116 @@
+@page "/email-templates"
+@using Tempo.Blazor.EmailTemplates.Abstractions.Layout
+@inject IEmailTemplateApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Email templates</PageTitle>
+
+<div class="tm-demo-email-templates" data-tm-email-templates-page>
+    <div class="tm-demo-email-templates__header">
+        <h1>Email templates</h1>
+        <TmButton Variant="ButtonVariant.Primary" Icon="plus" OnClick="CreateNewAsync" data-tm-new-template>
+            New template
+        </TmButton>
+    </div>
+
+    @if (_loading)
+    {
+        <TmSpinner />
+    }
+    else if (_templates.Count == 0)
+    {
+        <TmEmptyState Icon="mail" Title="No templates yet" Description="Create your first email template." />
+    }
+    else
+    {
+        <div class="tm-demo-email-templates__grid">
+            @foreach (var template in _templates)
+            {
+                <div class="tm-demo-email-templates__card" data-tm-template-card data-tm-template-id="@template.Id">
+                    <div class="tm-demo-email-templates__card-body">
+                        <h3>@template.Name</h3>
+                        <p>@template.Subject</p>
+                        <span class="tm-demo-email-templates__lang">@template.Language</span>
+                    </div>
+                    <div class="tm-demo-email-templates__card-actions">
+                        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Secondary" Icon="edit"
+                                  OnClick="() => Open(template.Id)" data-tm-open>Edit</TmButton>
+                        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Secondary" Icon="send"
+                                  OnClick="() => Send(template.Id)" data-tm-send>Send</TmButton>
+                        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" Icon="copy"
+                                  OnClick="() => DuplicateAsync(template.Id)" data-tm-duplicate>Duplicate</TmButton>
+                        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Danger" Icon="trash-2"
+                                  OnClick="() => AskDelete(template.Id)" data-tm-delete>Delete</TmButton>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<TmModal Show="_deleteId is not null" Title="Delete template?" Size="ModalSize.Small"
+         OnClose="() => _deleteId = null">
+    <ChildContent>
+        <p>This template will be permanently deleted.</p>
+    </ChildContent>
+    <Footer>
+        <TmButton Variant="ButtonVariant.Secondary" OnClick="() => _deleteId = null">Cancel</TmButton>
+        <TmButton Variant="ButtonVariant.Danger" OnClick="ConfirmDeleteAsync" data-tm-confirm-delete>Delete</TmButton>
+    </Footer>
+</TmModal>
+
+@code {
+    private List<EmailTemplateSummaryDto> _templates = new();
+    private bool _loading = true;
+    private Guid? _deleteId;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _templates = (await Api.ListAsync()).ToList();
+        _loading = false;
+    }
+
+    private async Task CreateNewAsync()
+    {
+        var document = new EmailTemplateDocument { Name = "Untitled template", Subject = "", Language = "en" };
+        document.Sections.Add(LayoutPresets.Create(LayoutPreset.Single));
+
+        var created = await Api.CreateAsync(new CreateEmailTemplateRequest
+        {
+            Name = document.Name, Subject = document.Subject, Language = document.Language,
+            ContentJson = EmailTemplateSerializer.Serialize(document),
+        });
+        Nav.NavigateTo($"/email-templates/edit/{created.Id}");
+    }
+
+    private void Open(Guid id) => Nav.NavigateTo($"/email-templates/edit/{id}");
+
+    private void Send(Guid id) => Nav.NavigateTo($"/email-templates/send/{id}");
+
+    private async Task DuplicateAsync(Guid id)
+    {
+        var detail = await Api.GetAsync(id);
+        if (detail is null) return;
+        await Api.CreateAsync(new CreateEmailTemplateRequest
+        {
+            Name = $"{detail.Name} (copy)", Subject = detail.Subject, Preheader = detail.Preheader,
+            Language = detail.Language, ContentJson = detail.ContentJson, SampleDataJson = detail.SampleDataJson,
+        });
+        await LoadAsync();
+    }
+
+    private void AskDelete(Guid id) => _deleteId = id;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_deleteId is { } id)
+        {
+            await Api.DeleteAsync(id);
+            _deleteId = null;
+            await LoadAsync();
+        }
+    }
+}

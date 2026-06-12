@@ -1,0 +1,67 @@
+<mjml lang="en">
+<mj-head>
+<mj-title>Golden subject</mj-title>
+<mj-preview>Golden preview</mj-preview>
+<mj-breakpoint width="500px" />
+<mj-font name="Roboto" href="https://fonts/roboto.css" />
+<mj-attributes>
+<mj-all font-family="Helvetica, Arial, sans-serif"></mj-all>
+<mj-text color="#222222"></mj-text>
+<mj-class name="cta" background-color="#0a0"></mj-class>
+</mj-attributes>
+<mj-style>.brand{color:#0a0}</mj-style>
+<mj-style inline="inline">.muted{color:#888}</mj-style>
+<mj-html-attributes>
+<mj-selector path=".brand">
+<mj-html-attribute name="data-role">brand</mj-html-attribute>
+</mj-selector>
+</mj-html-attributes>
+</mj-head>
+<mj-body width="640px" background-color="#ffffff">
+<mj-section background-color="#ffffff">
+<mj-column width="100%">
+{{ if is_member }}
+<mj-text><b>Hi</b> there</mj-text>
+{{ end }}
+<mj-button href="https://shop" css-class="cta">Buy</mj-button>
+<mj-image src="https://a/b.png" alt="Logo" />
+<mj-divider />
+<mj-spacer />
+<mj-raw><!-- promo --></mj-raw>
+<mj-table>
+<tr><th>Item</th><th>Price</th></tr>
+</mj-table>
+<mj-social>
+<mj-social-element name="facebook" href="https://fb" alt="">FB</mj-social-element>
+</mj-social>
+<mj-navbar>
+<mj-navbar-link href="https://home">Home</mj-navbar-link>
+</mj-navbar>
+<mj-carousel>
+<mj-carousel-image src="https://a/1.png" alt="One" />
+</mj-carousel>
+<mj-accordion>
+<mj-accordion-element>
+<mj-accordion-title>Q</mj-accordion-title>
+<mj-accordion-text><b>A</b></mj-accordion-text>
+</mj-accordion-element>
+</mj-accordion>
+<mj-hero background-url="https://a/hero.png">
+<mj-text>Hero</mj-text>
+</mj-hero>
+<mj-group>
+<mj-column width="50%">
+<mj-text>G</mj-text>
+</mj-column>
+</mj-group>
+<mj-wrapper background-color="#eeeeee">
+<mj-section>
+<mj-column>
+<mj-text>Wrapped</mj-text>
+</mj-column>
+</mj-section>
+</mj-wrapper>
+</mj-column>
+</mj-section>
+</mj-body>
+</mjml>

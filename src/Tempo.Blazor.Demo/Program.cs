@@ -7,6 +7,7 @@ using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Modeling;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.Demo.SharedUI;
+using Tempo.Blazor.EmailTemplates;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.Demo.Validators;
@@ -90,6 +91,10 @@ builder.Services.AddScoped<IDashboardProvider, InMemoryDashboardProvider>();
 
 // Register FluentValidation validators from Demo assembly
 builder.Services.AddTempoFluentValidation(typeof(PersonFormValidator).Assembly);
+
+// Email template editor demo: engine + localization, and the typed API client.
+builder.Services.AddTempoEmailTemplates();
+builder.Services.AddScoped<Tempo.Blazor.Demo.Services.IEmailTemplateApiClient, Tempo.Blazor.Demo.Services.EmailTemplateApiClient>();
 
 var host = builder.Build();
 

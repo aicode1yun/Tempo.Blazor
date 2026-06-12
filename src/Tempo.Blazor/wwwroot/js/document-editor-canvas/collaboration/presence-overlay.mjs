@@ -13,6 +13,7 @@ export function createCanvasPresenceOverlay(options = {}) {
     root.style.pointerEvents = 'none';
     const cursorsBySession = new Map();
     let lastSnapshot = [];
+    let lastUpdateSignature = null;
 
     function mount(host) {
         if (host && root.parentNode !== host) {
@@ -23,6 +24,21 @@ export function createCanvasPresenceOverlay(options = {}) {
     }
 
     function update(cursors = [], render = {}, model = {}) {
+        // Presence runs inside every render. Re-resolving caret rects + rewriting cursor DOM per
+        // keystroke is wasted work when nothing that places a remote caret changed: same cursor
+        // payload, same zoom/visible pages, and no repaint touching a cursor's block. The common
+        // single-user case (no cursors at all) exits here for free.
+        const cursorList = asArray(cursors);
+        const incremental = render?.incremental || {};
+        const dirtyIds = new Set((incremental.dirtyBlockIds || []).map(String));
+        const geometry = `${render?.view?.zoomScale ?? ''}|${(render?.virtualization?.visiblePageIndexes || []).join(',')}|${render?.mountedPageCount ?? ''}`;
+        const updateSignature = `${JSON.stringify(cursorList)}|${geometry}`;
+        const cursorBlockRepainted = cursorList.some(cursor => dirtyIds.has(asText(cursor?.blockId)));
+        if (incremental.enabled === true && !cursorBlockRepainted && updateSignature === lastUpdateSignature) {
+            return snapshot();
+        }
+        lastUpdateSignature = updateSignature;
+
         const selectionLayout = render?.selectionLayout || render?.displayList?.layout || {};
         const pages = render?.displayList?.pages || render?.layout?.pages || [];
         const nextKeys = new Set();

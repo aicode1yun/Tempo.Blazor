@@ -347,13 +347,27 @@ export function createCanvasStack(options = {}) {
             page.pageElement.setAttribute('data-canvas-revision-anchor-count', String(pageDisplayList.commands.filter(command => command.type === 'revisionAnchor').length));
             page.pageElement.setAttribute('data-canvas-diagnostic-count', String(pageDisplayList.commands.filter(command => command.layer === 'diagnostics').length));
             if (repaintPage) {
-                syncTextRectMetadata(page, pageDisplayList, zoomScale);
+                // The text-rect layer is test/diagnostic metadata (hundreds of DOM nodes on a full
+                // page) with no runtime consumer. The per-keystroke input render defers it; the
+                // debounced reconciliation render (or the next non-deferred paint) catches up.
+                if (options.deferTextRectMetadata === true) {
+                    page.textRectMetadataStale = true;
+                } else {
+                    syncTextRectMetadata(page, pageDisplayList, zoomScale);
+                    page.textRectMetadataStale = false;
+                }
                 syncTableOfContentsHitMetadata(page, pageDisplayList, model, zoomScale);
                 syncTableCellMetadata(page, pageDisplayList, zoomScale);
                 syncObjectMetadata(page, pageDisplayList, zoomScale);
                 syncHeaderFooterMetadata(page, pageDisplayList, zoomScale);
                 syncNoteMetadata(page, pageDisplayList, zoomScale);
                 syncContentControlMetadata(page, pageDisplayList, zoomScale);
+            } else if (page.textRectMetadataStale === true && options.deferTextRectMetadata !== true) {
+                syncTextRectMetadata(page, {
+                    ...displayList,
+                    commands: displayList.commands.filter(command => command.pageIndex === pageLayout.index),
+                }, zoomScale);
+                page.textRectMetadataStale = false;
             }
         }
 

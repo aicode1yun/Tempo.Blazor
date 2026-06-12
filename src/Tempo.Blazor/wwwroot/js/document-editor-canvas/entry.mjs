@@ -271,7 +271,12 @@ export class CanvasDocumentEngine {
         this.lastPrintPreview = createPrintPreviewSnapshot(model, layout, render, viewState);
         this.host.setAttribute?.('data-canvas-engine-ready', 'true');
         this.publishPerformanceDiagnostics(this.performanceMetrics.recordRender(now() - startedAt, render), render);
-        this.publishFormattingDiagnostics();
+        // The formatting diagnostics run the FULL command-state query (whole-document walks) and
+        // write ~50 root attributes — diagnostics only, no runtime consumer. The per-keystroke input
+        // render defers them; the debounced reconciliation render publishes the settled state.
+        if (renderOptions.deferFormattingDiagnostics !== true) {
+            this.publishFormattingDiagnostics();
+        }
 
         return {
             ok: true,
@@ -474,6 +479,7 @@ export class CanvasDocumentEngine {
         this.document?.defaultView?.removeEventListener?.('scroll', this.scrollHandler);
         this.pendingInputRender = null;
         this.inputRenderScheduled = false;
+        this.clearIdleReconciliationTimer();
         this.clearModelAnalysisTimer();
         this.clearTextInputSideEffectsTimer();
         this.flushPendingTextInputSideEffects();
@@ -639,8 +645,8 @@ export class CanvasDocumentEngine {
                 return;
             }
 
-            this.render(pending);
-            this.recalcInfo.queueIdleReconciliation(() => this.render({ forceRepaint: false }));
+            this.render({ ...pending, deferTextRectMetadata: true, deferFormattingDiagnostics: true });
+            this.scheduleIdleReconciliation();
         });
 
         return {
@@ -649,6 +655,43 @@ export class CanvasDocumentEngine {
             coalesced: false,
             pending: { ...this.pendingInputRender },
         };
+    }
+
+    // Debounce the idle reconciliation render to the typing pause. Each input render already runs a
+    // full layout plus a per-page tile-signature check, so cross-block shifts repaint immediately;
+    // running the reconciliation render after every keystroke just doubled the layout work between
+    // keys. One pass once typing settles clears the accumulated dirty-block bookkeeping.
+    scheduleIdleReconciliation() {
+        const view = this.document?.defaultView || globalThis.window || globalThis;
+        const clear = view.clearTimeout || clearTimeout;
+        const set = view.setTimeout || setTimeout;
+        if (this.idleReconcileTimer) {
+            clear(this.idleReconcileTimer);
+        }
+
+        this.idleReconcileTimer = set(() => {
+            this.idleReconcileTimer = 0;
+            if (!this.mounted) {
+                return;
+            }
+
+            this.recalcInfo.queueIdleReconciliation(() => this.render({ forceRepaint: false }));
+        }, 180);
+    }
+
+    clearIdleReconciliationTimer() {
+        if (!this.idleReconcileTimer) {
+            return;
+        }
+
+        const view = this.document?.defaultView || globalThis.window || globalThis;
+        if (view.clearTimeout) {
+            view.clearTimeout(this.idleReconcileTimer);
+        } else {
+            clearTimeout(this.idleReconcileTimer);
+        }
+
+        this.idleReconcileTimer = 0;
     }
 
     publishInputDiagnostics(input) {
@@ -1493,9 +1536,19 @@ function buildMiniToolbarPayload(canvasStack, selectionState) {
         if (pageBounds) {
             const width = 320;
             const height = 44;
+            const scale = Number(page?.pageElement?.getAttribute?.('data-canvas-page-zoom-scale') || 1) || 1;
             const viewportWidth = Number(globalThis.innerWidth || pageBounds.width || 1024) || 1024;
-            const centerX = pageBounds.left + (Number(object.rect.x || 0) || 0) + Math.max(1, Number(object.rect.width || 0) || 0) / 2;
-            const top = Math.max(8, pageBounds.top + (Number(object.rect.y || 0) || 0) - height - 10);
+            const viewportHeight = Number(globalThis.innerHeight || pageBounds.height || 768) || 768;
+            const objectTop = pageBounds.top + (Number(object.rect.y || 0) || 0) * scale;
+            const objectBottom = pageBounds.top + ((Number(object.rect.y || 0) || 0) + Math.max(1, Number(object.rect.height || 0) || 0)) * scale;
+            const centerX = pageBounds.left + ((Number(object.rect.x || 0) || 0) + Math.max(1, Number(object.rect.width || 0) || 0) / 2) * scale;
+            // The image panel is a tall multi-row card, not a 44px strip: anchored above the object
+            // top it grew DOWN over the whole image, so the object could not be dragged. Prefer the
+            // space below the object; fall back to growing upward from the object top.
+            const placement = viewportHeight - objectBottom >= 280 ? 'below' : 'above';
+            const top = placement === 'below'
+                ? objectBottom + 10
+                : Math.max(8, objectTop - 10);
             return {
                 isVisible: true,
                 left: Math.max(8, Math.min(viewportWidth - width - 8, centerX - width / 2)),
@@ -1503,7 +1556,8 @@ function buildMiniToolbarPayload(canvasStack, selectionState) {
                 width,
                 height,
                 viewportWidth,
-                viewportHeight: Number(globalThis.innerHeight || pageBounds.height || 768) || 768,
+                viewportHeight,
+                placement,
                 reason: 'canvas-object-selection',
                 selection,
             };

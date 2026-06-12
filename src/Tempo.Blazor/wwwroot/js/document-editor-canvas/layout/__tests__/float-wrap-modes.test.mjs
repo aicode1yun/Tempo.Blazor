@@ -103,6 +103,30 @@ test('captioned square image: caption sits below the image and reserves its foot
     }
 });
 
+test('Square wrap: a float only excludes text on its own page (page-local y must not leak to later pages)', () => {
+    // Pages use page-local coordinates, so a float at y=48..168 on page 0 numerically "overlaps"
+    // the same band on every page. Regression: paragraphs that flow onto later pages were indented
+    // around a float that is not there.
+    const layout = layoutDoc([
+        wrapImage('img', 'Square', { width: 200, height: 120, x: 0, y: 0 }),
+        ...Array.from({ length: 14 }, (_, i) => paragraph(`p${i}`, longText(), 2 + i)),
+    ]);
+    const image = (layout.objectLayouts || []).find(item => item.blockId === 'img');
+    assert.equal(image.pageIndex, 0, 'the float must stay on page 0');
+    assert.ok((layout.pages || []).length > 1, 'the document must flow onto a second page');
+
+    const laterPageLines = (layout.blocks || [])
+        .filter(block => String(block.blockId || '').startsWith('p'))
+        .flatMap(block => (block.lines || []).map(line => ({ ...line, pageIndex: Number(line.pageIndex ?? block.pageIndex) || 0 })))
+        .filter(line => line.pageIndex >= 1 && line.rect && (line.segments || []).some(segment => segment.type !== 'space'));
+    assert.ok(laterPageLines.length > 0, 'expected text lines on later pages');
+    for (const line of laterPageLines) {
+        assert.ok(
+            line.rect.x <= BODY_X + 1,
+            `page ${line.pageIndex} line (y=${line.rect.y}) must start at the margin, got x=${line.rect.x}`);
+    }
+});
+
 function layoutDoc(blocks) {
     return layoutCanvasDocument({
         documentId: 'float-wrap-modes',

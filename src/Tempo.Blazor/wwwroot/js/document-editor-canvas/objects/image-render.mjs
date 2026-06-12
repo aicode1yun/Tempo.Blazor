@@ -749,8 +749,13 @@ export function objectExclusionIntervals(objects, page, y, lineHeight) {
     const body = page?.body || {};
     const rowTop = Number(y || 0) || 0;
     const rowBottom = rowTop + Math.max(1, Number(lineHeight || 16) || 16);
+    const pageIndex = Number(page?.index ?? 0) || 0;
     const exclusions = (objects || [])
         .filter(layout => (layout?.object?.isFloating ?? layout?.isFloating) && shouldExcludeText(layout))
+        // Pages use page-local coordinates (body.y restarts at marginTop on every page), so a float
+        // only excludes text on its own page — without this filter a wrapped image on page 1 carves
+        // the same y-band out of every later page.
+        .filter(layout => (Number(layout?.pageIndex ?? 0) || 0) === pageIndex)
         // Use the axis-aligned bounding box of the (possibly rotated) object so text reserves space for the
         // rotated corners instead of flowing over them.
         .map(layout => ({ layout, aabb: aabbOfRotatedRect(layout.rect || {}, layout.object?.rotation) }))

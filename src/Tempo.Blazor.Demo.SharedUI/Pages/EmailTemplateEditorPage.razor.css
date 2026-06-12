@@ -1,0 +1,32 @@
+.tm-demo-email-editor-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+    min-height: 600px;
+}
+
+.tm-demo-email-editor-page__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-3, 0.75rem);
+    padding: var(--tm-space-3, 0.75rem) var(--tm-space-4, 1rem);
+    border-bottom: 1px solid var(--tm-color-border, #e4e7eb);
+    background: var(--tm-bg-surface, #fff);
+}
+
+.tm-demo-email-editor-page__status {
+    font-size: var(--tm-font-size-sm, 0.875rem);
+    color: var(--tm-text-secondary, #616e7c);
+    font-weight: var(--tm-font-weight-medium, 500);
+}
+
+.tm-demo-email-editor-page__editor {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+}
+
+.tm-demo-email-editor-page__editor > * {
+    flex: 1 1 auto;
+    min-height: 0;
+}

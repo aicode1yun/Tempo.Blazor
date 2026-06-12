@@ -1,0 +1,76 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+
+<div class="tm-email-table-editor" data-tm-table-editor>
+    <table class="tm-email-table-editor__grid">
+        <tbody>
+            @for (var r = 0; r < Block.Rows.Count; r++)
+            {
+                var row = Block.Rows[r];
+                <tr data-tm-table-row>
+                    <td class="tm-email-table-editor__rowctl">
+                        <TmToggle Value="row.IsHeader" Label="@Loc["EmailEditor_Table_HeaderRow"]"
+                                  ValueChanged="@(v => { row.IsHeader = v; return OnChanged.InvokeAsync(); })" />
+                        <button type="button" data-tm-table-row-remove aria-label="@Loc["EmailEditor_Action_Delete"]"
+                                @onclick="() => RemoveRowAsync(row)">
+                            <TmIcon Name="trash-2" Size="IconSize.Xs" />
+                        </button>
+                    </td>
+                    @foreach (var cell in row.Cells)
+                    {
+                        var c = cell;
+                        <td data-tm-table-cell>
+                            <TmTextInput Value="@c.Text"
+                                         ValueChanged="@(v => { c.Text = v; return OnChanged.InvokeAsync(); })" />
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="tm-email-table-editor__actions">
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Secondary" Icon="plus"
+                  data-tm-table-add-row="true" OnClick="AddRowAsync">@Loc["EmailEditor_Table_AddRow"]</TmButton>
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Secondary" Icon="plus"
+                  data-tm-table-add-col="true" OnClick="AddColumnAsync">@Loc["EmailEditor_Table_AddColumn"]</TmButton>
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" Icon="minus"
+                  data-tm-table-remove-col="true" OnClick="RemoveColumnAsync">@Loc["EmailEditor_Table_RemoveColumn"]</TmButton>
+    </div>
+</div>
+
+@code {
+    /// <summary>The table block being edited (mutated in place).</summary>
+    [Parameter, EditorRequired] public EmailTableBlock Block { get; set; } = default!;
+
+    /// <summary>Raised after the table changes.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private int ColumnCount => Block.Rows.Count == 0 ? 1 : Block.Rows.Max(r => r.Cells.Count);
+
+    private async Task AddRowAsync()
+    {
+        var columns = Math.Max(1, ColumnCount);
+        var row = new EmailTableRow();
+        for (var i = 0; i < columns; i++) row.Cells.Add(new EmailTableCell());
+        Block.Rows.Add(row);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task RemoveRowAsync(EmailTableRow row)
+    {
+        Block.Rows.Remove(row);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task AddColumnAsync()
+    {
+        if (Block.Rows.Count == 0) Block.Rows.Add(new EmailTableRow());
+        foreach (var row in Block.Rows) row.Cells.Add(new EmailTableCell());
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task RemoveColumnAsync()
+    {
+        foreach (var row in Block.Rows.Where(r => r.Cells.Count > 0)) row.Cells.RemoveAt(row.Cells.Count - 1);
+        await OnChanged.InvokeAsync();
+    }
+}

@@ -5,6 +5,7 @@ using Tempo.Blazor.Demo.Api.Endpoints;
 using Tempo.Blazor.Demo.Api.Hubs;
 using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.DocumentEditor.Services;
+using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.Models;
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
@@ -68,6 +69,16 @@ builder.Services.AddSingleton<WireframeExportService>();
 builder.Services.AddScoped<DemoDiagramHistoryStore>();
 builder.Services.AddScoped<IDiagramHistoryStore>(sp => sp.GetRequiredService<DemoDiagramHistoryStore>());
 
+// Email templates: engine + validators + localization, demo store and SMTP delivery (smtp4dev).
+builder.Services.AddLocalization();
+builder.Services.AddTempoEmailTemplateEngine();
+builder.Services.AddSingleton<DemoEmailTemplateStore>();
+builder.Services.AddSingleton<Tempo.Blazor.EmailTemplates.Abstractions.Contracts.IEmailTemplateStore>(
+    sp => sp.GetRequiredService<DemoEmailTemplateStore>());
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddSingleton<ISmtpClientFactory, MailKitSmtpClientFactory>();
+builder.Services.AddSingleton<Tempo.Blazor.EmailTemplates.Abstractions.Contracts.IEmailSender, SmtpEmailSender>();
+
 var app = builder.Build();
 
 app.UseCors();
@@ -90,6 +101,7 @@ app.MapDiagramHistoryEndpoints();
 app.MapNotionEditorEndpoints();
 app.MapDatabaseEndpoints();
 app.MapDocumentEditorEndpoints();
+app.MapEmailTemplateEndpoints();
 app.MapHub<DocumentEditorCollaborationHub>("/hubs/document-editor-collaboration");
 app.MapHub<NotionCollaborationHub>("/hubs/notion-collaboration");
 

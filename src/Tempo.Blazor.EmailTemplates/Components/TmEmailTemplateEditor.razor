@@ -1,0 +1,365 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+@implements IDisposable
+@inject IBlockRegistry Registry
+
+<div class="tm-email-editor" data-tm-email-editor tabindex="0" @onkeydown="HandleEditorKeyDownAsync">
+    <div class="tm-email-editor__toolbar" role="toolbar" aria-label="@Loc["EmailEditor_Panel_Blocks"]">
+        <div class="tm-email-editor__toolbar-group">
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="rotate-ccw"
+                      AriaLabel="@Loc["EmailEditor_Toolbar_Undo"]" Disabled="@(!_history.CanUndo)"
+                      OnClick="UndoAsync" data-tm-undo="true" />
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="rotate-cw"
+                      AriaLabel="@Loc["EmailEditor_Toolbar_Redo"]" Disabled="@(!_history.CanRedo)"
+                      OnClick="RedoAsync" data-tm-redo="true" />
+        </div>
+        <div class="tm-email-editor__toolbar-spacer"></div>
+        <div class="tm-email-editor__toolbar-group">
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="eye"
+                      OnClick="() => _showPreview = true" data-tm-preview-btn="true">@Loc["EmailEditor_Toolbar_Preview"]</TmButton>
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="check-circle"
+                      OnClick="() => _showValidation = true" data-tm-validate-btn="true">@Loc["EmailEditor_Toolbar_Validate"]</TmButton>
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="upload"
+                      OnClick="() => _showImport = true" data-tm-import-btn="true">@Loc["EmailEditor_Toolbar_Import"]</TmButton>
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="code"
+                      OnClick="() => _showExport = true" data-tm-mjml-btn="true">@Loc["EmailEditor_Toolbar_Mjml"]</TmButton>
+            <TmButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Sm" Icon="help-circle"
+                      AriaLabel="@Loc["EmailEditor_Toolbar_Help"]" OnClick="() => _showShortcuts = true"
+                      data-tm-help-btn="true" />
+            <TmButton Variant="ButtonVariant.Primary" Size="ButtonSize.Sm" Icon="save"
+                      OnClick="SaveAsync" data-tm-save="true">@Loc["EmailEditor_Toolbar_Save"]</TmButton>
+        </div>
+        <span class="tm-email-editor__status" data-tm-status>@_autoSaveStatus</span>
+    </div>
+
+    <TmSplitter Orientation="SplitterOrientation.Horizontal" AdditionalCssClass="tm-email-editor__body">
+        <TmSplitterPane Size="20%" MinSize="160px">
+            <section class="tm-email-editor__panel" data-tm-toolbox aria-label="@Loc["EmailEditor_Panel_Blocks"]">
+                <header class="tm-email-editor__panel-header">@Loc["EmailEditor_Panel_Blocks"]</header>
+                <div class="tm-email-editor__panel-body">
+                    <TmEmailTemplateToolbox OnAddBlock="AddBlockAsync" OnAddSection="AddSectionAsync"
+                                        OnDragBlockStart="StartBlockDragAsync" />
+                </div>
+            </section>
+        </TmSplitterPane>
+        <TmSplitterPane Size="60%" MinSize="320px">
+            <section class="tm-email-editor__canvas" data-tm-canvas aria-label="@Loc["EmailEditor_Toolbar_Preview"]">
+                <TmEmailTemplateCanvas Document="_document" SelectedId="_selectedId"
+                                       SelectedIdChanged="OnSelectionChangedAsync"
+                                       OnDocumentChanged="OnStructuralChangeAsync"
+                                       DragActive="_dragPayload is not null"
+                                       OnBlockDragStart="StartExistingBlockDragAsync"
+                                       OnDropInColumn="HandleDropAsync" />
+            </section>
+        </TmSplitterPane>
+        <TmSplitterPane Size="20%" MinSize="200px">
+            <section class="tm-email-editor__panel" data-tm-properties aria-label="@Loc["EmailEditor_Panel_Properties"]">
+                <header class="tm-email-editor__panel-header">@Loc["EmailEditor_Panel_Properties"]</header>
+                <div class="tm-email-editor__panel-body">
+                    <TmEmailPropertyPanel Document="_document" SelectedId="_selectedId"
+                                          Variables="Variables" OnImageUpload="OnImageUpload"
+                                          OnChanged="OnPropertyChangeAsync" />
+                </div>
+            </section>
+        </TmSplitterPane>
+    </TmSplitter>
+</div>
+
+<TmEmailExportDialog Show="_showExport" Document="_document" OnClose="() => _showExport = false" />
+<TmEmailImportDialog Show="_showImport" OnImport="ApplyImportAsync" OnClose="() => _showImport = false" />
+<TmModal Show="_showPreview" Title="@Loc["EmailEditor_Toolbar_Preview"]" Size="ModalSize.Large"
+         OnClose="() => _showPreview = false">
+    <TmEmailTemplatePreview Document="_document" />
+</TmModal>
+<TmModal Show="_showValidation" Title="@Loc["EmailEditor_Validation_Title"]" Size="ModalSize.Medium"
+         OnClose="() => _showValidation = false">
+    <TmEmailValidationPanel Document="_document" OnNavigate="OnValidationNavigateAsync" />
+</TmModal>
+<TmKeyboardShortcutsHelp IsVisible="_showShortcuts" Categories="ShortcutCategories"
+                         OnClose="() => _showShortcuts = false" />
+
+@code {
+    /// <summary>Gets or sets the edited document. Two-way bindable via <see cref="DocumentChanged"/>.</summary>
+    [Parameter] public EmailTemplateDocument? Document { get; set; }
+
+    /// <summary>Raised when the document changes (for <c>@bind-Document</c>).</summary>
+    [Parameter] public EventCallback<EmailTemplateDocument> DocumentChanged { get; set; }
+
+    /// <summary>Raised when the user requests a save.</summary>
+    [Parameter] public EventCallback<EmailTemplateDocument> OnSave { get; set; }
+
+    /// <summary>Auto-save configuration; when enabled, edits are saved after a debounce interval.</summary>
+    [Parameter] public AutoSaveOptions? AutoSave { get; set; }
+
+    /// <summary>Raised by auto-save with the current document.</summary>
+    [Parameter] public EventCallback<EmailTemplateDocument> OnAutoSave { get; set; }
+
+    /// <summary>Clock used for auto-save debouncing (overridable in tests).</summary>
+    [Parameter] public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
+    /// <summary>Host-provided variables offered by the variable picker (merged with extracted ones).</summary>
+    [Parameter] public IReadOnlyList<TemplateVariableInfo> Variables { get; set; } = Array.Empty<TemplateVariableInfo>();
+
+    /// <summary>Optional host image-upload handler: receives a picked file, returns the hosted URL.</summary>
+    [Parameter] public Func<IBrowserFile, Task<string>>? OnImageUpload { get; set; }
+
+    private readonly EditorHistoryService _history = new();
+    private readonly ClipboardService _clipboard = new();
+
+    private EmailTemplateDocument _document = new();
+    private Guid? _selectedId;
+    private string _autoSaveStatus = string.Empty;
+    private object? _dragPayload;
+    private ITimer? _autoSaveTimer;
+    private bool _showExport;
+    private bool _showImport;
+    private bool _showPreview;
+    private bool _showValidation;
+    private bool _showShortcuts;
+
+    private IEnumerable<TmShortcutCategory> ShortcutCategories => new[]
+    {
+        new TmShortcutCategory(Loc["EmailEditor_Shortcut_Category"], new[]
+        {
+            new TmKeyboardShortcut("Ctrl + Z", Loc["EmailEditor_Toolbar_Undo"]),
+            new TmKeyboardShortcut("Ctrl + Y", Loc["EmailEditor_Toolbar_Redo"]),
+            new TmKeyboardShortcut("Ctrl + C", Loc["EmailEditor_Shortcut_Copy"]),
+            new TmKeyboardShortcut("Ctrl + X", Loc["EmailEditor_Shortcut_Cut"]),
+            new TmKeyboardShortcut("Ctrl + V", Loc["EmailEditor_Shortcut_Paste"]),
+            new TmKeyboardShortcut("Ctrl + D", Loc["EmailEditor_Action_Duplicate"]),
+            new TmKeyboardShortcut("Delete", Loc["EmailEditor_Action_Delete"]),
+            new TmKeyboardShortcut("Arrow Up + Arrow Down", Loc["EmailEditor_Shortcut_Navigate"]),
+            new TmKeyboardShortcut("Escape", Loc["EmailEditor_Shortcut_Deselect"]),
+        }),
+    };
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => _history.Initialize(_document);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (Document is not null && !ReferenceEquals(Document, _document))
+        {
+            _document = Document;
+            _selectedId = null;
+            _history.Initialize(_document);
+        }
+    }
+
+    private Task SaveAsync() => OnSave.InvokeAsync(_document);
+
+    private Task OnSelectionChangedAsync(Guid? id)
+    {
+        _selectedId = id;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // ── Mutations ───────────────────────────────────────────────────────────────────────────
+
+    private async Task AddBlockAsync(BlockDescriptor descriptor)
+    {
+        var block = Registry.CreateInstance(descriptor.Type);
+        ResolveTargetColumn().Blocks.Add(block);
+        _selectedId = block.Id;
+        await CommitAsync();
+    }
+
+    private async Task AddSectionAsync(LayoutPreset preset)
+    {
+        var section = LayoutPresets.Create(preset);
+        _document.Sections.Add(section);
+        _selectedId = section.Id;
+        await CommitAsync();
+    }
+
+    private async Task HandleDropAsync((Guid ColumnId, int Index) target)
+    {
+        switch (_dragPayload)
+        {
+            case BlockDescriptor descriptor:
+                var block = Registry.CreateInstance(descriptor.Type);
+                if (_document.AddBlock(target.ColumnId, block, target.Index)) _selectedId = block.Id;
+                break;
+            case Guid blockId:
+                _document.MoveBlock(blockId, target.ColumnId, target.Index);
+                _selectedId = blockId;
+                break;
+            default:
+                return;
+        }
+
+        _dragPayload = null;
+        await CommitAsync();
+    }
+
+    private Task OnStructuralChangeAsync() => CommitAsync();
+
+    private async Task ApplyImportAsync(EmailTemplateDocument imported)
+    {
+        _document = imported;
+        _selectedId = null;
+        _showImport = false;
+        await CommitAsync();
+    }
+
+    private Task OnValidationNavigateAsync(Guid? id)
+    {
+        _selectedId = id;
+        _showValidation = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task OnPropertyChangeAsync() => CommitAsync(coalesceKey: "props");
+
+    // ── Undo / redo ─────────────────────────────────────────────────────────────────────────
+
+    private async Task UndoAsync()
+    {
+        var state = _history.Undo();
+        if (state is null) return;
+        _document = state;
+        await AfterHistoryAsync();
+    }
+
+    private async Task RedoAsync()
+    {
+        var state = _history.Redo();
+        if (state is null) return;
+        _document = state;
+        await AfterHistoryAsync();
+    }
+
+    private async Task AfterHistoryAsync()
+    {
+        await DocumentChanged.InvokeAsync(_document);
+        ScheduleAutoSave();
+        StateHasChanged();
+    }
+
+    // ── Clipboard ───────────────────────────────────────────────────────────────────────────
+
+    private void CopySelected()
+    {
+        if (_selectedId is Guid id && _document.FindBlock(id) is { } block) _clipboard.Copy(block);
+    }
+
+    private async Task CutSelectedAsync()
+    {
+        if (_selectedId is not Guid id || _document.FindBlock(id) is not { } block) return;
+        _clipboard.Copy(block);
+        _document.RemoveBlock(id);
+        _selectedId = null;
+        await CommitAsync();
+    }
+
+    private async Task PasteAsync()
+    {
+        var copy = _clipboard.Paste();
+        if (copy is null) return;
+
+        if (_selectedId is Guid id && _document.FindParentColumn(id) is { } column)
+        {
+            var index = column.Blocks.FindIndex(b => b.Id == id);
+            column.Blocks.Insert(index + 1, copy);
+        }
+        else
+        {
+            ResolveTargetColumn().Blocks.Add(copy);
+        }
+
+        _selectedId = copy.Id;
+        await CommitAsync();
+    }
+
+    // ── Keyboard ────────────────────────────────────────────────────────────────────────────
+
+    private async Task HandleEditorKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (!e.CtrlKey && !e.MetaKey) return;
+        switch (e.Key)
+        {
+            case "z" or "Z" when !e.ShiftKey: await UndoAsync(); break;
+            case "y" or "Y": await RedoAsync(); break;
+            case "z" or "Z" when e.ShiftKey: await RedoAsync(); break;
+            case "c" or "C": CopySelected(); break;
+            case "x" or "X": await CutSelectedAsync(); break;
+            case "v" or "V": await PasteAsync(); break;
+        }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────────────────────
+
+    private EmailColumn ResolveTargetColumn()
+    {
+        if (_selectedId is Guid selected)
+        {
+            var parentOfBlock = _document.FindParentColumn(selected);
+            if (parentOfBlock is not null) return parentOfBlock;
+
+            var selectedColumn = DocumentTree.AllColumns(_document).FirstOrDefault(c => c.Id == selected);
+            if (selectedColumn is not null) return selectedColumn;
+
+            var selectedSection = _document.Sections.FirstOrDefault(s => s.Id == selected);
+            if (selectedSection is { Columns.Count: > 0 }) return selectedSection.Columns[0];
+        }
+
+        var lastSection = _document.Sections.LastOrDefault(s => s.Columns.Count > 0);
+        if (lastSection is not null) return lastSection.Columns[0];
+
+        var created = LayoutPresets.Create(LayoutPreset.Single);
+        _document.Sections.Add(created);
+        return created.Columns[0];
+    }
+
+    private Task StartBlockDragAsync(BlockDescriptor descriptor)
+    {
+        _dragPayload = descriptor;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task StartExistingBlockDragAsync(Guid blockId)
+    {
+        _dragPayload = blockId;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task CommitAsync(string? coalesceKey = null)
+    {
+        _document.UpdatedAt = TimeProvider.GetUtcNow().UtcDateTime;
+        _history.Push(_document, coalesceKey);
+        await DocumentChanged.InvokeAsync(_document);
+        ScheduleAutoSave();
+        StateHasChanged();
+    }
+
+    private void ScheduleAutoSave()
+    {
+        if (AutoSave is not { Enabled: true }) return;
+        _autoSaveTimer?.Dispose();
+        _autoSaveTimer = TimeProvider.CreateTimer(_ => _ = InvokeAsync(RunAutoSaveAsync),
+            state: null, dueTime: AutoSave.Interval, period: Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task RunAutoSaveAsync()
+    {
+        _autoSaveStatus = Loc["EmailEditor_AutoSave_Saving"];
+        StateHasChanged();
+        try
+        {
+            await OnAutoSave.InvokeAsync(_document);
+            _autoSaveStatus = Loc["EmailEditor_AutoSave_Saved"];
+        }
+        catch
+        {
+            _autoSaveStatus = Loc["EmailEditor_AutoSave_Error"];
+        }
+        StateHasChanged();
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _autoSaveTimer?.Dispose();
+}

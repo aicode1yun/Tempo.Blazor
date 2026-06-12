@@ -1,0 +1,7 @@
+scenario,paragraphs,iterations,elapsed_ms,input_operations,model_commits,render_swaps,full_render_swaps,layout_passes,render_passes,typing_latency_total_ms,forced_reflows,js_interop_calls
+e2e-typing-30p,30,50,881.6,50,50,0,0,0,0,0,0,0
+e2e-typing-100p,100,50,989.4,50,50,0,0,0,0,0,0,0
+e2e-typing-500p,500,50,1296.8,50,50,0,0,0,0,0,0,0
+e2e-typing-30p,30,50,3117,50,50,0,0,0,0,0,0,0
+e2e-typing-100p,100,50,2567,50,50,0,0,0,0,0,0,0
+e2e-typing-500p,500,50,3168.6,50,50,0,0,0,0,0,0,0

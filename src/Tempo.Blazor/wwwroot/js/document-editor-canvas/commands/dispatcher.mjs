@@ -640,7 +640,11 @@ export function createCanvasCommandRuntime(options = {}) {
     }
 
     function getViewState() {
-        return queryCommandState().view || {};
+        // The view group is composed of paragraph.view + canvasView.view in BOTH query paths, so the
+        // formattingOnly fast path returns the identical view object while skipping the
+        // whole-document walks (tables/fields/math/forms/outline/bookmarks) the full query also
+        // runs. getViewState is called from every render, so it must stay O(selection).
+        return queryCommandState({ formattingOnly: true }).view || {};
     }
 
     function getSearchState() {

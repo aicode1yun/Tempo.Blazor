@@ -10,8 +10,10 @@
     <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Collaboration\Tempo.Blazor.Collaboration.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.EmailTemplates.Abstractions\Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.12.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
     <PackageReference Include="QuestPDF" Version="2026.2.4" />
     <PackageReference Include="SkiaSharp" Version="3.119.2" />

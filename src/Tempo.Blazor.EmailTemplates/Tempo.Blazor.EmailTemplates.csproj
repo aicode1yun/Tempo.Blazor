@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- NuGet Package Metadata -->
+    <IsPackable>true</IsPackable>
+    <PackageId>Tempo.Blazor.EmailTemplates</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>ptyll</Authors>
+    <Title>Tempo.Blazor.EmailTemplates</Title>
+    <Description>Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components.</Description>
+    <PackageTags>blazor;email;mjml;templates;editor;component</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ptyll/Tempo.Blazor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ptyll/Tempo.Blazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tempo.Blazor\Tempo.Blazor.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.EmailTemplates.Abstractions\Tempo.Blazor.EmailTemplates.Abstractions.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.FluentValidation\Tempo.Blazor.FluentValidation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Tempo.Blazor.EmailTemplates.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

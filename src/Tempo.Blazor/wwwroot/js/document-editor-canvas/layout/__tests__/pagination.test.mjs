@@ -98,6 +98,93 @@ test('paragraphs ending with a soft break expose a terminal caret stop on the ne
     assert.equal(terminal.lineId, block.lines.at(-1).id);
 });
 
+test('a page-fixed flow-affecting image above the flow position never rewinds the cursor (no text overlap)', () => {
+    // Regression (2026-06-12 video): switching a page-anchored badge (fixed Y near the page top)
+    // to a flow-affecting wrap mode rewound cursorY to the image bottom, so the next paragraph
+    // painted on top of the previous one.
+    const pageSettings = { width: 600, height: 900, marginTop: 48, marginRight: 48, marginBottom: 48, marginLeft: 48 };
+    const fixedTopBottom = {
+        id: 'fixed-img',
+        type: 'image',
+        order: 2,
+        content: {
+            type: 'image',
+            image: {
+                objectId: 'fixed-img',
+                url: 'data:image/png;base64,iVBORw0KGgo=',
+                layout: {
+                    kind: 2,
+                    wrapMode: 'TopBottom',
+                    transform: { width: 96, height: 54 },
+                    position: { x: 20, y: 250, verticalRelativeTo: 'page' },
+                    anchor: { fixedOnPage: true },
+                },
+            },
+        },
+    };
+    const longText = Array.from({ length: 14 }, () => 'Long paragraph text that pushes the flow cursor well below the fixed image position.').join(' ');
+    const layout = layoutCanvasDocument({
+        documentId: 'backward-flow-guard',
+        pageSettings,
+        theme: { bodyFontFamily: 'Arial', bodyFontSize: 12, paragraphSpacingAfter: 10 },
+        body: { blocks: [paragraph('pA', longText, 1), fixedTopBottom, paragraph('pB', 'Following paragraph must continue below paragraph A.', 3)] },
+    }, { fontMetrics: createDeterministicMetrics() });
+
+    const blockA = layout.blocks.find(item => item.blockId === 'pA');
+    const blockB = layout.blocks.find(item => item.blockId === 'pB');
+    assert.ok(blockA && blockB, 'both paragraphs must be laid out');
+    if (blockB.pageIndex === blockA.pageIndex) {
+        const aBottom = blockA.rect.y + blockA.rect.height;
+        assert.ok(
+            blockB.rect.y >= aBottom - 0.5,
+            `paragraph B (y=${blockB.rect.y}) must start below paragraph A (bottom=${aBottom})`);
+    }
+});
+
+test('an inline image near the page bottom breaks to the next page instead of painting into the footer', () => {
+    // Regression: the standalone drawing-run branch had no overflow check at all, and the image
+    // branch ignored the caption, so images near the body bottom painted across the footer band.
+    const pageSettings = { width: 600, height: 500, marginTop: 48, marginRight: 48, marginBottom: 48, marginLeft: 48 };
+    const bodyBottom = 500 - 48;
+    const drawingImage = {
+        id: 'img-drawing',
+        type: 'paragraph',
+        order: 2,
+        content: {
+            type: 'paragraph',
+            runs: [{
+                id: 'img-drawing-run',
+                type: 'drawing',
+                drawing: {
+                    kind: 'image',
+                    image: {
+                        objectId: 'img-drawing',
+                        url: 'data:image/png;base64,iVBORw0KGgo=',
+                        caption: 'Caption that must stay inside the body band.',
+                        layout: { kind: 0, wrapMode: 'Inline', transform: { width: 220, height: 124 }, position: {} },
+                    },
+                },
+            }],
+        },
+    };
+    const filler = Array.from({ length: 16 }, () => 'Filler sentence occupying page body vertical space here.').join(' ');
+    const layout = layoutCanvasDocument({
+        documentId: 'image-footer-overflow',
+        pageSettings,
+        theme: { bodyFontFamily: 'Arial', bodyFontSize: 12, paragraphSpacingAfter: 10 },
+        body: { blocks: [paragraph('filler', filler, 1), drawingImage] },
+    }, { fontMetrics: createDeterministicMetrics() });
+
+    const image = layout.objectLayouts.find(item => item.blockId === 'img-drawing');
+    assert.ok(image, 'image must be laid out');
+    const footprintBottom = image.captionRect
+        ? image.captionRect.y + image.captionRect.height
+        : image.rect.y + image.rect.height;
+    assert.ok(
+        footprintBottom <= bodyBottom + 0.5,
+        `image footprint (bottom=${footprintBottom}) must not cross the body bottom (${bodyBottom}); pageIndex=${image.pageIndex}`);
+});
+
 function paragraph(id, text, order) {
     return {
         id,

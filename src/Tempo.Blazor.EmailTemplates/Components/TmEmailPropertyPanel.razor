@@ -1,0 +1,196 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+
+<div class="tm-email-properties" data-tm-properties-panel>
+    @{
+        var block = SelectedId is Guid id ? Document.FindBlock(id) : null;
+        var section = SelectedId is Guid sid ? DocumentTree.AllSections(Document).FirstOrDefault(s => s.Id == sid) : null;
+        var column = SelectedId is Guid cid ? DocumentTree.AllColumns(Document).FirstOrDefault(c => c.Id == cid) : null;
+    }
+
+    @if (block is not null)
+    {
+        <header class="tm-email-properties__header" data-tm-prop-target="block">@Loc[$"block.{BlockKey(block)}.name"]</header>
+        <TmEmailObjectFields Target="block" Primary="PrimaryFor(block)" Exclude="ExcludeFor(block)" OnChanged="OnChanged" />
+        @switch (block)
+        {
+            case EmailTextBlock textBlock:
+                <div class="tm-email-properties__group" data-tm-rich-content>
+                    <header class="tm-email-properties__subheader">@Loc["EmailEditor_Field_Content"]</header>
+                    <TmRichEditorSimple Value="@textBlock.Content"
+                                        ValueChanged="@(v => { textBlock.Content = v; return OnChanged.InvokeAsync(); })" />
+                </div>
+                <details class="tm-email-properties__group" data-tm-variables="text">
+                    <summary>@Loc["EmailEditor_Variables_Title"]</summary>
+                    <TmEmailVariablePicker Variables="EffectiveVariables"
+                                           OnInsert="@(t => { textBlock.Content += t; return OnChanged.InvokeAsync(); })" />
+                </details>
+                break;
+            case EmailRawBlock raw:
+                <TmAlert Severity="AlertSeverity.Warning" data-tm-raw-warning="true">@Loc["EmailEditor_Raw_Warning"]</TmAlert>
+                <TmTextArea Label="@Loc["EmailEditor_Field_Content"]" Rows="8" Value="@raw.Content"
+                            ValueChanged="@(v => { raw.Content = v; return OnChanged.InvokeAsync(); })" />
+                break;
+            case EmailImageBlock image:
+                @if (string.IsNullOrWhiteSpace(image.Alt))
+                {
+                    <TmAlert Severity="AlertSeverity.Warning" data-tm-alt-warning="true">@Loc["EmailEditor_Image_AltRequired"]</TmAlert>
+                }
+                @if (OnImageUpload is not null)
+                {
+                    <div class="tm-email-properties__group" data-tm-image-upload>
+                        <header class="tm-email-properties__subheader">@Loc["EmailEditor_Image_Upload"]</header>
+                        <TmFileDropZone Accept="image/*" InputAriaLabel="@Loc["EmailEditor_Image_Upload"]"
+                                        InputTestId="tm-image-upload" OnFilesSelected="e => UploadImageAsync(image, e)" />
+                    </div>
+                }
+                break;
+            case EmailWrapperBlock or EmailGroupBlock:
+                <TmAlert Severity="AlertSeverity.Info" data-tm-nesting-info="true">@Loc["EmailEditor_Nesting_Info"]</TmAlert>
+                break;
+        }
+        @switch (block)
+        {
+            case EmailSocialBlock social:
+                <TmEmailListEditor TItem="EmailSocialElement" Items="social.Elements"
+                                   ItemPrimary="@(new[] { "Name", "Href", "Label" })" OnChanged="OnChanged" />
+                break;
+            case EmailNavbarBlock navbar:
+                <TmEmailListEditor TItem="EmailNavbarLink" Items="navbar.Links"
+                                   ItemPrimary="@(new[] { "Text", "Href" })" OnChanged="OnChanged" />
+                break;
+            case EmailCarouselBlock carousel:
+                <TmEmailListEditor TItem="EmailCarouselImage" Items="carousel.Images"
+                                   ItemPrimary="@(new[] { "Src", "Alt", "Href" })" OnChanged="OnChanged" />
+                break;
+            case EmailAccordionBlock accordion:
+                <TmEmailListEditor TItem="EmailAccordionItem" Items="accordion.Items"
+                                   ItemPrimary="@(new[] { "Title", "Content" })" OnChanged="OnChanged" />
+                break;
+            case EmailTableBlock table:
+                <TmEmailTableEditor Block="table" OnChanged="OnChanged" />
+                break;
+        }
+        <div class="tm-email-properties__group" data-tm-classes>
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_MjClass_Title"]</header>
+            <TmTextInput Value="@string.Join(' ', block.MjClasses)"
+                         ValueChanged="@(v => { block.MjClasses = Split(v); return OnChanged.InvokeAsync(); })" />
+        </div>
+        <div class="tm-email-properties__group" data-tm-extra>
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_ExtraAttributes_Title"]</header>
+            <TmEmailKeyValueEditor Items="block.ExtraAttributes" OnChanged="OnChanged" />
+        </div>
+    }
+    else if (section is not null)
+    {
+        <header class="tm-email-properties__header" data-tm-prop-target="section">@Loc["EmailEditor_Properties_Section"]</header>
+        <TmEmailObjectFields Target="section" Primary="SectionPrimary" OnChanged="OnChanged" />
+        <div class="tm-email-properties__group" data-tm-extra>
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_ExtraAttributes_Title"]</header>
+            <TmEmailKeyValueEditor Items="section.ExtraAttributes" OnChanged="OnChanged" />
+        </div>
+    }
+    else if (column is not null)
+    {
+        <header class="tm-email-properties__header" data-tm-prop-target="column">@Loc["EmailEditor_Properties_Column"]</header>
+        <TmEmailObjectFields Target="column" Primary="ColumnPrimary" OnChanged="OnChanged" />
+        <div class="tm-email-properties__group" data-tm-extra>
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_ExtraAttributes_Title"]</header>
+            <TmEmailKeyValueEditor Items="column.ExtraAttributes" OnChanged="OnChanged" />
+        </div>
+    }
+    else
+    {
+        <header class="tm-email-properties__header" data-tm-prop-target="document">@Loc["EmailEditor_Properties_Document"]</header>
+        <TmEmailObjectFields Target="Document" Primary="DocumentPrimary" OnChanged="OnChanged" />
+        <details class="tm-email-properties__group" data-tm-variables="subject">
+            <summary>@Loc["EmailEditor_Variables_Title"]</summary>
+            <TmEmailVariablePicker Variables="EffectiveVariables"
+                                   OnInsert="@(t => { Document.Subject += t; return OnChanged.InvokeAsync(); })" />
+        </details>
+        <TmEmailObjectFields Target="Document.Styles" Primary="StylesPrimary" OnChanged="OnChanged" />
+        <div class="tm-email-properties__group" data-tm-head="fonts">
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_Head_Fonts"]</header>
+            <TmEmailListEditor TItem="EmailFont" Items="Document.Styles.Fonts"
+                               ItemPrimary="@(new[] { "Name", "Href" })" OnChanged="OnChanged" />
+        </div>
+        <div class="tm-email-properties__group" data-tm-head="styles">
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_Head_Styles"]</header>
+            <TmEmailListEditor TItem="EmailStyle" Items="Document.Styles.Styles"
+                               ItemPrimary="@(new[] { "Css", "Inline" })" OnChanged="OnChanged" />
+        </div>
+        <div class="tm-email-properties__group" data-tm-head="classes">
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_Head_Classes"]</header>
+            <TmEmailClassesEditor Attributes="Document.Styles.Attributes" OnChanged="OnChanged" />
+        </div>
+        <div class="tm-email-properties__group" data-tm-head="html-attributes">
+            <header class="tm-email-properties__subheader">@Loc["EmailEditor_Head_HtmlAttributes"]</header>
+            <TmEmailHtmlAttributesEditor Selectors="Document.Styles.HtmlAttributes" OnChanged="OnChanged" />
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The document being edited.</summary>
+    [Parameter, EditorRequired] public EmailTemplateDocument Document { get; set; } = new();
+
+    /// <summary>The selected node id (block, section or column); null edits the document settings.</summary>
+    [Parameter] public Guid? SelectedId { get; set; }
+
+    /// <summary>Raised after any property changes.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    /// <summary>Host-provided variables, merged with those extracted from the document.</summary>
+    [Parameter] public IReadOnlyList<TemplateVariableInfo> Variables { get; set; } = Array.Empty<TemplateVariableInfo>();
+
+    /// <summary>Optional host upload handler: receives a picked file and returns the hosted image URL.</summary>
+    [Parameter] public Func<IBrowserFile, Task<string>>? OnImageUpload { get; set; }
+
+    private IReadOnlyList<TemplateVariableInfo> EffectiveVariables =>
+        Variables
+            .Concat(EmailDocumentVariableExtractor.Extract(Document))
+            .GroupBy(v => v.Path)
+            .Select(g => g.First())
+            .OrderBy(v => v.Path, StringComparer.Ordinal)
+            .ToList();
+
+    private static readonly string[] DocumentPrimary = { "Name", "Subject", "Preheader", "Language" };
+    private static readonly string[] StylesPrimary = { "ContentWidth", "BackgroundColor", "FontFamily", "Breakpoint" };
+    private static readonly string[] SectionPrimary = { "BackgroundColor", "BackgroundUrl", "Padding", "TextAlign", "FullWidth" };
+    private static readonly string[] ColumnPrimary = { "Width", "VerticalAlign", "BackgroundColor", "Padding" };
+
+    private static readonly string[] ContentOnly = { "Content" };
+
+    private static string BlockKey(EmailBlockBase block) => block.Type.ToString().ToLowerInvariant();
+
+    private static IReadOnlyList<string> ExcludeFor(EmailBlockBase block) =>
+        block is EmailTextBlock or EmailRawBlock ? ContentOnly : Array.Empty<string>();
+
+    private async Task UploadImageAsync(EmailImageBlock image, InputFileChangeEventArgs e)
+    {
+        if (OnImageUpload is null || e.File is null) return;
+        image.Src = await OnImageUpload(e.File);
+        await OnChanged.InvokeAsync();
+    }
+
+    private static List<string> Split(string value) =>
+        value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+    private static IReadOnlyList<string> PrimaryFor(EmailBlockBase block) => block switch
+    {
+        EmailTextBlock => new[] { "Content", "Color", "FontSize", "Align", "FontWeight" },
+        EmailButtonBlock => new[] { "Text", "Href", "BackgroundColor", "Color", "BorderRadius", "Align" },
+        EmailImageBlock => new[] { "Src", "Alt", "Href", "Width", "Align" },
+        EmailDividerBlock => new[] { "BorderColor", "BorderWidth", "BorderStyle", "Width", "Align" },
+        EmailSpacerBlock => new[] { "Height" },
+        EmailRawBlock => new[] { "Content" },
+        EmailTableBlock => new[] { "Width", "Align", "Color", "FontSize" },
+        EmailSocialBlock => new[] { "Mode", "Align", "IconSize", "Color" },
+        EmailNavbarBlock => new[] { "Align", "BaseUrl" },
+        EmailCarouselBlock => new[] { "Align", "Thumbnails", "IconWidth" },
+        EmailAccordionBlock => new[] { "IconPosition", "Border" },
+        EmailHeroBlock => new[] { "Mode", "BackgroundColor", "BackgroundUrl", "Height", "VerticalAlign" },
+        EmailWrapperBlock => new[] { "BackgroundColor", "BackgroundUrl", "TextAlign", "FullWidth" },
+        EmailGroupBlock => new[] { "BackgroundColor", "Direction", "VerticalAlign", "Width" },
+        _ => Array.Empty<string>(),
+    };
+}

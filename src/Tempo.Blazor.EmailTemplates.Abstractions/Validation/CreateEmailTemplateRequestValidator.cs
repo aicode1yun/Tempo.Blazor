@@ -1,0 +1,36 @@
+using System.Text.RegularExpressions;
+using FluentValidation;
+using Microsoft.Extensions.Localization;
+using Tempo.Blazor.EmailTemplates.Abstractions.Dtos;
+using Tempo.Blazor.EmailTemplates.Abstractions.Resources;
+
+namespace Tempo.Blazor.EmailTemplates.Abstractions.Validation;
+
+/// <summary>Shared language-code pattern (e.g. <c>en</c> or <c>en-US</c>).</summary>
+internal static partial class LanguagePattern
+{
+    [GeneratedRegex("^[a-zA-Z]{2,3}(-[a-zA-Z]{2,4})?$")]
+    public static partial Regex Regex();
+}
+
+/// <summary>Validates <see cref="CreateEmailTemplateRequest"/> with localized messages.</summary>
+public sealed class CreateEmailTemplateRequestValidator : AbstractValidator<CreateEmailTemplateRequest>
+{
+    /// <summary>Initializes the validator with a localized message source.</summary>
+    public CreateEmailTemplateRequestValidator(IStringLocalizer<EmailTemplateValidationResources> localizer)
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage(_ => localizer["Name_Required"])
+            .MaximumLength(200).WithMessage(_ => localizer["Name_TooLong"]);
+
+        RuleFor(x => x.Subject)
+            .MaximumLength(300).WithMessage(_ => localizer["Subject_TooLong"]);
+
+        RuleFor(x => x.Language)
+            .Must(lang => !string.IsNullOrEmpty(lang) && LanguagePattern.Regex().IsMatch(lang))
+            .WithMessage(_ => localizer["Language_Invalid"]);
+
+        RuleFor(x => x.ContentJson)
+            .NotEmpty().WithMessage(_ => localizer["ContentJson_Required"]);
+    }
+}

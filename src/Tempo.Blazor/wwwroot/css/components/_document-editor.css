@@ -4337,6 +4337,13 @@
     }
 }
 
+/* The tall image/object panel anchored above an object grows UP from the anchor so it never covers
+   the object it edits (the payload anchors `top` at the object's top edge in that case). */
+.tm-document-editor__mini-toolbar--object-above {
+    transform: translateY(-100%);
+    animation: none;
+}
+
 .tm-document-editor__mini-toolbar > button {
     display: inline-flex;
     align-items: center;

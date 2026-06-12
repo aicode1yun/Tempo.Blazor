@@ -899,7 +899,7 @@
             @if (_miniToolbar is { IsVisible: true } && IsObjectMiniToolbar && _coreActiveImage is { } objectImage)
             {
                 @* B3: floating image toolbar (Word/GDocs parity) anchored above the selected object. *@
-                <div class="tm-document-editor__mini-toolbar tm-document-editor__mini-toolbar--object"
+                <div class="tm-document-editor__mini-toolbar tm-document-editor__mini-toolbar--object @(string.Equals(_miniToolbar.Placement, "above", StringComparison.Ordinal) ? "tm-document-editor__mini-toolbar--object-above" : null)"
                      style="@MiniToolbarFloatingStyle(_miniToolbar)"
                      data-testid="document-mini-toolbar"
                      data-human-testid="document-floating-toolbar"

@@ -1,0 +1,182 @@
+@page "/email-templates/send/{Id:guid}"
+@using System.Text.Json
+@inject IEmailTemplateApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>Send template</PageTitle>
+
+<div class="tm-demo-email-send" data-tm-email-send-page>
+    <div class="tm-demo-email-send__bar">
+        <TmButton Variant="ButtonVariant.Ghost" Icon="arrow-left" OnClick="Back" data-tm-back>Back</TmButton>
+        <h1>@(_detail?.Name ?? "Send")</h1>
+    </div>
+
+    @if (_loading)
+    {
+        <TmSpinner />
+    }
+    else if (_document is null)
+    {
+        <TmEmptyState Icon="alert-triangle" Title="Template not found" />
+    }
+    else
+    {
+        <div class="tm-demo-email-send__layout">
+            <div class="tm-demo-email-send__form">
+                <TmTextInput Label="To (comma-separated)" Value="@_to" ValueChanged="v => { _to = v; }" data-tm-to />
+                <TmTextInput Label="Cc (comma-separated)" Value="@_cc" ValueChanged="v => { _cc = v; }" data-tm-cc />
+
+                @foreach (var variable in _scalars)
+                {
+                    var path = variable;
+                    <TmTextInput Label="@path" Value="@GetScalar(path)"
+                                 ValueChanged="v => SetScalar(path, v)" data-tm-var="@path" />
+                }
+                @foreach (var variable in _collections)
+                {
+                    var path = variable;
+                    <TmTextArea Label="@($"{path} (JSON array)")" Rows="4" Value="@GetCollection(path)"
+                                ValueChanged="v => SetCollection(path, v)" data-tm-var-collection="@path" />
+                }
+
+                <TmButton Variant="ButtonVariant.Primary" Icon="send" OnClick="SendAsync"
+                          Disabled="@(_sending || !HasRecipients)" data-tm-send-submit>Send email</TmButton>
+
+                @if (_result is { Success: true })
+                {
+                    <TmAlert Severity="AlertSeverity.Success" data-tm-send-success>
+                        Email sent. <a href="http://localhost:5000" target="_blank">Check it in smtp4dev</a>.
+                    </TmAlert>
+                }
+                else if (_result is { Success: false })
+                {
+                    <TmAlert Severity="AlertSeverity.Error" data-tm-send-errors>
+                        <ul>@foreach (var e in _result.Errors) { <li>@e</li> }</ul>
+                    </TmAlert>
+                }
+            </div>
+
+            <div class="tm-demo-email-send__preview">
+                <TmEmailTemplatePreview Document="_document" VariablesJson="@BuildVariablesJson()" />
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The template id from the route.</summary>
+    [Parameter] public Guid Id { get; set; }
+
+    private EmailTemplateDetailDto? _detail;
+    private EmailTemplateDocument? _document;
+    private bool _loading = true;
+    private bool _sending;
+    private SendEmailResult? _result;
+    private string _to = string.Empty;
+    private string _cc = string.Empty;
+
+    private List<string> _scalars = new();
+    private List<string> _collections = new();
+    private readonly Dictionary<string, string> _scalarValues = new();
+    private readonly Dictionary<string, string> _collectionValues = new();
+
+    private bool HasRecipients => SplitAddresses(_to).Count > 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _detail = await Api.GetAsync(Id);
+        _document = _detail is null ? null : EmailTemplateSerializer.Deserialize(_detail.ContentJson);
+        if (_document is not null)
+        {
+            var variables = EmailDocumentVariableExtractor.Extract(_document);
+            _scalars = variables.Where(v => v.Kind == VariableKind.Scalar).Select(v => v.Path).Distinct().ToList();
+            _collections = variables.Where(v => v.Kind == VariableKind.Collection).Select(v => v.Path).Distinct().ToList();
+            Prefill(_detail!.SampleDataJson);
+        }
+        _loading = false;
+    }
+
+    private void Prefill(string? sampleDataJson)
+    {
+        if (string.IsNullOrWhiteSpace(sampleDataJson)) return;
+        try
+        {
+            using var doc = JsonDocument.Parse(sampleDataJson);
+            foreach (var path in _scalars)
+                if (TryGetByPath(doc.RootElement, path, out var element) && element.ValueKind is not JsonValueKind.Object and not JsonValueKind.Array)
+                    _scalarValues[path] = element.ToString();
+            foreach (var path in _collections)
+                if (TryGetByPath(doc.RootElement, path, out var element))
+                    _collectionValues[path] = element.GetRawText();
+        }
+        catch (JsonException) { /* leave fields empty */ }
+    }
+
+    private string GetScalar(string path) => _scalarValues.GetValueOrDefault(path, string.Empty);
+    private void SetScalar(string path, string value) => _scalarValues[path] = value;
+    private string GetCollection(string path) => _collectionValues.GetValueOrDefault(path, "[]");
+    private void SetCollection(string path, string value) => _collectionValues[path] = value;
+
+    private string BuildVariablesJson()
+    {
+        var root = new Dictionary<string, object?>();
+        foreach (var (path, value) in _scalarValues)
+            SetPath(root, path.Split('.'), value);
+        foreach (var (path, json) in _collectionValues)
+        {
+            try { SetPath(root, path.Split('.'), JsonSerializer.Deserialize<JsonElement>(json)); }
+            catch (JsonException) { /* invalid array ignored */ }
+        }
+        return JsonSerializer.Serialize(root);
+    }
+
+    private async Task SendAsync()
+    {
+        if (_document is null) return;
+        _sending = true;
+        _result = null;
+        StateHasChanged();
+
+        _result = await Api.SendAsync(Id, new SendEmailRequest
+        {
+            To = SplitAddresses(_to),
+            Cc = SplitAddresses(_cc),
+            VariablesJson = BuildVariablesJson(),
+        });
+        _sending = false;
+    }
+
+    private void Back() => Nav.NavigateTo("/email-templates");
+
+    private static List<string> SplitAddresses(string value)
+        => value.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+    private static void SetPath(Dictionary<string, object?> root, string[] segments, object? value)
+    {
+        var current = root;
+        for (var i = 0; i < segments.Length - 1; i++)
+        {
+            if (current.TryGetValue(segments[i], out var existing) && existing is Dictionary<string, object?> dict)
+                current = dict;
+            else
+            {
+                var created = new Dictionary<string, object?>();
+                current[segments[i]] = created;
+                current = created;
+            }
+        }
+        current[segments[^1]] = value;
+    }
+
+    private static bool TryGetByPath(JsonElement root, string path, out JsonElement element)
+    {
+        element = root;
+        foreach (var segment in path.Split('.'))
+        {
+            if (element.ValueKind != JsonValueKind.Object || !element.TryGetProperty(segment, out element))
+                return false;
+        }
+        return true;
+    }
+}

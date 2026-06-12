@@ -1630,6 +1630,33 @@
                     <span>@(string.IsNullOrWhiteSpace(ActiveHeaderFooterScopeLabel) ? Loc["TmDocumentEditor_HeaderFooterScopePrimary"] : ActiveHeaderFooterScopeLabel)</span>
                 </span>
             </section>
+            @* The first-page / odd-even structure toggles sit right after the scope chip: they define
+               WHICH header variants exist, so they must stay visible — at the end of the row they fell
+               into the overflow menu on narrower windows and users could not find them. *@
+            <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_TabHeaderFooter"]">
+                <button class="@GetToggleButtonClass(DifferentFirstPage)"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_DifferentFirstPage"]))"
+                        aria-pressed="@DifferentFirstPage.ToString().ToLowerInvariant()"
+                        @onclick="ToggleDifferentFirstPageAsync"
+                        data-command="differentFirstPage"
+                        data-testid="document-header-footer-different-first-page">
+                    <TmIcon Name="panel-top" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_DifferentFirstPage"]</span>
+                </button>
+                <button class="@GetToggleButtonClass(DifferentOddAndEvenPages)"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_DifferentOddEven"]))"
+                        aria-pressed="@DifferentOddAndEvenPages.ToString().ToLowerInvariant()"
+                        @onclick="ToggleDifferentOddEvenAsync"
+                        data-command="differentOddEven"
+                        data-testid="document-header-footer-different-odd-even">
+                    <TmIcon Name="layout" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_DifferentOddEven"]</span>
+                </button>
+            </section>
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_HeaderFooterFields"]">
                 <div class="tm-document-header-footer-menu-wrapper">
                     <button class="@($"tm-document-editor__ribbon-button{(_headerFooterFieldMenuOpen ? " tm-document-editor__ribbon-button--active" : "")}")"
@@ -1784,28 +1811,6 @@
                 </button>
             </section>
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_TabHeaderFooter"]">
-                <button class="@GetToggleButtonClass(DifferentFirstPage)"
-                        type="button"
-                        disabled="@ReadOnly"
-                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_DifferentFirstPage"]))"
-                        aria-pressed="@DifferentFirstPage.ToString().ToLowerInvariant()"
-                        @onclick="ToggleDifferentFirstPageAsync"
-                        data-command="differentFirstPage"
-                        data-testid="document-header-footer-different-first-page">
-                    <TmIcon Name="panel-top" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_DifferentFirstPage"]</span>
-                </button>
-                <button class="@GetToggleButtonClass(DifferentOddAndEvenPages)"
-                        type="button"
-                        disabled="@ReadOnly"
-                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_DifferentOddEven"]))"
-                        aria-pressed="@DifferentOddAndEvenPages.ToString().ToLowerInvariant()"
-                        @onclick="ToggleDifferentOddEvenAsync"
-                        data-command="differentOddEven"
-                        data-testid="document-header-footer-different-odd-even">
-                    <TmIcon Name="layout" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_DifferentOddEven"]</span>
-                </button>
                 <button class="tm-document-editor__ribbon-button"
                         type="button"
                         title="@Loc["TmDocumentEditor_CloseHeaderFooter"]"

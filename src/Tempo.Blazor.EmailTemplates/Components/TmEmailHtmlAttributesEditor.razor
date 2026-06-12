@@ -1,0 +1,41 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+
+<div class="tm-email-html-attrs" data-tm-html-attrs-editor>
+    @for (var i = 0; i < Selectors.Count; i++)
+    {
+        var selector = Selectors[i];
+        <div class="tm-email-html-attrs__selector" data-tm-html-selector>
+            <div class="tm-email-html-attrs__selector-head">
+                <TmTextInput Placeholder="@Loc["EmailEditor_HtmlAttr_Path"]" Value="@selector.Path"
+                             ValueChanged="@(v => { selector.Path = v; return OnChanged.InvokeAsync(); })" />
+                <button type="button" data-tm-html-selector-remove aria-label="@Loc["EmailEditor_Action_Delete"]"
+                        @onclick="() => RemoveAsync(selector)">
+                    <TmIcon Name="trash-2" Size="IconSize.Xs" />
+                </button>
+            </div>
+            <TmEmailKeyValueEditor Items="selector.Attributes" OnChanged="OnChanged" />
+        </div>
+    }
+    <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Secondary" Icon="plus"
+              data-tm-html-add="true" OnClick="AddAsync">@Loc["EmailEditor_HtmlAttr_Add"]</TmButton>
+</div>
+
+@code {
+    /// <summary>The <c>mj-html-attributes</c> selectors (round-trip only; not rendered by Mjml.Net).</summary>
+    [Parameter, EditorRequired] public List<MjHtmlSelector> Selectors { get; set; } = default!;
+
+    /// <summary>Raised after the selectors change.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private async Task AddAsync()
+    {
+        Selectors.Add(new MjHtmlSelector());
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task RemoveAsync(MjHtmlSelector selector)
+    {
+        Selectors.Remove(selector);
+        await OnChanged.InvokeAsync();
+    }
+}

@@ -1,0 +1,347 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+
+<div class="tm-email-canvas-doc" data-tm-canvas-doc tabindex="0"
+     role="list" aria-label="@Loc["EmailEditor_Panel_Blocks"]"
+     @onkeydown="HandleKeyDownAsync">
+    @if (Document.Sections.Count == 0)
+    {
+        <TmEmptyState Icon="mail" Title="@Loc["EmailEditor_Canvas_Empty"]" />
+    }
+    else
+    {
+        @foreach (var section in Document.Sections)
+        {
+            <div class="tm-email-canvas-section @SelectedClass(section.Id)"
+                 data-tm-section="@(section.Id)" role="group"
+                 aria-label="@Loc["EmailEditor_Toolbox_Layouts"]"
+                 aria-selected="@AriaSelected(section.Id)"
+                 @onclick="() => SelectAsync(section.Id)" @onclick:stopPropagation="true">
+                <div class="tm-email-canvas-section__toolbar">
+                    <button type="button" data-tm-section-action="add-column"
+                            aria-label="@Loc["EmailEditor_Section_AddColumn"]"
+                            @onclick="() => AddColumnAsync(section)" @onclick:stopPropagation="true">
+                        <TmIcon Name="columns" Size="IconSize.Xs" />
+                    </button>
+                    <button type="button" data-tm-section-action="up"
+                            aria-label="@Loc["EmailEditor_Action_MoveUp"]"
+                            @onclick="() => MoveSectionAsync(section, -1)" @onclick:stopPropagation="true">
+                        <TmIcon Name="chevron-up" Size="IconSize.Xs" />
+                    </button>
+                    <button type="button" data-tm-section-action="down"
+                            aria-label="@Loc["EmailEditor_Action_MoveDown"]"
+                            @onclick="() => MoveSectionAsync(section, 1)" @onclick:stopPropagation="true">
+                        <TmIcon Name="chevron-down" Size="IconSize.Xs" />
+                    </button>
+                    <button type="button" data-tm-section-action="duplicate"
+                            aria-label="@Loc["EmailEditor_Action_Duplicate"]"
+                            @onclick="() => DuplicateSectionAsync(section)" @onclick:stopPropagation="true">
+                        <TmIcon Name="copy" Size="IconSize.Xs" />
+                    </button>
+                    <button type="button" data-tm-section-action="delete"
+                            aria-label="@Loc["EmailEditor_Action_Delete"]"
+                            @onclick="() => DeleteSectionAsync(section)" @onclick:stopPropagation="true">
+                        <TmIcon Name="trash-2" Size="IconSize.Xs" />
+                    </button>
+                </div>
+                <div class="tm-email-canvas-section__columns">
+                    @foreach (var column in section.Columns)
+                    {
+                        <div class="tm-email-canvas-column @SelectedClass(column.Id)"
+                             data-tm-column="@column.Id" role="group"
+                             aria-selected="@AriaSelected(column.Id)"
+                             style="@ColumnFlex(column)"
+                             @onclick="() => SelectAsync(column.Id)" @onclick:stopPropagation="true">
+                            @if (section.Columns.Count > 1)
+                            {
+                                <button type="button" class="tm-email-canvas-column__remove"
+                                        data-tm-column-action="remove"
+                                        aria-label="@Loc["EmailEditor_Section_RemoveColumn"]"
+                                        @onclick="() => RemoveColumnAsync(section, column)" @onclick:stopPropagation="true">
+                                    <TmIcon Name="x" Size="IconSize.Xs" />
+                                </button>
+                            }
+                            @if (column.Blocks.Count == 0)
+                            {
+                                <div class="tm-email-canvas-column__empty @(DragActive ? "is-drop-active" : "")"
+                                     data-tm-drop-col="@column.Id" data-tm-drop-index="0" data-tm-drop-empty
+                                     @ondragenter:preventDefault="true"
+                                     @ondragover:preventDefault="true"
+                                     @ondrop="() => OnDropInColumn.InvokeAsync((column.Id, 0))"
+                                     @ondrop:preventDefault="true"
+                                     @ondrop:stopPropagation="true">
+                                    @Loc["EmailEditor_Canvas_Empty"]
+                                </div>
+                            }
+                            @for (var i = 0; i < column.Blocks.Count; i++)
+                            {
+                                var block = column.Blocks[i];
+                                var index = i;
+                                var columnId = column.Id;
+                                if (DragActive)
+                                {
+                                    <div class="tm-email-canvas-dropzone" data-tm-drop-col="@columnId" data-tm-drop-index="@index"
+                                         @ondragenter:preventDefault="true"
+                                         @ondragover:preventDefault="true"
+                                         @ondrop="() => OnDropInColumn.InvokeAsync((columnId, index))"
+                                         @ondrop:preventDefault="true"
+                                         @ondrop:stopPropagation="true"></div>
+                                }
+                                <div class="tm-email-canvas-block @SelectedClass(block.Id)"
+                                     data-tm-block-id="@block.Id" role="listitem" tabindex="0"
+                                     draggable="true"
+                                     aria-label="@Loc[$"block.{BlockKey(block)}.name"]"
+                                     aria-selected="@AriaSelected(block.Id)"
+                                     @ondragstart="() => OnBlockDragStart.InvokeAsync(block.Id)"
+                                     @onclick="() => SelectAsync(block.Id)" @onclick:stopPropagation="true">
+                                    <div class="tm-email-canvas-block__toolbar">
+                                        <button type="button" data-tm-block-action="up"
+                                                aria-label="@Loc["EmailEditor_Action_MoveUp"]"
+                                                @onclick="() => MoveBlockAsync(block, -1)" @onclick:stopPropagation="true">
+                                            <TmIcon Name="chevron-up" Size="IconSize.Xs" />
+                                        </button>
+                                        <button type="button" data-tm-block-action="down"
+                                                aria-label="@Loc["EmailEditor_Action_MoveDown"]"
+                                                @onclick="() => MoveBlockAsync(block, 1)" @onclick:stopPropagation="true">
+                                            <TmIcon Name="chevron-down" Size="IconSize.Xs" />
+                                        </button>
+                                        <button type="button" data-tm-block-action="duplicate"
+                                                aria-label="@Loc["EmailEditor_Action_Duplicate"]"
+                                                @onclick="() => DuplicateBlockAsync(block)" @onclick:stopPropagation="true">
+                                            <TmIcon Name="copy" Size="IconSize.Xs" />
+                                        </button>
+                                        <button type="button" data-tm-block-action="delete"
+                                                aria-label="@Loc["EmailEditor_Action_Delete"]"
+                                                @onclick="() => DeleteBlockAsync(block)" @onclick:stopPropagation="true">
+                                            <TmIcon Name="trash-2" Size="IconSize.Xs" />
+                                        </button>
+                                    </div>
+                                    @RenderPreview(block)
+                                </div>
+                            }
+                            @if (DragActive && column.Blocks.Count > 0)
+                            {
+                                <div class="tm-email-canvas-dropzone tm-email-canvas-dropzone--end"
+                                     data-tm-drop-col="@column.Id" data-tm-drop-index="@column.Blocks.Count"
+                                     @ondragenter:preventDefault="true"
+                                     @ondragover:preventDefault="true"
+                                     @ondrop="() => OnDropInColumn.InvokeAsync((column.Id, column.Blocks.Count))"
+                                     @ondrop:preventDefault="true"
+                                     @ondrop:stopPropagation="true"></div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>The document being displayed.</summary>
+    [Parameter, EditorRequired] public EmailTemplateDocument Document { get; set; } = new();
+
+    /// <summary>The currently selected node id (block, column or section), if any.</summary>
+    [Parameter] public Guid? SelectedId { get; set; }
+
+    /// <summary>Raised when the selection changes.</summary>
+    [Parameter] public EventCallback<Guid?> SelectedIdChanged { get; set; }
+
+    /// <summary>Raised after the document is mutated by a block/section/column action.</summary>
+    [Parameter] public EventCallback OnDocumentChanged { get; set; }
+
+    /// <summary>Whether a drag is in progress (shows drop zones between blocks).</summary>
+    [Parameter] public bool DragActive { get; set; }
+
+    /// <summary>Raised when a block is dropped into a column at an index.</summary>
+    [Parameter] public EventCallback<(Guid ColumnId, int Index)> OnDropInColumn { get; set; }
+
+    /// <summary>Raised when an existing block begins being dragged.</summary>
+    [Parameter] public EventCallback<Guid> OnBlockDragStart { get; set; }
+
+    private bool IsSelected(Guid id) => SelectedId == id;
+
+    private string SelectedClass(Guid id) => IsSelected(id) ? "is-selected" : string.Empty;
+
+    private string AriaSelected(Guid id) => IsSelected(id) ? "true" : "false";
+
+    private static string BlockKey(EmailBlockBase block) => block.Type.ToString().ToLowerInvariant();
+
+    private static string ColumnFlex(EmailColumn column)
+        => column.Width is null ? "flex:1 1 0" : $"flex:0 0 {column.Width}";
+
+    private Task SelectAsync(Guid id) => SelectedIdChanged.InvokeAsync(id);
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await SelectedIdChanged.InvokeAsync(null);
+            return;
+        }
+
+        if (SelectedId is not Guid selected)
+        {
+            if (e.Key is "ArrowDown" or "ArrowUp")
+            {
+                var first = DocumentTree.AllBlocks(Document).FirstOrDefault();
+                if (first is not null) await SelectedIdChanged.InvokeAsync(first.Id);
+            }
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case "Delete" or "Backspace":
+                await DeleteSelectionAsync(selected);
+                break;
+            case "ArrowDown":
+                await NavigateAsync(selected, 1);
+                break;
+            case "ArrowUp":
+                await NavigateAsync(selected, -1);
+                break;
+            case "d" or "D" when e.CtrlKey:
+                await DuplicateSelectionAsync(selected);
+                break;
+        }
+    }
+
+    private async Task DeleteSelectionAsync(Guid id)
+    {
+        var block = Document.FindBlock(id);
+        if (block is not null) { await DeleteBlockAsync(block); return; }
+        var section = Document.Sections.FirstOrDefault(s => s.Id == id);
+        if (section is not null) await DeleteSectionAsync(section);
+    }
+
+    private async Task DuplicateSelectionAsync(Guid id)
+    {
+        var block = Document.FindBlock(id);
+        if (block is not null) { await DuplicateBlockAsync(block); return; }
+        var section = Document.Sections.FirstOrDefault(s => s.Id == id);
+        if (section is not null) await DuplicateSectionAsync(section);
+    }
+
+    private async Task NavigateAsync(Guid id, int direction)
+    {
+        var blocks = DocumentTree.AllBlocks(Document).ToList();
+        var index = blocks.FindIndex(b => b.Id == id);
+        if (index < 0)
+        {
+            if (blocks.Count > 0) await SelectedIdChanged.InvokeAsync(blocks[0].Id);
+            return;
+        }
+        var target = index + direction;
+        if (target < 0 || target >= blocks.Count) return;
+        await SelectedIdChanged.InvokeAsync(blocks[target].Id);
+    }
+
+    // ── Block actions ───────────────────────────────────────────────────────────────────────
+
+    private async Task MoveBlockAsync(EmailBlockBase block, int direction)
+    {
+        var column = Document.FindParentColumn(block.Id);
+        if (column is null) return;
+        var index = column.Blocks.FindIndex(b => b.Id == block.Id);
+        var target = index + direction;
+        if (index < 0 || target < 0 || target >= column.Blocks.Count) return;
+        (column.Blocks[index], column.Blocks[target]) = (column.Blocks[target], column.Blocks[index]);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    private async Task DuplicateBlockAsync(EmailBlockBase block)
+    {
+        var copy = Document.DuplicateBlock(block.Id);
+        if (copy is not null) await SelectedIdChanged.InvokeAsync(copy.Id);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    private async Task DeleteBlockAsync(EmailBlockBase block)
+    {
+        Document.RemoveBlock(block.Id);
+        if (SelectedId == block.Id) await SelectedIdChanged.InvokeAsync(null);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    // ── Section / column actions ────────────────────────────────────────────────────────────
+
+    private async Task AddColumnAsync(EmailSection section)
+    {
+        var column = new EmailColumn();
+        section.AddColumn(column);
+        await SelectedIdChanged.InvokeAsync(column.Id);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    private async Task RemoveColumnAsync(EmailSection section, EmailColumn column)
+    {
+        section.RemoveColumn(column.Id);
+        if (SelectedId == column.Id) await SelectedIdChanged.InvokeAsync(null);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    private async Task DuplicateSectionAsync(EmailSection section)
+    {
+        var copy = Document.DuplicateSection(section.Id);
+        if (copy is not null) await SelectedIdChanged.InvokeAsync(copy.Id);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    private async Task DeleteSectionAsync(EmailSection section)
+    {
+        Document.RemoveSection(section.Id);
+        if (SelectedId == section.Id) await SelectedIdChanged.InvokeAsync(null);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    private async Task MoveSectionAsync(EmailSection section, int direction)
+    {
+        var index = Document.Sections.FindIndex(s => s.Id == section.Id);
+        var target = index + direction;
+        if (index < 0 || target < 0 || target >= Document.Sections.Count) return;
+        Document.MoveSection(section.Id, target);
+        await OnDocumentChanged.InvokeAsync();
+    }
+
+    private RenderFragment RenderPreview(EmailBlockBase block) => builder =>
+    {
+        var (label, detail) = block switch
+        {
+            EmailTextBlock t => ("text", Strip(t.Content)),
+            EmailButtonBlock b => ("button", b.Text),
+            EmailImageBlock i => ("image", string.IsNullOrEmpty(i.Alt) ? i.Src : i.Alt),
+            EmailDividerBlock => ("divider", "———"),
+            EmailSpacerBlock s => ("spacer", s.Height),
+            EmailRawBlock => ("raw", "<html>"),
+            EmailTableBlock tb => ("table", $"{tb.Rows.Count}×"),
+            EmailSocialBlock so => ("social", $"{so.Elements.Count}"),
+            EmailNavbarBlock nv => ("navbar", $"{nv.Links.Count}"),
+            EmailCarouselBlock c => ("carousel", $"{c.Images.Count}"),
+            EmailAccordionBlock ac => ("accordion", $"{ac.Items.Count}"),
+            EmailHeroBlock => ("hero", string.Empty),
+            EmailWrapperBlock => ("wrapper", string.Empty),
+            EmailGroupBlock => ("group", string.Empty),
+            _ => ("block", string.Empty),
+        };
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", "tm-email-canvas-block__kind");
+        builder.AddContent(2, Loc[$"block.{label}.name"]);
+        builder.CloseElement();
+        if (!string.IsNullOrWhiteSpace(detail))
+        {
+            builder.OpenElement(3, "span");
+            builder.AddAttribute(4, "class", "tm-email-canvas-block__detail");
+            builder.AddContent(5, detail);
+            builder.CloseElement();
+        }
+    };
+
+    private static string Strip(string html)
+    {
+        if (string.IsNullOrEmpty(html)) return string.Empty;
+        var text = System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", " ");
+        text = System.Net.WebUtility.HtmlDecode(text);
+        text = System.Text.RegularExpressions.Regex.Replace(text, "\\s+", " ").Trim();
+        return text.Length > 80 ? text[..80] + "…" : text;
+    }
+}

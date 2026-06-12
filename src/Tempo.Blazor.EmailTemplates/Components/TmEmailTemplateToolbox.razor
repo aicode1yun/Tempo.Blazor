@@ -1,0 +1,57 @@
+@namespace Tempo.Blazor.EmailTemplates.Components
+@inject IBlockRegistry Registry
+
+<div class="tm-email-toolbox" data-tm-toolbox-list>
+    @foreach (var group in Registry.GetAll().GroupBy(d => d.Category))
+    {
+        <div class="tm-email-toolbox__group">
+            <header class="tm-email-toolbox__group-header">@Loc[$"category.{group.Key}"]</header>
+            <div class="tm-email-toolbox__items">
+                @foreach (var descriptor in group)
+                {
+                    <button type="button"
+                            class="tm-email-toolbox__item"
+                            data-tm-block="@descriptor.Id"
+                            draggable="true"
+                            @ondragstart="() => OnDragBlockStart.InvokeAsync(descriptor)"
+                            @onclick="() => OnAddBlock.InvokeAsync(descriptor)">
+                        <TmIcon Name="@descriptor.Icon" Size="IconSize.Sm" />
+                        <span>@Loc[descriptor.NameKey]</span>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="tm-email-toolbox__group">
+        <header class="tm-email-toolbox__group-header">@Loc["EmailEditor_Toolbox_Layouts"]</header>
+        <div class="tm-email-toolbox__items tm-email-toolbox__items--layouts">
+            @foreach (var preset in LayoutPresets.All)
+            {
+                <button type="button"
+                        class="tm-email-toolbox__item tm-email-toolbox__item--layout"
+                        data-tm-preset="@preset.Preset"
+                        @onclick="() => OnAddSection.InvokeAsync(preset.Preset)">
+                    <span class="tm-email-toolbox__layout-preview">
+                        @foreach (var width in preset.Widths)
+                        {
+                            <span class="tm-email-toolbox__layout-col" style="flex-basis:@width"></span>
+                        }
+                    </span>
+                    <span>@Loc[preset.NameKey]</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>Raised when a block is chosen (clicked) to be added.</summary>
+    [Parameter] public EventCallback<BlockDescriptor> OnAddBlock { get; set; }
+
+    /// <summary>Raised when a block drag starts (for drag-and-drop onto the canvas).</summary>
+    [Parameter] public EventCallback<BlockDescriptor> OnDragBlockStart { get; set; }
+
+    /// <summary>Raised when a layout preset is chosen to add as a new section.</summary>
+    [Parameter] public EventCallback<LayoutPreset> OnAddSection { get; set; }
+}

@@ -81,7 +81,9 @@ export function createCanvasSelectionController(options = {}) {
         layout = normalizeSelectionLayout(nextLayout);
         model = nextModel || {};
         if (!selection || !positionExists(layout, selection.focus)) {
-            const first = firstTextPosition(layout);
+            // Prefer the first BODY position: header text sits highest on the page, so a plain
+            // (pageIndex, y, x) sort would open every document with the caret inside the header.
+            const first = firstTextPosition(layout, model);
             selection = first ? createSelection(first, first) : null;
         }
         if (objectSelection) {
@@ -2494,18 +2496,22 @@ function nearestCaretStop(stops, x, y) {
     return best;
 }
 
-function firstTextPosition(layout) {
+function firstTextPosition(layout, model = null) {
     const stops = collectCaretStops(layout);
     if (!stops.length) {
         return null;
     }
 
-    const first = stops
+    const sorted = stops
         .slice()
         .sort((left, right) =>
             (Number(left.pageIndex || 0) - Number(right.pageIndex || 0))
             || (Number(left.rect?.y || 0) - Number(right.rect?.y || 0))
-            || (Number(left.rect?.x || 0) - Number(right.rect?.x || 0)))[0];
+            || (Number(left.rect?.x || 0) - Number(right.rect?.x || 0)));
+    // Header/footer (and note) text paints above/below the body, so the visually-first stop can be
+    // chrome rather than content. The caret must default into the body; fall back to the first stop
+    // only for documents with no body text at all.
+    const first = (model ? sorted.find(stop => editableRegionForBlock(model, stop.blockId).kind === 'body') : null) || sorted[0];
     return { blockId: first.blockId, offset: Number(first.offset || 0) || 0 };
 }
 

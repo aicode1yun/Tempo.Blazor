@@ -148,6 +148,42 @@ export function layoutCanvasDocument(model, options = {}) {
 
         if (type === 'table') {
             const tableSequence = sequence++;
+            // Tables reuse the block-level layout cache: re-laying a multi-row table (each cell is a
+            // paragraph layout) dominated the per-keystroke cost when typing in an unrelated block.
+            const tableKey = String(block?.id || '');
+            const tableCacheable = layoutCache !== null && tableKey !== '';
+            let tableContentSig = 0;
+            let tableStateSig = 0;
+            if (tableCacheable) {
+                seenBlockIds.add(tableKey);
+                const frame = columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex);
+                tableContentSig = textBlockContentSignature(block);
+                tableStateSig = textBlockStateSignature({
+                    cursorY: Math.round(cursorY * 100),
+                    currentPageIndex,
+                    currentColumnIndex,
+                    sectionId: currentSection?.id || '',
+                    frame,
+                    sequence: tableSequence,
+                    spacingAfter,
+                    objects: objectLayoutsSignature(objectLayouts),
+                });
+                const cached = layoutCache.get(tableKey);
+                if (cached && cached.kind === 'table' && cached.contentSig === tableContentSig && cached.stateSig === tableStateSig) {
+                    cacheStats.hits += 1;
+                    cacheStats.reusedBlockIds.push(tableKey);
+                    const tableLayout = cached.result.tableLayout;
+                    ensurePage(cached.result.flowAfter.pageIndex, currentSection);
+                    blockLayouts.push(tableLayout);
+                    blockLayouts.push(...(tableLayout.nestedBlocks || []));
+                    textRects.push(...tableTextRects(tableLayout.nestedBlocks || []));
+                    currentPageIndex = cached.result.flowAfter.pageIndex;
+                    currentColumnIndex = cached.result.flowAfter.columnIndex;
+                    cursorY = cached.result.flowAfter.cursorY;
+                    continue;
+                }
+            }
+
             const tableLayout = layoutCanvasTable({
                 model: sourceModel,
                 block,
@@ -179,6 +215,20 @@ export function layoutCanvasDocument(model, options = {}) {
             textRects.push(...tableTextRects(tableLayout.nestedBlocks || []));
             currentPageIndex = Number(tableLayout.lastPageIndex ?? tableLayout.pageIndex ?? currentPageIndex) || currentPageIndex;
             cursorY = (Number(tableLayout.endY ?? (tableLayout.rect.y + tableLayout.rect.height)) || (tableLayout.rect.y + tableLayout.rect.height)) + spacingAfter;
+            if (tableCacheable) {
+                cacheStats.misses += 1;
+                layoutCache.set(tableKey, {
+                    kind: 'table',
+                    contentSig: tableContentSig,
+                    stateSig: tableStateSig,
+                    result: {
+                        tableLayout,
+                        // cursorY already includes spacingAfter here; the retry path may also have
+                        // moved to another column/page, so capture the final flow state verbatim.
+                        flowAfter: { pageIndex: currentPageIndex, columnIndex: currentColumnIndex, cursorY },
+                    },
+                });
+            }
             continue;
         }
 
@@ -200,7 +250,9 @@ export function layoutCanvasDocument(model, options = {}) {
                 y: cursorY,
                 sequence: sequence++,
             });
-            if (cursorY > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).y && imageLayout.rect.y + imageLayout.rect.height > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).bottom) {
+            // Overflow uses the FOOTPRINT (image + caption): a caption that crosses the body bottom
+            // would otherwise paint into the footer band even though the image rect still fits.
+            if (cursorY > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).y && imageLayout.rect.y + footprintHeight(imageLayout) > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).bottom) {
                 moveToNextColumnOrPage(currentSection);
                 Object.assign(imageLayout, layoutCanvasImageObject(imageObject, {
                 fontMetrics: metrics,
@@ -214,7 +266,11 @@ export function layoutCanvasDocument(model, options = {}) {
             objectLayouts.push(imageLayout);
             currentPageIndex = imageLayout.pageIndex;
             if (!imageObject.isFloating || imageObject.wrapMode === 'TopBottom') {
-                cursorY = imageLayout.rect.y + footprintHeight(imageLayout) + spacingAfter;
+                // Never move the flow cursor BACKWARD: a page/margin-positioned image can resolve
+                // above the current flow position (e.g. fixed Y near the page top while the text
+                // already flowed past it), and rewinding cursorY made later paragraphs paint over
+                // earlier ones.
+                cursorY = Math.max(cursorY, imageLayout.rect.y + footprintHeight(imageLayout) + spacingAfter);
             }
             continue;
         }
@@ -240,12 +296,28 @@ export function layoutCanvasDocument(model, options = {}) {
                 y: cursorY,
                 sequence: sequence++,
             });
+            // Flow-affecting drawing runs (inline/top-bottom) must break to the next column/page
+            // when their footprint crosses the body bottom — this branch had no overflow check, so
+            // an image near the page end painted across the footer and past the page edge.
+            const drawingAffectsFlow = !imageObject.isFloating || imageObject.wrapMode === 'TopBottom';
+            if (drawingAffectsFlow
+                && cursorY > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).y
+                && imageLayout.rect.y + footprintHeight(imageLayout) > columnFrame(ensurePage(currentPageIndex, currentSection), currentColumnIndex).bottom) {
+                moveToNextColumnOrPage(currentSection);
+                Object.assign(imageLayout, layoutCanvasImageObject(imageObject, {
+                    fontMetrics: metrics,
+                    page: ensurePage(currentPageIndex, currentSection),
+                    y: cursorY,
+                    sequence: imageLayout.sequence,
+                }));
+            }
 
             blockLayouts.push(imageLayout);
             objectLayouts.push(imageLayout);
             currentPageIndex = imageLayout.pageIndex;
-            if (!imageObject.isFloating || imageObject.wrapMode === 'TopBottom') {
-                cursorY = imageLayout.rect.y + footprintHeight(imageLayout) + spacingAfter;
+            if (drawingAffectsFlow) {
+                // Same backward-flow guard as the image-block branch above.
+                cursorY = Math.max(cursorY, imageLayout.rect.y + footprintHeight(imageLayout) + spacingAfter);
             }
             continue;
         }

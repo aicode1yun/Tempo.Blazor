@@ -93,4 +93,11 @@ public sealed class WysiwygMiniToolbarRequest : WysiwygFloatingUiPosition
 
     /// <summary>Optional runtime reason for a visibility change.</summary>
     public string? Reason { get; set; }
+
+    /// <summary>
+    /// Preferred vertical placement relative to the anchored object: "below" renders the panel under
+    /// the anchor (growing down), "above" anchors the panel's bottom edge to the top of the object
+    /// (growing up). Null keeps the default top-anchored behavior.
+    /// </summary>
+    public string? Placement { get; set; }
 }
