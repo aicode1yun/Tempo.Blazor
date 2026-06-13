@@ -2,6 +2,7 @@ import { fontStringFromStyle } from '../../document-editor/layout/font-metrics.m
 import { applyPresetGeometryPath, buildPresetGeometryPath } from '../objects/geometry-preset.mjs';
 import { buildDrawingChartLayout } from '../objects/chart-layout.mjs';
 import { CANVAS_RENDER_LAYERS } from './layers.mjs';
+import { paintSigningField } from './signing-field-render.mjs';
 
 const imageCache = new Map();
 
@@ -98,6 +99,8 @@ export function paintCommand(context, command, options = {}) {
         case 'imageObject':
             paintImageObject(context, command);
             return true;
+        case 'signingField':
+            return paintSigningField(context, command, options);
         case 'drawingShape':
             if (command.metadataOnly === true) {
                 return false;

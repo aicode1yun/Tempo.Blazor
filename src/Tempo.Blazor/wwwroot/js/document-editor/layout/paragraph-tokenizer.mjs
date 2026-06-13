@@ -182,16 +182,18 @@ export function createParagraphTokenizer(options) {
         const result = [];
         runs.forEach(function (run, index) {
             const rawKind = String(run.kind || run.Kind || run.type || run.Type || 'text').toLowerCase();
-            const kind = rawKind.indexOf('drawing') >= 0
-                ? 'drawing'
-                : rawKind.indexOf('field') >= 0
-                    ? 'field'
-                    : rawKind.indexOf('math') >= 0
-                        ? 'math'
-                        : rawKind.indexOf('contentcontrol') >= 0
-                            ? 'contentControl'
-                            : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
-            const rawText = kind === 'drawing'
+            const kind = rawKind.indexOf('signingfield') >= 0
+                ? 'signingField'
+                : rawKind.indexOf('drawing') >= 0
+                    ? 'drawing'
+                    : rawKind.indexOf('field') >= 0
+                        ? 'field'
+                        : rawKind.indexOf('math') >= 0
+                            ? 'math'
+                            : rawKind.indexOf('contentcontrol') >= 0
+                                ? 'contentControl'
+                                : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
+            const rawText = kind === 'drawing' || kind === 'signingField'
                 ? ''
                 : asText(run.text || run.Text || run.fallbackText || run.FallbackText || '');
             const style = mergeTextStyle(baseStyle, run);
@@ -219,6 +221,9 @@ export function createParagraphTokenizer(options) {
                 mathLayoutAscent: run.mathLayoutAscent ?? run.MathLayoutAscent ?? null,
                 mathLayoutDescent: run.mathLayoutDescent ?? run.MathLayoutDescent ?? null,
                 contentControl: run.contentControl || run.ContentControl || null,
+                signingField: run.signingField || run.SigningField || null,
+                signingFieldWidth: run.signingFieldWidth ?? run.SigningFieldWidth ?? null,
+                signingFieldHeight: run.signingFieldHeight ?? run.SigningFieldHeight ?? null,
                 objectId: object && object.objectId || run.objectId || run.ObjectId || null,
             });
             cursor += rawText.length;
@@ -233,6 +238,31 @@ export function createParagraphTokenizer(options) {
         }).join('');
         const tokens = [];
         runs.forEach(function (run, runIndex) {
+            if (run.kind === 'signingField') {
+                const fontSize = cssLengthToPixels(run.style && (run.style.fontSize ?? run.style.FontSize), 16);
+                const width = Math.max(1, Number(run.signingFieldWidth || (run.signingField && run.signingField.boxWidth) || 0) || 1);
+                const height = Math.max(1, Number(run.signingFieldHeight || (run.signingField && run.signingField.boxHeight) || 0) || fontSize * 1.25);
+                tokens.push(sortObject({
+                    type: 'inlineObject',
+                    kind: 'signingField',
+                    text: '',
+                    start: run.start,
+                    end: run.end,
+                    length: 0,
+                    breakBefore: true,
+                    breakAfter: true,
+                    hardBreak: false,
+                    unbreakable: true,
+                    runId: run.id || null,
+                    signingField: run.signingField || null,
+                    width: width,
+                    height: height,
+                    style: clone(run.style || {}),
+                    marks: clone(run.marks || []),
+                }));
+                return;
+            }
+
             if (run.kind === 'drawing') {
                 const object = run.object || normalizeImageObject(run, {
                     blockId: paragraph && (paragraph.id || paragraph.Id

@@ -260,6 +260,10 @@ public sealed class DocxPackageWriter
             {
                 paragraph.Append(WriteContentControlInline(contentControl));
             }
+            else if (inline is DocumentSigningFieldRun signing)
+            {
+                paragraph.Append(WriteRun(Internal.SigningFieldPlaceholder.Text(signing), inline.Marks));
+            }
         }
 
         if (!paragraph.ChildElements.Any(element =>

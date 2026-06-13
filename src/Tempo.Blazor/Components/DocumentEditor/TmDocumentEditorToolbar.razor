@@ -1038,6 +1038,24 @@
                     </button>
                 }
             </section>
+            @if (_activeRibbonTab == DocumentRibbonTab.Insert && (CommandRegistry?.GetState("insertSigningField")?.IsVisible ?? false))
+            {
+                <section class="tm-document-editor__ribbon-group"
+                         aria-label="@Loc["TmDocumentEditor_GroupSigning"]"
+                         data-testid="document-signing-group">
+                    <button class="tm-document-editor__ribbon-button"
+                            type="button"
+                            disabled="@(!IsCommandEnabled("insertSigningField"))"
+                            title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_InsertSigningField"]))"
+                            @onmousedown:preventDefault="true"
+                            @onclick='() => ExecuteToolbarCommandAsync("insertSigningField", OnInsertSigningField)'
+                            data-command="insertSigningField"
+                            data-testid="document-insert-signing-field">
+                        <TmIcon Name="signature" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_InsertSigningField"]</span>
+                    </button>
+                </section>
+            }
         }
         else if (_activeRibbonTab == DocumentRibbonTab.Layout)
         {
@@ -3131,6 +3149,9 @@
 
     /// <summary>Raised when a page break should be inserted at the current selection.</summary>
     [Parameter] public EventCallback OnInsertPageBreak { get; set; }
+
+    /// <summary>Raised when the signing-fields toolbar button inserts a signing field (plan S2.19).</summary>
+    [Parameter] public EventCallback OnInsertSigningField { get; set; }
 
     /// <summary>Raised when a predefined equation gallery item should be inserted.</summary>
     [Parameter] public EventCallback<string> OnInsertEquation { get; set; }

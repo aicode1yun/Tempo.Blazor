@@ -3676,6 +3676,12 @@
   <data name="TmDocumentEditor_ImageLockAspectRatio"   xml:space="preserve"><value>Zamknout poměr stran</value></data>
   <data name="TmDocumentEditor_ImageResetSize"         xml:space="preserve"><value>Obnovit velikost</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Konec stránky</value></data>
+  <data name="TmDocumentEditor_GroupSigning"          xml:space="preserve"><value>Podpisová pole</value></data>
+  <data name="TmDocumentEditor_SigningRepeatsEveryPage" xml:space="preserve"><value>Opakuje se na každé stránce</value></data>
+  <data name="TmDocumentEditor_SigningFieldLabel" xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmDocumentEditor_SigningFieldRequired" xml:space="preserve"><value>Povinné</value></data>
+  <data name="TmDocumentEditor_SigningFieldRole" xml:space="preserve"><value>Podepisující</value></data>
+  <data name="TmDocumentEditor_InsertSigningField"     xml:space="preserve"><value>Podpisové pole</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG plocha dokumentu</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editovatelná plocha dokumentu. Pomocí Tab přecházíte mezi pásem karet, záhlavím, tělem, zápatím a komentáři.</value></data>
   <data name="TmDocumentEditor_WysiwygPageLabel"       xml:space="preserve"><value>Stránka {0}</value></data>

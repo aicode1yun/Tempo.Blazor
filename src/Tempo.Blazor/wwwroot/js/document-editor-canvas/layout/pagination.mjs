@@ -24,6 +24,7 @@ import { resolveNumberingState } from '../lists/numbering-engine.mjs';
 import { normalizeHyphenationOptions } from './hyphenation.mjs';
 import { applyTabStopsToParagraphLayout } from './tab-stops.mjs';
 import { layoutMathRun } from '../math/math-layout.mjs';
+import { normalizeSigningFieldRun } from '../controls/signing-field-model.mjs';
 
 const DEFAULT_BLOCK_GAP = 8;
 const DEFAULT_LIST_LABEL_GAP = 12;
@@ -540,6 +541,9 @@ export function normalizeTextBlock(model, block, metrics = null) {
                 const mathLayout = String(kind || '').replace(/[\s_-]/g, '').toLowerCase() === 'math'
                     ? measureCanvasMathRun(run, style, metrics)
                     : null;
+                const signingField = run?.type === 'signingField' || run?.signingField
+                    ? normalizeSigningFieldRun(run)
+                    : null;
                 return {
                     id: run?.id || `${block?.id || 'block'}-run-${index}`,
                     kind,
@@ -555,6 +559,9 @@ export function normalizeTextBlock(model, block, metrics = null) {
                     mathLayoutAscent: mathLayout?.ascent ?? null,
                     mathLayoutDescent: mathLayout?.descent ?? null,
                     contentControl: run?.contentControl || null,
+                    signingField,
+                    signingFieldWidth: signingField ? signingField.boxWidth : null,
+                    signingFieldHeight: signingField ? signingField.boxHeight : null,
                     objectId: run?.drawing?.id || run?.id || null,
                 };
             }),

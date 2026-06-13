@@ -55,6 +55,7 @@ export class CanvasDocumentEngine {
         this.performanceMetrics = createPerformanceMetrics();
         this.engineOptions = {
             contentControlRenderMode: options.contentControlRenderMode || 'form',
+            signingRoles: Array.isArray(options.signingRoles) ? options.signingRoles : [],
         };
         this.pendingInputRender = null;
         this.inputRenderScheduled = false;
@@ -242,6 +243,7 @@ export class CanvasDocumentEngine {
         const viewState = this.commandRuntime.getViewState();
         const render = this.canvasStack.render(layout, model, {
             contentControlRenderMode: this.engineOptions.contentControlRenderMode,
+            signingRoles: this.engineOptions.signingRoles,
             ...renderOptions,
             ...recalcOptions,
             viewState,
@@ -390,6 +392,7 @@ export class CanvasDocumentEngine {
         this.engineOptions = {
             ...this.engineOptions,
             contentControlRenderMode: options.contentControlRenderMode || this.engineOptions.contentControlRenderMode,
+            signingRoles: Array.isArray(options.signingRoles) ? options.signingRoles : this.engineOptions.signingRoles,
         };
         return this.render({ forceRepaint: true, structural: true });
     }

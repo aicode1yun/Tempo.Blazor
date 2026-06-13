@@ -132,6 +132,7 @@ export function createCanvasStack(options = {}) {
             theme,
             debug: theme.debug === true,
             contentControlRenderMode,
+            signingRoles: Array.isArray(options.signingRoles) ? options.signingRoles : [],
             layoutCache: layoutBlockCache,
             commandCache: commandDisplayCache,
         });

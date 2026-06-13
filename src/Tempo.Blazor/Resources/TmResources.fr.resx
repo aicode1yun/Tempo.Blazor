@@ -3121,6 +3121,12 @@
   <data name="TmDocumentEditor_WysiwygTableCellPlaceholder" xml:space="preserve"><value>Cellule</value></data>
   <data name="TmDocumentEditor_WysiwygPageOverflowWarning" xml:space="preserve"><value>Le contenu dépasse la page</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Saut de page</value></data>
+  <data name="TmDocumentEditor_GroupSigning"          xml:space="preserve"><value>Champs de signature</value></data>
+  <data name="TmDocumentEditor_SigningRepeatsEveryPage" xml:space="preserve"><value>Répété sur chaque page</value></data>
+  <data name="TmDocumentEditor_SigningFieldLabel" xml:space="preserve"><value>Libellé</value></data>
+  <data name="TmDocumentEditor_SigningFieldRequired" xml:space="preserve"><value>Obligatoire</value></data>
+  <data name="TmDocumentEditor_SigningFieldRole" xml:space="preserve"><value>Signataire</value></data>
+  <data name="TmDocumentEditor_InsertSigningField"     xml:space="preserve"><value>Champ de signature</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>Surface de document WYSIWYG</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Surface de document modifiable. Utilisez Tab pour passer entre le ruban, l'en-tête, le corps, le pied de page et les commentaires.</value></data>
   <data name="TmDocumentEditor_WysiwygPageLabel"       xml:space="preserve"><value>Page {0}</value></data>

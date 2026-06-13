@@ -181,6 +181,7 @@
                                      ShowSymbolTools="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
                                      OnInsertSymbol="InsertSymbolAsync"
                                      OnInsertPageBreak="InsertPageBreakAsync"
+                                     OnInsertSigningField="InsertSigningFieldFromToolbarAsync"
                                      OnInsertFootnote="InsertFootnoteAsync"
                                      OnInsertEndnote="InsertEndnoteAsync"
                                      OnInsertPageNumber="InsertPageNumberFieldAsync"
@@ -412,6 +413,7 @@
                                                     ImageProvider="@ImageProvider"
                                                     ImageValidation="@ImageValidation"
                                                     ContentControlRenderMode="@ContentControlRenderMode"
+                                                    SigningRoles="@SigningRoles"
                                                     ProofingOptions="@ProofingOptions"
                                                     Author="@Author"
                                                     TrackChangesEnabled="@CanvasEngineTracksChanges"
@@ -427,6 +429,67 @@
                                                     OnCommandPaletteRequested="OpenCommandPaletteAsync"
                                                     OnRibbonFocusRequested="ActivateRibbonKeyboardModeAsync"
                                                     OnVersionsPanelRequested="OpenVersionsPanelAsync" />
+                        @if (CanvasSigningFieldPopoverVisible)
+                        {
+                            <section class="tm-document-editor__content-control-popover"
+                                     role="dialog"
+                                     aria-label="@Loc["TmDocumentEditor_GroupSigning"]"
+                                     data-testid="document-canvas-signing-popover"
+                                     data-signing-field-id="@_activeCanvasSigningField!.Uuid"
+                                     @onclick:stopPropagation="true"
+                                     @onpointerdown:stopPropagation="true">
+                                <header class="tm-document-editor__content-control-popover-header">
+                                    <div>
+                                        <span class="tm-document-editor__content-control-kicker">@Loc["TmDocumentEditor_GroupSigning"]</span>
+                                        <h3>@(string.IsNullOrWhiteSpace(_activeCanvasSigningField.Label) ? _activeCanvasSigningField.FieldType : _activeCanvasSigningField.Label)</h3>
+                                    </div>
+                                    <button type="button"
+                                            class="tm-document-editor__content-control-close"
+                                            aria-label="@Loc["TmDocumentEditor_ContentControlClose"]"
+                                            @onclick="CloseSigningFieldPopoverAsync">
+                                        <TmIcon Name="x" Size="IconSize.Sm" />
+                                    </button>
+                                </header>
+                                <div class="tm-document-editor__content-control-popover-body">
+                                    @if (_activeCanvasSigningField.Repeats)
+                                    {
+                                        <span class="tm-badge" data-testid="document-signing-repeats-badge">
+                                            @Loc["TmDocumentEditor_SigningRepeatsEveryPage"]
+                                        </span>
+                                    }
+                                    <label class="tm-document-editor__field-label">
+                                        @Loc["TmDocumentEditor_SigningFieldLabel"]
+                                        <input type="text"
+                                               class="tm-input"
+                                               data-testid="document-signing-field-label"
+                                               value="@_activeCanvasSigningField.Label"
+                                               @onchange="@(args => UpdateActiveSigningFieldAsync(label: args.Value?.ToString() ?? string.Empty))" />
+                                    </label>
+                                    <label class="tm-document-editor__field-checkbox">
+                                        <input type="checkbox"
+                                               data-testid="document-signing-field-required"
+                                               checked="@_activeCanvasSigningField.Required"
+                                               @onchange="@(args => UpdateActiveSigningFieldAsync(required: args.Value is bool b && b))" />
+                                        @Loc["TmDocumentEditor_SigningFieldRequired"]
+                                    </label>
+                                    @if (SigningRoles.Count > 0)
+                                    {
+                                        <label class="tm-document-editor__field-label">
+                                            @Loc["TmDocumentEditor_SigningFieldRole"]
+                                            <select class="tm-input"
+                                                    data-testid="document-signing-field-role"
+                                                    value="@_activeCanvasSigningField.SubmitterUuid"
+                                                    @onchange="@(args => UpdateActiveSigningFieldAsync(submitterUuid: args.Value?.ToString() ?? string.Empty))">
+                                                @foreach (var role in SigningRoles)
+                                                {
+                                                    <option value="@role.Uuid">@role.Name</option>
+                                                }
+                                            </select>
+                                        </label>
+                                    }
+                                </div>
+                            </section>
+                        }
                         @if (CanvasContentControlPopoverVisible)
                         {
                             <section class="tm-document-editor__content-control-popover"

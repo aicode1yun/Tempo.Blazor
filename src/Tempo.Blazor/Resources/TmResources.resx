@@ -3719,6 +3719,12 @@
   <data name="TmDocumentEditor_ImageLockAspectRatio"   xml:space="preserve"><value>Lock aspect ratio</value></data>
   <data name="TmDocumentEditor_ImageResetSize"         xml:space="preserve"><value>Reset size</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Page break</value></data>
+  <data name="TmDocumentEditor_GroupSigning"          xml:space="preserve"><value>Signing fields</value></data>
+  <data name="TmDocumentEditor_SigningRepeatsEveryPage" xml:space="preserve"><value>Repeats on every page</value></data>
+  <data name="TmDocumentEditor_SigningFieldLabel" xml:space="preserve"><value>Label</value></data>
+  <data name="TmDocumentEditor_SigningFieldRequired" xml:space="preserve"><value>Required</value></data>
+  <data name="TmDocumentEditor_SigningFieldRole" xml:space="preserve"><value>Signer</value></data>
+  <data name="TmDocumentEditor_InsertSigningField"     xml:space="preserve"><value>Signature field</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG document surface</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editable document surface. Use Tab to move between the ribbon, header, body, footer, and comments.</value></data>
   <data name="TmDocumentEditor_WysiwygPageLabel"       xml:space="preserve"><value>Page {0}</value></data>

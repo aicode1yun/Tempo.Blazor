@@ -1,6 +1,7 @@
 import { createFontMetricsService } from '../../document-editor/layout/font-metrics.mjs';
 import { createCanvasRunStyle, normalizeCanvasAlignment } from './canvas-text-style.mjs';
 import { CANVAS_RENDER_LAYERS } from '../render/layers.mjs';
+import { normalizeSigningFieldRun } from '../controls/signing-field-model.mjs';
 
 const HEADER = 0;
 const FOOTER = 1;
@@ -138,6 +139,17 @@ function layoutInlineLine(context) {
     let lineHeight = 18;
     for (const run of context.runs) {
         const style = createCanvasRunStyle(context.model, context.block, run);
+        if (String(run?.type || '') === 'signingField' || run?.signingField) {
+            const field = normalizeSigningFieldRun(run);
+            const maxHeight = Math.max(8, (Number(context.region?.height) || 0) - 8);
+            const boxHeight = Math.max(1, Math.min(field.boxHeight, maxHeight));
+            const segment = { run, signingField: field, isSigningField: true, style, width: Math.max(1, field.boxWidth), height: boxHeight };
+            lineHeight = Math.max(lineHeight, segment.height);
+            width += segment.width;
+            segments.push(segment);
+            continue;
+        }
+
         const text = String(run?.type || '') === 'field'
             ? resolveFieldText(run, context)
             : defaultRunText(run);
@@ -171,6 +183,35 @@ function layoutInlineLine(context) {
     const commands = [];
     const baseline = context.y + lineHeight * 0.78;
     for (const segment of segments) {
+        if (segment.isSigningField) {
+            const field = segment.signingField;
+            commands.push({
+                id: `${context.headerFooter.id}-${context.block.id || 'block'}-${field.uuid}-${context.page.index}`,
+                type: 'signingField',
+                layer: CANVAS_RENDER_LAYERS.content,
+                pageIndex: Number(context.page.index || 0) || 0,
+                blockId: context.block?.id || '',
+                runId: segment.run?.id || '',
+                headerFooterId: context.headerFooter.id || '',
+                region: context.region.region,
+                fieldUuid: field.uuid,
+                fieldType: field.fieldType,
+                submitterUuid: field.submitterUuid,
+                required: field.required,
+                label: field.label,
+                options: field.options,
+                signingField: field,
+                x,
+                y: context.y,
+                width: segment.width,
+                height: segment.height,
+                style: segment.style,
+                marks: [],
+            });
+            x += segment.width;
+            continue;
+        }
+
         const isField = String(segment.run?.type || '') === 'field';
         commands.push({
             id: `${context.headerFooter.id}-${context.block.id || 'block'}-${segment.run?.id || commands.length}-${context.page.index}`,

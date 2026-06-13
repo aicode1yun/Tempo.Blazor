@@ -117,6 +117,9 @@
     /// <summary>Canvas content-control rendering mode. Use <c>form</c> for plain fill mode or <c>design</c> for structured-tag chrome.</summary>
     [Parameter] public string? ContentControlRenderMode { get; set; }
 
+    /// <summary>Signer roles used to colour inline signing fields by submitter (plan S2).</summary>
+    [Parameter] public IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningSubmitterRole> SigningRoles { get; set; } = [];
+
     /// <summary>Host-supplied proofing options used by the canvas diagnostics overlay.</summary>
     [Parameter] public DocumentProofingOptions? ProofingOptions { get; set; }
 
@@ -558,6 +561,81 @@
     /// <summary>Reads page metrics (total pages, per-page list, active page) for the navigator + status bar (B9).</summary>
     public Task<WysiwygPageMetrics> GetPageMetricsAsync()
         => ReadStateAsync("getPageMetricsJson", new WysiwygPageMetrics { TotalPages = 1, RenderedPages = 1, Pages = [new WysiwygPageMetric { PageIndex = 0, PageNumber = 1 }] });
+
+    /// <summary>
+    /// Exports each document page as a flat bitmap (plan S1) so the editor's output can be used as a
+    /// signing-template page. Pulls one descriptor per page from the engine (it reuses the engine's
+    /// current display list, so every page — including virtualized ones — is exported faithfully).
+    /// </summary>
+    public async Task<IReadOnlyList<DocumentPageImage>> ExportPageImagesAsync(DocumentPageImageExportOptions? options = null)
+    {
+        if (_module is null || _handle is null)
+        {
+            return [];
+        }
+
+        var resolved = options ?? new DocumentPageImageExportOptions();
+        var optionsJson = JsonSerializer.Serialize(
+            new { scale = resolved.Scale, format = resolved.Format, quality = resolved.Quality },
+            CanvasJsonOptions);
+
+        var metrics = await GetPageMetricsAsync();
+        var total = Math.Max(0, metrics.TotalPages);
+        var images = new List<DocumentPageImage>(total);
+        for (var pageIndex = 0; pageIndex < total; pageIndex++)
+        {
+            var json = await _module.InvokeAsync<string?>("exportPageImage", _handle, pageIndex, optionsJson);
+            var image = DeserializeState<DocumentPageImage?>(json, null);
+            if (image is not null)
+            {
+                images.Add(image);
+            }
+        }
+
+        return images;
+    }
+
+    /// <summary>
+    /// Reads the signing fields the editor currently lays out (plan S2). Areas are derived from the
+    /// layout — a body field has one area, a header/footer field one per page — and the attachment id
+    /// is applied to every area so the produced fields plug straight into the signing designer/runner.
+    /// </summary>
+    public async Task<IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningField>> GetSigningFieldsAsync(string attachmentUuid)
+    {
+        if (_module is null || _handle is null)
+        {
+            return [];
+        }
+
+        var json = await _module.InvokeAsync<string?>("getSigningFieldsJson", _handle);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        var descriptors = JsonSerializer.Deserialize<List<DocumentSigningFieldDescriptor>>(json, CanvasJsonOptions) ?? [];
+        return descriptors.ToSigningFields(attachmentUuid);
+    }
+
+    /// <summary>Inserts a signing field at the current caret (body or header/footer) via the engine command.</summary>
+    public async Task InsertSigningFieldAsync(Tempo.Blazor.Abstractions.Models.SigningField field)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+
+        if (_module is null || _handle is null)
+        {
+            return;
+        }
+
+        await ExecCommandAsync("insertSigningField", new
+        {
+            uuid = string.IsNullOrEmpty(field.Uuid) ? null : field.Uuid,
+            fieldType = field.Type,
+            submitterUuid = field.SubmitterUuid,
+            required = field.Required,
+            label = field.Title ?? string.Empty
+        });
+    }
 
     /// <summary>Scrolls a page into view from the navigator (handles virtualized pages) (B9).</summary>
     public async Task ScrollToPageAsync(int pageIndex)
@@ -1050,6 +1128,12 @@
             readOnly = ReadOnly,
             canEdit = EffectiveCanEdit,
             contentControlRenderMode = EffectiveContentControlRenderMode,
+            signingRoles = (SigningRoles ?? []).Select(role => new
+            {
+                uuid = role.Uuid,
+                color = role.Color,
+                name = role.Name
+            }),
             accessibility = new
             {
                 liveRegionLabel = Loc["TmDocumentEditor_CanvasLiveRegionLabel"],
@@ -1651,6 +1735,40 @@
 
         /// <summary>Header/footer scope (Primary/First/Even) when the caret is in a header/footer (B6).</summary>
         public string HeaderFooterScope { get; set; } = string.Empty;
+
+        /// <summary>Whether the caret sits on an inline signing field (plan S2.11).</summary>
+        public bool SigningFieldSelected { get; set; }
+
+        /// <summary>The signing field at the caret, when one is selected.</summary>
+        public CanvasEngineSigningFieldSelection? SigningField { get; set; }
+    }
+
+    /// <summary>Signing field at the current selection, for the properties panel (plan S2.11/S2.21).</summary>
+    public sealed class CanvasEngineSigningFieldSelection
+    {
+        /// <summary>Stable signing field identifier.</summary>
+        public string Uuid { get; set; } = string.Empty;
+
+        /// <summary>Field type name.</summary>
+        public string FieldType { get; set; } = "text";
+
+        /// <summary>Signer role identifier.</summary>
+        public string SubmitterUuid { get; set; } = string.Empty;
+
+        /// <summary>Whether the field is required.</summary>
+        public bool Required { get; set; }
+
+        /// <summary>User-facing label.</summary>
+        public string Label { get; set; } = string.Empty;
+
+        /// <summary>Owning header/footer id when the field lives in a header/footer (else empty).</summary>
+        public string HeaderFooterId { get; set; } = string.Empty;
+
+        /// <summary>Header/footer scope name (Primary/FirstPage/EvenPages/OddPages).</summary>
+        public string Scope { get; set; } = string.Empty;
+
+        /// <summary>Whether the field repeats on every page (header/footer field).</summary>
+        public bool Repeats { get; set; }
     }
 
     /// <summary>Canvas engine diagnostics exposed to Blazor callers.</summary>

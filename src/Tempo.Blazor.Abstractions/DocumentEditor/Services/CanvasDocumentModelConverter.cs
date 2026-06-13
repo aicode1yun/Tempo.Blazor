@@ -431,6 +431,23 @@ public static class CanvasDocumentModelConverter
                 },
                 Preserve = Preserve(control)
             },
+            DocumentSigningFieldRun signing => new CanvasInlineRun
+            {
+                Id = signing.Id,
+                Type = CanvasDocumentModelTypes.SigningFieldRun,
+                Marks = signing.Marks.Select(ToCanvasMark).ToList(),
+                SigningField = new CanvasSigningFieldRun
+                {
+                    Uuid = signing.Uuid,
+                    FieldType = signing.FieldType,
+                    SubmitterUuid = signing.SubmitterUuid,
+                    Required = signing.Required,
+                    Label = signing.Label,
+                    BoxWidth = signing.BoxWidth,
+                    BoxHeight = signing.BoxHeight
+                },
+                Preserve = Preserve(signing)
+            },
             _ => new CanvasInlineRun
             {
                 Id = inline.Id,
@@ -450,6 +467,7 @@ public static class CanvasDocumentModelConverter
             CanvasDocumentModelTypes.DrawingRun => FromCanvasDrawing(run, CloneFromPreserve<DocumentDrawingRun>(run.Preserve)),
             CanvasDocumentModelTypes.MathRun => FromCanvasMath(run, CloneFromPreserve<DocumentMathRun>(run.Preserve)),
             CanvasDocumentModelTypes.ContentControlRun => FromCanvasContentControl(run, CloneFromPreserve<DocumentContentControlRun>(run.Preserve)),
+            CanvasDocumentModelTypes.SigningFieldRun => FromCanvasSigningField(run, CloneFromPreserve<DocumentSigningFieldRun>(run.Preserve)),
             _ => FromCanvasText(run, CloneFromPreserve<TextRun>(run.Preserve))
         };
 
@@ -557,6 +575,23 @@ public static class CanvasDocumentModelConverter
         }
 
         return control;
+    }
+
+    private static InlineContent FromCanvasSigningField(CanvasInlineRun run, DocumentSigningFieldRun? preserved)
+    {
+        var field = preserved ?? new DocumentSigningFieldRun();
+        if (run.SigningField is not null)
+        {
+            field.Uuid = run.SigningField.Uuid;
+            field.FieldType = run.SigningField.FieldType;
+            field.SubmitterUuid = run.SigningField.SubmitterUuid;
+            field.Required = run.SigningField.Required;
+            field.Label = run.SigningField.Label;
+            field.BoxWidth = run.SigningField.BoxWidth;
+            field.BoxHeight = run.SigningField.BoxHeight;
+        }
+
+        return field;
     }
 
     private static string ContentControlDisplayText(DocumentContentControl control)

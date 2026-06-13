@@ -9,6 +9,7 @@ import { normalizeMathRun, mathToAccessibleText } from '../math/math-model.mjs';
 import { layoutMathRun } from '../math/math-layout.mjs';
 import { contentControlDisplayText, normalizeContentControl, validateContentControl } from '../controls/sdt-model.mjs';
 import { buildContentControlRenderState, normalizeContentControlRenderMode } from '../controls/sdt-render.mjs';
+import { resolveSigningRoleColor } from '../controls/signing-field-model.mjs';
 
 export function buildDisplayList(model, layout, options = {}) {
     const documentModel = model || {};
@@ -66,6 +67,16 @@ export function buildDisplayList(model, layout, options = {}) {
                 lineWidth: 1,
                 dash: [3, 3],
             }, sequence++));
+        }
+    }
+
+    // Resolve the role colour for every signing field command (body + header/footer) from the engine's
+    // signing roles, so the renderer can tint each field by signer. Done in one pass so both layout
+    // paths stay free of role/colour concerns.
+    const signingRoles = Array.isArray(options.signingRoles) ? options.signingRoles : [];
+    for (const command of commands) {
+        if (command.type === 'signingField') {
+            command.roleColor = resolveSigningRoleColor(command.submitterUuid, signingRoles, command.fieldUuid);
         }
     }
 
@@ -302,6 +313,11 @@ function buildParagraphBlockCommands(block, options, contentControlRenderMode) {
                 continue;
             }
 
+            if (isSigningFieldSegment(segment)) {
+                commands.push(signingFieldCommandForSegment(segment, line, block, localSequence++));
+                continue;
+            }
+
             if (!segment.text && segment.type !== 'space') {
                 continue;
             }
@@ -341,6 +357,36 @@ function buildParagraphBlockCommands(block, options, contentControlRenderMode) {
 
 function isMathSegment(segment) {
     return String(segment?.kind || segment?.type || '').toLowerCase() === 'math' || !!segment?.math;
+}
+
+function isSigningFieldSegment(segment) {
+    return String(segment?.kind || '').toLowerCase() === 'signingfield' || !!segment?.signingField;
+}
+
+function signingFieldCommandForSegment(segment, line, block, sequence) {
+    const field = segment.signingField || {};
+    return {
+        id: `${block.blockId || ''}-${String(segment.runId || field.uuid || 'signing')}-signing`,
+        type: 'signingField',
+        layer: CANVAS_RENDER_LAYERS.content,
+        pageIndex: Number(segment.pageIndex ?? line.pageIndex ?? block.pageIndex) || 0,
+        blockId: block.blockId || '',
+        runId: segment.runId || '',
+        fieldUuid: String(field.uuid || ''),
+        fieldType: String(field.fieldType || 'text'),
+        submitterUuid: String(field.submitterUuid || ''),
+        required: field.required === true,
+        label: String(field.label || ''),
+        options: Array.isArray(field.options) ? field.options : [],
+        signingField: field,
+        roleColor: '',
+        x: segment.rect.x,
+        y: segment.rect.y,
+        width: segment.rect.width,
+        height: segment.rect.height,
+        style: segment.style || {},
+        sequence,
+    };
 }
 
 function isContentControlSegment(segment) {

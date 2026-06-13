@@ -11,6 +11,7 @@ namespace Tempo.Blazor.DocumentEditor.Models;
 [JsonDerivedType(typeof(DocumentDrawingRun), "drawing")]
 [JsonDerivedType(typeof(DocumentMathRun), "math")]
 [JsonDerivedType(typeof(DocumentContentControlRun), "contentControl")]
+[JsonDerivedType(typeof(DocumentSigningFieldRun), "signingField")]
 public abstract class InlineContent
 {
     /// <summary>Stable inline identifier used for selection mapping and comment anchoring.</summary>
@@ -25,6 +26,34 @@ public class TextRun : InlineContent
 {
     /// <summary>Text value.</summary>
     public string Text { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Inline signing field placed in the document (plan S2). An atomic box a signer later fills; its
+/// areas are derived from the layout (body field → one, header/footer field → one per page).
+/// </summary>
+public class DocumentSigningFieldRun : InlineContent
+{
+    /// <summary>Stable signing field identifier (shared across all areas/pages of the field).</summary>
+    public string Uuid { get; set; } = string.Empty;
+
+    /// <summary>Field type name (camelCase, mirrors <c>SigningFieldType</c>).</summary>
+    public string FieldType { get; set; } = "text";
+
+    /// <summary>Signer role identifier the field belongs to.</summary>
+    public string SubmitterUuid { get; set; } = string.Empty;
+
+    /// <summary>Whether the signer must provide a value.</summary>
+    public bool Required { get; set; }
+
+    /// <summary>User-facing field label.</summary>
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>Inline box width in document units.</summary>
+    public double BoxWidth { get; set; }
+
+    /// <summary>Inline box height in document units.</summary>
+    public double BoxHeight { get; set; }
 }
 
 /// <summary>Drawing object anchored in a text run, such as an inline or floating image.</summary>

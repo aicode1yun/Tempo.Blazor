@@ -298,6 +298,9 @@ public sealed class CanvasInlineRun
     /// <summary>Structured document tag payload for content-control runs.</summary>
     public CanvasContentControlRun? ContentControl { get; set; }
 
+    /// <summary>Signing field payload for inline signing-field runs (plan S2).</summary>
+    public CanvasSigningFieldRun? SigningField { get; set; }
+
     /// <summary>Opaque source channel for exact inline restoration.</summary>
     public CanvasPreserveChannel Preserve { get; set; } = new();
 }
@@ -716,4 +719,32 @@ public static class CanvasDocumentModelTypes
 
     /// <summary>Structured document tag inline run type.</summary>
     public const string ContentControlRun = "contentControl";
+
+    /// <summary>Signing field inline run type (plan S2).</summary>
+    public const string SigningFieldRun = "signingField";
+}
+
+/// <summary>Signing field payload for an inline signing-field run (plan S2).</summary>
+public sealed class CanvasSigningFieldRun
+{
+    /// <summary>Stable signing field identifier.</summary>
+    public string Uuid { get; set; } = string.Empty;
+
+    /// <summary>Field type name (camelCase).</summary>
+    public string FieldType { get; set; } = "text";
+
+    /// <summary>Signer role identifier.</summary>
+    public string SubmitterUuid { get; set; } = string.Empty;
+
+    /// <summary>Whether the signer must provide a value.</summary>
+    public bool Required { get; set; }
+
+    /// <summary>User-facing label.</summary>
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>Inline box width in document units.</summary>
+    public double BoxWidth { get; set; }
+
+    /// <summary>Inline box height in document units.</summary>
+    public double BoxHeight { get; set; }
 }

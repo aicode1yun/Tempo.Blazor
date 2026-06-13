@@ -110,6 +110,18 @@ public partial class TmDocumentEditor
             defaultShortcut: "Ctrl+K",
             icon: "link"));
 
+        // Signing fields (plan S2.19): visible only when the canvas engine is active and signer roles
+        // are configured, so the toolbar group has zero impact on the default editor.
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "insertSigningField", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeVisible: _ => EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview && SigningRoles.Count > 0,
+            execute: (_, _) => InsertSigningFieldFromToolbarAsync(),
+            descriptionKey: "TmDocumentEditor_InsertSigningField",
+            tooltipKey: "TmDocumentEditor_InsertSigningField",
+            category: "Signing",
+            icon: "signature"));
+
         if (IsFeatureEnabled(DocumentEditorFeatureNames.Table))
         {
             _commandRegistry.Register(new FuncDocumentEditorCommandEntry(

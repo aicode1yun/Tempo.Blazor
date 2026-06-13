@@ -6087,6 +6087,43 @@ Signing modely jsou v `Tempo.Blazor.Abstractions`, aby je mohlo referencovat API
 <link href="_content/Tempo.Blazor/css/tempo-blazor.css" rel="stylesheet" />
 ```
 
+### Most TmDocumentEditor → Signing
+
+`TmDocumentEditor` (canvas engine, `RenderEngine="CanvasEnginePreview"`) umí sloužit jako autor podpisových
+šablon: smlouvu napíšete v editoru a její stránky / pole rovnou předáte do `TmPdfTemplateDesigner`
+a `TmSigningFormRunner`. Most je čistě v Abstractions modelech (`SigningField`, `SigningFieldArea`,
+`SigningDocumentPage`, `SigningSubmitterRole`) — žádná nová UI komponenta.
+
+| API na `TmDocumentEditor` | Popis |
+|---|---|
+| `Task<IReadOnlyList<DocumentPageImage>> ExportPageImagesAsync(DocumentPageImageExportOptions?)` | Vyrenderuje každou stránku dokumentu do bitmapu (PNG/JPEG data URL). `Scale` 1–3 (výchozí 2). Funguje i pro virtualizované stránky. Vyžaduje canvas engine. |
+| `Task<IReadOnlyList<SigningField>> GetSigningFieldsAsync(string attachmentUuid)` | Vrátí inline podpisová pole s **areas odvozenými z layoutu** (pole v těle = 1 area, v hlavičce/patičce = 1 per stránka). `attachmentUuid` se zapíše do každé area. |
+| `Task InsertSigningFieldAsync(SigningField field)` | Vloží podpisové pole na aktuální caret (tělo i hlavička/patička). |
+| `Task EnterHeaderFooterAsync(string type)` | Přepne caret do hlavičky/patičky (`"header"`/`"footer"`) — následný insert vytvoří pole opakované na každé stránce. |
+| `[Parameter] IReadOnlyList<SigningSubmitterRole> SigningRoles` | Role podepisujících — barví inline pole a aktivuje toolbar skupinu „Podpisová pole". |
+| `[Parameter] EventCallback<IReadOnlyList<SigningField>> SigningFieldsChanged` | Vyvoláno po vložení/úpravě/odebrání pole. |
+
+`DocumentPageImage.ToSigningDocumentPages(attachmentUuid, labelFactory?)` a `IEnumerable<DocumentSigningFieldDescriptor>.ToSigningFields(attachmentUuid)` převedou výstup do signing modelů.
+
+**Toolbar:** se nastavenými `SigningRoles` přibude na Insert tabu skupina „Podpisová pole" s tlačítkem pro
+vložení podpisu (jinak skupina nevznikne). **Properties popover:** při výběru pole se zobrazí editace
+labelu / required / role + odznak „opakuje se na každé stránce" pro pole v hlavičce/patičce.
+
+Pole se přelévá s textem jako atomický inline box; **areas se nikdy neukládají, vždy se derivují z layoutu**
+(jedno pole v patičce = jedna hodnota „orazítkovaná" na každou stránku — `SigningStepPlanner` to řeší jako
+jeden krok). Export do DOCX/HTML/ODT/Markdown pole degraduje na placeholder `⟦Pole: {label} ({role})⟧`.
+Demo: `/signing-from-editor` (Demo.SharedUI).
+
+```razor
+<TmDocumentEditor @ref="_editor" DocumentId="contract" Provider="@_provider"
+                  SigningRoles="@_roles" SigningFieldsChanged="OnFieldsChanged" />
+
+@* po úpravách dokumentu: *@
+var pages  = (await _editor.ExportPageImagesAsync()).ToSigningDocumentPages("export", n => $"Strana {n}");
+var fields = await _editor.GetSigningFieldsAsync("export");
+@* pages + fields → TmSigningFormRunner / TmPdfTemplateDesigner *@
+```
+
 ## Chat
 
 ### TmChat

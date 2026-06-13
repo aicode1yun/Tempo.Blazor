@@ -215,6 +215,7 @@ public sealed class DocumentHtmlExporter
                 TokenRun token => RenderToken(token),
                 DocumentNoteReferenceRun note => "<sup data-note-id=\"" + HtmlAttr(note.NoteId) + "\">" + Html(note.DisplayMarker ?? note.NoteId) + "</sup>",
                 DocumentDrawingRun drawing => RenderDrawing(drawing, options),
+                DocumentSigningFieldRun signing => "<span data-signing-field=\"" + HtmlAttr(signing.Uuid) + "\">" + Html(Internal.SigningFieldPlaceholder.Text(signing)) + "</span>",
                 _ => string.Empty
             };
 

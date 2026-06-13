@@ -99,6 +99,7 @@ public sealed class DocumentMarkdownExporter
                 TokenRun token => "{{" + EscapeText(token.Key) + "}}",
                 DocumentNoteReferenceRun note => "[^" + EscapeText(note.NoteId) + "]",
                 DocumentDrawingRun drawing => RenderDrawing(drawing),
+                DocumentSigningFieldRun signing => EscapeText(Internal.SigningFieldPlaceholder.Text(signing)),
                 _ => string.Empty
             };
 

@@ -2,6 +2,9 @@ import { createCanvasDocumentEngine } from './entry.mjs';
 import { isDeliberateSelectionNotification } from './selection-cadence.mjs';
 import { buildFormattingState } from './format-state.mjs';
 import { extractAnnotations, countModelWords } from './annotations-state.mjs';
+import { clampExportScale, renderDisplayListPageToCanvas } from './render/page-image-export.mjs';
+import { findSigningFieldAtSelection } from './controls/signing-field-selection.mjs';
+import { extractSigningFields } from './controls/signing-field-areas.mjs';
 
 const instances = new Map();
 let nextInstanceId = 1;
@@ -53,6 +56,7 @@ export function mount(hostElement, mountElement, modelJson, optionsJson, dotNetR
         inputAriaLabel: options.inputAriaLabel,
         accessibility: options.accessibility,
         contentControlRenderMode: options.contentControlRenderMode,
+        signingRoles: options.signingRoles,
         uploadImage: file => uploadClipboardImage(dotNetRef, model.documentId, file),
         proofing: options.proofing,
         author: options.author,
@@ -401,9 +405,13 @@ export function getUndoStateJson(handle) {
 
 export function getSelectionStateJson(handle) {
     const state = getInstance(handle);
-    const selection = state.engine.getSnapshot().selection || {};
+    const snapshot = state.engine.getSnapshot();
+    const selection = snapshot.selection || {};
+    const signingField = findSigningFieldAtSelection(snapshot.model, selection);
     return JSON.stringify({
         isCollapsed: selection.isCollapsed !== false,
+        signingFieldSelected: signingField != null,
+        signingField: signingField || null,
         pageIndex: Number(selection.pageIndex || 0) || 0,
         anchorBlockId: selection.anchor?.blockId || '',
         anchorOffset: Number(selection.anchor?.offset || 0) || 0,
@@ -524,6 +532,64 @@ export function getPageMetricsJson(handle) {
         activePageIndex,
         pages,
     });
+}
+
+// Signing bridge (plan S2): derive the signing fields (with their multi-page areas) from the engine's
+// current display list. Areas are computed from the layout, never stored — a body field has one area,
+// a header/footer field one per page it renders on (all sharing one field uuid).
+export function getSigningFieldsJson(handle) {
+    const state = getInstance(handle);
+    const displayList = state.engine.getSnapshot().render?.displayList;
+    return JSON.stringify(extractSigningFields(displayList || {}));
+}
+
+// Signing bridge (plan S1): flatten the document into one opaque bitmap per page so the editor's
+// output can be used directly as a signing-template page. Reuses the engine's CURRENT display list
+// (the exact layout the editor produced), so the image is faithful and every page is exported —
+// including pages the editor never mounted under virtualization.
+export function exportPageImages(handle, optionsJson) {
+    const state = getInstance(handle);
+    const options = parseJson(optionsJson, {});
+    const displayList = state.engine.getSnapshot().render?.displayList;
+    const pages = Array.isArray(displayList?.pages) ? displayList.pages : [];
+    const images = pages.map((_, index) => exportPageDescriptor(state, displayList, index, options));
+    return JSON.stringify(images);
+}
+
+// Single-page variant so the host can paginate the export and avoid very large interop strings.
+export function exportPageImage(handle, pageIndex, optionsJson) {
+    const state = getInstance(handle);
+    const options = parseJson(optionsJson, {});
+    const displayList = state.engine.getSnapshot().render?.displayList;
+    return JSON.stringify(exportPageDescriptor(state, displayList, Number(pageIndex) || 0, options));
+}
+
+function exportPageDescriptor(state, displayList, pageIndex, options) {
+    const doc = state.mountHost?.ownerDocument || globalThis.document;
+    const format = String(options.format || 'png').toLowerCase() === 'jpeg' ? 'jpeg' : 'png';
+    const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+    const { canvas, width, height, scale } = renderDisplayListPageToCanvas(displayList || {}, pageIndex, {
+        scale: clampExportScale(options.scale),
+        createCanvas: (backingWidth, backingHeight) => {
+            const element = doc.createElement('canvas');
+            element.width = backingWidth;
+            element.height = backingHeight;
+            return element;
+        },
+    });
+    const dataUrl = typeof canvas.toDataURL === 'function'
+        ? (format === 'jpeg' ? canvas.toDataURL(mime, clampJpegQuality(options.quality)) : canvas.toDataURL(mime))
+        : '';
+    return { pageIndex, width, height, scale, dataUrl };
+}
+
+function clampJpegQuality(quality) {
+    const value = Number(quality);
+    if (!Number.isFinite(value)) {
+        return 0.92;
+    }
+
+    return Math.min(1, Math.max(0.1, value));
 }
 
 // B9: scroll a page into view from the navigator (works for virtualized/unmounted pages too).

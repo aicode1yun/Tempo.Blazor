@@ -331,6 +331,12 @@ public sealed class OdtPackageWriter
                     yield return new XElement(Text + "span", drawing.Caption);
                 }
             }
+            else if (inline is DocumentSigningFieldRun signing)
+            {
+                yield return new XElement(Text + "span",
+                    new XAttribute(Tm + "signing-field", signing.Uuid),
+                    Internal.SigningFieldPlaceholder.Text(signing));
+            }
         }
     }
 

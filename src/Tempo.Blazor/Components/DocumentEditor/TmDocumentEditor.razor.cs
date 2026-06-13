@@ -7863,6 +7863,102 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private bool UsingCanvasEngine => EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview && _canvasHost is not null;
 
+    /// <summary>
+    /// Exports each document page as a flat bitmap (plan S1, signing bridge) so the document can be used
+    /// directly as a signing-template page. Requires the canvas render engine to be active and mounted.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The canvas render engine is not the active, mounted engine.</exception>
+    public Task<IReadOnlyList<DocumentPageImage>> ExportPageImagesAsync(DocumentPageImageExportOptions? options = null)
+    {
+        if (!UsingCanvasEngine || _canvasHost is null)
+        {
+            throw new InvalidOperationException(
+                "ExportPageImagesAsync requires the canvas render engine to be active and mounted.");
+        }
+
+        return _canvasHost.ExportPageImagesAsync(options);
+    }
+
+    /// <summary>Signer roles used to colour inline signing fields and to attribute placed fields (plan S2).</summary>
+    [Parameter] public IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningSubmitterRole> SigningRoles { get; set; } = [];
+
+    /// <summary>Raised after a signing field is inserted, updated, or removed in the editor.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningField>> SigningFieldsChanged { get; set; }
+
+    /// <summary>
+    /// Reads the signing fields the editor currently lays out (plan S2). A body field yields one area,
+    /// a header/footer field one per page; the attachment id is applied to every area so the result
+    /// plugs straight into the signing designer/runner. Requires the canvas engine.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The canvas render engine is not the active, mounted engine.</exception>
+    public Task<IReadOnlyList<Tempo.Blazor.Abstractions.Models.SigningField>> GetSigningFieldsAsync(string attachmentUuid = "editor-document")
+    {
+        if (!UsingCanvasEngine || _canvasHost is null)
+        {
+            throw new InvalidOperationException(
+                "GetSigningFieldsAsync requires the canvas render engine to be active and mounted.");
+        }
+
+        return _canvasHost.GetSigningFieldsAsync(attachmentUuid);
+    }
+
+    /// <summary>Moves the caret into the first header/footer of the given type (<c>"header"</c>/<c>"footer"</c>)
+    /// so a subsequent <see cref="InsertSigningFieldAsync"/> places a repeating field there. Requires the canvas engine.</summary>
+    public Task EnterHeaderFooterAsync(string type)
+    {
+        if (!UsingCanvasEngine || _canvasHost is null)
+        {
+            throw new InvalidOperationException(
+                "EnterHeaderFooterAsync requires the canvas render engine to be active and mounted.");
+        }
+
+        return _canvasHost.EnterHeaderFooterAsync(type);
+    }
+
+    /// <summary>Inserts a signing field at the current caret (body or header/footer). Requires the canvas engine.</summary>
+    /// <exception cref="InvalidOperationException">The canvas render engine is not the active, mounted engine.</exception>
+    public async Task InsertSigningFieldAsync(Tempo.Blazor.Abstractions.Models.SigningField field)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+
+        if (!UsingCanvasEngine || _canvasHost is null)
+        {
+            throw new InvalidOperationException(
+                "InsertSigningFieldAsync requires the canvas render engine to be active and mounted.");
+        }
+
+        await _canvasHost.InsertSigningFieldAsync(field);
+        await RaiseSigningFieldsChangedAsync();
+    }
+
+    /// <summary>Toolbar entry point: inserts a signature field for the first signer role at the caret.</summary>
+    private async Task InsertSigningFieldFromToolbarAsync()
+    {
+        if (!UsingCanvasEngine || SigningRoles.Count == 0)
+        {
+            return;
+        }
+
+        await InsertSigningFieldAsync(new Tempo.Blazor.Abstractions.Models.SigningField
+        {
+            Type = Tempo.Blazor.Abstractions.Models.SigningFieldType.Signature,
+            SubmitterUuid = SigningRoles[0].Uuid,
+            Required = true,
+            Title = SigningRoles[0].Name
+        });
+    }
+
+    private async Task RaiseSigningFieldsChangedAsync()
+    {
+        if (!SigningFieldsChanged.HasDelegate || _canvasHost is null)
+        {
+            return;
+        }
+
+        var fields = await _canvasHost.GetSigningFieldsAsync("editor-document");
+        await SigningFieldsChanged.InvokeAsync(fields);
+    }
+
     private async Task<bool> RouteToCoreEngineAsync(string command, object? argument = null)
     {
         if (!UsingCoreEngine)
@@ -8340,8 +8436,54 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
+        _activeCanvasSigningField = selection.SigningFieldSelected ? selection.SigningField : null;
+
         var runtimeDocument = await _canvasHost.RequestDocumentAsync();
         _activeCanvasContentControl = FindCanvasContentControlAtSelection(runtimeDocument, selection);
+    }
+
+    private TmDocumentCanvasEngineHost.CanvasEngineSigningFieldSelection? _activeCanvasSigningField;
+
+    private bool CanvasSigningFieldPopoverVisible
+        => _activeCanvasSigningField is not null && UsingCanvasEngine && !EffectiveReadOnly;
+
+    /// <summary>Applies a change from the signing-field properties popover via the engine command.</summary>
+    private async Task UpdateActiveSigningFieldAsync(string? label = null, bool? required = null, string? submitterUuid = null)
+    {
+        if (_activeCanvasSigningField is null || _canvasHost is null)
+        {
+            return;
+        }
+
+        var field = _activeCanvasSigningField;
+        await _canvasHost.ExecCommandAsync("updateSigningField", new
+        {
+            uuid = field.Uuid,
+            label = label ?? field.Label,
+            required = required ?? field.Required,
+            submitterUuid = submitterUuid ?? field.SubmitterUuid
+        });
+
+        // Reflect locally so the popover stays in sync without a full reconcile round-trip.
+        _activeCanvasSigningField = new TmDocumentCanvasEngineHost.CanvasEngineSigningFieldSelection
+        {
+            Uuid = field.Uuid,
+            FieldType = field.FieldType,
+            SubmitterUuid = submitterUuid ?? field.SubmitterUuid,
+            Required = required ?? field.Required,
+            Label = label ?? field.Label,
+            HeaderFooterId = field.HeaderFooterId,
+            Scope = field.Scope,
+            Repeats = field.Repeats
+        };
+        await RaiseSigningFieldsChangedAsync();
+        StateHasChanged();
+    }
+
+    private Task CloseSigningFieldPopoverAsync()
+    {
+        _activeCanvasSigningField = null;
+        return _canvasHost?.FocusAsync() ?? Task.CompletedTask;
     }
 
     private async Task CloseCanvasContentControlPopoverAsync()

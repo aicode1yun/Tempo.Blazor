@@ -1,0 +1,306 @@
+@page "/signing-from-editor"
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
+
+<PageTitle>Signing template from editor - Tempo.Blazor</PageTitle>
+
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Signing template from editor</h1>
+    <p class="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">
+        Author a contract in the document editor, export its pages as images, place signing fields on
+        them with the template designer, and preview the signer experience — all from one document.
+        This is the phase&nbsp;S1 bridge between <code>TmDocumentEditor</code> and the signing components.
+    </p>
+</div>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">1. Author the document</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Edit the contract, then turn its rendered pages into a signing template.</p>
+        </div>
+        <button type="button"
+                class="px-4 py-2 text-sm font-semibold rounded-md bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid="signing-from-editor-export"
+                disabled="@(!_editorReady)"
+                @onclick="ExportToTemplateAsync">
+            Use as signing template
+        </button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Inline signing fields:</span>
+        <button type="button"
+                class="px-3 py-2 text-sm font-medium rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                data-testid="signing-from-editor-insert-body"
+                disabled="@(!_editorReady)"
+                @onclick="InsertBodySignatureAsync">
+            Insert signature in body
+        </button>
+        <button type="button"
+                class="px-3 py-2 text-sm font-medium rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                data-testid="signing-from-editor-insert-footer"
+                disabled="@(!_editorReady)"
+                @onclick="InsertFooterInitialsAsync">
+            Initials in footer (every page)
+        </button>
+        <button type="button"
+                class="px-3 py-2 text-sm font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                data-testid="signing-from-editor-inline-preview"
+                disabled="@(!_editorReady)"
+                @onclick="PreviewInlineSigningAsync">
+            Preview inline signing
+        </button>
+    </div>
+
+    <div class="showcase-card" data-testid="signing-from-editor-editor">
+        <TmDocumentEditor @ref="_editor"
+                          DocumentId="@DocumentId"
+                          Provider="@_provider"
+                          Author="@_author"
+                          SigningRoles="@_roles"
+                          SigningFieldsChanged="HandleSigningFieldsChanged"
+                          OnDocumentLoaded="HandleDocumentLoaded"
+                          ShowDebugTools="false"
+                          data-testid="signing-from-editor-document" />
+    </div>
+    <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-from-editor-status">
+        @_status
+    </div>
+</section>
+
+@if (_phase == BridgePhase.InlineRunner)
+{
+    <section class="demo-section" data-testid="signing-from-editor-inline-runner-section">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Sign (inline fields)</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400">Fields placed directly in the document — areas derived from the layout. A footer field becomes one step stamped on every page.</p>
+            </div>
+        </div>
+        <div class="showcase-card">
+            <TmSigningFormRunner Pages="_inlinePages"
+                                 Fields="_inlineFields"
+                                 Values="_inlineValues"
+                                 ValuesChanged="v => _inlineValues = v"
+                                 data-testid="signing-from-editor-inline-runner" />
+            <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-from-editor-inline-status">
+                @_inlineFields.Count field(s), @_inlineFields.Sum(f => f.Areas.Count) area(s) across @_inlinePages.Count page(s).
+            </div>
+        </div>
+    </section>
+}
+
+@if (_phase >= BridgePhase.Designer)
+{
+    <section class="demo-section" data-testid="signing-from-editor-designer-section">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">2. Place signing fields</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400">The exported pages drive the template designer. Drop fields onto them or add a demo field below.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button"
+                        class="px-3 py-2 text-sm font-medium rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        data-testid="signing-from-editor-add-field"
+                        @onclick="AddDemoSignatureField">
+                    Add signature field
+                </button>
+                <button type="button"
+                        class="px-4 py-2 text-sm font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        data-testid="signing-from-editor-preview"
+                        disabled="@(_fields.Count == 0)"
+                        @onclick="() => _phase = BridgePhase.Runner">
+                    Preview signing
+                </button>
+            </div>
+        </div>
+
+        <div class="showcase-card">
+            <TmPdfTemplateDesigner Documents="_pages"
+                                   Fields="_fields"
+                                   FieldsChanged="HandleFieldsChanged"
+                                   SubmitterRoles="_roles"
+                                   SelectedSubmitterUuid="@SignerRoleUuid"
+                                   data-testid="signing-from-editor-designer" />
+            <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-from-editor-designer-status">
+                @_pages.Count exported page(s), @_fields.Count signing field(s).
+            </div>
+        </div>
+    </section>
+}
+
+@if (_phase >= BridgePhase.Runner)
+{
+    <section class="demo-section" data-testid="signing-from-editor-runner-section">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">3. Sign</h2>
+                <p class="text-sm text-slate-600 dark:text-slate-400">The signer fills the same fields over the exported page images.</p>
+            </div>
+        </div>
+
+        <div class="showcase-card">
+            <TmSigningFormRunner Pages="_pages"
+                                 Fields="_fields"
+                                 Values="_values"
+                                 ValuesChanged="HandleValuesChanged"
+                                 data-testid="signing-from-editor-runner" />
+            <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-from-editor-runner-status">
+                @_values.Count value(s) captured.
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private const string DocumentId = "signing-from-editor-contract";
+    private const string AttachmentUuid = "editor-export";
+    private const string SignerRoleUuid = "signer";
+    private const string ApproverRoleUuid = "approver";
+
+    private enum BridgePhase
+    {
+        Edit = 0,
+        Designer = 1,
+        Runner = 2,
+        InlineRunner = 3
+    }
+
+    private readonly InMemoryDocumentEditorProvider _provider = new();
+    private readonly DocumentEditorAuthor _author = new() { Id = "demo-author", DisplayName = "Demo Author" };
+
+    private TmDocumentEditor? _editor;
+    private bool _editorReady;
+    private BridgePhase _phase = BridgePhase.Edit;
+    private string _status = "Loading document…";
+
+    private IReadOnlyList<SigningDocumentPage> _pages = [];
+    private IReadOnlyList<SigningField> _fields = [];
+    private IReadOnlyDictionary<string, object?> _values = new Dictionary<string, object?>();
+
+    private IReadOnlyList<SigningDocumentPage> _inlinePages = [];
+    private IReadOnlyList<SigningField> _inlineFields = [];
+    private IReadOnlyDictionary<string, object?> _inlineValues = new Dictionary<string, object?>();
+    private int _inlineFieldCount;
+
+    private readonly IReadOnlyList<SigningSubmitterRole> _roles =
+    [
+        new SigningSubmitterRole { Uuid = SignerRoleUuid, Name = "Signer", Color = "#2563eb", Order = 0 },
+        new SigningSubmitterRole { Uuid = ApproverRoleUuid, Name = "Approver", Color = "#16a34a", Order = 1 }
+    ];
+
+    protected override void OnInitialized()
+    {
+        _provider.SeedContractDocument(DocumentId);
+    }
+
+    private void HandleDocumentLoaded(DocumentEditorDocument document)
+    {
+        _editorReady = true;
+        _status = "Document ready. Edit it, then export it as a signing template.";
+    }
+
+    private async Task ExportToTemplateAsync()
+    {
+        if (_editor is null)
+        {
+            return;
+        }
+
+        var images = await _editor.ExportPageImagesAsync();
+        _pages = images.ToSigningDocumentPages(AttachmentUuid, pageNumber => $"Page {pageNumber}");
+        _phase = BridgePhase.Designer;
+        _status = $"Exported {_pages.Count} page(s) from the editor into a signing template.";
+    }
+
+    private void HandleFieldsChanged(IReadOnlyList<SigningField> fields)
+    {
+        _fields = fields;
+    }
+
+    private void AddDemoSignatureField()
+    {
+        var field = new SigningField
+        {
+            Uuid = $"signature-{_fields.Count + 1}",
+            SubmitterUuid = SignerRoleUuid,
+            Type = SigningFieldType.Signature,
+            Required = true,
+            Title = "Signature",
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    AttachmentUuid = AttachmentUuid,
+                    Page = 0,
+                    X = 0.12,
+                    Y = 0.78,
+                    Width = 0.3,
+                    Height = 0.08
+                }
+            ]
+        };
+
+        _fields = [.. _fields, field];
+    }
+
+    private void HandleValuesChanged(IReadOnlyDictionary<string, object?> values)
+    {
+        _values = values;
+    }
+
+    private async Task InsertBodySignatureAsync()
+    {
+        if (_editor is null)
+        {
+            return;
+        }
+
+        await _editor.InsertSigningFieldAsync(new SigningField
+        {
+            Type = SigningFieldType.Signature,
+            SubmitterUuid = SignerRoleUuid,
+            Required = true,
+            Title = "Signature",
+        });
+        _status = "Inserted a signature field in the document body.";
+    }
+
+    private async Task InsertFooterInitialsAsync()
+    {
+        if (_editor is null)
+        {
+            return;
+        }
+
+        await _editor.EnterHeaderFooterAsync("footer");
+        await _editor.InsertSigningFieldAsync(new SigningField
+        {
+            Type = SigningFieldType.Initials,
+            SubmitterUuid = ApproverRoleUuid,
+            Required = true,
+            Title = "Initials",
+        });
+        _status = "Inserted an initials field in the footer — it repeats on every page.";
+    }
+
+    private async Task PreviewInlineSigningAsync()
+    {
+        if (_editor is null)
+        {
+            return;
+        }
+
+        _inlineFields = await _editor.GetSigningFieldsAsync(AttachmentUuid);
+        var images = await _editor.ExportPageImagesAsync();
+        _inlinePages = images.ToSigningDocumentPages(AttachmentUuid, pageNumber => $"Page {pageNumber}");
+        _phase = BridgePhase.InlineRunner;
+        _status = $"Previewing {_inlineFields.Count} inline field(s) over {_inlinePages.Count} page(s).";
+    }
+
+    private void HandleSigningFieldsChanged(IReadOnlyList<SigningField> fields)
+    {
+        _inlineFieldCount = fields.Count;
+    }
+}

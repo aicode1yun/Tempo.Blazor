@@ -1,5 +1,6 @@
 import { normalizeMathRun } from '../math/math-model.mjs';
 import { normalizeContentControlBlock, normalizeContentControlRun } from '../controls/sdt-model.mjs';
+import { normalizeSigningFieldRun } from '../controls/signing-field-model.mjs';
 
 export const CANVAS_MODEL_SCHEMA_VERSION = 1;
 
@@ -22,6 +23,7 @@ export const CANVAS_RUN_TYPES = Object.freeze({
     drawing: 'drawing',
     math: 'math',
     contentControl: 'contentControl',
+    signingField: 'signingField',
 });
 
 export function createCanvasDocumentModel(input = {}) {
@@ -116,6 +118,9 @@ export function normalizeRun(input = {}, index = 0) {
     const contentControl = type === CANVAS_RUN_TYPES.contentControl || source.contentControl
         ? normalizeContentControlRun(source)
         : null;
+    const signingField = type === CANVAS_RUN_TYPES.signingField || source.signingField
+        ? normalizeSigningFieldRun(source)
+        : null;
     return {
         id: source.id == null ? `run-${index + 1}` : String(source.id),
         type,
@@ -131,6 +136,7 @@ export function normalizeRun(input = {}, index = 0) {
             ? normalizeMathRun(source)
             : null,
         contentControl,
+        signingField,
         preserve: objectOrEmpty(source.preserve),
     };
 }

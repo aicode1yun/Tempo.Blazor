@@ -298,6 +298,7 @@ export function createParagraphLayoutEngineFactory(deps) {
                     objectRect: segment.objectRect ? clone(segment.objectRect) : null,
                     object: segment.object ? clone(segment.object) : (run && run.object ? clone(run.object) : null),
                     math: segment.math ? clone(segment.math) : (run && run.math ? clone(run.math) : null),
+                    signingField: segment.signingField ? clone(segment.signingField) : (run && run.signingField ? clone(run.signingField) : null),
                     style: normalizeLayoutSegmentStyle((run && run.style) || segment.style || {}),
                     decorations: decorationsFromMarks((run && run.marks) || []),
                     marks: asArray(run && run.marks),

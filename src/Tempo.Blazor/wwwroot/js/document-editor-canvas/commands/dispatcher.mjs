@@ -45,6 +45,12 @@ import {
     queryContentControlCommandState,
 } from '../controls/forms-mode.mjs';
 import {
+    applySigningFieldCommand,
+    canonicalSigningFieldCommandId,
+    isSigningFieldCommand,
+    querySigningFieldCommandState,
+} from './signing-field-commands.mjs';
+import {
     applyFormatPainterCommand,
     canonicalFormatPainterCommandId,
     createFormatPainterState,
@@ -408,6 +414,16 @@ export function createCanvasCommandRuntime(options = {}) {
         dispatcher.register(command, payload => executeContentControlCommand(command, payload));
     }
     for (const command of [
+        'insertsigningfield',
+        'addsigningfield',
+        'updatesigningfield',
+        'setsigningfield',
+        'removesigningfield',
+        'deletesigningfield',
+    ]) {
+        dispatcher.register(command, payload => executeSigningFieldCommand(command, payload));
+    }
+    for (const command of [
         'copyformat',
         'copyformatting',
         'formatpainter',
@@ -561,6 +577,7 @@ export function createCanvasCommandRuntime(options = {}) {
         const fields = queryFieldCommandState(getModel(), getSelection());
         const math = queryMathCommandState(getModel(), getSelection());
         const forms = queryContentControlCommandState(getModel(), getSelection());
+        const signing = querySigningFieldCommandState(getModel(), getSelection());
         const formatPainter = queryFormatPainterCommandState(getModel(), getSelection(), formatPainterState);
         const symbols = queryInsertSymbolCommandState(getModel(), getSelection());
         const canvasView = queryCanvasViewCommandState(canvasViewState);
@@ -574,6 +591,7 @@ export function createCanvasCommandRuntime(options = {}) {
                 ...(fields.commands || {}),
                 ...(math.commands || {}),
                 ...(forms.commands || {}),
+                ...(signing.commands || {}),
                 ...(formatPainter.commands || {}),
                 ...(symbols.commands || {}),
                 ...(canvasView.commands || {}),
@@ -1058,6 +1076,58 @@ export function createCanvasCommandRuntime(options = {}) {
             validation: result.validation || null,
             selection: result.selection || null,
             repeatingSection: result.repeatingSection || null,
+            dirtyBlockIds: result.dirtyBlockIds || [],
+        };
+    }
+
+    function executeSigningFieldCommand(commandId, argument) {
+        if (!isSigningFieldCommand(commandId)) {
+            return { changed: false, commandId: normalizeCommandId(commandId) };
+        }
+
+        const before = captureSnapshot();
+        const result = applySigningFieldCommand(getModel(), getSelection(), commandId, argument);
+        revision += 1;
+        lastCommand = {
+            id: normalizeCommandId(commandId),
+            changed: result.changed === true,
+            selectionChanged: result.selection && JSON.stringify(result.selection) !== JSON.stringify(before.selection),
+            revision,
+        };
+
+        if (result.changed || lastCommand.selectionChanged) {
+            const after = {
+                model: result.model,
+                selection: result.selection || before.selection,
+                formatState: createInlineFormatState(formatState),
+                paragraphState: createParagraphCommandState(paragraphState),
+            };
+            if (result.changed) {
+                pushHistory({
+                    id: `canvas-signing-field-${revision}`,
+                    kind: 'signing-field',
+                    commandId: normalizeCommandId(commandId),
+                    before,
+                    after,
+                });
+            }
+
+            commit({
+                model: result.model,
+                selection: result.selection || before.selection,
+                result,
+                command: lastCommand,
+            });
+        }
+
+        return {
+            changed: result.changed === true,
+            selectionChanged: lastCommand.selectionChanged === true,
+            commandId: normalizeCommandId(commandId),
+            canonicalCommandId: canonicalSigningFieldCommandId(commandId),
+            operation: result.operation || canonicalSigningFieldCommandId(commandId),
+            fieldUuid: result.fieldUuid || null,
+            selection: result.selection || null,
             dirtyBlockIds: result.dirtyBlockIds || [],
         };
     }

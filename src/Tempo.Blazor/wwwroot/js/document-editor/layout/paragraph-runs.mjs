@@ -76,16 +76,18 @@ export function flattenParagraphRuns(paragraph, normalizeImageObject) {
     const result = [];
     runs.forEach(function (run, index) {
         const rawKind = String(run.kind || run.Kind || run.type || run.Type || 'text').toLowerCase();
-        const kind = rawKind.indexOf('drawing') >= 0
-            ? 'drawing'
-            : rawKind.indexOf('field') >= 0
-                ? 'field'
-                : rawKind.indexOf('math') >= 0
-                    ? 'math'
-                    : rawKind.indexOf('contentcontrol') >= 0
-                        ? 'contentControl'
-                        : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
-        const text = kind === 'drawing'
+        const kind = rawKind.indexOf('signingfield') >= 0
+            ? 'signingField'
+            : rawKind.indexOf('drawing') >= 0
+                ? 'drawing'
+                : rawKind.indexOf('field') >= 0
+                    ? 'field'
+                    : rawKind.indexOf('math') >= 0
+                        ? 'math'
+                        : rawKind.indexOf('contentcontrol') >= 0
+                            ? 'contentControl'
+                            : (rawKind.indexOf('token') >= 0 ? 'token' : 'text');
+        const text = kind === 'drawing' || kind === 'signingField'
             ? ''
             : asText(run.text || run.Text || run.fallbackText || run.FallbackText || '');
         const object = (kind === 'drawing' && typeof normalizeImageObject === 'function')
@@ -105,6 +107,9 @@ export function flattenParagraphRuns(paragraph, normalizeImageObject) {
             object,
             math: run.math || run.Math || null,
             contentControl: run.contentControl || run.ContentControl || null,
+            signingField: run.signingField || run.SigningField || null,
+            signingFieldWidth: run.signingFieldWidth ?? run.SigningFieldWidth ?? null,
+            signingFieldHeight: run.signingFieldHeight ?? run.SigningFieldHeight ?? null,
             objectId: (object && object.objectId) || run.objectId || run.ObjectId || null,
         });
         cursor += text.length;
