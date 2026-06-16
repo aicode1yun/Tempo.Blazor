@@ -31,27 +31,31 @@ public sealed class DemoNotionNotificationService : INotificationService, INotif
     {
         using var response = await _http.PostAsJsonAsync("/api/notion/notifications", ToConcreteEvent(notificationEvent), ct);
         response.EnsureSuccessStatusCode();
-        await RefreshUnreadCountAsync(notificationEvent.RecipientUserId, ct);
+        Increment();
     }
 
     public async Task MarkAsReadAsync(string notificationId, string userId, CancellationToken ct = default)
     {
+        var before = await GetUnreadCountAsync(userId, ct);
         using var response = await _http.PostAsync(
             $"/api/notion/notifications/users/{Uri.EscapeDataString(userId)}/{Uri.EscapeDataString(notificationId)}/read",
             null,
             ct);
         response.EnsureSuccessStatusCode();
-        await RefreshUnreadCountAsync(userId, ct);
+        var after = await GetUnreadCountAsync(userId, ct);
+        UpdateUnreadCount(_unreadCount + after - before);
     }
 
     public async Task MarkAllAsReadAsync(string userId, CancellationToken ct = default)
     {
+        var before = await GetUnreadCountAsync(userId, ct);
         using var response = await _http.PostAsync(
             $"/api/notion/notifications/users/{Uri.EscapeDataString(userId)}/read-all",
             null,
             ct);
         response.EnsureSuccessStatusCode();
-        await RefreshUnreadCountAsync(userId, ct);
+        var after = await GetUnreadCountAsync(userId, ct);
+        UpdateUnreadCount(_unreadCount + after - before);
     }
 
     public async Task<IReadOnlyList<INotification>> GetNotificationsAsync(string userId, int limit = 20, CancellationToken ct = default)
@@ -67,7 +71,6 @@ public sealed class DemoNotionNotificationService : INotificationService, INotif
         var count = await _http.GetFromJsonAsync<int>(
             $"/api/notion/notifications/users/{Uri.EscapeDataString(userId)}/unread-count",
             ct);
-        UpdateUnreadCount(count);
         return count;
     }
 
@@ -78,19 +81,9 @@ public sealed class DemoNotionNotificationService : INotificationService, INotif
         UpdateUnreadCount(0);
     }
 
-    private async Task RefreshUnreadCountAsync(string userId, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(userId))
-            return;
-
-        var count = await _http.GetFromJsonAsync<int>(
-            $"/api/notion/notifications/users/{Uri.EscapeDataString(userId)}/unread-count",
-            cancellationToken);
-        UpdateUnreadCount(count);
-    }
-
     private void UpdateUnreadCount(int count)
     {
+        count = Math.Max(0, count);
         if (Interlocked.Exchange(ref _unreadCount, count) != count)
             OnChanged?.Invoke();
     }

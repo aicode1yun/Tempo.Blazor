@@ -140,15 +140,17 @@ public sealed class DemoEmailTemplateStore : IEmailTemplateStore
             Language = "en",
             UpdatedAt = DateTime.UtcNow,
         };
-        var col = new EmailColumn();
+        var col = new EmailColumn { Width = "66.666%" };
         col.Blocks.Add(new EmailTextBlock { Content = "<h2>{{ newsletter_title }}</h2>" });
         col.Blocks.Add(new EmailTextBlock
         {
             Content = "{{ for article in articles }}<h3>{{ article.title }}</h3><p>{{ article.summary }}</p>{{ end }}",
         });
         col.Blocks.Add(new EmailImageBlock { Src = "https://example.com/banner.png", Alt = "Newsletter banner" });
+        var emptyCol = new EmailColumn { Width = "33.333%" };
         var section = new EmailSection();
         section.Columns.Add(col);
+        section.Columns.Add(emptyCol);
         doc.Sections.Add(section);
         return doc;
     }

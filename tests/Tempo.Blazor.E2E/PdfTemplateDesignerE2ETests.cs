@@ -97,6 +97,7 @@ public class PdfTemplateDesignerE2ETests : WasmTestBase
 
         await designer.Locator("[data-field-type='Text']").ClickAsync();
         var surface = designer.Locator("[data-page-key='designer-nda:0'] .tm-pdf-template-designer__page-surface").First;
+        await surface.ScrollIntoViewIfNeededAsync();
         var box = await surface.BoundingBoxAsync();
         Assert.IsNotNull(box);
 

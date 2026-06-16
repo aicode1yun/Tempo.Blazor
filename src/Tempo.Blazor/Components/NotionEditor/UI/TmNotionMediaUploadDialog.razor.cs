@@ -37,6 +37,7 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
     private string  _embedUrl    = string.Empty;
 
     private bool _focusTrapInitialized;
+    private bool _wasOpen;
     private ElementReference _dialogRef;
     private ElementReference _urlInputRef;
 
@@ -90,10 +91,18 @@ public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
     {
         if (!IsOpen)
         {
+            _wasOpen = false;
             _focusTrapInitialized = false;
             ResetLibraryState();
             return;
         }
+
+        if (_wasOpen)
+        {
+            return;
+        }
+
+        _wasOpen      = true;
         _uploadError  = null;
         _embedUrl     = string.Empty;
         _isDragging   = false;

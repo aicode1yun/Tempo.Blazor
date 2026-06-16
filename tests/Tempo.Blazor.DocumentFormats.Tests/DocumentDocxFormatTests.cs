@@ -273,7 +273,7 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(CreateFloatingImageDocument());
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        var image = ImportedImageBlock(imported.Document);
         image.Layout.IsInline.Should().BeFalse();
         image.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
         image.Layout.Position.HorizontalRelativeTo.Should().Be(DocumentRelativePosition.Margin);
@@ -303,7 +303,7 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(CreatePhase19DocxDocument());
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        var image = ImportedImageBlock(imported.Document);
         image.Size.Width.Should().Be(240);
         image.Size.Height.Should().Be(120);
         image.Caption.Should().Be("Phase 19 image caption");
@@ -698,7 +698,7 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(source);
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        var image = ImportedImageBlock(imported.Document);
         image.Layout.Position.HorizontalAlignment.Should().Be(DocumentImageHorizontalPosition.Right);
         image.Layout.Wrap.DistanceLeft.Should().BeApproximately(8, 0.1);
         image.Layout.Wrap.DistanceRight.Should().BeApproximately(4, 0.1);
@@ -712,7 +712,7 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(source);
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        var image = ImportedImageBlock(imported.Document);
         image.Layout.Position.HorizontalAlignment.Should().Be(DocumentImageHorizontalPosition.Left);
     }
 
@@ -722,9 +722,12 @@ public class DocumentDocxFormatTests
         var exported = await new DocumentDocxExporter().ExportAsync(CreateFloatingImageDocument());
         var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
 
-        var image = DocumentImagePersistence.EnumerateDrawingRuns(imported.Document).Single();
+        var image = ImportedImageBlock(imported.Document);
         image.Layout.Position.HorizontalAlignment.Should().BeNull();
     }
+
+    private static ImageBlockContent ImportedImageBlock(DocumentEditorDocument document)
+        => document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
 
     private static DocumentEditorDocument CreateFloatingImageDocument()
     {

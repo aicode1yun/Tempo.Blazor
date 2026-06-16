@@ -1933,11 +1933,12 @@
 
 .tm-document-image-insert-menu-wrapper {
     position: relative;
+    z-index: calc(var(--tm-z-popover, 1000) + 20);
 }
 
 .tm-document-image-insert-menu {
     position: absolute;
-    z-index: var(--tm-z-popover, 1000);
+    z-index: calc(var(--tm-z-popover, 1000) + 21);
     inset-block-start: calc(100% + var(--tm-space-1));
     inset-inline-start: 0;
     display: grid;
@@ -2955,11 +2956,6 @@
     pointer-events: none;
 }
 
-.tm-wysiwyg-page__layer--selection > .tm-wysiwyg-object-selection-overlay.tm-wysiwyg-object--selected,
-.tm-wysiwyg-page__layer--guides > .tm-wysiwyg-object-guides-overlay.tm-wysiwyg-object--selected {
-    pointer-events: auto;
-}
-
 .tm-wysiwyg-object-track--predrag {
     cursor: grabbing;
 }
@@ -2989,6 +2985,7 @@
 }
 
 .tm-wysiwyg-behind-object-handle {
+    appearance: none;
     position: absolute;
     z-index: var(--tm-document-z-object-overlay, 50);
     display: inline-grid;

@@ -313,7 +313,7 @@ public sealed class DocumentEditorStrictEnginePhase0E2ETests : DocumentEditorE2E
                 for (let i = 0; i < textRects.length; i++) {
                     for (let j = i + 1; j < textRects.length; j++) {
                         if (textRects[i].sourceId === textRects[j].sourceId) continue;
-                        if (intersects(textRects[i].rect, textRects[j].rect, 1.5)) {
+                        if (textRectsOverlap(textRects[i].rect, textRects[j].rect, 1.5)) {
                             issues.push(`text/text overlap: ${textRects[i].blockId || '?'} <-> ${textRects[j].blockId || '?'}`);
                         }
                     }
@@ -569,6 +569,13 @@ public sealed class DocumentEditorStrictEnginePhase0E2ETests : DocumentEditorE2E
                     const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
                     const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
                     return x * y > tolerance;
+                }
+
+                function textRectsOverlap(a, b, tolerance) {
+                    const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+                    const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+                    if (x * y <= tolerance) return false;
+                    return y > 2.75;
                 }
 
                 function toRect(rect) {

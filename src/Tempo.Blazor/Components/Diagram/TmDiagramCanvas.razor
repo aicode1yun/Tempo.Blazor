@@ -343,19 +343,25 @@
                         bool sourceFloating = string.IsNullOrEmpty(edge.SourceNodeId) && string.IsNullOrEmpty(edge.SourceEdgeId) && edge.SourcePoint is not null;
                         bool targetFloating = string.IsNullOrEmpty(edge.TargetNodeId) && string.IsNullOrEmpty(edge.TargetEdgeId) && edge.TargetPoint is not null;
                         bool edgeSelected = _currentSelectionIds.Contains(edge.Id);
+                        var sourceHandleX = sourceFloating && edge.SourcePoint is not null ? edge.SourcePoint.X : pts[0].X;
+                        var sourceHandleY = sourceFloating && edge.SourcePoint is not null ? edge.SourcePoint.Y : pts[0].Y;
+                        var targetHandleX = targetFloating && edge.TargetPoint is not null ? edge.TargetPoint.X : pts[^1].X;
+                        var targetHandleY = targetFloating && edge.TargetPoint is not null ? edge.TargetPoint.Y : pts[^1].Y;
                         @if (sourceFloating ||
                              (edgeSelected && !string.IsNullOrEmpty(edge.SourceNodeId) && string.IsNullOrEmpty(edge.SourceEdgeId)))
                         {
                             <rect class="tm-diagram-edge-handle tm-diagram-edge-handle--dangling"
-                                  x="@F(pts[0].X - 4)" y="@F(pts[0].Y - 4)" width="8" height="8"
-                                  data-edge-id="@edge.Id" data-dangling="source" />
+                                  x="@F(sourceHandleX - 4)" y="@F(sourceHandleY - 4)" width="8" height="8"
+                                  data-edge-id="@edge.Id" data-dangling="source"
+                                  data-doc-x="@F(sourceHandleX)" data-doc-y="@F(sourceHandleY)" />
                         }
                         @if (targetFloating ||
                              (edgeSelected && !string.IsNullOrEmpty(edge.TargetNodeId) && string.IsNullOrEmpty(edge.TargetEdgeId)))
                         {
                             <rect class="tm-diagram-edge-handle tm-diagram-edge-handle--dangling"
-                                  x="@F(pts[^1].X - 4)" y="@F(pts[^1].Y - 4)" width="8" height="8"
-                                  data-edge-id="@edge.Id" data-dangling="target" />
+                                  x="@F(targetHandleX - 4)" y="@F(targetHandleY - 4)" width="8" height="8"
+                                  data-edge-id="@edge.Id" data-dangling="target"
+                                  data-doc-x="@F(targetHandleX)" data-doc-y="@F(targetHandleY)" />
                         }
                         @* Phase 3.9: subtle open-circle marker on unselected edges whose
                            endpoint is floating, so a hover reveals that the end is not
@@ -364,14 +370,14 @@
                         @if (sourceFloating && !edgeSelected)
                         {
                             <circle class="tm-diagram-edge-floating-marker"
-                                    cx="@F(pts[0].X)" cy="@F(pts[0].Y)" r="5"
+                                    cx="@F(sourceHandleX)" cy="@F(sourceHandleY)" r="5"
                                     data-edge-id="@edge.Id" data-floating="source"
                                     pointer-events="none" />
                         }
                         @if (targetFloating && !edgeSelected)
                         {
                             <circle class="tm-diagram-edge-floating-marker"
-                                    cx="@F(pts[^1].X)" cy="@F(pts[^1].Y)" r="5"
+                                    cx="@F(targetHandleX)" cy="@F(targetHandleY)" r="5"
                                     data-edge-id="@edge.Id" data-floating="target"
                                     pointer-events="none" />
                         }

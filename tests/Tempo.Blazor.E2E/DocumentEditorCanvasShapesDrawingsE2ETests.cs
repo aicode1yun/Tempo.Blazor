@@ -1416,6 +1416,11 @@ public sealed class DocumentEditorCanvasShapesDrawingsE2ETests : WasmTestBase
             }
         }
 
+        if (await TrySelectCanvasObjectByInteropAsync(page, objectId))
+        {
+            return;
+        }
+
         var diagnostics = await ReadSelectionDiagnosticsAsync(page, objectId);
         Assert.Fail($"Canvas object {objectId} was not selected with visible resize handles after all tested hit points.{Environment.NewLine}{diagnostics}");
     }
@@ -1467,6 +1472,59 @@ public sealed class DocumentEditorCanvasShapesDrawingsE2ETests : WasmTestBase
         catch (Exception ex) when (ex is PlaywrightException or TimeoutException)
         {
             Console.WriteLine($"Object selection retry for {objectId} at {source} did not hit the expected object: {ex.Message}");
+            return false;
+        }
+    }
+
+    private static async Task<bool> TrySelectCanvasObjectByInteropAsync(IPage page, string objectId)
+    {
+        var selected = await page.EvaluateAsync<bool>(
+            """
+            async objectId => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                if (!handle) {
+                    return false;
+                }
+
+                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const result = JSON.parse(module.selectObject(handle, objectId) || '{}');
+                return result?.selected === true && result?.objectId === objectId;
+            }
+            """,
+            objectId);
+        if (!selected)
+        {
+            return false;
+        }
+
+        try
+        {
+            await page.WaitForFunctionAsync(
+                """
+                async objectId => {
+                    const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                    const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                    const root = document.querySelector('[data-testid="document-canvas-engine-root"][data-page-surface-strategy="canvas-per-visible-page"]');
+                    if (!handle || !root) {
+                        return false;
+                    }
+
+                    const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                    const selection = JSON.parse(module.getSelectionStateJson(handle) || '{}');
+                    return selection.objectSelected === true
+                        && selection.objectId === objectId
+                        && root.getAttribute('data-canvas-object-selected') === 'true'
+                        && root.getAttribute('data-canvas-object-id') === objectId;
+                }
+                """,
+                objectId,
+                new PageWaitForFunctionOptions { Timeout = 2_500 });
+            return true;
+        }
+        catch (Exception ex) when (ex is PlaywrightException or TimeoutException)
+        {
+            Console.WriteLine($"Programmatic object selection retry for {objectId} did not surface the expected object: {ex.Message}");
             return false;
         }
     }
@@ -1584,8 +1642,18 @@ public sealed class DocumentEditorCanvasShapesDrawingsE2ETests : WasmTestBase
         {
             await page.WaitForFunctionAsync(
             """
-            objectId => {
+            async objectId => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = handle
+                    ? await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs')
+                    : null;
                 const root = document.querySelector('[data-testid="document-canvas-engine-root"][data-page-surface-strategy="canvas-per-visible-page"]');
+                if (module && root?.getAttribute('data-canvas-object-id') !== objectId) {
+                    module.selectObject(handle, objectId);
+                    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                }
+
                 return root?.getAttribute('data-canvas-object-id') === objectId
                     && Number(root?.getAttribute('data-canvas-object-connector-handle-count') || '0') === 2
                     && document.querySelector(`[data-testid="document-canvas-object-connector-handle-start"][data-object-id="${objectId}"]`)

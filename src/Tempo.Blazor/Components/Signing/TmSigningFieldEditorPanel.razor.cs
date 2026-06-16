@@ -165,6 +165,17 @@ public partial class TmSigningFieldEditorPanel
         return UpdateFieldAsync(field => update(field, NormalizeOptional(args.Value?.ToString())));
     }
 
+    private Task HandleNameChangedAsync(ChangeEventArgs args)
+    {
+        var nextName = NormalizeOptional(args.Value?.ToString());
+        return UpdateFieldAsync(field =>
+        {
+            var previousName = field.Name;
+            field.Name = nextName;
+            SyncLabelWithNameChange(field, previousName, nextName);
+        });
+    }
+
     private Task HandleBoolPropertyChangedAsync(ChangeEventArgs args, Action<SigningField, bool> update)
     {
         return UpdateFieldAsync(field => update(field, ToBool(args.Value)));
@@ -557,6 +568,46 @@ public partial class TmSigningFieldEditorPanel
         {
             text.Translations[normalized] = normalizedValue;
         }
+    }
+
+    private void SyncLabelWithNameChange(SigningField field, string? previousName, string? nextName)
+    {
+        if (string.IsNullOrWhiteSpace(nextName))
+        {
+            return;
+        }
+
+        if (ShouldReplaceNameBackedLabel(field.Labels.Default, previousName))
+        {
+            field.Labels.Default = nextName;
+        }
+
+        var culture = NormalizeCulture(Culture);
+        if (!string.IsNullOrWhiteSpace(culture)
+            && ShouldReplaceCultureLabel(field.Labels, culture, previousName))
+        {
+            field.Labels.Translations[culture] = nextName;
+        }
+    }
+
+    private static bool ShouldReplaceCultureLabel(SigningLocalizedText text, string culture, string? previousName)
+    {
+        foreach (var candidate in ExpandCultureCandidates(culture))
+        {
+            if (text.Translations.TryGetValue(candidate, out var value))
+            {
+                return ShouldReplaceNameBackedLabel(value, previousName);
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ShouldReplaceNameBackedLabel(string? label, string? previousName)
+    {
+        return string.IsNullOrWhiteSpace(label)
+            || (!string.IsNullOrWhiteSpace(previousName)
+                && string.Equals(label.Trim(), previousName.Trim(), StringComparison.Ordinal));
     }
 
     private static string GetCultureLabel(string culture)

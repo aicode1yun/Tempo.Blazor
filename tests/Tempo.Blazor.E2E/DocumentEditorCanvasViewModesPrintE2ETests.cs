@@ -46,6 +46,7 @@ public sealed class DocumentEditorCanvasViewModesPrintE2ETests : WasmTestBase
         var reading = await ExecuteCanvasCommandAsync(page, "readingMode", new { });
         Assert.IsTrue(reading.Handled && reading.ViewChanged, reading.Debug);
         await WaitForViewModeAsync(page, "reading");
+        await WaitForToolbarVisibilityAsync(page, visible: false);
         var readingProbe = await ReadViewProbeAsync(page);
         Assert.IsTrue(readingProbe.ToolbarHidden, readingProbe.Debug);
         Assert.IsFalse(readingProbe.ToolbarVisible, readingProbe.Debug);
@@ -177,6 +178,18 @@ public sealed class DocumentEditorCanvasViewModesPrintE2ETests : WasmTestBase
         => page.WaitForFunctionAsync(
             "viewMode => document.querySelector('[data-testid=\"document-canvas-engine-root\"]')?.getAttribute('data-canvas-view-mode') === viewMode",
             viewMode,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+    private static Task WaitForToolbarVisibilityAsync(IPage page, bool visible)
+        => page.WaitForFunctionAsync(
+            """
+            visible => {
+                const toolbar = document.querySelector('[data-testid="document-toolbar"]');
+                const isVisible = !!toolbar && toolbar.getBoundingClientRect().height > 0;
+                return isVisible === visible;
+            }
+            """,
+            visible,
             new PageWaitForFunctionOptions { Timeout = 10_000 });
 
     private static Task WaitForZoomPresetAsync(IPage page, string preset)

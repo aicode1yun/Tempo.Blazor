@@ -107,7 +107,7 @@ public partial class TmFormulaBuilder
 
     private Task InsertFieldTokenAsync(SigningField field)
     {
-        return InsertTextAsync("{{" + field.Uuid + "}}");
+        return InsertTextAsync("{{" + SigningFormulaHelper.GetFieldLabel(field) + "}}");
     }
 
     private string GetLocalizedFieldLabel(SigningField field)

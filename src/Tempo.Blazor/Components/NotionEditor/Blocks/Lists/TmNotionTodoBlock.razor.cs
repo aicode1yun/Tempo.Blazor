@@ -208,7 +208,7 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
 
     private async Task HandleCheckboxChangeAsync(ChangeEventArgs e)
     {
-        _isChecked = e.Value is bool b && b;
+        _isChecked = !_isChecked;
         await OnCheckedChanged.InvokeAsync(_isChecked);
     }
 

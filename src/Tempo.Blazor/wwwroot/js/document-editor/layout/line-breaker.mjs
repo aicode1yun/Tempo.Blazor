@@ -431,7 +431,11 @@ export function createLineBreakerModule(options) {
                         moveToNextRangeOrLine();
                         continue;
                     }
-                    const pieces = splitTokenIntoFittingPieces(token, tokenText, tokenStyle, service, range.width);
+                    const splitWidth = current.ranges.slice(current.rangeIndex).reduce(function (min, item) {
+                        const itemWidth = Math.max(0, Number(item && item.width || 0) || 0);
+                        return itemWidth > 0 ? Math.min(min, itemWidth) : min;
+                    }, Math.max(1, Number(range.width || 1) || 1));
+                    const pieces = splitTokenIntoFittingPieces(token, tokenText, tokenStyle, service, splitWidth);
                     for (let pieceIndex = 0; pieceIndex < pieces.length; pieceIndex++) {
                         const piece = pieces[pieceIndex];
                         range = activeRange();

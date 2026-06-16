@@ -22,12 +22,55 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
-        await page.GotoAsync($"{BaseUrl}/core-engine-host", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        // Wait for the component to mount the engine (async OnAfterRender → JS interop).
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                await page.GotoAsync($"{BaseUrl}/core-engine-host", new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
+                await WaitForCoreEngineHostReadyAsync(page);
+                return page;
+            }
+            catch (TimeoutException) when (attempt == 0)
+            {
+                await TryResetCoreEngineNavigationAsync(page);
+            }
+        }
+
         return page;
+    }
+
+    private static Task WaitForCoreEngineHostReadyAsync(IPage page)
+        => page.WaitForFunctionAsync(
+            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 45000 });
+
+    private static async Task TryResetCoreEngineNavigationAsync(IPage page)
+    {
+        try
+        {
+            await page.GotoAsync("about:blank", new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 10000 });
+        }
+        catch (TimeoutException)
+        {
+            // The retry below performs the authoritative core-engine readiness check.
+        }
+    }
+
+    private static async Task WaitForCoreEngineEditorReadyAsync(IPage page)
+    {
+        const string readyExpression =
+            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }";
+
+        try
+        {
+            await page.WaitForFunctionAsync(readyExpression, null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        }
+        catch (TimeoutException)
+        {
+            await page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
+            await page.WaitForFunctionAsync(readyExpression, null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        }
     }
 
     [TestMethod]
@@ -84,9 +127,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
 
         // The full TmDocumentEditor shell loads + mounts the core engine host (not legacy).
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         var json = await page.EvaluateAsync<string>(@"() => {
             const editorRoot = document.querySelector('[data-render-engine]');
@@ -120,9 +161,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Click into the paragraph (focus + caret), select the whole line with the keyboard.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -159,9 +198,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Edit through the core engine: click into p1, go to end, type with the real keyboard.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -189,9 +226,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Select the whole paragraph line through the core engine.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -224,9 +259,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Click into the paragraph and select the whole line.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -267,9 +300,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Select the paragraph line in the core engine.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -310,9 +341,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Place the caret in the paragraph (the image anchors at the engine's live caret).
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -347,9 +376,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Place the caret, open the image dialog (URL menu item also exposes the file picker).
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -388,9 +415,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Insert an image via the dialog.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -429,9 +454,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Place the caret in the paragraph, then pick Heading 1 from the block-style dropdown.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -457,9 +480,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
         paraBox.Should().NotBeNull();
@@ -484,9 +505,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Insert an image and select it → inspector.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -521,9 +540,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Focus the editor (click into the text), then open find+replace (Ctrl+H).
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -555,9 +572,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Insert a floating image (Square wrap) and select it.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -608,9 +623,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Insert an image and select it → inspector.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -663,9 +676,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Click into the paragraph and type — without ever pressing Save.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();
@@ -691,9 +702,7 @@ public sealed class CoreEngineHostBridgeE2ETests : WasmTestBase
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1280, 900);
         await page.GotoAsync($"{BaseUrl}/core-engine-editor", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await page.WaitForFunctionAsync(
-            "() => { const el = document.querySelector('[data-testid=\"document-core-engine-host\"]'); return el && el.getAttribute('data-core-engine-ready') === 'true'; }",
-            null, new PageWaitForFunctionOptions { Timeout = 45000 });
+        await WaitForCoreEngineEditorReadyAsync(page);
 
         // Select the paragraph (so comment/cut/copy are enabled), then right-click it.
         var paraBox = await page.Locator("[data-testid='document-core-engine-host'] [data-render-block-id='p1']").BoundingBoxAsync();

@@ -271,6 +271,102 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         syncAccessibilityState(root, false);
     }
 
+    function ensureActiveCellDomProxy(root) {
+        const s = getState(root);
+        if (!root || !s) return null;
+        if (s.activeCellDomProxy?.isConnected) return s.activeCellDomProxy;
+
+        const proxy = document.createElement("div");
+        proxy.className = "tm-spreadsheet-cell tm-spreadsheet-cell--active tm-spreadsheet-canvas-grid__active-cell-proxy";
+        proxy.setAttribute("aria-hidden", "true");
+        const focusRoot = ev => {
+            root.focus?.({ preventScroll: true });
+            ev.preventDefault();
+            ev.stopPropagation();
+        };
+        proxy.addEventListener("pointerdown", focusRoot);
+        proxy.addEventListener("mousedown", focusRoot);
+        proxy.addEventListener("click", focusRoot);
+        root.appendChild(proxy);
+        s.activeCellDomProxy = proxy;
+        return proxy;
+    }
+
+    function ensureDomCellProxyLayer(root) {
+        const s = getState(root);
+        if (!root || !s) return null;
+        if (s.cellDomProxyLayer?.isConnected) return s.cellDomProxyLayer;
+
+        const layer = document.createElement("div");
+        layer.className = "tm-spreadsheet-canvas-grid__cell-proxy-layer";
+        layer.setAttribute("aria-hidden", "true");
+        root.appendChild(layer);
+        s.cellDomProxyLayer = layer;
+        return layer;
+    }
+
+    function updateDomCellProxies(root) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!root || !s || !model) return;
+
+        const layer = ensureDomCellProxyLayer(root);
+        if (!layer) return;
+
+        const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
+        const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
+        const layout = getVisibleLayout(root, model, width, height);
+        const visibleRefs = new Set();
+        const row = 0;
+        const activeRef = String(read(model, "ActiveCellRef", "A1") || "A1").toUpperCase();
+
+        for (const colFrame of layout.columns || []) {
+            const col = read(colFrame, "Index", -1);
+            if (col < 0) continue;
+            const ref = toCellRef(row, col);
+            if (ref.toUpperCase() === activeRef) continue;
+            visibleRefs.add(ref);
+
+            let proxy = layer.querySelector(`[data-cell-ref="${ref}"]`);
+            if (!proxy) {
+                proxy = document.createElement("div");
+                proxy.className = "tm-spreadsheet-cell tm-spreadsheet-canvas-grid__cell-proxy";
+                proxy.dataset.cellRef = ref;
+                proxy.title = ref;
+                layer.appendChild(proxy);
+            }
+
+            proxy.hidden = false;
+        }
+
+        for (const proxy of layer.querySelectorAll(".tm-spreadsheet-canvas-grid__cell-proxy")) {
+            const ref = proxy.dataset.cellRef || "";
+            if (!visibleRefs.has(ref)) proxy.hidden = true;
+        }
+    }
+
+    function updateActiveCellDomProxy(root) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!root || !s || !model) return;
+
+        const active = parseCellRef(read(model, "ActiveCellRef", s.sheetState?.activeCell?.ref || "A1"));
+        const proxy = ensureActiveCellDomProxy(root);
+        if (!proxy) return;
+
+        const ref = toCellRef(active.row, active.col);
+        proxy.title = ref;
+        proxy.dataset.cellRef = ref;
+        proxy.textContent = read(findCell(model, active.row, active.col), "Value", "") || "";
+
+        proxy.hidden = false;
+        proxy.style.left = `${(root.scrollLeft || 0) + 1}px`;
+        proxy.style.top = `${(root.scrollTop || 0) + 1}px`;
+        proxy.style.width = "24px";
+        proxy.style.height = "18px";
+        updateDomCellProxies(root);
+    }
+
     function setSheetHover(root, hover) {
         const sheet = getSheetState(root);
         if (sheet) sheet.hover = hover;
@@ -1102,12 +1198,16 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
     function getLogicalScrollLeft(root) {
         const s = getState(root);
-        return s ? s.sheetState?.scroll?.left ?? s.logicalScrollLeft ?? 0 : root?.scrollLeft || 0;
+        return s
+            ? (Number.isFinite(s.logicalScrollLeft) ? s.logicalScrollLeft : s.sheetState?.scroll?.left ?? 0)
+            : root?.scrollLeft || 0;
     }
 
     function getLogicalScrollTop(root) {
         const s = getState(root);
-        return s ? s.sheetState?.scroll?.top ?? s.logicalScrollTop ?? 0 : root?.scrollTop || 0;
+        return s
+            ? (Number.isFinite(s.logicalScrollTop) ? s.logicalScrollTop : s.sheetState?.scroll?.top ?? 0)
+            : root?.scrollTop || 0;
     }
 
     function setLogicalScroll(root, left, top, source) {
@@ -1125,6 +1225,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             write(s.model, "ScrollTop", nextTop);
         }
         if (changed) updateLocalEditorPosition(root);
+        if (changed) updateActiveCellDomProxy(root);
 
         if (changed) bumpLocalRevision(root, source || "scroll");
 
@@ -2738,6 +2839,27 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 return cells;
             }
         }
+        const directCells = [];
+        const seenDirectCells = new Set();
+        const appendDirectCell = cell => {
+            const colorIndex = Number(read(cell, "FormulaRefColorIndex", -1));
+            if (!Number.isFinite(colorIndex) || colorIndex < 0) return;
+            const row = Number(read(cell, "Row", 0)) || 0;
+            const col = Number(read(cell, "Col", 0)) || 0;
+            const key = cellStoreKey(row, col);
+            if (seenDirectCells.has(key)) return;
+            seenDirectCells.add(key);
+            directCells.push(cell);
+        };
+        for (const cell of read(model, "Cells", []) || []) appendDirectCell(cell);
+        for (const cell of s?.sheetState?.cellStore?.cells?.values?.() || []) appendDirectCell(cell);
+        if (directCells.length > 0) {
+            if (s?.metrics) {
+                s.metrics.formulaEditorHighlightCount = directCells.length;
+                s.metrics.formulaEditorReferenceCount = directCells.length;
+            }
+            return directCells;
+        }
         if (s) {
             s.formulaReferenceSource = null;
             s.formulaReferenceRevision = 0;
@@ -2797,6 +2919,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
         updateCellSelectionFlags(model, row, col, true, true, true);
         addSelectionDirtyRectForChange(root, beforeSelection, getSelectionSnapshot(root));
+        updateActiveCellDomProxy(root);
 
         requestCanvasRedraw(root, source || "selection", "selection");
         scheduleLiveRegionUpdate(root, source === "keyboard" ? 90 : defaultLiveRegionDebounceMs);
@@ -5594,6 +5717,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 }
             }
             updateLocalEditorPosition(root);
+            updateActiveCellDomProxy(root);
             syncEditorAccessibility(root);
             syncAccessibilityState(root, false);
             s.syncedScrollLeft = getLogicalScrollLeft(root);

@@ -247,23 +247,27 @@ public class DemoNotionDatabaseProvider : INotionDatabaseProvider
     public async Task<IDatabaseRecord> GetRecordAsync(string databaseId, string recordId)
     {
         var record = await _http.GetFromJsonAsync<DatabaseRecord>($"/api/notion/databases/{databaseId}/records/{recordId}");
-        return record ?? throw new KeyNotFoundException($"Record {recordId} not found");
+        return record is not null
+            ? NormalizeRecord(record)
+            : throw new KeyNotFoundException($"Record {recordId} not found");
     }
 
     public async Task<IDatabaseRecord> CreateRecordAsync(string databaseId, IDatabaseRecord record)
     {
         var response = await _http.PostAsJsonAsync($"/api/notion/databases/{databaseId}/records", record);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<DatabaseRecord>()
+        var created = await response.Content.ReadFromJsonAsync<DatabaseRecord>()
             ?? throw new Exception("Failed to create record");
+        return NormalizeRecord(created);
     }
 
     public async Task<IDatabaseRecord> UpdateRecordAsync(string databaseId, IDatabaseRecord record)
     {
         var response = await _http.PutAsJsonAsync($"/api/notion/databases/{databaseId}/records/{record.Id}", record);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<DatabaseRecord>()
+        var updated = await response.Content.ReadFromJsonAsync<DatabaseRecord>()
             ?? throw new Exception("Failed to update record");
+        return NormalizeRecord(updated);
     }
 
     public async Task DeleteRecordAsync(string databaseId, string recordId)
@@ -277,7 +281,7 @@ public class DemoNotionDatabaseProvider : INotionDatabaseProvider
         var response = await _http.PostAsJsonAsync($"/api/notion/databases/{databaseId}/records/batch", records);
         response.EnsureSuccessStatusCode();
         var updated = await response.Content.ReadFromJsonAsync<List<DatabaseRecord>>();
-        return updated ?? [];
+        return updated?.Select(NormalizeRecord).Cast<IDatabaseRecord>().ToList() ?? [];
     }
 
     public async Task<IEnumerable<IDatabaseRecord>> GetSubItemsAsync(string parentRecordId)

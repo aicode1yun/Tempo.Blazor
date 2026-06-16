@@ -365,10 +365,10 @@ public sealed class DocumentEditorCanvasHistorySaveE2ETests : WasmTestBase
     private static void AssertPhase12Categories(Phase12Probe probe)
     {
         Assert.AreEqual(Phase12DocumentId, probe.ModelDocumentId);
-        Assert.IsTrue(probe.BlockCount >= 4, $"Expected text, formatting, table, and image blocks. Probe: {JsonSerializer.Serialize(probe)}");
+        Assert.IsTrue(probe.BlockCount >= 4, $"Expected text, formatting, table, and drawing-backed image content. Probe: {JsonSerializer.Serialize(probe)}");
         Assert.IsTrue(probe.TableBlockCount >= 1, $"Expected table model block. Probe: {JsonSerializer.Serialize(probe)}");
-        Assert.IsTrue(probe.ImageBlockCount >= 1, $"Expected image model block. Probe: {JsonSerializer.Serialize(probe)}");
         Assert.IsTrue(probe.TableCount >= 1, $"Expected table render command. Probe: {JsonSerializer.Serialize(probe)}");
+        Assert.IsTrue(probe.ImageCount >= 1, $"Expected drawing-backed image render command. Probe: {JsonSerializer.Serialize(probe)}");
         Assert.IsTrue(probe.CommentAnchorCount >= 1, $"Expected comment anchor render command. Probe: {JsonSerializer.Serialize(probe)}");
         Assert.IsTrue(probe.RevisionAnchorCount >= 1, $"Expected revision anchor render command. Probe: {JsonSerializer.Serialize(probe)}");
     }

@@ -37,6 +37,7 @@ export function createRenderFormattedInlineHtml(deps) {
         const styles = [];
         const textDecoration = [];
         let href = '';
+        let linkTitle = '';
         marks.forEach(function (mark) {
             const type = markType(mark);
             const value = markValue(mark);
@@ -75,7 +76,8 @@ export function createRenderFormattedInlineHtml(deps) {
                 styles.push('background-color:' + value);
             } else if (type === 'link') {
                 classes.push('tm-document-inline--link');
-                href = asText((mark && (mark.href || mark.Href || mark.url || mark.Url)) || value || '');
+                href = asText((mark && (mark.href || mark.Href || mark.url || mark.Url || mark.link?.href || mark.Link?.Href)) || value || '');
+                linkTitle = asText(mark && (mark.title || mark.Title || mark.link?.title || mark.Link?.Title) || '');
             }
         });
         if (textDecoration.length) {
@@ -91,7 +93,12 @@ export function createRenderFormattedInlineHtml(deps) {
             'data-node-id="' + escapeHtml(inlineId) + '"',
         ];
         if (styles.length) attrs.push('style="' + escapeHtml(styles.join(';')) + '"');
-        if (href) attrs.push('data-href="' + escapeHtml(href) + '"');
+        if (href) {
+            attrs.push('data-href="' + escapeHtml(href) + '"');
+            attrs.push('data-link-href="' + escapeHtml(href) + '"');
+            attrs.push('role="link"');
+        }
+        if (linkTitle) attrs.push('title="' + escapeHtml(linkTitle) + '"');
         return '<span ' + attrs.join(' ') + '>' + contentHtml + '</span>';
     };
 }

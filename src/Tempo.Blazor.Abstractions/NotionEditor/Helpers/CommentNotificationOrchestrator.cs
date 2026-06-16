@@ -22,7 +22,7 @@ public class CommentNotificationOrchestrator
         var parent = thread.Thread.FirstOrDefault(e => e.Id == newEntry.ParentEntryId);
         if (parent is null) return;
         if (parent.AuthorUserId == newEntry.AuthorUserId) return; // don't self-notify
-        if (!thread.SubscribedUserIds.Contains(parent.AuthorUserId)) return;
+        if (!ShouldNotifyParticipant(thread, parent.AuthorUserId)) return;
 
         await _notificationService.NotifyAsync(new NotificationEvent
         {
@@ -84,7 +84,7 @@ public class CommentNotificationOrchestrator
         var participants = thread.Thread
             .Select(e => e.AuthorUserId)
             .Distinct()
-            .Where(id => id != resolverUserId && thread.SubscribedUserIds.Contains(id));
+            .Where(id => id != resolverUserId && ShouldNotifyParticipant(thread, id));
 
         foreach (var userId in participants)
         {
@@ -100,4 +100,7 @@ public class CommentNotificationOrchestrator
             }, ct);
         }
     }
+
+    private static bool ShouldNotifyParticipant(IBlockComment thread, string userId)
+        => thread.SubscribedUserIds.Count == 0 || thread.SubscribedUserIds.Contains(userId);
 }

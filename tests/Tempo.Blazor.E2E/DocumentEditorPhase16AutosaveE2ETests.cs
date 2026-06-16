@@ -147,14 +147,17 @@ public sealed class DocumentEditorPhase16AutosaveE2ETests : DocumentEditorE2ETes
     private async Task<IPage> OpenDocumentEditorWithQueryAsync(string query, int width, int height)
     {
         var context = await CreateContextAsync();
+        await InstallDocumentEditorClientStateIsolationAsync(context);
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(width, height);
-        await page.GotoAsync($"{BaseUrl}/document-editor?{query}", new PageGotoOptions
+        var separator = string.IsNullOrWhiteSpace(query) ? string.Empty : "&";
+        await page.GotoAsync($"{BaseUrl}/document-editor?{query}{separator}renderEngine=Legacy", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000
         });
         await WaitForDocumentEditorReadyAsync(page);
+        await ResetDocumentEditorTransientClientStateAsync(page);
         return page;
     }
 

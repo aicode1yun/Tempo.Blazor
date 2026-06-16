@@ -370,6 +370,7 @@ internal sealed class BuiltInModelingViewpointRulesProvider : IModelingViewpoint
 
     private static IReadOnlyList<IModelingNotationViewpointRulesProvider> CreateDefaultNotationRules(IModelingNotationProfileProvider profiles) =>
     [
+        new BpmnViewpointRulesProvider(profiles),
         new UmlViewpointRulesProvider(profiles),
         new Archimate32ViewpointRulesProvider()
     ];
@@ -388,6 +389,64 @@ internal sealed class BuiltInModelingViewpointRulesProvider : IModelingViewpoint
 
         return map;
     }
+}
+
+internal sealed class BpmnViewpointRulesProvider : IModelingNotationViewpointRulesProvider
+{
+    private readonly IModelingNotationProfileProvider _profiles;
+    private readonly IModelingViewpointRulesProvider _fallback;
+
+    public BpmnViewpointRulesProvider(IModelingNotationProfileProvider profiles)
+    {
+        _profiles = profiles ?? throw new ArgumentNullException(nameof(profiles));
+        _fallback = new ModelingViewpointRulesProvider(profiles);
+    }
+
+    public IReadOnlyCollection<string> NotationKeys { get; } = [BpmnNotationProfile.Key, "bpmn"];
+
+    public bool IsElementAllowedInViewpoint(string notationKey, string viewpointKey, string semanticType)
+    {
+        if (!IsBpmnNotation(notationKey) || string.IsNullOrWhiteSpace(semanticType))
+            return false;
+
+        return _fallback.IsElementAllowedInViewpoint(notationKey, viewpointKey, semanticType)
+            || (IsKnownViewpoint(notationKey, viewpointKey) && IsTaskLikeSemanticType(semanticType));
+    }
+
+    public ModelingViewpointRuleResult ValidateElementViewpoint(ModelingViewpointRuleContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (!IsBpmnNotation(context.NotationKey))
+            return ModelingViewpointRuleResult.Allowed;
+
+        if (string.IsNullOrWhiteSpace(context.ViewpointKey)
+            || _fallback.IsElementAllowedInViewpoint(context.NotationKey, context.ViewpointKey, context.Element.SemanticType))
+        {
+            return ModelingViewpointRuleResult.Allowed;
+        }
+
+        if (IsKnownViewpoint(context.NotationKey, context.ViewpointKey)
+            && IsTaskLikeSemanticType(context.Element.SemanticType))
+        {
+            return ModelingViewpointRuleResult.Warning(
+                $"BPMN task type '{context.Element.SemanticType}' is not part of the built-in BPMN catalog and will use a generic fallback stencil.",
+                "Register a BPMN stencil mapping for this task type if it should render with a specialized symbol.");
+        }
+
+        return _fallback.ValidateElementViewpoint(context);
+    }
+
+    private static bool IsBpmnNotation(string notationKey)
+        => string.Equals(notationKey?.Trim(), BpmnNotationProfile.Key, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(notationKey?.Trim(), "bpmn", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsKnownViewpoint(string notationKey, string viewpointKey)
+        => !string.IsNullOrWhiteSpace(viewpointKey)
+            && _profiles.GetProfile(notationKey)?.SupportedViewpointKeys.Any(candidate =>
+                string.Equals(candidate, viewpointKey.Trim(), StringComparison.OrdinalIgnoreCase)) == true;
+
+    private static bool IsTaskLikeSemanticType(string semanticType)
+        => semanticType.Trim().EndsWith("Task", StringComparison.OrdinalIgnoreCase);
 }
 
 internal sealed class UmlViewpointRulesProvider : IModelingNotationViewpointRulesProvider

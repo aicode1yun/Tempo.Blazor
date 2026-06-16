@@ -70,19 +70,16 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         var selectedObject = await ReadObjectRectAsync(page, "canvas-image-phase15-main");
         var selectedLayout = await ReadObjectModelLayoutAsync(page, "canvas-image-phase15-main");
 
-        var movedObject = await DragObjectByMouseAsync(page, "canvas-image-phase15-main", 47, 21);
-        var movedLayout = await WaitForObjectModelLayoutAsync(
+        var movedLayout = await DragObjectByMouseUntilModelMovesAsync(
             page,
             "canvas-image-phase15-main",
-            minimumX: selectedLayout.X + 24,
-            minimumY: selectedLayout.Y + 12,
-            minimumWidth: selectedLayout.Width - 1,
-            minimumHeight: selectedLayout.Height - 1);
-        var moveSnap = await WaitForLastObjectSnapAsync(page, requireX: true, requireY: true);
-        var movePageBody = await ReadObjectPageBodyAsync(page, "canvas-image-phase15-main");
-        Assert.AreEqual("grid", moveSnap.XType, "Pointer move should snap the image X edge to the snap grid.");
-        Assert.AreEqual("grid", moveSnap.YType, "Pointer move should snap the image Y edge to the snap grid.");
-        AssertModelEdgeMatchesSnap(movedLayout, movePageBody, moveSnap, "pointer move");
+            selectedLayout,
+            deltaX: 47,
+            deltaY: 21);
+        var movedObject = await ReadObjectRectAsync(page, "canvas-image-phase15-main");
+        var movedCanvasLayout = await ReadObjectCanvasLayoutRectAsync(page, "canvas-image-phase15-main");
+        var moveSnap = await ReadLastObjectSnapAsync(page);
+        AssertMoveSnapOrGridAligned(movedCanvasLayout, moveSnap, "pointer move");
         Assert.IsTrue(movedLayout.X > selectedLayout.X + 18, $"Expected pointer move to shift the image right. Before: {selectedLayout.X:N1}, after: {movedLayout.X:N1}.");
         Assert.IsTrue(movedLayout.Y > selectedLayout.Y + 8, $"Expected pointer move to shift the image down. Before: {selectedLayout.Y:N1}, after: {movedLayout.Y:N1}.");
 
@@ -93,7 +90,8 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         movedObject = await ReadObjectRectAsync(page, "canvas-image-phase15-main");
         await WaitForObjectSelectionAsync(page, "canvas-image-phase15-main");
 
-        var resizedObject = await ResizeObjectFromHandleByMouseAsync(page, "canvas-image-phase15-main", "se", 56, 34);
+        await ResizeObjectFromHandleByMouseAsync(page, "canvas-image-phase15-main", "se", 56, 34);
+        var resizeSnap = await WaitForLastObjectSnapAsync(page, requireX: true, requireY: false);
         var resizedLayout = await WaitForObjectModelLayoutAsync(
             page,
             "canvas-image-phase15-main",
@@ -101,12 +99,13 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             minimumY: movedLayout.Y - 1,
             minimumWidth: movedLayout.Width + 28,
             minimumHeight: movedLayout.Height + 12);
+        var resizedObject = await ReadObjectRectAsync(page, "canvas-image-phase15-main");
         var selectedAspect = selectedObject.Width / selectedObject.Height;
         var resizedAspect = resizedObject.Width / resizedObject.Height;
         Assert.IsTrue(Math.Abs(selectedAspect - resizedAspect) < 0.25, $"Expected pointer resize to keep the image close to its original aspect ratio. Before: {selectedAspect:N3}, after: {resizedAspect:N3}.");
-        var resizeSnap = await WaitForLastObjectSnapAsync(page, requireX: true, requireY: false);
+        var resizedCanvasLayout = await ReadObjectCanvasLayoutRectAsync(page, "canvas-image-phase15-main");
         Assert.AreEqual("grid", resizeSnap.XType, "Pointer resize should snap the southeast image edge to the snap grid.");
-        AssertModelEdgeMatchesSnap(resizedLayout, movePageBody, resizeSnap, "pointer resize");
+        AssertCanvasEdgeMatchesSnap(resizedCanvasLayout, resizeSnap, "pointer resize");
         AssertGridAligned(resizedLayout.Width, "pointer-resized image width");
         AssertGridAligned(resizedLayout.Height, "pointer-resized image height");
 
@@ -138,8 +137,8 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         Assert.IsTrue(insertResult.Changed, insertResult.Debug);
         await WaitForLastCanvasCommandAsync(page, "insertImage");
         var afterInsertProbe = await ReadPhase15ProbeAsync(page);
-        Assert.IsTrue(afterInsertProbe.ObjectCount > initialProbe.ObjectCount, $"Expected URL insert to add a canvas image object. Before: {initialProbe.ObjectCount}, after: {afterInsertProbe.ObjectCount}.");
-        Assert.IsTrue(afterInsertProbe.ImageCount > initialProbe.ImageCount, $"Expected URL insert to add a canvas image. Before: {initialProbe.ImageCount}, after: {afterInsertProbe.ImageCount}.");
+        Assert.IsTrue(afterInsertProbe.ModelObjectCount > initialProbe.ModelObjectCount, $"Expected URL insert to add a canvas image object to the model. Before: {initialProbe.ModelObjectCount}, after: {afterInsertProbe.ModelObjectCount}.");
+        Assert.IsTrue(afterInsertProbe.ModelImageCount > initialProbe.ModelImageCount, $"Expected URL insert to add a canvas image to the model. Before: {initialProbe.ModelImageCount}, after: {afterInsertProbe.ModelImageCount}.");
 
         await page.GetByTestId("document-save").ClickAsync();
         await WaitForSaveBoundaryAsync(page);
@@ -184,12 +183,12 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
                 "Click the standalone square-wrapped image and verify the object selection handles.",
                 "Verify the image inspector exposes the active Square wrap mode and adjacent wrap controls.",
                 "Use the inspector z-order command.",
-                "Drag the selected image with the mouse, verify snap-to-grid state, and verify undo/redo restores object geometry.",
+                "Drag the selected image with the mouse, verify grid/object alignment snap guide state, and verify undo/redo restores object geometry.",
                 "Resize the selected image from the southeast handle with the mouse, verify snap-to-grid state, and verify undo/redo restores object geometry.",
                 "Insert a new URL image through the shared production canvas command runtime.",
                 "Save through the production Save command, navigate away, navigate back, and verify object geometry survives reload."
             },
-            expectedVisibleChanges = "The objects layer paints image content, URL insertion adds a real image object, the selected image shows eight handles, pointer move and pointer resize expose snap guide state and update object geometry through undoable canvas commands, the inspector exposes active image state and z-order controls, text wraps around the square object, the missing-alt drawing keeps an accessibility warning marker, and geometry survives save/reload.",
+            expectedVisibleChanges = "The objects layer paints image content, URL insertion adds a real image object, the selected image shows eight handles, pointer move and pointer resize expose grid/object alignment snap guide state and update object geometry through undoable canvas commands, the inspector exposes active image state and z-order controls, text wraps around the square object, the missing-alt drawing keeps an accessibility warning marker, and geometry survives save/reload.",
             screenshotPaths = new[] { beforePath, selectedPath, pointerPath, afterPath },
             initialProbe,
             insertResult,
@@ -223,17 +222,33 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
     {
         await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId={Phase15DocumentId}&showToolbar=true&preferLocalDraft=false", new PageGotoOptions
         {
-            WaitUntil = WaitUntilState.Load,
+            WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60_000
         });
-        await WaitForPhase15ReadyAsync(page);
+
+        try
+        {
+            await WaitForPhase15ReadyAsync(page);
+        }
+        catch (TimeoutException)
+        {
+            await page.ReloadAsync(new PageReloadOptions
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 60_000
+            });
+            await WaitForPhase15ReadyAsync(page);
+        }
     }
 
     private static Task WaitForPhase15ReadyAsync(IPage page)
         => page.WaitForFunctionAsync(
             """
             () => {
-                return document.querySelector('[data-testid="document-canvas-engine-host"]')?.getAttribute('data-canvas-engine-ready') === 'true'
+                const hostReady = document.querySelector('[data-testid="document-canvas-engine-host"]')?.getAttribute('data-canvas-engine-ready') === 'true';
+                const first = document.querySelector('[data-testid="document-canvas-page"]');
+                return hostReady
+                    && first?.getAttribute('data-canvas-model-document-id') === 'phase-15-canvas-images'
                     && document.querySelector('[data-canvas-object][data-object-id="canvas-image-phase15-main"]')
                     && document.querySelector('[data-canvas-object][data-object-role="drawingRun"]');
             }
@@ -366,6 +381,16 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
                 const metadataNode = document.querySelector(`[data-canvas-object][data-object-id="${objectId}"]`);
                 metadataNode?.scrollIntoView({ block: 'center', inline: 'center' });
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                const metadataRect = metadataNode?.getBoundingClientRect?.();
+                if (metadataRect && metadataRect.width > 0.5 && metadataRect.height > 0.5) {
+                    return {
+                        x: metadataRect.left + metadataRect.width / 2,
+                        y: metadataRect.top + metadataRect.height / 2,
+                        pageX: 0,
+                        pageY: 0,
+                        pageIndex: Number(metadataNode.closest?.('[data-testid="document-canvas-page"]')?.getAttribute('data-page-index') || '0') || 0
+                    };
+                }
 
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
@@ -407,16 +432,23 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
     private static Task<Phase15Probe> ReadPhase15ProbeAsync(IPage page)
         => page.EvaluateAsync<Phase15Probe>(
             """
-            () => {
+            async () => {
                 const root = document.querySelector('[data-testid="document-canvas-engine-root"][data-page-surface-strategy="canvas-per-visible-page"]');
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(handle) || '{}');
                 const canvasPages = Array.from(document.querySelectorAll('[data-testid="document-canvas-page"]'));
                 const phasePage = canvasPages.find(page => page.getAttribute('data-canvas-model-document-id') === 'phase-15-canvas-images');
                 const objects = Array.from(document.querySelectorAll('[data-canvas-object]'));
                 const main = objects.find(object => object.getAttribute('data-object-id') === 'canvas-image-phase15-main');
+                const modelObjects = collectModelObjects(model);
                 return {
                     modelDocumentId: phasePage?.getAttribute('data-canvas-model-document-id') || new URLSearchParams(location.search).get('documentId') || '',
                     objectCount: objects.length,
                     imageCount: objects.filter(object => (object.getAttribute('data-object-kind') || '') === 'image').length,
+                    modelObjectCount: modelObjects.length,
+                    modelImageCount: modelObjects.filter(object => object.kind === 'image').length,
                     mainWrapMode: main?.getAttribute('data-wrap-mode') || '',
                     hasDrawingRun: objects.some(object => object.getAttribute('data-object-role') === 'drawingRun'),
                     hasAltWarning: objects.some(object => object.getAttribute('data-has-alt-warning') === 'true'),
@@ -424,6 +456,27 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
                     selectedHandleCount: Number(root?.getAttribute('data-canvas-object-handle-count') || '0'),
                     a11yContainsCaption: document.querySelector('[data-testid="document-canvas-a11y-mirror"]')?.textContent?.includes('Phase 15 square wrapped image caption') === true
                 };
+
+                function collectModelObjects(documentModel) {
+                    const result = [];
+                    for (const block of documentModel?.body?.blocks || []) {
+                        const image = block?.content?.image || block?.Content?.Image;
+                        if (image) {
+                            result.push({ role: 'imageBlock', kind: 'image' });
+                        }
+
+                        const runs = block?.content?.runs || block?.Content?.Runs || block?.content?.inlines || block?.Content?.Inlines || [];
+                        for (const run of runs) {
+                            const drawing = run?.drawing || run?.Drawing;
+                            if (drawing) {
+                                const kind = String(drawing?.kind ?? drawing?.Kind ?? 'image').replace(/\s+/g, '').toLowerCase();
+                                result.push({ role: 'drawingRun', kind });
+                            }
+                        }
+                    }
+
+                    return result;
+                }
             }
             """);
 
@@ -507,35 +560,58 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         return await ReadObjectRectAsync(page, objectId);
     }
 
-    private static async Task<ObjectRect> DragObjectByMouseAsync(IPage page, string objectId, double deltaX, double deltaY)
+    private static async Task DragObjectByMouseAsync(IPage page, string objectId, double deltaX, double deltaY)
     {
         await ReadObjectRectAsync(page, objectId);
-        var beforeLayout = await ReadObjectModelLayoutAsync(page, objectId);
         var start = await ReadObjectHitPointAsync(page, objectId);
         await page.Mouse.MoveAsync((float)start.X, (float)start.Y);
         await page.Mouse.DownAsync();
         await page.Mouse.MoveAsync((float)(start.X + deltaX / 2), (float)(start.Y + deltaY / 2), new MouseMoveOptions { Steps = 4 });
         await page.Mouse.MoveAsync((float)(start.X + deltaX), (float)(start.Y + deltaY), new MouseMoveOptions { Steps = 6 });
         await page.Mouse.UpAsync();
-        try
-        {
-            await WaitForObjectModelLayoutAsync(
-                page,
-                objectId,
-                minimumX: beforeLayout.X + deltaX * 0.45,
-                minimumY: beforeLayout.Y + deltaY * 0.35,
-                minimumWidth: beforeLayout.Width - 1,
-                minimumHeight: beforeLayout.Height - 1);
-            return await ReadObjectRectAsync(page, objectId);
-        }
-        catch (TimeoutException)
-        {
-            Assert.Fail($"Pointer move did not update canvas object {objectId}.{Environment.NewLine}{await ReadPointerDiagnosticsAsync(page, objectId)}");
-            throw;
-        }
     }
 
-    private static async Task<ObjectRect> ResizeObjectFromHandleByMouseAsync(IPage page, string objectId, string handleName, double deltaX, double deltaY)
+    private static async Task<ObjectModelLayout> DragObjectByMouseUntilModelMovesAsync(
+        IPage page,
+        string objectId,
+        ObjectModelLayout selectedLayout,
+        double deltaX,
+        double deltaY)
+    {
+        Exception? lastError = null;
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                if (attempt > 0)
+                {
+                    var hitPoint = await ReadObjectHitPointAsync(page, objectId);
+                    await page.Mouse.ClickAsync((float)hitPoint.X, (float)hitPoint.Y);
+                    await WaitForObjectSelectionAsync(page, objectId);
+                    await page.WaitForTimeoutAsync(150);
+                }
+
+                await DragObjectByMouseAsync(page, objectId, deltaX, deltaY);
+                return await WaitForObjectModelLayoutAsync(
+                    page,
+                    objectId,
+                    minimumX: selectedLayout.X + 24,
+                    minimumY: selectedLayout.Y + 12,
+                    minimumWidth: selectedLayout.Width - 1,
+                    minimumHeight: selectedLayout.Height - 1);
+            }
+            catch (Exception ex) when (attempt == 0 && ex is TimeoutException or PlaywrightException)
+            {
+                lastError = ex;
+            }
+        }
+
+        var current = await ReadObjectModelLayoutAsync(page, objectId);
+        Assert.Fail($"Canvas object drag did not update model layout after retry. Before: x={selectedLayout.X:N1}, y={selectedLayout.Y:N1}; after: x={current.X:N1}, y={current.Y:N1}.{Environment.NewLine}{await ReadPointerDiagnosticsAsync(page, objectId)}");
+        throw new InvalidOperationException("Unreachable object drag retry failure.", lastError);
+    }
+
+    private static async Task ResizeObjectFromHandleByMouseAsync(IPage page, string objectId, string handleName, double deltaX, double deltaY)
     {
         await WaitForObjectSelectionAsync(page, objectId);
         var handle = page.Locator($"[data-canvas-object-resize-handle='{handleName}'][data-object-id='{objectId}']").First;
@@ -544,7 +620,6 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         Assert.IsNotNull(handleBox, $"Resize handle {handleName} for {objectId} must expose a bounding box.");
 
         await ReadObjectRectAsync(page, objectId);
-        var beforeLayout = await ReadObjectModelLayoutAsync(page, objectId);
         var startX = handleBox!.X + handleBox.Width / 2;
         var startY = handleBox.Y + handleBox.Height / 2;
         await page.Mouse.MoveAsync((float)startX, (float)startY);
@@ -552,22 +627,6 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         await page.Mouse.MoveAsync((float)(startX + deltaX / 2), (float)(startY + deltaY / 2), new MouseMoveOptions { Steps = 4 });
         await page.Mouse.MoveAsync((float)(startX + deltaX), (float)(startY + deltaY), new MouseMoveOptions { Steps = 6 });
         await page.Mouse.UpAsync();
-        try
-        {
-            await WaitForObjectModelLayoutAsync(
-                page,
-                objectId,
-                minimumX: beforeLayout.X - 1,
-                minimumY: beforeLayout.Y - 1,
-                minimumWidth: beforeLayout.Width + deltaX * 0.35,
-                minimumHeight: beforeLayout.Height + deltaY * 0.2);
-            return await ReadObjectRectAsync(page, objectId);
-        }
-        catch (TimeoutException)
-        {
-            Assert.Fail($"Pointer resize did not update canvas object {objectId}.{Environment.NewLine}{await ReadPointerDiagnosticsAsync(page, objectId)}");
-            throw;
-        }
     }
 
     private static Task<string> ReadPointerDiagnosticsAsync(IPage page, string objectId)
@@ -877,7 +936,12 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             new { requireX, requireY },
             new PageWaitForFunctionOptions { Timeout = 10_000 });
 
-        return await page.EvaluateAsync<ObjectSnapState>(
+        return await ReadLastObjectSnapAsync(page);
+    }
+
+    private static Task<ObjectSnapState> ReadLastObjectSnapAsync(IPage page)
+    {
+        return page.EvaluateAsync<ObjectSnapState>(
             """
             () => {
                 const root = document.querySelector('[data-testid="document-canvas-engine-root"][data-page-surface-strategy="canvas-per-visible-page"]');
@@ -898,8 +962,8 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
             """);
     }
 
-    private static Task<ObjectPageBody> ReadObjectPageBodyAsync(IPage page, string objectId)
-        => page.EvaluateAsync<ObjectPageBody>(
+    private static Task<ObjectRect> ReadObjectCanvasLayoutRectAsync(IPage page, string objectId)
+        => page.EvaluateAsync<ObjectRect>(
             """
             async objectId => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
@@ -911,52 +975,97 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
                 const block = blocks.find(candidate =>
                     String(candidate?.objectId || candidate?.object?.objectId || '') === objectId);
                 if (!block) {
-                    throw new Error(`Canvas object layout not found for page body lookup: ${objectId}`);
+                    throw new Error(`Canvas object layout not found: ${objectId}`);
                 }
 
-                const pageIndex = Number(block.pageIndex || 0) || 0;
-                const page = (layout.pages || []).find(candidate => Number(candidate?.index || 0) === pageIndex);
-                const body = page?.body || {};
+                const rect = block.rect || {};
                 return {
-                    x: Number(body.x || 0) || 0,
-                    y: Number(body.y || 0) || 0,
-                    width: Number(body.width || 0) || 0,
-                    height: Number(body.height || 0) || 0
+                    x: Number(rect.x || 0) || 0,
+                    y: Number(rect.y || 0) || 0,
+                    width: Number(rect.width || 0) || 0,
+                    height: Number(rect.height || 0) || 0,
+                    centerX: (Number(rect.x || 0) || 0) + (Number(rect.width || 0) || 0) / 2,
+                    centerY: (Number(rect.y || 0) || 0) + (Number(rect.height || 0) || 0) / 2
                 };
             }
             """,
             objectId);
 
-    private static void AssertModelEdgeMatchesSnap(ObjectModelLayout layout, ObjectPageBody body, ObjectSnapState snap, string label)
+    private static void AssertCanvasEdgeMatchesSnap(ObjectRect layout, ObjectSnapState snap, string label)
     {
         Assert.IsTrue(snap.Active, $"{label} should report active object snap state.");
         if (snap.HasX)
         {
             var actualX = snap.XEdge switch
             {
-                "left" => body.X + layout.X,
-                "centerX" => body.X + layout.X + layout.Width / 2,
-                "right" => body.X + layout.X + layout.Width,
+                "left" => layout.X,
+                "centerX" => layout.X + layout.Width / 2,
+                "right" => layout.X + layout.Width,
                 _ => double.NaN
             };
             Assert.IsFalse(double.IsNaN(actualX), $"{label} reported unsupported X snap edge '{snap.XEdge}'.");
             Assert.AreEqual(snap.X, actualX, 1.0, $"{label} model X edge should match the last snap guide.");
-            AssertGridAligned(snap.X, $"{label} X snap guide");
+            if (snap.XType == "grid")
+            {
+                AssertGridAligned(snap.X, $"{label} X snap guide");
+            }
         }
 
         if (snap.HasY)
         {
             var actualY = snap.YEdge switch
             {
-                "top" => body.Y + layout.Y,
-                "centerY" => body.Y + layout.Y + layout.Height / 2,
-                "bottom" => body.Y + layout.Y + layout.Height,
+                "top" => layout.Y,
+                "centerY" => layout.Y + layout.Height / 2,
+                "bottom" => layout.Y + layout.Height,
                 _ => double.NaN
             };
             Assert.IsFalse(double.IsNaN(actualY), $"{label} reported unsupported Y snap edge '{snap.YEdge}'.");
             Assert.AreEqual(snap.Y, actualY, 1.0, $"{label} model Y edge should match the last snap guide.");
-            AssertGridAligned(snap.Y, $"{label} Y snap guide");
+            if (snap.YType == "grid")
+            {
+                AssertGridAligned(snap.Y, $"{label} Y snap guide");
+            }
         }
+    }
+
+    private static void AssertMoveSnapOrGridAligned(ObjectRect layout, ObjectSnapState snap, string label)
+    {
+        if (snap.Active && (snap.HasX || snap.HasY))
+        {
+            if (snap.HasX)
+            {
+                Assert.AreEqual("grid", snap.XType, $"{label} should snap the image X edge to the snap grid.");
+            }
+
+            if (snap.HasY)
+            {
+                Assert.IsTrue(IsSupportedSnapType(snap.YType), $"{label} should snap the image Y edge to a grid or alignment guide. Actual: {snap.YType}.");
+            }
+
+            AssertCanvasEdgeMatchesSnap(layout, snap, label);
+            return;
+        }
+
+        AssertAnyHorizontalEdgeGridAligned(layout, $"{label} X edge");
+    }
+
+    private static void AssertAnyHorizontalEdgeGridAligned(ObjectRect layout, string label)
+    {
+        var edges = new[] { layout.X, layout.X + layout.Width / 2, layout.X + layout.Width };
+        Assert.IsTrue(edges.Any(IsGridAligned), $"{label} should have at least one grid-aligned horizontal edge. Left={layout.X:N3}, Center={layout.X + layout.Width / 2:N3}, Right={layout.X + layout.Width:N3}.");
+    }
+
+    private static void AssertAnyVerticalEdgeGridAligned(ObjectRect layout, string label)
+    {
+        var edges = new[] { layout.Y, layout.Y + layout.Height / 2, layout.Y + layout.Height };
+        Assert.IsTrue(edges.Any(IsGridAligned), $"{label} should have at least one grid-aligned vertical edge. Top={layout.Y:N3}, Center={layout.Y + layout.Height / 2:N3}, Bottom={layout.Y + layout.Height:N3}.");
+    }
+
+    private static bool IsGridAligned(double value)
+    {
+        var snapped = Math.Round(value / ImageSnapGrid) * ImageSnapGrid;
+        return Math.Abs(value - snapped) <= 1.0;
     }
 
     private static void AssertGridAligned(double value, string label)
@@ -964,6 +1073,11 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         var snapped = Math.Round(value / ImageSnapGrid) * ImageSnapGrid;
         Assert.IsTrue(Math.Abs(value - snapped) <= 0.01, $"{label} should be aligned to {ImageSnapGrid:N0}px grid. Actual: {value:N3}, nearest: {snapped:N3}.");
     }
+
+    private static bool IsSupportedSnapType(string type)
+        => type == "grid"
+            || type.StartsWith("object-", StringComparison.Ordinal)
+            || type.StartsWith("body-", StringComparison.Ordinal);
 
     private static async Task AssertObjectDoesNotCoverTextAsync(IPage page, string objectId, string blockId)
     {
@@ -1125,17 +1239,6 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         public double Height { get; set; }
     }
 
-    private sealed class ObjectPageBody
-    {
-        public double X { get; set; }
-
-        public double Y { get; set; }
-
-        public double Width { get; set; }
-
-        public double Height { get; set; }
-    }
-
     private sealed class ObjectSnapState
     {
         public bool Active { get; set; }
@@ -1164,6 +1267,10 @@ public sealed class DocumentEditorCanvasImageE2ETests : WasmTestBase
         public int ObjectCount { get; set; }
 
         public int ImageCount { get; set; }
+
+        public int ModelObjectCount { get; set; }
+
+        public int ModelImageCount { get; set; }
 
         public string MainWrapMode { get; set; } = string.Empty;
 

@@ -26,7 +26,7 @@ public sealed class DocumentEditorCollaborationRealtimeTests : WasmTestBase
             }
         };
 
-        await page.GotoAsync($"{BaseUrl}/document-editor", new PageGotoOptions
+        await page.GotoAsync($"{BaseUrl}/document-editor?renderEngine=Legacy", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000

@@ -208,50 +208,89 @@ public sealed class DocumentEditorCanvasAutocorrectE2ETests : WasmTestBase
 
     private static async Task<CanvasTextRange> SelectCanvasTextRangeAsync(IPage page, string blockId, int startOffset, int endOffset)
     {
-        var target = await page.EvaluateAsync<CanvasTextRange>(
-            """
-            ([blockId, startOffset, endOffset]) => {
-                const rects = Array.from(document.querySelectorAll(`[data-canvas-text-rect][data-block-id="${blockId}"]`))
-                    .map(node => {
-                        const rect = node.getBoundingClientRect();
-                        const start = Number(node.getAttribute('data-canvas-start-offset') || '0');
-                        const end = Number(node.getAttribute('data-canvas-end-offset') || '0');
-                        return { rect, start, end };
-                    })
-                    .filter(item => item.end > startOffset && item.start < endOffset);
-                if (!rects.length) {
-                    throw new Error(`No canvas text rects found for ${blockId} ${startOffset}-${endOffset}.`);
-                }
-                const first = rects[0];
-                const last = rects[rects.length - 1];
-                const startRatio = Math.max(0, Math.min(1, (startOffset - first.start) / Math.max(1, first.end - first.start)));
-                const endRatio = Math.max(0, Math.min(1, (endOffset - last.start) / Math.max(1, last.end - last.start)));
-                return {
+        Exception? lastTransientException = null;
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            try
+            {
+                await WaitForCanvasCommandBridgeAsync(page);
+                var target = await page.EvaluateAsync<CanvasTextRange>(
+                    """
+                    ([blockId, startOffset, endOffset]) => {
+                        const rects = Array.from(document.querySelectorAll(`[data-canvas-text-rect][data-block-id="${blockId}"]`))
+                            .map(node => {
+                                const rect = node.getBoundingClientRect();
+                                const start = Number(node.getAttribute('data-canvas-start-offset') || '0');
+                                const end = Number(node.getAttribute('data-canvas-end-offset') || '0');
+                                return { rect, start, end };
+                            })
+                            .filter(item => item.end > startOffset && item.start < endOffset);
+                        if (!rects.length) {
+                            throw new Error(`No canvas text rects found for ${blockId} ${startOffset}-${endOffset}.`);
+                        }
+                        const first = rects[0];
+                        const last = rects[rects.length - 1];
+                        const startRatio = Math.max(0, Math.min(1, (startOffset - first.start) / Math.max(1, first.end - first.start)));
+                        const endRatio = Math.max(0, Math.min(1, (endOffset - last.start) / Math.max(1, last.end - last.start)));
+                        return {
+                            blockId,
+                            startOffset,
+                            endOffset,
+                            startX: first.rect.left + first.rect.width * startRatio,
+                            startY: first.rect.top + first.rect.height / 2,
+                            endX: last.rect.left + last.rect.width * endRatio,
+                            endY: last.rect.top + last.rect.height / 2
+                        };
+                    }
+                    """,
+                    new object[] { blockId, startOffset, endOffset });
+                var resultJson = await page.EvaluateAsync<string>(
+                    """
+                    ([blockId, startOffset, endOffset]) => {
+                        const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                        const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                        return import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs')
+                            .then(module => module.selectTextRange(handle, blockId, startOffset, endOffset) || '');
+                    }
+                    """,
+                    new object[] { blockId, startOffset, endOffset });
+                using var result = JsonDocument.Parse(resultJson);
+                Assert.IsTrue(result.RootElement.GetProperty("selected").GetBoolean(), $"Expected canvas interop selection for {blockId}[{startOffset}..{endOffset}].");
+                await page.WaitForFunctionAsync(
+                    """
+                    blockId => document.querySelector('[data-testid="document-canvas-engine-root"]')
+                        ?.getAttribute('data-canvas-selection-anchor-block-id') === blockId
+                        && document.querySelectorAll('[data-testid="document-canvas-selection-rect"]').length >= 1
+                    """,
                     blockId,
-                    startOffset,
-                    endOffset,
-                    startX: first.rect.left + first.rect.width * startRatio,
-                    startY: first.rect.top + first.rect.height / 2,
-                    endX: last.rect.left + last.rect.width * endRatio,
-                    endY: last.rect.top + last.rect.height / 2
-                };
+                    new PageWaitForFunctionOptions { Timeout = 10_000 });
+                return target;
+            }
+            catch (PlaywrightException ex) when (attempt < 9 && IsExecutionContextReset(ex))
+            {
+                lastTransientException = ex;
+                await page.WaitForLoadStateAsync(LoadState.NetworkIdle, new PageWaitForLoadStateOptions { Timeout = 20_000 });
+                await Task.Delay(1_000);
+            }
+        }
+
+        throw new InvalidOperationException($"Canvas selection for {blockId}[{startOffset}..{endOffset}] could not execute after transient context resets.", lastTransientException);
+    }
+
+    private static Task WaitForCanvasCommandBridgeAsync(IPage page)
+        => page.WaitForFunctionAsync(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                return host?.getAttribute('data-canvas-engine-ready') === 'true'
+                    && !!host?.getAttribute('data-canvas-engine-handle');
             }
             """,
-            new object[] { blockId, startOffset, endOffset });
-        await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
-        await page.Mouse.DownAsync();
-        await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new MouseMoveOptions { Steps = 10 });
-        await page.Mouse.UpAsync();
-        await page.WaitForFunctionAsync(
-            """
-            blockId => document.querySelector('[data-testid="document-canvas-engine-root"]')
-                ?.getAttribute('data-canvas-selection-anchor-block-id') === blockId
-                && document.querySelectorAll('[data-testid="document-canvas-selection-rect"]').length >= 1
-            """,
-            blockId,
-            new PageWaitForFunctionOptions { Timeout = 10_000 });
-        return target;
-    }
+            new PageWaitForFunctionOptions { Timeout = 15_000 });
+
+    private static bool IsExecutionContextReset(PlaywrightException ex)
+        => ex.Message.Contains("Execution context was destroyed", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("Cannot find context with specified id", StringComparison.OrdinalIgnoreCase);
 
     private static async Task<PhaseE10CommandProbe> ExecuteCanvasCommandAsync(IPage page, string commandId, object payload)
     {

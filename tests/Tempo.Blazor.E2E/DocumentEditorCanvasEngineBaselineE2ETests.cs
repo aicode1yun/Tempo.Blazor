@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tempo.Blazor.E2E;
 
-/// <summary>Phase 0 baseline evidence for the canvas-based document editor direction.</summary>
+    /// <summary>Baseline evidence for the canvas-based document editor direction.</summary>
 [TestClass]
 [TestCategory("DocumentEditor")]
 [TestCategory("DocumentEditor:CanvasEngine")]
@@ -17,12 +17,12 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
     };
 
     [TestMethod]
-    public async Task Baseline_CurrentCoreEngineBeforeRedesign_CapturesDesktopScreenshots()
+    public async Task Baseline_CurrentCanvasEngine_CapturesDesktopScreenshots()
     {
         var page = await OpenBaselineDocumentEditorAsync("/document-editor?documentId=onlyoffice-parity-2026-05-24", 1440, 1000);
         var output = CreateOutputDirectory("desktop-1440x1000");
-        var fullPath = Path.Combine(output, "00-current-core-full.png");
-        var editorPath = Path.Combine(output, "01-current-core-editor.png");
+        var fullPath = Path.Combine(output, "00-current-canvas-full.png");
+        var editorPath = Path.Combine(output, "01-current-canvas-editor.png");
 
         await page.ScreenshotAsync(new PageScreenshotOptions
         {
@@ -37,30 +37,30 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
         });
 
         var probe = await CaptureProbeAsync(page);
-        Assert.AreEqual("CoreEnginePreview", probe.RenderEngine, "The before-redesign baseline must capture the current core engine.");
-        Assert.IsTrue(probe.HasCoreHost, "The baseline route must render the current core engine host.");
-        Assert.IsFalse(probe.HasCanvasHost, "Phase 0 must not pretend the canvas engine host already exists.");
+        Assert.AreEqual("CanvasEnginePreview", probe.RenderEngine, "The baseline route must capture the current canvas engine.");
+        Assert.IsTrue(probe.HasCanvasHost, "The baseline route must render the canvas engine host.");
+        Assert.IsFalse(probe.HasCoreHost, "The current canvas baseline should not fall back to the core engine host.");
         Assert.IsTrue(new FileInfo(fullPath).Length > 10_000, "The full-page baseline screenshot must be a real non-empty PNG.");
         Assert.IsTrue(new FileInfo(editorPath).Length > 5_000, "The editor baseline screenshot must be a real non-empty PNG.");
 
         var manifestPath = Path.Combine(output, "manifest.json");
         await WriteManifestAsync(manifestPath, new
         {
-            testName = nameof(Baseline_CurrentCoreEngineBeforeRedesign_CapturesDesktopScreenshots),
+            testName = nameof(Baseline_CurrentCanvasEngine_CapturesDesktopScreenshots),
             viewport = "desktop-1440x1000",
             seedDocumentId = "onlyoffice-parity-2026-05-24",
             userActions = new[]
             {
                 "Open /document-editor with the deterministic ONLYOFFICE parity document.",
-                "Wait for the current core engine host to be present.",
-                "Capture the full page and editor surface as before-redesign evidence."
+                "Wait for the current canvas engine host to be present.",
+                "Capture the full page and editor surface as current canvas evidence."
             },
-            expectedVisibleChanges = "No document mutation; this is the visual baseline for the current core engine.",
+            expectedVisibleChanges = "No document mutation; this is the visual baseline for the current canvas engine.",
             expectedModelChanges = "None.",
             screenshotPaths = new[] { fullPath, editorPath },
-            canvasNonBlankMetrics = "Not applicable in phase 0 because the canvas host is intentionally absent.",
-            overlapChecks = "Deferred to the canvas screenshot gate in phase 2; this baseline records current visual debt.",
-            uxUiReviewerNotes = "Manual review of the saved screenshot: current core engine shows visible text overlap around wrapped images and table/object areas, compressed document density beside the side panel, and no canvas-owned page/overlay separation. This is an honest before-redesign baseline.",
+            canvasNonBlankMetrics = "Captured by the canvas host screenshot gates in the dedicated canvas E2E tests.",
+            overlapChecks = "Covered by the canvas visual assertion suite; this baseline records current visual output.",
+            uxUiReviewerNotes = "Manual review of the saved screenshot should confirm the canvas-owned page, overlay, and side panel composition remains stable.",
             probe
         });
         TestContext.AddResultFile(fullPath);
@@ -69,20 +69,20 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
     }
 
     [TestMethod]
-    public async Task CanvasEngineRouteFlag_CurrentlyMissing_BaselineIsExplicit()
+    public async Task CanvasEngineRouteFlag_RendersCanvasHost()
     {
         var page = await OpenBaselineDocumentEditorAsync("/document-editor?tmDocumentEditorEngine=canvas", 1280, 800);
         var probe = await CaptureProbeAsync(page);
 
-        Assert.IsFalse(probe.HasCanvasHost, "Phase 0 records the honest red state: the canvas engine host is not routable yet.");
-        Assert.AreNotEqual("CanvasEnginePreview", probe.RenderEngine, "The demo route must not report a canvas engine before it exists.");
-        Assert.AreNotEqual("CanvasEnginePreview", probe.RequestedRenderEngine, "The public component flag is intentionally not wired to canvas in phase 0.");
+        Assert.IsTrue(probe.HasCanvasHost, "The canvas engine route flag must render the canvas host.");
+        Assert.AreEqual("CanvasEnginePreview", probe.RenderEngine, "The demo route must report the active canvas engine.");
+        Assert.AreEqual("CanvasEnginePreview", probe.RequestedRenderEngine, "The public component flag must request the canvas engine.");
 
-        var output = CreateOutputDirectory("canvas-flag-red");
+        var output = CreateOutputDirectory("canvas-flag");
         var manifestPath = Path.Combine(output, "manifest.json");
         await WriteManifestAsync(manifestPath, new
         {
-            testName = nameof(CanvasEngineRouteFlag_CurrentlyMissing_BaselineIsExplicit),
+            testName = nameof(CanvasEngineRouteFlag_RendersCanvasHost),
             viewport = "notebook-1280x800",
             seedDocumentId = "contract-demo",
             userActions = new[]
@@ -90,20 +90,19 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
                 "Open /document-editor?tmDocumentEditorEngine=canvas.",
                 "Inspect the active document editor host and root render-engine attributes."
             },
-            expectedVisibleChanges = "No canvas host appears yet; phase 3 will change this.",
+            expectedVisibleChanges = "The canvas host appears and the render-engine attributes report CanvasEnginePreview.",
             expectedModelChanges = "None.",
             screenshotPaths = Array.Empty<string>(),
-            canvasNonBlankMetrics = "Red baseline: no canvas element is owned by a canvas document engine yet.",
-            overlapChecks = "Not applicable until the canvas host exists.",
-            uxUiReviewerNotes = "This is the explicit phase 0 red gate, not a product implementation.",
+            canvasNonBlankMetrics = "Covered by the dedicated canvas host screenshot gate.",
+            overlapChecks = "Covered by the dedicated canvas host screenshot gate.",
+            uxUiReviewerNotes = "This verifies that the route flag remains wired to the canvas engine.",
             probe
         });
         TestContext.AddResultFile(manifestPath);
     }
 
-    [Ignore("Phase 0 RED gate: enable when implementing the CanvasEnginePreview route/flag in phase 3.")]
     [TestMethod]
-    public async Task CanvasEngineRouteFlag_RedGate_RendersCanvasHostWhenEnabled()
+    public async Task CanvasEngineRouteFlag_RendersCanvasHostWhenEnabled()
     {
         var page = await OpenBaselineDocumentEditorAsync("/document-editor?tmDocumentEditorEngine=canvas", 1280, 800);
 

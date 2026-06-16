@@ -17,6 +17,13 @@ public sealed class DocumentPendingActionService
     /// <summary>All pending action messages in registration order.</summary>
     public IReadOnlyList<string> Messages => [.. _actions.Values];
 
+    /// <summary>Returns the message for a pending action, or <c>null</c> when the action is not registered.</summary>
+    public string? GetMessage(string id)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(id);
+        return _actions.TryGetValue(id, out var message) ? message : null;
+    }
+
     /// <summary>
     /// Registers or updates a pending action.
     /// If an action with <paramref name="id"/> already exists its message is replaced.

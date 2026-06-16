@@ -55,9 +55,7 @@ public partial class TmChat : ComponentBase
 
     private async Task ScrollToBottomAsync()
     {
-        // Defer to ensure DOM is updated before scrolling
-        await Task.Delay(1);
-        StateHasChanged();
+        await Task.CompletedTask;
     }
 
     private string GetMessageCssClass(ChatMessage message)
@@ -115,9 +113,9 @@ public partial class TmChat : ComponentBase
         }
     }
 
-    private void HandleAttachmentClick(ChatAttachment attachment)
+    private async Task HandleAttachmentClick(ChatAttachment attachment)
     {
-        OnAttachmentClick.InvokeAsync(attachment);
+        await OnAttachmentClick.InvokeAsync(attachment);
     }
 
     private string GetTypingText()

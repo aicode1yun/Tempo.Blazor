@@ -249,7 +249,12 @@ export function createHistoryControllerFactory(options) {
             const targetStack = undo ? redoStack : undoStack;
             const entry = sourceStack.pop();
             if (!entry) return sortObject({ ok: false, empty: true, transactionType: undo ? TransactionTypes.Undo : TransactionTypes.Redo });
-            const operations = (undo ? entry.inverseOperations : entry.redoOperations).map(function (operation) { return attachOperationMethods(clone(operation)); });
+            const historySource = undo ? TransactionTypes.Undo : TransactionTypes.Redo;
+            const operations = (undo ? entry.inverseOperations : entry.redoOperations).map(function (operation) {
+                const nextOperation = attachOperationMethods(clone(operation));
+                nextOperation.source = historySource;
+                return nextOperation;
+            });
             const historyTransaction = createTransaction(model, {
                 type: undo ? TransactionTypes.Undo : TransactionTypes.Redo,
                 label: undo ? 'Undo' : 'Redo',

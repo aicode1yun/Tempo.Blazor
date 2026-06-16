@@ -7,7 +7,7 @@
      @onclick="ToggleAsync"
      aria-label="@(IsChecked ? Loc["TmNotionDatabaseBlock_CheckedYes"] : Loc["TmNotionDatabaseBlock_CheckedNo"])"
      role="@(!ReadOnly ? "checkbox" : null)"
-     aria-checked="@IsChecked">
+     aria-checked="@AriaChecked">
 
     <span class="tm-dbc__checkbox">
         @if (IsChecked)

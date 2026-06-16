@@ -69,6 +69,8 @@
 }
 
 .tm-document-editor__ribbon-groups {
+    position: relative;
+    z-index: 2;
     flex: 1 1 auto;
     flex-wrap: nowrap;
     min-width: 0;
@@ -331,8 +333,19 @@
     display: inline-flex;
 }
 
+.tm-document-editor__ribbon:has(.tm-document-editor__ribbon-tempo-color-picker.tm-color-picker--open),
+.tm-document-editor__ribbon-groups:has(.tm-document-editor__ribbon-tempo-color-picker.tm-color-picker--open),
+.tm-document-editor__ribbon-group:has(.tm-document-editor__ribbon-tempo-color-picker.tm-color-picker--open) {
+    overflow: visible;
+}
+
+.tm-document-editor__ribbon:has(.tm-document-editor__ribbon-tempo-color-picker.tm-color-picker--open) {
+    z-index: calc(var(--tm-document-z-floating-ui, var(--tm-z-popover, 1000)) + 30);
+}
+
 .tm-document-editor__ribbon-tempo-color-picker.tm-color-picker--open {
-    z-index: var(--tm-z-popover, 1000);
+    position: relative;
+    z-index: calc(var(--tm-document-z-floating-ui, var(--tm-z-popover, 1000)) + 31);
 }
 
 .tm-document-editor__ribbon-tempo-color-picker .tm-color-picker-trigger {
@@ -385,8 +398,9 @@
 .tm-document-editor__ribbon-tempo-color-picker .tm-color-picker-dropdown {
     top: calc(100% + var(--tm-space-2));
     bottom: auto;
-    right: 0;
+    right: min(6rem, 18vw);
     left: auto;
+    z-index: calc(var(--tm-document-z-floating-ui, var(--tm-z-popover, 1000)) + 32);
     display: flex;
     flex-direction: column;
     width: 12.5rem;
@@ -561,7 +575,7 @@
 .tm-document-editor__toolbar-floating-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 19;
+    z-index: 0;
     padding: 0;
     background: transparent;
     border: 0;

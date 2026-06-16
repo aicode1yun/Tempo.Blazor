@@ -648,7 +648,8 @@ export class CanvasDocumentEngine {
                 return;
             }
 
-            this.render({ ...pending, deferTextRectMetadata: true, deferFormattingDiagnostics: true });
+            const result = this.render({ ...pending, deferTextRectMetadata: true, deferFormattingDiagnostics: true });
+            this.publishInputRenderDiagnostics(result?.render);
             this.scheduleIdleReconciliation();
         });
 
@@ -711,15 +712,26 @@ export class CanvasDocumentEngine {
         this.liveRegion.announceSelection(this.selectionController.getSelection());
     }
 
+    publishInputRenderDiagnostics(render) {
+        const root = this.canvasStack.root;
+        const incremental = render?.incremental || {};
+        root?.setAttribute?.('data-canvas-input-incremental-repaint', String(incremental.enabled === true));
+        root?.setAttribute?.('data-canvas-input-repaint-page-indexes', Array.isArray(incremental.repaintPageIndexes) ? incremental.repaintPageIndexes.join(',') : '');
+    }
+
     commitCommandChange(change) {
         const viewOnlyChange = change?.result?.viewChanged === true || change?.result?.printRequested === true;
+        const structuralChange = (change.result?.insertedBlockIds || []).length > 0
+            || (change.result?.removedBlockIds || []).length > 0
+            || (change.result?.insertedRunIds || []).length > 0
+            || (change.result?.removedRunIds || []).length > 0;
         const beforeModel = this.modelStore.getModel();
         if (!viewOnlyChange || change?.result?.changed === true) {
             this.modelStore.setModel(change.model);
             this.recordLocalCollaborationChange(beforeModel, change.model, change);
         }
         this.recalcInfo.markDirty(change.result?.dirtyBlockIds || [], {
-            structural: (change.result?.insertedBlockIds || []).length > 0 || (change.result?.removedBlockIds || []).length > 0,
+            structural: structuralChange,
         });
         if (change.selection) {
             this.selectionController.setSelection(change.selection);
@@ -727,7 +739,7 @@ export class CanvasDocumentEngine {
 
         const result = this.render({
             dirtyBlockIds: change.result?.dirtyBlockIds || [],
-            structural: (change.result?.insertedBlockIds || []).length > 0 || (change.result?.removedBlockIds || []).length > 0,
+            structural: structuralChange,
         });
         this.publishCommandDiagnostics(change);
         if (change?.command?.printRequested === true || change?.result?.printRequested === true) {

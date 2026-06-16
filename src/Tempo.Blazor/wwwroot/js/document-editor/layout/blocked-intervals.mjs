@@ -134,9 +134,17 @@ export function applyWrapSideToBlockedIntervals(intervals, wrapSide, body, minWi
 export function blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth) {
     const rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
     const lineRect = { x: body.x, y: atY, width: body.width, height: lineHeight };
-    if (!rectIntersectsGeometry(lineRect, rect)) return [];
     const mode = normalizeWrapModeName(
         exclusion && (exclusion.wrapMode || exclusion.WrapMode));
+    const sourceRect = mode === 'Tight'
+        ? rectFromGeometry(exclusion && (exclusion.sourceRect || exclusion.SourceRect))
+        : null;
+    const intersectsRect = rectIntersectsGeometry(lineRect, rect);
+    const intersectsSourceRect = !!(sourceRect
+        && sourceRect.width > 0
+        && sourceRect.height > 0
+        && rectIntersectsGeometry(lineRect, sourceRect));
+    if (!intersectsRect && !intersectsSourceRect) return [];
     const kind = asText(exclusion && (exclusion.kind || exclusion.Kind));
     if (mode === 'TopBottom' || kind === 'fullWidth') {
         return [{ x: body.x, width: body.width }];
@@ -152,6 +160,13 @@ export function blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight,
         intervals = right - left >= minWidth - 0.0001
             ? [{ x: left, width: right - left }]
             : [];
+    }
+    if (mode === 'Tight' && intersectsSourceRect) {
+        const sourceLeft = Math.max(body.x, sourceRect.x);
+        const sourceRight = Math.min(rectRightGeometry(body), rectRightGeometry(sourceRect));
+        if (sourceRight - sourceLeft > 0.0001) {
+            intervals.push({ x: sourceLeft, width: sourceRight - sourceLeft });
+        }
     }
 
     return applyWrapSideToBlockedIntervals(

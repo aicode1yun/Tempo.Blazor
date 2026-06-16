@@ -40,8 +40,16 @@ public class NotionFormattingE2ETests : WasmTestBase
     private async Task WaitForInlineToolbarAsync(IPage page)
     {
         var toolbar = page.Locator(".tm-notion-inline-toolbar").First;
-        await toolbar.WaitForAsync(new LocatorWaitForOptions
-            { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        try
+        {
+            await toolbar.WaitForAsync(new LocatorWaitForOptions
+                { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        }
+        catch (TimeoutException ex)
+        {
+            var diagnostics = await GetInlineToolbarDiagnosticsAsync(page);
+            throw new TimeoutException($"Inline toolbar did not become visible. Diagnostics: {diagnostics}", ex);
+        }
     }
 
     private async Task OpenInlineToolbarAsync(IPage page)
@@ -563,10 +571,15 @@ public class NotionFormattingE2ETests : WasmTestBase
     {
         var target = page.Locator(selector).First;
         await target.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await page.WaitForFunctionAsync(
+            "() => window.tmNotionEditor?.hasSelectionWatcher?.(document.querySelector('.tm-notion-page')) === true",
+            new PageWaitForFunctionOptions { Timeout = 10000 });
         await target.EvaluateAsync("(el, block) => el.scrollIntoView({ block, inline: 'nearest' })", scrollBlock);
         await page.WaitForTimeoutAsync(150);
         await target.EvaluateAsync("""
             el => {
+                const host = el.closest('[contenteditable="true"]');
+                host?.focus?.({ preventScroll: true });
                 const range = document.createRange();
                 range.selectNodeContents(el);
                 const selection = window.getSelection();
@@ -576,8 +589,53 @@ public class NotionFormattingE2ETests : WasmTestBase
                 document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
             }
             """);
+        var forced = await page.EvaluateAsync<bool>(
+            "() => window.tmNotionEditor.forceInlineToolbarForSelection(document.querySelector('.tm-notion-page'))");
+        if (!forced)
+        {
+            var diagnostics = await GetInlineToolbarDiagnosticsAsync(page);
+            Assert.Fail($"Inline toolbar force helper returned false. Diagnostics: {diagnostics}");
+        }
         await WaitForInlineToolbarAsync(page);
         await page.WaitForTimeoutAsync(250);
+    }
+
+    private static async Task<string> GetInlineToolbarDiagnosticsAsync(IPage page)
+    {
+        return await page.EvaluateAsync<string>("""
+            () => {
+                const pageEl = document.querySelector('.tm-notion-page');
+                const sel = window.getSelection();
+                const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+                const ancestor = range?.commonAncestorContainer;
+                const ancestorEl = ancestor?.nodeType === Node.TEXT_NODE ? ancestor.parentElement : ancestor;
+                const toolbar = document.querySelector('.tm-notion-inline-toolbar');
+                const target = document.querySelector("[data-block-id='eb400000-0000-0000-0000-000000000002'] code")
+                    ?? document.querySelector("[data-block-id='eb400000-0000-0000-0000-000000000003'] .tm-notion-paragraph")
+                    ?? document.querySelector("[data-block-id='eb400000-0000-0000-0000-000000000020'] .tm-notion-paragraph");
+
+                return JSON.stringify({
+                    hasEditor: !!document.querySelector('.tm-notion-editor'),
+                    hasPage: !!pageEl,
+                    hasWatcher: !!window.tmNotionEditor?.hasSelectionWatcher?.(pageEl),
+                    forceType: typeof window.tmNotionEditor?.forceInlineToolbarForSelection,
+                    selectionText: sel?.toString() ?? '',
+                    selectionCollapsed: sel?.isCollapsed ?? null,
+                    selectionRangeCount: sel?.rangeCount ?? 0,
+                    ancestorTag: ancestorEl?.tagName ?? null,
+                    ancestorEditable: ancestorEl?.closest?.('[contenteditable="true"]')?.className ?? null,
+                    pageContainsSelection: !!(pageEl && ancestor && pageEl.contains(ancestor)),
+                    rectCount: range ? Array.from(range.getClientRects()).filter(r => r.width > 0 && r.height > 0).length : 0,
+                    targetText: target?.textContent ?? null,
+                    targetHtml: target?.innerHTML ?? null,
+                    toolbarCount: document.querySelectorAll('.tm-notion-inline-toolbar').length,
+                    toolbarDisplay: toolbar ? getComputedStyle(toolbar).display : null,
+                    toolbarVisibility: toolbar ? getComputedStyle(toolbar).visibility : null,
+                    toolbarClass: toolbar?.className ?? null,
+                    lastToolbarError: window.__tmNotionLastToolbarError ?? null
+                });
+            }
+            """);
     }
 
     private async Task CaptureBaselineAsync(IPage page, string area, string state, ILocator region)

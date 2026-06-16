@@ -111,12 +111,14 @@
             @if (_tablePropertiesPanelOpen && ActiveTableContent is { } activeTable)
             {
                 <TmDocumentTablePropertiesPanel Layout="activeTable.Layout"
+                                                TestIdPrefix="document-wysiwyg-table-properties"
                                                 LayoutChanged="SetActiveTablePropertiesAsync" />
             }
 
             @if (_cellPropertiesPanelOpen)
             {
                 <TmDocumentCellPropertiesPanel Cell="activeCell"
+                                               TestIdPrefix="document-wysiwyg-cell-properties"
                                                CellChanged="SetActiveCellPropertiesAsync" />
             }
         }
@@ -215,6 +217,7 @@
     private string? _pendingImageAltText;
     private string? _lastSentSnapshotJson;
     private DocumentEditorDocument? _lastSnapshotDocument;
+    private WysiwygDirtyState _lastDirtyState = new();
     // Phase C1 — last document Version we sent over JS interop. Defaults to long.MinValue so
     // the first send always fires (even if Document.Version starts at 0).
     private long _lastSnapshotVersion = long.MinValue;
@@ -974,6 +977,11 @@
 
     private bool ShouldSendParameterSnapshot()
     {
+        if (_hasSentSnapshot && _lastDirtyState.IsDirty)
+        {
+            return false;
+        }
+
         // Phase C1 — primary fast path: same document reference + matching Version + same
         // suggestion list reference + read-only unchanged means nothing to send.
         if (_hasSentSnapshot
@@ -1079,6 +1087,7 @@
             return clone;
         }
 
+        var documentAssetUrls = BuildDocumentAssetUrlMap(clone);
         foreach (var drawing in DocumentImagePersistence.EnumerateDrawingRuns(clone))
         {
             if (drawing.Source == DocumentImageSource.Url || string.IsNullOrWhiteSpace(drawing.AssetId))
@@ -1088,6 +1097,13 @@
 
             if (IsSafeImageUrl(drawing.Url))
             {
+                continue;
+            }
+
+            if (TryGetDocumentAssetUrl(documentAssetUrls, drawing.AssetId, out var assetUrl))
+            {
+                drawing.Url = assetUrl;
+                changed = true;
                 continue;
             }
 
@@ -1120,6 +1136,13 @@
                 continue;
             }
 
+            if (TryGetDocumentAssetUrl(documentAssetUrls, image.AssetId, out var assetUrl))
+            {
+                image.Url = assetUrl;
+                changed = true;
+                continue;
+            }
+
             string? resolvedUrl;
             try
             {
@@ -1138,6 +1161,31 @@
         }
 
         return changed ? clone : document;
+    }
+
+    private static Dictionary<string, string> BuildDocumentAssetUrlMap(DocumentEditorDocument document)
+    {
+        var assets = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var asset in document.Assets)
+        {
+            if (string.IsNullOrWhiteSpace(asset.Id) || !IsSafeImageUrl(asset.Url))
+            {
+                continue;
+            }
+
+            assets[asset.Id] = asset.Url!;
+        }
+
+        return assets;
+    }
+
+    private static bool TryGetDocumentAssetUrl(
+        IReadOnlyDictionary<string, string> assetUrls,
+        string? assetId,
+        out string url)
+    {
+        url = string.Empty;
+        return !string.IsNullOrWhiteSpace(assetId) && assetUrls.TryGetValue(assetId, out url);
     }
 
     private async Task<string?> ResolveImageUrlAsync(string documentId, string assetId)
@@ -1640,6 +1688,7 @@
     [JSInvokable("HandleJsDirtyStateChanged")]
     public Task HandleDirtyStateChanged(WysiwygDirtyState state)
     {
+        _lastDirtyState = state ?? new WysiwygDirtyState();
         return DirtyStateChanged.InvokeAsync(state);
     }
 
@@ -2666,16 +2715,30 @@
                 return null;
             }
 
+            var asset = new DocumentImageAsset
+            {
+                Id = result.AssetId,
+                DocumentId = Document.DocumentId,
+                Source = DocumentImageSource.Asset,
+                Url = result.Url,
+                ContentType = payload.ContentType,
+                FileName = fileName,
+                SizeBytes = sizeBytes,
+                AltText = payload.AltText ?? fileName,
+                Caption = payload.Caption
+            };
+            RememberImageAsset(asset);
+
             return new WysiwygImagePayload
             {
                 Source = DocumentImageSource.Asset,
-                AssetId = result.AssetId,
-                Url = result.Url,
-                AltText = payload.AltText ?? fileName,
-                Caption = payload.Caption,
-                FileName = fileName,
-                ContentType = payload.ContentType,
-                SizeBytes = sizeBytes,
+                AssetId = asset.Id,
+                Url = asset.Url,
+                AltText = asset.AltText,
+                Caption = asset.Caption,
+                FileName = asset.FileName,
+                ContentType = asset.ContentType,
+                SizeBytes = asset.SizeBytes,
                 Selection = payload.Selection
             };
         }

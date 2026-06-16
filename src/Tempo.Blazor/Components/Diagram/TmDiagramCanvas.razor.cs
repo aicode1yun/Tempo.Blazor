@@ -1366,6 +1366,31 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         double[]? waypointsXY = null)
     {
         if (ReadOnly || Document is null) return;
+
+        if (GridSize > 0)
+        {
+            if (targetPointX is not null && targetPointY is not null)
+            {
+                targetPointX = Math.Round(targetPointX.Value / GridSize) * GridSize;
+                targetPointY = Math.Round(targetPointY.Value / GridSize) * GridSize;
+            }
+
+            if (sourcePointX is not null && sourcePointY is not null)
+            {
+                sourcePointX = Math.Round(sourcePointX.Value / GridSize) * GridSize;
+                sourcePointY = Math.Round(sourcePointY.Value / GridSize) * GridSize;
+            }
+
+            if (waypointsXY is not null)
+            {
+                for (var i = 0; i + 1 < waypointsXY.Length; i += 2)
+                {
+                    waypointsXY[i] = Math.Round(waypointsXY[i] / GridSize) * GridSize;
+                    waypointsXY[i + 1] = Math.Round(waypointsXY[i + 1] / GridSize) * GridSize;
+                }
+            }
+        }
+
         await OnEdgeCreated.InvokeAsync((sourceNodeId, sourcePortId, targetNodeId, targetPortId, sourceSide, sourceOffset, targetSide, targetOffset, targetEdgeId, targetEdgeT,
             sourceConstraintRx, sourceConstraintRy, sourceConstraintPerimeter,
             targetConstraintRx, targetConstraintRy, targetConstraintPerimeter,

@@ -443,6 +443,12 @@ public class MockNotionBlockStore
             }
         });
 
+        Add(BlockType.Image, 43, new ImageBlockContent
+        {
+            Url = string.Empty,
+            Caption = "Upload target"
+        });
+
         // ── Page 4 — Engineering Wiki ─────────────────────────────────────────
         AddTo(MockNotionDataStore.Page4Id, BlockType.Heading1, 0,
             new HeadingBlockContent { Level = 1, Html = "Engineering Wiki" });

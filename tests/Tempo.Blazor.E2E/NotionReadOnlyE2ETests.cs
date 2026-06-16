@@ -207,13 +207,27 @@ public sealed class NotionReadOnlyE2ETests : NotionE2ETestBase
             ["clipboard-read", "clipboard-write"],
             new BrowserContextGrantPermissionsOptions { Origin = BaseUrl });
 
-        await SelectLocatorContentsAsync(page, locator);
+        await SelectReadOnlyLocatorContentsAsync(locator);
         var selectedText = await page.EvaluateAsync<string>("() => window.getSelection()?.toString() ?? ''");
         AssertSelectedText(expectedText, selectedText, "Selected text should contain the read-only block content.");
 
         await page.Keyboard.PressAsync("Control+C");
         var clipboardText = await page.EvaluateAsync<string>("async () => await navigator.clipboard.readText()");
         AssertSelectedText(expectedText, clipboardText, "Clipboard text should contain the copied read-only block content.");
+    }
+
+    private static async Task SelectReadOnlyLocatorContentsAsync(ILocator locator)
+    {
+        await locator.EvaluateAsync("""
+            el => {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """);
     }
 
     private static void AssertSelectedText(string expectedText, string actualText, string message)

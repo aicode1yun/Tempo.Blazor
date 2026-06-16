@@ -38,7 +38,15 @@ public sealed class DocumentEditorPhase11ImageUxE2ETests : DocumentEditorE2ETest
 
         await InsertImageViaUrlFlowAsync(page, "Phase 11 original alt");
 
-        var figure = page.Locator("[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image").Last;
+        var insertedFigure = page.Locator("[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image")
+            .Filter(new() { Has = page.Locator("img[alt='Phase 11 original alt']") })
+            .First;
+        var objectId = await insertedFigure.GetAttributeAsync("data-object-id")
+            ?? await insertedFigure.GetAttributeAsync("data-render-object-id")
+            ?? throw new InvalidOperationException("Inserted image did not expose a stable object id.");
+        var figure = page.Locator(
+            $"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-object-id='{objectId}'], " +
+            $"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-render-object-id='{objectId}']").First;
         await figure.ClickAsync();
         await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']"))
             .ToBeVisibleAsync(new() { Timeout = 10000 });

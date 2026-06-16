@@ -101,6 +101,7 @@ public static class DocumentEditorEndpoints
             request.ConcurrencyMode = request.ConcurrencyMode == DocumentEditorConcurrencyMode.Force
                 ? DocumentEditorConcurrencyMode.Force
                 : DocumentEditorConcurrencyMode.Optional;
+            PreserveStructuredImageBlocks(request);
             var result = await store.SaveAsync(request, cancellationToken);
             return result.Success ? Results.Ok(result) : Results.Conflict(result);
         });
@@ -129,6 +130,7 @@ public static class DocumentEditorEndpoints
             request.ConcurrencyMode = request.ConcurrencyMode == DocumentEditorConcurrencyMode.Force
                 ? DocumentEditorConcurrencyMode.Force
                 : DocumentEditorConcurrencyMode.Optional;
+            PreserveStructuredImageBlocks(request);
             var result = await store.SaveAsync(request, cancellationToken);
             return result.Success ? Results.Ok(result) : Results.Conflict(result);
         });
@@ -235,7 +237,8 @@ public static class DocumentEditorEndpoints
             {
                 DocumentId = imported.Document.DocumentId,
                 Document = imported.Document,
-                ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+                ConcurrencyMode = DocumentEditorConcurrencyMode.Force,
+                PreserveImageBlocks = HasImageBlocks(imported.Document)
             }, cancellationToken);
 
             return Results.Ok(imported);
@@ -268,7 +271,8 @@ public static class DocumentEditorEndpoints
             {
                 DocumentId = document.DocumentId,
                 Document = document,
-                ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+                ConcurrencyMode = DocumentEditorConcurrencyMode.Force,
+                PreserveImageBlocks = HasImageBlocks(document)
             }, cancellationToken);
             return Results.Ok(imported);
         }).DisableAntiforgery();
@@ -343,7 +347,8 @@ public static class DocumentEditorEndpoints
             {
                 DocumentId = document.DocumentId,
                 Document = document,
-                ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+                ConcurrencyMode = DocumentEditorConcurrencyMode.Force,
+                PreserveImageBlocks = HasImageBlocks(document)
             }, cancellationToken);
             return Results.Ok(imported);
         }).DisableAntiforgery();
@@ -619,6 +624,46 @@ public static class DocumentEditorEndpoints
         });
 
         return app;
+    }
+
+    private static void PreserveStructuredImageBlocks(DocumentEditorSaveRequest request)
+    {
+        if (request.Document is null)
+        {
+            return;
+        }
+
+        DocumentImagePersistence.RestoreImageBlocksFromDrawingRuns(request.Document);
+        request.PreserveImageBlocks = request.PreserveImageBlocks || HasImageBlocks(request.Document);
+    }
+
+    private static bool HasImageBlocks(DocumentEditorDocument document)
+        => EnumerateBlocks(document.Blocks).Any(block => block.Content is ImageBlockContent)
+        || document.HeadersFooters.SelectMany(headerFooter => EnumerateBlocks(headerFooter.Blocks)).Any(block => block.Content is ImageBlockContent)
+        || document.Notes.SelectMany(note => EnumerateBlocks(note.Blocks)).Any(block => block.Content is ImageBlockContent);
+
+    private static IEnumerable<DocumentBlock> EnumerateBlocks(IEnumerable<DocumentBlock>? blocks)
+    {
+        if (blocks is null)
+        {
+            yield break;
+        }
+
+        foreach (var block in blocks)
+        {
+            yield return block;
+            if (block.Content is not TableBlockContent table)
+            {
+                continue;
+            }
+
+            foreach (var nested in table.Rows
+                         .SelectMany(row => row.Cells ?? [])
+                         .SelectMany(cell => EnumerateBlocks(cell.Blocks)))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private static DocumentPdfExportOptions CreatePdfExportOptions(DocumentEditorDocument document)

@@ -43,6 +43,8 @@ export function markValue(mark) {
             ?? mark.Color
             ?? mark.href
             ?? mark.Href
+            ?? mark.link?.href
+            ?? mark.Link?.Href
             ?? null);
 }
 

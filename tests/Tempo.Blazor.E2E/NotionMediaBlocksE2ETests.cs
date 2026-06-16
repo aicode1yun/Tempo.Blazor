@@ -16,6 +16,10 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
 
     private async Task<IPage> OpenNotionEditorAsync()
     {
+        using var http = new HttpClient();
+        try { await http.PostAsync("https://localhost:5100/api/notion/reset", null); }
+        catch { /* API may not be running; ignore */ }
+
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
         await page.GotoAsync($"{BaseUrl}/notion-editor");
@@ -29,7 +33,7 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     /// Inserts a block via the slash menu. Searches for <paramref name="searchTerm"/>
     /// and clicks the item whose visible name matches <paramref name="itemName"/>.
     /// </summary>
-    private async Task InsertBlockViaSlashMenuAsync(IPage page, string searchTerm, string itemName)
+    private async Task<ILocator> InsertBlockViaSlashMenuAsync(IPage page, string searchTerm, string itemName, string expectedBlockType)
     {
         var para = page.Locator(".tm-notion-paragraph[contenteditable='true']").First;
         await para.WaitForAsync(new LocatorWaitForOptions { Timeout = 10000 });
@@ -37,6 +41,11 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
         await page.Keyboard.PressAsync("End");
         await page.Keyboard.PressAsync("Enter");
         await page.WaitForTimeoutAsync(1000);
+
+        var insertedBlockId = await page.EvaluateAsync<string?>("""
+            () => document.activeElement?.closest?.('[data-notion-block]')?.getAttribute('data-block-id')
+            """);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(insertedBlockId), "A fresh editable block should be focused after pressing Enter.");
 
         await page.Keyboard.TypeAsync("/");
         await page.WaitForSelectorAsync(".tm-notion-slash",
@@ -53,8 +62,17 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
                         .Filter(new() { Has = page.Locator(".tm-notion-slash__item-name").Filter(new() { HasText = itemName }) })
                         .First;
         await item.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
-        await item.ClickAsync();
+        await item.EvaluateAsync("el => el.click()");
         await page.WaitForTimeoutAsync(800);
+
+        var insertedBlock = page.Locator($"[data-block-id='{insertedBlockId}']").First;
+        await insertedBlock.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.WaitForFunctionAsync(
+            "args => document.querySelector(`[data-block-id='${args.id}']`)?.getAttribute('data-block-type') === args.type",
+            new { id = insertedBlockId, type = expectedBlockType },
+            new PageWaitForFunctionOptions { Timeout = 5000 });
+
+        return insertedBlock;
     }
 
     /// <summary>
@@ -135,11 +153,9 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task ImageBlock_Empty_ShowsUploadZone()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+        var imageBlock = await InsertBlockViaSlashMenuAsync(page, "image", "Image", "Image");
 
-        // Use the last image block (newly created) to avoid existing demo-data blocks
-        var lastImageBlock = page.Locator("[data-block-type='Image']").Last;
-        var uploadZone = lastImageBlock.Locator(".tm-notion-media-upload-zone--image");
+        var uploadZone = imageBlock.Locator(".tm-notion-media-upload-zone--image");
         await uploadZone.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
         Assert.IsTrue(await uploadZone.IsVisibleAsync(), "Upload zone should be visible for empty image block");
 
@@ -151,12 +167,11 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task ImageBlock_EnterUrl_DisplaysImage()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+        var imageBlock = await InsertBlockViaSlashMenuAsync(page, "image", "Image", "Image");
 
-        var lastImageBlock = page.Locator("[data-block-type='Image']").Last;
-        await SetMediaUrlViaDialogAsync(page, lastImageBlock, "https://via.placeholder.com/150");
+        await SetMediaUrlViaDialogAsync(page, imageBlock, "https://via.placeholder.com/150");
 
-        var img = lastImageBlock.Locator(".tm-notion-image-block__img");
+        var img = imageBlock.Locator(".tm-notion-image-block__img");
         await img.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 8000 });
         var src = await img.GetAttributeAsync("src");
         Assert.IsTrue(!string.IsNullOrEmpty(src), "Image src should be set");
@@ -209,14 +224,13 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task VideoBlock_EnterUrl_ShowsEmbed()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "video", "Video");
+        var videoBlock = await InsertBlockViaSlashMenuAsync(page, "video", "Video", "Video");
 
-        var lastVideoBlock = page.Locator("[data-block-type='Video']").Last;
-        await SetMediaUrlViaDialogAsync(page, lastVideoBlock, "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+        await SetMediaUrlViaDialogAsync(page, videoBlock, "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
 
         // The block renders either an iframe (YouTube/Vimeo/Loom) or a native <video> tag.
-        var iframe = lastVideoBlock.Locator(".tm-notion-video-block__embed");
-        var video  = lastVideoBlock.Locator(".tm-notion-video-block__video");
+        var iframe = videoBlock.Locator(".tm-notion-video-block__embed");
+        var video  = videoBlock.Locator(".tm-notion-video-block__video");
 
         // Use CountAsync first to stabilise the locator before attribute assertions
         var iframeCount = await iframe.CountAsync();
@@ -248,16 +262,15 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task BookmarkBlock_EnterUrl_ShowsPreview()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "bookmark", "Web bookmark");
+        var bookmarkBlock = await InsertBlockViaSlashMenuAsync(page, "bookmark", "Web bookmark", "Bookmark");
 
-        var lastBlock = page.Locator("[data-block-type='Bookmark']").Last;
-        await SetBookmarkUrlAsync(page, lastBlock, "https://example.com");
+        await SetBookmarkUrlAsync(page, bookmarkBlock, "https://example.com");
 
-        var card = lastBlock.Locator(".tm-notion-bookmark-block__card");
+        var card = bookmarkBlock.Locator(".tm-notion-bookmark-block__card");
         await card.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
         Assert.IsTrue(await card.IsVisibleAsync(), "Bookmark card should be visible after resolving URL");
 
-        var domain = lastBlock.Locator(".tm-notion-bookmark-block__domain");
+        var domain = bookmarkBlock.Locator(".tm-notion-bookmark-block__domain");
         var domainText = await domain.InnerTextAsync();
         StringAssert.Contains(domainText, "example.com", "Bookmark domain should display the URL host");
 
@@ -273,12 +286,11 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task EmbedBlock_EnterUrl_ShowsIframe()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "embed", "Embed");
+        var embedBlock = await InsertBlockViaSlashMenuAsync(page, "embed", "Embed", "Embed");
 
-        var lastBlock = page.Locator("[data-block-type='Embed']").Last;
-        await SetEmbedUrlAsync(page, lastBlock, "https://example.com");
+        await SetEmbedUrlAsync(page, embedBlock, "https://example.com");
 
-        var iframe = lastBlock.Locator(".tm-notion-embed-block__frame");
+        var iframe = embedBlock.Locator(".tm-notion-embed-block__frame");
         await iframe.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
         Assert.IsTrue(await iframe.IsVisibleAsync(), "Embed iframe should be visible after confirming URL");
         var src = await iframe.GetAttributeAsync("src");
@@ -296,12 +308,11 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task FileBlock_Shows_DownloadLink()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "file", "File");
+        var fileBlock = await InsertBlockViaSlashMenuAsync(page, "file", "File", "File");
 
-        var lastBlock = page.Locator("[data-block-type='File']").Last;
-        await SetMediaUrlViaDialogAsync(page, lastBlock, "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
+        await SetMediaUrlViaDialogAsync(page, fileBlock, "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
 
-        var downloadLink = lastBlock.Locator(".tm-notion-file-block__download");
+        var downloadLink = fileBlock.Locator(".tm-notion-file-block__download");
         await downloadLink.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
         Assert.IsTrue(await downloadLink.IsVisibleAsync(), "Download link should be visible for file block");
         var href = await downloadLink.GetAttributeAsync("href");
@@ -320,16 +331,15 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task AudioBlock_EnterUrl_ShowsPlayer()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "audio", "Audio");
+        var audioBlock = await InsertBlockViaSlashMenuAsync(page, "audio", "Audio", "Audio");
 
-        var lastBlock = page.Locator("[data-block-type='Audio']").Last;
-        await SetMediaUrlViaDialogAsync(page, lastBlock, "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3");
+        await SetMediaUrlViaDialogAsync(page, audioBlock, "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3");
 
         // SoundCloud URL would render iframe; generic MP3 renders native <audio>
         // With our detector the URL is generic, so we expect <audio> element.
         await page.WaitForTimeoutAsync(800);
-        var audio = lastBlock.Locator(".tm-notion-audio-block__audio");
-        var embed = lastBlock.Locator(".tm-notion-audio-block__embed");
+        var audio = audioBlock.Locator(".tm-notion-audio-block__audio");
+        var embed = audioBlock.Locator(".tm-notion-audio-block__embed");
 
         var audioCount = await audio.CountAsync();
         var embedCount = await embed.CountAsync();
@@ -349,10 +359,9 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task MediaLibrary_LibraryTab_IsVisible()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+        var imageBlock = await InsertBlockViaSlashMenuAsync(page, "image", "Image", "Image");
 
-        var lastBlock = page.Locator("[data-block-type='Image']").Last;
-        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        var uploadZone = imageBlock.Locator(".tm-notion-media-upload-zone").First;
         await uploadZone.ClickAsync();
 
         var dialog = page.Locator(".tm-media-dialog");
@@ -369,10 +378,9 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task MediaLibrary_LibraryTab_ShowsItems()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+        var imageBlock = await InsertBlockViaSlashMenuAsync(page, "image", "Image", "Image");
 
-        var lastBlock = page.Locator("[data-block-type='Image']").Last;
-        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        var uploadZone = imageBlock.Locator(".tm-notion-media-upload-zone").First;
         await uploadZone.ClickAsync();
 
         var dialog = page.Locator(".tm-media-dialog");
@@ -394,10 +402,9 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task MediaLibrary_SelectItem_SetsImageOnBlock()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+        var imageBlock = await InsertBlockViaSlashMenuAsync(page, "image", "Image", "Image");
 
-        var lastBlock = page.Locator("[data-block-type='Image']").Last;
-        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        var uploadZone = imageBlock.Locator(".tm-notion-media-upload-zone").First;
         await uploadZone.ClickAsync();
 
         var dialog = page.Locator(".tm-media-dialog");
@@ -417,7 +424,7 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
         var dialogVisible = await dialogAfter.IsVisibleAsync();
         Assert.IsFalse(dialogVisible, "Dialog should close after selecting a library item");
 
-        var img = lastBlock.Locator(".tm-notion-image-block__img");
+        var img = imageBlock.Locator(".tm-notion-image-block__img");
         await img.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
 
         await TakeScreenshotAsync(page, "media_library_image_set");
@@ -428,10 +435,9 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
     public async Task MediaLibrary_Search_FiltersItems()
     {
         var page = await OpenNotionEditorAsync();
-        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+        var imageBlock = await InsertBlockViaSlashMenuAsync(page, "image", "Image", "Image");
 
-        var lastBlock = page.Locator("[data-block-type='Image']").Last;
-        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        var uploadZone = imageBlock.Locator(".tm-notion-media-upload-zone").First;
         await uploadZone.ClickAsync();
 
         var dialog = page.Locator(".tm-media-dialog");

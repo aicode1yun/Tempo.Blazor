@@ -16,6 +16,14 @@ public class NotionBlockEditingE2ETests : WasmTestBase
 
     private async Task<IPage> OpenNotionEditorAsync(bool grantClipboard = false)
     {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler);
+        try { await http.PostAsync("https://localhost:5100/api/notion/reset", null); }
+        catch { /* API may already be in a clean state when running against a different host. */ }
+
         var context = await CreateContextAsync();
         if (grantClipboard)
             await context.GrantPermissionsAsync(["clipboard-read", "clipboard-write"]);
@@ -32,7 +40,7 @@ public class NotionBlockEditingE2ETests : WasmTestBase
     /// empty block, then types / to open the slash menu, types searchTerm to filter,
     /// and clicks the first matching item.
     /// </summary>
-    private async Task InsertBlockViaSlashMenuAsync(IPage page, string searchTerm)
+    private async Task<ILocator> InsertBlockViaSlashMenuAsync(IPage page, string searchTerm)
     {
         var para = page.Locator(".tm-notion-paragraph[contenteditable='true']").First;
         await para.WaitForAsync(new LocatorWaitForOptions { Timeout = 10000 });
@@ -59,6 +67,12 @@ public class NotionBlockEditingE2ETests : WasmTestBase
         await firstItem.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
         await firstItem.ClickAsync();
         await page.WaitForTimeoutAsync(800);
+
+        var focusedBlock = page.Locator(".tm-notion-block--focused").First;
+        await focusedBlock.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
+        var blockId = await focusedBlock.GetAttributeAsync("data-block-id");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(blockId), "Inserted block should expose data-block-id.");
+        return page.Locator($"[data-block-id='{blockId}']").First;
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -271,16 +285,15 @@ public class NotionBlockEditingE2ETests : WasmTestBase
     {
         var page = await OpenNotionEditorAsync();
 
-        await InsertBlockViaSlashMenuAsync(page, "todo");
+        var todoBlock = await InsertBlockViaSlashMenuAsync(page, "todo");
 
         // The checkbox input is inside an aria-hidden span; use Force to bypass actionability
-        var checkInput = page.Locator(".tm-notion-todo__input").Last;
+        var checkInput = todoBlock.Locator(".tm-notion-todo__input").First;
         await checkInput.WaitForAsync(new LocatorWaitForOptions { Timeout = 10000 });
         await checkInput.ClickAsync(new LocatorClickOptions { Force = true });
         await page.WaitForTimeoutAsync(600);
 
-        var todoLabel = page.Locator("label.tm-notion-todo").Last;
-        var cls = await todoLabel.GetAttributeAsync("class") ?? "";
+        var cls = await todoBlock.Locator(".tm-notion-todo").First.GetAttributeAsync("class") ?? "";
         Assert.IsTrue(cls.Contains("tm-notion-todo--checked"),
             $"Todo item should be checked. Classes: {cls}");
         await TakeScreenshotAsync(page, "todo_checked");
@@ -292,9 +305,9 @@ public class NotionBlockEditingE2ETests : WasmTestBase
     {
         var page = await OpenNotionEditorAsync();
 
-        await InsertBlockViaSlashMenuAsync(page, "todo");
+        var todoBlock = await InsertBlockViaSlashMenuAsync(page, "todo");
 
-        var checkInput = page.Locator(".tm-notion-todo__input").Last;
+        var checkInput = todoBlock.Locator(".tm-notion-todo__input").First;
         await checkInput.WaitForAsync(new LocatorWaitForOptions { Timeout = 10000 });
 
         // Click once to check
@@ -305,8 +318,7 @@ public class NotionBlockEditingE2ETests : WasmTestBase
         await checkInput.ClickAsync(new LocatorClickOptions { Force = true });
         await page.WaitForTimeoutAsync(600);
 
-        var todoLabel = page.Locator("label.tm-notion-todo").Last;
-        var cls = await todoLabel.GetAttributeAsync("class") ?? "";
+        var cls = await todoBlock.Locator(".tm-notion-todo").First.GetAttributeAsync("class") ?? "";
         Assert.IsFalse(cls.Contains("tm-notion-todo--checked"),
             $"Todo item should be unchecked after second click. Classes: {cls}");
         await TakeScreenshotAsync(page, "todo_unchecked");

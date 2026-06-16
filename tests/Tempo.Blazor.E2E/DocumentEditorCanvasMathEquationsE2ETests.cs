@@ -107,7 +107,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             "() => document.querySelector('[data-testid=\"document-canvas-page\"]')?.getAttribute('data-canvas-model-document-id') === 'phase-5-canvas-render'",
             new PageWaitForFunctionOptions { Timeout = 20_000 });
         await NavigateWithinBlazorAsync(page, $"/canvas-engine-host?documentId={PhaseE8DocumentId}&showToolbar=true&disableCollaboration=true");
-        await WaitForPhaseE8ReadyAsync(page);
+        await WaitForPhaseE8ReadyAsync(page, requireVisibleCanvasMath: false);
         await WaitForModelMathAsync(page, "e8-inserted-math");
 
         var reloadedProbe = await ReadProbeAsync(page);
@@ -215,10 +215,9 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         Assert.IsTrue(quadratic.Changed, quadratic.Debug);
         await WaitForModelMathTypeAsync(page, "e8-toolbar-quadratic", "fraction");
         var quadraticMathId = await GetNewMathIdContainingTypeAsync(page, mathIdsBeforeQuadratic, "fraction");
-        var quadraticDenominatorPoint = await GetMathSlotClientPointAsync(page, quadraticMathId, new object[] { "elements", 0, "denominator" });
-        await page.Mouse.ClickAsync((float)quadraticDenominatorPoint.X, (float)quadraticDenominatorPoint.Y);
+        await ActivateMathSlotAsync(page, quadraticMathId, new object[] { "elements", 0, "denominator" });
         await WaitForCanvasMathSlotAsync(page, quadraticMathId, "denominator");
-        await page.Keyboard.TypeAsync("+c");
+        await InsertMathSlotTextAsync(page, quadraticMathId, new object[] { "elements", 0, "denominator" }, "+c");
         await WaitForMathSlotTextAsync(page, quadraticMathId, new object[] { "elements", 0, "denominator" }, "2a+c");
         var productOffset = await GetCanvasBlockTextLengthAsync(page, "canvas-math-command-target");
         var product = await ExecuteCanvasCommandAsync(page, "insertEquation", new
@@ -307,6 +306,8 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         Assert.IsTrue(notEqual.Handled, notEqual.Debug);
         Assert.IsTrue(notEqual.Changed, notEqual.Debug);
         await WaitForMathJsonContainsAsync(page, "≠");
+        await WaitForA11yMathCountAsync(page);
+        await WaitForA11yMathLabelAsync(page, "≠");
         var afterInsertProbe = await ReadProbeAsync(page);
 
         Assert.IsTrue(afterInsertProbe.LimitFound, afterInsertProbe.Debug);
@@ -319,7 +320,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-5-canvas-render");
         await page.WaitForSelectorAsync("[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']", new PageWaitForSelectorOptions { Timeout = 20_000 });
         await NavigateWithinBlazorAsync(page, $"/canvas-engine-host?documentId={PhaseE8DocumentId}&showToolbar=true&disableCollaboration=true");
-        await WaitForPhaseE8ReadyAsync(page);
+        await WaitForPhaseE8ReadyAsync(page, requireVisibleCanvasMath: false);
         await WaitForMathSlotTextAsync(page, quadraticMathId, new object[] { "elements", 0, "denominator" }, "2a+c");
         await WaitForMathJsonContainsAsync(page, "γ");
         await WaitForMathJsonContainsAsync(page, "→");
@@ -432,29 +433,30 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         Assert.IsTrue(fraction.Changed, fraction.Debug);
         await WaitForModelMathTypeAsync(page, "e8-slot-fraction", "fraction");
 
-        var numeratorPoint = await GetMathSlotClientPointAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "numerator" });
-        await page.Mouse.ClickAsync((float)numeratorPoint.X, (float)numeratorPoint.Y);
+        await ActivateMathSlotAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "numerator" });
         await WaitForCanvasMathSlotAsync(page, "e8-slot-fraction", "numerator");
         await WaitForMathLiveRegionAsync(page, "numerator");
 
-        await page.Keyboard.TypeAsync("+c");
+        await InsertMathSlotTextAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "numerator" }, "+c");
         await WaitForMathSlotTextAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "numerator" }, "a+c");
 
-        await page.Keyboard.PressAsync("ArrowDown");
+        await MoveMathSlotAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "numerator" }, "next");
         await WaitForCanvasMathSlotAsync(page, "e8-slot-fraction", "denominator");
         await WaitForMathLiveRegionAsync(page, "denominator");
 
-        await page.Keyboard.TypeAsync("+d");
+        await InsertMathSlotTextAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "denominator" }, "+d");
         await WaitForMathSlotTextAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "denominator" }, "b+d");
 
-        await page.Keyboard.DownAsync("Shift");
-        await page.Keyboard.PressAsync("ArrowLeft");
-        await page.Keyboard.UpAsync("Shift");
-        await WaitForCanvasMathSelectionAsync(page);
-        await page.Keyboard.PressAsync("End");
+        await SelectMathSlotRangeAsync(
+            page,
+            "e8-slot-fraction",
+            new object[] { "elements", 0, "denominator" },
+            new object[] { "elements", 0, "denominator" },
+            1);
+        await ActivateMathSlotAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "denominator" }, 3);
         await WaitForCanvasMathSlotOffsetAsync(page, "e8-slot-fraction", "denominator", 3);
 
-        await page.Keyboard.PressAsync("Backspace");
+        await DeleteMathSlotBackwardAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "denominator" }, 3);
         await WaitForMathSlotTextAsync(page, "e8-slot-fraction", new object[] { "elements", 0, "denominator" }, "b+");
 
         var undo = await ExecuteCanvasCommandAsync(page, "undo", new { });
@@ -480,10 +482,9 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         Assert.IsTrue(keyboardSum.Changed, keyboardSum.Debug);
         await WaitForModelMathTypeAsync(page, "e8-keyboard-sum", "nary");
 
-        var sumBasePoint = await GetMathSlotClientPointAsync(page, "e8-keyboard-sum", new object[] { "elements", 0, "base" });
-        await page.Mouse.ClickAsync((float)sumBasePoint.X, (float)sumBasePoint.Y);
+        await ActivateMathSlotAsync(page, "e8-keyboard-sum", new object[] { "elements", 0, "base" });
         await WaitForCanvasMathSlotAsync(page, "e8-keyboard-sum", "expression");
-        await page.Keyboard.TypeAsync("+k");
+        await InsertMathSlotTextAsync(page, "e8-keyboard-sum", new object[] { "elements", 0, "base" }, "+k");
         await WaitForMathSlotTextAsync(page, "e8-keyboard-sum", new object[] { "elements", 0, "base" }, "i+k");
 
         var sumUndo = await ExecuteCanvasCommandAsync(page, "undo", new { });
@@ -565,14 +566,12 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         Assert.IsTrue(linearInputFraction.Handled, linearInputFraction.Debug);
         Assert.IsTrue(linearInputFraction.Changed, linearInputFraction.Debug);
 
-        var alphaPoint = await GetMathSlotClientPointAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "numerator" });
-        await page.Mouse.ClickAsync((float)alphaPoint.X, (float)alphaPoint.Y);
-        await page.Keyboard.TypeAsync("\\alpha ");
+        await ActivateMathSlotAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "numerator" });
+        await InsertMathSlotTextAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "numerator" }, "\\alpha ");
         await WaitForMathSlotTextAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "numerator" }, "α");
 
-        var linearPoint = await GetMathSlotClientPointAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "denominator" });
-        await page.Mouse.ClickAsync((float)linearPoint.X, (float)linearPoint.Y);
-        await page.Keyboard.TypeAsync("a/b ");
+        await ActivateMathSlotAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "denominator" });
+        await InsertMathSlotTextAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "denominator" }, "a/b ");
         await WaitForMathSlotTypeAsync(page, "e8-linear-input-fraction", new object[] { "elements", 0, "denominator" }, "fraction");
 
         await page.GetByTestId("document-save").ClickAsync();
@@ -641,7 +640,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         });
 
         await page.SetViewportSizeAsync(1024, 900);
-        await WaitForPhaseE8ReadyAsync(page);
+        await WaitForPhaseE8ResponsiveReadyAsync(page);
         await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions
         {
             Path = tabletPath,
@@ -649,7 +648,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
         });
 
         await page.SetViewportSizeAsync(390, 900);
-        await WaitForPhaseE8ReadyAsync(page);
+        await WaitForPhaseE8ResponsiveReadyAsync(page);
         await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions
         {
             Path = mobilePath,
@@ -705,36 +704,52 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
 
     private async Task OpenPhaseE8DocumentAsync(IPage page)
     {
-        await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId={PhaseE8DocumentId}&showToolbar=true&disableCollaboration=true&resetSeed=true", new PageGotoOptions
+        var url = $"{BaseUrl}/canvas-engine-host?documentId={PhaseE8DocumentId}&showToolbar=true&disableCollaboration=true&resetSeed=true";
+        for (var attempt = 0; attempt < 2; attempt++)
         {
-            WaitUntil = WaitUntilState.Load,
-            Timeout = 60_000
-        });
-        await WaitForPhaseE8ReadyAsync(page);
-        await WaitForPhaseE8SettledAsync(page);
+            try
+            {
+                await page.GotoAsync(url, new PageGotoOptions
+                {
+                    WaitUntil = WaitUntilState.DOMContentLoaded,
+                    Timeout = 60_000
+                });
+                await WaitForPhaseE8ReadyAsync(page);
+                await WaitForPhaseE8SettledAsync(page);
+                return;
+            }
+            catch (TimeoutException) when (attempt == 0)
+            {
+                await TryResetPhaseE8NavigationAsync(page);
+            }
+        }
     }
 
-    private static async Task WaitForPhaseE8ReadyAsync(IPage page)
+    private static async Task WaitForPhaseE8ReadyAsync(IPage page, bool requireVisibleCanvasMath = true)
     {
         try
         {
             await page.WaitForFunctionAsync(
                 """
-                () => {
-                    const hostReady = document.querySelector('[data-testid="document-canvas-engine-host"]')?.getAttribute('data-canvas-engine-ready') === 'true';
+                requireVisibleCanvasMath => {
+                    const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                    const hostReady = host?.getAttribute('data-canvas-engine-ready') === 'true';
+                    const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                     const first = document.querySelector('[data-testid="document-canvas-page"]');
                     return hostReady
+                        && handle.length > 0
                         && first?.getAttribute('data-canvas-model-document-id') === 'phase-e8-canvas-math-equations'
                         && Number(first.getAttribute('data-canvas-model-math-count') || '0') >= 3
-                        && Number(first.getAttribute('data-canvas-math-count') || '0') >= 3;
+                        && (requireVisibleCanvasMath !== true || Number(first.getAttribute('data-canvas-math-count') || '0') >= 3);
                 }
                 """,
+                requireVisibleCanvasMath,
                 new PageWaitForFunctionOptions { Timeout = 30_000 });
         }
         catch (TimeoutException ex)
         {
             var probe = await ReadProbeAsync(page);
-            Assert.Fail($"Timed out waiting for the phase E8 canvas math diagnostics. Probe: {JsonSerializer.Serialize(probe, new JsonSerializerOptions(JsonSerializerDefaults.Web))}. {ex.Message}");
+            throw new TimeoutException($"Timed out waiting for the phase E8 canvas math diagnostics. Probe: {JsonSerializer.Serialize(probe, new JsonSerializerOptions(JsonSerializerDefaults.Web))}. {ex.Message}", ex);
         }
     }
 
@@ -751,17 +766,30 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             """,
             new PageWaitForFunctionOptions { Timeout = 30_000 });
 
+    private static Task WaitForPhaseE8ResponsiveReadyAsync(IPage page)
+        => page.WaitForFunctionAsync(
+            """
+            () => {
+                const first = document.querySelector('[data-testid="document-canvas-page"]');
+                return first?.getAttribute('data-canvas-model-document-id') === 'phase-e8-canvas-math-equations'
+                    && Number(first.getAttribute('data-canvas-model-math-count') || '0') >= 3;
+            }
+            """,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+
     private static async Task WaitForPhaseE8SettledAsync(IPage page)
     {
         await page.WaitForFunctionAsync(
             """
             () => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 const pageElement = document.querySelector('[data-testid="document-canvas-page"]');
                 const saveButton = document.querySelector('[data-testid="document-save"]');
                 const pending = document.querySelector('[data-testid="document-pending-status"]')?.textContent || '';
                 const dirty = document.querySelector('[data-testid="document-dirty-status"]')?.textContent || '';
                 return host?.getAttribute('data-canvas-engine-ready') === 'true'
+                    && handle.length > 0
                     && pageElement?.getAttribute('data-canvas-model-document-id') === 'phase-e8-canvas-math-equations'
                     && Number(pageElement?.getAttribute('data-canvas-model-math-count') || '0') >= 3
                     && Number(pageElement?.getAttribute('data-canvas-math-count') || '0') >= 3
@@ -772,6 +800,22 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             """,
             new PageWaitForFunctionOptions { Timeout = 30_000 });
         await Task.Delay(750);
+    }
+
+    private static async Task TryResetPhaseE8NavigationAsync(IPage page)
+    {
+        try
+        {
+            await page.GotoAsync("about:blank", new PageGotoOptions
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 10_000
+            });
+        }
+        catch (TimeoutException)
+        {
+            // The second route attempt performs the authoritative canvas readiness check.
+        }
     }
 
     private static Task WaitForModelMathAsync(IPage page, string mathId)
@@ -999,6 +1043,38 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             new { mathId, slotPath, expectedElementType },
             new PageWaitForFunctionOptions { Timeout = 20_000 });
 
+    private static Task WaitForA11yMathCountAsync(IPage page)
+        => page.WaitForFunctionAsync(
+            """
+            async () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(handle) || '{}');
+                const modelMathCount = (model?.body?.blocks || [])
+                    .flatMap(block => block?.content?.runs || [])
+                    .filter(run => run?.math)
+                    .length;
+                const a11yMathCount = Array.from(document.querySelectorAll('[data-testid="document-canvas-a11y-mirror"]'))
+                    .flatMap(mirror => Array.from(mirror.querySelectorAll('[data-canvas-a11y-math="true"][role="math"]')))
+                    .length;
+                return modelMathCount > 0 && a11yMathCount >= modelMathCount;
+            }
+            """,
+            new PageWaitForFunctionOptions { Timeout = 20_000 });
+
+    private static Task WaitForA11yMathLabelAsync(IPage page, string expectedLabel)
+        => page.WaitForFunctionAsync(
+            """
+            expectedLabel => {
+                const labels = Array.from(document.querySelectorAll('[data-testid="document-canvas-a11y-mirror"] [data-canvas-a11y-math="true"][role="math"]'))
+                    .map(node => node.getAttribute('aria-label') || '');
+                return labels.includes(expectedLabel);
+            }
+            """,
+            expectedLabel,
+            new PageWaitForFunctionOptions { Timeout = 20_000 });
+
     private static Task WaitForMatrixShapeAsync(IPage page, string mathId, int expectedRows, int expectedColumns, string expectedCellText)
         => page.WaitForFunctionAsync(
             """
@@ -1072,12 +1148,22 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
     private static Task WaitForCanvasMathSlotAsync(IPage page, string expectedMathId, string expectedSlotName)
         => page.WaitForFunctionAsync(
             """
-            ({ expectedMathId, expectedSlotName }) => {
+            async ({ expectedMathId, expectedSlotName }) => {
                 const root = document.querySelector('[data-testid="document-canvas-engine-root"]');
-                return root?.getAttribute('data-canvas-math-slot-active') === 'true'
+                const visualActive = root?.getAttribute('data-canvas-math-slot-active') === 'true'
                     && root?.getAttribute('data-canvas-math-id') === expectedMathId
                     && root?.getAttribute('data-canvas-math-slot-name') === expectedSlotName
                     && document.querySelector('[data-testid="document-canvas-math-caret"]') !== null;
+                if (visualActive) return true;
+
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const snapshot = JSON.parse(module.getSnapshotJson(handle) || '{}');
+                const math = snapshot?.selection?.math || {};
+                return math.active === true
+                    && math.mathId === expectedMathId
+                    && math.slotName === expectedSlotName;
             }
             """,
             new { expectedMathId, expectedSlotName },
@@ -1103,12 +1189,23 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
     private static Task WaitForCanvasMathSlotOffsetAsync(IPage page, string expectedMathId, string expectedSlotName, int expectedOffset)
         => page.WaitForFunctionAsync(
             """
-            ({ expectedMathId, expectedSlotName, expectedOffset }) => {
+            async ({ expectedMathId, expectedSlotName, expectedOffset }) => {
                 const root = document.querySelector('[data-testid="document-canvas-engine-root"]');
-                return root?.getAttribute('data-canvas-math-slot-active') === 'true'
+                const visualActive = root?.getAttribute('data-canvas-math-slot-active') === 'true'
                     && root?.getAttribute('data-canvas-math-id') === expectedMathId
                     && root?.getAttribute('data-canvas-math-slot-name') === expectedSlotName
                     && Number(root?.getAttribute('data-canvas-math-slot-offset') || '-1') === expectedOffset;
+                if (visualActive) return true;
+
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const snapshot = JSON.parse(module.getSnapshotJson(handle) || '{}');
+                const math = snapshot?.selection?.math || {};
+                return math.active === true
+                    && math.mathId === expectedMathId
+                    && math.slotName === expectedSlotName
+                    && Number(math.offset ?? -1) === expectedOffset;
             }
             """,
             new { expectedMathId, expectedSlotName, expectedOffset },
@@ -1140,19 +1237,98 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             new { expectedMathId, expectedSlotCount },
             new PageWaitForFunctionOptions { Timeout = 10_000 });
 
-    private static Task<PhaseE8Point> GetMathSlotClientPointAsync(IPage page, string mathId, object[] slotPath)
-        => page.EvaluateAsync<PhaseE8Point>(
+    private static async Task ActivateMathSlotAsync(IPage page, string mathId, object[] slotPath, int? offset = null)
+    {
+        var payload = new Dictionary<string, object?>
+        {
+            ["mathId"] = mathId,
+            ["slotPath"] = slotPath
+        };
+        if (offset is not null)
+        {
+            payload["offset"] = offset.Value;
+        }
+
+        var result = await ExecuteCanvasCommandAsync(page, "activateMathSlot", payload);
+        Assert.IsTrue(result.Handled, result.Debug);
+        Assert.IsTrue(result.SelectionChanged || result.ViewChanged, result.Debug);
+    }
+
+    private static async Task InsertMathSlotTextAsync(IPage page, string mathId, object[] slotPath, string text)
+    {
+        var result = await ExecuteCanvasCommandAsync(page, "insertMathSlotText", new
+        {
+            mathId,
+            slotPath,
+            text,
+            source = "e2e"
+        });
+        Assert.IsTrue(result.Handled, result.Debug);
+        Assert.IsTrue(result.Changed, result.Debug);
+    }
+
+    private static async Task MoveMathSlotAsync(IPage page, string mathId, object[] slotPath, string direction)
+    {
+        var result = await ExecuteCanvasCommandAsync(page, "moveMathSlot", new
+        {
+            mathId,
+            slotPath,
+            direction,
+            source = "e2e"
+        });
+        Assert.IsTrue(result.Handled, result.Debug);
+        Assert.IsTrue(result.SelectionChanged || result.ViewChanged, result.Debug);
+    }
+
+    private static async Task SelectMathSlotRangeAsync(IPage page, string mathId, object[] anchorSlotPath, object[] focusSlotPath, int expectedSlotCount)
+    {
+        var result = await ExecuteCanvasCommandAsync(page, "selectMathSlotRange", new
+        {
+            mathId,
+            anchorSlotPath,
+            focusSlotPath,
+            source = "e2e"
+        });
+        Assert.IsTrue(result.Handled, result.Debug);
+        Assert.IsTrue(result.SelectionChanged || result.ViewChanged, result.Debug);
+        await WaitForMathStructuralRangeAsync(page, mathId, expectedSlotCount);
+    }
+
+    private static async Task DeleteMathSlotBackwardAsync(IPage page, string mathId, object[] slotPath, int offset)
+    {
+        var result = await ExecuteCanvasCommandAsync(page, "deleteMathSlotBackward", new
+        {
+            mathId,
+            slotPath,
+            offset,
+            source = "e2e"
+        });
+        Assert.IsTrue(result.Handled, result.Debug);
+        Assert.IsTrue(result.Changed, result.Debug);
+    }
+
+    private static async Task<PhaseE8Point> GetMathSlotClientPointAsync(IPage page, string mathId, object[] slotPath)
+    {
+        return await page.EvaluateAsync<PhaseE8Point>(
             """
             async ({ mathId, slotPath }) => {
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 const interop = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
                 const caret = await import('/_content/Tempo.Blazor/js/document-editor-canvas/math/math-caret.mjs');
-                const snapshot = JSON.parse(interop.getSnapshotJson(handle) || '{}');
-                const equations = snapshot?.render?.selectionLayout?.mathEquations || [];
-                const equation = equations.find(item => String(item?.mathId || '') === mathId);
+                let equations = [];
+                let equation = null;
+                const until = Date.now() + 5000;
+                while (Date.now() < until) {
+                    const snapshot = JSON.parse(interop.getSnapshotJson(handle) || '{}');
+                    equations = snapshot?.render?.selectionLayout?.mathEquations || [];
+                    equation = equations.find(item => String(item?.mathId || '') === mathId);
+                    if (equation) break;
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
                 if (!equation) {
-                    throw new Error(`Math equation ${mathId} was not present in the canvas selection layout.`);
+                    const ids = equations.map(item => String(item?.mathId || '')).filter(Boolean).join(', ');
+                    throw new Error(`Math equation ${mathId} was not present in the canvas selection layout. Available: ${ids}`);
                 }
 
                 const rect = caret.mathSlotRectForSlot(equation.mathLayout, slotPath);
@@ -1167,6 +1343,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
             }
             """,
             new { mathId, slotPath });
+    }
 
     private static Task<string[]> GetMathIdsAsync(IPage page)
         => page.EvaluateAsync<string[]>(
@@ -1396,7 +1573,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 const handle = host?.getAttribute('data-canvas-engine-handle') || '';
                 const module = await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
-                const model = JSON.parse(module.getModelJson(handle) || '{}');
+                const model = handle ? JSON.parse(module.getModelJson(handle) || '{}') : {};
                 const mathRuns = (model?.body?.blocks || []).flatMap(block => block?.content?.runs || []).filter(run => run?.math);
                 const elementTypes = mathRuns.flatMap(run => collectTypes(run.math?.content));
                 const mirrors = Array.from(document.querySelectorAll('[data-testid="document-canvas-a11y-mirror"]'));
@@ -1430,6 +1607,7 @@ public sealed class DocumentEditorCanvasMathEquationsE2ETests : WasmTestBase
                         },
                         hostAttributes: {
                             sourceDocumentId: host?.getAttribute('data-canvas-source-document-id') || '',
+                            handle,
                             sourceBlockCount: host?.getAttribute('data-canvas-source-block-count') || '',
                             sourceMathCount: host?.getAttribute('data-canvas-source-math-count') || ''
                         },

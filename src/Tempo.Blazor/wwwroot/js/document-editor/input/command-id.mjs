@@ -44,6 +44,8 @@ const ALIASES = Object.freeze({
     'set-highlight-color': 'backgroundColor',
     'sethighlightcolor': 'backgroundColor',
     'link': 'link',
+    'remove-link': 'removeLink',
+    'removelink': 'removeLink',
     'clear-formatting': 'clearFormatting',
     'clearformatting': 'clearFormatting',
     'remove-formatting': 'clearFormatting',

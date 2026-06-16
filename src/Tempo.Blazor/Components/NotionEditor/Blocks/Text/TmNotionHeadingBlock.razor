@@ -28,6 +28,7 @@
         {
             <h1 @key="ReadOnly"
                 class="tm-notion-h1 tm-notion-editable tm-notion-editable--readonly @_alignClass @_bgClass"
+                contenteditable="false"
                 data-bg="@Content?.BackgroundColor"
                 data-color="@Content?.TextColor">
                 @((MarkupString)(Content?.Html ?? string.Empty))
@@ -55,6 +56,7 @@
         {
             <h2 @key="ReadOnly"
                 class="tm-notion-h2 tm-notion-editable tm-notion-editable--readonly @_alignClass @_bgClass"
+                contenteditable="false"
                 data-bg="@Content?.BackgroundColor"
                 data-color="@Content?.TextColor">
                 @((MarkupString)(Content?.Html ?? string.Empty))
@@ -82,6 +84,7 @@
         {
             <h3 @key="ReadOnly"
                 class="tm-notion-h3 tm-notion-editable tm-notion-editable--readonly @_alignClass @_bgClass"
+                contenteditable="false"
                 data-bg="@Content?.BackgroundColor"
                 data-color="@Content?.TextColor">
                 @((MarkupString)(Content?.Html ?? string.Empty))

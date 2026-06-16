@@ -35,6 +35,10 @@ public class SigningQualityE2ETests : WasmTestBase
         await panel.Locator(".tm-signing-form-runner__next").FocusAsync();
         await page.Keyboard.PressAsync("Enter");
 
+        await Assertions.Expect(panel.Locator(".tm-signing-step-shell__title")).ToContainTextAsync("Delivery method");
+        await panel.Locator(".tm-signing-form-runner__next").FocusAsync();
+        await page.Keyboard.PressAsync("Enter");
+
         await Assertions.Expect(panel.Locator(".tm-signing-step-shell__title")).ToContainTextAsync("Amount");
         await panel.Locator("input.tm-signing-number-step__input").FocusAsync();
         await page.Keyboard.InsertTextAsync("100");
@@ -151,18 +155,39 @@ public class SigningQualityE2ETests : WasmTestBase
         await page.EvaluateAsync("() => { document.documentElement.style.zoom = '0.9'; window.dispatchEvent(new Event('resize')); }");
         await page.WaitForTimeoutAsync(300);
 
-        var after = await field.BoundingBoxAsync();
-        Assert.IsNotNull(after);
-        Assert.IsTrue(after.Width > 0);
-        Assert.IsTrue(after.Height > 0);
-
         var surface = designer.Locator("[data-page-key='designer-nda:0'] .tm-pdf-template-designer__page-surface").First;
-        var surfaceBox = await surface.BoundingBoxAsync();
-        Assert.IsNotNull(surfaceBox);
-        Assert.IsTrue(after.X >= surfaceBox.X - 1);
-        Assert.IsTrue(after.Y >= surfaceBox.Y - 1);
-        Assert.IsTrue(after.X + after.Width <= surfaceBox.X + surfaceBox.Width + 1);
-        Assert.IsTrue(after.Y + after.Height <= surfaceBox.Y + surfaceBox.Height + 1);
+        await surface.ScrollIntoViewIfNeededAsync();
+        await page.WaitForTimeoutAsync(100);
+
+        var containment = await designer.EvaluateAsync<OverlayContainmentResult>(
+            """
+            designer => {
+                const field = designer.querySelector("[data-field-uuid='designer-name']");
+                const surface = designer.querySelector("[data-page-key='designer-nda:0'] .tm-pdf-template-designer__page-surface");
+                const fieldRect = field.getBoundingClientRect();
+                const surfaceRect = surface.getBoundingClientRect();
+                return {
+                    fieldLeft: fieldRect.left,
+                    fieldTop: fieldRect.top,
+                    fieldRight: fieldRect.right,
+                    fieldBottom: fieldRect.bottom,
+                    fieldWidth: fieldRect.width,
+                    fieldHeight: fieldRect.height,
+                    surfaceLeft: surfaceRect.left,
+                    surfaceTop: surfaceRect.top,
+                    surfaceRight: surfaceRect.right,
+                    surfaceBottom: surfaceRect.bottom,
+                    inside: fieldRect.left >= surfaceRect.left - 1
+                        && fieldRect.top >= surfaceRect.top - 1
+                        && fieldRect.right <= surfaceRect.right + 1
+                        && fieldRect.bottom <= surfaceRect.bottom + 1
+                };
+            }
+            """);
+
+        Assert.IsTrue(containment.FieldWidth > 0);
+        Assert.IsTrue(containment.FieldHeight > 0);
+        Assert.IsTrue(containment.Inside, $"Field rect ({containment.FieldLeft}, {containment.FieldTop}, {containment.FieldRight}, {containment.FieldBottom}) should stay inside surface rect ({containment.SurfaceLeft}, {containment.SurfaceTop}, {containment.SurfaceRight}, {containment.SurfaceBottom}).");
 
         await page.EvaluateAsync("() => { document.documentElement.style.zoom = ''; window.dispatchEvent(new Event('resize')); }");
     }
@@ -185,5 +210,30 @@ public class SigningQualityE2ETests : WasmTestBase
     private static ILocator GetRunner(IPage page)
     {
         return page.Locator("[data-testid='signing-runner-demo']").First;
+    }
+
+    private sealed class OverlayContainmentResult
+    {
+        public double FieldLeft { get; set; }
+
+        public double FieldTop { get; set; }
+
+        public double FieldRight { get; set; }
+
+        public double FieldBottom { get; set; }
+
+        public double FieldWidth { get; set; }
+
+        public double FieldHeight { get; set; }
+
+        public double SurfaceLeft { get; set; }
+
+        public double SurfaceTop { get; set; }
+
+        public double SurfaceRight { get; set; }
+
+        public double SurfaceBottom { get; set; }
+
+        public bool Inside { get; set; }
     }
 }

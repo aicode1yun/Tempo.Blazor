@@ -85,8 +85,8 @@ public class TmFormulaBuilderTests : LocalizationTestBase
 
         cut.Find("[data-field-uuid='subtotal']").Click();
 
-        captured.Should().Contain("{{subtotal}}");
-        cut.Find(".tm-formula-builder__textarea").GetAttribute("value").Should().Contain("{{subtotal}}");
+        captured.Should().Contain("{{Subtotal}}");
+        cut.Find(".tm-formula-builder__textarea").GetAttribute("value").Should().Contain("{{Subtotal}}");
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     }
 
     [Fact]
-    public void ClickTokenButton_WithLocalizedLabelStillInsertsStableToken()
+    public void ClickTokenButton_WithLocalizedLabelStillInsertsHumanizedFieldToken()
     {
         string? captured = null;
         var fields = CreateFields();
@@ -127,7 +127,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
 
         cut.Find("[data-field-uuid='subtotal']").Click();
 
-        captured.Should().Be("{{subtotal}}");
+        captured.Should().Be("{{Subtotal}}");
     }
 
     [Theory]

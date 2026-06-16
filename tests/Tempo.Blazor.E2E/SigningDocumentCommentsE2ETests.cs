@@ -22,6 +22,7 @@ public class SigningDocumentCommentsE2ETests : WasmTestBase
 
         await viewer.Locator(".tm-document-page-viewer__comment-toggle").ClickAsync();
         var pageElement = viewer.Locator(".tm-document-page-viewer__page").First;
+        await pageElement.ScrollIntoViewIfNeededAsync();
         var box = await pageElement.BoundingBoxAsync();
         Assert.IsNotNull(box, "Document comment page should have a bounding box.");
 
@@ -94,6 +95,7 @@ public class SigningDocumentCommentsE2ETests : WasmTestBase
         await viewer.Locator(".tm-document-page-viewer__comment-toggle").ClickAsync();
 
         var pageElement = viewer.Locator(".tm-document-page-viewer__page").First;
+        await pageElement.ScrollIntoViewIfNeededAsync();
         var box = await pageElement.BoundingBoxAsync();
         Assert.IsNotNull(box, "Document comment page should have a bounding box.");
 
@@ -105,6 +107,9 @@ public class SigningDocumentCommentsE2ETests : WasmTestBase
         await page.Keyboard.PressAsync("Escape");
         await Assertions.Expect(viewer.Locator("[data-testid='document-comment-draft']")).ToHaveCountAsync(0);
 
+        await pageElement.ScrollIntoViewIfNeededAsync();
+        box = await pageElement.BoundingBoxAsync();
+        Assert.IsNotNull(box, "Document comment page should have a bounding box after draft cancellation.");
         await DragAreaAsync(page, box.X, box.Y, box.Width, box.Height, 0.22, 0.54, 0.44, 0.64);
         var composer = viewer.Locator("[data-testid='document-comment-draft'] .tm-comment-composer").First;
         await composer.Locator(".tm-comment-composer__input").FillAsync("Area review from E2E");
@@ -156,6 +161,7 @@ public class SigningDocumentCommentsE2ETests : WasmTestBase
         await viewer.Locator(".tm-document-page-viewer__comment-toggle").ClickAsync();
 
         var pageElement = viewer.Locator(".tm-document-page-viewer__page").First;
+        await pageElement.ScrollIntoViewIfNeededAsync();
         var box = await pageElement.BoundingBoxAsync();
         Assert.IsNotNull(box, "Document comment page should have a bounding box.");
 

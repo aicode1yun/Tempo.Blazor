@@ -50,6 +50,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 'insertBlock',
                 'insertText',
                 'moveBlock',
+                'moveDrawingObject',
                 'rejectRevision',
                 'removeInlineMark',
                 'setBlockAttribute',

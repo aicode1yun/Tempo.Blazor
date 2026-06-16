@@ -72,7 +72,40 @@ window.tmColorPicker = window.tmColorPicker || (function () {
         }
     }
 
+    function adjustDropdownPosition(root) {
+        const dropdown = root ? root.querySelector(".tm-color-picker-dropdown") : null;
+        if (!dropdown) {
+            return;
+        }
+
+        dropdown.style.transform = "";
+        const rect = dropdown.getBoundingClientRect();
+        const padding = 8;
+        let offsetX = 0;
+        let offsetY = 0;
+        if (rect.right > window.innerWidth - padding) {
+            offsetX = window.innerWidth - padding - rect.right;
+        }
+
+        if (rect.left + offsetX < padding) {
+            offsetX = padding - rect.left;
+        }
+
+        if (rect.bottom > window.innerHeight - padding) {
+            offsetY = window.innerHeight - padding - rect.bottom;
+        }
+
+        if (rect.top + offsetY < padding) {
+            offsetY = padding - rect.top;
+        }
+
+        if (Math.abs(offsetX) > 0.5 || Math.abs(offsetY) > 0.5) {
+            dropdown.style.transform = `translate(${Math.round(offsetX)}px, ${Math.round(offsetY)}px)`;
+        }
+    }
+
     return {
+        adjustDropdownPosition: adjustDropdownPosition,
         focusPaletteSwatch: focusPaletteSwatch,
         registerEscape: registerEscape,
         unregister: unregister

@@ -646,16 +646,23 @@ public abstract class NotionE2ETestBase : WasmTestBase
 
     protected static async Task SelectLocatorContentsAsync(IPage page, ILocator locator)
     {
+        await page.WaitForFunctionAsync(
+            "() => window.tmNotionEditor?.hasSelectionWatcher?.(document.querySelector('.tm-notion-page')) === true",
+            new PageWaitForFunctionOptions { Timeout = 10000 });
         await locator.EvaluateAsync("""
             el => {
+                const host = el.closest('[contenteditable="true"]');
+                host?.focus?.({ preventScroll: true });
                 const range = document.createRange();
                 range.selectNodeContents(el);
                 const selection = window.getSelection();
                 selection.removeAllRanges();
                 selection.addRange(range);
                 document.dispatchEvent(new Event('selectionchange'));
+                document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
             }
             """);
+        await page.EvaluateAsync("() => window.tmNotionEditor.forceInlineToolbarForSelection(document.querySelector('.tm-notion-page'))");
         await page.WaitForTimeoutAsync(300);
     }
 

@@ -1332,7 +1332,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         await SeedDocumentAsync(provider, document);
 
         var domSnapshot = Clone(document);
-        ((ImageBlockContent)domSnapshot.Blocks.Single(block => block.Id == "image-1").Content).Url = "blob:https://app.test/display-only";
+        GetSingleDrawingRun(domSnapshot, "image-1").Url = "blob:https://app.test/display-only";
         domSnapshot.HeadersFooters.Clear();
         domSnapshot.Theme = new DocumentEditorTheme { BodyFontFamily = "Browser default", BodyFontSize = 9 };
         JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
@@ -1353,10 +1353,10 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.WaitForAssertion(() => captured.Should().NotBeNull());
         captured!.Document.Should().NotBeNull();
         AssertPhase17Metadata(captured.Document!);
-        var image = (ImageBlockContent)captured.Document!.Blocks.Single(block => block.Id == "image-1").Content;
-        image.Source.Should().Be(DocumentImageSource.Asset);
-        image.AssetId.Should().Be("asset-1");
-        image.Url.Should().BeNull();
+        var drawing = GetSingleDrawingRun(captured.Document!, "image-1");
+        drawing.Source.Should().Be(DocumentImageSource.Asset);
+        drawing.AssetId.Should().Be("asset-1");
+        drawing.Url.Should().BeNull();
         JsonSerializer.Serialize(captured.Document, DocumentEditorJson.Options).Should().NotContain("display-only");
     }
 
@@ -1513,7 +1513,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         await SeedDocumentAsync(provider, document);
 
         var domSnapshot = Clone(document);
-        ((ImageBlockContent)domSnapshot.Blocks.Single(block => block.Id == "image-1").Content).Url = "https://cdn.test/display-url.png";
+        GetSingleDrawingRun(domSnapshot, "image-1").Url = "https://cdn.test/display-url.png";
         JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
             .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = domSnapshot }, DocumentEditorJson.Options));
 
@@ -1542,9 +1542,9 @@ public class TmDocumentEditorTests : LocalizationTestBase
         AssertPhase17Metadata(pdfProvider.LastRequest!.Document);
         GetParagraphText(formatProvider.LastExportRequest.Document).Should().StartWith("Provider export text");
         GetParagraphText(pdfProvider.LastRequest.Document).Should().StartWith("Provider export text");
-        ((ImageBlockContent)formatProvider.LastExportRequest.Document.Blocks.Single(block => block.Id == "image-1").Content)
+        GetSingleDrawingRun(formatProvider.LastExportRequest.Document, "image-1")
             .Url.Should().BeNull();
-        ((ImageBlockContent)pdfProvider.LastRequest.Document.Blocks.Single(block => block.Id == "image-1").Content)
+        GetSingleDrawingRun(pdfProvider.LastRequest.Document, "image-1")
             .Url.Should().BeNull();
         pdfProvider.LastRequest.Options.PageSetup.PageSize.Name.Should().Be("A4");
         formatProvider.LastExportRequest.Format.Should().Be(DocumentFormatProviderKind.Docx);
@@ -1583,11 +1583,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.WaitForAssertion(() => pdfProvider.LastRequest.Should().NotBeNull());
         var request = pdfProvider.LastRequest!;
-        var image = request.Document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
-        image.Size.Width.Should().Be(320);
-        image.Size.Height.Should().Be(180);
-        image.FloatingLayout!.WrapMode.Should().Be(DocumentWrapMode.Square);
-        image.LinkUrl.Should().Be("https://example.test/image");
+        var drawing = GetSingleDrawingRun(request.Document, "image-1");
+        drawing.Size.Width.Should().Be(320);
+        drawing.Size.Height.Should().Be(180);
+        drawing.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        drawing.LinkUrl.Should().Be("https://example.test/image");
         var table = request.Document.Blocks.Select(block => block.Content).OfType<TableBlockContent>().Single();
         table.Layout.Width.Should().Be(420);
         table.Layout.Alignment.Should().Be(TableHorizontalAlignment.Center);
@@ -1648,6 +1648,9 @@ public class TmDocumentEditorTests : LocalizationTestBase
         JSInterop.Mode = JSRuntimeMode.Strict;
         JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        var focusModule = JSInterop.SetupModule("./_content/Tempo.Blazor/js/document-editor/focus-management.mjs");
+        focusModule.SetupVoid("trapFocus", _ => true).SetVoidResult();
+        focusModule.SetupVoid("releaseFocusTrap", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
@@ -3441,10 +3444,13 @@ public class TmDocumentEditorTests : LocalizationTestBase
         document.HeadersFooters.Should().Contain(headerFooter => headerFooter.Id == "header-1");
         document.HeadersFooters.Should().Contain(headerFooter => headerFooter.Id == "footer-1");
         document.Revisions.Should().ContainSingle(revision => revision.Id == "revision-1");
-        var image = (ImageBlockContent)document.Blocks.Single(block => block.Id == "image-1").Content;
-        image.Size.Width.Should().Be(300);
-        image.FloatingLayout!.WrapMode.Should().Be(DocumentWrapMode.Square);
+        var drawing = GetSingleDrawingRun(document, "image-1");
+        drawing.Size.Width.Should().Be(300);
+        drawing.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
     }
+
+    private static DocumentDrawingRun GetSingleDrawingRun(DocumentEditorDocument document, string objectId)
+        => DocumentImagePersistence.EnumerateDrawingRuns(document).Single(drawing => drawing.ObjectId == objectId);
 
     private static string GetParagraphText(DocumentEditorDocument document)
     {

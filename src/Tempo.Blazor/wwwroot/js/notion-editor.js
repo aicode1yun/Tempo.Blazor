@@ -278,11 +278,36 @@ window.tmNotionEditor = (function () {
         return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
     }
 
-    function applyFormat(command, value) {
-        if (command === 'unlink' && _savedRange) {
-            _applyRange(_savedRange);
-            // execCommand('unlink') often fails on <a> inserted via insertHTML.
-            // Unwrap anchor tags inside the restored selection manually.
+    function applyFormat(command, value, blockId) {
+        if (command === 'unlink') {
+            if (_savedRange) {
+                _applyRange(_savedRange);
+            }
+
+            let changedEditable = null;
+            const anchorsToUnwrap = new Set();
+            const elementFromNode = (node) =>
+                node?.nodeType === Node.TEXT_NODE ? node.parentElement :
+                node?.nodeType === Node.ELEMENT_NODE ? node : null;
+
+            const addClosestAnchor = (node) => {
+                const anchor = elementFromNode(node)?.closest?.('a');
+                if (anchor) anchorsToUnwrap.add(anchor);
+            };
+
+            const addIntersectingAnchors = (range, root) => {
+                if (!range || !root) return;
+                for (const anchor of root.querySelectorAll('a')) {
+                    try {
+                        if (range.intersectsNode(anchor)) {
+                            anchorsToUnwrap.add(anchor);
+                        }
+                    } catch {
+                        anchorsToUnwrap.add(anchor);
+                    }
+                }
+            };
+
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0) {
                 const range = sel.getRangeAt(0);
@@ -290,26 +315,82 @@ window.tmNotionEditor = (function () {
                 if (container.nodeType === Node.TEXT_NODE) {
                     container = container.parentElement;
                 }
-                const anchors = container.nodeType === Node.ELEMENT_NODE
-                    ? container.querySelectorAll('a')
-                    : [];
-                for (const a of anchors) {
-                    const parent = a.parentNode;
-                    while (a.firstChild) {
-                        parent.insertBefore(a.firstChild, a);
-                    }
-                    parent.removeChild(a);
-                }
-                // Also unwrap if the selection itself is inside a single <a>
-                const directAnchor = container.closest?.('a');
-                if (directAnchor) {
-                    const parent = directAnchor.parentNode;
-                    while (directAnchor.firstChild) {
-                        parent.insertBefore(directAnchor.firstChild, directAnchor);
-                    }
-                    parent.removeChild(directAnchor);
+
+                addClosestAnchor(range.startContainer);
+                addClosestAnchor(range.endContainer);
+                addClosestAnchor(container);
+
+                const candidateRoot = elementFromNode(container);
+                if (candidateRoot) {
+                    changedEditable = candidateRoot.closest?.('[contenteditable="true"], .tm-notion-editable') ?? null;
+                    addIntersectingAnchors(range, candidateRoot);
                 }
             }
+
+            const savedRoot = _savedRange
+                ? elementFromNode(_savedRange.commonAncestorContainer)?.closest?.('[contenteditable="true"], .tm-notion-editable') ?? null
+                : null;
+            if (savedRoot) {
+                changedEditable ??= savedRoot;
+                addClosestAnchor(_savedRange.startContainer);
+                addClosestAnchor(_savedRange.endContainer);
+                addIntersectingAnchors(_savedRange, savedRoot);
+            }
+
+            if (anchorsToUnwrap.size === 0 && value) {
+                const targetHref = String(value);
+                const normalizeHref = (href) => {
+                    const probe = document.createElement('a');
+                    probe.href = href;
+                    return probe.href;
+                };
+                const normalizedTargetHref = normalizeHref(targetHref);
+                const roots = [];
+                if (changedEditable) roots.push(changedEditable);
+                if (savedRoot && !roots.includes(savedRoot)) roots.push(savedRoot);
+
+                if (blockId) {
+                    const blockRoot = Array
+                        .from(document.querySelectorAll('[data-block-id]'))
+                        .find(el => el.dataset?.blockId === blockId);
+                    const blockEditable = blockRoot?.querySelector?.('[contenteditable="true"], .tm-notion-editable') ?? null;
+                    if (blockEditable && !roots.includes(blockEditable)) roots.push(blockEditable);
+                }
+
+                for (const root of roots) {
+                    for (const anchor of root.querySelectorAll('a')) {
+                        const rawHref = anchor.getAttribute('href') ?? '';
+                        if (rawHref === targetHref ||
+                            anchor.href === targetHref ||
+                            anchor.href === normalizedTargetHref ||
+                            normalizeHref(rawHref) === normalizedTargetHref) {
+                            anchorsToUnwrap.add(anchor);
+                        }
+                    }
+                }
+            }
+
+            if (anchorsToUnwrap.size === 0) {
+                document.execCommand('unlink', false, null);
+            }
+
+            for (const anchor of anchorsToUnwrap) {
+                const parent = anchor.parentNode;
+                if (!parent) continue;
+                changedEditable ??= anchor.closest?.('[contenteditable="true"], .tm-notion-editable') ?? null;
+                while (anchor.firstChild) {
+                    parent.insertBefore(anchor.firstChild, anchor);
+                }
+                parent.removeChild(anchor);
+            }
+
+            if (changedEditable) {
+                const event = typeof InputEvent === 'function'
+                    ? new InputEvent('input', { bubbles: true, inputType: 'formatRemove' })
+                    : new Event('input', { bubbles: true });
+                changedEditable.dispatchEvent(event);
+            }
+            _savedRange = null;
             return;
         }
         document.execCommand(command, false, value ?? null);
@@ -2201,6 +2282,7 @@ window.tmNotionEditor = (function () {
         // Allow the link URL input to receive focus normally
         if (e.target.closest('.tm-notion-inline-toolbar__link-input')) return;
         e.preventDefault();
+        if (e.target.closest('.tm-notion-inline-toolbar__link-remove')) return;
         saveSelection();
     }, true);
 
@@ -2301,7 +2383,7 @@ window.tmNotionEditor = (function () {
             _on(document, 'selectionchange', onUp)
         );
 
-        _selectionWatchers.set(pageEl, { dotNetRef, listeners });
+        _selectionWatchers.set(pageEl, { dotNetRef, listeners, notify: _notify });
     }
 
     function destroySelectionWatcher(pageEl) {
@@ -2310,6 +2392,102 @@ window.tmNotionEditor = (function () {
         if (!state) return;
         _offAll(state.listeners);
         _selectionWatchers.delete(pageEl);
+    }
+
+    function hasSelectionWatcher(pageEl) {
+        return !!pageEl && _selectionWatchers.has(pageEl);
+    }
+
+    function notifySelectionChanged(pageEl) {
+        const state = pageEl ? _selectionWatchers.get(pageEl) : null;
+        if (state?.notify) state.notify();
+    }
+
+    async function forceInlineToolbarForSelection(pageEl) {
+        window.__tmNotionLastToolbarError = null;
+        const dotNetRef = (pageEl ? _selectionWatchers.get(pageEl)?.dotNetRef : null) ?? _pageDotNetRef;
+        if (!dotNetRef) return false;
+
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || sel.rangeCount === 0) return false;
+
+        const range = sel.getRangeAt(0);
+        const host = _selectionElement(range.commonAncestorContainer)?.closest?.('[contenteditable="true"]');
+        const rects = Array.from(range.getClientRects())
+            .filter(r => r.width > 0 && r.height > 0);
+        let rect = rects[0] ?? range.getBoundingClientRect();
+        if ((!rect || rect.width === 0) && host) {
+            rect = host.getBoundingClientRect();
+        }
+
+        if (!rect) return false;
+
+        const blockEl = _selectionElement(range.commonAncestorContainer)?.closest?.('[data-notion-block]');
+        const blockId = blockEl?.dataset?.blockId || blockEl?.dataset?.notionBlock || '';
+        const linkEl = _selectionClosest(sel, range, 'a') ?? (
+            range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+                ? range.commonAncestorContainer.querySelector?.('a')
+                : null
+        );
+        const codeEl = _selectionClosest(sel, range, 'code');
+        const selectedText = sel.toString() || '';
+        const top = rect.top - 40;
+        const left = rect.left + rect.width / 2 - 160;
+
+        try {
+            await dotNetRef.invokeMethodAsync(
+                'OnToolbarSelectionChanged',
+                top,
+                left,
+                _selectionHasFormat(sel, range, 'strong,b', 'bold'),
+                _selectionHasFormat(sel, range, 'em,i', 'italic'),
+                _selectionHasFormat(sel, range, 'u', 'underline'),
+                _selectionHasFormat(sel, range, 's,strike,del', 'line-through'),
+                !!codeEl && !codeEl.closest('pre'),
+                linkEl?.href ?? '',
+                blockId,
+                selectedText
+            );
+            return true;
+        } catch (error) {
+            window.__tmNotionLastToolbarError = String(error?.message || error || 'Unknown toolbar interop error');
+            return false;
+        }
+    }
+
+    function _selectionElement(node) {
+        if (!node) return null;
+        return node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    }
+
+    function _selectionClosest(sel, range, selector) {
+        return _selectionElement(sel.anchorNode)?.closest?.(selector)
+            ?? _selectionElement(sel.focusNode)?.closest?.(selector)
+            ?? _selectionElement(range.commonAncestorContainer)?.closest?.(selector);
+    }
+
+    function _selectionHasFormat(sel, range, selector, command) {
+        try {
+            if (command === 'bold' && document.queryCommandState('bold')) return true;
+            if (command === 'italic' && document.queryCommandState('italic')) return true;
+            if (command === 'underline' && document.queryCommandState('underline')) return true;
+            if (command === 'line-through' && document.queryCommandState('strikeThrough')) return true;
+        } catch { }
+
+        const formatted = _selectionClosest(sel, range, selector);
+        if (formatted) return true;
+
+        const host = _selectionElement(sel.anchorNode);
+        if (!host) return false;
+        const style = getComputedStyle(host);
+        if (command === 'bold') {
+            const weight = Number.parseInt(style.fontWeight || '400', 10);
+            return Number.isFinite(weight) && weight >= 600;
+        }
+        if (command === 'italic') return style.fontStyle === 'italic';
+        if (command === 'underline') return style.textDecorationLine.includes('underline');
+        if (command === 'line-through') return style.textDecorationLine.includes('line-through');
+        return false;
     }
 
     function saveSelection() {
@@ -2797,7 +2975,8 @@ window.tmNotionEditor = (function () {
         adjustSlashMenuPosition, scrollSlashItemIntoView,
         // 44.1
         initSelectionWatcher, destroySelectionWatcher,
-        saveSelection, insertLinkOnSavedSelection,
+        hasSelectionWatcher, notifySelectionChanged, forceInlineToolbarForSelection,
+        saveSelection, restoreSavedSelection, insertLinkOnSavedSelection,
         applyInlineColor, toggleInlineCode,
         insertInlineMath, adjustInlineToolbarPosition,
         getSelectedText, replaceSavedSelectionWithHtml,
@@ -2916,6 +3095,9 @@ window.tmDb.initBoardDrag = function (element, dotNetRef) {
 
     let isDragging = false;
     let lastEnteredCol = null;
+    let draggedRecordId = '';
+    let draggedFromGroup = '';
+    let dropHandled = false;
 
     element.addEventListener('dragstart', function (e) {
         const card = e.target.closest('[data-record-id]');
@@ -2923,10 +3105,13 @@ window.tmDb.initBoardDrag = function (element, dotNetRef) {
         if (!card) return;
         isDragging = true;
         lastEnteredCol = null;
+        draggedRecordId = card.dataset.recordId || '';
+        draggedFromGroup = card.dataset.fromGroup || '';
+        dropHandled = false;
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', card.dataset.recordId);
-        console.log('[tmDb] dragstart: recordId=' + card.dataset.recordId + ' fromGroup=' + card.dataset.fromGroup);
-        dotNetRef.invokeMethodAsync('JsDragStart', card.dataset.recordId, card.dataset.fromGroup || '');
+        e.dataTransfer.setData('text/plain', draggedRecordId);
+        console.log('[tmDb] dragstart: recordId=' + draggedRecordId + ' fromGroup=' + draggedFromGroup);
+        dotNetRef.invokeMethodAsync('JsDragStart', draggedRecordId, draggedFromGroup);
     }, true);
 
     element.addEventListener('dragover', function (e) {
@@ -2952,12 +3137,16 @@ window.tmDb.initBoardDrag = function (element, dotNetRef) {
         if (!isDragging) return;
         isDragging = false;
         lastEnteredCol = null;
+        dropHandled = true;
         e.preventDefault();
         if (col) {
             console.log('[tmDb] drop: groupValue=' + col.dataset.groupValue);
-            dotNetRef.invokeMethodAsync('JsDrop', col.dataset.groupValue);
+            dotNetRef.invokeMethodAsync('JsDrop', col.dataset.groupValue, draggedRecordId, draggedFromGroup);
         } else {
             console.log('[tmDb] drop: outside column, calling JsDragEnd');
+            draggedRecordId = '';
+            draggedFromGroup = '';
+            dropHandled = false;
             dotNetRef.invokeMethodAsync('JsDragEnd');
         }
     }, true);
@@ -2966,6 +3155,12 @@ window.tmDb.initBoardDrag = function (element, dotNetRef) {
         console.log('[tmDb] dragend fired, isDragging was=' + isDragging);
         isDragging = false;
         lastEnteredCol = null;
+        draggedRecordId = '';
+        draggedFromGroup = '';
+        if (dropHandled) {
+            dropHandled = false;
+            return;
+        }
         dotNetRef.invokeMethodAsync('JsDragEnd');
     }, true);
 };

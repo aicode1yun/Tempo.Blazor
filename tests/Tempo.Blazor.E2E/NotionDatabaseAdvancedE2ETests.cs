@@ -16,6 +16,8 @@ public class NotionDatabaseAdvancedE2ETests : WasmTestBase
 
     private async Task<IPage> OpenNotionEditorAsync()
     {
+        await ResetNotionDatabaseAsync();
+
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
         await page.GotoAsync($"{BaseUrl}/notion-editor");
@@ -23,6 +25,24 @@ public class NotionDatabaseAdvancedE2ETests : WasmTestBase
         await page.WaitForSelectorAsync(".tm-notion-editor", new PageWaitForSelectorOptions { Timeout = 30000 });
         await page.WaitForTimeoutAsync(2000);
         return page;
+    }
+
+    private static async Task ResetNotionDatabaseAsync()
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://localhost:5100")
+        };
+
+        using var notionResponse = await http.PostAsync("/api/notion/reset", null);
+        notionResponse.EnsureSuccessStatusCode();
+
+        using var databaseResponse = await http.PostAsync("/api/notion/databases/e2e/seed/default", null);
+        databaseResponse.EnsureSuccessStatusCode();
     }
 
     private async Task<ILocator> NavigateToDatabaseBlockAsync(IPage page)
@@ -406,6 +426,10 @@ public class NotionDatabaseAdvancedE2ETests : WasmTestBase
         var addViewBtn = db.Locator(".tm-db__view-add-btn");
         await addViewBtn.WaitForAsync(new LocatorWaitForOptions { Timeout = 8000 });
         await addViewBtn.ClickAsync();
+
+        var viewTypeOption = page.Locator(".tm-db__floatmenu .tm-db__ctx-item").First;
+        await viewTypeOption.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
+        await viewTypeOption.ClickAsync();
         await page.WaitForTimeoutAsync(800);
 
         var newTabCount = await db.Locator(".tm-db__view-tab").CountAsync();
@@ -504,6 +528,9 @@ public class NotionDatabaseAdvancedE2ETests : WasmTestBase
         }
 
         var initialTargetCount = await targetCol.Locator(".tm-dbb__card").CountAsync();
+        var targetGroupValue = await targetCol.GetAttributeAsync("data-group-value") ?? string.Empty;
+        var sourceRecordId = await sourceCard.GetAttributeAsync("data-record-id")
+            ?? throw new AssertFailedException("Source card should expose a stable record id");
 
         // HTML5 drag-and-drop requires dispatching drag events via JavaScript because
         // Playwright's pointer-based DragToAsync does not fire ondragstart/ondragover/ondrop.
@@ -518,12 +545,24 @@ public class NotionDatabaseAdvancedE2ETests : WasmTestBase
             src.dispatchEvent(new DragEvent('dragend',   { bubbles: true, cancelable: true, dataTransfer: dt }));
         }", new object[] { sourceHandle!, targetHandle! });
 
-        await page.WaitForTimeoutAsync(1000);
+        await Assertions.Expect(db.Locator($".tm-dbb__card[data-record-id='{sourceRecordId}']"))
+            .ToHaveAttributeAsync("data-from-group", targetGroupValue, new LocatorAssertionsToHaveAttributeOptions { Timeout = 8000 });
 
-        var newTargetCount = await targetCol.Locator(".tm-dbb__card").CountAsync();
+        var newTargetCount = await GetBoardColumnCardCountAsync(db, targetGroupValue);
         Assert.IsTrue(newTargetCount > initialTargetCount,
             $"Target column card count should increase after dragging (was {initialTargetCount}, now {newTargetCount})");
 
         await TakeScreenshotAsync(page, "db_board_drag_card");
     }
+
+    private static async Task<int> GetBoardColumnCardCountAsync(ILocator db, string groupValue)
+        => await db.EvaluateAsync<int>(
+            """
+            (root, value) => {
+                const columns = Array.from(root.querySelectorAll('.tm-dbb__col'));
+                const column = columns.find(col => (col.dataset.groupValue || '') === value);
+                return column ? column.querySelectorAll('.tm-dbb__card').length : 0;
+            }
+            """,
+            groupValue);
 }

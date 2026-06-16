@@ -200,7 +200,7 @@ public sealed partial class DemoNotionSearchService(
 
     private static string NormalizeForSearch(string value)
     {
-        var normalized = WebUtility.HtmlDecode(value)
+        var normalized = SanitizeUnicode(WebUtility.HtmlDecode(value))
             .Normalize(NormalizationForm.FormD);
         var builder = new StringBuilder(normalized.Length);
         foreach (var ch in normalized)
@@ -211,6 +211,33 @@ public sealed partial class DemoNotionSearchService(
         }
 
         return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private static string SanitizeUnicode(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        var builder = new StringBuilder(value.Length);
+        for (var i = 0; i < value.Length; i++)
+        {
+            var ch = value[i];
+            if (char.IsHighSurrogate(ch))
+            {
+                if (i + 1 < value.Length && char.IsLowSurrogate(value[i + 1]))
+                {
+                    builder.Append(ch);
+                    builder.Append(value[++i]);
+                }
+
+                continue;
+            }
+
+            if (!char.IsLowSurrogate(ch))
+                builder.Append(ch);
+        }
+
+        return builder.ToString();
     }
 
     private static bool IsWithinRange(DateTime value, DateTime? after, DateTime? before)
@@ -301,7 +328,7 @@ public sealed partial class DemoNotionSearchService(
 
     private static (string Snippet, IReadOnlyList<NotionSearchHighlightRange> Ranges) BuildSnippet(string text, string query)
     {
-        var plain = HtmlTagRegex().Replace(WebUtility.HtmlDecode(text), " ").Trim();
+        var plain = HtmlTagRegex().Replace(SanitizeUnicode(WebUtility.HtmlDecode(text)), " ").Trim();
         plain = WhitespaceRegex().Replace(plain, " ");
         if (string.IsNullOrWhiteSpace(plain))
             return (string.Empty, []);
@@ -335,13 +362,27 @@ public sealed partial class DemoNotionSearchService(
         var originalIndexes = new List<int>(text.Length);
         for (var i = 0; i < text.Length; i++)
         {
-            foreach (var ch in text[i].ToString().Normalize(NormalizationForm.FormD))
+            var originalIndex = i;
+            var element = text[i].ToString();
+            if (char.IsHighSurrogate(text[i]))
+            {
+                if (i + 1 >= text.Length || !char.IsLowSurrogate(text[i + 1]))
+                    continue;
+
+                element = new string([text[i], text[++i]]);
+            }
+            else if (char.IsLowSurrogate(text[i]))
+            {
+                continue;
+            }
+
+            foreach (var ch in element.Normalize(NormalizationForm.FormD))
             {
                 if (CharUnicodeInfo.GetUnicodeCategory(ch) == UnicodeCategory.NonSpacingMark)
                     continue;
 
                 normalized.Append(char.ToLowerInvariant(ch));
-                originalIndexes.Add(i);
+                originalIndexes.Add(originalIndex);
             }
         }
 

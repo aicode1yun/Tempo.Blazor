@@ -1,3 +1,6 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Net;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -12,6 +15,9 @@ public abstract class PlaywrightTestBase
     private static IBrowser? _browser;
     private static IPlaywright? _playwright;
     private static readonly SemaphoreSlim BrowserLock = new(1, 1);
+    private static readonly SemaphoreSlim HostLock = new(1, 1);
+    private static readonly List<DemoHostProcess> DemoHostProcesses = [];
+    private static bool _demoHostsInitialized;
 
     // Per-test list of contexts created via CreatePageAsync / CreateContextAsync.
     // They MUST be disposed after each test, otherwise the shared static browser
@@ -43,6 +49,8 @@ public abstract class PlaywrightTestBase
     [ClassInitialize(InheritanceBehavior.BeforeEachDerivedClass)]
     public static async Task ClassInitialize(TestContext context)
     {
+        await EnsureDemoHostsAsync(context);
+
         await BrowserLock.WaitAsync();
         try
         {
@@ -59,6 +67,29 @@ public abstract class PlaywrightTestBase
         finally
         {
             BrowserLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// One-time cleanup for self-hosted demo applications.
+    /// </summary>
+    [AssemblyCleanup]
+    public static async Task AssemblyCleanup()
+    {
+        await HostLock.WaitAsync();
+        try
+        {
+            foreach (var host in DemoHostProcesses)
+            {
+                host.Dispose();
+            }
+
+            DemoHostProcesses.Clear();
+            _demoHostsInitialized = false;
+        }
+        finally
+        {
+            HostLock.Release();
         }
     }
 
@@ -185,11 +216,36 @@ public abstract class PlaywrightTestBase
     /// </summary>
     protected async Task WaitForAppReadyAsync(IPage page)
     {
-        // Wait for the app to be fully loaded
-        await page.WaitForSelectorAsync(".tm-app-loaded, main, [data-testid='app-ready']", new PageWaitForSelectorOptions
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded, new PageWaitForLoadStateOptions
         {
             Timeout = 60000
         });
+
+        try
+        {
+            await page.WaitForSelectorAsync(".tm-app-loaded, main, [data-testid='app-ready']", new PageWaitForSelectorOptions
+            {
+                Timeout = 15000
+            });
+        }
+        catch (TimeoutException)
+        {
+            await page.WaitForFunctionAsync(
+                """
+                () => {
+                    const body = document.body;
+                    const app = document.querySelector('#app, [data-testid="app"], main') || body;
+                    const text = (app?.textContent || body?.textContent || '').trim();
+                    return (document.readyState === 'interactive' || document.readyState === 'complete')
+                        && !!body
+                        && body.children.length > 0
+                        && text.length > 0
+                        && !/^loading[.\s]*$/i.test(text);
+                }
+                """,
+                null,
+                new PageWaitForFunctionOptions { Timeout = 45000 });
+        }
 
         // Additional wait for WASM to boot in InteractiveAuto mode
         await page.WaitForTimeoutAsync(1000);
@@ -257,6 +313,214 @@ public abstract class PlaywrightTestBase
     {
         var metrics = await page.EvaluateAsync<Dictionary<string, object>>("() => { return { usedJSHeapSize: performance.memory?.usedJSHeapSize || 0 }; }");
         return Convert.ToInt64(metrics["usedJSHeapSize"]);
+    }
+
+    private static async Task EnsureDemoHostsAsync(TestContext context)
+    {
+        if (string.Equals(Environment.GetEnvironmentVariable("TM_E2E_SELF_HOST"), "false", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await HostLock.WaitAsync();
+        try
+        {
+            if (_demoHostsInitialized)
+            {
+                return;
+            }
+
+            var repoRoot = FindRepositoryRoot();
+            await EnsureHostAsync(
+                context,
+                "Demo API",
+                Path.Combine(repoRoot, "src", "Tempo.Blazor.Demo.Api", "Tempo.Blazor.Demo.Api.csproj"),
+                "Tempo.Blazor.Demo.Api",
+                ["https://localhost:5100"],
+                TimeSpan.FromSeconds(120));
+
+            await EnsureHostAsync(
+                context,
+                "Demo WASM",
+                Path.Combine(repoRoot, "src", "Tempo.Blazor.Demo", "Tempo.Blazor.Demo.csproj"),
+                "https",
+                ["https://localhost:7106", "http://localhost:5010"],
+                TimeSpan.FromSeconds(180));
+
+            _demoHostsInitialized = true;
+        }
+        finally
+        {
+            HostLock.Release();
+        }
+    }
+
+    private static async Task EnsureHostAsync(
+        TestContext context,
+        string name,
+        string projectPath,
+        string launchProfile,
+        IReadOnlyList<string> urls,
+        TimeSpan timeout)
+    {
+        if (await AllUrlsReachableAsync(urls))
+        {
+            return;
+        }
+
+        var process = StartDemoHostProcess(name, projectPath, launchProfile);
+        DemoHostProcesses.Add(process);
+
+        var deadline = DateTimeOffset.UtcNow + timeout;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (process.HasExited)
+            {
+                throw new InvalidOperationException($"{name} exited before it became ready. Recent output:{Environment.NewLine}{process.RecentOutput}");
+            }
+
+            if (await AllUrlsReachableAsync(urls))
+            {
+                context.WriteLine($"{name} ready at {string.Join(", ", urls)}.");
+                return;
+            }
+
+            await Task.Delay(500);
+        }
+
+        throw new TimeoutException($"{name} did not become ready at {string.Join(", ", urls)} within {timeout.TotalSeconds:n0}s. Recent output:{Environment.NewLine}{process.RecentOutput}");
+    }
+
+    private static DemoHostProcess StartDemoHostProcess(string name, string projectPath, string launchProfile)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            WorkingDirectory = FindRepositoryRoot(),
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        startInfo.ArgumentList.Add("run");
+        startInfo.ArgumentList.Add("--project");
+        startInfo.ArgumentList.Add(projectPath);
+        startInfo.ArgumentList.Add("--launch-profile");
+        startInfo.ArgumentList.Add(launchProfile);
+        startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+        startInfo.Environment["DOTNET_ENVIRONMENT"] = "Development";
+
+        var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+        var host = new DemoHostProcess(name, process);
+        process.OutputDataReceived += (_, args) => host.AddOutput(args.Data);
+        process.ErrorDataReceived += (_, args) => host.AddOutput(args.Data);
+
+        if (!process.Start())
+        {
+            throw new InvalidOperationException($"Failed to start {name}.");
+        }
+
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        return host;
+    }
+
+    private static async Task<bool> AllUrlsReachableAsync(IReadOnlyList<string> urls)
+    {
+        foreach (var url in urls)
+        {
+            if (!await IsUrlReachableAsync(url))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static async Task<bool> IsUrlReachableAsync(string url)
+    {
+        try
+        {
+            using var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(2) };
+            using var response = await client.GetAsync(url);
+            return response.StatusCode != HttpStatusCode.ServiceUnavailable;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "TempoBlazor.slnx")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Repository root was not found.");
+    }
+
+    private sealed class DemoHostProcess : IDisposable
+    {
+        private readonly string _name;
+        private readonly Process _process;
+        private readonly ConcurrentQueue<string> _output = new();
+
+        public DemoHostProcess(string name, Process process)
+        {
+            _name = name;
+            _process = process;
+        }
+
+        public bool HasExited => _process.HasExited;
+
+        public string RecentOutput => string.Join(Environment.NewLine, _output.ToArray());
+
+        public void AddOutput(string? line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                return;
+            }
+
+            _output.Enqueue(line);
+            while (_output.Count > 80 && _output.TryDequeue(out _))
+            {
+            }
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (!_process.HasExited)
+                {
+                    _process.Kill(entireProcessTree: true);
+                    _process.WaitForExit(5000);
+                }
+            }
+            catch
+            {
+                // Best-effort cleanup after the test run.
+            }
+            finally
+            {
+                _process.Dispose();
+            }
+        }
+
+        public override string ToString() => _name;
     }
 }
 

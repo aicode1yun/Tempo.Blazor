@@ -920,6 +920,16 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         BlockType.Table        => new TableBlockContent(),
         BlockType.ColumnList   => new ColumnListBlockContent(),
         BlockType.Breadcrumb   => new BreadcrumbBlockContent(),
+        BlockType.Image        => new ImageBlockContent(),
+        BlockType.Video        => new VideoBlockContent(),
+        BlockType.Audio        => new AudioBlockContent(),
+        BlockType.File         => new FileBlockContent(),
+        BlockType.Pdf          => new PdfBlockContent(),
+        BlockType.Bookmark     => new BookmarkBlockContent(),
+        BlockType.Embed        => new EmbedBlockContent(),
+        BlockType.Diagram      => new DiagramBlockContent(),
+        BlockType.Wireframe    => new WireframeBlockContent(),
+        BlockType.Spreadsheet  => new SpreadsheetBlockContent(),
         BlockType.WorkItem     => new WorkItemBlockContent(),
         BlockType.ContentByLabel => new ContentByLabelBlockContent(),
         _                      => new TextBlockContent  { Html = initialHtml }
@@ -1156,33 +1166,37 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         bool isBold, bool isItalic, bool isUnderline, bool isStrikethrough, bool isCode,
         string currentHref, string blockId, string selectedText)
     {
-        _toolbarVisible        = true;
-        _toolbarTop            = top;
-        _toolbarLeft           = left;
-        _toolbarIsBold         = isBold;
-        _toolbarIsItalic       = isItalic;
-        _toolbarIsUnderline    = isUnderline;
-        _toolbarIsStrikethrough = isStrikethrough;
-        _toolbarIsCode         = isCode;
-        _toolbarCurrentHref    = currentHref;
-        _toolbarBlockId        = blockId;
-        _toolbarSelectedText   = selectedText;
+        return InvokeAsync(() =>
+        {
+            _toolbarVisible        = true;
+            _toolbarTop            = top;
+            _toolbarLeft           = left;
+            _toolbarIsBold         = isBold;
+            _toolbarIsItalic       = isItalic;
+            _toolbarIsUnderline    = isUnderline;
+            _toolbarIsStrikethrough = isStrikethrough;
+            _toolbarIsCode         = isCode;
+            _toolbarCurrentHref    = currentHref;
+            _toolbarBlockId        = blockId;
+            _toolbarSelectedText   = selectedText;
 
-        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
-        _toolbarCurrentAlign = block?.Content is ITextBlockContent tc ? tc.Alignment : TextAlignment.Left;
+            var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
+            _toolbarCurrentAlign = block?.Content is ITextBlockContent tc ? tc.Alignment : TextAlignment.Left;
 
-        StateHasChanged();
-        return Task.CompletedTask;
+            StateHasChanged();
+        });
     }
 
     [JSInvokable]
     public Task OnToolbarSelectionCleared()
     {
-        if (!_toolbarVisible) return Task.CompletedTask;
-        _toolbarVisible = false;
-        _toolbarSelectedText = string.Empty;
-        StateHasChanged();
-        return Task.CompletedTask;
+        return InvokeAsync(() =>
+        {
+            if (!_toolbarVisible) return;
+            _toolbarVisible = false;
+            _toolbarSelectedText = string.Empty;
+            StateHasChanged();
+        });
     }
 
     [JSInvokable]

@@ -171,15 +171,21 @@ public partial class TmNotionDbBoardView : ComponentBase, IAsyncDisposable
     }
 
     [JSInvokable]
-    public async Task JsDrop(string groupValue)
+    public async Task JsDrop(string groupValue, string? recordId = null, string? fromGroup = null)
     {
-        if (_dragRecordId is null || _dragFromGroup == groupValue)
+        var dragRecordId = _dragRecordId;
+        if (dragRecordId is null && !string.IsNullOrWhiteSpace(recordId) && Guid.TryParse(recordId, out var parsedRecordId))
+            dragRecordId = parsedRecordId;
+
+        var dragFromGroup = _dragFromGroup ?? fromGroup;
+
+        if (dragRecordId is null || dragFromGroup == groupValue)
         {
             await JsDragEnd();
             return;
         }
 
-        var record = Records.FirstOrDefault(r => r.Id == _dragRecordId);
+        var record = Records.FirstOrDefault(r => r.Id == dragRecordId);
         _dragRecordId  = null;
         _dragFromGroup = null;
         _dragOverGroup = null;

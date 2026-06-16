@@ -26,16 +26,16 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
             ["TmNotionTableBlock_DragRow"] = "Drag row",
             ["TmNotionTableBlock_ToggleHeaderRow"] = "Header row",
             ["TmNotionTableBlock_ToggleHeaderColumn"] = "Header column",
-            ["Notion_Table_Merge"] = "Merge cells",
-            ["Notion_Table_Split"] = "Split",
-            ["Notion_Table_Undo"] = "Undo table change",
-            ["Notion_Table_Color"] = "Cell color",
-            ["Notion_Table_ClearColor"] = "Clear color",
-            ["Notion_Table_ColorYellow"] = "Yellow",
-            ["Notion_Table_ColorGreen"] = "Green",
-            ["Notion_Table_ColorBlue"] = "Blue",
-            ["Notion_Table_ColorRed"] = "Red",
-            ["Notion_Table_Sort"] = "Sort column"
+            ["TmNotionTableBlock_SelectionTools"] = "Table selection tools",
+            ["TmNotionTableBlock_Merge"] = "Merge cells",
+            ["TmNotionTableBlock_Split"] = "Split",
+            ["TmNotionTableBlock_Undo"] = "Undo table change",
+            ["TmNotionTableBlock_ClearColor"] = "Clear color",
+            ["TmNotionTableBlock_ColorYellow"] = "Yellow",
+            ["TmNotionTableBlock_ColorGreen"] = "Green",
+            ["TmNotionTableBlock_ColorBlue"] = "Blue",
+            ["TmNotionTableBlock_ColorRed"] = "Red",
+            ["TmNotionTableBlock_Sort"] = "Sort column"
         });
     }
 

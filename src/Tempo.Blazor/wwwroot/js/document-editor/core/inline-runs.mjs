@@ -20,7 +20,7 @@ import {
     sortObject,
     unique,
 } from './helpers.mjs';
-import { normalizeMarks, readRevisionIdFromMarks } from './marks.mjs';
+import { markType, markValue, normalizeMarks, readRevisionIdFromMarks } from './marks.mjs';
 import {
     normalizeDrawingKindName,
     exportDrawingKind,
@@ -115,10 +115,28 @@ export function importInlineRun(source, path) {
 // Inline run export — internal model → C#-JSON
 // ────────────────────────────────────────────────────────────────────────────────
 
+function exportInlineMark(mark) {
+    const type = markType(mark);
+    const rawType = mark && (mark.Type ?? mark.type);
+    if (type === 'link') {
+        const href = asText(markValue(mark));
+        const title = asText(mark && (mark.title ?? mark.Title ?? mark.link?.title ?? mark.Link?.Title ?? ''));
+        return sortObject({
+            Type: rawType ?? 6,
+            Link: {
+                Href: href,
+                Title: title || null,
+            },
+        });
+    }
+
+    return clone(mark || {});
+}
+
 export function exportInlineRun(run) {
     const result = {
         Id: run.id,
-        Marks: clone(run.marks || []),
+        Marks: asArray(run.marks).map(exportInlineMark),
     };
     if (run.kind === 'field') {
         result.$type = 'field';

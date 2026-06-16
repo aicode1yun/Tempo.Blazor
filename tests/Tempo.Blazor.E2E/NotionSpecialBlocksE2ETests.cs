@@ -16,6 +16,10 @@ public class NotionSpecialBlocksE2ETests : WasmTestBase
 
     private async Task<IPage> OpenNotionEditorAsync()
     {
+        using var http = new HttpClient();
+        try { await http.PostAsync("https://localhost:5100/api/notion/reset", null); }
+        catch { /* API may not be running; ignore */ }
+
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
         await page.GotoAsync($"{BaseUrl}/notion-editor");

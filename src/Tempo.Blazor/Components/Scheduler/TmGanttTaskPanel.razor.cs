@@ -396,7 +396,7 @@ public partial class TmGanttTaskPanel
         public string? AuthorAvatarUrl => _c.AvatarUrl;
         public DateTimeOffset CreatedAt => new(_c.CreatedAt, TimeSpan.Zero);
         public DateTimeOffset? UpdatedAt => null;
-        public string HtmlContent => System.Net.WebUtility.HtmlEncode(_c.Text).Replace("\n", "<br/>");
+        public string HtmlContent => ParseMentions(_c.Text).Value.Replace("\n", "<br/>");
         public bool CanEdit => false;
         public bool CanDelete => false;
     }

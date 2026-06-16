@@ -1846,6 +1846,30 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         if (_document is null || ReadOnly) return;
 
+        if (GridSize > 0)
+        {
+            if (args.TargetPointX is not null && args.TargetPointY is not null)
+            {
+                args.TargetPointX = Math.Round(args.TargetPointX.Value / GridSize) * GridSize;
+                args.TargetPointY = Math.Round(args.TargetPointY.Value / GridSize) * GridSize;
+            }
+
+            if (args.SourcePointX is not null && args.SourcePointY is not null)
+            {
+                args.SourcePointX = Math.Round(args.SourcePointX.Value / GridSize) * GridSize;
+                args.SourcePointY = Math.Round(args.SourcePointY.Value / GridSize) * GridSize;
+            }
+
+            if (args.WaypointsXY is not null)
+            {
+                for (var i = 0; i + 1 < args.WaypointsXY.Length; i += 2)
+                {
+                    args.WaypointsXY[i] = Math.Round(args.WaypointsXY[i] / GridSize) * GridSize;
+                    args.WaypointsXY[i + 1] = Math.Round(args.WaypointsXY[i + 1] / GridSize) * GridSize;
+                }
+            }
+        }
+
         var edge = new DiagramEdge();
 
         // Inherit the last used edge style (stroke, arrow, routing…) so the

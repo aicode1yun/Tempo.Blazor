@@ -12,6 +12,7 @@ public partial class TmSpreadsheetFormulaBar
 {
     private ElementReference _rootRef;
     private ElementReference _inputRef;
+    private ElementReference _nameBoxRef;
     private string? _editValue;
     private string? _nameBoxValue;
     private bool _shouldFocusAfterRender;
@@ -317,7 +318,7 @@ public partial class TmSpreadsheetFormulaBar
             // JS can be unavailable during prerender/tests.
         }
 
-        if (!shouldRetainFocus && !CurrentSession.IsFormula)
+        if (!shouldRetainFocus)
             return;
 
         _shouldFocusAfterRender = true;
@@ -352,6 +353,10 @@ public partial class TmSpreadsheetFormulaBar
                 _rootRef,
                 EditorIsEditing,
                 _editValue ?? string.Empty);
+            await JS.InvokeVoidAsync(
+                "tmSpreadsheetFormulaBar.syncNameBoxText",
+                _nameBoxRef,
+                _nameBoxValue ?? ActiveCellRef ?? string.Empty);
         }
         catch
         {

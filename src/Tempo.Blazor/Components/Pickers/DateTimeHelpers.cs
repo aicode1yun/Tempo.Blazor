@@ -9,22 +9,17 @@ internal static class DateTimeHelpers
 {
     /// <summary>
     /// Returns <see cref="DateOnly"/> values that fill the calendar grid for the given year/month,
-    /// starting on Monday. The grid contains only as many weeks as needed — 5 weeks when the month
-    /// fits (e.g. month ends on Sunday), 6 weeks otherwise.
+    /// starting on Monday. The grid always contains six weeks so the calendar
+    /// keeps a stable shape while navigating between months.
     /// Leading and trailing cells contain days from adjacent months.
     /// </summary>
     public static IReadOnlyList<DateOnly> GetCalendarDays(int year, int month)
     {
         var first  = new DateOnly(year, month, 1);
-        var last   = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
         // Mon=0 offset: (DayOfWeek + 6) % 7
         var startOffset = ((int)first.DayOfWeek + 6) % 7;
         var start = first.AddDays(-startOffset);
-        // Extend grid to the Sunday on or after the last day of the month
-        var endOffset = (7 - (int)last.DayOfWeek) % 7; // 0 if already Sunday
-        var end = last.AddDays(endOffset);
-
-        var count = (end.DayNumber - start.DayNumber) + 1;
+        const int count = 42;
         var days = new DateOnly[count];
         for (var i = 0; i < count; i++)
             days[i] = start.AddDays(i);

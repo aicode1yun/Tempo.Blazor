@@ -421,11 +421,35 @@ public sealed class DocumentEditorStrictEnginePhase19E2ETests : DocumentEditorE2
     private static async Task<Phase19ImageFootprintProbe> CapturePhase19ImageFootprintAsync(IPage page, string objectId)
     {
         await ScrollDocumentEditorObjectIntoViewAsync(page, objectId);
+        await RefreshDocumentEditorTextExclusionLayoutAsync(page);
         await page.WaitForTimeoutAsync(50);
         var diagnostics = await ReadDocumentEditorImageDiagnosticsAsync(page, objectId);
         var layer = await ReadPhase19ImageLayerProbeAsync(page, objectId);
         return new Phase19ImageFootprintProbe(objectId, diagnostics.ImageRect, diagnostics.LineIntervals, layer, diagnostics.Debug);
     }
+
+    private static Task RefreshDocumentEditorTextExclusionLayoutAsync(IPage page)
+        => page.EvaluateAsync(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                if (!instanceId) throw new Error('Phase19 text-exclusion refresh could not find the document editor instance id.');
+                const refresh = window.tmDocumentEditorEngine?.refreshWysiwygTextExclusionLayoutForTest
+                    || window.tmDocumentEditorEngine?.__testHooks?.refreshWysiwygTextExclusionLayoutForTest;
+                if (typeof refresh !== 'function') {
+                    throw new Error('Phase19 text-exclusion refresh hook is not available.');
+                }
+                const result = refresh(instanceId, {
+                    reason: 'phase19-footprint-capture',
+                    maxPasses: 8
+                });
+                if (!result || result.ok === false) {
+                    throw new Error(`Phase19 text-exclusion refresh failed: ${JSON.stringify(result)}`);
+                }
+                return result;
+            }
+            """);
 
     private static Task ScrollDocumentEditorObjectIntoViewAsync(IPage page, string objectId)
         => page.EvaluateAsync(

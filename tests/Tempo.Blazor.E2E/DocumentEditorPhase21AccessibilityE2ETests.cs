@@ -259,7 +259,8 @@ public sealed class DocumentEditorPhase21AccessibilityE2ETests : DocumentEditorE
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(width, height);
-        await page.GotoAsync($"{BaseUrl}/document-editor?{query}", new PageGotoOptions
+        var separator = string.IsNullOrWhiteSpace(query) ? string.Empty : "&";
+        await page.GotoAsync($"{BaseUrl}/document-editor?{query}{separator}renderEngine=Legacy", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000

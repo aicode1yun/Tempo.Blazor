@@ -170,7 +170,10 @@ export function createBoundaryPatchModule(options) {
         stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         if (inst.pendingTypingBoundaryTimer) clearTimeout(inst.pendingTypingBoundaryTimer);
-        const delay = Math.max(0, Number((inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs)) || 500) || 500);
+        const configuredDelay = inst.options ? (inst.options.TypingBatchMs ?? inst.options.typingBatchMs) : null;
+        const delay = configuredDelay === null || configuredDelay === undefined
+            ? 16
+            : Math.max(0, Number(configuredDelay) || 0);
         inst.pendingTypingBoundaryTimer = setTimeout(function () {
             flushTypingBoundaryPatchDispatch(inst);
         }, delay);

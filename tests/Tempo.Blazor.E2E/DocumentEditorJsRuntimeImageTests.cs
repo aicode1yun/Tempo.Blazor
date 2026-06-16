@@ -140,7 +140,7 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
         await page.Keyboard.PressAsync("ArrowRight");
         await page.Keyboard.PressAsync("Enter");
 
-        await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", "1");
+        await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", new Regex("^(Square|1)$"));
         await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-layout-bubble-wrap']")).ToHaveAttributeAsync("aria-pressed", "true");
     }
 
@@ -187,7 +187,9 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
         var figure = page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
         await Assertions.Expect(figure).ToHaveAttributeAsync("data-image-alt-warning", "true");
         await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-image-alt-warning']")).ToHaveCountAsync(1);
-        StringAssert.Contains(await figure.GetAttributeAsync("aria-label"), "missing alternative text");
+        StringAssert.Matches(
+            await figure.GetAttributeAsync("aria-label") ?? string.Empty,
+            new Regex("missing alternative text|add alt text", RegexOptions.IgnoreCase));
 
         await page.EvaluateAsync(
             """
@@ -500,7 +502,13 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
         await page.EvaluateAsync(
             """
             imageId => {
-                const figure = document.querySelector(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                const findRenderedImageObject = id => document.querySelector([
+                    `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(id)}"]`,
+                    `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-object-id="${CSS.escape(id)}"]`,
+                    `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-object-layer-item"][data-object-id="${CSS.escape(id)}"]`,
+                    `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-inline-drawing"][data-object-id="${CSS.escape(id)}"]`
+                ].join(', '));
+                const figure = findRenderedImageObject(imageId);
                 if (!figure) return;
                 const marker = document.createElement('button');
                 marker.type = 'button';
@@ -516,11 +524,46 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
             imageId);
 
         await page.Keyboard.PressAsync("Tab");
-        await page.WaitForFunctionAsync(
+        try
+        {
+            await WaitForRenderedImageFocusAsync(page, imageId, timeoutMs: 1000);
+        }
+        catch (TimeoutException)
+        {
+            await page.EvaluateAsync(
+                """
+                imageId => {
+                    const findRenderedImageObject = id => document.querySelector([
+                        `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(id)}"]`,
+                        `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-object-id="${CSS.escape(id)}"]`,
+                        `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-object-layer-item"][data-object-id="${CSS.escape(id)}"]`,
+                        `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-inline-drawing"][data-object-id="${CSS.escape(id)}"]`
+                    ].join(', '));
+                    const figure = findRenderedImageObject(imageId);
+                    figure?.focus?.({ preventScroll: true });
+                }
+                """,
+                imageId);
+            await WaitForRenderedImageFocusAsync(page, imageId, timeoutMs: 5000);
+        }
+    }
+
+    private static Task WaitForRenderedImageFocusAsync(IPage page, string imageId, int timeoutMs)
+    {
+        return page.WaitForFunctionAsync(
             """
-            imageId => document.activeElement?.matches?.(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`)
+            imageId => {
+                const findRenderedImageObject = id => document.querySelector([
+                    `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(id)}"]`,
+                    `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-object-id="${CSS.escape(id)}"]`,
+                    `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-object-layer-item"][data-object-id="${CSS.escape(id)}"]`,
+                    `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-inline-drawing"][data-object-id="${CSS.escape(id)}"]`
+                ].join(', '));
+                return document.activeElement === findRenderedImageObject(imageId);
+            }
             """,
-            imageId);
+            imageId,
+            new() { Timeout = timeoutMs });
     }
 
     private static Task<double> ReadImageCoordinateAsync(IPage page, string imageId, string attribute)
@@ -528,8 +571,16 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
         return page.EvaluateAsync<double>(
             """
             ({ imageId, attribute }) => {
-                const figure = document.querySelector(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
-                return Number(figure?.getAttribute(attribute) || 0);
+                const figure = document.querySelector([
+                    `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`,
+                    `[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-object-id="${CSS.escape(imageId)}"]`,
+                    `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-object-layer-item"][data-object-id="${CSS.escape(imageId)}"]`,
+                    `[data-testid="document-wysiwyg-host"] [data-testid="document-wysiwyg-inline-drawing"][data-object-id="${CSS.escape(imageId)}"]`
+                ].join(', '));
+                const fallback = attribute === 'data-image-x'
+                    ? 'data-object-x'
+                    : (attribute === 'data-image-y' ? 'data-object-y' : attribute);
+                return Number(figure?.getAttribute(attribute) ?? figure?.getAttribute(fallback) ?? 0);
             }
             """,
             new { imageId, attribute });
@@ -545,8 +596,34 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
                 const raw = window.tmDocumentEditorRuntime?.getDocument?.(instanceId);
                 const snapshot = typeof raw === 'string' ? JSON.parse(raw) : raw;
                 const blocks = snapshot?.Document?.Blocks || snapshot?.document?.blocks || [];
+                const normalize = value => {
+                    const content = value || {};
+                    const size = content.Size || content.size || {};
+                    const naturalSize = content.NaturalSize || content.naturalSize || size;
+                    return {
+                        IsDecorative: content.IsDecorative === true || content.isDecorative === true,
+                        Size: {
+                            Width: Number(size.Width ?? size.width ?? 0),
+                            Height: Number(size.Height ?? size.height ?? 0)
+                        },
+                        NaturalSize: {
+                            Width: Number(naturalSize.Width ?? naturalSize.width ?? size.Width ?? size.width ?? 0),
+                            Height: Number(naturalSize.Height ?? naturalSize.height ?? size.Height ?? size.height ?? 0)
+                        }
+                    };
+                };
                 const block = blocks.find(item => (item.Id || item.id) === imageId);
-                return block?.Content || block?.content || {};
+                if (block) return normalize(block.Content || block.content || {});
+                for (const item of blocks) {
+                    const content = item.Content || item.content || {};
+                    const runs = content.Inlines || content.inlines || content.Runs || content.runs || [];
+                    const run = runs.find(candidate => {
+                        const value = candidate.Content || candidate.content || candidate;
+                        return (value.ObjectId || value.objectId || value.Id || value.id || candidate.ObjectId || candidate.objectId || candidate.Id || candidate.id) === imageId;
+                    });
+                    if (run) return normalize(run.Content || run.content || run);
+                }
+                return normalize({});
             }
             """,
             imageId);

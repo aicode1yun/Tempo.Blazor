@@ -834,7 +834,7 @@ export function createParagraphLayoutEngineFactory(deps) {
             const nextBlocks = asArray(previousLayout.blocks).map(function (layoutBlock) {
                 if (layoutBlock.blockId === activeBlockId) { seenActive = true; return clone(local); }
                 const c = clone(layoutBlock);
-                if (seenActive && Math.abs(heightDelta) > 0.0001 && c.region === (previousBlock.region || c.region) && Number(c.pageIndex || 0) === Number(previousBlock.pageIndex || 0)) { shiftLayoutBlockForIncrementalReflow(c, heightDelta); c.stale = true; c.safeOffsetY = heightDelta; staleFollowing.push(c.blockId); }
+                if (seenActive && Math.abs(heightDelta) > 0.0001 && c.region === (previousBlock.region || c.region)) { shiftLayoutBlockForIncrementalReflow(c, heightDelta); c.stale = true; c.safeOffsetY = heightDelta; staleFollowing.push(c.blockId); }
                 return c;
             });
             const next = clone(previousLayout);

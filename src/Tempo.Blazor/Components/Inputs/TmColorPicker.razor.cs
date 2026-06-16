@@ -121,6 +121,11 @@ public partial class TmColorPicker : IAsyncDisposable
             _focusTriggerAfterClose = false;
             await _triggerElement.FocusAsync(preventScroll: true);
         }
+
+        if (_isOpen)
+        {
+            await JSRuntime.InvokeVoidAsync("tmColorPicker.adjustDropdownPosition", _rootElement);
+        }
     }
 
     private async Task OnFlatValueChangedAsync(string? value)

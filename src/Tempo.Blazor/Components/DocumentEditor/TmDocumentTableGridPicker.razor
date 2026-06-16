@@ -8,6 +8,7 @@
      tabindex="0"
      @onfocus="OnGridFocus"
      @onkeydown="HandleKeyDown"
+     @onkeydown:preventDefault="true"
      @onkeydown:stopPropagation="true">
 
     <div class="tm-document-table-grid-picker__grid" @onmouseleave="OnGridMouseLeave">
@@ -49,6 +50,7 @@
     private int _hoverRow = 1;
     private int _kbCol = 1;
     private int _kbRow = 1;
+    private bool _keyboardActive;
 
     /// <summary>Raised when the user chooses a table size.</summary>
     [Parameter] public EventCallback<(int Rows, int Columns)> OnInsert { get; set; }
@@ -60,17 +62,18 @@
 
     private void OnCellHover(int col, int row)
     {
+        _keyboardActive = false;
         _hoverCol = col;
         _hoverRow = row;
         _kbCol = col;
         _kbRow = row;
     }
 
-    private void OnCellClick(int col, int row)
+    private async Task OnCellClick(int col, int row)
     {
         _hoverCol = col;
         _hoverRow = row;
-        _ = OnInsert.InvokeAsync((row + 1, col + 1));
+        await OnInsert.InvokeAsync((row + 1, col + 1));
     }
 
     private void OnGridMouseLeave()
@@ -81,14 +84,28 @@
 
     private void OnGridFocus()
     {
-        _hoverCol = 1;
-        _hoverRow = 1;
-        _kbCol = 1;
-        _kbRow = 1;
+        if (!_keyboardActive)
+        {
+            _hoverCol = 1;
+            _hoverRow = 1;
+            _kbCol = 1;
+            _kbRow = 1;
+            return;
+        }
+
+        _hoverCol = _kbCol;
+        _hoverRow = _kbRow;
     }
 
-    private void HandleKeyDown(KeyboardEventArgs args)
+    private async Task HandleKeyDown(KeyboardEventArgs args)
     {
+        if (!_keyboardActive)
+        {
+            _keyboardActive = true;
+            _kbCol = 1;
+            _kbRow = 1;
+        }
+
         switch (args.Key)
         {
             case "ArrowRight":
@@ -113,10 +130,10 @@
                 break;
             case "Enter":
             case " ":
-                _ = OnInsert.InvokeAsync((_kbRow + 1, _kbCol + 1));
+                await OnInsert.InvokeAsync((_kbRow + 1, _kbCol + 1));
                 break;
             case "Escape":
-                _ = OnClose.InvokeAsync();
+                await OnClose.InvokeAsync();
                 break;
         }
     }

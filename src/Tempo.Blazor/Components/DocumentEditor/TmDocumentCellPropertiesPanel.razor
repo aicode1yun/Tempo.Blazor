@@ -5,7 +5,7 @@
 <section class="tm-document-cell-properties"
          role="region"
          aria-label="@Loc["TmDocumentEditor_CellProperties"]"
-         data-testid="document-cell-properties-panel">
+         data-testid="@($"{TestIdPrefix}-panel")">
     <header>
         <TmIcon Name="square" Size="IconSize.Sm" />
         <span>@Loc["TmDocumentEditor_CellProperties"]</span>
@@ -17,7 +17,7 @@
             <button type="button"
                     class="@SegmentClass(alignment)"
                     aria-pressed="@(CurrentVerticalAlignment == alignment)"
-                    data-testid="@($"document-cell-properties-valign-{alignment.ToString().ToLowerInvariant()}")"
+                    data-testid="@($"{TestIdPrefix}-valign-{alignment.ToString().ToLowerInvariant()}")"
                     @onclick="() => HandleVerticalAlignmentChangedAsync(alignment)">
                 @Loc[$"TmDocumentEditor_CellAlign{alignment}"]
             </button>
@@ -28,7 +28,7 @@
         <span>@Loc["TmDocumentEditor_CellBackground"]</span>
         <input type="color"
                value="@BackgroundValue"
-               data-testid="document-cell-properties-background"
+               data-testid="@($"{TestIdPrefix}-background")"
                @onchange="HandleBackgroundChangedAsync" />
     </label>
 
@@ -38,14 +38,14 @@
                min="0"
                step="1"
                value="@PaddingValue"
-               data-testid="document-cell-properties-padding"
+               data-testid="@($"{TestIdPrefix}-padding")"
                @onchange="HandlePaddingChangedAsync" />
     </label>
 
     <label>
         <span>@Loc["TmDocumentEditor_CellBorder"]</span>
         <select value="@BorderValue"
-                data-testid="document-cell-properties-border"
+                data-testid="@($"{TestIdPrefix}-border")"
                 @onchange="HandleBorderChangedAsync">
             <option value="">@Loc["TmDocumentEditor_None"]</option>
             <option value="1px solid var(--tm-color-border)">@Loc["TmDocumentEditor_TableBorderDefault"]</option>
@@ -53,7 +53,7 @@
         </select>
     </label>
 
-    <dl class="tm-document-cell-properties__meta" data-testid="document-cell-properties-span-info">
+    <dl class="tm-document-cell-properties__meta" data-testid="@($"{TestIdPrefix}-span-info")">
         <div>
             <dt>@Loc["TmDocumentEditor_ColumnSpan"]</dt>
             <dd>@(Cell?.ColumnSpan ?? 1)</dd>
@@ -78,6 +78,9 @@
 
     /// <summary>Raised when cell properties change.</summary>
     [Parameter] public EventCallback<TableCellContent> CellChanged { get; set; }
+
+    /// <summary>Prefix used for test id attributes. Defaults to document-cell-properties.</summary>
+    [Parameter] public string TestIdPrefix { get; set; } = "document-cell-properties";
 
     private TableCellVerticalAlignment CurrentVerticalAlignment => Cell?.VerticalAlignment ?? TableCellVerticalAlignment.Top;
 

@@ -28,6 +28,7 @@
 
 .tm-spreadsheet-canvas-grid {
     position: relative;
+    display: block;
     flex: 1 1 auto;
     overflow: auto;
     background: var(--tm-color-surface);
@@ -66,6 +67,34 @@
 
 .tm-spreadsheet-canvas-grid__canvas--selection {
     z-index: 3;
+}
+
+.tm-spreadsheet-canvas-grid__active-cell-proxy {
+    position: absolute;
+    z-index: 4;
+    box-sizing: border-box;
+    overflow: hidden;
+    color: transparent;
+    background: transparent;
+    opacity: 0.01;
+    pointer-events: auto;
+}
+
+.tm-spreadsheet-canvas-grid__cell-proxy-layer {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.tm-spreadsheet-canvas-grid__cell-proxy {
+    display: block;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    opacity: 0.01;
 }
 
 .tm-spreadsheet-canvas-grid__size {

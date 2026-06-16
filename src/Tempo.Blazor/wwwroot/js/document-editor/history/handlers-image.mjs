@@ -133,7 +133,17 @@ export function createImageHandlers(deps) {
                 : -1;
             if (runIndex < 0) return { ok: false, errors: [{ code: 'drawing-run-not-found', objectId, blockId: drawing.blockId }] };
 
+            const currentDrawingObject = normalizeImageObject(runs[runIndex], { blockId: drawing.blockId, inlineIndex: runIndex });
+            const previousDrawingLayout = syncImageLayoutCase(imageObjectToLayout(currentDrawingObject));
             const drawingLayout = syncImageLayoutCase(clone(op.newLayout || op.NewLayout || op.layout || op.Layout || {}));
+            if (!op.oldLayout && !op.OldLayout && !op.previousLayout && !op.PreviousLayout) {
+                op.oldLayout = clone(previousDrawingLayout);
+                op.OldLayout = clone(previousDrawingLayout);
+            }
+            op.newLayout = clone(drawingLayout);
+            op.NewLayout = clone(drawingLayout);
+            op.layout = clone(drawingLayout);
+            op.Layout = clone(drawingLayout);
             runs[runIndex].layout = drawingLayout;
             const drawingTransform = drawingLayout.Transform || drawingLayout.transform || {};
             const drawingSize = runs[runIndex].size || runs[runIndex].Size || {};

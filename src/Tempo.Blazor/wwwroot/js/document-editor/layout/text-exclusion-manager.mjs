@@ -65,8 +65,20 @@ export function createTextExclusionManager(exclusions, bodyFrame, options) {
                 || exclusion.allowOverlap === true
                 || exclusion.AllowOverlap === true) return;
             const rect = rectFromGeometry(exclusion.rect || exclusion.Rect);
-            if (!rectIntersectsGeometry(lineRect, rect)) return;
-            blockingBottom = Math.max(blockingBottom, rectBottomGeometry(rect));
+            const mode = normalizeWrapModeName(exclusion.wrapMode || exclusion.WrapMode);
+            const sourceRect = mode === 'Tight'
+                ? rectFromGeometry(exclusion.sourceRect || exclusion.SourceRect)
+                : null;
+            const intersectsRect = rectIntersectsGeometry(lineRect, rect);
+            const intersectsSourceRect = !!(sourceRect
+                && sourceRect.width > 0
+                && sourceRect.height > 0
+                && rectIntersectsGeometry(lineRect, sourceRect));
+            if (!intersectsRect && !intersectsSourceRect) return;
+            blockingBottom = Math.max(
+                blockingBottom,
+                intersectsRect ? rectBottomGeometry(rect) : lineY,
+                intersectsSourceRect ? rectBottomGeometry(sourceRect) : lineY);
             if (intervalCacheStats) {
                 intervalCacheStats.blockedGeometryComputeCount =
                     Number(intervalCacheStats.blockedGeometryComputeCount || 0) + 1;
@@ -80,8 +92,7 @@ export function createTextExclusionManager(exclusions, bodyFrame, options) {
                     blocked.push(normalizeManagerInterval(interval, lineY, height, {
                         objectId: exclusion.objectId || exclusion.ObjectId || '',
                         blockId: exclusion.blockId || exclusion.BlockId || '',
-                        wrapMode: normalizeWrapModeName(
-                            exclusion.wrapMode || exclusion.WrapMode),
+                        wrapMode: mode,
                         wrapSide: normalizeWrapSideName(
                             exclusion.wrapSide || exclusion.WrapSide),
                     }));

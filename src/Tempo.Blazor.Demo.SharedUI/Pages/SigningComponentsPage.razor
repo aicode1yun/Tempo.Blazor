@@ -323,7 +323,7 @@
                                            Area="_editorArea"
                                            Value="GetEditorPreviewValue()"
                                            Completed="_editorField.Required"
-                                           Culture="@_designerCulture"
+                                           Culture="@_fieldEditorCulture"
                                            FallbackCulture="cs-CZ"
                                            Class="signing-components-page__sample-field" />
                 </div>
@@ -336,7 +336,7 @@
                                        FieldChanged="HandleEditorFieldChanged"
                                        Fields="_editorFields"
                                        SubmitterRoles="_templateRoles"
-                                       Culture="@_designerCulture"
+                                       Culture="@_fieldEditorCulture"
                                        FallbackCulture="cs-CZ"
                                        SupportedCultures="_signingCultures"
                                        ShowLocalizationEditor="true"
@@ -728,6 +728,7 @@
     private string? _formulaValue;
     private string _formulaStatus = "No formula saved";
     private readonly IReadOnlyList<string> _signingCultures = ["cs-CZ", "en-US"];
+    private string? _fieldEditorCulture = "en-US";
     private string? _designerCulture = "cs-CZ";
     private string? _runnerCulture = "en-US";
     private IReadOnlyList<SigningSubmitterRole> _templateRoles = [];

@@ -181,6 +181,7 @@ export function applyJustifyMetadata(lines, alignment) {
         const isLast = index === lines.length - 1;
         let totalGaps = 0;
         let anyEnabled = false;
+        let maxExtraSpacePerGap = 0;
         const rangeJustify = asArray(line.ranges && line.ranges.length
             ? line.ranges
             : line.availableIntervals).map(function (range, rangeIndex) {
@@ -202,6 +203,7 @@ export function applyJustifyMetadata(lines, alignment) {
                 const remaining = Math.max(0, Number(range && range.width || 0) - usedWidth);
                 const enabled = justify && !isLast && !line.hardBreak && gaps > 0 && remaining > 0;
                 if (enabled) anyEnabled = true;
+                if (enabled) maxExtraSpacePerGap = Math.max(maxExtraSpacePerGap, remaining / gaps);
                 return {
                     enabled: enabled,
                     extraSpacePerGap: enabled ? remaining / gaps : 0,
@@ -212,7 +214,7 @@ export function applyJustifyMetadata(lines, alignment) {
             });
         line.justify = {
             enabled: anyEnabled,
-            extraSpacePerGap: 0,
+            extraSpacePerGap: anyEnabled ? maxExtraSpacePerGap : 0,
             gapCount: totalGaps,
             ranges: rangeJustify,
         };

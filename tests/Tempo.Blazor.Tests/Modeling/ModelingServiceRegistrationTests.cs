@@ -35,6 +35,7 @@ public sealed class ModelingServiceRegistrationTests
         relationshipRules.IsValidRelationship("bpmn", "startEvent", "userTask", "sequenceFlow").Should().BeTrue();
         relationshipRules.IsValidRelationship("uml25", "Class", "Class", "Generalization").Should().BeTrue();
         viewpointRules.IsElementAllowedInViewpoint("archimate", "overview", "applicationComponent").Should().BeTrue();
+        viewpointRules.IsElementAllowedInViewpoint("bpmn2", "Process", "AiTask").Should().BeTrue();
         viewpointRules.IsElementAllowedInViewpoint("archimate32", "ApplicationUsage", "ApplicationComponent").Should().BeTrue();
         viewpointRules.IsElementAllowedInViewpoint("archimate32", "ApplicationUsage", "BusinessActor").Should().BeFalse();
         mapper.GetStencilId("bpmn", "userTask").Should().Be("bpmn2.task.user");

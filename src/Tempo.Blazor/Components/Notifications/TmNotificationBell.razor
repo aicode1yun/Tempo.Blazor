@@ -93,10 +93,11 @@
     private bool _isOpen;
     private bool _hasNew;
     private bool _showOnlyUnread;
+    private int _serviceUnreadCount;
     private List<INotification> _notifications = new();
     private ElementReference _rootRef;
 
-    private int UnreadCount => BadgeState.UnreadCount;
+    private int UnreadCount => Math.Max(_serviceUnreadCount, BadgeState.UnreadCount);
 
     private string AriaLabelText => UnreadCount > 0
         ? Loc["TmNotificationBell_NewCount", UnreadCount]
@@ -105,9 +106,10 @@
     private IEnumerable<INotification> VisibleNotifications =>
         _showOnlyUnread ? _notifications.Where(n => !n.IsRead) : _notifications;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         BadgeState.OnChanged += OnBadgeChanged;
+        await LoadUnreadCountAsync();
     }
 
     private async void OnBadgeChanged()
@@ -115,6 +117,7 @@
         await InvokeAsync(async () =>
         {
             _hasNew = true;
+            await LoadUnreadCountAsync();
             if (_isOpen)
                 await LoadNotificationsAsync();
             StateHasChanged();
@@ -139,6 +142,12 @@
     private async Task LoadNotificationsAsync()
     {
         _notifications = (await NotificationService.GetNotificationsAsync(CurrentUserId, limit: 50)).ToList();
+        _serviceUnreadCount = _notifications.Count(n => !n.IsRead);
+    }
+
+    private async Task LoadUnreadCountAsync()
+    {
+        _serviceUnreadCount = await NotificationService.GetUnreadCountAsync(CurrentUserId);
     }
 
     private async Task MarkAllReadAsync()

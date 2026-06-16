@@ -237,6 +237,7 @@ test('input commits publish latency immediately and coalesce canvas render to th
 
     assert.ok(Number(root.getAttribute('data-canvas-render-count') || '0') > renderCountBefore);
     assert.equal(root.getAttribute('data-canvas-recalc-first-dirty-block-index'), '0');
+    assert.equal(root.getAttribute('data-canvas-input-incremental-repaint'), 'true');
 
     await new Promise(resolve => setTimeout(resolve, 220));
 

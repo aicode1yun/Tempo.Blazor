@@ -31,6 +31,32 @@ export function createCollectWysiwygDomTextExclusions(options) {
 
     return function collectWysiwygDomTextExclusions(body, bodyRect, frame) {
         const result = [];
+        const rectRelativeTo = (rect, origin) => ({
+            x: Number((rect && (rect.left ?? rect.x)) || 0) - Number((origin && (origin.left ?? origin.x)) || 0),
+            y: Number((rect && (rect.top ?? rect.y)) || 0) - Number((origin && (origin.top ?? origin.y)) || 0),
+            width: Math.max(0, Number((rect && rect.width) || 0) || 0),
+            height: Math.max(0, Number((rect && rect.height) || 0) || 0),
+        });
+        const visibleChildRect = (item, selector) => {
+            const child = item && typeof item.querySelector === 'function'
+                ? item.querySelector(selector)
+                : null;
+            if (!child || !isWysiwygLayoutElementVisible(child)
+                || typeof child.getBoundingClientRect !== 'function') {
+                return null;
+            }
+
+            return rectRelativeTo(child.getBoundingClientRect(), bodyRect);
+        };
+        const readWrapContourPoints = item => {
+            const raw = item.getAttribute('data-wrap-contour-points') || '';
+            if (!raw) return [];
+            try {
+                return JSON.parse(raw);
+            } catch (_) {
+                return [];
+            }
+        };
         Array.from(body.querySelectorAll(
             '.tm-wysiwyg-page__layer--object .tm-wysiwyg-object-layer-item[data-object-id]'))
             .forEach(function (item) {
@@ -38,26 +64,34 @@ export function createCollectWysiwygDomTextExclusions(options) {
                 if ((item.getAttribute('data-object-layer-kind') || '') === 'inline') return;
                 const mode = normalizeWrapModeName(item.getAttribute('data-wrap-mode') || 'Inline');
                 if (!wrapModeCreatesTextExclusion(mode)) return;
-                const objectRect = getWysiwygObjectVisualRectRelativeTo(item, bodyRect);
+                const objectRect = visibleChildRect(item, 'img')
+                    || getWysiwygObjectVisualRectRelativeTo(item, bodyRect);
                 if (!objectRect || objectRect.width <= 0 || objectRect.height <= 0) return;
                 const anchorBlockId = item.getAttribute('data-anchor-block-id')
                     || item.getAttribute('data-model-block-id')
                     || item.getAttribute('data-block-id') || '';
+                const objectId = item.getAttribute('data-object-id') || '';
+                const wrapSide = normalizeWrapSideName(item.getAttribute('data-wrap-side') || 'BothSides');
+                const distanceLeft = Number(item.getAttribute('data-distance-left') || 0) || 0;
+                const distanceRight = Number(item.getAttribute('data-distance-right') || 0) || 0;
+                const distanceTop = Number(item.getAttribute('data-distance-top') || 0) || 0;
+                const distanceBottom = Number(item.getAttribute('data-distance-bottom') || 0) || 0;
                 const object = {
-                    objectId: item.getAttribute('data-object-id') || '',
+                    objectId,
                     blockId: anchorBlockId,
                     anchorBlockId,
                     pageIndex: 0,
                     region: 'Body',
                     wrapMode: mode,
-                    wrapSide: normalizeWrapSideName(item.getAttribute('data-wrap-side') || 'BothSides'),
+                    wrapSide,
                     rect: objectRect,
                     width: objectRect.width,
                     height: objectRect.height,
-                    distanceLeft: Number(item.getAttribute('data-distance-left') || 0) || 0,
-                    distanceRight: Number(item.getAttribute('data-distance-right') || 0) || 0,
-                    distanceTop: Number(item.getAttribute('data-distance-top') || 0) || 0,
-                    distanceBottom: Number(item.getAttribute('data-distance-bottom') || 0) || 0,
+                    wrapContourPoints: readWrapContourPoints(item),
+                    distanceLeft,
+                    distanceRight,
+                    distanceTop,
+                    distanceBottom,
                     allowOverlap: false,
                 };
                 const exclusion = createTextExclusion(object, frame);
@@ -65,6 +99,32 @@ export function createCollectWysiwygDomTextExclusions(options) {
                 exclusion.anchorBlockId = anchorBlockId;
                 exclusion.objectElement = item;
                 result.push(exclusion);
+                const captionRect = visibleChildRect(item, 'figcaption');
+                if (captionRect && captionRect.width > 0 && captionRect.height > 0) {
+                    const captionExclusion = createTextExclusion({
+                        objectId: objectId ? `${objectId}:caption` : `${anchorBlockId}:caption`,
+                        blockId: anchorBlockId,
+                        anchorBlockId,
+                        pageIndex: 0,
+                        region: 'Body',
+                        wrapMode: 'Square',
+                        wrapSide,
+                        rect: captionRect,
+                        width: captionRect.width,
+                        height: captionRect.height,
+                        distanceLeft,
+                        distanceRight,
+                        distanceTop: 0,
+                        distanceBottom,
+                        allowOverlap: false,
+                    }, frame);
+                    if (captionExclusion) {
+                        captionExclusion.anchorBlockId = anchorBlockId;
+                        captionExclusion.objectElement = item;
+                        captionExclusion.captionElement = item.querySelector('figcaption');
+                        result.push(captionExclusion);
+                    }
+                }
             });
         return result;
     };

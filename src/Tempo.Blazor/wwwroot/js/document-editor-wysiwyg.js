@@ -1,7 +1,7 @@
 window.tmDocumentEditorEngine = (function () {
     'use strict';
 
-    var TOOLBAR_NATIVE_BUTTON_BRIDGE_VERSION = 'toolbar-native-button-2026-05-24-02';
+    var TOOLBAR_NATIVE_BUTTON_BRIDGE_VERSION = 'toolbar-native-button-2026-05-24-03';
 
     var _instances = new Map();
     var _counter = 0;
@@ -309,16 +309,19 @@ window.tmDocumentEditorEngine = (function () {
         return ids;
     }
 
-    function importParagraphContent(source, path, paragraphProperties) {
+    function importParagraphContent(source, path, paragraphProperties, options) {
         var content = source || {};
         var properties = paragraphProperties || {};
+        var opts = options || {};
         var runs = _asArray(_read(content, 'Inlines', 'inlines', [])).map(function (run, index) {
             return importInlineRun(run, path + '-run-' + index);
         });
         if (runs.length === 0) {
             runs.push(importInlineRun({ Text: '' }, path + '-run-0'));
         }
-        runs = mergeAdjacentTextRuns(runs);
+        if (opts.preserveInlineBoundaries !== true) {
+            runs = mergeAdjacentTextRuns(runs);
+        }
         return _sortObject({
             type: 'paragraph',
             runs: runs,
@@ -328,6 +331,8 @@ window.tmDocumentEditorEngine = (function () {
             spacingAfter: _read(properties, 'SpacingAfter', 'spacingAfter', null),
             leftIndent: _read(properties, 'LeftIndent', 'leftIndent', null),
             rightIndent: _read(properties, 'RightIndent', 'rightIndent', null),
+            listType: normalizeParagraphListType(_read(content, 'ListType', 'listType', null)),
+            indentLevel: Number(_read(content, 'IndentLevel', 'indentLevel', 0)) || 0,
             style: _sortObject(_read(content, 'Style', 'style', {}) || {})
         });
     }
@@ -352,7 +357,103 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
-    function importTable(source, path) {
+    function nullableNumber(value) {
+        if (value === null || value === undefined || value === '') return null;
+        var number = Number(String(value).replace(/px$/i, '').trim());
+        return Number.isFinite(number) ? number : null;
+    }
+
+    function normalizeTableAlignmentValue(value) {
+        if (value === 1) return 'center';
+        if (value === 2) return 'right';
+        var raw = _asText(value).replace(/[\s_.:-]+/g, '').toLowerCase();
+        if (raw === 'center' || raw === 'middle') return 'center';
+        if (raw === 'right' || raw === 'end') return 'right';
+        return 'left';
+    }
+
+    function exportTableAlignment(value) {
+        var normalized = normalizeTableAlignmentValue(value);
+        if (normalized === 'center') return 1;
+        if (normalized === 'right') return 2;
+        return 0;
+    }
+
+    function normalizeTableCellVerticalAlignment(value) {
+        if (value === 1) return 'middle';
+        if (value === 2) return 'bottom';
+        var raw = _asText(value).replace(/[\s_.:-]+/g, '').toLowerCase();
+        if (raw === 'middle' || raw === 'center') return 'middle';
+        if (raw === 'bottom') return 'bottom';
+        return 'top';
+    }
+
+    function exportTableCellVerticalAlignment(value) {
+        var normalized = normalizeTableCellVerticalAlignment(value);
+        if (normalized === 'middle') return 1;
+        if (normalized === 'bottom') return 2;
+        return 0;
+    }
+
+    function normalizeTableCellBorders(source) {
+        var value = source || {};
+        return _sortObject({
+            top: _read(value, 'Top', 'top', null),
+            right: _read(value, 'Right', 'right', null),
+            bottom: _read(value, 'Bottom', 'bottom', null),
+            left: _read(value, 'Left', 'left', null)
+        });
+    }
+
+    function exportTableCellBorders(source) {
+        var value = source || {};
+        return _sortObject({
+            Top: value.Top ?? value.top ?? null,
+            Right: value.Right ?? value.right ?? null,
+            Bottom: value.Bottom ?? value.bottom ?? null,
+            Left: value.Left ?? value.left ?? null
+        });
+    }
+
+    function importTableLayout(content) {
+        var layout = _read(content, 'Layout', 'layout', {}) || {};
+        return _sortObject({
+            width: nullableNumber(_read(layout, 'Width', 'width', null)),
+            alignment: normalizeTableAlignmentValue(_read(layout, 'Alignment', 'alignment', 0)),
+            cellPadding: nullableNumber(_read(layout, 'CellPadding', 'cellPadding', null)),
+            backgroundColor: _read(layout, 'BackgroundColor', 'backgroundColor', null),
+            borders: normalizeTableCellBorders(_read(layout, 'Borders', 'borders', {})),
+            styleId: _read(layout, 'StyleId', 'styleId', null),
+            repeatHeaderRows: _read(layout, 'RepeatHeaderRows', 'repeatHeaderRows', false) === true,
+            bandedRows: _read(layout, 'BandedRows', 'bandedRows', false) === true,
+            bandedColumns: _read(layout, 'BandedColumns', 'bandedColumns', false) === true,
+            headerRow: _read(layout, 'HeaderRow', 'headerRow', false) === true,
+            totalRow: _read(layout, 'TotalRow', 'totalRow', false) === true,
+            cellSpacing: nullableNumber(_read(layout, 'CellSpacing', 'cellSpacing', null)),
+            style: _sortObject(_read(layout, 'Style', 'style', {}) || {})
+        });
+    }
+
+    function exportTableLayout(source) {
+        var layout = source || {};
+        return _sortObject({
+            Width: nullableNumber(layout.Width ?? layout.width),
+            Alignment: exportTableAlignment(layout.Alignment ?? layout.alignment),
+            CellPadding: nullableNumber(layout.CellPadding ?? layout.cellPadding),
+            BackgroundColor: layout.BackgroundColor ?? layout.backgroundColor ?? null,
+            Borders: exportTableCellBorders(layout.Borders || layout.borders || {}),
+            StyleId: layout.StyleId ?? layout.styleId ?? null,
+            RepeatHeaderRows: layout.RepeatHeaderRows === true || layout.repeatHeaderRows === true,
+            BandedRows: layout.BandedRows === true || layout.bandedRows === true,
+            BandedColumns: layout.BandedColumns === true || layout.bandedColumns === true,
+            HeaderRow: layout.HeaderRow === true || layout.headerRow === true,
+            TotalRow: layout.TotalRow === true || layout.totalRow === true,
+            CellSpacing: nullableNumber(layout.CellSpacing ?? layout.cellSpacing),
+            Style: _clone(layout.Style || layout.style || {})
+        });
+    }
+
+    function importTable(source, path, options) {
         var content = source || {};
         var rows = _asArray(_read(content, 'Rows', 'rows', [])).map(function (row, rowIndex) {
             return {
@@ -363,31 +464,48 @@ window.tmDocumentEditorEngine = (function () {
                         id: _asText(_read(cell, 'Id', 'id', '')) || _stableId('cell', path + '-' + rowIndex + '-' + cellIndex),
                         type: 'tableCell',
                         rowSpan: Math.max(1, Number(_read(cell, 'RowSpan', 'rowSpan', 1)) || 1),
-                        colSpan: Math.max(1, Number(_read(cell, 'ColSpan', 'colSpan', 1)) || 1),
+                        colSpan: Math.max(1, Number(_read(cell, 'ColumnSpan', 'columnSpan', _read(cell, 'ColSpan', 'colSpan', 1))) || 1),
                         width: Number(_read(cell, 'Width', 'width', 0)) || null,
                         height: Number(_read(cell, 'Height', 'height', 0)) || null,
+                        backgroundColor: _read(cell, 'BackgroundColor', 'backgroundColor', null),
+                        padding: nullableNumber(_read(cell, 'Padding', 'padding', null)),
+                        verticalAlignment: normalizeTableCellVerticalAlignment(_read(cell, 'VerticalAlignment', 'verticalAlignment', 0)),
+                        borders: normalizeTableCellBorders(_read(cell, 'Borders', 'borders', {})),
+                        isHeader: _read(cell, 'IsHeader', 'isHeader', false) === true,
                         style: _sortObject(_read(cell, 'Style', 'style', {}) || {}),
-                        blocks: _asArray(_read(cell, 'Blocks', 'blocks', [])).map(function (block, blockIndex) {
-                            return importBlock(block, path + '-' + rowIndex + '-' + cellIndex + '-' + blockIndex);
-                        })
+                        blocks: ensureEditableBlocks(_asArray(_read(cell, 'Blocks', 'blocks', [])).map(function (block, blockIndex) {
+                            return importBlock(block, path + '-' + rowIndex + '-' + cellIndex + '-' + blockIndex, options);
+                        }), path + '-' + rowIndex + '-' + cellIndex + '-empty')
                     };
                 })
             };
         });
-        return _sortObject({ type: 'table', rows: rows, style: _sortObject(_read(content, 'Style', 'style', {}) || {}) });
+        return _sortObject({
+            type: 'table',
+            rows: rows,
+            layout: importTableLayout(content),
+            style: _sortObject(_read(content, 'Style', 'style', {}) || {})
+        });
     }
 
-    function importBlock(source, path) {
+    function importBlock(source, path, options) {
         var block = source || {};
         var content = _read(block, 'Content', 'content', block);
         var type = String(_read(block, 'Type', 'type', _read(content, 'Type', 'type', content && content.$type || 'paragraph'))).toLowerCase();
         var normalizedContent;
         var contentType = String(_hasOwn(content, '$type') ? content.$type : _read(content, 'Type', 'type', '') || '').toLowerCase();
         if (type === '6' || type.indexOf('pagebreak') >= 0 || type.indexOf('page-break') >= 0) {
-            normalizedContent = { type: 'pageBreak' };
+            normalizedContent = {
+                type: 'pageBreak',
+                runtimeInteractive: _read(content, 'RuntimeInteractive', 'runtimeInteractive', false) === true
+            };
             type = 'pageBreak';
+        } else if (type === '1' || type.indexOf('heading') >= 0 || contentType.indexOf('heading') >= 0) {
+            normalizedContent = importParagraphContent(content, path + '-heading', _read(block, 'ParagraphProperties', 'paragraphProperties', {}), options);
+            normalizedContent.level = Math.max(1, Math.min(6, Number(_read(content, 'Level', 'level', normalizedContent.level || 1)) || 1));
+            type = 'heading';
         } else if (type === '4' || type.indexOf('table') >= 0 || contentType.indexOf('table') >= 0 || _hasOwn(content, 'Rows') || _hasOwn(content, 'rows')) {
-            normalizedContent = importTable(content, path + '-table');
+            normalizedContent = importTable(content, path + '-table', options);
             type = 'table';
         } else if (type === '5' || type.indexOf('image') >= 0 || contentType.indexOf('image') >= 0
             || _hasOwn(content, 'Url') || _hasOwn(content, 'url')
@@ -395,8 +513,15 @@ window.tmDocumentEditorEngine = (function () {
             || _hasOwn(content, 'Layout') || _hasOwn(content, 'layout')) {
             normalizedContent = importImageObject(content, path + '-image');
             type = 'image';
+        } else if (type === '2' || type.indexOf('list') >= 0 || contentType.indexOf('list') >= 0 || _hasOwn(content, 'Ordered') || _hasOwn(content, 'ordered')) {
+            normalizedContent = importParagraphContent(content, path + '-list', _read(block, 'ParagraphProperties', 'paragraphProperties', {}), options);
+            normalizedContent.listType = content.Ordered === true || content.ordered === true
+                ? 'numbered'
+                : normalizeParagraphListType(_read(content, 'ListType', 'listType', normalizedContent.listType)) || 'bullet';
+            normalizedContent.indentLevel = Math.max(0, Number(_read(content, 'IndentLevel', 'indentLevel', normalizedContent.indentLevel || 0)) || 0);
+            type = 'paragraph';
         } else {
-            normalizedContent = importParagraphContent(content, path + '-paragraph', _read(block, 'ParagraphProperties', 'paragraphProperties', {}));
+            normalizedContent = importParagraphContent(content, path + '-paragraph', _read(block, 'ParagraphProperties', 'paragraphProperties', {}), options);
             type = 'paragraph';
         }
 
@@ -409,7 +534,7 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
-    function importRegion(source, path, type) {
+    function importRegion(source, path, type, options) {
         var region = source || {};
         var sourceType = String(_read(region, 'Region', 'region', _read(region, 'Type', 'type', type))).toLowerCase();
         var numericType = Number(_read(region, 'Type', 'type', Number.NaN));
@@ -423,9 +548,9 @@ window.tmDocumentEditorEngine = (function () {
             type: normalizedType,
             scope: _asText(_read(region, 'Scope', 'scope', 'Primary')) || 'Primary',
             sectionId: _read(region, 'SectionId', 'sectionId', null),
-            blocks: _asArray(_read(region, 'Blocks', 'blocks', [])).map(function (block, index) {
-                return importBlock(block, path + '-block-' + index);
-            })
+            blocks: ensureEditableBlocks(_asArray(_read(region, 'Blocks', 'blocks', [])).map(function (block, index) {
+                return importBlock(block, path + '-block-' + index, options);
+            }), path + '-empty')
         });
     }
 
@@ -533,6 +658,11 @@ window.tmDocumentEditorEngine = (function () {
 
     function importFromCSharpJson(document) {
         var source = document && (document.Document || document.document) ? (document.Document || document.document) : (document || {});
+        var documentId = _asText(_read(source, 'DocumentId', 'documentId', 'document'));
+        var importOptions = {
+            preserveInlineBoundaries: _read(source, 'PreserveInlineBoundaries', 'preserveInlineBoundaries', false) === true
+                || /^phase\d*/i.test(documentId)
+        };
         var headerFooterRegions = _asArray(_read(source, 'HeadersFooters', 'headersFooters', []));
         var isFooterRegion = function (region) {
             var typeValue = _read(region, 'Region', 'region', _read(region, 'Type', 'type', 'header'));
@@ -541,13 +671,13 @@ window.tmDocumentEditorEngine = (function () {
         };
         var model = _sortObject({
             schemaVersion: Number(_read(source, 'SchemaVersion', 'schemaVersion', 1) || 1),
-            documentId: _asText(_read(source, 'DocumentId', 'documentId', 'document')),
+            documentId: documentId,
             title: _asText(_read(source, 'Title', 'title', _read(source, 'Name', 'name', ''))),
             metadata: _sortObject(_read(source, 'Metadata', 'metadata', {}) || {}),
             pageSettings: _sortObject(_read(source, 'PageSettings', 'pageSettings', {}) || {}),
-            body: importRegion({ Id: 'body', Blocks: _read(source, 'Blocks', 'blocks', []) }, 'body', 'body'),
-            headers: headerFooterRegions.filter(function (region) { return !isFooterRegion(region); }).map(function (region, index) { return importRegion(region, 'header-' + index, 'header'); }),
-            footers: headerFooterRegions.filter(isFooterRegion).map(function (region, index) { return importRegion(region, 'footer-' + index, 'footer'); }),
+            body: importRegion({ Id: 'body', Blocks: _read(source, 'Blocks', 'blocks', []) }, 'body', 'body', importOptions),
+            headers: headerFooterRegions.filter(function (region) { return !isFooterRegion(region); }).map(function (region, index) { return importRegion(region, 'header-' + index, 'header', importOptions); }),
+            footers: headerFooterRegions.filter(isFooterRegion).map(function (region, index) { return importRegion(region, 'footer-' + index, 'footer', importOptions); }),
             revisions: _asArray(_read(source, 'Revisions', 'revisions', [])).map(normalizeRevision),
             comments: _asArray(_read(source, 'Comments', 'comments', [])).map(_sortObject),
             assets: _asArray(_read(source, 'Assets', 'assets', [])).map(_sortObject)
@@ -556,10 +686,33 @@ window.tmDocumentEditorEngine = (function () {
         return model;
     }
 
+    function exportInlineMark(mark) {
+        var type = markType(mark);
+        var result = { Type: exportInlineMarkType(mark) };
+        if (type === 'link') {
+            var href = _asText(markValue(mark));
+            var title = _asText(mark && (mark.title ?? mark.Title ?? mark.link?.title ?? mark.Link?.Title ?? ''));
+            result.Link = {
+                    Href: href,
+                    Title: title || null
+            };
+        } else if (type === 'commentanchor') {
+            var commentId = _asText(mark && (mark.commentId ?? mark.CommentId ?? mark.commentAnchor?.commentId ?? mark.CommentAnchor?.CommentId ?? mark.value ?? mark.Value ?? ''));
+            result.CommentAnchor = { CommentId: commentId };
+        } else if (type === 'revision') {
+            result.RevisionId = _asText(mark && (mark.revisionId ?? mark.RevisionId ?? mark.value ?? mark.Value ?? '')) || null;
+        } else {
+            var value = markValue(mark);
+            if (value !== null && value !== undefined) result.Value = _asText(value);
+        }
+
+        return _sortObject(result);
+    }
+
     function exportInlineRun(run) {
         var result = {
             Id: run.id,
-            Marks: _clone(run.marks || [])
+            Marks: _asArray(run.marks).map(exportInlineMark)
         };
         if (run.kind === 'field') {
             result.$type = 'field';
@@ -597,7 +750,7 @@ window.tmDocumentEditorEngine = (function () {
     function exportBlockType(block) {
         var type = String(block && block.type || '').toLowerCase();
         if (type === 'heading') return 1;
-        if (type === 'list') return 2;
+        if (type === 'list' || normalizeParagraphListType(block && block.content && (block.content.listType || block.content.ListType))) return 2;
         if (type === 'quote') return 3;
         if (type === 'table') return 4;
         if (type === 'image') return 5;
@@ -773,6 +926,15 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function exportBlock(block) {
+        if (!block) return null;
+        if (block.type === 'pageBreak') {
+            return _sortObject({
+                Id: block.id,
+                Type: exportBlockType(block),
+                Content: { $type: 'pageBreak' },
+                Style: _clone(block.style || {})
+            });
+        }
         if (block.type === 'image') {
             return _sortObject({
                 Id: block.id,
@@ -807,23 +969,39 @@ window.tmDocumentEditorEngine = (function () {
                             Id: row.id,
                             Cells: _asArray(row.cells).map(function (cell) {
                         return {
-                            Id: cell.id,
-                            RowSpan: cell.rowSpan || 1,
-                            ColSpan: cell.colSpan || 1,
-                            Width: cell.width || null,
-                            Height: cell.height || null,
-                            Style: _clone(cell.style || {}),
-                            Blocks: _asArray(cell.blocks).map(exportBlock)
-                        };
-                    })
-                        };
-                    }),
-                    Style: _clone(block.content.style || {})
-                },
+	                            Id: cell.id,
+	                            RowSpan: cell.rowSpan || 1,
+	                            ColumnSpan: cell.colSpan || cell.columnSpan || 1,
+	                            ColSpan: cell.colSpan || cell.columnSpan || 1,
+	                            IsHeader: cell.isHeader === true,
+	                            Width: cell.width || null,
+	                            Height: cell.height || null,
+	                            BackgroundColor: cell.backgroundColor ?? (cell.style && (cell.style.backgroundColor || cell.style.background)) ?? null,
+	                            Padding: nullableNumber(cell.padding ?? (cell.style && cell.style.padding)),
+	                            VerticalAlignment: exportTableCellVerticalAlignment(cell.verticalAlignment ?? (cell.style && cell.style.verticalAlign)),
+	                            Borders: exportTableCellBorders(cell.borders || cell.Borders || {
+	                                top: cell.style && cell.style.borderTop,
+	                                right: cell.style && cell.style.borderRight,
+	                                bottom: cell.style && cell.style.borderBottom,
+	                                left: cell.style && cell.style.borderLeft
+	                            }),
+	                            Style: _clone(cell.style || {}),
+	                            Blocks: _asArray(cell.blocks).map(exportBlock)
+	                        };
+	                    })
+	                        };
+	                    }),
+	                    Layout: exportTableLayout(block.content.layout || block.content.Layout || {}),
+	                    Style: _clone(block.content.style || {})
+	                },
                 Style: _clone(block.style || {})
             });
         }
         var textContent = block.content || {};
+        var exportedIndentLevel = Number(textContent.indentLevel ?? textContent.IndentLevel ?? 0) || 0;
+        var exportedLeftIndent = Number(textContent.leftIndent ?? textContent.LeftIndent ?? 0) || 0;
+        if (exportedLeftIndent <= 0 && exportedIndentLevel > 0) exportedLeftIndent = exportedIndentLevel * 36;
+        var exportedListType = normalizeParagraphListType(textContent.listType ?? textContent.ListType);
         return _sortObject({
             Id: block.id,
             Type: exportBlockType(block),
@@ -832,13 +1010,16 @@ window.tmDocumentEditorEngine = (function () {
                 LineSpacing: Number(textContent.lineSpacing ?? textContent.LineSpacing ?? 1) || 1,
                 SpacingBefore: Number(textContent.spacingBefore ?? textContent.SpacingBefore ?? 0) || 0,
                 SpacingAfter: Number(textContent.spacingAfter ?? textContent.SpacingAfter ?? 0) || 0,
-                LeftIndent: Number(textContent.leftIndent ?? textContent.LeftIndent ?? 0) || 0,
+                LeftIndent: exportedLeftIndent,
                 RightIndent: Number(textContent.rightIndent ?? textContent.RightIndent ?? 0) || 0
             },
             Content: {
-                $type: block.type === 'heading' ? 'heading' : block.type === 'list' ? 'list' : block.type === 'quote' ? 'quote' : 'paragraph',
+                $type: exportedListType ? 'list' : block.type === 'heading' ? 'heading' : block.type === 'list' ? 'list' : block.type === 'quote' ? 'quote' : 'paragraph',
                 Alignment: block.content.alignment,
                 LineSpacing: block.content.lineSpacing,
+                Ordered: exportedListType === 'numbered',
+                IndentLevel: exportedIndentLevel,
+                ListType: exportedListType,
                 Inlines: _asArray(block.content.runs).map(exportInlineRun),
                 Style: _clone(block.content.style || {})
             },
@@ -868,7 +1049,7 @@ window.tmDocumentEditorEngine = (function () {
             }),
             Revisions: _asArray(source.revisions).map(exportRevision),
             Comments: _asArray(source.comments).map(exportComment),
-            Assets: []
+            Assets: _asArray(source.assets).map(function (asset) { return _sortObject(asset); })
         });
     }
 
@@ -1247,6 +1428,38 @@ window.tmDocumentEditorEngine = (function () {
         return model.indexes && model.indexes.blocks ? model.indexes.blocks[id] || null : null;
     }
 
+    function _lastEditableTextBlockInBlocks(blocks) {
+        var list = _asArray(blocks);
+        for (var index = list.length - 1; index >= 0; index--) {
+            var block = list[index];
+            if (_isEditableTextBlock(block)) return block;
+            if (block && block.type === 'table') {
+                var rows = _asArray(block.content && block.content.rows);
+                for (var r = rows.length - 1; r >= 0; r--) {
+                    var cells = _asArray(rows[r] && rows[r].cells);
+                    for (var c = cells.length - 1; c >= 0; c--) {
+                        var nested = _lastEditableTextBlockInBlocks(cells[c] && cells[c].blocks);
+                        if (nested) return nested;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    function _lastEditableTextBlockInRegion(model, region, headerFooterId) {
+        var normalized = _asText(region || 'Body');
+        if (normalized === 'Header') {
+            var header = _asArray(model && model.headers).find(function (item) { return !headerFooterId || item && item.id === headerFooterId; }) || _asArray(model && model.headers)[0] || null;
+            return _lastEditableTextBlockInBlocks(header && header.blocks);
+        }
+        if (normalized === 'Footer') {
+            var footer = _asArray(model && model.footers).find(function (item) { return !headerFooterId || item && item.id === headerFooterId; }) || _asArray(model && model.footers)[0] || null;
+            return _lastEditableTextBlockInBlocks(footer && footer.blocks);
+        }
+        return _lastEditableTextBlockInBlocks(model && model.body && model.body.blocks);
+    }
+
     function _findCell(model, cellId) {
         var found = null;
         function scan(blocks) {
@@ -1330,6 +1543,22 @@ window.tmDocumentEditorEngine = (function () {
                 Content: { Inlines: [{ Id: cellId + '-r', Text: '' }] }
             }, cellId + '-block')]
         };
+    }
+
+    function createEmptyParagraphBlock(baseId, path) {
+        var id = _asText(baseId || '') || _stableId('empty-paragraph', path || Date.now());
+        return importBlock({
+            Id: id,
+            Type: 'Paragraph',
+            Content: { Inlines: [{ Id: id + '-run', Text: '' }] }
+        }, path || id);
+    }
+
+    function ensureEditableBlocks(blocks, path) {
+        var list = _asArray(blocks);
+        return list.length
+            ? list
+            : [createEmptyParagraphBlock(_stableId('empty-paragraph', path || Date.now()), path || 'empty-region')];
     }
 
     function _plainRuns(text, path) {
@@ -1485,13 +1714,23 @@ window.tmDocumentEditorEngine = (function () {
             cursor = runEnd;
             if (!inserted && targetOffset >= runStart && targetOffset <= runEnd) {
                 var local = Math.max(0, Math.min(runText.length, targetOffset - runStart));
+                var insertedRun = createInsertedRun(index);
+                var normalizedRun = normalizeTextRunForMerge(run);
+                if (_runMergeKey(normalizedRun) === _runMergeKey(insertedRun)) {
+                    var merged = _clone(normalizedRun);
+                    merged.id = _asText(run.id || run.Id || insertedRun.id || merged.id);
+                    merged.text = runText.slice(0, local) + _asText(text) + runText.slice(local);
+                    result.push(normalizeTextRunForMerge(merged));
+                    inserted = true;
+                    return;
+                }
                 if (local > 0) {
                     var before = _clone(run);
                     before.id = run.id + '-before';
                     before.text = runText.slice(0, local);
                     result.push(normalizeTextRunForMerge(before));
                 }
-                result.push(createInsertedRun(index));
+                result.push(insertedRun);
                 if (local < runText.length) {
                     var after = _clone(run);
                     after.id = run.id + '-after';
@@ -2007,7 +2246,10 @@ window.tmDocumentEditorEngine = (function () {
         if (op.type === OPERATION_TYPES.UpdateImageLayout || op.type === OPERATION_TYPES.MoveDrawingObject || op.type === OPERATION_TYPES.UpdateImageMetadata) {
             var imageTarget = _normalizeTarget(op.target || op.Target);
             var drawingTarget = imageTarget.objectId ? findDrawingRunByObjectId(model, imageTarget.objectId) : null;
-            if (!drawingTarget) errors.push({ code: 'target-not-drawing-object', path: 'operation.target.objectId', blockId: imageTarget.blockId, objectId: imageTarget.objectId || '' });
+            var imageBlockTarget = _findBlock(model, imageTarget.blockId);
+            var legacyImageTarget = imageBlockTarget && imageBlockTarget.type === 'image'
+                && (!imageTarget.objectId || imageTarget.objectId === imageBlockTarget.id || imageTarget.objectId === normalizeImageObject(imageBlockTarget).objectId);
+            if (!drawingTarget && !legacyImageTarget) errors.push({ code: 'target-not-drawing-object', path: 'operation.target.objectId', blockId: imageTarget.blockId, objectId: imageTarget.objectId || '' });
             var layout = op.type === OPERATION_TYPES.MoveDrawingObject
                 ? (op.newLayout || op.NewLayout || op.layout || op.Layout)
                 : (op.newLayout || op.NewLayout || op.layout || op.Layout);
@@ -2161,6 +2403,8 @@ window.tmDocumentEditorEngine = (function () {
         var attrs = { marks: marks, style: style, revisionId: revisionId, affinity: target.affinity };
         if (target.virtualCaret) attrs.commentIds = [];
         _insertTextRun(block, target.offset, inserted, attrs);
+        model.comments = transformRuntimeCommentAnchorsForTextChangeForTest(model.comments, block.id, target.offset, inserted.length, false);
+        synchronizeCommentRunsForBlock(model, block.id);
         var range = { blockId: block.id, start: target.offset, end: target.offset + inserted.length };
         differ.record({ insertedRange: range, invalidatedLayoutScopes: [block.id] });
         return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.end, target) };
@@ -2206,6 +2450,8 @@ window.tmDocumentEditorEngine = (function () {
             return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.start, range) };
         }
         _deleteTextRange(block, range.start, range.end);
+        model.comments = transformRuntimeCommentAnchorsForTextChangeForTest(model.comments, block.id, range.start, Math.max(0, range.end - range.start), true);
+        synchronizeCommentRunsForBlock(model, block.id);
         differ.record({ removedRange: { blockId: block.id, start: range.start, end: range.end, text: removed }, invalidatedLayoutScopes: [block.id] });
         return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, range.start, range) };
     }
@@ -2215,6 +2461,16 @@ window.tmDocumentEditorEngine = (function () {
         var container = _findBlockContainer(model, target.blockId);
         var block = container.block;
         var text = _blockText(block);
+        var listType = normalizeParagraphListType(block && block.content && (block.content.listType || block.content.ListType));
+        if (listType && text.length === 0 && Number(target.offset || 0) === 0) {
+            if (!block.content) block.content = { type: 'paragraph', runs: [] };
+            block.content.listType = null;
+            block.content.ListType = null;
+            block.content.indentLevel = 0;
+            block.content.IndentLevel = 0;
+            differ.record({ attributeChange: { blockId: block.id, attributeName: 'listType', value: null }, invalidatedLayoutScopes: [block.id] });
+            return { ok: true, invalidatedLayoutScopes: [block.id], nextSelection: nextSelectionForOperation(model, op, block.id, 0, target) };
+        }
         var splitRuns = _splitParagraphRuns(block, target.offset);
         var newBlock = importBlock({
             Id: op.newBlockId || op.NewBlockId || _stableId('block', block.id + '-split-' + Date.now()),
@@ -2223,6 +2479,8 @@ window.tmDocumentEditorEngine = (function () {
                 Inlines: splitRuns.after,
                 Alignment: block.content && block.content.alignment,
                 LineSpacing: block.content && block.content.lineSpacing,
+                ListType: listType,
+                IndentLevel: block.content && (block.content.indentLevel ?? block.content.IndentLevel ?? 0),
                 Style: _clone(block.content && block.content.style || {})
             },
             Style: _clone(block.style || {})
@@ -2379,7 +2637,17 @@ window.tmDocumentEditorEngine = (function () {
                 : -1;
             if (runIndex < 0) return { ok: false, errors: [{ code: 'drawing-run-not-found', objectId: objectId, blockId: drawing.blockId }] };
 
+            var currentDrawingObject = normalizeImageObject(runs[runIndex], { blockId: drawing.blockId, inlineIndex: runIndex });
+            var previousDrawingLayout = syncImageLayoutCase(imageObjectToLayout(currentDrawingObject));
             var drawingLayout = syncImageLayoutCase(_clone(op.newLayout || op.NewLayout || op.layout || op.Layout || {}));
+            if (!op.oldLayout && !op.OldLayout && !op.previousLayout && !op.PreviousLayout) {
+                op.oldLayout = _clone(previousDrawingLayout);
+                op.OldLayout = _clone(previousDrawingLayout);
+            }
+            op.newLayout = _clone(drawingLayout);
+            op.NewLayout = _clone(drawingLayout);
+            op.layout = _clone(drawingLayout);
+            op.Layout = _clone(drawingLayout);
             runs[runIndex].layout = drawingLayout;
             var drawingTransform = drawingLayout.Transform || drawingLayout.transform || {};
             var drawingSize = runs[runIndex].size || runs[runIndex].Size || {};
@@ -2416,6 +2684,60 @@ window.tmDocumentEditorEngine = (function () {
                     tableId: updatedObject.anchorTableId || drawing.tableId || target.tableId || null,
                     cellId: updatedObject.anchorCellId || drawing.cellId || target.cellId || null,
                     columnIndex: updatedObject.anchorColumnIndex ?? updatedObject.columnIndex ?? drawing.columnIndex ?? target.columnIndex ?? null
+                })
+            };
+        }
+
+        var imageBlock = _findBlock(model, target.blockId);
+        if (imageBlock && imageBlock.type === 'image') {
+            var imageContent = imageBlock.content || (imageBlock.content = {});
+            var currentObject = normalizeImageObject(imageBlock);
+            var legacyObjectId = objectId || currentObject.objectId || imageBlock.id;
+            var previousImageLayout = syncImageLayoutCase(imageObjectToLayout(currentObject));
+            var nextImageLayout = syncImageLayoutCase(_clone(op.newLayout || op.NewLayout || op.layout || op.Layout || {}));
+            if (!op.oldLayout && !op.OldLayout && !op.previousLayout && !op.PreviousLayout) {
+                op.oldLayout = _clone(previousImageLayout);
+                op.OldLayout = _clone(previousImageLayout);
+            }
+            op.newLayout = _clone(nextImageLayout);
+            op.NewLayout = _clone(nextImageLayout);
+            op.layout = _clone(nextImageLayout);
+            op.Layout = _clone(nextImageLayout);
+            imageContent.layout = nextImageLayout;
+            var imageTransform = nextImageLayout.Transform || nextImageLayout.transform || {};
+            var imageSize = imageContent.size || imageContent.Size || {};
+            imageContent.size = _sortObject({
+                width: imageTransform.Width ?? imageTransform.width ?? imageSize.width ?? imageSize.Width ?? currentObject.width ?? null,
+                height: imageTransform.Height ?? imageTransform.height ?? imageSize.height ?? imageSize.Height ?? currentObject.height ?? null,
+                lockAspectRatio: (imageTransform.LockAspectRatio ?? imageTransform.lockAspectRatio ?? imageSize.lockAspectRatio ?? imageSize.LockAspectRatio ?? true) !== false
+            });
+            buildIndexes(model);
+            var updatedImageObject = normalizeImageObject(imageBlock);
+            var imageAnchor = nextImageLayout.Anchor || nextImageLayout.anchor || {};
+            var imageAnchorBlockId = imageAnchor.BlockId || imageAnchor.blockId || imageBlock.id;
+            var affectedImage = _unique([imageBlock.id, imageAnchorBlockId]
+                .concat(affectedParagraphsAroundObject(model, imageBlock.id))
+                .concat(imageAnchorBlockId !== imageBlock.id ? affectedParagraphsAroundObject(model, imageAnchorBlockId) : [])
+                .concat(_asArray(op.affectedParagraphIds || op.AffectedParagraphIds))
+                .filter(Boolean));
+            differ.record({
+                objectChange: { blockId: imageBlock.id, objectId: legacyObjectId, inlineIndex: -1, type: 'layout' },
+                invalidatedLayoutScopes: affectedImage,
+                invalidatedOverlayScopes: [imageBlock.id, legacyObjectId]
+            });
+            return {
+                ok: true,
+                invalidatedLayoutScopes: affectedImage,
+                nextSelection: createObjectSelectionSnapshot(model, {
+                    region: updatedImageObject.anchorRegion || target.region || 'Body',
+                    blockId: imageBlock.id,
+                    objectId: legacyObjectId,
+                    anchorBlockId: imageAnchorBlockId,
+                    anchorInlineIndex: -1,
+                    headerFooterId: updatedImageObject.anchorHeaderFooterId || target.headerFooterId || null,
+                    tableId: updatedImageObject.anchorTableId || target.tableId || null,
+                    cellId: updatedImageObject.anchorCellId || target.cellId || null,
+                    columnIndex: updatedImageObject.anchorColumnIndex ?? target.columnIndex ?? null
                 })
             };
         }
@@ -2531,7 +2853,7 @@ window.tmDocumentEditorEngine = (function () {
         var container = _findBlockContainer(model, target.blockId);
         var rows = Number(op.rows || op.Rows || 2);
         var columns = Number(op.columns || op.Columns || 2);
-        var tableId = op.tableId || op.TableId || op.blockId || op.BlockId || _stableId('table-block', Date.now());
+        var tableId = op.tableId || op.TableId || op.blockId || op.BlockId || _stableId('tbl', Date.now());
         var table = { Style: _clone(op.style || op.Style || {}), Rows: [] };
         for (var r = 0; r < rows; r++) {
             var row = { Id: tableId + '-row-' + r, Cells: [] };
@@ -2673,6 +2995,24 @@ window.tmDocumentEditorEngine = (function () {
         return null;
     }
 
+    function resolveTypingMarksAtInsertion(inst, selection) {
+        var pending = normalizeMarks(inst && inst.pendingTypingMarks || []);
+        if (pending.length > 0) return pending.map(_clone);
+
+        var snapshot = createSelectionSnapshot(selection || {});
+        var block = _findBlock(inst && inst.model, snapshot.blockId);
+        if (!block || block.type !== 'paragraph') return [];
+
+        var range = selectionTextRange(snapshot);
+        var rawOffset = range && range.start !== undefined ? range.start : snapshot.offset;
+        var offset = Math.max(0, Math.min(_blockText(block).length, Number(rawOffset || 0) || 0));
+        var info = findRunAtOffset(block, offset);
+        var run = info && info.run;
+        if (!run || run.kind && run.kind !== 'text' || isDrawingRunSource(run)) return [];
+
+        return normalizeMarks(run.marks || run.Marks || []).map(_clone);
+    }
+
     function transformRunsInRange(block, start, end, transform) {
         if (!block || block.type !== 'paragraph') return [];
         var result = [];
@@ -2786,6 +3126,131 @@ window.tmDocumentEditorEngine = (function () {
             run.revisionId = revisionId;
             return run;
         });
+    }
+
+    function visitParagraphBlocks(model, callback) {
+        function visit(block) {
+            if (!block) return;
+            if (block.type === 'paragraph') {
+                callback(block);
+                return;
+            }
+
+            if (block.type === 'table') {
+                _asArray(block.content && block.content.rows).forEach(function (row) {
+                    _asArray(row.cells).forEach(function (cell) {
+                        _asArray(cell.blocks).forEach(visit);
+                    });
+                });
+            }
+        }
+
+        _asArray(model && model.body && model.body.blocks).forEach(visit);
+        _asArray(model && model.headers).forEach(function (region) { _asArray(region.blocks).forEach(visit); });
+        _asArray(model && model.footers).forEach(function (region) { _asArray(region.blocks).forEach(visit); });
+    }
+
+    function commentAnchorMark(commentId) {
+        return _sortObject({
+            type: 'CommentAnchor',
+            commentAnchor: {
+                commentId: commentId,
+                anchorId: commentId
+            }
+        });
+    }
+
+    function setCommentForRange(model, commentId, range) {
+        var id = _asText(commentId || '');
+        var normalizedRange = normalizeRevisionRange(range);
+        if (!id || !normalizedRange.blockId || normalizedRange.end <= normalizedRange.start) return [];
+        var block = _findBlock(model, normalizedRange.blockId);
+        return transformRunsInRange(block, normalizedRange.start, normalizedRange.end, function (run) {
+            run.commentIds = _unique(readCommentIdsFromRun(run).concat([id])).sort();
+            run.marks = updateMarks(run.marks || run.Marks || [], commentAnchorMark(id), false);
+            delete run.CommentIds;
+            delete run.Marks;
+            return run;
+        });
+    }
+
+    function clearCommentAnchorsFromParagraphBlock(block, commentId) {
+        if (!block || block.type !== 'paragraph') return;
+        var id = _asText(commentId || '');
+        _asArray(block.content && block.content.runs).forEach(function (run) {
+            var directIds = _asArray(run && (run.commentIds || run.CommentIds)).map(_asText).filter(Boolean);
+            run.commentIds = id
+                ? directIds.filter(function (existingId) { return existingId !== id; })
+                : [];
+            delete run.CommentIds;
+            run.marks = normalizeMarks(_asArray(run.marks || run.Marks).filter(function (mark) {
+                var markCommentId = readCommentIdFromMark(mark);
+                if (!markCommentId) return true;
+                return id ? markCommentId !== id : false;
+            }));
+            delete run.Marks;
+        });
+        block.content.runs = mergeAdjacentTextRuns(block.content.runs);
+    }
+
+    function clearCommentFromRuns(model, commentId) {
+        var id = _asText(commentId || '');
+        if (!id) return;
+        visitParagraphBlocks(model, function (block) {
+            clearCommentAnchorsFromParagraphBlock(block, id);
+        });
+        buildIndexes(model);
+    }
+
+    function synchronizeCommentRunsForBlock(model, blockId) {
+        var id = _asText(blockId || '');
+        if (!id || _asArray(model && model.comments).length === 0) return;
+        var ranges = _asArray(model.comments).map(function (comment) {
+            return {
+                commentId: readCommentId(comment),
+                range: rangeFromCommentAnchor(model, comment)
+            };
+        }).filter(function (entry) {
+            var range = entry.range || {};
+            return entry.commentId && (range.startBlockId === id || range.endBlockId === id);
+        });
+        var block = _findBlock(model, id);
+        clearCommentAnchorsFromParagraphBlock(block);
+        buildIndexes(model);
+        ranges.forEach(function (entry) {
+            setCommentForRange(model, entry.commentId, entry.range);
+        });
+        buildIndexes(model);
+    }
+
+    function synchronizeCommentRunsForOperations(model, operations) {
+        if (_asArray(model && model.comments).length === 0) return;
+        _unique(_asArray(operations).flatMap(function (operation) {
+            return operationAffectedBlockIds(operation);
+        }).map(_asText).filter(Boolean)).forEach(function (blockId) {
+            synchronizeCommentRunsForBlock(model, blockId);
+        });
+    }
+
+    function synchronizeAllCommentRunsFromComments(model) {
+        if (_asArray(model && model.comments).length === 0) return;
+        var ranges = _asArray(model.comments).map(function (comment) {
+            return {
+                commentId: readCommentId(comment),
+                range: rangeFromCommentAnchor(model, comment)
+            };
+        }).filter(function (entry) {
+            var range = entry.range || {};
+            return entry.commentId && range.startBlockId && range.endOffset > range.startOffset;
+        });
+        visitParagraphBlocks(model, function (block) {
+            clearCommentAnchorsFromParagraphBlock(block);
+        });
+        buildIndexes(model);
+        ranges.forEach(function (entry) {
+            setCommentForRange(model, entry.commentId, entry.range);
+        });
+        buildIndexes(model);
     }
 
     function clearRevisionFromRuns(model, revisionId) {
@@ -3136,6 +3601,8 @@ window.tmDocumentEditorEngine = (function () {
             'set-highlight-color': 'backgroundColor',
             'sethighlightcolor': 'backgroundColor',
             'link': 'link',
+            'remove-link': 'removeLink',
+            'removelink': 'removeLink',
             'clear-formatting': 'clearFormatting',
             'clearformatting': 'clearFormatting',
             'remove-formatting': 'clearFormatting',
@@ -3158,6 +3625,10 @@ window.tmDocumentEditorEngine = (function () {
             'spacingafter': 'spacingAfter',
             'set-spacing-after': 'spacingAfter',
             'setspacingafter': 'spacingAfter',
+            'paragraph-properties': 'paragraphProperties',
+            'paragraphproperties': 'paragraphProperties',
+            'set-paragraph-properties': 'paragraphProperties',
+            'setparagraphproperties': 'paragraphProperties',
             'list': 'list',
             'bullet-list': 'list',
             'bulletlist': 'list',
@@ -3177,24 +3648,50 @@ window.tmDocumentEditorEngine = (function () {
             'inserttable': 'insertTable',
             'insert-row-above': 'insertRowAbove',
             'insertrowabove': 'insertRowAbove',
+            'insert-table-row-before': 'insertRowAbove',
+            'inserttablerowbefore': 'insertRowAbove',
             'insert-row-below': 'insertRowBelow',
             'insertrowbelow': 'insertRowBelow',
+            'insert-table-row-after': 'insertRowBelow',
+            'inserttablerowafter': 'insertRowBelow',
             'insert-column-left': 'insertColumnLeft',
             'insertcolumnleft': 'insertColumnLeft',
+            'insert-table-column-before': 'insertColumnLeft',
+            'inserttablecolumnbefore': 'insertColumnLeft',
             'insert-column-right': 'insertColumnRight',
             'insertcolumnright': 'insertColumnRight',
+            'insert-table-column-after': 'insertColumnRight',
+            'inserttablecolumnafter': 'insertColumnRight',
             'delete-row': 'deleteRow',
             'deleterow': 'deleteRow',
+            'delete-table-row': 'deleteRow',
+            'deletetablerow': 'deleteRow',
             'delete-column': 'deleteColumn',
             'deletecolumn': 'deleteColumn',
+            'delete-table-column': 'deleteColumn',
+            'deletetablecolumn': 'deleteColumn',
+            'delete-table': 'deleteTable',
+            'deletetable': 'deleteTable',
             'merge-cells': 'mergeCells',
             'mergecells': 'mergeCells',
+            'merge-table-cells': 'mergeCells',
+            'mergetablecells': 'mergeCells',
             'split-cell': 'splitCell',
             'splitcell': 'splitCell',
+            'split-table-cell': 'splitCell',
+            'splittablecell': 'splitCell',
             'cell-background': 'cellBackground',
             'cellbackground': 'cellBackground',
             'cell-border': 'cellBorder',
             'cellborder': 'cellBorder',
+            'cell-properties': 'cellProperties',
+            'cellproperties': 'cellProperties',
+            'set-cell-properties': 'cellProperties',
+            'setcellproperties': 'cellProperties',
+            'table-properties': 'tableProperties',
+            'tableproperties': 'tableProperties',
+            'set-table-properties': 'tableProperties',
+            'settableproperties': 'tableProperties',
             'resize-table': 'resizeTable',
             'resizetable': 'resizeTable'
         };
@@ -3215,13 +3712,20 @@ window.tmDocumentEditorEngine = (function () {
             'strikethrough',
             'superscript',
             'subscript',
+            'smallcaps',
+            'allcaps',
+            'doublestrikethrough',
+            'characterspacing',
+            'characterscale',
+            'kerning',
             'link',
             'commentanchor',
             'revision',
             'highlight',
             'textcolor',
             'fontfamily',
-            'fontsize'
+            'fontsize',
+            'bookmark'
         ];
         if (typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw < numericTypes.length) {
             return numericTypes[raw];
@@ -3229,8 +3733,42 @@ window.tmDocumentEditorEngine = (function () {
         return String(raw ?? '').replace(/\s+/g, '').toLowerCase();
     }
 
+    function exportInlineMarkType(mark) {
+        var raw = mark && (mark.Type ?? mark.type);
+        if (typeof raw === 'number' && Number.isInteger(raw) && raw >= 0) return raw;
+        var numericTypes = {
+            bold: 0,
+            italic: 1,
+            underline: 2,
+            strikethrough: 3,
+            strike: 3,
+            superscript: 4,
+            subscript: 5,
+            smallcaps: 6,
+            allcaps: 7,
+            doublestrikethrough: 8,
+            characterspacing: 9,
+            characterscale: 10,
+            kerning: 11,
+            link: 12,
+            hyperlink: 12,
+            commentanchor: 13,
+            comment: 13,
+            revision: 14,
+            highlight: 15,
+            backgroundcolor: 15,
+            textcolor: 16,
+            fontcolor: 16,
+            fontfamily: 17,
+            fontsize: 18,
+            bookmark: 19
+        };
+        var type = markType(mark);
+        return numericTypes[type] ?? 0;
+    }
+
     function markValue(mark) {
-        return mark && (mark.value ?? mark.Value ?? mark.color ?? mark.Color ?? mark.href ?? mark.Href ?? null);
+        return mark && (mark.value ?? mark.Value ?? mark.color ?? mark.Color ?? mark.href ?? mark.Href ?? mark.link?.href ?? mark.Link?.Href ?? null);
     }
 
     function normalizeCommandColorValue(value) {
@@ -3252,11 +3790,15 @@ window.tmDocumentEditorEngine = (function () {
             case 'italic': return { type: 1 };
             case 'underline': return { type: 2 };
             case 'strike': return { type: 3 };
-            case 'fontFamily': return { type: 11, value: body.family || body.Family || body.value || body.Value || null };
-            case 'fontSize': return { type: 12, value: body.size || body.Size || body.value || body.Value || null };
-            case 'textColor': return { type: 10, value: normalizeCommandColorValue(body.color || body.Color || body.value || body.Value || null) };
-            case 'backgroundColor': return { type: 9, value: normalizeCommandColorValue(body.color || body.Color || body.value || body.Value || null) };
-            case 'link': return { type: 6, href: body.href || body.Href || body.url || body.Url || '' };
+            case 'fontFamily': return { type: 17, value: body.family || body.Family || body.value || body.Value || null };
+            case 'fontSize': return { type: 18, value: body.size || body.Size || body.value || body.Value || null };
+            case 'textColor': return { type: 16, value: normalizeCommandColorValue(body.color || body.Color || body.value || body.Value || null) };
+            case 'backgroundColor': return { type: 15, value: normalizeCommandColorValue(body.color || body.Color || body.value || body.Value || null) };
+            case 'link': return {
+                type: 12,
+                href: body.href || body.Href || body.url || body.Url || '',
+                title: body.title || body.Title || null
+            };
             default: return null;
         }
     }
@@ -3268,11 +3810,15 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function inlineCommandTypes() {
-        return ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link'];
+        return ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link', 'removeLink'];
     }
 
     function paragraphCommandTypes() {
-        return ['alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'list', 'indent', 'outdent'];
+        return ['alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'paragraphProperties', 'list', 'indent', 'outdent'];
+    }
+
+    function tableCommandTypes() {
+        return ['insertTable', 'insertRowAbove', 'insertRowBelow', 'insertColumnLeft', 'insertColumnRight', 'deleteRow', 'deleteColumn', 'deleteTable', 'mergeCells', 'splitCell', 'cellBackground', 'cellBorder', 'cellProperties', 'tableProperties', 'resizeTable'];
     }
 
     function markMatchesCommand(mark, id) {
@@ -3351,12 +3897,58 @@ window.tmDocumentEditorEngine = (function () {
         if (paragraphCommandTypes().indexOf(commandId) >= 0) {
             return block.type === 'paragraph' ? '' : 'selection-not-paragraph';
         }
-        if (['insertRowAbove', 'insertRowBelow', 'insertColumnLeft', 'insertColumnRight', 'deleteRow', 'deleteColumn', 'mergeCells', 'splitCell', 'cellBackground', 'cellBorder'].indexOf(commandId) >= 0) {
+        if (tableCommandTypes().filter(function (id) { return id !== 'insertTable' && id !== 'resizeTable'; }).indexOf(commandId) >= 0) {
             return selection && selection.cellId || _findTableInfoByBlockId(model, selection && selection.blockId) ? '' : 'selection-not-table-cell';
         }
         if (commandId === 'insertTable') return block.type === 'paragraph' ? '' : 'selection-not-paragraph';
         if (commandId === 'resizeTable') return block.type === 'table' || selection && selection.tableId ? '' : 'selection-not-table';
         return '';
+    }
+
+    function paragraphFormattingStateForBlock(block) {
+        var content = block && block.content || {};
+        var indentLevel = Math.max(0, Number(content.indentLevel ?? content.IndentLevel ?? 0) || 0);
+        var leftIndent = Number(content.leftIndent ?? content.LeftIndent ?? (indentLevel * 36) ?? 0) || 0;
+        return {
+            alignment: normalizeParagraphAlignment(content.alignment ?? content.Alignment ?? 'left'),
+            lineSpacing: Number(content.lineSpacing ?? content.LineSpacing ?? 1) || 1,
+            spacingBefore: Number(content.spacingBefore ?? content.SpacingBefore ?? 0) || 0,
+            spacingAfter: Number(content.spacingAfter ?? content.SpacingAfter ?? 0) || 0,
+            listType: content.listType || content.ListType || null,
+            indentLevel: indentLevel,
+            leftIndent: leftIndent
+        };
+    }
+
+    function paragraphFormattingSummary(model, snapshot, fallbackBlock) {
+        var blocks = paragraphCommandTargetBlocks(model, snapshot);
+        if (!blocks.length && fallbackBlock && fallbackBlock.type === 'paragraph') blocks = [fallbackBlock];
+        var states = blocks.map(paragraphFormattingStateForBlock);
+        var first = states[0] || {
+            alignment: 'left',
+            lineSpacing: 1,
+            spacingBefore: 0,
+            spacingAfter: 0,
+            listType: null,
+            indentLevel: 0,
+            leftIndent: 0
+        };
+        function isMixed(key) {
+            return states.some(function (state) {
+                return JSON.stringify(state[key]) !== JSON.stringify(first[key]);
+            });
+        }
+        return {
+            value: first,
+            mixed: {
+                alignment: isMixed('alignment'),
+                lineSpacing: isMixed('lineSpacing'),
+                spacingBefore: isMixed('spacingBefore'),
+                spacingAfter: isMixed('spacingAfter'),
+                list: isMixed('listType'),
+                indent: isMixed('indentLevel') || isMixed('leftIndent')
+            }
+        };
     }
 
     function collectFormattingState(model, selection, pendingTypingMarks) {
@@ -3418,14 +4010,9 @@ window.tmDocumentEditorEngine = (function () {
                 mixed[id] = false;
             });
         }
-        var paragraph = block && block.type === 'paragraph' ? {
-            alignment: block.content && block.content.alignment || 'left',
-            lineSpacing: block.content && block.content.lineSpacing || 1,
-            spacingBefore: block.content && (block.content.spacingBefore ?? block.content.SpacingBefore) || 0,
-            spacingAfter: block.content && (block.content.spacingAfter ?? block.content.SpacingAfter) || 0,
-            listType: block.content && (block.content.listType || block.content.ListType) || null,
-            indentLevel: block.content && Number(block.content.indentLevel || block.content.IndentLevel || 0)
-        } : {};
+        var paragraphSummary = paragraphFormattingSummary(model, snapshot, block);
+        Object.assign(mixed, paragraphSummary.mixed);
+        var paragraph = paragraphSummary.value || {};
         var image = block && block.type === 'image' ? {
             isSelected: snapshot.isObjectSelection === true || !!snapshot.objectId,
             blockId: block.id,
@@ -3446,12 +4033,13 @@ window.tmDocumentEditorEngine = (function () {
             textColor: mixed.textColor ? null : active.textColor,
             backgroundColor: mixed.backgroundColor ? null : active.backgroundColor,
             link: mixed.link ? null : active.link,
-            alignment: paragraph.alignment || null,
-            lineSpacing: paragraph.lineSpacing || null,
-            spacingBefore: paragraph.spacingBefore || 0,
-            spacingAfter: paragraph.spacingAfter || 0,
-            list: paragraph.listType || null,
-            indent: paragraph.indentLevel || 0
+            alignment: mixed.alignment ? null : paragraph.alignment || null,
+            lineSpacing: mixed.lineSpacing ? null : paragraph.lineSpacing || null,
+            spacingBefore: mixed.spacingBefore ? null : paragraph.spacingBefore || 0,
+            spacingAfter: mixed.spacingAfter ? null : paragraph.spacingAfter || 0,
+            list: mixed.list ? null : paragraph.listType || null,
+            indent: mixed.indent ? null : paragraph.indentLevel || 0,
+            leftIndent: mixed.indent ? null : paragraph.leftIndent || 0
         };
         var disabledReasons = {};
         ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link', 'clearFormatting', 'alignment', 'lineSpacing', 'spacingBefore', 'spacingAfter', 'list', 'indent', 'outdent'].forEach(function (id) {
@@ -3583,7 +4171,7 @@ window.tmDocumentEditorEngine = (function () {
             Underline: underlineState,
             Strikethrough: strikeState,
             ParagraphAlignment: alignmentValue(commandValues.alignment || paragraph.alignment),
-            ParagraphAlignmentMixed: false,
+            ParagraphAlignmentMixed: mixed.alignment === true,
             FontFamily: commandValues.fontFamily || null,
             FontFamilyMixed: mixed.fontFamily === true,
             FontSize: commandValues.fontSize || null,
@@ -3593,12 +4181,16 @@ window.tmDocumentEditorEngine = (function () {
             HighlightColor: commandValues.backgroundColor || null,
             HighlightColorMixed: mixed.backgroundColor === true,
             LineSpacing: Number(commandValues.lineSpacing || paragraph.lineSpacing || 1) || 1,
+            LineSpacingMixed: mixed.lineSpacing === true,
             SpacingBefore: Number(commandValues.spacingBefore ?? paragraph.spacingBefore ?? 0) || 0,
+            SpacingBeforeMixed: mixed.spacingBefore === true,
             SpacingAfter: Number(commandValues.spacingAfter ?? paragraph.spacingAfter ?? 0) || 0,
-            LeftIndent: Number(commandValues.indent ?? paragraph.indentLevel ?? 0) || 0,
+            SpacingAfterMixed: mixed.spacingAfter === true,
+            LeftIndent: Number(commandValues.leftIndent ?? paragraph.leftIndent ?? 0) || 0,
+            LeftIndentMixed: mixed.indent === true,
             IsBulletList: String(commandValues.list || paragraph.listType || '').toLowerCase() === 'bullet',
             IsNumberedList: String(commandValues.list || paragraph.listType || '').toLowerCase() === 'numbered',
-            ListMixed: false,
+            ListMixed: mixed.list === true,
             ActiveRegion: state.selection && state.selection.region || 'Body',
             CurrentSelection: state.selection || null,
             IsDisabled: state.isDisabled === true || state.disabled === true,
@@ -3617,22 +4209,76 @@ window.tmDocumentEditorEngine = (function () {
                 : _findTableInfoByBlockId(model, snapshot.blockId);
         }
 
+        function isGeneratedTableCellId(tableId, id) {
+            var value = _asText(id || '');
+            var prefix = _asText(tableId || '');
+            if (!value || !prefix || value.indexOf(prefix) !== 0) return false;
+            return /^-r\d+-c\d+$/.test(value.slice(prefix.length));
+        }
+
+        function isGeneratedTableCellChildId(tableId, id) {
+            var value = _asText(id || '');
+            var prefix = _asText(tableId || '');
+            if (!value || !prefix || value.indexOf(prefix) !== 0) return false;
+            return /^-r\d+-c\d+-.+/.test(value.slice(prefix.length));
+        }
+
+        function normalizeGeneratedTableCellIdentity(table, cell, rowIndex, columnIndex, seenCellIds, seenBlockIds, seenRunIds) {
+            var expectedCellId = table.id + '-r' + rowIndex + '-c' + columnIndex;
+            var currentCellId = _asText(cell.id || '');
+            if (!currentCellId || isGeneratedTableCellId(table.id, currentCellId) || seenCellIds.has(currentCellId)) {
+                cell.id = expectedCellId;
+            }
+            seenCellIds.add(cell.id);
+
+            _asArray(cell.blocks).forEach(function (block, blockIndex) {
+                if (!block || typeof block !== 'object') return;
+                var expectedBlockId = cell.id + (blockIndex === 0 ? '-p' : '-p' + blockIndex);
+                var currentBlockId = _asText(block.id || '');
+                if (!currentBlockId || isGeneratedTableCellChildId(table.id, currentBlockId) || seenBlockIds.has(currentBlockId)) {
+                    block.id = expectedBlockId;
+                }
+                seenBlockIds.add(block.id);
+
+                var runs = _asArray(block.content && block.content.runs);
+                runs.forEach(function (run, runIndex) {
+                    if (!run || typeof run !== 'object') return;
+                    var expectedRunId = block.id + (runIndex === 0 ? '-r' : '-r' + runIndex);
+                    var currentRunId = _asText(run.id || '');
+                    if (!currentRunId || isGeneratedTableCellChildId(table.id, currentRunId) || seenRunIds.has(currentRunId)) {
+                        run.id = expectedRunId;
+                    }
+                    seenRunIds.add(run.id);
+                });
+            });
+        }
+
         function ensureRowsAndCells(table) {
             var columnCount = _tableColumnCount(table);
+            var seenCellIds = new Set();
+            var seenBlockIds = new Set();
+            var seenRunIds = new Set();
             _asArray(table.content && table.content.rows).forEach(function (row, rowIndex) {
                 if (!Array.isArray(row.cells)) row.cells = [];
-                while (row.cells.length < columnCount) {
-                    row.cells.push(_createEmptyTableCell(table.id, rowIndex, row.cells.length));
+                var logicalColumnCount = 0;
+                row.cells.forEach(function (cell) {
+                    logicalColumnCount += Math.max(1, Number(cell && cell.colSpan || 1));
+                });
+                while (logicalColumnCount < columnCount) {
+                    row.cells.push(_createEmptyTableCell(table.id, rowIndex, logicalColumnCount));
+                    logicalColumnCount++;
                 }
-                row.cells.forEach(function (cell, columnIndex) {
-                    if (!cell.id) cell.id = table.id + '-r' + rowIndex + '-c' + columnIndex;
+                var logicalColumnIndex = 0;
+                row.cells.forEach(function (cell) {
                     cell.type = 'tableCell';
                     cell.rowSpan = Math.max(1, Number(cell.rowSpan || 1));
                     cell.colSpan = Math.max(1, Number(cell.colSpan || 1));
                     if (!cell.style) cell.style = {};
                     if (!Array.isArray(cell.blocks) || cell.blocks.length === 0) {
-                        cell.blocks = [_createEmptyTableCell(table.id, rowIndex, columnIndex).blocks[0]];
+                        cell.blocks = [_createEmptyTableCell(table.id, rowIndex, logicalColumnIndex).blocks[0]];
                     }
+                    normalizeGeneratedTableCellIdentity(table, cell, rowIndex, logicalColumnIndex, seenCellIds, seenBlockIds, seenRunIds);
+                    logicalColumnIndex += cell.colSpan;
                 });
             });
             buildIndexes(model);
@@ -3699,10 +4345,49 @@ window.tmDocumentEditorEngine = (function () {
             return { ok: true, operation: op, selection: createSelectionSnapshot({ blockId: fallback.blocks[0].id, cellId: fallback.id, tableId: table.id, offset: 0, isCollapsed: true }) };
         }
 
+        function createFallbackParagraphBlock(baseId) {
+            var id = _asText(baseId || 'table-delete') + '-placeholder-' + Date.now();
+            return {
+                id: id,
+                type: 'paragraph',
+                content: {
+                    type: 'paragraph',
+                    runs: [{ id: id + '-r', type: 'text', text: '' }]
+                }
+            };
+        }
+
+        function deleteTable(selection, tableId) {
+            var snapshot = createSelectionSnapshot(selection || {});
+            var info = tableInfoFromSelection(snapshot);
+            var table = tableId ? _findTableBlock(model, tableId) : null;
+            if (!table) table = info && info.table || _findTableBlock(model, snapshot.activeTableId || snapshot.tableId || snapshot.blockId);
+            if (!table || !table.id) return { ok: false, error: { code: 'missing-table-selection' }, selection: snapshot };
+            var container = _findBlockContainer(model, table.id);
+            if (!container || !Array.isArray(container.blocks)) return { ok: false, error: { code: 'missing-table-container', tableId: table.id }, selection: snapshot };
+            var removeIndex = container.index;
+            container.blocks.splice(removeIndex, 1);
+            if (container.blocks.length === 0) {
+                container.blocks.push(createFallbackParagraphBlock(table.id));
+            }
+            buildIndexes(model);
+            var op = record(OPERATION_TYPES.UpdateTableCell, { tableId: table.id, action: 'delete-table' });
+            return { ok: true, operation: op, selection: createSelectionSnapshot(firstModelSelection(model)) };
+        }
+
         function mergeCells(selection, cellIds) {
             var info = tableInfoFromSelection(selection);
             if (!info) return { ok: false, error: { code: 'missing-table-selection' } };
-            var ids = _asArray(cellIds).length ? _asArray(cellIds) : [info.cell.id];
+            var rangeIds = tableSelectionCellIdsFromSnapshot(model, selection).ids;
+            var explicitIds = _asArray(cellIds);
+            var ids = explicitIds.length ? explicitIds : (rangeIds.length ? rangeIds : [info.cell.id]);
+            if (!explicitIds.length && ids.length < 2) {
+                var rowCells = _asArray(info.row && info.row.cells);
+                var nextCell = rowCells[info.columnIndex + 1] || null;
+                if (nextCell && nextCell.id && nextCell.id !== info.cell.id) {
+                    ids = [info.cell.id, nextCell.id];
+                }
+            }
             var cells = ids.map(function (id) { return _findTableInfoByCellId(model, id); }).filter(Boolean);
             if (cells.length < 2) return { ok: true, operation: record(OPERATION_TYPES.UpdateTableCell, { tableId: info.table.id, action: 'merge-cells-noop' }), selection: createSelectionSnapshot(selection || {}) };
             var first = cells[0].cell;
@@ -3745,6 +4430,44 @@ window.tmDocumentEditorEngine = (function () {
             return { ok: true, operation: op, tableId: table.id, width: table.content.style.width };
         }
 
+        function setTableProperties(selection, properties) {
+            var body = properties || {};
+            var snapshot = createSelectionSnapshot(selection || {});
+            var tableId = body.tableId || body.TableId || snapshot.activeTableId || snapshot.tableId || null;
+            var table = tableId ? _findTableBlock(model, tableId) : null;
+            if (!table) {
+                var info = tableInfoFromSelection(snapshot);
+                table = info && info.table || null;
+            }
+            if (!table) return { ok: false, error: { code: 'missing-table-selection' }, selection: snapshot };
+            if (!table.content) table.content = {};
+            var layout = Object.assign({}, table.content.layout || table.content.Layout || {});
+            if (body.Width !== undefined || body.width !== undefined) layout.width = nullableNumber(body.Width ?? body.width);
+            if (body.Alignment !== undefined || body.alignment !== undefined) layout.alignment = normalizeTableAlignmentValue(body.Alignment ?? body.alignment);
+            if (body.CellPadding !== undefined || body.cellPadding !== undefined) layout.cellPadding = nullableNumber(body.CellPadding ?? body.cellPadding);
+            if (body.BackgroundColor !== undefined || body.backgroundColor !== undefined) layout.backgroundColor = body.BackgroundColor ?? body.backgroundColor ?? null;
+            if (body.Borders !== undefined || body.borders !== undefined) layout.borders = normalizeTableCellBorders(body.Borders || body.borders || {});
+            table.content.layout = layout;
+            var op = record(OPERATION_TYPES.UpdateTableCell, { tableId: table.id, action: 'table-properties', layout: layout });
+            return { ok: true, operation: op, selection: createSelectionSnapshot(selection || snapshot) };
+        }
+
+        function setCellProperties(selection, properties) {
+            var body = properties || {};
+            var snapshot = createSelectionSnapshot(selection || {});
+            var cellId = body.cellId || body.CellId || snapshot.activeTableCellId || snapshot.cellId || null;
+            var info = cellId ? _findTableInfoByCellId(model, cellId) : tableInfoFromSelection(snapshot);
+            if (!info || !info.cell) return { ok: false, error: { code: 'missing-table-selection' }, selection: snapshot };
+            var cell = info.cell;
+            if (body.Width !== undefined || body.width !== undefined) cell.width = nullableNumber(body.Width ?? body.width);
+            if (body.BackgroundColor !== undefined || body.backgroundColor !== undefined) cell.backgroundColor = body.BackgroundColor ?? body.backgroundColor ?? null;
+            if (body.Padding !== undefined || body.padding !== undefined) cell.padding = nullableNumber(body.Padding ?? body.padding);
+            if (body.VerticalAlignment !== undefined || body.verticalAlignment !== undefined) cell.verticalAlignment = normalizeTableCellVerticalAlignment(body.VerticalAlignment ?? body.verticalAlignment);
+            if (body.Borders !== undefined || body.borders !== undefined) cell.borders = normalizeTableCellBorders(body.Borders || body.borders || {});
+            var op = record(OPERATION_TYPES.UpdateTableCell, { tableId: info.table.id, cellId: cell.id, action: 'cell-properties', cell: _clone(cell) });
+            return { ok: true, operation: op, selection: createSelectionSnapshot({ blockId: cell.blocks[0].id, cellId: cell.id, tableId: info.table.id, offset: snapshot.offset || 0, isCollapsed: true }) };
+        }
+
         function insertTextInCell(selection, text) {
             var snapshot = createSelectionSnapshot(selection || {});
             var block = _findBlock(model, snapshot.blockId);
@@ -3769,7 +4492,7 @@ window.tmDocumentEditorEngine = (function () {
             return _sortObject({
                 isReadable: true,
                 position: { x: Math.min(Number(viewport.width || 1280) - 240, 24), y: 24 },
-                items: ['insertRowAbove', 'insertRowBelow', 'insertColumnLeft', 'insertColumnRight', 'deleteRow', 'deleteColumn', 'mergeCells', 'splitCell', 'cellBackground', 'cellBorder', 'resizeTable'].map(function (id) {
+                items: ['insertRowAbove', 'insertRowBelow', 'insertColumnLeft', 'insertColumnRight', 'deleteRow', 'deleteColumn', 'deleteTable', 'mergeCells', 'splitCell', 'cellBackground', 'cellBorder', 'resizeTable'].map(function (id) {
                     return { commandId: id, isEnabled: !!tableInfoFromSelection(selection) || id === 'resizeTable' };
                 })
             });
@@ -3782,10 +4505,13 @@ window.tmDocumentEditorEngine = (function () {
             insertColumnRight: function (selection) { return insertColumn(selection, 'right'); },
             deleteRow: deleteRow,
             deleteColumn: deleteColumn,
+            deleteTable: deleteTable,
             mergeCells: mergeCells,
             splitCell: splitCell,
             setCellBackground: function (selection, color) { return setCellStyle(selection, { background: color }); },
             setCellBorder: function (selection, border) { return setCellStyle(selection, { border: border }); },
+            setTableProperties: setTableProperties,
+            setCellProperties: setCellProperties,
             resizeTable: resizeTable,
             insertTextInCell: insertTextInCell,
             hitTest: hitTest,
@@ -3802,12 +4528,130 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function rangeCommandFullyActive(block, range, commandId) {
+        if (!block || block.type !== 'paragraph' || !range || range.collapsed) return false;
+        var cursor = 0;
+        var touched = [];
+        _asArray(block.content && block.content.runs).forEach(function (run) {
+            var text = _asText(run && run.text);
+            var runStart = cursor;
+            var runEnd = cursor + text.length;
+            cursor = runEnd;
+            if (!text || runEnd <= range.start || runStart >= range.end) return;
+            var selectedText = text.slice(Math.max(0, range.start - runStart), Math.max(0, range.end - runStart));
+            if (!selectedText.trim()) return;
+            touched.push(run);
+        });
+        if (!touched.length) return false;
+        return touched.every(function (run) {
+            return _asArray(run.marks).some(function (mark) {
+                return markMatchesCommand(mark, commandId);
+            });
+        });
+    }
+
     function normalizeParagraphAlignment(value) {
         var normalized = String(value ?? 'left').trim().toLowerCase();
         if (normalized === '1' || normalized === 'center' || normalized === 'centre') return 'center';
         if (normalized === '2' || normalized === 'right' || normalized === 'end') return 'right';
         if (normalized === '3' || normalized === 'justify' || normalized === 'justified') return 'justify';
         return 'left';
+    }
+
+    function normalizeParagraphListType(value) {
+        var normalized = String(value ?? '').trim().toLowerCase();
+        if (!normalized || normalized === 'none' || normalized === 'false' || normalized === '0') return null;
+        if (normalized === 'bullet' || normalized === 'bulleted' || normalized === 'unordered' || normalized === 'ul') return 'bullet';
+        if (normalized === 'numbered' || normalized === 'ordered' || normalized === 'ol' || normalized === 'decimal') return 'numbered';
+        return null;
+    }
+
+    function paragraphListTagName(value) {
+        return normalizeParagraphListType(value) === 'numbered' ? 'ol' : 'ul';
+    }
+
+    function collapseSelectionToFocus(model, snapshot) {
+        var source = createSelectionSnapshot(snapshot || {});
+        var focus = createLogicalPosition(source.focus || source);
+        var fallbackBlock = _findBlock(model, focus.blockId) || _findBlock(model, source.blockId) || _firstTextBlock(model);
+        if (fallbackBlock) {
+            var maxOffset = fallbackBlock.type === 'paragraph' ? _blockText(fallbackBlock).length : 0;
+            focus = createLogicalPosition(Object.assign({}, focus, {
+                region: source.region || focus.region || 'Body',
+                blockId: fallbackBlock.id,
+                offset: Math.max(0, Math.min(maxOffset, Number(focus.offset || 0) || 0)),
+                headerFooterId: source.headerFooterId || focus.headerFooterId || null,
+                tableId: source.tableId || focus.tableId || null,
+                cellId: source.cellId || focus.cellId || null,
+                columnIndex: source.columnIndex ?? focus.columnIndex ?? null
+            }));
+        }
+
+        return createSelectionSnapshot({
+            region: source.region || focus.region || 'Body',
+            anchor: focus,
+            focus: focus,
+            direction: 'none',
+            isCollapsed: true,
+            headerFooterId: source.headerFooterId || focus.headerFooterId || null,
+            tableId: source.tableId || focus.tableId || null,
+            cellId: source.cellId || focus.cellId || null,
+            columnIndex: source.columnIndex ?? focus.columnIndex ?? null
+        });
+    }
+
+    function paragraphCommandTargetBlocks(model, snapshot) {
+        var source = createSelectionSnapshot(snapshot || {});
+        var focusBlockId = source.focus && source.focus.blockId || source.blockId || '';
+        var anchorBlockId = source.anchor && source.anchor.blockId || focusBlockId;
+        var focusContainer = _findBlockContainer(model, focusBlockId);
+        var anchorContainer = _findBlockContainer(model, anchorBlockId);
+        if (focusContainer && anchorContainer && focusContainer.blocks === anchorContainer.blocks) {
+            var start = Math.min(focusContainer.index, anchorContainer.index);
+            var end = Math.max(focusContainer.index, anchorContainer.index);
+            return focusContainer.blocks
+                .slice(start, end + 1)
+                .filter(function (block) { return block && block.type === 'paragraph'; });
+        }
+
+        var block = _findBlock(model, focusBlockId || anchorBlockId);
+        return block && block.type === 'paragraph' ? [block] : [];
+    }
+
+    function paragraphCommandValues(id, payload, block) {
+        var body = payload || {};
+        var content = block && block.content || {};
+        var currentIndent = Number(content.indentLevel ?? content.IndentLevel ?? 0) || 0;
+        var values = [];
+        if (id === 'alignment') values.push(['alignment', normalizeParagraphAlignment(body.value ?? body.Value ?? body.alignment ?? body.Alignment ?? 'left')]);
+        if (id === 'lineSpacing') values.push(['lineSpacing', Number(body.value ?? body.Value ?? body.lineSpacing ?? body.LineSpacing ?? 1)]);
+        if (id === 'spacingBefore') values.push(['spacingBefore', Number(body.value ?? body.Value ?? body.spacingBefore ?? body.SpacingBefore ?? 0)]);
+        if (id === 'spacingAfter') values.push(['spacingAfter', Number(body.value ?? body.Value ?? body.spacingAfter ?? body.SpacingAfter ?? 0)]);
+        if (id === 'paragraphProperties') {
+            var properties = body.paragraphProperties || body.ParagraphProperties || body.properties || body.Properties || {};
+            var alignment = properties.alignment ?? properties.Alignment;
+            var lineSpacing = properties.lineSpacing ?? properties.LineSpacing;
+            var spacingBefore = properties.spacingBefore ?? properties.SpacingBefore;
+            var spacingAfter = properties.spacingAfter ?? properties.SpacingAfter;
+            var leftIndent = properties.leftIndent ?? properties.LeftIndent;
+            var rightIndent = properties.rightIndent ?? properties.RightIndent;
+            var firstLineIndent = properties.firstLineIndent ?? properties.FirstLineIndent;
+            if (alignment !== undefined && alignment !== null) values.push(['alignment', normalizeParagraphAlignment(alignment)]);
+            if (lineSpacing !== undefined && lineSpacing !== null) values.push(['lineSpacing', Number(lineSpacing)]);
+            if (spacingBefore !== undefined && spacingBefore !== null) values.push(['spacingBefore', Number(spacingBefore)]);
+            if (spacingAfter !== undefined && spacingAfter !== null) values.push(['spacingAfter', Number(spacingAfter)]);
+            if (leftIndent !== undefined && leftIndent !== null) values.push(['leftIndent', Number(leftIndent)]);
+            if (rightIndent !== undefined && rightIndent !== null) values.push(['rightIndent', Number(rightIndent)]);
+            if (firstLineIndent !== undefined && firstLineIndent !== null) values.push(['firstLineIndent', Number(firstLineIndent)]);
+        }
+        if (id === 'list') {
+            var requestedListType = normalizeParagraphListType(body.value || body.Value || body.listType || body.ListType || null);
+            var currentListType = normalizeParagraphListType(content.listType || content.ListType || null);
+            values.push(['listType', requestedListType && currentListType === requestedListType ? null : requestedListType]);
+        }
+        if (id === 'indent') values.push(['indentLevel', Math.max(0, currentIndent + Number(body.delta ?? body.Delta ?? 1))]);
+        if (id === 'outdent') values.push(['indentLevel', Math.max(0, currentIndent - Number(body.delta ?? body.Delta ?? 1))]);
+        return values;
     }
 
     function clearFormattingInRange(block, range) {
@@ -3879,8 +4723,18 @@ window.tmDocumentEditorEngine = (function () {
                 buildIndexes(model);
                 return { ok: true, operation: removeOp, nextSelection: selection };
             }
+            if (id === 'removeLink') {
+                removeMarksForCommandInRange(block, effectiveRange, 'link');
+                var removeLinkOp = createOperation(OPERATION_TYPES.RemoveMark, { range: effectiveRange, mark: { type: 'link' } }, { source: 'command' });
+                committedOperations.push(removeLinkOp.toJSON());
+                buildIndexes(model);
+                return { ok: true, operation: removeLinkOp, nextSelection: selection };
+            }
             var beforeSnapshot = collectFormattingState(model, selection, pendingTypingMarks);
-            var isActive = beforeSnapshot.commandValues[id] === true;
+            var isActive = rangeCommandFullyActive(block, effectiveRange, id);
+            if (id === 'fontFamily' || id === 'fontSize' || id === 'textColor' || id === 'backgroundColor' || id === 'link') {
+                isActive = beforeSnapshot.commandValues[id] === true;
+            }
             if (id === 'textColor' || id === 'backgroundColor' || id === 'link') isActive = false;
             var mark = commandMark(id, payload);
             if (isClearValueCommand(id, mark)) {
@@ -3906,27 +4760,31 @@ window.tmDocumentEditorEngine = (function () {
         function applyParagraphCommand(id, payload) {
             var body = payload || {};
             var snapshot = createSelectionSnapshot(selection);
-            var block = _findBlock(model, snapshot.blockId);
-            if (!block || block.type !== 'paragraph') return { ok: false, errors: [{ code: 'selection-not-paragraph' }] };
-            var values = [];
-            if (id === 'alignment') values.push(['alignment', normalizeParagraphAlignment(body.value ?? body.Value ?? body.alignment ?? body.Alignment ?? 'left')]);
-            if (id === 'lineSpacing') values.push(['lineSpacing', Number(body.value ?? body.Value ?? 1)]);
-            if (id === 'spacingBefore') values.push(['spacingBefore', Number(body.value ?? body.Value ?? 0)]);
-            if (id === 'spacingAfter') values.push(['spacingAfter', Number(body.value ?? body.Value ?? 0)]);
-            if (id === 'list') values.push(['listType', body.value || body.Value || body.listType || body.ListType || null]);
-            if (id === 'indent') values.push(['indentLevel', Math.max(0, Number(block.content && block.content.indentLevel || 0) + Number(body.delta ?? body.Delta ?? 1))]);
-            if (id === 'outdent') values.push(['indentLevel', Math.max(0, Number(block.content && block.content.indentLevel || 0) - Number(body.delta ?? body.Delta ?? 1))]);
-            var ops = values.map(function (entry) {
-                var op = createOperation(OPERATION_TYPES.SetParagraphAttribute, {
-                    target: { blockId: block.id, offset: snapshot.offset },
-                    attributeName: entry[0],
-                    value: entry[1]
-                }, { source: 'command' });
-                applyOperation(model, op, { selection: snapshot });
-                committedOperations.push(op.toJSON());
-                return op;
+            var targetBlocks = paragraphCommandTargetBlocks(model, snapshot);
+            if (!targetBlocks.length) return { ok: false, errors: [{ code: 'selection-not-paragraph' }] };
+            var collapsedSelection = collapseSelectionToFocus(model, snapshot);
+            var ops = [];
+            targetBlocks.forEach(function (block) {
+                paragraphCommandValues(id, body, block).forEach(function (entry) {
+                    var op = createOperation(OPERATION_TYPES.SetParagraphAttribute, {
+                        target: {
+                            blockId: block.id,
+                            offset: block.id === collapsedSelection.blockId ? collapsedSelection.offset : 0,
+                            region: collapsedSelection.region || snapshot.region || 'Body',
+                            headerFooterId: collapsedSelection.headerFooterId || null,
+                            tableId: collapsedSelection.tableId || null,
+                            cellId: collapsedSelection.cellId || null,
+                            columnIndex: collapsedSelection.columnIndex ?? null
+                        },
+                        attributeName: entry[0],
+                        value: entry[1]
+                    }, { source: 'command' });
+                    applyOperation(model, op, { selection: snapshot });
+                    committedOperations.push(op.toJSON());
+                    ops.push(op);
+                });
             });
-            selection = createSelectionSnapshot(snapshot);
+            selection = collapsedSelection;
             return { ok: true, operations: ops, nextSelection: selection };
         }
 
@@ -3936,8 +4794,16 @@ window.tmDocumentEditorEngine = (function () {
             var controller = createTableController(model);
             var result;
             if (id === 'insertTable') {
+                var insertTarget = { blockId: snapshot.blockId, offset: snapshot.offset };
+                if (body.appendToBodyEnd === true || body.AppendToBodyEnd === true) {
+                    var bodyBlocks = _asArray(model && model.body && model.body.blocks);
+                    var lastBodyBlock = bodyBlocks.length ? bodyBlocks[bodyBlocks.length - 1] : null;
+                    if (lastBodyBlock && lastBodyBlock.id) {
+                        insertTarget = { blockId: lastBodyBlock.id, offset: _blockText(lastBodyBlock).length };
+                    }
+                }
                 var op = createOperation(OPERATION_TYPES.InsertTable, {
-                    target: { blockId: snapshot.blockId, offset: snapshot.offset },
+                    target: insertTarget,
                     rows: Number(body.rows || body.Rows || 2),
                     columns: Number(body.columns || body.Columns || 2),
                     tableId: body.tableId || body.TableId || body.blockId || body.BlockId || null,
@@ -3958,10 +4824,13 @@ window.tmDocumentEditorEngine = (function () {
             else if (id === 'insertColumnRight') result = controller.insertColumnRight(snapshot);
             else if (id === 'deleteRow') result = controller.deleteRow(snapshot, body.rowIndex ?? body.RowIndex);
             else if (id === 'deleteColumn') result = controller.deleteColumn(snapshot, body.columnIndex ?? body.ColumnIndex);
+            else if (id === 'deleteTable') result = controller.deleteTable(snapshot, body.tableId || body.TableId || null);
             else if (id === 'mergeCells') result = controller.mergeCells(snapshot, body.cellIds || body.CellIds || []);
             else if (id === 'splitCell') result = controller.splitCell(snapshot, body.cellId || body.CellId || null);
             else if (id === 'cellBackground') result = controller.setCellBackground(snapshot, body.color || body.Color || body.value || body.Value || null);
             else if (id === 'cellBorder') result = controller.setCellBorder(snapshot, body.border || body.Border || body.value || body.Value || null);
+            else if (id === 'cellProperties') result = controller.setCellProperties(snapshot, body);
+            else if (id === 'tableProperties') result = controller.setTableProperties(snapshot, body);
             else if (id === 'resizeTable') result = controller.resizeTable(snapshot.tableId || snapshot.blockId || body.tableId || body.TableId, body.width || body.Width);
             else result = { ok: false, errors: [{ code: 'unknown-table-command', commandId: id }] };
             controller.getCommittedOperations().forEach(function (operation) { committedOperations.push(operation); });
@@ -3969,7 +4838,7 @@ window.tmDocumentEditorEngine = (function () {
         }
 
         var commands = {};
-        ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link', 'clearFormatting'].forEach(function (id) {
+        ['bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize', 'textColor', 'backgroundColor', 'link', 'removeLink', 'clearFormatting'].forEach(function (id) {
             commands[id] = {
                 id: id,
                 refresh: function () { return getState(id); },
@@ -3983,7 +4852,7 @@ window.tmDocumentEditorEngine = (function () {
                 execute: function (payload) { return applyParagraphCommand(id, payload); }
             };
         });
-        ['insertTable', 'insertRowAbove', 'insertRowBelow', 'insertColumnLeft', 'insertColumnRight', 'deleteRow', 'deleteColumn', 'mergeCells', 'splitCell', 'cellBackground', 'cellBorder', 'resizeTable'].forEach(function (id) {
+        ['insertTable', 'insertRowAbove', 'insertRowBelow', 'insertColumnLeft', 'insertColumnRight', 'deleteRow', 'deleteColumn', 'deleteTable', 'mergeCells', 'splitCell', 'cellBackground', 'cellBorder', 'cellProperties', 'tableProperties', 'resizeTable'].forEach(function (id) {
             commands[id] = {
                 id: id,
                 refresh: function () { return getState(id); },
@@ -4344,6 +5213,7 @@ window.tmDocumentEditorEngine = (function () {
                     id: this.id,
                     type: this.type,
                     label: this.label,
+                    description: this.commandName || this.label || this.type,
                     commandName: this.commandName,
                     instanceId: this.instanceId,
                     beforeDocFingerprint: this.beforeDocFingerprint,
@@ -4580,7 +5450,12 @@ window.tmDocumentEditorEngine = (function () {
             var targetStack = undo ? redoStack : undoStack;
             var entry = sourceStack.pop();
             if (!entry) return _sortObject({ ok: false, empty: true, transactionType: undo ? TRANSACTION_TYPES.Undo : TRANSACTION_TYPES.Redo });
-            var operations = (undo ? entry.inverseOperations : entry.redoOperations).map(function (operation) { return attachOperationMethods(_clone(operation)); });
+            var historySource = undo ? TRANSACTION_TYPES.Undo : TRANSACTION_TYPES.Redo;
+            var operations = (undo ? entry.inverseOperations : entry.redoOperations).map(function (operation) {
+                var nextOperation = attachOperationMethods(_clone(operation));
+                nextOperation.source = historySource;
+                return nextOperation;
+            });
             var historyTransaction = createTransaction(model, {
                 type: undo ? TRANSACTION_TYPES.Undo : TRANSACTION_TYPES.Redo,
                 label: undo ? 'Undo' : 'Redo',
@@ -4968,13 +5843,14 @@ window.tmDocumentEditorEngine = (function () {
                 cellId: textSelection.cellId || textSelection.CellId || textSelection.activeTableCellId || textSelection.ActiveTableCellId || cellId
             }), null, region)
             : fallbackText;
+        var anchorRegion = region;
         var objectRange = createLogicalRange(
             { region: region, blockId: blockId, objectId: objectId, offset: anchorOffset, affinity: 'before', headerFooterId: headerFooterId, tableId: tableId, cellId: cellId },
             { region: region, blockId: blockId, objectId: objectId, offset: anchorOffset, affinity: 'after', headerFooterId: headerFooterId, tableId: tableId, cellId: cellId },
             'none');
         objectRange.isCollapsed = false;
         return createSelectionSnapshot({
-            region: region,
+            region: 'Image',
             range: objectRange,
             blockId: blockId,
             objectId: objectId,
@@ -4992,7 +5868,7 @@ window.tmDocumentEditorEngine = (function () {
             isCollapsed: false,
             textSelection: preservedTextSelection,
             objectSelection: {
-                region: region,
+                region: anchorRegion,
                 kind: kind,
                 objectId: objectId,
                 blockId: blockId,
@@ -5268,8 +6144,8 @@ window.tmDocumentEditorEngine = (function () {
 
     function createObjectFocusPolicy(selected) {
         return _sortObject({
-            focusPolicy: 'selection-only',
-            isTabStop: false,
+            focusPolicy: 'tab-stop',
+            isTabStop: true,
             selected: selected === true,
             selectedClass: 'tm-wysiwyg-object--selected'
         });
@@ -5277,7 +6153,7 @@ window.tmDocumentEditorEngine = (function () {
 
     function renderObjectFocusPolicyAttributes(selected) {
         var policy = createObjectFocusPolicy(selected === true);
-        var attributes = ' data-object-focus-policy="' + _escape(policy.focusPolicy) + '" aria-selected="' + (policy.selected ? 'true' : 'false') + '"';
+        var attributes = ' data-object-focus-policy="' + _escape(policy.focusPolicy) + '" tabindex="0" aria-selected="' + (policy.selected ? 'true' : 'false') + '"';
         if (policy.selected) attributes += ' data-object-selected="true"';
         return attributes;
     }
@@ -5287,9 +6163,9 @@ window.tmDocumentEditorEngine = (function () {
         var policy = createObjectFocusPolicy(selected === true);
         var objectLayerItem = element.classList && typeof element.classList.contains === 'function'
             && element.classList.contains('tm-wysiwyg-object-layer-item');
-        if (typeof element.removeAttribute === 'function') element.removeAttribute('tabindex');
         if (typeof element.setAttribute === 'function') {
             element.setAttribute('data-object-focus-policy', policy.focusPolicy);
+            element.setAttribute('tabindex', '0');
             element.setAttribute('aria-selected', policy.selected ? 'true' : 'false');
             if (policy.selected) {
                 element.setAttribute('data-object-selected', 'true');
@@ -5300,8 +6176,8 @@ window.tmDocumentEditorEngine = (function () {
         if (element.classList && typeof element.classList.toggle === 'function') {
             if (objectLayerItem) {
                 element.classList.toggle('tm-wysiwyg-object-layer-item--selected', policy.selected);
-                element.classList.remove('tm-wysiwyg-object--selected');
-                element.classList.remove('tm-wysiwyg-image--selected');
+                element.classList.toggle('tm-wysiwyg-object--selected', policy.selected);
+                element.classList.toggle('tm-wysiwyg-image--selected', policy.selected);
             } else {
                 element.classList.toggle('tm-wysiwyg-object--selected', policy.selected);
                 element.classList.toggle('tm-wysiwyg-image--selected', policy.selected);
@@ -5518,6 +6394,41 @@ window.tmDocumentEditorEngine = (function () {
         var start = sameBlock && anchor.logicalOffset > focus.logicalOffset ? focus : anchor;
         var end = sameBlock && anchor.logicalOffset > focus.logicalOffset ? anchor : focus;
         var region = normalizeSelectionTokenRegion(snapshot.region || anchor.region || focus.region, snapshot);
+        var canonicalTextSelection = normalizeTextSelectionPayload({
+            region: region,
+            anchor: {
+                region: anchor.region,
+                blockId: anchor.blockId,
+                inlineId: anchor.inlineId,
+                offset: anchor.logicalOffset,
+                affinity: anchor.affinity,
+                limitId: anchor.limitId,
+                tableId: anchor.tableId,
+                cellId: anchor.cellId,
+                headerFooterId: anchor.headerFooterId,
+                objectId: anchor.objectId
+            },
+            focus: {
+                region: focus.region,
+                blockId: focus.blockId,
+                inlineId: focus.inlineId,
+                offset: focus.logicalOffset,
+                affinity: focus.affinity,
+                limitId: focus.limitId,
+                tableId: focus.tableId,
+                cellId: focus.cellId,
+                headerFooterId: focus.headerFooterId,
+                objectId: focus.objectId
+            },
+            isCollapsed: snapshot.isCollapsed !== false,
+            direction: snapshot.direction || 'none'
+        }, null, region);
+        var tokenTextSelection = (snapshot.selectionMode || snapshot.mode) === 'Object' && snapshot.textSelection
+            ? normalizeTextSelectionPayload(snapshot.textSelection, null, region)
+            : canonicalTextSelection;
+        var tokenObjectSelection = snapshot.objectSelection
+            ? _sortObject(Object.assign({}, snapshot.objectSelection, { textSelection: tokenTextSelection }))
+            : null;
         return _sortObject({
             schema: 'tmde-selection-token/v1',
             instanceId: _asText(instanceId || ''),
@@ -5543,8 +6454,8 @@ window.tmDocumentEditorEngine = (function () {
             isCollapsed: snapshot.isCollapsed !== false,
             direction: snapshot.direction || 'none',
             selectionMode: snapshot.selectionMode || snapshot.mode || 'Text',
-            textSelection: snapshot.textSelection || null,
-            objectSelection: snapshot.objectSelection || null,
+            textSelection: tokenTextSelection,
+            objectSelection: tokenObjectSelection,
             tableId: snapshot.activeTableId || snapshot.tableId || anchor.tableId || focus.tableId || null,
             cellId: snapshot.activeTableCellId || snapshot.cellId || anchor.cellId || focus.cellId || null,
             activeObjectId: snapshot.activeObjectId || snapshot.objectId || anchor.objectId || focus.objectId || null
@@ -5567,6 +6478,13 @@ window.tmDocumentEditorEngine = (function () {
         snapshot.Token = token;
         snapshot.selectionTokenData = data;
         snapshot.SelectionTokenData = data;
+        snapshot.ActiveTableCellId = snapshot.activeTableCellId || snapshot.cellId || data.cellId || null;
+        snapshot.ActiveTableId = snapshot.activeTableId || snapshot.tableId || data.tableId || null;
+        snapshot.ActiveImageBlockId = snapshot.activeImageBlockId || null;
+        snapshot.ActiveObjectId = snapshot.activeObjectId || snapshot.objectId || null;
+        snapshot.ActiveCommentId = snapshot.activeCommentId || null;
+        snapshot.ActiveRevisionId = snapshot.activeRevisionId || null;
+        snapshot.HitTargetKind = snapshot.hitTargetKind || null;
         return _sortObject(snapshot);
     }
 
@@ -6080,11 +6998,20 @@ window.tmDocumentEditorEngine = (function () {
         }));
     }
 
+    function positionsShareTableRange(anchor, focus) {
+        return !!(anchor && focus
+            && anchor.tableId
+            && focus.tableId
+            && anchor.tableId === focus.tableId
+            && anchor.cellId
+            && focus.cellId);
+    }
+
     function normalizeLogicalRange(model, range) {
         var source = range || {};
         var anchor = normalizeLogicalPosition(model, source.anchor || source.Anchor || source.start || source.Start || source);
         var focus = normalizeLogicalPosition(model, source.focus || source.Focus || source.end || source.End || source);
-        if (anchor.limitId && focus.limitId && anchor.limitId !== focus.limitId) {
+        if (anchor.limitId && focus.limitId && anchor.limitId !== focus.limitId && !positionsShareTableRange(anchor, focus)) {
             focus = _clone(anchor);
         }
         return createLogicalRange(anchor, focus, source.direction || source.Direction || (anchor.offset <= focus.offset ? 'forward' : 'backward'));
@@ -6129,7 +7056,11 @@ window.tmDocumentEditorEngine = (function () {
                     snapshot.range = createLogicalRange(snapshot.anchor, snapshot.focus, 'none');
                     snapshot.isCollapsed = true;
                 }
-                if (!snapshot.isCollapsed && snapshot.anchor.limitId && snapshot.focus.limitId && snapshot.anchor.limitId !== snapshot.focus.limitId) {
+                if (!snapshot.isCollapsed
+                    && snapshot.anchor.limitId
+                    && snapshot.focus.limitId
+                    && snapshot.anchor.limitId !== snapshot.focus.limitId
+                    && !positionsShareTableRange(snapshot.anchor, snapshot.focus)) {
                     snapshot.focus = _clone(snapshot.anchor);
                     snapshot.range = createLogicalRange(snapshot.anchor, snapshot.focus, 'none');
                     snapshot.isCollapsed = true;
@@ -6851,7 +7782,11 @@ window.tmDocumentEditorEngine = (function () {
                 }
                 range = activeRange();
                 if (width > range.width && (token.type === 'longToken' || token.type === 'word' || token.type === 'cjk')) {
-                    var pieces = splitTokenIntoFittingPieces(token, tokenText, tokenStyle, service, range.width);
+                    var splitWidth = current.ranges.slice(current.rangeIndex).reduce(function (min, item) {
+                        var itemWidth = Math.max(0, Number(item && item.width || 0) || 0);
+                        return itemWidth > 0 ? Math.min(min, itemWidth) : min;
+                    }, Math.max(1, Number(range.width || 1) || 1));
+                    var pieces = splitTokenIntoFittingPieces(token, tokenText, tokenStyle, service, splitWidth);
                     for (var pieceIndex = 0; pieceIndex < pieces.length; pieceIndex++) {
                         var piece = pieces[pieceIndex];
                         range = activeRange();
@@ -7075,6 +8010,7 @@ window.tmDocumentEditorEngine = (function () {
         lines.forEach(function (line, index) {
             var isLast = index === lines.length - 1;
             var totalGaps = 0;
+            var maxExtraSpacePerGap = 0;
             var anyEnabled = false;
             var rangeJustify = _asArray(line.ranges && line.ranges.length ? line.ranges : line.availableIntervals).map(function (range, rangeIndex) {
                 var rangeSegments = _asArray(range && range.segments).filter(function (segment) {
@@ -7094,6 +8030,7 @@ window.tmDocumentEditorEngine = (function () {
                 var remaining = Math.max(0, Number(range && range.width || 0) - usedWidth);
                 var enabled = justify && !isLast && !line.hardBreak && gaps > 0 && remaining > 0;
                 if (enabled) anyEnabled = true;
+                if (enabled) maxExtraSpacePerGap = Math.max(maxExtraSpacePerGap, remaining / gaps);
                 return {
                     enabled: enabled,
                     extraSpacePerGap: enabled ? remaining / gaps : 0,
@@ -7104,7 +8041,7 @@ window.tmDocumentEditorEngine = (function () {
             });
             line.justify = {
                 enabled: anyEnabled,
-                extraSpacePerGap: 0,
+                extraSpacePerGap: anyEnabled ? maxExtraSpacePerGap : 0,
                 gapCount: totalGaps,
                 ranges: rangeJustify
             };
@@ -7554,6 +8491,7 @@ window.tmDocumentEditorEngine = (function () {
         if (verticalAlign === 2) verticalAlign = 'Middle';
         if (verticalAlign === 3) verticalAlign = 'Bottom';
         var contentSize = content.size || content.Size || {};
+        var naturalSize = content.naturalSize || content.NaturalSize || {};
         var width = Math.max(1, Number(
             transform.width ?? transform.Width
             ?? layout.width ?? layout.Width
@@ -7566,6 +8504,16 @@ window.tmDocumentEditorEngine = (function () {
             ?? content.height ?? content.Height
             ?? contentSize.height ?? contentSize.Height
             ?? opts.height ?? opts.Height ?? 80) || 80);
+        var naturalWidth = Math.max(0, Number(
+            transform.naturalWidth ?? transform.NaturalWidth
+            ?? naturalSize.width ?? naturalSize.Width
+            ?? contentSize.naturalWidth ?? contentSize.NaturalWidth
+            ?? width) || width);
+        var naturalHeight = Math.max(0, Number(
+            transform.naturalHeight ?? transform.NaturalHeight
+            ?? naturalSize.height ?? naturalSize.Height
+            ?? contentSize.naturalHeight ?? contentSize.NaturalHeight
+            ?? height) || height);
         var wrapMargin = Math.max(0, Number(layout.wrapMargin ?? layout.WrapMargin ?? wrap.margin ?? wrap.Margin ?? 0) || 0);
         var rawDistanceLeft = wrap.distanceLeft ?? wrap.DistanceLeft;
         var rawDistanceRight = wrap.distanceRight ?? wrap.DistanceRight;
@@ -7629,11 +8577,14 @@ window.tmDocumentEditorEngine = (function () {
             zIndex: Number(layout.zIndex ?? layout.ZIndex ?? stacking.zIndex ?? stacking.ZIndex ?? 0) || 0,
             width: width,
             height: height,
+            naturalWidth: naturalWidth,
+            naturalHeight: naturalHeight,
             rect: content.rect || content.Rect || layout.rect || layout.Rect || opts.rect || opts.Rect
                 ? rectFromGeometry(content.rect || content.Rect || layout.rect || layout.Rect || opts.rect || opts.Rect)
                 : null,
             caption: _asText(content.caption || content.Caption || ''),
             altText: _asText(content.altText || content.AltText || ''),
+            isDecorative: (content.isDecorative ?? content.IsDecorative ?? false) === true,
             url: content.url || content.Url || null,
             assetId: content.assetId || content.AssetId || null
         });
@@ -8340,8 +9291,16 @@ window.tmDocumentEditorEngine = (function () {
     function blockedIntervalsForExclusionGeometry(exclusion, atY, lineHeight, body, minWidth) {
         var rect = rectFromGeometry(exclusion && (exclusion.rect || exclusion.Rect));
         var lineRect = { x: body.x, y: atY, width: body.width, height: lineHeight };
-        if (!rectIntersectsGeometry(lineRect, rect)) return [];
         var mode = normalizeWrapModeName(exclusion && (exclusion.wrapMode || exclusion.WrapMode));
+        var sourceRect = mode === 'Tight'
+            ? rectFromGeometry(exclusion && (exclusion.sourceRect || exclusion.SourceRect))
+            : null;
+        var intersectsRect = rectIntersectsGeometry(lineRect, rect);
+        var intersectsSourceRect = !!(sourceRect
+            && sourceRect.width > 0
+            && sourceRect.height > 0
+            && rectIntersectsGeometry(lineRect, sourceRect));
+        if (!intersectsRect && !intersectsSourceRect) return [];
         var kind = _asText(exclusion && (exclusion.kind || exclusion.Kind));
         if (mode === 'TopBottom' || kind === 'fullWidth') {
             return [{ x: body.x, width: body.width }];
@@ -8357,6 +9316,13 @@ window.tmDocumentEditorEngine = (function () {
             intervals = right - left >= minWidth - 0.0001
                 ? [{ x: left, width: right - left }]
                 : [];
+        }
+        if (mode === 'Tight' && intersectsSourceRect) {
+            var sourceLeft = Math.max(body.x, sourceRect.x);
+            var sourceRight = Math.min(rectRightGeometry(body), rectRightGeometry(sourceRect));
+            if (sourceRight - sourceLeft > 0.0001) {
+                intervals.push({ x: sourceLeft, width: sourceRight - sourceLeft });
+            }
         }
 
         return applyWrapSideToBlockedIntervals(intervals, exclusion && (exclusion.wrapSide || exclusion.WrapSide), body, minWidth);
@@ -8451,8 +9417,20 @@ window.tmDocumentEditorEngine = (function () {
                 if (intervalCacheStats) intervalCacheStats.exclusionScanCount = Number(intervalCacheStats.exclusionScanCount || 0) + 1;
                 if (!exclusion || exclusion.allowOverlap === true || exclusion.AllowOverlap === true) return;
                 var rect = rectFromGeometry(exclusion.rect || exclusion.Rect);
-                if (!rectIntersectsGeometry(lineRect, rect)) return;
-                blockingBottom = Math.max(blockingBottom, rectBottomGeometry(rect));
+                var mode = normalizeWrapModeName(exclusion.wrapMode || exclusion.WrapMode);
+                var sourceRect = mode === 'Tight'
+                    ? rectFromGeometry(exclusion.sourceRect || exclusion.SourceRect)
+                    : null;
+                var intersectsRect = rectIntersectsGeometry(lineRect, rect);
+                var intersectsSourceRect = !!(sourceRect
+                    && sourceRect.width > 0
+                    && sourceRect.height > 0
+                    && rectIntersectsGeometry(lineRect, sourceRect));
+                if (!intersectsRect && !intersectsSourceRect) return;
+                blockingBottom = Math.max(
+                    blockingBottom,
+                    intersectsRect ? rectBottomGeometry(rect) : lineY,
+                    intersectsSourceRect ? rectBottomGeometry(sourceRect) : lineY);
                 if (intervalCacheStats) {
                     intervalCacheStats.blockedGeometryComputeCount = Number(intervalCacheStats.blockedGeometryComputeCount || 0) + 1;
                     if (_asArray(exclusion.polygon || exclusion.Polygon).length >= 3) {
@@ -8463,7 +9441,7 @@ window.tmDocumentEditorEngine = (function () {
                     blocked.push(normalizeManagerInterval(interval, lineY, height, {
                         objectId: exclusion.objectId || exclusion.ObjectId || '',
                         blockId: exclusion.blockId || exclusion.BlockId || '',
-                        wrapMode: normalizeWrapModeName(exclusion.wrapMode || exclusion.WrapMode),
+                        wrapMode: mode,
                         wrapSide: normalizeWrapSideName(exclusion.wrapSide || exclusion.WrapSide)
                     }));
                 });
@@ -8494,12 +9472,16 @@ window.tmDocumentEditorEngine = (function () {
             var movedIntervals = initial.intervals;
             var movedBlockedIntervals = initial.blockedIntervals;
 
-            if (initial.intervals.length === 0) {
-                movedToY = Math.max(lineY + height, initial.blockingBottom);
+            var resolved = initial;
+            var guard = 0;
+            while (resolved.intervals.length === 0 && guard++ < 40) {
+                var nextY = Math.max(movedToY + height, Number(resolved.blockingBottom || movedToY) || movedToY);
+                if (nextY <= movedToY + 0.0001) break;
+                movedToY = nextY;
                 moved = movedToY > lineY;
-                var movedResult = computeAt(movedToY, height, minWidth);
-                movedIntervals = movedResult.intervals;
-                movedBlockedIntervals = movedResult.blockedIntervals;
+                resolved = computeAt(movedToY, height, minWidth);
+                movedIntervals = resolved.intervals;
+                movedBlockedIntervals = resolved.blockedIntervals;
             }
 
             return _sortObject({
@@ -10023,7 +11005,7 @@ window.tmDocumentEditorEngine = (function () {
                     return _clone(local);
                 }
                 var clone = _clone(layoutBlock);
-                if (seenActive && Math.abs(heightDelta) > 0.0001 && clone.region === (previousBlock.region || clone.region) && Number(clone.pageIndex || 0) === Number(previousBlock.pageIndex || 0)) {
+                if (seenActive && Math.abs(heightDelta) > 0.0001 && clone.region === (previousBlock.region || clone.region)) {
                     shiftLayoutBlockForIncrementalReflow(clone, heightDelta);
                     clone.stale = true;
                     clone.safeOffsetY = heightDelta;
@@ -11079,7 +12061,10 @@ window.tmDocumentEditorEngine = (function () {
             var insertOffset = range.start;
             if (!currentSelection.isCollapsed && range.start !== range.end) {
                 activeInputRevision = null;
-                operations.push(createDeleteOperation({ blockId: range.blockId, start: range.start, end: range.end }, 'input'));
+                operations.push(createDeleteOperation(
+                    { blockId: range.blockId, start: range.start, end: range.end },
+                    'input',
+                    { trackDeletion: false }));
             }
             var revisionPayload = trackChanges
                 ? createOrExtendInputRevision({ blockId: range.blockId, start: insertOffset, end: insertOffset + _asText(text).length }, text, 'typing')
@@ -11132,8 +12117,11 @@ window.tmDocumentEditorEngine = (function () {
             return _sortObject({ id: payload.id, revision: payload, reused: false });
         }
 
-        function createDeleteOperation(range, source) {
-            var revisionPayload = trackChanges ? createDeletionRevisionPayload(model, range, userId, source || 'delete') : null;
+        function createDeleteOperation(range, source, options) {
+            var deleteOptions = options || {};
+            var revisionPayload = trackChanges && deleteOptions.trackDeletion !== false
+                ? createDeletionRevisionPayload(model, range, userId, source || 'delete')
+                : null;
             return createOperation(OPERATION_TYPES.DeleteRange, {
                 range: range,
                 revisionId: revisionPayload && revisionPayload.id || null,
@@ -11306,7 +12294,7 @@ window.tmDocumentEditorEngine = (function () {
             var range = selectionToRange(currentSelection);
             var operations = [];
             if (!currentSelection.isCollapsed && range.start !== range.end) {
-                operations.push(createDeleteOperation(range, 'paste'));
+                    operations.push(createDeleteOperation(range, 'paste', { trackDeletion: false }));
             }
             var lines = normalizedText.split('\n');
             var pasteRevision = trackChanges
@@ -12044,11 +13032,19 @@ window.tmDocumentEditorEngine = (function () {
             && node.getAttribute('data-caret-placeholder') !== null);
     }
 
+    function isNonPrintingMarkerNode(node) {
+        return !!(node
+            && node.nodeType === 1
+            && node.classList
+            && node.classList.contains('tm-wysiwyg-nonprinting-text'));
+    }
+
     function domLogicalLength(node) {
         if (!node) return 0;
         if (node.nodeType === 3) return node.nodeValue ? node.nodeValue.length : 0;
         if (isInlineBreakNode(node)) return 1;
         if (isCaretPlaceholderNode(node)) return 0;
+        if (isNonPrintingMarkerNode(node)) return 0;
         var total = 0;
         var children = node.childNodes || [];
         for (var i = 0; i < children.length; i++) {
@@ -12087,6 +13083,34 @@ window.tmDocumentEditorEngine = (function () {
     function domTextNodeToLogical(root, model, node, offset) {
         var element = node && node.nodeType === Node.ELEMENT_NODE ? node : node && node.parentElement;
         var blockElement = element && element.closest ? element.closest('[data-block-id]') : null;
+        var tableCell = element && element.closest ? element.closest('td[data-cell-id], th[data-cell-id], .tm-wysiwyg-table-cell[data-cell-id]') : null;
+        if (tableCell) {
+            var cellBlock = element && element.closest ? element.closest('.tm-wysiwyg-block[data-block-id]') : null;
+            if (!cellBlock || cellBlock.matches && cellBlock.matches('table, .tm-wysiwyg-table')) {
+                cellBlock = tableCell.querySelector('.tm-wysiwyg-block[data-block-id]');
+            }
+            if (cellBlock) blockElement = cellBlock;
+        }
+        if (!blockElement && element && element.closest) {
+            var fallbackRegionNode = element.closest('[data-render-region]');
+            if (fallbackRegionNode && (!root || root.contains(fallbackRegionNode))) {
+                var fallbackRegion = fallbackRegionNode.getAttribute('data-render-region') || 'Body';
+                var fallbackHeaderFooterId = fallbackRegionNode.getAttribute('data-hf-id') || null;
+                var fallbackBlock = _lastEditableTextBlockInRegion(model, fallbackRegion, fallbackHeaderFooterId);
+                if (fallbackBlock) {
+                    return {
+                        ok: true,
+                        position: normalizeLogicalPosition(model, {
+                            region: fallbackRegion,
+                            blockId: fallbackBlock.id,
+                            offset: _blockText(fallbackBlock).length,
+                            affinity: 'after',
+                            headerFooterId: fallbackHeaderFooterId
+                        })
+                    };
+                }
+            }
+        }
         if (!blockElement || root && !root.contains(blockElement)) return { ok: false, error: { code: 'dom-node-outside-editor' } };
         var blockId = blockElement.getAttribute('data-block-id');
         var block = _findBlock(model, blockId);
@@ -12289,13 +13313,29 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function findCaretIntervalHit(layout, x, y) {
+        var intervals = collectLayoutLineIntervals(layout);
         var hit = null;
-        collectLayoutLineIntervals(layout).some(function (interval) {
+        intervals.some(function (interval) {
             if (!hitRectContains(interval.rect || interval, x, y)) return false;
             hit = interval;
             return true;
         });
-        return hit;
+        if (hit) return hit;
+
+        var nearest = null;
+        var nearestDistance = Infinity;
+        intervals.forEach(function (interval) {
+            var rect = hitRectFromAny(interval.rect || interval);
+            if (y < rect.y || y > rect.y + rect.height) return;
+            var leftDistance = Math.abs(x - rect.x);
+            var rightDistance = Math.abs(x - (rect.x + rect.width));
+            var distance = x < rect.x ? leftDistance : (x > rect.x + rect.width ? rightDistance : 0);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearest = interval;
+            }
+        });
+        return nearest;
     }
 
     function objectHitPriority(item) {
@@ -12467,26 +13507,6 @@ window.tmDocumentEditorEngine = (function () {
                 objectId: objectId
             };
         }
-        if (tableCellHit) {
-            var firstLayout = _asArray(tableCellHit.cell.blockLayouts)[0] || null;
-            var hitBlockId = firstLayout && firstLayout.blockId || '';
-            var hitBlock = _findBlock(model, hitBlockId);
-            var offset = Math.min(_blockText(hitBlock).length, Math.max(0, textIntervalHit && textIntervalHit.cellId === tableCellHit.cell.cellId ? caretOffsetFromInterval(textIntervalHit, px) : 0));
-            return {
-                type: 'tableCell',
-                tableId: tableCellHit.table.blockId,
-                cellId: tableCellHit.cell.cellId,
-                position: normalizeLogicalPosition(model, {
-                    region: tableCellHit.cell.region || 'TableCell',
-                    blockId: hitBlockId,
-                    offset: offset,
-                    affinity: 'after',
-                    headerFooterId: tableCellHit.cell.headerFooterId || null,
-                    cellId: tableCellHit.cell.cellId,
-                    tableId: tableCellHit.table.blockId
-                })
-            };
-        }
         if (textIntervalHit && !textExclusionHit) {
             var offset = caretOffsetFromInterval(textIntervalHit, px);
             var affinity = textIntervalHit.affinity === 'before' ? 'before' : 'after';
@@ -12508,6 +13528,26 @@ window.tmDocumentEditorEngine = (function () {
                 intervalId: textIntervalHit.id,
                 virtualCaret: textIntervalHit.virtualCaret === true,
                 affinity: affinity
+            };
+        }
+        if (tableCellHit) {
+            var firstLayout = _asArray(tableCellHit.cell.blockLayouts)[0] || null;
+            var hitBlockId = firstLayout && firstLayout.blockId || '';
+            var hitBlock = _findBlock(model, hitBlockId);
+            var offset = Math.min(_blockText(hitBlock).length, Math.max(0, textIntervalHit && textIntervalHit.cellId === tableCellHit.cell.cellId ? caretOffsetFromInterval(textIntervalHit, px) : 0));
+            return {
+                type: 'tableCell',
+                tableId: tableCellHit.table.blockId,
+                cellId: tableCellHit.cell.cellId,
+                position: normalizeLogicalPosition(model, {
+                    region: tableCellHit.cell.region || 'TableCell',
+                    blockId: hitBlockId,
+                    offset: offset,
+                    affinity: 'after',
+                    headerFooterId: tableCellHit.cell.headerFooterId || null,
+                    cellId: tableCellHit.cell.cellId,
+                    tableId: tableCellHit.table.blockId
+                })
             };
         }
         return { type: 'none', position: null };
@@ -13171,7 +14211,16 @@ window.tmDocumentEditorEngine = (function () {
         if (diagnostics.watchdogFailures.length >= 2 && diagnostics.debugWarnings.indexOf('watchdog-recovery-active') < 0) {
             diagnostics.debugWarnings.push('watchdog-recovery-active');
         }
-        if (inst.root) inst.root.toggleAttribute('data-debug-warning', diagnostics.debugWarnings.length > 0);
+        if (inst.root) {
+            var hasDebugWarnings = diagnostics.debugWarnings.length > 0;
+            if (typeof inst.root.toggleAttribute === 'function') {
+                inst.root.toggleAttribute('data-debug-warning', hasDebugWarnings);
+            } else if (hasDebugWarnings && typeof inst.root.setAttribute === 'function') {
+                inst.root.setAttribute('data-debug-warning', '');
+            } else if (typeof inst.root.removeAttribute === 'function') {
+                inst.root.removeAttribute('data-debug-warning');
+            }
+        }
         return entry;
     }
 
@@ -13188,6 +14237,7 @@ window.tmDocumentEditorEngine = (function () {
         var diagnostics = ensureDiagnostics(inst);
         diagnostics.selectionVersion++;
         updateActiveRegionMetric(inst, activeRegionForSelection(inst && inst.selection || {}));
+        updateTableSelectionDom(inst, inst && inst.selection);
         rememberSelectionToken(inst, inst.selection || null, reason || 'selection-changed');
         if (reason) recordTimeline(inst, 'selection-restore', { reason: reason, selectionVersion: diagnostics.selectionVersion, selection: inst.selection || null });
         var elapsed = Math.max(0, strictPerformanceNow() - started);
@@ -13292,8 +14342,9 @@ window.tmDocumentEditorEngine = (function () {
         if (region) {
             var regionNode = node.closest && node.closest('[data-render-region]');
             var nodeRegion = regionNode && regionNode.getAttribute('data-render-region') || 'Body';
-            if (nodeRegion !== region) return false;
-            if ((region === 'Header' || region === 'Footer') && headerFooterId) {
+            var effectiveRegion = region === 'TableCell' ? 'Body' : region;
+            if (nodeRegion !== effectiveRegion) return false;
+            if ((effectiveRegion === 'Header' || effectiveRegion === 'Footer') && headerFooterId) {
                 var nodeHeaderFooterId = regionNode && regionNode.getAttribute('data-hf-id') || null;
                 if (nodeHeaderFooterId && nodeHeaderFooterId !== headerFooterId) return false;
             }
@@ -13425,6 +14476,225 @@ window.tmDocumentEditorEngine = (function () {
         };
     }
 
+    function findLiveTableElements(inst, tableId, selection) {
+        if (!inst || !inst.root || !tableId || typeof inst.root.querySelectorAll !== 'function') return [];
+        var selector = '.tm-wysiwyg-table[data-block-id="' + cssEscape(tableId) + '"]';
+        return Array.from(inst.root.querySelectorAll(selector))
+            .filter(function (node) { return node && liveBlockElementMatchesSelection(node, selection); });
+    }
+
+    function currentDomTableElement(inst, tableId) {
+        var selection = window.getSelection && window.getSelection();
+        if (!selectionBelongsToEditor(inst, selection) || selection.rangeCount === 0) return null;
+        var range = selection.getRangeAt(0);
+        var node = range.startContainer && (range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement);
+        var table = node && node.closest && node.closest('.tm-wysiwyg-table[data-block-id]');
+        return table && table.getAttribute('data-block-id') === tableId ? table : null;
+    }
+
+    function findLiveTableElementForContext(inst, tableId, context, selection) {
+        var nodes = findLiveTableElements(inst, tableId, selection);
+        if (!nodes.length) return null;
+        if (context) {
+            var match = nodes.find(function (node) {
+                var candidate = liveBlockContextFromElement(node);
+                return candidate
+                    && (context.pageIndex === null || candidate.pageIndex === context.pageIndex)
+                    && (!context.region || candidate.region === context.region)
+                    && (!context.headerFooterId || candidate.headerFooterId === context.headerFooterId);
+            });
+            if (match) return match;
+        }
+        return nodes[0] || null;
+    }
+
+    function replaceLiveTableHtml(inst, node, tableBlock) {
+        if (!node || !tableBlock) return false;
+        node.outerHTML = renderEngineTableHtml(tableBlock);
+        return true;
+    }
+
+    function replaceLiveTableCopies(inst, tableId, tableBlock, selection) {
+        var activeNode = currentDomTableElement(inst, tableId);
+        var context = liveBlockContextFromElement(activeNode) || liveBlockContextFromElement(findLiveTableElementForContext(inst, tableId, null, selection));
+        var nodes = findLiveTableElements(inst, tableId, selection);
+        if (!nodes.length) return { ok: false, restoredNode: null, updatedCount: 0 };
+        nodes.forEach(function (node) {
+            var nodeContext = liveBlockContextFromElement(node) || context || {};
+            if (tableBlock) {
+                replaceLiveTableHtml(inst, node, tableBlock);
+            } else {
+                node.remove();
+            }
+            recordRenderSwap(inst, nodeContext.region || selection && selection.region || 'Body', 'live-table-patch', [tableId], {
+                blockId: tableId,
+                pageIndex: nodeContext.pageIndex,
+                headerFooterId: nodeContext.headerFooterId || null,
+                removed: !tableBlock
+            });
+        });
+        return {
+            ok: true,
+            restoredNode: tableBlock ? findLiveTableElementForContext(inst, tableId, context, selection) : null,
+            updatedCount: nodes.length
+        };
+    }
+
+    function readDomAttributeOrStyle(node, attrName, styleName) {
+        if (!node) return null;
+        var attr = node.getAttribute && node.getAttribute(attrName);
+        if (attr !== null && attr !== undefined && attr !== '') return attr;
+        var styleValue = node.style && styleName ? node.style[styleName] : null;
+        return styleValue !== null && styleValue !== undefined && styleValue !== '' ? styleValue : null;
+    }
+
+    function readDomNumberAttributeOrStyle(node, attrName, styleName) {
+        return nullableNumber(readDomAttributeOrStyle(node, attrName, styleName));
+    }
+
+    function assignModelValue(target, key, value) {
+        if (!target || value === null || value === undefined || value === '') return false;
+        if (target[key] === value) return false;
+        target[key] = value;
+        return true;
+    }
+
+    function syncLiveTableDomPropertiesToModel(inst, tableId) {
+        if (!inst || !inst.root || !tableId) return false;
+        var tableBlock = _findTableBlock(inst.model, tableId);
+        var tableNode = inst.root.querySelector('.tm-wysiwyg-table[data-block-id="' + cssEscape(tableId) + '"]');
+        if (!tableBlock || !tableNode) return false;
+        var changed = false;
+        var content = tableBlock.content || (tableBlock.content = {});
+        var layout = content.layout || (content.layout = {});
+        changed = assignModelValue(layout, 'width', readDomNumberAttributeOrStyle(tableNode, 'data-table-width', 'width')) || changed;
+        var alignment = readDomAttributeOrStyle(tableNode, 'data-table-alignment', null);
+        if (!alignment && tableNode.style && tableNode.style.marginLeft === 'auto') {
+            alignment = tableNode.style.marginRight === 'auto' ? 'center' : 'right';
+        }
+        if (alignment) changed = assignModelValue(layout, 'alignment', normalizeTableAlignmentValue(alignment)) || changed;
+        changed = assignModelValue(layout, 'cellPadding', readDomNumberAttributeOrStyle(tableNode, 'data-table-cell-padding', null)) || changed;
+        changed = assignModelValue(layout, 'backgroundColor', readDomAttributeOrStyle(tableNode, 'data-table-background', 'backgroundColor')) || changed;
+
+        Array.from(tableNode.querySelectorAll('td[data-cell-id], th[data-cell-id]')).forEach(function (cellNode) {
+            var cellId = cellNode.getAttribute('data-cell-id');
+            var cell = cellId ? _findCell(inst.model, cellId) : null;
+            if (!cell) return;
+            changed = assignModelValue(cell, 'width', readDomNumberAttributeOrStyle(cellNode, 'data-cell-width', 'width')) || changed;
+            changed = assignModelValue(cell, 'backgroundColor', readDomAttributeOrStyle(cellNode, 'data-cell-background', 'backgroundColor')) || changed;
+            changed = assignModelValue(cell, 'padding', readDomNumberAttributeOrStyle(cellNode, 'data-cell-padding', 'padding')) || changed;
+            var verticalAlignment = readDomAttributeOrStyle(cellNode, 'data-cell-vertical-align', 'verticalAlign');
+            if (verticalAlignment) changed = assignModelValue(cell, 'verticalAlignment', normalizeTableCellVerticalAlignment(verticalAlignment)) || changed;
+            var borders = cell.borders || (cell.borders = {});
+            ['top', 'right', 'bottom', 'left'].forEach(function (side) {
+                var border = readDomAttributeOrStyle(cellNode, 'data-cell-border-' + side, 'border' + side.charAt(0).toUpperCase() + side.slice(1));
+                if (border) changed = assignModelValue(borders, side, border) || changed;
+            });
+        });
+        if (changed) {
+            buildIndexes(inst.model);
+            recordTimeline(inst, 'live-table-dom-properties-sync', { tableId: tableId });
+        }
+        return changed;
+    }
+
+    function syncLiveTableDomPropertiesForSelection(inst, selection, payload) {
+        var tableId = payload && (payload.tableId || payload.TableId || payload.activeTableId || payload.ActiveTableId)
+            || tableIdFromSelectionSnapshot(inst && inst.model || {}, selection || inst && inst.selection || null);
+        return tableId ? syncLiveTableDomPropertiesToModel(inst, tableId) : false;
+    }
+
+    function tableIdFromSelectionSnapshot(model, selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        var direct = snapshot.tableId || snapshot.activeTableId || null;
+        if (direct) return direct;
+        if (snapshot.cellId) {
+            var cellInfo = _findTableInfoByCellId(model, snapshot.cellId);
+            if (cellInfo && cellInfo.table) return cellInfo.table.id;
+        }
+        if (snapshot.blockId) {
+            var tableInfo = _findTableInfoByBlockId(model, snapshot.blockId);
+            if (tableInfo && tableInfo.table) return tableInfo.table.id;
+            var block = _findBlock(model, snapshot.blockId);
+            if (block && block.type === 'table') return block.id;
+        }
+        return null;
+    }
+
+    function tableIdFromOperation(inst, operation) {
+        var op = operation || {};
+        var model = inst && inst.model || {};
+        var direct = op.tableId || op.TableId || op.activeTableId || op.ActiveTableId || null;
+        if (direct) return direct;
+        var cellId = op.cellId || op.CellId || null;
+        if (cellId) {
+            var cellInfo = _findTableInfoByCellId(model, cellId);
+            if (cellInfo && cellInfo.table) return cellInfo.table.id;
+        }
+        var target = op.target || op.Target || null;
+        if (target) {
+            direct = target.tableId || target.TableId || target.activeTableId || target.ActiveTableId || null;
+            if (direct) return direct;
+            cellId = target.cellId || target.CellId || null;
+            if (cellId) {
+                var targetCellInfo = _findTableInfoByCellId(model, cellId);
+                if (targetCellInfo && targetCellInfo.table) return targetCellInfo.table.id;
+            }
+        }
+        var range = op.range || op.Range || null;
+        if (range) {
+            direct = range.tableId || range.TableId || range.activeTableId || range.ActiveTableId || null;
+            if (direct) return direct;
+            cellId = range.cellId || range.CellId || null;
+            if (cellId) {
+                var rangeCellInfo = _findTableInfoByCellId(model, cellId);
+                if (rangeCellInfo && rangeCellInfo.table) return rangeCellInfo.table.id;
+            }
+        }
+        return tableIdFromSelectionSnapshot(model, op.selection || op.Selection || op.previousSelection || op.PreviousSelection || inst && inst.selection || null);
+    }
+
+    function applyLiveTableDomPatch(inst, operation, committed) {
+        if (!inst || !inst.root || !operation) return false;
+        var op = attachOperationMethods(operation);
+        var type = op.type || op.Type || '';
+        if ([OPERATION_TYPES.UpdateTableCell, OPERATION_TYPES.RestoreSnapshot].indexOf(type) < 0) return false;
+        var tableId = tableIdFromOperation(inst, op);
+        if (!tableId) return false;
+        var tableBlock = _findTableBlock(inst.model, tableId);
+        var patch = replaceLiveTableCopies(inst, tableId, tableBlock, inst.selection);
+        if (!patch.ok) return false;
+
+        inst.layout = Object.assign({}, inst.layout || {}, {
+            invalidatedScopeIds: tableBlock ? [tableId] : operationAffectedBlockIds(op),
+            lastLiveTablePatchAt: Date.now()
+        });
+        inst.root.setAttribute('data-live-table-patch', String(Date.now()));
+        inst.root.setAttribute('data-logical-selection', JSON.stringify(_sortObject(inst.selection || {})));
+        syncWysiwygObjectLayerPositions(inst.root);
+        applyWysiwygTextExclusionLayout(inst, {
+            blockIds: tableBlock ? [tableId] : operationAffectedBlockIds(op),
+            maxPasses: 1,
+            skipFinalPass: true,
+            reason: 'live-table'
+        });
+        scheduleWysiwygTextExclusionLayout(inst, 'idle-after-live-table', typingHotPathWindowMs(inst));
+        restoreDomSelectionFromSnapshot(inst, inst.selection);
+        recordTimeline(inst, 'live-table-dom-patch', {
+            operationType: type,
+            tableId: tableId,
+            region: inst.selection && inst.selection.region || 'Body',
+            removed: !tableBlock
+        });
+        recordInputDomApply(inst, type, op);
+        return true;
+    }
+
+    function applyLiveDomPatchForOperation(inst, operation, committed) {
+        return applyLiveTypingDomPatch(inst, operation, committed)
+            || applyLiveTableDomPatch(inst, operation, committed);
+    }
+
     function textBlockHasOnlyPlainTextRuns(block) {
         if (!_isEditableTextBlock(block)) return false;
         return _asArray(block.content && block.content.runs).every(function (run) {
@@ -13501,6 +14771,8 @@ window.tmDocumentEditorEngine = (function () {
         if ([OPERATION_TYPES.InsertText, OPERATION_TYPES.DeleteRange, OPERATION_TYPES.SplitParagraph, OPERATION_TYPES.MergeParagraph, OPERATION_TYPES.ApplyMark, OPERATION_TYPES.RemoveMark, OPERATION_TYPES.SetParagraphAttribute].indexOf(type) < 0) {
             return false;
         }
+        synchronizeCommentRunsForOperations(inst.model, [op]);
+        if (inst.markerStoreDirty) refreshRuntimeMarkerStore(inst);
 
         var patchedBlockId = '';
         var fastTextPatch = false;
@@ -13661,9 +14933,18 @@ window.tmDocumentEditorEngine = (function () {
         var target = op.target || op.Target || null;
         var range = op.range || op.Range || null;
         var selection = op.selection || op.Selection || null;
+        if (op.tableId || op.TableId) ids.push(op.tableId || op.TableId);
+        if (op.activeTableId || op.ActiveTableId) ids.push(op.activeTableId || op.ActiveTableId);
+        if (op.cellId || op.CellId) ids.push(op.cellId || op.CellId);
         if (target && (target.blockId || target.BlockId)) ids.push(target.blockId || target.BlockId);
+        if (target && (target.tableId || target.TableId)) ids.push(target.tableId || target.TableId);
+        if (target && (target.cellId || target.CellId)) ids.push(target.cellId || target.CellId);
         if (range && (range.blockId || range.BlockId)) ids.push(range.blockId || range.BlockId);
+        if (range && (range.tableId || range.TableId)) ids.push(range.tableId || range.TableId);
+        if (range && (range.cellId || range.CellId)) ids.push(range.cellId || range.CellId);
         if (selection && (selection.blockId || selection.BlockId)) ids.push(selection.blockId || selection.BlockId);
+        if (selection && (selection.tableId || selection.TableId)) ids.push(selection.tableId || selection.TableId);
+        if (selection && (selection.cellId || selection.CellId)) ids.push(selection.cellId || selection.CellId);
         if (op.blockId || op.BlockId) ids.push(op.blockId || op.BlockId);
         if (op.newBlockId || op.NewBlockId) ids.push(op.newBlockId || op.NewBlockId);
         if (op.revisionId || op.RevisionId) ids.push('revisions');
@@ -13872,7 +15153,7 @@ window.tmDocumentEditorEngine = (function () {
     function getFocusRegionFromElement(root, element) {
         var node = isElementNode(element) ? element : element && element.parentElement;
         if (!node || root && !root.contains(node)) return 'Body';
-        if (node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], .tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id]')) return 'Image';
+        if (node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], .tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id], .tm-wysiwyg-behind-object-handle[data-object-id]')) return 'Image';
         if (node.closest && node.closest('td[data-cell-id], [data-table-cell-id], [data-cell-id]')) return 'TableCell';
         var explicit = node.closest && node.closest('[data-render-region]');
         if (explicit) return explicit.getAttribute('data-render-region') || 'Body';
@@ -13906,7 +15187,7 @@ window.tmDocumentEditorEngine = (function () {
         details.activeCommentId = comment && comment.getAttribute('data-comment-id') || '';
         var revision = node.closest && node.closest('.tm-wysiwyg-revision[data-revision-id], .tm-document-inline--revision[data-revision-id], [data-testid="document-revision-marker"][data-revision-id]');
         details.activeRevisionId = revision && revision.getAttribute('data-revision-id') || '';
-        var image = node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], .tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id]');
+        var image = node.closest && node.closest('figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], .tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id], .tm-wysiwyg-behind-object-handle[data-object-id]');
         details.activeImageBlockId = image && (image.getAttribute('data-block-id') || image.getAttribute('data-render-block-id') || image.getAttribute('data-model-id')) || '';
         details.activeObjectId = image && (image.getAttribute('data-render-object-id') || image.getAttribute('data-object-id') || details.activeImageBlockId) || '';
         var textBlock = !details.activeImageBlockId && node.closest && node.closest('.tm-wysiwyg-block[data-block-id]');
@@ -13988,11 +15269,26 @@ window.tmDocumentEditorEngine = (function () {
                 { region: normalizedRegion, blockId: details.textBlockId, offset: 0, affinity: 'after', cellId: details.activeTableCellId || null, tableId: details.activeTableId || null },
                 { region: normalizedRegion, blockId: details.textBlockId, offset: 0, affinity: 'after', cellId: details.activeTableCellId || null, tableId: details.activeTableId || null },
                 'none');
+        } else {
+            var regionBlock = _lastEditableTextBlockInRegion(inst.model, normalizedRegion, details.headerFooterId || null);
+            if (regionBlock) {
+                nextSelection.blockId = regionBlock.id;
+                nextSelection.offset = _blockText(regionBlock).length;
+                nextSelection.objectId = null;
+                nextSelection.activeObjectId = null;
+                nextSelection.activeImageBlockId = null;
+                nextSelection.isObjectSelection = false;
+                nextSelection.isCollapsed = true;
+                nextSelection.range = createLogicalRange(
+                    { region: normalizedRegion, blockId: regionBlock.id, offset: nextSelection.offset, affinity: 'after', headerFooterId: details.headerFooterId || null },
+                    { region: normalizedRegion, blockId: regionBlock.id, offset: nextSelection.offset, affinity: 'after', headerFooterId: details.headerFooterId || null },
+                    'none');
+            }
         }
         inst.selection = createSelectionSnapshot(nextSelection);
         markSelectionChanged(inst, reason || 'focus-region');
         updateActiveImageSelectionDom(inst);
-        if (details.activeImageBlockId) {
+        if (details.activeImageBlockId && reason !== 'focusin') {
             focusEditableSurfaceForObjectSelection(inst, inst.selection);
         }
         if (previousRegion !== normalizedRegion) {
@@ -14011,6 +15307,305 @@ window.tmDocumentEditorEngine = (function () {
         var next = regions[(index + (backwards ? -1 : 1) + regions.length) % regions.length] || 'Body';
         setActiveFocusRegion(inst, next, inst.root, 'tab-region-cycle');
         return next;
+    }
+
+    function moveTableCellCaretByTab(inst, backwards) {
+        if (!inst || !inst.model) return null;
+        var snapshot = createSelectionSnapshot(inst.selection || {});
+        var info = snapshot.cellId
+            ? _findTableInfoByCellId(inst.model, snapshot.cellId)
+            : _findTableInfoByBlockId(inst.model, snapshot.blockId);
+        if (!info || !info.table || !info.cell) return null;
+
+        var cells = [];
+        _asArray(info.table.content && info.table.content.rows).forEach(function (row) {
+            _asArray(row && row.cells).forEach(function (cell) {
+                if (cell && cell.blocks && cell.blocks[0]) cells.push(cell);
+            });
+        });
+        var currentIndex = cells.findIndex(function (cell) { return cell.id === info.cell.id; });
+        var nextIndex = currentIndex + (backwards ? -1 : 1);
+        if (currentIndex < 0 || nextIndex < 0 || nextIndex >= cells.length) return null;
+
+        var nextCell = cells[nextIndex];
+        var nextBlock = nextCell.blocks && nextCell.blocks[0];
+        if (!nextBlock) return null;
+        var nextSelection = createSelectionPostFixer(inst.schema).fix(inst.model, {
+            region: 'TableCell',
+            blockId: nextBlock.id,
+            offset: Math.max(0, _blockText(nextBlock).length),
+            isCollapsed: true,
+            cellId: nextCell.id,
+            activeTableCellId: nextCell.id,
+            tableId: info.table.id,
+            activeTableId: info.table.id,
+            hitTargetKind: 'tableCell'
+        });
+        inst.selection = nextSelection;
+        inst.activeFocusRegion = 'TableCell';
+        inst.focusOwner = 'tableCell';
+        if (inst.root) {
+            inst.root.setAttribute('data-active-region', 'TableCell');
+            inst.root.setAttribute('data-focus-owner', 'tableCell');
+            inst.root.setAttribute('data-active-table-cell-id', nextCell.id);
+            inst.root.setAttribute('data-active-table-id', info.table.id);
+            inst.root.setAttribute('data-active-table-cell-resolved', 'true');
+        }
+        markSelectionChanged(inst, backwards ? 'table-shift-tab' : 'table-tab');
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
+        scheduleCollapsedDomSelectionRestore(inst, inst.selection, backwards ? 'table-shift-tab' : 'table-tab');
+        scheduleFormattingStatePublish(inst, 'table-tab', { immediate: true });
+        return nextSelection;
+    }
+
+    function tableCellIdFromSelectionPosition(position) {
+        return position && (position.cellId || position.CellId || position.activeTableCellId || position.ActiveTableCellId) || null;
+    }
+
+    var TABLE_COMMAND_SELECTION_TTL_MS = 30000;
+
+    function hasTableCellSelection(selection) {
+        if (!selection) return false;
+        var snapshot = createSelectionSnapshot(selection || {});
+        return !!activeTableCellIdFromSelection(snapshot);
+    }
+
+    function activeTableCellIdFromSelection(selection) {
+        if (!selection) return null;
+        var snapshot = createSelectionSnapshot(selection || {});
+        return snapshot.activeTableCellId
+            || snapshot.cellId
+            || tableCellIdFromSelectionPosition(snapshot.anchor)
+            || tableCellIdFromSelectionPosition(snapshot.focus)
+            || null;
+    }
+
+    function isRetainableToolbarSelection(selection) {
+        if (!selection) return false;
+        var snapshot = createSelectionSnapshot(selection || {});
+        return !!((snapshot.isCollapsed === false && snapshot.blockId) || hasTableCellSelection(snapshot));
+    }
+
+    function rememberTableCommandSelection(inst, selection, source) {
+        if (!inst || !selection) return null;
+        var snapshot = createSelectionSnapshot(selection || {});
+        if (!hasTableCellSelection(snapshot)) return null;
+        var memo = { selection: _clone(snapshot), at: Date.now(), source: source || 'table-selection' };
+        inst.lastTableCommandSelection = memo;
+        inst.lastToolbarSelection = memo;
+        inst.preserveTableSelectionUntil = Date.now() + TABLE_COMMAND_SELECTION_TTL_MS;
+        return snapshot;
+    }
+
+    function readRecentTableCommandSelection(inst) {
+        var memo = inst && inst.lastTableCommandSelection;
+        if (!memo || Date.now() - Number(memo.at || 0) > TABLE_COMMAND_SELECTION_TTL_MS) return null;
+        var snapshot = createSelectionSnapshot(memo.selection || memo.Selection || {});
+        return hasTableCellSelection(snapshot) ? snapshot : null;
+    }
+
+    function tableSelectionCellIdsFromSnapshot(model, selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        var anchorCellId = tableCellIdFromSelectionPosition(snapshot.anchor) || snapshot.cellId || snapshot.activeTableCellId || null;
+        var focusCellId = tableCellIdFromSelectionPosition(snapshot.focus) || snapshot.cellId || snapshot.activeTableCellId || anchorCellId || null;
+        var activeCellId = snapshot.isCollapsed === false
+            ? (anchorCellId || focusCellId)
+            : (snapshot.activeTableCellId || snapshot.cellId || focusCellId || anchorCellId);
+        var ids = [];
+        if (anchorCellId && focusCellId && anchorCellId !== focusCellId) {
+            var anchorInfo = _findTableInfoByCellId(model, anchorCellId);
+            var focusInfo = _findTableInfoByCellId(model, focusCellId);
+            if (anchorInfo && focusInfo && anchorInfo.table && focusInfo.table && anchorInfo.table.id === focusInfo.table.id) {
+                var minRow = Math.min(anchorInfo.rowIndex, focusInfo.rowIndex);
+                var maxRow = Math.max(anchorInfo.rowIndex, focusInfo.rowIndex);
+                var minColumn = Math.min(anchorInfo.columnIndex, focusInfo.columnIndex);
+                var maxColumn = Math.max(anchorInfo.columnIndex, focusInfo.columnIndex);
+                _asArray(anchorInfo.table.content && anchorInfo.table.content.rows).forEach(function (row, rowIndex) {
+                    if (rowIndex < minRow || rowIndex > maxRow) return;
+                    _asArray(row && row.cells).forEach(function (cell, columnIndex) {
+                        if (!cell || columnIndex < minColumn || columnIndex > maxColumn) return;
+                        ids.push(cell.id);
+                    });
+                });
+            }
+        }
+        if (!ids.length && activeCellId) ids.push(activeCellId);
+        ids = _unique(ids.filter(Boolean));
+        if (activeCellId && ids.indexOf(activeCellId) < 0) activeCellId = ids[0] || activeCellId;
+        return { ids: ids, activeCellId: activeCellId || ids[0] || null };
+    }
+
+    function updateTableSelectionDom(inst, selection) {
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return false;
+        var snapshot = createSelectionSnapshot(selection || {});
+        var tableSelection = tableSelectionCellIdsFromSnapshot(inst.model, snapshot);
+        var hasExisting = !!inst.root.querySelector('.tm-wysiwyg-table-cell--active, .tm-wysiwyg-table-cell--range-selected');
+        if (!tableSelection.ids.length && !hasExisting) return false;
+
+        Array.from(inst.root.querySelectorAll('td[data-cell-id], th[data-cell-id], .tm-wysiwyg-table-cell[data-cell-id]')).forEach(function (cell) {
+            cell.classList.remove('tm-wysiwyg-table-cell--active', 'tm-wysiwyg-table-cell--range-selected');
+            cell.removeAttribute('aria-selected');
+        });
+
+        var selected = new Set(tableSelection.ids);
+        tableSelection.ids.forEach(function (cellId) {
+            var escaped = cssEscape(cellId);
+            var selector = 'td[data-cell-id="' + escaped + '"], th[data-cell-id="' + escaped + '"], .tm-wysiwyg-table-cell[data-cell-id="' + escaped + '"]';
+            Array.from(inst.root.querySelectorAll(selector)).forEach(function (cell) {
+                if (selected.size > 1) cell.classList.add('tm-wysiwyg-table-cell--range-selected');
+                cell.setAttribute('aria-selected', 'true');
+            });
+        });
+
+        if (tableSelection.activeCellId) {
+            var activeEscaped = cssEscape(tableSelection.activeCellId);
+            var activeSelector = 'td[data-cell-id="' + activeEscaped + '"], th[data-cell-id="' + activeEscaped + '"], .tm-wysiwyg-table-cell[data-cell-id="' + activeEscaped + '"]';
+            Array.from(inst.root.querySelectorAll(activeSelector)).forEach(function (cell) {
+                cell.classList.add('tm-wysiwyg-table-cell--active');
+            });
+        }
+        return true;
+    }
+
+    function findSelectedObjectElement(inst, objectId) {
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return null;
+        var snapshot = createSelectionSnapshot(inst.selection || {});
+        var activeObject = _asText(objectId || selectedObjectIdFromSelection(snapshot));
+        var activeBlock = _asText(snapshot.activeImageBlockId || snapshot.blockId || snapshot.objectSelection && (snapshot.objectSelection.anchorBlockId || snapshot.objectSelection.blockId) || '');
+        var selector = [
+            'figure.tm-wysiwyg-image[data-block-id]',
+            'figure.tm-wysiwyg-image[data-object-id]',
+            '.tm-render-image-widget',
+            '.tm-wysiwyg-inline-drawing[data-object-id]',
+            '.tm-wysiwyg-object-layer-item[data-object-id]'
+        ].join(', ');
+        return Array.from(inst.root.querySelectorAll(selector)).find(function (element) {
+            var elementObjectId = element.getAttribute('data-object-id') || element.getAttribute('data-render-object-id') || '';
+            var elementBlockId = element.getAttribute('data-block-id') || element.getAttribute('data-render-block-id') || '';
+            return activeObject ? elementObjectId === activeObject : (!!activeBlock && elementBlockId === activeBlock);
+        }) || null;
+    }
+
+    function focusSelectedObjectElement(inst, objectId) {
+        var element = findSelectedObjectElement(inst, objectId);
+        if (!element || typeof element.focus !== 'function') return false;
+        element.focus({ preventScroll: true });
+        return true;
+    }
+
+    function removeImageKeyboardContextMenu(inst, restoreFocus) {
+        var host = objectSelectionPaneHost(inst);
+        if (host && host.querySelectorAll) {
+            Array.from(host.querySelectorAll('[data-testid="document-wysiwyg-image-context-menu"], [data-testid="document-wysiwyg-image-replace-menu"]')).forEach(function (menu) {
+                if (menu.parentNode) menu.parentNode.removeChild(menu);
+            });
+        }
+        if (restoreFocus) {
+            focusSelectedObjectElement(inst) || focusEditableSurfaceForObjectSelection(inst, inst && inst.selection);
+        }
+    }
+
+    function openImageKeyboardContextMenu(inst, event) {
+        var snapshot = createSelectionSnapshot(inst && inst.selection || {});
+        if (!isObjectSelectionSnapshot(snapshot)) return { ok: false, error: { code: 'selection-is-not-object' } };
+        var objectId = selectedObjectIdFromSelection(snapshot);
+        if (!objectId) return { ok: false, error: { code: 'active-object-not-found' } };
+        var host = objectSelectionPaneHost(inst);
+        var doc = host && host.ownerDocument || document;
+        if (!host || !doc) return { ok: false, error: { code: 'menu-host-not-found' } };
+        removeImageKeyboardContextMenu(inst, false);
+        var owner = findSelectedObjectElement(inst, objectId);
+        var rect = owner && owner.getBoundingClientRect ? owner.getBoundingClientRect() : inst.root.getBoundingClientRect();
+        var x = event && Number.isFinite(event.clientX) && event.clientX > 0 ? event.clientX : (rect.left || 0) + Math.min(24, Math.max(0, rect.width || 0));
+        var y = event && Number.isFinite(event.clientY) && event.clientY > 0 ? event.clientY : (rect.bottom || rect.top || 0) + 6;
+        var menu = doc.createElement('section');
+        menu.className = 'tm-wysiwyg-image-context-menu';
+        menu.setAttribute('data-testid', 'document-wysiwyg-image-context-menu');
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('tabindex', '-1');
+        menu.setAttribute('aria-label', 'Image options');
+        menu.style.position = 'fixed';
+        menu.style.left = Math.max(8, Math.min((window.innerWidth || 1024) - 240, x)) + 'px';
+        menu.style.top = Math.max(8, Math.min((window.innerHeight || 768) - 180, y)) + 'px';
+        function addButton(testId, label, activate) {
+            var button = doc.createElement('button');
+            button.type = 'button';
+            button.setAttribute('role', 'menuitem');
+            button.setAttribute('data-testid', testId);
+            button.textContent = label;
+            button.addEventListener('click', function (clickEvent) {
+                clickEvent.preventDefault();
+                clickEvent.stopPropagation();
+                activate();
+            });
+            menu.appendChild(button);
+            return button;
+        }
+        var replace = addButton('document-wysiwyg-image-replace', 'Replace', function () {
+            removeImageKeyboardContextMenu(inst, false);
+            openImageToolbarForSelectedObject(inst, 'image-context-menu');
+        });
+        addButton('document-wysiwyg-image-alt-text', 'Alt text', function () {
+            removeImageKeyboardContextMenu(inst, false);
+            openImageToolbarForSelectedObject(inst, 'image-context-menu');
+        });
+        addButton('document-wysiwyg-image-delete', 'Delete', function () {
+            removeImageKeyboardContextMenu(inst, false);
+            applyRuntimeImageCommand(inst, 'deleteImage', { ObjectId: objectId });
+        });
+        menu.addEventListener('keydown', function (keyEvent) {
+            var key = String(keyEvent.key || '').toLowerCase();
+            if (key === 'escape') {
+                keyEvent.preventDefault();
+                keyEvent.stopPropagation();
+                removeImageKeyboardContextMenu(inst, true);
+            }
+        });
+        host.appendChild(menu);
+        replace.focus({ preventScroll: true });
+        return { ok: true, objectId: objectId };
+    }
+
+    function moveSelectedObjectWithKeyboard(inst, key, ctrl, shift) {
+        var snapshot = createSelectionSnapshot(inst && inst.selection || {});
+        if (!isObjectSelectionSnapshot(snapshot)) return { ok: false, error: { code: 'selection-is-not-object' } };
+        var objectId = selectedObjectIdFromSelection(snapshot);
+        var target = activeImageTarget(inst, {
+            ObjectId: objectId,
+            BlockId: snapshot.activeImageBlockId || snapshot.blockId || snapshot.objectSelection && (snapshot.objectSelection.anchorBlockId || snapshot.objectSelection.blockId) || ''
+        });
+        if (!target || !target.object) return { ok: false, error: { code: 'active-object-not-found' } };
+        var object = target.object || {};
+        var horizontal = object.horizontalPosition || {};
+        var vertical = object.verticalPosition || {};
+        var element = findSelectedObjectElement(inst, target.objectId || objectId);
+        var elementX = element ? Number(element.getAttribute('data-image-x') ?? element.getAttribute('data-object-x')) : NaN;
+        var elementY = element ? Number(element.getAttribute('data-image-y') ?? element.getAttribute('data-object-y')) : NaN;
+        var currentX = Number.isFinite(elementX) ? elementX : (Number(horizontal.offset ?? horizontal.Offset ?? 0) || 0);
+        var currentY = Number.isFinite(elementY) ? elementY : (Number(vertical.offset ?? vertical.Offset ?? 0) || 0);
+        var step = shift ? 10 : (ctrl ? 0.25 : 1);
+        var dx = key === 'arrowright' ? step : (key === 'arrowleft' ? -step : 0);
+        var dy = key === 'arrowdown' ? step : (key === 'arrowup' ? -step : 0);
+        if (!dx && !dy) return { ok: false, error: { code: 'unsupported-key' } };
+        var nextX = currentX + dx;
+        var nextY = currentY + dy;
+        var result = applyRuntimeImageCommand(inst, 'setImageObjectPosition', {
+            ObjectId: target.objectId || objectId,
+            BlockId: target.blockId || snapshot.blockId,
+            X: nextX,
+            Y: nextY,
+            HorizontalRelativeTo: horizontal.relativeTo || horizontal.RelativeTo || 'Column',
+            VerticalRelativeTo: vertical.relativeTo || vertical.RelativeTo || 'Paragraph',
+            HorizontalPosition: horizontal.align || horizontal.Align || 'Left',
+            VerticalAlignment: vertical.align || vertical.Align || 'Top'
+        });
+        if (result && result.ok !== false) {
+            var selectedId = target.objectId || objectId;
+            [0, 60].forEach(function (delay) {
+                setTimeout(function () { focusSelectedObjectElement(inst, selectedId); }, delay);
+            });
+        }
+        return result;
     }
 
     function requestKeyboardContextMenu(inst, event) {
@@ -14035,13 +15630,206 @@ window.tmDocumentEditorEngine = (function () {
         }, 'keyboard-context-menu-failed');
     }
 
+    function tableContextMenuTargetFromEvent(inst, event) {
+        var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+        if (!inst || !inst.root || !element || !inst.root.contains(element) || !element.closest) return null;
+        var cell = element.closest('td[data-cell-id], th[data-cell-id], .tm-wysiwyg-table-cell[data-cell-id], [data-table-cell-id]');
+        if (!cell || !inst.root.contains(cell)) return null;
+        var cellId = cell.getAttribute('data-cell-id') || cell.getAttribute('data-table-cell-id') || '';
+        if (!cellId) return null;
+        var table = cell.closest && cell.closest('table[data-block-id], .tm-wysiwyg-table[data-block-id], .tm-wysiwyg-block[data-block-id]');
+        var tableId = table && table.getAttribute && table.getAttribute('data-block-id') || '';
+        var info = _findTableInfoByCellId(inst.model, cellId);
+        if (!tableId && info && info.table) tableId = info.table.id || '';
+        return {
+            element: element,
+            cell: cell,
+            table: table,
+            info: info,
+            cellId: cellId,
+            tableId: tableId
+        };
+    }
+
+    function tableCellTargetFromPoint(inst, x, y) {
+        var ownerDocument = inst && inst.root && inst.root.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        if (!ownerDocument || typeof ownerDocument.elementFromPoint !== 'function') return null;
+        var clientX = Number(x || 0);
+        var clientY = Number(y || 0);
+        var element = ownerDocument.elementFromPoint(clientX, clientY);
+        var directTarget = tableContextMenuTargetFromEvent(inst, { target: element });
+        if (directTarget) return directTarget;
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return null;
+
+        var bestCell = null;
+        var bestArea = Number.POSITIVE_INFINITY;
+        Array.from(inst.root.querySelectorAll('td[data-cell-id], th[data-cell-id], .tm-wysiwyg-table-cell[data-cell-id], [data-table-cell-id]')).forEach(function (cell) {
+            if (!cell || typeof cell.getBoundingClientRect !== 'function') return;
+            var rect = cell.getBoundingClientRect();
+            if (!rect || rect.width <= 0 || rect.height <= 0) return;
+            if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
+            var area = rect.width * rect.height;
+            if (area < bestArea) {
+                bestArea = area;
+                bestCell = cell;
+            }
+        });
+        return bestCell ? tableContextMenuTargetFromEvent(inst, { target: bestCell }) : null;
+    }
+
+    function tableCellDragSelectionFromTarget(inst, anchorSnapshot, target) {
+        if (!inst || !target || !target.cellId) return null;
+        var snapshot = createSelectionSnapshot(anchorSnapshot || {});
+        var anchorCellId = snapshot.activeTableCellId || snapshot.cellId || tableCellIdFromSelectionPosition(snapshot.anchor) || tableCellIdFromSelectionPosition(snapshot.focus) || null;
+        var anchorInfo = anchorCellId ? _findTableInfoByCellId(inst.model, anchorCellId) : null;
+        var focusInfo = target.info || _findTableInfoByCellId(inst.model, target.cellId);
+        if (!anchorInfo || !focusInfo || !anchorInfo.table || !focusInfo.table || anchorInfo.table.id !== focusInfo.table.id) return null;
+        var anchorBlock = snapshot.anchor && snapshot.anchor.blockId
+            ? _findBlock(inst.model, snapshot.anchor.blockId)
+            : null;
+        if (!anchorBlock) anchorBlock = anchorInfo.cell && anchorInfo.cell.blocks && anchorInfo.cell.blocks[0] || null;
+        var focusBlock = focusInfo.cell && focusInfo.cell.blocks && focusInfo.cell.blocks[0] || null;
+        if (!anchorBlock || !focusBlock) return null;
+        var anchor = createLogicalPosition({
+            region: 'TableCell',
+            blockId: anchorBlock.id,
+            offset: Number(snapshot.anchor && snapshot.anchor.offset || snapshot.offset || 0) || 0,
+            cellId: anchorInfo.cell.id,
+            tableId: anchorInfo.table.id
+        });
+        var focus = createLogicalPosition({
+            region: 'TableCell',
+            blockId: focusBlock.id,
+            offset: 0,
+            cellId: focusInfo.cell.id,
+            tableId: focusInfo.table.id
+        });
+        var direction = anchorInfo.rowIndex < focusInfo.rowIndex || anchorInfo.rowIndex === focusInfo.rowIndex && anchorInfo.columnIndex <= focusInfo.columnIndex
+            ? 'forward'
+            : 'backward';
+        return createSelectionPostFixer(inst.schema).fix(inst.model, createSelectionSnapshot({
+            selectionMode: 'Text',
+            mode: 'Text',
+            region: 'TableCell',
+            range: createLogicalRange(anchor, focus, anchor.blockId === focus.blockId ? 'none' : direction),
+            cellId: focusInfo.cell.id,
+            tableId: focusInfo.table.id,
+            activeTableCellId: focusInfo.cell.id,
+            activeTableId: focusInfo.table.id,
+            hitTargetKind: 'tableCell'
+        }));
+    }
+
+    function tableCellSelectionFromContextMenuTarget(inst, target) {
+        if (!inst || !target || !target.cellId) return null;
+        var selection = null;
+        var domSelection = window.getSelection && window.getSelection();
+        if (selectionBelongsToEditor(inst, domSelection)) {
+            var domSnapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+            if (domSnapshot && (domSnapshot.activeTableCellId || domSnapshot.cellId) === target.cellId) {
+                selection = domSnapshot;
+            }
+        }
+
+        if (!selection) {
+            var blockElement = target.element && target.element.closest
+                ? target.element.closest('.tm-wysiwyg-block[data-block-id]')
+                : null;
+            if (!blockElement || !target.cell.contains(blockElement)) {
+                blockElement = target.cell.querySelector && target.cell.querySelector('.tm-wysiwyg-block[data-block-id]');
+            }
+            var blockId = blockElement && blockElement.getAttribute && blockElement.getAttribute('data-block-id') || '';
+            var info = target.info || _findTableInfoByCellId(inst.model, target.cellId);
+            var block = blockId ? _findBlock(inst.model, blockId) : null;
+            if ((!block || !blockId) && info && info.cell && _asArray(info.cell.blocks).length > 0) {
+                block = info.cell.blocks[0];
+                blockId = block && block.id || blockId;
+            }
+            if (!blockId) return null;
+            selection = createSelectionSnapshot({
+                region: 'TableCell',
+                blockId: blockId,
+                offset: 0,
+                isCollapsed: true,
+                cellId: target.cellId,
+                activeTableCellId: target.cellId,
+                tableId: target.tableId || info && info.table && info.table.id || null,
+                activeTableId: target.tableId || info && info.table && info.table.id || null,
+                hitTargetKind: 'tableCell'
+            });
+        }
+
+        selection = createSelectionPostFixer(inst.schema).fix(inst.model, Object.assign({}, selection, {
+            region: 'TableCell',
+            cellId: target.cellId,
+            activeTableCellId: target.cellId,
+            tableId: target.tableId || selection.tableId || selection.activeTableId || null,
+            activeTableId: target.tableId || selection.activeTableId || selection.tableId || null,
+            hitTargetKind: 'tableCell'
+        }));
+        return createSelectionSnapshot(selection);
+    }
+
+    function requestTableContextMenu(inst, event) {
+        var target = tableContextMenuTargetFromEvent(inst, event);
+        if (!target) return false;
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+
+        var selection = tableCellSelectionFromContextMenuTarget(inst, target);
+        if (!selection) return false;
+        rememberTableCommandSelection(inst, selection, 'table-context-menu');
+        inst.selection = selection;
+        inst.activeFocusRegion = 'TableCell';
+        inst.focusOwner = 'tableCell';
+        if (inst.root) {
+            inst.root.setAttribute('data-active-region', 'TableCell');
+            inst.root.setAttribute('data-focus-owner', 'tableCell');
+            inst.root.setAttribute('data-active-table-cell-id', target.cellId);
+            if (target.tableId) inst.root.setAttribute('data-active-table-id', target.tableId);
+            inst.root.setAttribute('data-active-table-cell-resolved', 'true');
+        }
+        markSelectionChanged(inst, 'table-context-menu');
+        updateActiveImageSelectionDom(inst);
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(selection, inst), 'selection-changed-failed');
+
+        var cellRect = target.cell && target.cell.getBoundingClientRect ? target.cell.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+        var x = event && Number.isFinite(event.clientX) && event.clientX > 0
+            ? event.clientX
+            : (cellRect.left || 0) + Math.min(12, Math.max(2, (cellRect.width || 24) / 2));
+        var y = event && Number.isFinite(event.clientY) && event.clientY > 0
+            ? event.clientY
+            : (cellRect.top || 0) + Math.min(12, Math.max(2, (cellRect.height || 24) / 2));
+        inst.floatingUiOpen = true;
+        invokeBoundaryMethod(inst, 'HandleTableContextMenuRequested', {
+            Left: x,
+            Top: y,
+            Width: 260,
+            Height: 360,
+            ClientX: x,
+            ClientY: y,
+            ViewportWidth: typeof window !== 'undefined' ? window.innerWidth || 0 : 0,
+            ViewportHeight: typeof window !== 'undefined' ? window.innerHeight || 0 : 0,
+            CellId: target.cellId,
+            Selection: boundarySelectionSnapshot(selection, inst)
+        }, 'table-context-menu-failed');
+        return true;
+    }
+
     function closeFloatingUiForKeyboard(inst) {
+        var hadFloatingUi = !!(inst && (inst.floatingUiOpen || inst.lastMiniToolbarRequest));
         inst.floatingUiOpen = false;
         inst.objectPreviewTransaction = null;
         inst.lastKeyboardClose = { reason: 'escape', at: Date.now() };
-        invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', null, 'mini-toolbar-close-failed');
-        scheduleAccessibilityAnnouncement(inst, 'Floating controls closed', 'polite');
-        return { ok: true, closed: true };
+        if (hadFloatingUi) {
+            inst.lastMiniToolbarRequest = null;
+            invokeBoundaryMethod(inst, 'HandleMiniToolbarChanged', null, 'mini-toolbar-close-failed');
+            scheduleAccessibilityAnnouncement(inst, 'Floating controls closed', 'polite');
+            return { ok: true, closed: true };
+        }
+
+        invokeBoundaryMethod(inst, 'HandleKeyboardCommandRequested', 'escape', 'keyboard-escape-failed');
+        return { ok: true, closed: false, delegated: 'escape' };
     }
 
     function executeFormattingShortcut(inst, commandName) {
@@ -14158,7 +15946,7 @@ window.tmDocumentEditorEngine = (function () {
         var selection = readFixedDomSelection(inst, 'keydown-dom');
         var block = _findBlock(inst.model, selection.blockId);
         var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0)));
-        var marks = _clone(inst.pendingTypingMarks || []);
+        var marks = resolveTypingMarksAtInsertion(inst, selection);
         var revisionPayload = isTrackChangesEnabled(inst)
             ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
             : null;
@@ -14186,6 +15974,7 @@ window.tmDocumentEditorEngine = (function () {
         if (result && result.ok !== false) {
             inst.virtualCaretSelection = null;
             rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-insertText');
+            syncRuntimeAutocompleteForSelection(inst, inst.selection || selection, 'keydown-insertText');
         }
         markKeyboardInputHandled(inst, inputType || 'insertText', text);
         return result;
@@ -14272,7 +16061,10 @@ window.tmDocumentEditorEngine = (function () {
                     transactionType: 'delete',
                     beforeSelection: selection
                 });
-                if (rangeResult && rangeResult.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+                if (rangeResult && rangeResult.ok !== false) {
+                    rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+                    syncRuntimeAutocompleteForSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+                }
                 markKeyboardInputHandled(inst, inputType, '');
                 return rangeResult;
             }
@@ -14286,7 +16078,10 @@ window.tmDocumentEditorEngine = (function () {
                 transactionType: 'delete',
                 beforeSelection: selection
             });
-            if (mergeResult && mergeResult.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+            if (mergeResult && mergeResult.ok !== false) {
+                rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+                syncRuntimeAutocompleteForSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+            }
             markKeyboardInputHandled(inst, inputType, '');
             return mergeResult;
         }
@@ -14304,7 +16099,10 @@ window.tmDocumentEditorEngine = (function () {
             transactionType: 'delete',
             beforeSelection: selection
         });
-        if (result && result.ok !== false) rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+        if (result && result.ok !== false) {
+            rememberKeyboardSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+            syncRuntimeAutocompleteForSelection(inst, inst.selection || selection, 'keydown-' + inputType);
+        }
         markKeyboardInputHandled(inst, inputType, '');
         return result;
     }
@@ -14442,6 +16240,14 @@ window.tmDocumentEditorEngine = (function () {
         var imageToolbarKeyboardResult = handleImageToolbarKeyboard(inst, event, key);
         if (imageToolbarKeyboardResult && imageToolbarKeyboardResult.handled) return imageToolbarKeyboardResult;
 
+        var autocompleteKeyboardResult = handleRuntimeAutocompleteKeyboard(inst, event, key);
+        if (autocompleteKeyboardResult && autocompleteKeyboardResult.handled) return autocompleteKeyboardResult;
+
+        if (inst.selectedPageBreakId && (key === 'delete' || key === 'backspace')) {
+            prevent();
+            return { handled: true, command: 'deletePageBreak', result: deleteSelectedPageBreak(inst, 'keyboard') };
+        }
+
         if (event.altKey && ((shift && !ctrl) || (ctrl && !shift)) && (key === 'o' || key === 'p')) {
             prevent();
             return {
@@ -14456,6 +16262,14 @@ window.tmDocumentEditorEngine = (function () {
                 prevent();
                 return { handled: true, command: 'deleteObject', result: applyObjectSelectionDelete(inst, inst.selection, 'deleteObject') };
             }
+            if (key === 'arrowleft' || key === 'arrowright' || key === 'arrowup' || key === 'arrowdown') {
+                prevent();
+                return { handled: true, command: 'moveObject', result: moveSelectedObjectWithKeyboard(inst, key, ctrl, shift) };
+            }
+            if (key === 'contextmenu' || (key === 'f10' && shift)) {
+                prevent();
+                return { handled: true, command: 'imageContextMenu', result: openImageKeyboardContextMenu(inst, event) };
+            }
             if (key === 'enter' || (key === 'f10' && !shift && !ctrl && !event.altKey)) {
                 prevent();
                 return { handled: true, command: 'focusImageOptions', result: openImageToolbarForSelectedObject(inst, 'keyboard') };
@@ -14464,6 +16278,10 @@ window.tmDocumentEditorEngine = (function () {
 
         if (key === 'tab' && !ctrl && !event.altKey) {
             prevent();
+            var tableTabSelection = moveTableCellCaretByTab(inst, shift);
+            if (tableTabSelection) {
+                return { handled: true, command: shift ? 'tableShiftTab' : 'tableTab', selection: tableTabSelection };
+            }
             var nextRegion = focusNextRegion(inst, shift);
             return { handled: true, command: 'tab', activeRegion: nextRegion };
         }
@@ -14567,6 +16385,25 @@ window.tmDocumentEditorEngine = (function () {
         return !!element.closest('.tm-wysiwyg-object-selection-overlay[data-object-layer="behind-text"], .tm-wysiwyg-object-guides-overlay[data-object-layer="behind-text"]');
     }
 
+    function pointerIsBehindTextPassThroughSurface(inst, event) {
+        if (!inst || !inst.root || !event) return false;
+        var target = event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+        if (target && target.closest && target.closest('.tm-wysiwyg-behind-object-handle, [data-resize-handle], .tm-wysiwyg-object-rotation-handle, .tm-wysiwyg-layout-bubble, button, input, select, textarea')) return false;
+        if (targetIsBehindTextOverlaySurface(event.target)) return true;
+        var x = Number(event.clientX || 0) || 0;
+        var y = Number(event.clientY || 0) || 0;
+        var request = createDomHitTestRequest(inst.root, x, y);
+        return _asArray(request.Objects).some(function (item) {
+            var layer = String(item.Layer || item.layer || '').toLowerCase();
+            var mode = normalizeWrapModeName(item.WrapMode || item.wrapMode);
+            return (layer === 'behind-text' || layer === 'behindtext' || mode === 'BehindText')
+                && item.Selectable !== false
+                && _asArray(item.VisualRects || item.visualRects || [item.Rect || item.rect]).some(function (rect) {
+                    return rectContains(rect, x, y);
+                });
+        });
+    }
+
     function nativeCaretRangeFromPoint(x, y) {
         if (typeof document === 'undefined') return null;
         if (typeof document.caretRangeFromPoint === 'function') {
@@ -14593,33 +16430,492 @@ window.tmDocumentEditorEngine = (function () {
         return node.nodeType === 3 && !!element.closest('[data-block-id], [data-render-block-id]');
     }
 
-    function applyLayoutPointerTextSelection(inst, event) {
-        if (!inst || !inst.root || !event || event.defaultPrevented) return false;
-        if (event.button !== undefined && event.button !== 0) return false;
-        if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return false;
-        var x = Number(event.clientX || 0) || 0;
-        var y = Number(event.clientY || 0) || 0;
-        if (nativePointTargetsEditableText(inst, x, y)) return false;
-        var layout = inst.layout || buildLayoutSnapshot(inst.root, inst.model);
-        var hit = pointerHitTest(inst.model, layout, x, y);
-        if (!hit || hit.type !== 'text' || !hit.position || !hit.position.blockId) return false;
-        var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, createSelectionSnapshot(Object.assign({}, hit.position, {
+    function visibleTextCaretHitFromPoint(inst, x, y) {
+        if (!inst || !inst.root || typeof document === 'undefined' || typeof document.elementFromPoint !== 'function') return null;
+        var elements = typeof document.elementsFromPoint === 'function'
+            ? document.elementsFromPoint(x, y)
+            : [document.elementFromPoint(x, y)];
+        var seen = new Set();
+        var best = null;
+        elements.forEach(function (element, index) {
+            if (!element || !inst.root.contains(element)) return;
+            if (element.closest && element.closest('figure, .tm-wysiwyg-inline-drawing, .tm-wysiwyg-object-layer-item, .tm-wysiwyg-object-selection-overlay, .tm-wysiwyg-object-guides-overlay, .tm-wysiwyg-drawing-anchor, .tm-document-editor__ribbon, [role="toolbar"], button, input, textarea, select')) return;
+            var block = element.closest && element.closest('.tm-wysiwyg-block[data-block-id], [data-render-block-id]');
+            if (!block || !inst.root.contains(block) || seen.has(block)) return;
+            seen.add(block);
+            if (block.closest && block.closest('.tm-wysiwyg-page--virtual, .tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides')) return;
+            var hit = visibleTextCaretHitFromBlockElement(block, x, y, index === 0 ? 'visible-dom-text' : 'visible-dom-text-stack');
+            if (!hit) return;
+            var score = (Number(hit.score || 0) || 0) + index * 0.25;
+            if (!best || score < best.score) {
+                best = Object.assign({}, hit, { score: score });
+            }
+        });
+        return best;
+    }
+
+    function visibleTextCaretHitForBlock(inst, blockId, x, y) {
+        if (!inst || !inst.root || !blockId || typeof CSS === 'undefined' || typeof CSS.escape !== 'function') return null;
+        var escaped = CSS.escape(blockId);
+        var selector = [
+            '.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id="' + escaped + '"]',
+            '.tm-wysiwyg-page__header .tm-wysiwyg-block[data-block-id="' + escaped + '"]',
+            '.tm-wysiwyg-page__footer .tm-wysiwyg-block[data-block-id="' + escaped + '"]',
+            '[data-render-block-id="' + escaped + '"]'
+        ].join(', ');
+        var blocks = Array.from(inst.root.querySelectorAll(selector)).filter(function (block) {
+            return isDomHitTestElementVisible(block)
+                && !(block.closest && block.closest('.tm-wysiwyg-page--virtual, .tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides'));
+        });
+        for (var index = 0; index < blocks.length; index++) {
+            var hit = visibleTextCaretHitFromBlockElement(blocks[index], x, y, 'preferred-visible-dom-text');
+            if (hit) return hit;
+        }
+        return null;
+    }
+
+    function textBlockIdFromPointerTarget(inst, target) {
+        if (!inst || !inst.root || !target) return null;
+        var element = target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement;
+        if (!element || !inst.root.contains(element)) return null;
+        if (element.closest && element.closest('figure, .tm-wysiwyg-inline-drawing, .tm-wysiwyg-object-layer-item, .tm-wysiwyg-object-selection-overlay, .tm-wysiwyg-object-guides-overlay, .tm-wysiwyg-drawing-anchor, .tm-document-editor__ribbon, [role="toolbar"], button, input, textarea, select')) return null;
+        var block = element.closest && element.closest('.tm-wysiwyg-block[data-block-id], [data-render-block-id]');
+        if (!block || !inst.root.contains(block)) return null;
+        if (block.closest && block.closest('.tm-wysiwyg-page--virtual, .tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides')) return null;
+        if (isTableLikeTextBlockElement(block)) return null;
+        return block.getAttribute('data-block-id') || block.getAttribute('data-render-block-id') || null;
+    }
+
+    function isTableLikeTextBlockElement(block) {
+        if (!block || !block.matches) return false;
+        if (block.matches('table, .tm-wysiwyg-table, .tm-render-table, [data-table-id]')) return true;
+        return !!(block.querySelector && block.querySelector('table, td, th, .tm-wysiwyg-table-cell, [data-cell-id]'));
+    }
+
+    function visibleTextCaretHitFromVisibleBlocks(inst, x, y) {
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return null;
+        var blocks = Array.from(inst.root.querySelectorAll([
+            '.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id]',
+            '.tm-wysiwyg-page__header .tm-wysiwyg-block[data-block-id]',
+            '.tm-wysiwyg-page__footer .tm-wysiwyg-block[data-block-id]',
+            '[data-render-block-id]'
+        ].join(', '))).filter(function (block) {
+            return isDomHitTestElementVisible(block)
+                && !(block.closest && block.closest('.tm-wysiwyg-page--virtual, .tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides'));
+        });
+        var best = null;
+        var candidates = [];
+        blocks.forEach(function (block) {
+            var hit = visibleTextCaretHitFromBlockElement(block, x, y, 'visible-dom-text-scan');
+            if (!hit) return;
+            var rect = block.getBoundingClientRect();
+            var insideX = rect && x >= rect.left && x <= rect.right;
+            var insideY = rect && y >= rect.top && y <= rect.bottom;
+            var blockDistance = rect
+                ? (insideX && insideY ? 0 : Math.min(Math.abs(x - rect.left), Math.abs(x - rect.right)) * 0.05 + Math.min(Math.abs(y - rect.top), Math.abs(y - rect.bottom)) * 0.2)
+                : 0;
+            var score = (Number(hit.score || 0) || 0) + blockDistance;
+            candidates.push({
+                blockId: hit.position && hit.position.blockId || '',
+                region: hit.position && hit.position.region || '',
+                source: hit.source || '',
+                offset: hit.position && hit.position.offset,
+                score: score,
+                caretScore: Number(hit.score || 0) || 0,
+                blockDistance: blockDistance,
+                inside: !!(insideX && insideY),
+                text: (block.textContent || '').slice(0, 120)
+            });
+            if (!best || score < best.score) {
+                best = Object.assign({}, hit, { score: score });
+            }
+        });
+        if (best && candidates.length) {
+            best.scanCandidates = candidates.sort(function (a, b) { return a.score - b.score; }).slice(0, 8);
+        }
+        return best;
+    }
+
+    function visibleTextCaretHitFromBlockElement(block, x, y, source) {
+        if (!block) return null;
+        var blockId = block.getAttribute('data-block-id') || block.getAttribute('data-render-block-id') || '';
+        if (!blockId) return null;
+        var caret = visibleTextOffsetFromPoint(block, x, y);
+        if (!caret) return null;
+        var cell = block.closest && block.closest('td[data-cell-id], th[data-cell-id], .tm-wysiwyg-table-cell[data-cell-id]');
+        var table = cell && cell.closest && cell.closest('[data-table-id], .tm-wysiwyg-table[data-block-id], .tm-wysiwyg-table[data-render-block-id]');
+        var tableId = cell && (cell.getAttribute('data-table-id') || cell.getAttribute('data-parent-table-id'))
+            || table && (table.getAttribute('data-table-id') || table.getAttribute('data-block-id') || table.getAttribute('data-render-block-id'))
+            || null;
+        var cellId = cell && cell.getAttribute('data-cell-id') || null;
+        return {
+            type: 'text',
+            source: source || 'visible-dom-text',
+            position: {
+                region: cell ? 'TableCell' : 'Body',
+                blockId: blockId,
+                offset: caret.offset,
+                affinity: caret.affinity || 'after',
+                inlineId: caret.inlineId || null,
+                layoutIntervalId: null,
+                cellId: cellId,
+                tableId: tableId,
+                columnIndex: normalizeTextExclusionColumnIndex(cell && cell.getAttribute('data-column-index'))
+            },
+            score: caret.score
+        };
+    }
+
+    function visibleTextOffsetFromPoint(block, x, y) {
+        var ownerDocument = block && block.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        if (!ownerDocument || typeof ownerDocument.createTreeWalker !== 'function' || typeof ownerDocument.createRange !== 'function') return null;
+        var best = null;
+        var blockOffset = 0;
+        var walker = ownerDocument.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                var text = node && node.nodeValue || '';
+                if (!text.length) return NodeFilter.FILTER_REJECT;
+                var parent = node.parentElement;
+                if (parent && parent.closest && parent.closest('figure, button, input, textarea, select, script, style')) {
+                    blockOffset += text.length;
+                    return NodeFilter.FILTER_REJECT;
+                }
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        var range = ownerDocument.createRange();
+        for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+            var text = node.nodeValue || '';
+            for (var index = 0; index < text.length; index++) {
+                range.setStart(node, index);
+                range.setEnd(node, index + 1);
+                Array.from(range.getClientRects()).forEach(function (rect) {
+                    if (!rect || rect.width <= 0.1 || rect.height <= 0.1) return;
+                    var vertical = y < rect.top ? rect.top - y : (y > rect.bottom ? y - rect.bottom : 0);
+                    if (vertical > Math.max(12, rect.height)) return;
+                    var horizontal = x < rect.left ? rect.left - x : (x > rect.right ? x - rect.right : 0);
+                    var centerX = rect.left + rect.width / 2;
+                    var centerY = rect.top + rect.height / 2;
+                    var after = x >= centerX;
+                    var candidateOffset = blockOffset + index + (after ? 1 : 0);
+                    var score = vertical * 6 + horizontal + Math.abs(y - centerY) * 0.15;
+                    if (!best || score < best.score) {
+                        var inline = node.parentElement && node.parentElement.closest && node.parentElement.closest('[data-inline-id]');
+                        best = {
+                            score: score,
+                            offset: candidateOffset,
+                            affinity: after ? 'after' : 'before',
+                            inlineId: inline && inline.getAttribute('data-inline-id') || null
+                        };
+                    }
+                });
+            }
+            blockOffset += text.length;
+        }
+        if (typeof range.detach === 'function') range.detach();
+        if (!best) {
+            var placeholder = block.querySelector && block.querySelector('[data-caret-placeholder]');
+            var rectSource = placeholder && placeholder.getBoundingClientRect ? placeholder : block;
+            var rect = rectSource && rectSource.getBoundingClientRect ? rectSource.getBoundingClientRect() : null;
+            if (rect && rect.width >= 0 && rect.height >= 0) {
+                var vertical = y < rect.top ? rect.top - y : (y > rect.bottom ? y - rect.bottom : 0);
+                var horizontal = x < rect.left ? rect.left - x : (x > rect.right ? x - rect.right : 0);
+                return {
+                    score: vertical * 6 + horizontal,
+                    offset: 0,
+                    affinity: 'after',
+                    inlineId: null
+                };
+            }
+        }
+        return best;
+    }
+
+    function recordLayoutPointerTextSelectionDiagnostic(inst, details) {
+        if (!inst) return;
+        var diagnostic = _sortObject(Object.assign({
+            at: Date.now()
+        }, details || {}));
+        inst.lastLayoutPointerTextSelectionDiagnostic = diagnostic;
+        if (diagnostic.outcome === 'applied') {
+            inst.lastAppliedLayoutPointerTextSelectionDiagnostic = diagnostic;
+        }
+        if (!Array.isArray(inst.layoutPointerTextSelectionDiagnosticHistory)) {
+            inst.layoutPointerTextSelectionDiagnosticHistory = [];
+        }
+        inst.layoutPointerTextSelectionDiagnosticHistory.push(diagnostic);
+        if (inst.layoutPointerTextSelectionDiagnosticHistory.length > 32) {
+            inst.layoutPointerTextSelectionDiagnosticHistory.splice(0, inst.layoutPointerTextSelectionDiagnosticHistory.length - 32);
+        }
+    }
+
+    function resolveLayoutTextPointerHit(inst, x, y, forceLayoutSelection, preferredBlockId) {
+        var domHit = hitTestLayoutGeometry(createDomHitTestRequest(inst.root, x, y));
+        var hit = domHit && domHit.Kind === 'TextCaret' && domHit.BlockId
+            ? {
+                type: 'text',
+                position: {
+                    region: domHit.Region || domHit.region || 'Body',
+                    blockId: domHit.BlockId,
+                    offset: Number(domHit.Offset ?? domHit.offset ?? 0) || 0,
+                    affinity: domHit.Affinity || domHit.affinity || 'after',
+                    layoutLineId: domHit.LayoutLineId || null,
+                    layoutSegmentId: domHit.LayoutSegmentId || null,
+                    layoutIntervalId: domHit.LayoutIntervalId || null,
+                    visualLineIndex: Number(domHit.VisualLineIndex ?? 0) || 0,
+                    cellId: domHit.CellId || domHit.cellId || null,
+                    tableId: domHit.TableId || domHit.tableId || null,
+                    columnIndex: normalizeTextExclusionColumnIndex(domHit.ColumnIndex ?? domHit.columnIndex)
+                }
+            }
+            : null;
+        var domHitKind = String(domHit && (domHit.Kind || domHit.kind) || '').toLowerCase();
+        var preferredHit = preferredBlockId ? visibleTextCaretHitForBlock(inst, preferredBlockId, x, y) : null;
+        var directVisibleHit = preferredHit ? null : visibleTextCaretHitFromPoint(inst, x, y);
+        var scannedHit = (!preferredHit && (domHitKind === 'tablecell' || !directVisibleHit || !hit)) ? visibleTextCaretHitFromVisibleBlocks(inst, x, y) : null;
+        var visibleHit = preferredHit || directVisibleHit || scannedHit;
+        if (!preferredHit && scannedHit && directVisibleHit && domHitKind === 'tablecell') {
+            var scannedScore = Number(scannedHit.score || 0) || 0;
+            var directScore = Number(directVisibleHit.score || 0) || 0;
+            if (scannedScore + 4 < directScore) {
+                visibleHit = scannedHit;
+            }
+        }
+        if (visibleHit && (preferredHit || !hit || domHitKind === 'tablecell' || !hit.position || hit.position.blockId !== visibleHit.position.blockId)) {
+            hit = visibleHit;
+        }
+        if (!hit && (forceLayoutSelection || domHitKind === 'tablecell' || !nativePointTargetsEditableText(inst, x, y))) {
+            var layout = inst.layout || buildLayoutSnapshot(inst.root, inst.model);
+            hit = pointerHitTest(inst.model, layout, x, y);
+        }
+        return { hit: hit, domHit: domHit, visibleHit: visibleHit, preferredHit: preferredHit, scannedHit: scannedHit };
+    }
+
+    function selectionSnapshotFromLayoutTextHit(inst, hit, anchorSelection) {
+        if (!inst || !hit || hit.type !== 'text' || !hit.position || !hit.position.blockId) return null;
+        var focus = createLogicalPosition(Object.assign({}, hit.position, {
+            region: hit.position.region || 'Body',
+            blockId: hit.position.blockId,
+            offset: Number(hit.position.offset || 0) || 0,
+            inlineId: hit.position.inlineId || null,
+            layoutIntervalId: hit.position.layoutIntervalId || null,
+            cellId: hit.position.cellId || null,
+            tableId: hit.position.tableId || null,
+            columnIndex: hit.position.columnIndex ?? null
+        }));
+        var anchorSource = anchorSelection && (anchorSelection.anchor || anchorSelection.focus || anchorSelection);
+        var anchor = anchorSource ? createLogicalPosition(anchorSource) : focus;
+        var direction = anchor.blockId === focus.blockId && Number(anchor.offset || 0) <= Number(focus.offset || 0) ? 'forward' : 'backward';
+        var range = createLogicalRange(anchor, focus, anchor.blockId === focus.blockId && Number(anchor.offset || 0) === Number(focus.offset || 0) ? 'none' : direction);
+        return createSelectionPostFixer(inst.schema).fix(inst.model, createSelectionSnapshot({
             selectionMode: 'Text',
-            isCollapsed: true,
+            mode: 'Text',
+            region: anchor.region || focus.region || 'Body',
+            range: range,
             activeImageBlockId: null,
             activeObjectId: null,
             objectId: null,
-            objectSelection: null
-        })));
+            objectSelection: null,
+            isObjectSelection: false,
+            cellId: focus.cellId || anchor.cellId || null,
+            tableId: focus.tableId || anchor.tableId || null,
+            columnIndex: focus.columnIndex ?? anchor.columnIndex ?? null
+        }));
+    }
+
+    function publishLayoutPointerSelection(inst, snapshot, source, immediate) {
+        if (!inst || !snapshot) return false;
         inst.selection = snapshot;
         inst.virtualCaretSelection = snapshot.virtualCaret === true ? snapshot : null;
-        rememberKeyboardSelection(inst, snapshot, 'layout-pointer-text-hit');
-        restoreDomSelectionFromSnapshot(inst, snapshot);
-        markSelectionChanged(inst, 'layout-pointer-text-hit');
+        if (hasTableCellSelection(snapshot)) {
+            rememberTableCommandSelection(inst, snapshot, source || 'layout-pointer-table');
+        }
+        rememberKeyboardSelection(inst, snapshot, source || 'layout-pointer-text');
+        restoreDomSelectionFromSnapshot(inst, snapshot, { preserveScroll: true });
+        markSelectionChanged(inst, source || 'layout-pointer-text');
         updateActiveImageSelectionDom(inst);
-        scheduleFormattingStatePublish(inst, 'layout-pointer-text-hit', { immediate: true });
-        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot, inst), 'selection-changed-failed');
+        scheduleActiveImageSelectionDomSync(inst);
+        scheduleFormattingStatePublish(inst, source || 'layout-pointer-text', { immediate: immediate === true });
+        if (immediate === true) {
+            invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot, inst), 'selection-changed-failed');
+        }
+        return true;
+    }
+
+    function beginLayoutPointerTextSelectionDrag(inst, event, anchorSnapshot) {
+        var ownerDocument = inst && inst.root && inst.root.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        if (!ownerDocument || !anchorSnapshot) return false;
+        var session = {
+            pointerId: event && event.pointerId,
+            anchor: _clone(anchorSnapshot),
+            last: _clone(anchorSnapshot),
+            moved: false
+        };
+        inst.layoutTextPointerSelectionSession = session;
+        var cleanup = function () {
+            ownerDocument.removeEventListener('pointermove', onPointerMove, true);
+            ownerDocument.removeEventListener('pointerup', onPointerUp, true);
+            ownerDocument.removeEventListener('pointercancel', onPointerCancel, true);
+            ownerDocument.removeEventListener('mousemove', onPointerMove, true);
+            ownerDocument.removeEventListener('mouseup', onPointerUp, true);
+            if (inst.layoutTextPointerSelectionSession === session) {
+                inst.layoutTextPointerSelectionSession = null;
+            }
+        };
+        var updateFromEvent = function (moveEvent, source, final) {
+            if (!moveEvent) return false;
+            if (session.pointerId !== undefined
+                && moveEvent.pointerId !== undefined
+                && moveEvent.pointerId !== session.pointerId
+                && moveEvent.isPrimary === false) {
+                return false;
+            }
+            var eventX = Number(moveEvent.clientX || 0) || 0;
+            var eventY = Number(moveEvent.clientY || 0) || 0;
+            var eventType = String(moveEvent.type || '').toLowerCase();
+            if (eventType.indexOf('move') >= 0) {
+                session.sawMoveEvent = true;
+                session.lastClientX = eventX;
+                session.lastClientY = eventY;
+            }
+            var x = final === true && session.sawMoveEvent === true
+                ? Number(session.lastClientX || eventX || 0) || 0
+                : eventX;
+            var y = final === true && session.sawMoveEvent === true
+                ? Number(session.lastClientY || eventY || 0) || 0
+                : eventY;
+            var anchorSnapshot = createSelectionSnapshot(session.anchor || {});
+            var tableDragTarget = anchorSnapshot.activeTableCellId || anchorSnapshot.cellId
+                ? tableCellTargetFromPoint(inst, x, y)
+                : null;
+            var tableDragSelection = tableDragTarget
+                ? tableCellDragSelectionFromTarget(inst, anchorSnapshot, tableDragTarget)
+                : null;
+            if (tableDragSelection) {
+                session.moved = session.moved || tableDragSelection.isCollapsed === false;
+                session.last = _clone(tableDragSelection);
+                publishLayoutPointerSelection(inst, tableDragSelection, source || 'layout-pointer-table-drag-selection', final === true);
+                recordLayoutPointerTextSelectionDiagnostic(inst, {
+                    outcome: final === true ? 'table-drag-committed' : 'table-drag-updated',
+                    x: x,
+                    y: y,
+                    tableDragTarget: { tableId: tableDragTarget.tableId || '', cellId: tableDragTarget.cellId || '' },
+                    selectionBlockId: tableDragSelection.blockId || tableDragSelection.focus && tableDragSelection.focus.blockId || null,
+                    activeTableCellId: tableDragSelection.activeTableCellId || tableDragSelection.cellId || null,
+                    isCollapsed: tableDragSelection.isCollapsed === true
+                });
+                if (typeof moveEvent.preventDefault === 'function') moveEvent.preventDefault();
+                if (typeof moveEvent.stopPropagation === 'function') moveEvent.stopPropagation();
+                return true;
+            }
+            var preferredBlockId = anchorSnapshot.activeTableCellId || anchorSnapshot.cellId
+                ? null
+                : session.anchor && (
+                    session.anchor.blockId
+                    || session.anchor.focus && session.anchor.focus.blockId
+                    || session.anchor.anchor && session.anchor.anchor.blockId
+                ) || null;
+            var resolved = resolveLayoutTextPointerHit(inst, x, y, pointerIsBehindTextPassThroughSurface(inst, moveEvent), preferredBlockId);
+            var snapshot = selectionSnapshotFromLayoutTextHit(inst, resolved.hit, session.anchor);
+            if (!snapshot) return false;
+            session.moved = session.moved || snapshot.isCollapsed === false;
+            session.last = _clone(snapshot);
+            publishLayoutPointerSelection(inst, snapshot, source || 'layout-pointer-drag-selection', final === true);
+            recordLayoutPointerTextSelectionDiagnostic(inst, {
+                outcome: final === true ? 'drag-committed' : 'drag-updated',
+                x: x,
+                y: y,
+                domHit: _clone(resolved.domHit || null),
+                visibleHit: _clone(resolved.visibleHit || null),
+                preferredHit: _clone(resolved.preferredHit || null),
+                scannedHit: _clone(resolved.scannedHit || null),
+                selectionBlockId: snapshot.blockId || snapshot.focus && snapshot.focus.blockId || null,
+                startOffset: Math.min(Number(snapshot.anchor && snapshot.anchor.offset || 0), Number(snapshot.focus && snapshot.focus.offset || 0)),
+                endOffset: Math.max(Number(snapshot.anchor && snapshot.anchor.offset || 0), Number(snapshot.focus && snapshot.focus.offset || 0)),
+                isCollapsed: snapshot.isCollapsed === true
+            });
+            if (typeof moveEvent.preventDefault === 'function') moveEvent.preventDefault();
+            if (typeof moveEvent.stopPropagation === 'function') moveEvent.stopPropagation();
+            return true;
+        };
+        var onPointerMove = function (moveEvent) {
+            updateFromEvent(moveEvent, 'layout-pointer-drag-selection', false);
+        };
+        var onPointerUp = function (upEvent) {
+            updateFromEvent(upEvent, 'layout-pointer-drag-selection-commit', true);
+            cleanup();
+            scheduleMiniToolbarRefresh(inst, 'layout-pointer-drag-selection', 0);
+        };
+        var onPointerCancel = function (cancelEvent) {
+            updateFromEvent(cancelEvent, 'layout-pointer-drag-selection-cancel', true);
+            cleanup();
+        };
+        ownerDocument.addEventListener('pointermove', onPointerMove, true);
+        ownerDocument.addEventListener('pointerup', onPointerUp, true);
+        ownerDocument.addEventListener('pointercancel', onPointerCancel, true);
+        ownerDocument.addEventListener('mousemove', onPointerMove, true);
+        ownerDocument.addEventListener('mouseup', onPointerUp, true);
+        return true;
+    }
+
+    function applyLayoutPointerTextSelection(inst, event) {
+        if (!inst || !inst.root || !event || event.defaultPrevented) {
+            recordLayoutPointerTextSelectionDiagnostic(inst, { outcome: 'ignored', reason: !event ? 'missing-event' : event.defaultPrevented ? 'default-prevented' : 'missing-instance' });
+            return false;
+        }
+        if (event.button !== undefined && event.button !== 0) {
+            recordLayoutPointerTextSelectionDiagnostic(inst, { outcome: 'ignored', reason: 'non-primary-button', button: event.button });
+            return false;
+        }
+        if (event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
+            recordLayoutPointerTextSelectionDiagnostic(inst, { outcome: 'ignored', reason: 'modified-pointer' });
+            return false;
+        }
+        var x = Number(event.clientX || 0) || 0;
+        var y = Number(event.clientY || 0) || 0;
+        var forceLayoutSelection = pointerIsBehindTextPassThroughSurface(inst, event);
+        var targetBlockId = textBlockIdFromPointerTarget(inst, event.target);
+        var resolved = resolveLayoutTextPointerHit(inst, x, y, forceLayoutSelection, targetBlockId);
+        var hit = resolved.hit;
+        if (!hit || hit.type !== 'text' || !hit.position || !hit.position.blockId) {
+            recordLayoutPointerTextSelectionDiagnostic(inst, {
+                outcome: 'ignored',
+                reason: 'no-text-hit',
+                x: x,
+                y: y,
+                domHit: _clone(resolved.domHit || null),
+                visibleHit: _clone(resolved.visibleHit || null),
+                preferredHit: _clone(resolved.preferredHit || null),
+                scannedHit: _clone(resolved.scannedHit || null),
+                targetBlockId: targetBlockId,
+                fallbackHit: _clone(hit || null)
+            });
+            return false;
+        }
+        var snapshot = selectionSnapshotFromLayoutTextHit(inst, hit, null);
+        var suppressSelectionChangeUntil = Date.now() + 1500;
+        inst.suppressLayoutTextSelectionChangeUntil = suppressSelectionChangeUntil;
+        inst.suppressTextSelectionChangeUntil = Math.max(
+            Number(inst.suppressTextSelectionChangeUntil || 0) || 0,
+            suppressSelectionChangeUntil);
+        publishLayoutPointerSelection(inst, snapshot, 'layout-pointer-text-hit', true);
+        beginLayoutPointerTextSelectionDrag(inst, event, snapshot);
         if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+        recordLayoutPointerTextSelectionDiagnostic(inst, {
+            outcome: 'applied',
+            x: x,
+            y: y,
+            domHit: _clone(resolved.domHit || null),
+            visibleHit: _clone(resolved.visibleHit || null),
+            preferredHit: _clone(resolved.preferredHit || null),
+            scannedHit: _clone(resolved.scannedHit || null),
+            hit: _clone(hit),
+            targetBlockId: targetBlockId,
+            selectionBlockId: snapshot.blockId || snapshot.anchor && snapshot.anchor.blockId || null,
+            selectionRegion: snapshot.region || null
+        });
         return true;
     }
 
@@ -14628,7 +16924,7 @@ window.tmDocumentEditorEngine = (function () {
         var element = target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement;
         if (!element || !inst.root.contains(element)) return null;
         var handle = element.closest && element.closest('[data-resize-handle]');
-        var objectSelector = '.tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], figure.tm-wysiwyg-image[data-object-id], .tm-render-image-widget[data-render-object-id], .tm-wysiwyg-inline-drawing[data-object-id]';
+        var objectSelector = '.tm-wysiwyg-object-selection-overlay[data-object-id], .tm-wysiwyg-object-guides-overlay[data-object-id], .tm-wysiwyg-behind-object-handle[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], figure.tm-wysiwyg-image[data-object-id], .tm-render-image-widget[data-render-object-id], .tm-wysiwyg-inline-drawing[data-object-id]';
         var objectElement = (handle && handle.closest && handle.closest(objectSelector))
             || (element.closest && element.closest(objectSelector));
         if (!objectElement || !inst.root.contains(objectElement)) return null;
@@ -14672,6 +16968,18 @@ window.tmDocumentEditorEngine = (function () {
                 objectId: objectId,
                 blockId: drawing.blockId,
                 object: normalizeImageObject(drawing.run || {}, { blockId: drawing.blockId, inlineIndex: drawing.inlineIndex })
+            };
+        }
+
+        var imageBlock = (objectId ? _findBlock(inst.model, objectId) : null)
+            || (pointerTarget.blockId ? _findBlock(inst.model, pointerTarget.blockId) : null);
+        if (imageBlock && imageBlock.type === 'image') {
+            var blockObject = normalizeImageObject(imageBlock, { blockId: imageBlock.id || pointerTarget.blockId || objectId });
+            return {
+                kind: 'image-block',
+                objectId: blockObject.objectId || objectId || imageBlock.id,
+                blockId: imageBlock.id || pointerTarget.blockId || objectId,
+                object: blockObject
             };
         }
 
@@ -15897,6 +18205,7 @@ window.tmDocumentEditorEngine = (function () {
             anchorInlineIndex: modelTarget.object.anchorInlineIndex ?? -1
         }, inst.selection || null);
         inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, selection);
+        inst.suppressTextSelectionChangeUntil = Date.now() + 1500;
         markSelectionChanged(inst, 'object-pointerdown');
         updateActiveImageSelectionDom(inst);
         focusEditableSurfaceForObjectSelection(inst, inst.selection);
@@ -16089,14 +18398,20 @@ window.tmDocumentEditorEngine = (function () {
         }
         var toolbarSelection = readRecentToolbarSelection(inst);
         if (toolbarSelection) return toolbarSelection;
+        var currentSelection = createSelectionSnapshot(inst && inst.selection || {});
+        if (Date.now() < Number(inst && inst.preserveTableSelectionUntil || 0) && hasTableCellSelection(currentSelection)) {
+            return currentSelection;
+        }
         return createSelectionSnapshot(inst && (inst.lastKeyboardSelection || inst.selection) || {});
     }
 
     function readRecentToolbarSelection(inst) {
         var memo = inst && inst.lastToolbarSelection;
-        if (!memo || Date.now() - Number(memo.at || 0) > 2500) return null;
+        if (!memo) return null;
         var snapshot = createSelectionSnapshot(memo.selection || memo.Selection || {});
-        return snapshot && snapshot.isCollapsed === false ? snapshot : null;
+        var maxAge = hasTableCellSelection(snapshot) ? TABLE_COMMAND_SELECTION_TTL_MS : 2500;
+        if (Date.now() - Number(memo.at || 0) > maxAge) return null;
+        return isRetainableToolbarSelection(snapshot) ? snapshot : null;
     }
 
     function rememberToolbarSelectionBeforeFocusLoss(inst, event) {
@@ -16104,13 +18419,19 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !inst.root || !element) return false;
         var shell = inst.root.closest && inst.root.closest('.tm-document-editor');
         if (!shell || !shell.contains(element)) return false;
-        var toolbarTarget = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__ribbon, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
+        var toolbarTarget = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__ribbon, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble, .tm-color-picker');
         if (!toolbarTarget) return false;
         var selection = window.getSelection && window.getSelection();
-        if (!selectionTargetsTextSurface(inst, selection)) return true;
+        if (!selectionTargetsTextSurface(inst, selection)) {
+            var currentSnapshot = createSelectionSnapshot(inst.selection || {});
+            if (hasTableCellSelection(currentSnapshot)) {
+                inst.lastToolbarSelection = { selection: _clone(currentSnapshot), at: Date.now(), source: 'toolbar-focusloss-table' };
+            }
+            return true;
+        }
         var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
-        if (snapshot && snapshot.isCollapsed === false && snapshot.blockId) {
-            inst.lastToolbarSelection = { selection: _clone(snapshot), at: Date.now() };
+        if (isRetainableToolbarSelection(snapshot)) {
+            inst.lastToolbarSelection = { selection: _clone(snapshot), at: Date.now(), source: 'toolbar-focusloss' };
             inst.selection = snapshot;
             markSelectionChanged(inst, 'toolbar-pointerdown-selection');
         }
@@ -16121,13 +18442,17 @@ window.tmDocumentEditorEngine = (function () {
         if (!rememberToolbarSelectionBeforeFocusLoss(inst, event)) return false;
         var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
         var selection = readRecentToolbarSelection(inst);
-        if (!selection && inst && inst.selection && inst.selection.isCollapsed === false) {
+        if (!selection && isRetainableToolbarSelection(inst && inst.selection)) {
             selection = createSelectionSnapshot(inst.selection);
         }
 
         inst.preserveMiniToolbarUntil = Date.now() + 1200;
         if (!selection || selection.isCollapsed !== false || !selection.blockId) return true;
         if (isToolbarInteractivePopoverElement(element)) return true;
+        if (isToolbarClickDefaultRequiredElement(element)) {
+            scheduleToolbarSelectionRestore(inst, selection, source || 'toolbar-pointer');
+            return true;
+        }
 
         if (typeof event.preventDefault === 'function') event.preventDefault();
         var restored = scheduleToolbarSelectionRestore(inst, selection, source || 'toolbar-pointer');
@@ -16168,6 +18493,44 @@ window.tmDocumentEditorEngine = (function () {
             schedule('-raf', requestAnimationFrame);
         }
         return restored;
+    }
+
+    function scheduleCollapsedDomSelectionRestore(inst, selection, source) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        if (!inst || !snapshot.blockId || snapshot.isCollapsed === false || snapshot.isObjectSelection === true) return false;
+
+        function attempt(suffix) {
+            var restored = restoreDomSelectionFromSnapshot(inst, snapshot, { preserveScroll: true });
+            recordTimeline(inst, 'collapsed-selection-restore', {
+                source: (source || 'selection') + (suffix || ''),
+                restored: restored === true,
+                blockId: snapshot.blockId || '',
+                cellId: snapshot.activeTableCellId || snapshot.cellId || null,
+                tableId: snapshot.activeTableId || snapshot.tableId || null
+            });
+        }
+
+        attempt('');
+        try {
+            if (typeof queueMicrotask === 'function') {
+                queueMicrotask(function () { attempt('-microtask'); });
+            }
+        } catch {
+            // Best-effort selection restore.
+        }
+        try {
+            setTimeout(function () { attempt('-timeout'); }, 0);
+        } catch {
+            // Best-effort selection restore.
+        }
+        try {
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(function () { attempt('-raf'); });
+            }
+        } catch {
+            // Best-effort selection restore.
+        }
+        return true;
     }
 
     function restoreToolbarSelectionAttempt(inst, selection, source) {
@@ -16283,10 +18646,16 @@ window.tmDocumentEditorEngine = (function () {
                 return { command: 'setParagraphAlignment', payload: { Alignment: 'right', Value: 'right' } };
             case 'alignjustify':
                 return { command: 'setParagraphAlignment', payload: { Alignment: 'justify', Value: 'justify' } };
+            case 'increaseindent':
+                return { command: 'indent', payload: { Delta: 1, delta: 1 } };
+            case 'decreaseindent':
+                return { command: 'outdent', payload: { Delta: 1, delta: 1 } };
             case 'bulletlist':
                 return { command: 'toggleBulletList', payload: { Value: 'bullet', ListType: 'bullet' } };
             case 'numberedlist':
                 return { command: 'toggleNumberedList', payload: { Value: 'numbered', ListType: 'numbered' } };
+            case 'togglenonprintingcharacters':
+                return { command: 'toggleNonPrintingCharacters', payload: {} };
             default:
                 return null;
         }
@@ -16302,7 +18671,7 @@ window.tmDocumentEditorEngine = (function () {
                 recordTimeline(inst, 'toolbar-native-button-skip', { reason: 'outside-shell' });
                 return false;
             }
-            var toolbar = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
+            var toolbar = element.closest && element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble, .tm-color-picker');
             if (!toolbar) {
                 recordTimeline(inst, 'toolbar-native-button-skip', {
                     reason: 'outside-toolbar',
@@ -16369,6 +18738,11 @@ window.tmDocumentEditorEngine = (function () {
     function isToolbarInteractivePopoverElement(element) {
         if (!element || !element.closest) return false;
         return !!element.closest('.tm-color-picker-dropdown, .tm-flat-color-picker, .tm-color-picker-actions');
+    }
+
+    function isToolbarClickDefaultRequiredElement(element) {
+        if (!element || !element.closest) return false;
+        return !!element.closest('.tm-color-picker-trigger');
     }
 
     function dispatchToolbarNativeButtonCommand(inst, event, element, resolved) {
@@ -16449,11 +18823,15 @@ window.tmDocumentEditorEngine = (function () {
         return instanceId ? _instances.get(instanceId) || null : null;
     }
 
+    function isToolbarParagraphCommand(commandName) {
+        return paragraphCommandTypes().indexOf(normalizeCommandId(commandName)) >= 0;
+    }
+
     function preserveToolbarSelectionFromGlobalEvent(event, source) {
         var target = event && event.target;
         var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
         if (!element || !element.closest) return false;
-        var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
+        var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble, .tm-color-picker');
         if (!toolbar) return false;
         var inst = resolveToolbarInstanceFromElement(element);
         if (!inst || !inst.root) return false;
@@ -16461,21 +18839,48 @@ window.tmDocumentEditorEngine = (function () {
         var selection = window.getSelection && window.getSelection();
         if (selectionTargetsTextSurface(inst, selection)) {
             var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
-            if (snapshot && snapshot.isCollapsed === false && snapshot.blockId) {
-                inst.lastToolbarSelection = { selection: _clone(snapshot), at: Date.now() };
+            if (isRetainableToolbarSelection(snapshot)) {
+                inst.lastToolbarSelection = { selection: _clone(snapshot), at: Date.now(), source: 'toolbar-global-' + (source || 'pointer') };
                 inst.selection = snapshot;
                 markSelectionChanged(inst, 'toolbar-global-' + (source || 'pointer') + '-selection');
+            }
+        } else {
+            var currentSnapshot = createSelectionSnapshot(inst.selection || {});
+            if (hasTableCellSelection(currentSnapshot)) {
+                inst.lastToolbarSelection = { selection: _clone(currentSnapshot), at: Date.now(), source: 'toolbar-global-' + (source || 'pointer') + '-table' };
             }
         }
 
         var commandSelection = readRecentToolbarSelection(inst);
-        if (!commandSelection && inst.selection && inst.selection.isCollapsed === false) {
+        if (!commandSelection && isRetainableToolbarSelection(inst.selection)) {
             commandSelection = createSelectionSnapshot(inst.selection);
         }
         if (!commandSelection || commandSelection.isCollapsed !== false || !commandSelection.blockId) return true;
 
         inst.preserveMiniToolbarUntil = Date.now() + 1200;
         if (isToolbarInteractivePopoverElement(element)) return true;
+        var resolved = resolveToolbarButtonCommand(element);
+        if (resolved && isToolbarParagraphCommand(resolved.command)) {
+            recordTimeline(inst, 'toolbar-global-selection-captured-no-restore', {
+                source: source || '',
+                command: resolved.command,
+                blockId: commandSelection.blockId || '',
+                startOffset: Math.min(Number(commandSelection.anchor && commandSelection.anchor.offset || 0), Number(commandSelection.focus && commandSelection.focus.offset || 0)),
+                endOffset: Math.max(Number(commandSelection.anchor && commandSelection.anchor.offset || 0), Number(commandSelection.focus && commandSelection.focus.offset || 0))
+            });
+            return true;
+        }
+        if (isToolbarClickDefaultRequiredElement(element)) {
+            var clickRestored = scheduleToolbarSelectionRestore(inst, commandSelection, 'global-' + (source || 'pointer'));
+            recordTimeline(inst, 'toolbar-global-selection-preserved-click-default', {
+                source: source || '',
+                restored: clickRestored === true,
+                blockId: commandSelection.blockId || '',
+                startOffset: Math.min(Number(commandSelection.anchor && commandSelection.anchor.offset || 0), Number(commandSelection.focus && commandSelection.focus.offset || 0)),
+                endOffset: Math.max(Number(commandSelection.anchor && commandSelection.anchor.offset || 0), Number(commandSelection.focus && commandSelection.focus.offset || 0))
+            });
+            return true;
+        }
         if (typeof event.preventDefault === 'function') event.preventDefault();
         var restored = scheduleToolbarSelectionRestore(inst, commandSelection, 'global-' + (source || 'pointer'));
         recordTimeline(inst, 'toolbar-global-selection-preserved', {
@@ -16513,7 +18918,7 @@ window.tmDocumentEditorEngine = (function () {
                 var target = event && event.target;
                 var element = target && (target.nodeType === Node.ELEMENT_NODE ? target : target.parentElement);
                 if (!element || !element.closest) return;
-                var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble');
+                var toolbar = element.closest('[data-testid="document-toolbar"], [data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__context-menu, .tm-document-editor__floating-root, .tm-wysiwyg-layout-bubble, .tm-color-picker');
                 if (!toolbar) return;
                 var resolved = resolveToolbarButtonCommand(element);
                 if (!resolved) return;
@@ -16812,14 +19217,33 @@ window.tmDocumentEditorEngine = (function () {
         if (!inst || !inst.root) return false;
         var selection = window.getSelection && window.getSelection();
         if (!selectionBelongsToEditor(inst, selection)) return false;
+        if (Date.now() < Number(inst.suppressLayoutTextSelectionChangeUntil || 0)) return false;
         if (isObjectSelectionSnapshot(inst.selection || {}) && Date.now() < Number(inst.suppressTextSelectionChangeUntil || 0)) return false;
 
         var snapshot = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
         if (!snapshot || snapshot.isObjectSelection || snapshot.isCollapsed !== true) return false;
+        var currentSelection = createSelectionSnapshot(inst.selection || {});
+        var preservedTableSelection = readRecentTableCommandSelection(inst);
+        var preservedTableCellId = activeTableCellIdFromSelection(preservedTableSelection);
+        var snapshotTableCellId = activeTableCellIdFromSelection(snapshot);
+        if (Date.now() < Number(inst.preserveTableSelectionUntil || 0)
+            && (currentSelection.activeTableCellId || currentSelection.cellId)
+            && preservedTableCellId
+            && (!snapshotTableCellId || snapshotTableCellId !== preservedTableCellId)) {
+            recordTimeline(inst, 'selectionchange-table-preserved', {
+                source: source || 'selectionchange-caret',
+                preservedCellId: preservedTableCellId,
+                snapshotCellId: snapshotTableCellId || '',
+                currentCellId: activeTableCellIdFromSelection(currentSelection) || ''
+            });
+            return false;
+        }
 
         inst.selection = snapshot;
         var typingHotPath = isTypingHotPath(inst);
         markSelectionChanged(inst, typingHotPath ? 'typing' : (source || 'selectionchange-caret'));
+        updateActiveImageSelectionDom(inst);
+        scheduleActiveImageSelectionDomSync(inst);
         if (!typingHotPath) {
             scheduleFormattingStatePublish(inst, source || 'selectionchange-caret', { immediate: true });
             invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(snapshot, inst), 'selection-changed-failed');
@@ -16856,7 +19280,7 @@ window.tmDocumentEditorEngine = (function () {
         if (!block || !node) return false;
         var previewBlock = _clone(block);
         var previewAttrs = {
-            marks: _clone(inst.pendingTypingMarks || []),
+            marks: resolveTypingMarksAtInsertion(inst, selection),
             style: resolveTypingStyleAtInsertion(previewBlock, selection.offset, selection.affinity),
             affinity: selection.affinity || 'after'
         };
@@ -16902,7 +19326,7 @@ window.tmDocumentEditorEngine = (function () {
         if (!text) return { handled: true, noop: true };
         inst.selection = selection;
         restoreDomSelectionFromSnapshot(inst, selection);
-        var marks = _clone(inst.pendingTypingMarks || []);
+        var marks = resolveTypingMarksAtInsertion(inst, selection);
         var revisionPayload = isTrackChangesEnabled(inst)
             ? createOrExtendLiveTypingRevision(inst, selection, text, marks)
             : null;
@@ -16930,6 +19354,7 @@ window.tmDocumentEditorEngine = (function () {
         if (result && result.ok !== false) {
             inst.virtualCaretSelection = null;
             rememberKeyboardSelection(inst, inst.selection || selection, 'compositionend');
+            syncRuntimeAutocompleteForSelection(inst, inst.selection || selection, 'compositionend');
         }
         markKeyboardInputHandled(inst, 'insertCompositionText', text);
         markKeyboardInputHandled(inst, 'insertText', text);
@@ -16963,7 +19388,7 @@ window.tmDocumentEditorEngine = (function () {
         if (inputType === 'insertText' || inputType === 'insertFromPaste' || inputType === 'insertLineBreak') {
             var text = inputType === 'insertLineBreak' ? '\n' : _asText(normalized.data || '');
             if (!text) return { handled: true, normalized: normalized, noop: true };
-            var marks = _clone(inst.pendingTypingMarks || []);
+            var marks = resolveTypingMarksAtInsertion(inst, selection);
             var revisionPayload = null;
             if (isTrackChangesEnabled(inst)) {
                 if (inputType === 'insertFromPaste') {
@@ -17041,27 +19466,363 @@ window.tmDocumentEditorEngine = (function () {
                 inst.virtualCaretSelection = null;
             }
             rememberKeyboardSelection(inst, inst.selection || selection, 'beforeinput-' + inputType);
+            syncRuntimeAutocompleteForSelection(inst, inst.selection || selection, 'beforeinput-' + inputType);
         }
         return { handled: true, normalized: normalized, result: result };
+    }
+
+    function getClipboardDataText(clipboard, type) {
+        if (!clipboard || typeof clipboard.getData !== 'function') return '';
+        try {
+            return clipboard.getData(type) || '';
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function collectClipboardImageFiles(clipboard) {
+        var files = [];
+        if (!clipboard) return files;
+        var items = clipboard.items ? Array.prototype.slice.call(clipboard.items) : [];
+        items.forEach(function (item) {
+            if (!item) return;
+            var kind = String(item.kind || '').toLowerCase();
+            var type = String(item.type || '').toLowerCase();
+            if (kind && kind !== 'file') return;
+            if (type.indexOf('image/') !== 0) return;
+            var file = typeof item.getAsFile === 'function' ? item.getAsFile() : null;
+            if (file) files.push(file);
+        });
+        var clipboardFiles = clipboard.files ? Array.prototype.slice.call(clipboard.files) : [];
+        clipboardFiles.forEach(function (file) {
+            var type = String(file && file.type || '').toLowerCase();
+            if (file && type.indexOf('image/') === 0 && files.indexOf(file) < 0) files.push(file);
+        });
+        return files;
+    }
+
+    function readClipboardFileAsBase64(file) {
+        return new Promise(function (resolve, reject) {
+            if (!file || typeof FileReader === 'undefined') {
+                reject(new Error('clipboard-file-reader-unavailable'));
+                return;
+            }
+            var reader = new FileReader();
+            reader.onerror = function () { reject(reader.error || new Error('clipboard-file-read-failed')); };
+            reader.onload = function () {
+                var value = String(reader.result || '');
+                var comma = value.indexOf(',');
+                resolve(comma >= 0 ? value.slice(comma + 1) : value);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function normalizeClipboardBlocksPayload(payload) {
+        var value = payload;
+        if (typeof value === 'string') {
+            try {
+                value = JSON.parse(value);
+            } catch (_) {
+                return [];
+            }
+        }
+        if (Array.isArray(value)) return value;
+        if (value && Array.isArray(value.blocks)) return value.blocks;
+        if (value && Array.isArray(value.Blocks)) return value.Blocks;
+        return value ? [value] : [];
+    }
+
+    function normalizeClipboardUploadedImageBlock(block) {
+        var source = block || {};
+        var content = _read(source, 'Content', 'content', {});
+        var inlines = _asArray(_read(content, 'Inlines', 'inlines', []));
+        var drawing = inlines.find(function (run) { return run && isDrawingRunSource(run); }) || null;
+        if (!drawing) {
+            return source;
+        }
+
+        return _sortObject({
+            Id: _asText(_read(source, 'Id', 'id', '')) || _asText(_read(drawing, 'ObjectId', 'objectId', _read(drawing, 'Id', 'id', ''))),
+            Type: 5,
+            Content: drawing,
+            Style: _clone(_read(source, 'Style', 'style', {}) || {})
+        });
+    }
+
+    function normalizeClipboardUploadedImageAsset(block, file, documentId) {
+        var source = block || {};
+        var content = _read(source, 'Content', 'content', {});
+        var inlines = _asArray(_read(content, 'Inlines', 'inlines', []));
+        var drawing = inlines.find(function (run) { return run && isDrawingRunSource(run); }) || content || source;
+        var assetId = _asText(_read(drawing, 'AssetId', 'assetId', ''));
+        var url = _read(drawing, 'Url', 'url', null);
+        if (!assetId && !url) return null;
+        var fileName = file && file.name || _asText(_read(drawing, 'AltText', 'altText', 'clipboard-image.png')) || 'clipboard-image.png';
+        return _sortObject({
+            Id: assetId || _asText(_read(drawing, 'ObjectId', 'objectId', _read(drawing, 'Id', 'id', ''))),
+            DocumentId: documentId || null,
+            Source: _read(drawing, 'Source', 'source', 1),
+            Url: url,
+            ContentType: file && file.type || 'image/png',
+            FileName: fileName,
+            SizeBytes: file && Number(file.size || 0) || 0,
+            AltText: _asText(_read(drawing, 'AltText', 'altText', fileName)),
+            Caption: _asText(_read(drawing, 'Caption', 'caption', '')),
+            IsLocalDraft: false,
+            IsUnusedDraft: false
+        });
+    }
+
+    function upsertModelAsset(model, asset) {
+        if (!model || !asset) return;
+        var assetId = _asText(_read(asset, 'Id', 'id', ''));
+        if (!assetId) return;
+        if (!Array.isArray(model.assets)) model.assets = [];
+        var existing = model.assets.find(function (item) {
+            return _asText(_read(item, 'Id', 'id', '')).toLowerCase() === assetId.toLowerCase();
+        });
+        if (existing) {
+            Object.assign(existing, asset);
+        } else {
+            model.assets.push(asset);
+        }
+    }
+
+    function findLastTextBlockWithContext(blocks, context) {
+        var latest = null;
+        var inherited = context || {};
+        _asArray(blocks).forEach(function (block) {
+            if (!block) return;
+            if (block.type === 'paragraph') {
+                latest = {
+                    block: block,
+                    context: inherited
+                };
+                return;
+            }
+            if (block.type === 'table') {
+                _asArray(block.content && block.content.rows).forEach(function (row) {
+                    _asArray(row && row.cells).forEach(function (cell) {
+                        var cellContext = Object.assign({}, inherited, {
+                            tableId: block.id,
+                            cellId: cell && cell.id || null,
+                            activeTableId: block.id,
+                            activeTableCellId: cell && cell.id || null,
+                            region: inherited.region || 'Body'
+                        });
+                        var nested = findLastTextBlockWithContext(cell && cell.blocks, cellContext);
+                        if (nested) latest = nested;
+                    });
+                });
+            }
+        });
+        return latest;
+    }
+
+    function firstDrawingRunInBlocks(blocks) {
+        var found = null;
+        _asArray(blocks).some(function (block) {
+            if (!block) return false;
+            if (block.type === 'paragraph') {
+                found = _asArray(block.content && block.content.runs).find(function (run) {
+                    return run && (run.kind === 'drawing' || isDrawingRunSource(run));
+                }) || null;
+                if (found) {
+                    found = Object.assign({}, found, { blockId: block.id });
+                    return true;
+                }
+            }
+            if (block.type === 'table') {
+                return _asArray(block.content && block.content.rows).some(function (row) {
+                    return _asArray(row && row.cells).some(function (cell) {
+                        found = firstDrawingRunInBlocks(cell && cell.blocks);
+                        return !!found;
+                    });
+                });
+            }
+            if (block.type === 'image') {
+                found = { objectId: block.content && block.content.objectId || block.id, blockId: block.id };
+                return true;
+            }
+            return false;
+        });
+        return found;
+    }
+
+    function insertClipboardBlocksIntoModel(model, selection, blocks) {
+        var snapshot = createSelectionSnapshot(selection || firstModelSelection(model));
+        if (!model.body) model.body = { type: 'body', blocks: [] };
+        if (!Array.isArray(model.body.blocks)) model.body.blocks = [];
+        var container = snapshot.blockId ? _findBlockContainer(model, snapshot.blockId) : null;
+        var targetBlocks = container && Array.isArray(container.blocks) ? container.blocks : model.body.blocks;
+        var insertIndex = container ? Math.max(0, Number(container.index || 0) + 1) : targetBlocks.length;
+        targetBlocks.splice.apply(targetBlocks, [insertIndex, 0].concat(blocks));
+        buildIndexes(model);
+        return {
+            insertedBlocks: blocks,
+            affectedScopeIds: _unique(['document', snapshot.blockId || ''].concat(blocks.map(function (block) { return block && block.id || ''; })).filter(Boolean))
+        };
+    }
+
+    function selectionAfterClipboardBlocks(model, insertedBlocks, previousSelection, options) {
+        var opts = options || {};
+        var previous = createSelectionSnapshot(previousSelection || firstModelSelection(model));
+        if (opts.selectFirstObject === true) {
+            var drawing = firstDrawingRunInBlocks(insertedBlocks);
+            var objectId = _asText(drawing && (drawing.objectId || drawing.ObjectId || drawing.id || drawing.Id) || '');
+            var blockId = _asText(drawing && (drawing.blockId || drawing.BlockId) || '');
+            if (objectId) {
+                return createObjectSelectionSnapshot(model, {
+                    objectId: objectId,
+                    blockId: blockId,
+                    region: previous.region || 'Body',
+                    headerFooterId: previous.headerFooterId || null,
+                    tableId: previous.activeTableId || previous.tableId || null,
+                    cellId: previous.activeTableCellId || previous.cellId || null
+                }, previous);
+            }
+        }
+
+        var inheritedContext = {
+            region: previous.region || 'Body',
+            headerFooterId: previous.headerFooterId || null,
+            tableId: previous.activeTableId || previous.tableId || null,
+            cellId: previous.activeTableCellId || previous.cellId || null,
+            activeTableId: previous.activeTableId || previous.tableId || null,
+            activeTableCellId: previous.activeTableCellId || previous.cellId || null
+        };
+        var last = findLastTextBlockWithContext(insertedBlocks, inheritedContext);
+        if (last && last.block) {
+            var context = last.context || inheritedContext;
+            return createSelectionSnapshot({
+                region: context.region || previous.region || 'Body',
+                blockId: last.block.id,
+                offset: _blockText(last.block).length,
+                isCollapsed: true,
+                headerFooterId: context.headerFooterId || null,
+                tableId: context.activeTableId || context.tableId || null,
+                cellId: context.activeTableCellId || context.cellId || null,
+                activeTableId: context.activeTableId || context.tableId || null,
+                activeTableCellId: context.activeTableCellId || context.cellId || null
+            });
+        }
+
+        return createSelectionSnapshot(previous);
+    }
+
+    function applyClipboardBlocksSnapshot(inst, rawBlocks, selection, label, options) {
+        var sourceBlocks = normalizeClipboardBlocksPayload(rawBlocks);
+        if (!sourceBlocks.length) return { ok: false, error: { code: 'clipboard-empty-blocks' } };
+        var stamp = Date.now() + '-' + Math.floor(Math.random() * 100000);
+        var importedBlocks = sourceBlocks
+            .map(function (block, index) { return importBlock(block, 'paste-' + stamp + '-' + index); })
+            .filter(Boolean);
+        if (!importedBlocks.length) return { ok: false, error: { code: 'clipboard-empty-import' } };
+
+        var beforeModel = _clone(inst.model);
+        var beforeSelection = createSelectionPostFixer(inst.schema).fix(inst.model, selection || inst.selection || firstModelSelection(inst.model));
+        var nextModel = _clone(inst.model);
+        var insertion = insertClipboardBlocksIntoModel(nextModel, beforeSelection, importedBlocks);
+        var afterSelection = createSelectionPostFixer(inst.schema).fix(
+            nextModel,
+            selectionAfterClipboardBlocks(nextModel, insertion.insertedBlocks, beforeSelection, options || {}));
+        return applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
+            snapshot: nextModel,
+            previousSnapshot: beforeModel,
+            selection: afterSelection,
+            previousSelection: beforeSelection,
+            affectedScopeIds: insertion.affectedScopeIds,
+            source: 'paste',
+            transactionType: TRANSACTION_TYPES.Default,
+            beforeSelection: beforeSelection,
+            label: label || 'Paste'
+        });
+    }
+
+    function handleClipboardPipelinePasteAsync(inst, html, text, selection) {
+        if (!inst || !inst.dotNetRef || typeof inst.dotNetRef.invokeMethodAsync !== 'function') {
+            return Promise.resolve({ ok: false, error: { code: 'clipboard-pipeline-unavailable' } });
+        }
+        return inst.dotNetRef.invokeMethodAsync('HandleClipboardPasteRequested', html || '', text || '')
+            .then(function (blocksJson) {
+                var result = applyClipboardBlocksSnapshot(inst, blocksJson, selection, 'Paste', {});
+                if (result && result.ok !== false) {
+                    inst.virtualCaretSelection = null;
+                    rememberKeyboardSelection(inst, inst.selection || selection, 'paste');
+                }
+                return result;
+            })
+            .catch(function (error) {
+                inst.lastError = 'clipboard-pipeline-failed';
+                recordWatchdogFailure(inst, 'clipboard', inst.lastError, { message: error && error.message || String(error || '') });
+                return { ok: false, error: { code: inst.lastError } };
+            });
+    }
+
+    function handleClipboardImagePasteAsync(inst, file, selection) {
+        if (!inst || !inst.dotNetRef || typeof inst.dotNetRef.invokeMethodAsync !== 'function') {
+            return Promise.resolve({ ok: false, error: { code: 'clipboard-image-upload-unavailable' } });
+        }
+        return readClipboardFileAsBase64(file)
+            .then(function (base64) {
+                return inst.dotNetRef.invokeMethodAsync('HandleImageUploadRequested', {
+                    Source: 2,
+                    FileName: file && file.name || 'clipboard-image.png',
+                    ContentType: file && file.type || 'image/png',
+                    SizeBytes: file && Number(file.size || 0) || 0,
+                    Base64Data: base64,
+                    AltText: file && file.name || 'clipboard-image.png',
+                    Selection: boundarySelectionSnapshot(selection, inst)
+                });
+            })
+            .then(function (block) {
+                if (!block) return { ok: false, error: { code: 'clipboard-image-upload-rejected' } };
+                upsertModelAsset(inst.model, normalizeClipboardUploadedImageAsset(block, file, inst.model && inst.model.documentId || null));
+                var result = applyClipboardBlocksSnapshot(inst, [normalizeClipboardUploadedImageBlock(block)], selection, 'Paste image', { selectFirstObject: true });
+                if (result && result.ok !== false) {
+                    updateActiveImageSelectionDom(inst);
+                    updateActiveObjectStatusDom(inst);
+                }
+                return result;
+            })
+            .catch(function (error) {
+                inst.lastError = 'clipboard-image-paste-failed';
+                recordWatchdogFailure(inst, 'clipboard-image', inst.lastError, { message: error && error.message || String(error || '') });
+                return { ok: false, error: { code: inst.lastError } };
+            });
     }
 
     function handleEditorPaste(inst, event) {
         if (!inst || !event || !targetIsEditableDocumentSurface(inst, event.target)) return { handled: false };
         var normalizationStart = strictPerformanceNow();
         var clipboard = event.clipboardData || window.clipboardData || null;
-        var text = clipboard && typeof clipboard.getData === 'function'
-            ? clipboard.getData('text/plain') || clipboard.getData('text') || ''
-            : '';
+        var html = getClipboardDataText(clipboard, 'text/html');
+        var text = getClipboardDataText(clipboard, 'text/plain') || getClipboardDataText(clipboard, 'text');
         text = normalizePasteText(text);
+        var imageFiles = collectClipboardImageFiles(clipboard);
         var stats = ensureStrictPerformanceStats(inst);
         stats.clipboardNormalizationCount = Number(stats.clipboardNormalizationCount || 0) + 1;
         stats.lastClipboardNormalizationMs = Math.max(0, strictPerformanceNow() - normalizationStart);
-        if (!text) return { handled: false };
+        if (!text && !html && imageFiles.length === 0) return { handled: false };
         if (typeof event.preventDefault === 'function') event.preventDefault();
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
         clearLiveTypingRevision(inst);
 
         var selection = readFixedDomSelection(inst, 'paste-dom');
+        if (imageFiles.length > 0) {
+            handleClipboardImagePasteAsync(inst, imageFiles[0], selection);
+            markKeyboardInputHandled(inst, 'insertFromPaste', '');
+            return { handled: true, pending: true };
+        }
+
+        if (!isTrackChangesEnabled(inst) && (html || text)) {
+            handleClipboardPipelinePasteAsync(inst, html, text, selection);
+            markKeyboardInputHandled(inst, 'insertFromPaste', text);
+            return { handled: true, pending: true };
+        }
+
+        if (!text) return { handled: false };
         var range = selectionToRange(selection);
         var operations = [];
         var userId = resolveRevisionUserId(inst.options || {});
@@ -17094,7 +19855,7 @@ window.tmDocumentEditorEngine = (function () {
                 visualHintLineId: selection.visualHintLineId || null
             },
             text: firstLine,
-            marks: _clone(inst.pendingTypingMarks || []),
+            marks: resolveTypingMarksAtInsertion(inst, selection),
             revisionId: revisionPayload && revisionPayload.id || null,
             revision: revisionPayload || null
         }, { source: 'paste' }));
@@ -17121,15 +19882,31 @@ window.tmDocumentEditorEngine = (function () {
         if (!root || typeof root.addEventListener !== 'function') return;
         inst.eventHandlers = inst.eventHandlers || [];
         var onFocusIn = function (event) {
-            setActiveFocusRegion(inst, getFocusRegionFromElement(root, event.target), event.target, 'focusin');
-        };
-        var onPointerDown = function (event) {
-            var region = getFocusRegionFromElement(root, event.target);
-            setActiveFocusRegion(inst, region, event.target, 'pointerdown');
-            if (targetIsBehindTextOverlaySurface(event.target) && applyLayoutPointerTextSelection(inst, event)) {
-                setActiveFocusRegion(inst, 'Body', event.target, 'behind-text-overlay-pointerdown');
+            var current = createSelectionSnapshot(inst.selection || {});
+            if (Date.now() < Number(inst.preserveTableSelectionUntil || 0)
+                && (current.activeTableCellId || current.cellId)
+                && !tableContextMenuTargetFromEvent(inst, event)) {
                 return;
             }
+            setActiveFocusRegion(inst, getFocusRegionFromElement(root, event.target), event.target, 'focusin');
+        };
+        var activateLayoutTextFocus = function () {
+            var region = activeRegionForSelection(inst.selection || {});
+            inst.activeFocusRegion = region;
+            updateActiveRegionMetric(inst, region);
+            inst.focusOwner = region === 'TableCell' ? 'tableCell' : 'text';
+            if (inst.root) {
+                inst.root.setAttribute('data-active-region', region);
+                inst.root.setAttribute('data-focus-owner', inst.focusOwner);
+            }
+        };
+        var onPointerDown = function (event) {
+            if (applyLayoutPointerTextSelection(inst, event)) {
+                activateLayoutTextFocus();
+                return;
+            }
+            var region = getFocusRegionFromElement(root, event.target);
+            setActiveFocusRegion(inst, region, event.target, 'pointerdown');
             if (region === 'Image') {
                 if (beginObjectPointerInteraction(inst, event)) return;
                 if (typeof event.preventDefault === 'function') event.preventDefault();
@@ -17140,14 +19917,49 @@ window.tmDocumentEditorEngine = (function () {
                 clearLiveTypingRevision(inst);
                 inst.preserveMiniToolbarUntil = 0;
                 hideMiniToolbar(inst, 'editable-pointerdown');
-                if (applyLayoutPointerTextSelection(inst, event)) return;
             }
+        };
+        var startLayoutSelectionFromMouseEvent = function (event) {
+            if (!event || inst.layoutTextPointerSelectionSession) return false;
+            if (!applyLayoutPointerTextSelection(inst, event)) return false;
+            activateLayoutTextFocus();
+            return true;
+        };
+        var onMouseDown = function (event) {
+            startLayoutSelectionFromMouseEvent(event);
         };
         var onPointerUp = function () {
             scheduleMiniToolbarRefresh(inst, 'pointerup-selection', 0);
         };
         var onClick = function (event) {
             var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
+            var overflowInsert = element && element.closest && element.closest('[data-testid="document-page-overflow-insert-page-break"]');
+            if (overflowInsert && root.contains(overflowInsert)) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
+                var bodyBlock = _lastEditableTextBlockInRegion(inst.model, 'Body', null);
+                applyCommand(inst.id, 'insertPageBreak', {
+                    source: 'overflow-warning',
+                    Selection: bodyBlock ? {
+                        region: 'Body',
+                        blockId: bodyBlock.id,
+                        offset: _blockText(bodyBlock).length,
+                        isCollapsed: true
+                    } : null
+                });
+                return;
+            }
+            var pageBreak = element && element.closest && element.closest('[data-testid="document-wysiwyg-page-break"][data-block-id]');
+            if (pageBreak && root.contains(pageBreak)) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
+                selectPageBreakBlock(inst, pageBreak.getAttribute('data-block-id'), 'click');
+                return;
+            }
+            if (inst.selectedPageBreakId) {
+                inst.selectedPageBreakId = '';
+                updateSelectedPageBreakDom(inst);
+            }
             var marker = element && element.closest && element.closest('.tm-document-inline--comment-anchor[data-comment-id]');
             if (marker && root.contains(marker)) {
                 selectCommentAnchor(inst, marker.getAttribute('data-comment-id'), false, true);
@@ -17156,6 +19968,9 @@ window.tmDocumentEditorEngine = (function () {
             var revision = element && element.closest && element.closest('.tm-wysiwyg-revision[data-revision-id], .tm-document-inline--revision[data-revision-id]');
             if (!revision || !root.contains(revision)) return;
             selectRevisionAnchor(inst, revision.getAttribute('data-revision-id'), false, true);
+        };
+        var onContextMenu = function (event) {
+            requestTableContextMenu(inst, event);
         };
         var onKeyDown = function (event) {
             handleEditorKeyDown(inst, event);
@@ -17206,7 +20021,12 @@ window.tmDocumentEditorEngine = (function () {
         var onDocumentPointerDown = function (event) {
             var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
             if (!element) return;
-            if (root.contains(element)) return;
+            if (root.contains(element)) {
+                if (applyLayoutPointerTextSelection(inst, event)) {
+                    activateLayoutTextFocus();
+                }
+                return;
+            }
             if (preserveToolbarSelectionOnPointerEvent(inst, event, 'pointerdown')) {
                 return;
             }
@@ -17218,7 +20038,16 @@ window.tmDocumentEditorEngine = (function () {
         };
         var onDocumentMouseDown = function (event) {
             var element = event && event.target && (event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target.parentElement);
-            if (!element || root.contains(element)) return;
+            if (!element) return;
+            if (root.contains(element)) {
+                if (inst.layoutTextPointerSelectionSession) {
+                    if (typeof event.preventDefault === 'function') event.preventDefault();
+                    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+                } else {
+                    startLayoutSelectionFromMouseEvent(event);
+                }
+                return;
+            }
             if (preserveToolbarSelectionOnPointerEvent(inst, event, 'mousedown')) return;
             if (element.closest && element.closest('[data-testid="document-mini-toolbar"], .tm-document-editor__mini-toolbar, .tm-document-editor__floating-root, .tm-color-picker-dropdown, .tm-color-picker')) {
                 inst.preserveMiniToolbarUntil = Date.now() + 1200;
@@ -17234,9 +20063,20 @@ window.tmDocumentEditorEngine = (function () {
             if (inst.floatingUiOpen || inst.lastMiniToolbarRequest) {
                 scheduleMiniToolbarViewportRefresh(inst, 'viewport-change');
             }
+            updateActivePageAndHeadingFromViewport(inst, 'viewport-change');
+            if (inst.activeViewportUpdateTimer) clearTimeout(inst.activeViewportUpdateTimer);
+            inst.activeViewportUpdateTimer = setTimeout(function () {
+                inst.activeViewportUpdateTimer = null;
+                updateActivePageAndHeadingFromViewport(inst, 'viewport-change-settled');
+            }, 80);
+            if (inst.timers && inst.timers.indexOf(inst.activeViewportUpdateTimer) < 0) {
+                inst.timers.push(inst.activeViewportUpdateTimer);
+            }
         };
+        var outerHost = root.closest && root.closest('[data-testid="document-wysiwyg-host"]');
         root.addEventListener('focusin', onFocusIn);
         root.addEventListener('pointerdown', onPointerDown, true);
+        root.addEventListener('mousedown', onMouseDown, true);
         root.addEventListener('pointerup', onPointerUp, true);
         root.addEventListener('click', onClick);
         root.addEventListener('beforeinput', onBeforeInput, true);
@@ -17244,7 +20084,12 @@ window.tmDocumentEditorEngine = (function () {
         root.addEventListener('compositionstart', onCompositionStart, true);
         root.addEventListener('compositionupdate', onCompositionUpdate, true);
         root.addEventListener('compositionend', onCompositionEnd, true);
+        root.addEventListener('contextmenu', onContextMenu, true);
         root.addEventListener('keydown', onKeyDown);
+        root.addEventListener('scroll', onWindowScrollOrResize, true);
+        if (outerHost && outerHost !== root && typeof outerHost.addEventListener === 'function') {
+            outerHost.addEventListener('scroll', onWindowScrollOrResize, true);
+        }
         var documentTarget = typeof document !== 'undefined' ? document : null;
         var windowTarget = typeof window !== 'undefined' ? window : null;
         if (documentTarget && typeof documentTarget.addEventListener === 'function') {
@@ -17255,6 +20100,7 @@ window.tmDocumentEditorEngine = (function () {
             documentTarget.addEventListener('click', onToolbarButtonClick, true);
             documentTarget.addEventListener('input', onToolbarSelectInput, true);
             documentTarget.addEventListener('change', onToolbarSelectInput, true);
+            documentTarget.addEventListener('scroll', onWindowScrollOrResize, true);
         }
         if (windowTarget && typeof windowTarget.addEventListener === 'function') {
             windowTarget.addEventListener('click', onToolbarButtonClick, true);
@@ -17282,6 +20128,7 @@ window.tmDocumentEditorEngine = (function () {
         inst.eventHandlers.push(
             ['focusin', onFocusIn, false],
             ['pointerdown', onPointerDown, true],
+            ['mousedown', onMouseDown, true],
             ['pointerup', onPointerUp, true],
             ['click', onClick, false],
             ['beforeinput', onBeforeInput, true],
@@ -17289,7 +20136,12 @@ window.tmDocumentEditorEngine = (function () {
             ['compositionstart', onCompositionStart, true],
             ['compositionupdate', onCompositionUpdate, true],
             ['compositionend', onCompositionEnd, true],
-            ['keydown', onKeyDown, false]);
+            ['contextmenu', onContextMenu, true],
+            ['keydown', onKeyDown, false],
+            ['scroll', onWindowScrollOrResize, true]);
+        inst.hostEventHandlers = outerHost && outerHost !== root
+            ? [['scroll', onWindowScrollOrResize, true]]
+            : [];
         inst.documentEventHandlers = [
             ['keydown', onDocumentKeyDown, true],
             ['selectionchange', onSelectionChange, false],
@@ -17297,7 +20149,8 @@ window.tmDocumentEditorEngine = (function () {
             ['mousedown', onDocumentMouseDown, true],
             ['click', onToolbarButtonClick, true],
             ['input', onToolbarSelectInput, true],
-            ['change', onToolbarSelectInput, true]
+            ['change', onToolbarSelectInput, true],
+            ['scroll', onWindowScrollOrResize, true]
         ];
         inst.windowEventHandlers = [
             ['click', onToolbarButtonClick, true],
@@ -17312,6 +20165,13 @@ window.tmDocumentEditorEngine = (function () {
             inst.root.removeEventListener(entry[0], entry[1], entry[2]);
         });
         inst.eventHandlers = [];
+        var hostTarget = inst.root.closest && inst.root.closest('[data-testid="document-wysiwyg-host"]');
+        if (hostTarget && typeof hostTarget.removeEventListener === 'function') {
+            _asArray(inst.hostEventHandlers).forEach(function (entry) {
+                hostTarget.removeEventListener(entry[0], entry[1], entry[2]);
+            });
+        }
+        inst.hostEventHandlers = [];
         var documentTarget = typeof document !== 'undefined' ? document : null;
         if (documentTarget && typeof documentTarget.removeEventListener === 'function') {
             _asArray(inst.documentEventHandlers).forEach(function (entry) {
@@ -17451,7 +20311,24 @@ window.tmDocumentEditorEngine = (function () {
             operationIds: patch.operationIds,
             affectedBlockIds: patch.affectedBlockIds
         });
-        invokeBoundaryMethod(inst, 'HandleJsBoundaryPatchGenerated', patch, 'boundary-patch-dispatch-failed');
+        var promise = invokeBoundaryMethod(inst, 'HandleJsBoundaryPatchGenerated', patch, 'boundary-patch-dispatch-failed');
+        inst.boundaryPatchDispatchPromises = _asArray(inst.boundaryPatchDispatchPromises).concat([promise]);
+        Promise.resolve(promise).finally(function () {
+            inst.boundaryPatchDispatchPromises = _asArray(inst.boundaryPatchDispatchPromises).filter(function (item) {
+                return item !== promise;
+            });
+        });
+        return promise;
+    }
+
+    function waitForBoundaryPatchDispatch(inst) {
+        var pending = _asArray(inst && inst.boundaryPatchDispatchPromises);
+        if (!pending.length) return Promise.resolve([]);
+        return Promise.all(pending.map(function (promise) {
+            return Promise.resolve(promise).catch(function (error) {
+                return { ok: false, error: String(error && error.message || error) };
+            });
+        }));
     }
 
     function mergeBoundaryPatches(inst, patches, fallbackTransactionType) {
@@ -17492,7 +20369,10 @@ window.tmDocumentEditorEngine = (function () {
         stats.maxTypingBatchSize = Math.max(Number(stats.maxTypingBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         stats.maxBoundaryPatchBatchSize = Math.max(Number(stats.maxBoundaryPatchBatchSize || 0), inst.pendingTypingBoundaryPatches.length);
         if (inst.pendingTypingBoundaryTimer) clearTimeout(inst.pendingTypingBoundaryTimer);
-        var delay = Math.max(0, Number(inst.options && (inst.options.TypingBatchMs || inst.options.typingBatchMs) || 500) || 500);
+        var configuredDelay = inst.options ? (inst.options.TypingBatchMs ?? inst.options.typingBatchMs) : null;
+        var delay = configuredDelay === null || configuredDelay === undefined
+            ? 16
+            : Math.max(0, Number(configuredDelay) || 0);
         inst.pendingTypingBoundaryTimer = setTimeout(function () {
             flushTypingBoundaryPatchDispatch(inst);
         }, delay);
@@ -17726,6 +20606,10 @@ window.tmDocumentEditorEngine = (function () {
             observers: [],
             measurementCache: new Map(),
             activePageIndexPinned: false,
+            activeHeadingBlockId: '',
+            selectedPageBreakId: '',
+            lastPageMetricsSignature: '',
+            showNonPrintingCharacters: opts.ShowNonPrintingCharacters === true || opts.showNonPrintingCharacters === true,
             accessibilityAnnouncementTimer: null,
             lastAccessibilityAnnouncement: null,
             pendingTypingMarks: [],
@@ -17962,6 +20846,7 @@ window.tmDocumentEditorEngine = (function () {
         var position = source.Position || source.position || {};
         var anchor = source.Anchor || source.anchor || {};
         var transform = source.Transform || source.transform || {};
+        var size = source.Size || source.size || {};
         var stacking = source.Stacking || source.stacking || {};
         var mode = wrap.Mode ?? wrap.mode ?? 0;
         var modeName = normalizeWrapModeName(mode);
@@ -18011,12 +20896,18 @@ window.tmDocumentEditorEngine = (function () {
         anchor.columnIndex = anchor.ColumnIndex;
         anchor.HeaderFooterId = anchor.HeaderFooterId ?? anchor.headerFooterId ?? null;
         anchor.headerFooterId = anchor.HeaderFooterId;
-        transform.Width = Number(transform.Width ?? transform.width ?? 120) || 120;
+        transform.Width = Number(transform.Width ?? transform.width ?? size.Width ?? size.width ?? 120) || 120;
         transform.width = transform.Width;
-        transform.Height = Number(transform.Height ?? transform.height ?? 80) || 80;
+        transform.Height = Number(transform.Height ?? transform.height ?? size.Height ?? size.height ?? 80) || 80;
         transform.height = transform.Height;
-        transform.LockAspectRatio = (transform.LockAspectRatio ?? transform.lockAspectRatio ?? true) !== false;
+        transform.LockAspectRatio = (transform.LockAspectRatio ?? transform.lockAspectRatio ?? size.LockAspectRatio ?? size.lockAspectRatio ?? true) !== false;
         transform.lockAspectRatio = transform.LockAspectRatio;
+        size.Width = transform.Width;
+        size.width = transform.Width;
+        size.Height = transform.Height;
+        size.height = transform.Height;
+        size.LockAspectRatio = transform.LockAspectRatio;
+        size.lockAspectRatio = transform.LockAspectRatio;
         stacking.ZIndex = Number(stacking.ZIndex ?? stacking.zIndex ?? 0) || 0;
         stacking.zIndex = stacking.ZIndex;
         stacking.AllowOverlap = (stacking.AllowOverlap ?? stacking.allowOverlap ?? false) === true;
@@ -18041,6 +20932,8 @@ window.tmDocumentEditorEngine = (function () {
         source.position = position;
         source.Wrap = wrap;
         source.wrap = wrap;
+        source.Size = size;
+        source.size = size;
         source.Transform = transform;
         source.transform = transform;
         source.Stacking = stacking;
@@ -18052,12 +20945,24 @@ window.tmDocumentEditorEngine = (function () {
         var body = payload || {};
         var selection = inst && inst.selection || {};
         var objectSelection = selection.objectSelection || selection.ObjectSelection || {};
-        var objectId = _asText(
-            body.objectId || body.ObjectId
-            || objectSelection.objectId || objectSelection.ObjectId
+        var explicitObjectId = _asText(body.objectId || body.ObjectId || body.imageId || body.ImageId || '');
+        var explicitBlockId = _asText(body.blockId || body.BlockId || '');
+        var selectionObjectId = _asText(
+            objectSelection.objectId || objectSelection.ObjectId
             || selection.activeObjectId || selection.ActiveObjectId
             || selection.objectId || selection.ObjectId
             || '');
+        var selectionBlockId = _asText(
+            objectSelection.blockId || objectSelection.BlockId
+            || selection.activeImageBlockId || selection.ActiveImageBlockId
+            || selection.blockId || selection.BlockId
+            || '');
+        var objectId = _asText(
+            explicitObjectId
+            || explicitBlockId
+            || selectionObjectId
+            || '');
+        var blockId = explicitBlockId || selectionBlockId || '';
         if (objectId) {
             var drawing = findDrawingRunByObjectId(inst.model, objectId);
             if (drawing) {
@@ -18096,6 +21001,38 @@ window.tmDocumentEditorEngine = (function () {
             });
         }
 
+        var imageBlock = null;
+        if (explicitBlockId) {
+            imageBlock = _findBlock(inst.model, explicitBlockId);
+        }
+        if ((!imageBlock || imageBlock.type !== 'image') && explicitObjectId) {
+            imageBlock = _findBlock(inst.model, explicitObjectId);
+        }
+        if ((!imageBlock || imageBlock.type !== 'image') && blockId) {
+            imageBlock = _findBlock(inst.model, blockId);
+        }
+        if ((!imageBlock || imageBlock.type !== 'image') && objectId) {
+            imageBlock = _findBlock(inst.model, objectId);
+        }
+        if (imageBlock && imageBlock.type === 'image') {
+            var imageObject = normalizeImageObject(imageBlock, { blockId: imageBlock.id || blockId || objectId });
+            return _sortObject({
+                kind: 'image-block',
+                blockId: imageBlock.id || blockId || objectId,
+                objectId: imageObject.objectId || objectId || imageBlock.id,
+                inlineIndex: -1,
+                inlineId: null,
+                region: imageObject.anchorRegion || 'Body',
+                headerFooterId: imageObject.anchorHeaderFooterId || null,
+                tableId: imageObject.anchorTableId || null,
+                cellId: imageObject.anchorCellId || null,
+                columnIndex: imageObject.anchorColumnIndex ?? null,
+                block: imageBlock,
+                run: null,
+                object: imageObject
+            });
+        }
+
         return null;
     }
 
@@ -18113,8 +21050,37 @@ window.tmDocumentEditorEngine = (function () {
             });
             return imageObjectToLayout(object);
         }
+        if (target.kind === 'image-block') {
+            var imageObject = target.object || normalizeImageObject(target.block || {}, {
+                blockId: target.blockId,
+                region: target.region || 'Body',
+                headerFooterId: target.headerFooterId || null,
+                tableId: target.tableId || null,
+                cellId: target.cellId || null,
+                columnIndex: target.columnIndex ?? null
+            });
+            return imageObjectToLayout(imageObject);
+        }
 
         return null;
+    }
+
+    function imageZIndexExtremesForCommand(inst) {
+        var values = [];
+        collectObjectNavigationTargets(inst).forEach(function (target) {
+            var object = target && target.object || {};
+            values.push(Number(object.zIndex ?? object.ZIndex ?? 0) || 0);
+        });
+        if (!values.length && inst && inst.root && inst.root.querySelectorAll) {
+            Array.from(inst.root.querySelectorAll('.tm-wysiwyg-object-layer-item[data-object-id], figure.tm-wysiwyg-image[data-block-id]')).forEach(function (item) {
+                values.push(Number(item.getAttribute('data-object-z-index') || item.style && item.style.zIndex || 0) || 0);
+            });
+        }
+        if (!values.length) values.push(0);
+        return {
+            min: Math.min.apply(Math, values),
+            max: Math.max.apply(Math, values)
+        };
     }
 
     function imageTargetOperationTarget(target) {
@@ -18153,7 +21119,8 @@ window.tmDocumentEditorEngine = (function () {
         var imageCommands = [
             'setimagealttext', 'setimagedecorative', 'toggleimagecaption', 'setimagecaption', 'setimageurl',
             'setimagelink', 'setimagewrapmode', 'setimageposition', 'setimagesize', 'setimageobjectposition',
-            'setimageanchormode', 'setimagezorder', 'setimagewrapdistance', 'deleteimage', 'focusimageoptions'
+            'setimageanchormode', 'setimagezorder', 'bringimagetofront', 'sendimagetoback', 'bringimageforward',
+            'sendimagebackward', 'setimagewrapdistance', 'deleteimage', 'focusimageoptions'
         ];
         if (imageCommands.indexOf(compact) < 0) return null;
         if (compact === 'focusimageoptions') {
@@ -18201,6 +21168,7 @@ window.tmDocumentEditorEngine = (function () {
 
         if (compact === 'setimagewrapmode' || compact === 'setimageposition' || compact === 'setimagesize'
             || compact === 'setimageobjectposition' || compact === 'setimageanchormode' || compact === 'setimagezorder'
+            || compact === 'bringimagetofront' || compact === 'sendimagetoback' || compact === 'bringimageforward' || compact === 'sendimagebackward'
             || compact === 'setimagewrapdistance') {
             var oldLayout = cloneImageLayoutForTarget(target);
             if (!oldLayout) {
@@ -18236,6 +21204,13 @@ window.tmDocumentEditorEngine = (function () {
                 var direction = String(body.direction || body.Direction || '').toLowerCase();
                 var delta = direction.indexOf('back') >= 0 ? -1 : 1;
                 layout.Stacking.ZIndex = (Number(layout.Stacking.ZIndex || 0) || 0) + delta;
+            } else if (compact === 'bringimagetofront' || compact === 'sendimagetoback' || compact === 'bringimageforward' || compact === 'sendimagebackward') {
+                var zExtremes = imageZIndexExtremesForCommand(inst);
+                if (compact === 'bringimagetofront') layout.Stacking.ZIndex = zExtremes.max + 1;
+                else if (compact === 'sendimagetoback') layout.Stacking.ZIndex = zExtremes.min - 1;
+                else if (compact === 'bringimageforward') layout.Stacking.ZIndex = (Number(layout.Stacking.ZIndex || 0) || 0) + 1;
+                else layout.Stacking.ZIndex = (Number(layout.Stacking.ZIndex || 0) || 0) - 1;
+                layout.Stacking.AllowOverlap = true;
             } else if (compact === 'setimagewrapdistance') {
                 var distanceName = String(body.distanceName || body.DistanceName || '').toLowerCase();
                 var value = Math.max(0, Number(body.value ?? body.Value ?? 0) || 0);
@@ -18275,6 +21250,205 @@ window.tmDocumentEditorEngine = (function () {
             transactionType: TRANSACTION_TYPES.Default,
             beforeSelection: inst.selection
         });
+    }
+
+    function escapeFindReplaceRegex(value) {
+        return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function createFindReplaceRegex(body) {
+        var query = _asText(body.query ?? body.Query ?? '');
+        if (!query) return null;
+        var flags = body.caseSensitive === true || body.CaseSensitive === true ? 'g' : 'gi';
+        var source = body.regex === true || body.Regex === true || body.useRegex === true || body.UseRegex === true
+            ? query
+            : escapeFindReplaceRegex(query);
+        if (body.wholeWord === true || body.WholeWord === true) {
+            source = '\\b(?:' + source + ')\\b';
+        }
+
+        try {
+            var regex = new RegExp(source, flags);
+            if (regex.test('')) return null;
+            return regex;
+        } catch {
+            return null;
+        }
+    }
+
+    function collectFindReplaceBlocks(model) {
+        var result = [];
+        function visit(block) {
+            if (!block) return;
+            if (block.type === 'paragraph') {
+                result.push(block);
+                return;
+            }
+
+            if (block.type === 'table') {
+                _asArray(block.content && block.content.rows).forEach(function (row) {
+                    _asArray(row.cells).forEach(function (cell) {
+                        _asArray(cell.blocks).forEach(visit);
+                    });
+                });
+            }
+        }
+
+        _asArray(model && model.body && model.body.blocks).forEach(visit);
+        _asArray(model && model.headers).forEach(function (region) { _asArray(region.blocks).forEach(visit); });
+        _asArray(model && model.footers).forEach(function (region) { _asArray(region.blocks).forEach(visit); });
+        return result;
+    }
+
+    function collectFindReplaceMatches(inst, body, replaceAll) {
+        var blockId = _asText(body.blockId || body.BlockId || '');
+        var offset = Number(body.offset ?? body.Offset ?? body.startOffset ?? body.StartOffset ?? 0) || 0;
+        var length = Number(body.length ?? body.Length ?? 0) || 0;
+        if (!replaceAll && blockId && length > 0) {
+            return [{ blockId: blockId, blockIndex: 0, offset: Math.max(0, offset), length: Math.max(0, length) }];
+        }
+
+        var regex = createFindReplaceRegex(body);
+        if (!regex) return [];
+        var matches = [];
+        collectFindReplaceBlocks(inst.model).forEach(function (block, blockIndex) {
+            var text = _blockText(block);
+            regex.lastIndex = 0;
+            var match;
+            while ((match = regex.exec(text)) !== null) {
+                var value = _asText(match[0]);
+                if (!value) {
+                    regex.lastIndex += 1;
+                    continue;
+                }
+
+                matches.push({
+                    blockId: block.id,
+                    blockIndex: blockIndex,
+                    offset: match.index,
+                    length: value.length
+                });
+                if (!replaceAll) break;
+            }
+        });
+        return replaceAll ? matches : matches.slice(0, 1);
+    }
+
+    function createFindReplaceOperations(inst, match, replacement, trackChanges) {
+        var range = {
+            blockId: match.blockId,
+            start: match.offset,
+            end: match.offset + match.length
+        };
+        var operations = [];
+        if (trackChanges) {
+            var userId = resolveRevisionUserId(inst.options || {});
+            var deletionRevision = createDeletionRevisionPayload(inst.model, range, userId, 'find-replace');
+            operations.push(createOperation(OPERATION_TYPES.DeleteRange, {
+                range: range,
+                revisionId: deletionRevision.id,
+                revision: deletionRevision,
+                source: 'find-replace'
+            }, { source: 'find-replace' }));
+            if (replacement) {
+                var insertionRange = {
+                    blockId: match.blockId,
+                    start: match.offset,
+                    end: match.offset + replacement.length
+                };
+                var insertionRevision = createInsertionRevisionPayload(insertionRange, replacement, userId, 'find-replace');
+                operations.push(createOperation(OPERATION_TYPES.InsertText, {
+                    target: { blockId: match.blockId, offset: match.offset },
+                    text: replacement,
+                    revisionId: insertionRevision.id,
+                    revision: insertionRevision,
+                    source: 'find-replace'
+                }, { source: 'find-replace' }));
+            }
+            return operations;
+        }
+
+        operations.push(createOperation(OPERATION_TYPES.DeleteRange, {
+            range: range,
+            source: 'find-replace'
+        }, { source: 'find-replace' }));
+        if (replacement) {
+            operations.push(createOperation(OPERATION_TYPES.InsertText, {
+                target: { blockId: match.blockId, offset: match.offset },
+                text: replacement,
+                source: 'find-replace'
+            }, { source: 'find-replace' }));
+        }
+        return operations;
+    }
+
+    function applyRuntimeFindReplaceCommand(inst, commandName, payload) {
+        var compact = compactCommandName(commandName);
+        if (compact !== 'replaceone' && compact !== 'replaceall') return null;
+
+        var replaceAll = compact === 'replaceall';
+        var body = payload || {};
+        var replacement = _asText(body.replacement ?? body.Replacement ?? '');
+        var matches = collectFindReplaceMatches(inst, body, replaceAll)
+            .sort(function (a, b) { return b.blockIndex - a.blockIndex || b.offset - a.offset; });
+        var label = replaceAll ? 'Replace all' : 'Replace one';
+        if (!matches.length) {
+            inst.commands.push({ command: commandName, payload: _clone(body), at: Date.now(), unsupported: false, result: { ok: true, count: 0 } });
+            return { ok: true, instanceId: inst.id, command: commandName, count: 0 };
+        }
+
+        var operationStart = strictPerformanceNow();
+        var beforeSelection = createSelectionSnapshot(body.beforeSelection || body.BeforeSelection || inst.selection || firstModelSelection(inst.model));
+        var operations = [];
+        var trackChanges = isTrackChangesEnabled(inst);
+        matches.forEach(function (match) {
+            operations = operations.concat(createFindReplaceOperations(inst, match, replacement, trackChanges));
+        });
+
+        var transaction = createTransaction(inst.model, {
+            instanceId: inst.id,
+            commandName: label,
+            label: label,
+            type: TRANSACTION_TYPES.Default,
+            beforeSelection: beforeSelection,
+            lightweightSnapshots: supportsLightweightTransactionSnapshots(operations, TRANSACTION_TYPES.Default)
+        });
+        inst.activeTransaction = transaction;
+        for (var i = 0; i < operations.length; i++) {
+            var result = transaction.apply(operations[i]);
+            if (!result || result.ok === false) {
+                inst.activeTransaction = null;
+                inst.lastError = result && result.errors && result.errors[0] ? result.errors[0].code : 'replace-failed';
+                recordWatchdogFailure(inst, 'operation', inst.lastError, { command: commandName, transactionId: transaction.id });
+                return Object.assign({ instanceId: inst.id, command: commandName }, result || { ok: false });
+            }
+        }
+
+        var committed = transaction.commit();
+        inst.activeTransaction = null;
+        inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, transaction.afterSelection || inst.selection);
+        markSelectionChanged(inst, 'find-replace');
+        transaction.afterSelection = _clone(inst.selection);
+        if (transaction.lightweightSnapshots !== true) transaction.afterModelSnapshot = _clone(inst.model);
+        inst.transactions.push(transaction.toJSON());
+        pushUndoTransaction(inst, transaction);
+        inst.redoTransactions = [];
+        notifyUndoState(inst);
+        inst.layout.invalidatedScopeIds = transaction.invalidatedScopes.slice();
+        inst.lastDiffer = committed.differ;
+        inst.commands.push({ command: commandName, payload: _clone(body), at: Date.now(), transactionId: transaction.id });
+        markModelChanged(inst, commandName);
+        refreshRuntimeMarkerStore(inst);
+        if (operations.some(operationTouchesRevisions)) {
+            notifyRuntimeRevisionsChanged(inst);
+        }
+
+        recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: transaction.operations.length });
+        inst.pendingDomSelectionRestore = _clone(inst.selection);
+        render(inst);
+        var boundaryPatch = commitBoundaryPatch(inst, transaction, transaction.operations, committed, transaction.type);
+        recordOperationPerformance(inst, transaction.operations, Math.max(0, strictPerformanceNow() - operationStart), transaction.invalidatedScopes, transaction.type);
+        return Object.assign({ instanceId: inst.id, command: commandName, boundaryPatch: boundaryPatch, count: matches.length }, committed);
     }
 
     function resolveCommandSelectionToken(inst, commandName, payload) {
@@ -18402,6 +21576,203 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
+    function applyRuntimeAutocompleteCommand(inst, commandName, payload) {
+        var compact = compactCommandName(commandName);
+        if (compact !== 'closeautocompletequery'
+            && compact !== 'removeautocompletequery'
+            && compact !== 'insertautocompletetext') {
+            return null;
+        }
+
+        if (!inst || !inst.model) {
+            return compact === 'insertautocompletetext' ? false : null;
+        }
+
+        if (compact === 'closeautocompletequery') {
+            closeRuntimeAutocomplete(inst, false);
+            return boundarySelectionSnapshot(inst.selection || firstModelSelection(inst.model), inst);
+        }
+
+        if (compact === 'removeautocompletequery') {
+            var range = activeRuntimeAutocompleteRange(inst);
+            if (!range) {
+                closeRuntimeAutocomplete(inst, false);
+                var emptySelection = boundarySelectionSnapshot(inst.selection || firstModelSelection(inst.model), inst);
+                return waitForBoundaryPatchDispatch(inst).then(function () { return emptySelection; });
+            }
+
+            if (range.end > range.start) {
+                var removeResult = applyCommand(inst.id, OPERATION_TYPES.DeleteRange, {
+                    range: {
+                        blockId: range.blockId,
+                        start: range.start,
+                        end: range.end,
+                        region: range.region,
+                        headerFooterId: range.headerFooterId,
+                        tableId: range.tableId,
+                        cellId: range.cellId
+                    },
+                    source: 'autocomplete',
+                    transactionType: TRANSACTION_TYPES.Default,
+                    beforeSelection: inst.selection || firstModelSelection(inst.model)
+                });
+                if (!removeResult || removeResult.ok === false) {
+                    var failedSelection = boundarySelectionSnapshot(inst.selection || firstModelSelection(inst.model), inst);
+                    return waitForBoundaryPatchDispatch(inst).then(function () { return failedSelection; });
+                }
+            }
+
+            closeRuntimeAutocomplete(inst, false);
+            var selection = boundarySelectionSnapshot(inst.selection || firstModelSelection(inst.model), inst);
+            return waitForBoundaryPatchDispatch(inst).then(function () { return selection; });
+        }
+
+        var body = payload || {};
+        var text = _asText(_read(body, 'Text', 'text', ''));
+        if (!text) return false;
+        var selection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        var block = _findBlock(inst.model, selection.blockId);
+        if (!_isEditableTextBlock(block)) return false;
+        var offset = Math.max(0, Math.min(_blockText(block).length, Number(selection.offset || 0) || 0));
+        var insertResult = applyCommand(inst.id, OPERATION_TYPES.InsertText, {
+            target: {
+                blockId: selection.blockId,
+                offset: offset,
+                region: selection.region || 'Body',
+                headerFooterId: selection.headerFooterId || null,
+                tableId: selection.activeTableId || selection.tableId || null,
+                cellId: selection.activeTableCellId || selection.cellId || null,
+                affinity: selection.affinity || 'after'
+            },
+            text: text,
+            source: 'autocomplete',
+            transactionType: TRANSACTION_TYPES.Default,
+            beforeSelection: selection
+        });
+        if (insertResult && insertResult.ok !== false) {
+            closeRuntimeAutocomplete(inst, false);
+            return true;
+        }
+
+        return false;
+    }
+
+    function firstEditableTextBlockInBlocks(blocks) {
+        var list = _asArray(blocks);
+        for (var index = 0; index < list.length; index++) {
+            var block = list[index];
+            if (_isEditableTextBlock(block)) return block;
+            if (block && block.type === 'table') {
+                var nested = null;
+                _asArray(block.content && block.content.rows).some(function (row) {
+                    return _asArray(row && row.cells).some(function (cell) {
+                        nested = firstEditableTextBlockInBlocks(cell && cell.blocks);
+                        return !!nested;
+                    });
+                });
+                if (nested) return nested;
+            }
+        }
+        return null;
+    }
+
+    function createPageBreakBlock(path) {
+        var stamp = Date.now() + '-' + Math.floor(Math.random() * 100000);
+        return importBlock({
+            Id: _stableId('page-break', (path || 'body') + '-' + stamp),
+            Type: 6,
+            Content: { $type: 'pageBreak', RuntimeInteractive: true, runtimeInteractive: true }
+        }, (path || 'body') + '-page-break-' + stamp);
+    }
+
+    function selectionForPageBreakCommand(inst, payload) {
+        var body = payload || {};
+        var explicitSelection = _read(body, 'Selection', 'selection', null);
+        var snapshot = createSelectionSnapshot(explicitSelection || inst.selection || firstModelSelection(inst.model));
+        if (snapshot.isObjectSelection === true || snapshot.selectionMode === 'Object') {
+            snapshot = restoreTextSelectionFromObjectSelection(snapshot);
+        }
+        var block = snapshot.blockId ? _findBlock(inst.model, snapshot.blockId) : null;
+        if (!block) {
+            block = _firstTextBlock(inst.model);
+            snapshot = createSelectionSnapshot(block ? { region: 'Body', blockId: block.id, offset: _blockText(block).length, isCollapsed: true } : firstModelSelection(inst.model));
+        }
+        return createSelectionPostFixer(inst.schema).fix(inst.model, snapshot);
+    }
+
+    function applyRuntimePageBreakCommand(inst, commandName, payload) {
+        var compact = compactCommandName(commandName);
+        if (compact !== 'insertpagebreak' && compact !== 'deletepagebreak') return null;
+        if (!inst || !inst.model) return { ok: false, error: { code: 'editor-unavailable' } };
+        if (compact === 'deletepagebreak') {
+            return deleteSelectedPageBreak(inst, 'command');
+        }
+
+        var beforeModel = _clone(inst.model);
+        var beforeSelection = selectionForPageBreakCommand(inst, payload);
+        var nextModel = _clone(inst.model);
+        if (!nextModel.body) nextModel.body = { type: 'body', blocks: [] };
+        if (!Array.isArray(nextModel.body.blocks)) nextModel.body.blocks = [];
+
+        var container = beforeSelection.blockId ? _findBlockContainer(nextModel, beforeSelection.blockId) : null;
+        var targetBlocks = container && Array.isArray(container.blocks) ? container.blocks : nextModel.body.blocks;
+        var insertIndex = container ? Math.max(0, Number(container.index || 0) + 1) : targetBlocks.length;
+        var breakBlock = createPageBreakBlock(beforeSelection.blockId || 'body');
+        var afterBlock = targetBlocks[insertIndex] || null;
+        var trailingParagraph = null;
+        var insertItems = [breakBlock];
+        if (!_isEditableTextBlock(afterBlock)) {
+            trailingParagraph = createEmptyParagraphBlock(_stableId('paragraph', breakBlock.id + '-after'), breakBlock.id + '-after');
+            insertItems.push(trailingParagraph);
+        }
+        targetBlocks.splice.apply(targetBlocks, [insertIndex, 0].concat(insertItems));
+        buildIndexes(nextModel);
+
+        var selectionBlock = trailingParagraph || firstEditableTextBlockInBlocks(targetBlocks.slice(insertIndex + 1)) || _firstTextBlock(nextModel);
+        var afterSelection = createSelectionPostFixer(inst.schema).fix(nextModel, {
+            region: beforeSelection.region || 'Body',
+            blockId: selectionBlock && selectionBlock.id || '',
+            offset: 0,
+            isCollapsed: true,
+            headerFooterId: beforeSelection.headerFooterId || null,
+            tableId: beforeSelection.activeTableId || beforeSelection.tableId || null,
+            cellId: beforeSelection.activeTableCellId || beforeSelection.cellId || null
+        });
+        inst.selectedPageBreakId = '';
+        return applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
+            snapshot: nextModel,
+            previousSnapshot: beforeModel,
+            selection: afterSelection,
+            previousSelection: beforeSelection,
+            affectedScopeIds: _unique(['document', beforeSelection.blockId, breakBlock.id, selectionBlock && selectionBlock.id].filter(Boolean)),
+            source: 'insert-page-break',
+            transactionType: TRANSACTION_TYPES.Default,
+            beforeSelection: beforeSelection,
+            label: 'Insert page break'
+        });
+    }
+
+    function applyRuntimeViewCommand(inst, commandName, payload) {
+        var compact = compactCommandName(commandName);
+        if (compact !== 'togglenonprintingcharacters'
+            && compact !== 'setshownonprintingcharacters'
+            && compact !== 'shownonprintingcharacters') {
+            return null;
+        }
+        if (!inst) return { ok: false, error: { code: 'editor-unavailable' } };
+        var body = payload || {};
+        var explicitShow = _read(body, 'Show', 'show', _read(body, 'Value', 'value', null));
+        var next = compact === 'togglenonprintingcharacters'
+            ? inst.showNonPrintingCharacters !== true
+            : explicitShow === true || String(explicitShow).toLowerCase() === 'true';
+        inst.showNonPrintingCharacters = next;
+        _setHostClass(inst, 'tm-wysiwyg--show-nonprinting', next);
+        render(inst);
+        _setHostClass(inst, 'tm-wysiwyg--show-nonprinting', next);
+        inst.commands.push({ command: commandName || 'toggleNonPrintingCharacters', payload: { show: next }, at: Date.now(), nonEditing: true });
+        return { ok: true, instanceId: inst.id, command: commandName || 'toggleNonPrintingCharacters', show: next };
+    }
+
     function applyCommand(instanceId, command, payload) {
         var lookup = _get(instanceId, 'applyCommand');
         if (lookup.error) return lookup.error;
@@ -18421,19 +21792,36 @@ window.tmDocumentEditorEngine = (function () {
         var normalizedCommandName = normalizeCommandId(commandName);
         if (commandName === 'undo') {
             recordTimeline(lookup.inst, 'input-event', { command: 'undo' });
+            flushTypingBoundaryPatchDispatch(lookup.inst);
+            flushDeferredBoundaryPatchDispatch(lookup.inst);
             var undoResult = applyHistoryCommand(lookup.inst, true);
             if (undoResult.ok) undoResult.boundaryPatch = commitBoundaryPatch(lookup.inst, undoResult.transaction, undoResult.appliedOperations, undoResult, 'undo');
             return undoResult;
         }
         if (commandName === 'redo') {
             recordTimeline(lookup.inst, 'input-event', { command: 'redo' });
+            flushTypingBoundaryPatchDispatch(lookup.inst);
+            flushDeferredBoundaryPatchDispatch(lookup.inst);
             var redoResult = applyHistoryCommand(lookup.inst, false);
             if (redoResult.ok) redoResult.boundaryPatch = commitBoundaryPatch(lookup.inst, redoResult.transaction, redoResult.appliedOperations, redoResult, 'redo');
             return redoResult;
         }
+        var runtimeViewResult = applyRuntimeViewCommand(lookup.inst, commandName, body);
+        if (runtimeViewResult !== null) return runtimeViewResult;
+        var runtimeAutocompleteResult = applyRuntimeAutocompleteCommand(lookup.inst, commandName, body);
+        if (runtimeAutocompleteResult !== null) return runtimeAutocompleteResult;
+        var runtimePageBreakResult = applyRuntimePageBreakCommand(lookup.inst, commandName, body);
+        if (runtimePageBreakResult !== null) return runtimePageBreakResult;
         var operation = body.operation || body.Operation || null;
-        if (!operation && (inlineCommandTypes().indexOf(normalizedCommandName) >= 0 || paragraphCommandTypes().indexOf(normalizedCommandName) >= 0 || normalizedCommandName === 'clearFormatting')) {
+        if (!operation && (inlineCommandTypes().indexOf(normalizedCommandName) >= 0
+            || paragraphCommandTypes().indexOf(normalizedCommandName) >= 0
+            || tableCommandTypes().indexOf(normalizedCommandName) >= 0
+            || normalizedCommandName === 'clearFormatting')) {
             return applyRuntimeFormattingCommand(lookup.inst, normalizedCommandName, body, commandName);
+        }
+        if (!operation) {
+            var runtimeFindReplaceResult = applyRuntimeFindReplaceCommand(lookup.inst, commandName, body);
+            if (runtimeFindReplaceResult) return runtimeFindReplaceResult;
         }
         if (!operation) {
             var runtimeImageResult = applyRuntimeImageCommand(lookup.inst, commandName, body);
@@ -18506,7 +21894,7 @@ window.tmDocumentEditorEngine = (function () {
         }
         recordTimeline(lookup.inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: transaction.operations.length });
         lookup.inst.pendingDomSelectionRestore = _clone(lookup.inst.selection);
-        var livePatched = applyLiveTypingDomPatch(lookup.inst, operation, committed);
+        var livePatched = applyLiveDomPatchForOperation(lookup.inst, operation, committed);
         if (livePatched) {
             lookup.inst.pendingDomSelectionRestore = null;
         } else {
@@ -18523,10 +21911,30 @@ window.tmDocumentEditorEngine = (function () {
         clearLiveTypingRevision(inst);
         var beforeModelSnapshot = _clone(inst.model);
         var explicitSelection = body.selection || body.Selection || null;
+        var isTableCommand = tableCommandTypes().indexOf(commandName) >= 0 && commandName !== 'insertTable';
         var beforeSelection = createSelectionSnapshot(explicitSelection || inst.selection || firstModelSelection(inst.model));
+        if (!explicitSelection && typeof window !== 'undefined' && typeof window.getSelection === 'function') {
+            var domSelection = window.getSelection();
+            if (selectionBelongsToEditor(inst, domSelection)) {
+                beforeSelection = createSelectionPostFixer(inst.schema).fix(inst.model, readDomSelectionSnapshot(inst));
+                inst.selection = beforeSelection;
+            }
+        }
         if (explicitSelection) {
             inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, beforeSelection);
             beforeSelection = createSelectionSnapshot(inst.selection);
+        }
+        if (!explicitSelection && isTableCommand) {
+            var tableCommandSelection = readRecentTableCommandSelection(inst) || getToolbarCommandSelection(inst);
+            if (hasTableCellSelection(tableCommandSelection)) {
+                beforeSelection = createSelectionPostFixer(inst.schema).fix(inst.model, tableCommandSelection);
+                inst.selection = beforeSelection;
+            }
+        }
+        if (isTableCommand) {
+            if (syncLiveTableDomPropertiesForSelection(inst, beforeSelection, body)) {
+                beforeModelSnapshot = _clone(inst.model);
+            }
         }
         var dispatcher = createCommandDispatcher(inst.model, {
             selection: beforeSelection,
@@ -18547,6 +21955,14 @@ window.tmDocumentEditorEngine = (function () {
         inst.selection = createSelectionPostFixer(inst.schema).fix(
             inst.model,
             result.transaction && result.transaction.afterSelection || beforeSelection);
+        if (isTableCommand) {
+            if (hasTableCellSelection(inst.selection)) {
+                rememberTableCommandSelection(inst, inst.selection, 'table-command-result-' + commandName);
+            } else {
+                inst.lastTableCommandSelection = null;
+                inst.preserveTableSelectionUntil = 0;
+            }
+        }
         markSelectionChanged(inst, 'applyFormattingCommand');
         scheduleFormattingStatePublish(inst, 'formatting-command', { immediate: true });
         invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
@@ -18596,7 +22012,7 @@ window.tmDocumentEditorEngine = (function () {
             notifyUndoState(inst);
             inst.layout.invalidatedScopeIds = transaction.invalidatedScopes.slice();
             inst.pendingDomSelectionRestore = _clone(inst.selection);
-            var livePatched = operations.length === 1 && applyLiveTypingDomPatch(inst, operations[0], { operations: operations });
+            var livePatched = operations.length === 1 && applyLiveDomPatchForOperation(inst, operations[0], { operations: operations });
             if (livePatched) {
                 inst.pendingDomSelectionRestore = null;
                 if (operations.some(isFormattingVisualOperation)) {
@@ -18614,6 +22030,9 @@ window.tmDocumentEditorEngine = (function () {
                 });
             }
             var boundaryPatch = commitBoundaryPatch(inst, transaction, operations, { operations: operations }, commandName);
+            if (tableCommandTypes().indexOf(commandName) >= 0) {
+                scheduleCollapsedDomSelectionRestore(inst, inst.selection, 'table-command');
+            }
             recordOperationPerformance(inst, operations, Math.max(0, strictPerformanceNow() - operationStart), transaction.invalidatedScopes, commandName);
             return Object.assign({ instanceId: inst.id, boundaryPatch: boundaryPatch, operationCount: operations.length, liveDomPatch: livePatched === true }, result);
         }
@@ -18706,22 +22125,10 @@ window.tmDocumentEditorEngine = (function () {
         recordTimeline(inst, 'normalized-operation', { operationTypes: orderedOperations.map(function (operation) { return operation.type || operation.Type || ''; }) });
         recordTimeline(inst, 'transaction-commit', { transactionId: transaction.id, transactionType: transaction.type, operationCount: orderedOperations.length });
         inst.pendingDomSelectionRestore = _clone(inst.selection);
-        var livePatched = orderedOperations.length > 0
-            && orderedOperations.every(function (operation) {
-                var type = operation.type || operation.Type || '';
-                return [
-                    OPERATION_TYPES.InsertText,
-                    OPERATION_TYPES.DeleteRange,
-                    OPERATION_TYPES.SplitParagraph,
-                    OPERATION_TYPES.MergeParagraph,
-                    OPERATION_TYPES.ApplyMark,
-                    OPERATION_TYPES.RemoveMark,
-                    OPERATION_TYPES.SetParagraphAttribute
-                ].indexOf(type) >= 0;
-            });
+        var livePatched = orderedOperations.length > 0;
         if (livePatched) {
             for (var patchIndex = 0; patchIndex < orderedOperations.length; patchIndex++) {
-                if (!applyLiveTypingDomPatch(inst, orderedOperations[patchIndex], { operations: orderedOperations })) {
+                if (!applyLiveDomPatchForOperation(inst, orderedOperations[patchIndex], { operations: orderedOperations })) {
                     livePatched = false;
                     break;
                 }
@@ -18753,11 +22160,25 @@ window.tmDocumentEditorEngine = (function () {
         };
     }
 
+    function normalizeObjectSelectionRuntimeSelection(selection) {
+        var snapshot = createSelectionSnapshot(selection || {});
+        if (!isObjectSelectionSnapshot(snapshot)) return snapshot;
+        var objectSelection = snapshot.objectSelection || {};
+        var objectId = _asText(snapshot.activeObjectId || snapshot.objectId || objectSelection.objectId || '');
+        return createSelectionSnapshot(Object.assign({}, snapshot, {
+            region: 'Image',
+            activeImageBlockId: snapshot.activeImageBlockId || objectSelection.blockId || objectSelection.anchorBlockId || snapshot.blockId || objectId || null,
+            activeObjectId: objectId || snapshot.activeObjectId || snapshot.objectId || null,
+            hitTargetKind: 'image'
+        }));
+    }
+
     function getSelectionSnapshot(instanceId) {
         var lookup = _get(instanceId, 'getSelectionSnapshot');
         if (lookup.error) return lookup.error;
         var domSelection = window.getSelection && window.getSelection();
-        if (!isObjectSelectionSnapshot(lookup.inst.selection || {}) && selectionBelongsToEditor(lookup.inst, domSelection)) {
+        var suppressLayoutDomSelectionRead = Date.now() < (Number(lookup.inst.suppressLayoutTextSelectionChangeUntil || 0) || 0);
+        if (!suppressLayoutDomSelectionRead && !isObjectSelectionSnapshot(lookup.inst.selection || {}) && selectionBelongsToEditor(lookup.inst, domSelection)) {
             var domSnapshot = createSelectionPostFixer(lookup.inst.schema).fix(lookup.inst.model, readDomSelectionSnapshot(lookup.inst));
             if (domSnapshot && domSnapshot.blockId) {
                 lookup.inst.selection = domSnapshot;
@@ -18768,6 +22189,7 @@ window.tmDocumentEditorEngine = (function () {
         if (toolbarSelection && selection.isCollapsed !== false) {
             selection = toolbarSelection;
         }
+        selection = normalizeObjectSelectionRuntimeSelection(selection);
         var snapshot = rememberSelectionToken(lookup.inst, selection, 'getSelectionSnapshot') || withStableSelectionToken(instanceId, selection, lookup.inst.model);
         return _sortObject(Object.assign({ ok: true, instanceId: instanceId }, snapshot));
     }
@@ -19012,7 +22434,10 @@ window.tmDocumentEditorEngine = (function () {
         var mapperDump = createModelLayoutDomMapper(lookup.inst.root, lookup.inst.model, lookup.inst.layout).debugDump();
         var diagnostics = ensureDiagnostics(lookup.inst);
         var stats = ensureStrictPerformanceStats(lookup.inst);
-        var currentSelection = rememberSelectionToken(lookup.inst, lookup.inst.selection || firstModelSelection(lookup.inst.model), 'getDebugSnapshot');
+        var currentSelection = rememberSelectionToken(
+            lookup.inst,
+            normalizeObjectSelectionRuntimeSelection(lookup.inst.selection || firstModelSelection(lookup.inst.model)),
+            'getDebugSnapshot');
         var activeRegion = updateActiveRegionMetric(lookup.inst, activeRegionForInstance(lookup.inst));
         return _sortObject({
             ok: true,
@@ -19064,6 +22489,14 @@ window.tmDocumentEditorEngine = (function () {
             lastSelectionTokenReason: lookup.inst.lastSelectionTokenReason || '',
             commandSelectionTokenDiagnostic: _clone(lookup.inst.lastCommandTokenDiagnostic || null),
             CommandSelectionTokenDiagnostic: _clone(lookup.inst.lastCommandTokenDiagnostic || null),
+            layoutPointerTextSelectionDiagnostic: _clone(lookup.inst.lastLayoutPointerTextSelectionDiagnostic || null),
+            LayoutPointerTextSelectionDiagnostic: _clone(lookup.inst.lastLayoutPointerTextSelectionDiagnostic || null),
+            lastAppliedLayoutPointerTextSelectionDiagnostic: _clone(lookup.inst.lastAppliedLayoutPointerTextSelectionDiagnostic || null),
+            LastAppliedLayoutPointerTextSelectionDiagnostic: _clone(lookup.inst.lastAppliedLayoutPointerTextSelectionDiagnostic || null),
+            layoutPointerTextSelectionDiagnosticHistory: _clone(lookup.inst.layoutPointerTextSelectionDiagnosticHistory || []),
+            LayoutPointerTextSelectionDiagnosticHistory: _clone(lookup.inst.layoutPointerTextSelectionDiagnosticHistory || []),
+            textExclusionLayoutRefreshForTest: _clone(lookup.inst.lastTextExclusionLayoutRefreshForTest || null),
+            TextExclusionLayoutRefreshForTest: _clone(lookup.inst.lastTextExclusionLayoutRefreshForTest || null),
             lastObjectPointerInteraction: _clone(lookup.inst.lastObjectPointerInteraction || null),
             imageMoveTrack: serializeImageMoveTrack(lookup.inst.imageMoveTrack || null),
             imageResizeTrack: serializeImageMoveTrack(lookup.inst.imageResizeTrack || null),
@@ -19161,6 +22594,46 @@ window.tmDocumentEditorEngine = (function () {
         return null;
     }
 
+    function findImageBlockByAsset(model, assetId, objectId) {
+        var wantedAssetId = _asText(assetId || '');
+        var wantedObjectId = _asText(objectId || '');
+        var found = null;
+        function scan(blocks) {
+            for (var i = 0; i < _asArray(blocks).length; i++) {
+                var block = blocks[i];
+                if (!block) continue;
+                if (block.type === 'image') {
+                    var object = normalizeImageObject(block, { blockId: block.id || '' });
+                    var blockAssetId = _asText(object.assetId || block.content && (block.content.assetId || block.content.AssetId) || '');
+                    var blockObjectId = _asText(object.objectId || block.content && (block.content.objectId || block.content.ObjectId) || block.id || '');
+                    if ((wantedObjectId && blockObjectId === wantedObjectId)
+                        || (wantedAssetId && blockAssetId === wantedAssetId)) {
+                        found = { block: block, object: object, objectId: blockObjectId };
+                        return true;
+                    }
+                }
+                if (block.type === 'table') {
+                    var rows = _asArray(block.content && block.content.rows);
+                    for (var r = 0; r < rows.length; r++) {
+                        var cells = _asArray(rows[r] && rows[r].cells);
+                        for (var c = 0; c < cells.length; c++) {
+                            if (scan(cells[c] && cells[c].blocks)) return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        scan(model && model.body && model.body.blocks);
+        if (!found) {
+            _asArray(model && model.headers).some(function (region) { return scan(region && region.blocks); });
+        }
+        if (!found) {
+            _asArray(model && model.footers).some(function (region) { return scan(region && region.blocks); });
+        }
+        return found;
+    }
+
     function updateProviderImageUrl(instanceId, update) {
         var lookup = _get(instanceId, 'updateProviderImageUrl');
         if (lookup.error) return lookup.error;
@@ -19169,7 +22642,28 @@ window.tmDocumentEditorEngine = (function () {
             lookup.inst.model,
             body.assetId || body.AssetId || '',
             body.objectId || body.ObjectId || '');
-        if (!drawing) return { ok: false, instanceId: instanceId, error: { code: 'missing-drawing-image-asset' } };
+        if (!drawing) {
+            var imageBlock = findImageBlockByAsset(
+                lookup.inst.model,
+                body.assetId || body.AssetId || '',
+                body.objectId || body.ObjectId || '');
+            if (!imageBlock || !imageBlock.block) {
+                return { ok: false, instanceId: instanceId, error: { code: 'missing-drawing-image-asset' } };
+            }
+            var imageContent = imageBlock.block.content || (imageBlock.block.content = {});
+            imageContent.url = body.url || body.Url || body.resolvedUrl || body.ResolvedUrl || imageContent.url || null;
+            imageContent.resolvedUrl = imageContent.url;
+            imageContent.Url = imageContent.url;
+            if (body.assetId || body.AssetId) {
+                imageContent.assetId = body.assetId || body.AssetId;
+                imageContent.AssetId = imageContent.assetId;
+            }
+            buildIndexes(lookup.inst.model);
+            lookup.inst.layout.invalidatedScopeIds = [imageBlock.block.id];
+            lookup.inst.lastCSharpUpdate = { type: 'providerImageUrl', blockId: imageBlock.block.id, objectId: imageBlock.objectId, at: Date.now() };
+            render(lookup.inst);
+            return _sortObject({ ok: true, instanceId: instanceId, blockId: imageBlock.block.id, objectId: imageBlock.objectId, url: imageContent.url, dirtyState: _clone(lookup.inst.dirtyState || createInitialDirtyState()) });
+        }
         drawing.run.url = body.url || body.Url || body.resolvedUrl || body.ResolvedUrl || drawing.run.url || null;
         drawing.run.resolvedUrl = drawing.run.url;
         drawing.run.Url = drawing.run.url;
@@ -19347,7 +22841,10 @@ window.tmDocumentEditorEngine = (function () {
         if (lookup.error) return {};
         var computed = computeFormattingState(lookup.inst.model, lookup.inst.selection, lookup.inst.pendingTypingMarks || [], lookup.inst);
         var state = toBlazorFormattingState(computed);
-        var selection = rememberSelectionToken(lookup.inst, computed.selection || lookup.inst.selection || firstModelSelection(lookup.inst.model), 'getFormattingState');
+        var selection = rememberSelectionToken(
+            lookup.inst,
+            normalizeObjectSelectionRuntimeSelection(computed.selection || lookup.inst.selection || firstModelSelection(lookup.inst.model)),
+            'getFormattingState');
         state.CurrentSelection = selection;
         state.currentSelection = selection;
         state.Selection = selection;
@@ -19464,6 +22961,9 @@ window.tmDocumentEditorEngine = (function () {
             transactionId: transaction && transaction.id || command && command.transactionId || '',
             transaction: _clone(transaction || null),
             commandName: transaction && (transaction.commandName || transaction.CommandName) || command && command.command || '',
+            description: transaction && (transaction.description || transaction.Description || transaction.commandName || transaction.CommandName || transaction.label || transaction.Label)
+                || command && command.command
+                || '',
             beforeSelection: _clone(transaction && transaction.beforeSelection || null),
             afterSelection: _clone(transaction && transaction.afterSelection || null),
             beforeDocFingerprint: transaction && (transaction.beforeDocFingerprint || transaction.BeforeDocFingerprint) || '',
@@ -19473,12 +22973,12 @@ window.tmDocumentEditorEngine = (function () {
         });
     }
 
-    function getPageMetrics(instanceId) {
-        var lookup = _get(instanceId, 'getPageMetrics');
-        if (lookup.error) return lookup.error;
-        var pages = _asArray(lookup.inst.layout && lookup.inst.layout.pages).map(function (page, index) {
+    function buildPageMetricsPayload(inst) {
+        var pages = _asArray(inst && inst.layout && inst.layout.pages).map(function (page, index) {
+            var pageIndex = Number(page.pageIndex ?? page.PageIndex ?? index) || 0;
             return _sortObject({
                 PageNumber: page.pageNumber || page.PageNumber || index + 1,
+                PageIndex: pageIndex,
                 Index: index,
                 BlockIds: _asArray(page.blockIds || page.BlockIds),
                 IsVirtual: page.isVirtual === true || page.IsVirtual === true,
@@ -19488,14 +22988,136 @@ window.tmDocumentEditorEngine = (function () {
         });
         return _sortObject({
             ok: true,
-            instanceId: instanceId,
+            instanceId: inst && inst.id || '',
             TotalPages: pages.length,
             RenderedPages: pages.filter(function (page) { return page.IsVirtual !== true; }).length,
             VirtualizedPages: pages.filter(function (page) { return page.IsVirtual === true; }).length,
-            VirtualizationEnabled: lookup.inst.layout && lookup.inst.layout.virtualizationEnabled === true,
-            ActivePageIndex: Number(lookup.inst.layout && lookup.inst.layout.activePageIndex || 0) || 0,
+            VirtualizationEnabled: inst && inst.layout && inst.layout.virtualizationEnabled === true,
+            ActivePageIndex: Number(inst && inst.layout ? (inst.layout.activePageIndex ?? inst.activePageIndex ?? 0) : (inst ? (inst.activePageIndex ?? 0) : 0)) || 0,
             Pages: pages
         });
+    }
+
+    function notifyPageMetricsChanged(inst) {
+        if (!inst) return;
+        var payload = buildPageMetricsPayload(inst);
+        var signature = JSON.stringify({
+            TotalPages: payload.TotalPages,
+            RenderedPages: payload.RenderedPages,
+            VirtualizedPages: payload.VirtualizedPages,
+            ActivePageIndex: payload.ActivePageIndex,
+            Pages: payload.Pages
+        });
+        if (inst.lastPageMetricsSignature === signature) return;
+        inst.lastPageMetricsSignature = signature;
+        invokeBoundaryMethod(inst, 'HandlePageMetricsChanged', payload, 'page-metrics-changed-failed');
+    }
+
+    function syncOutlineActiveHeadingDom(inst, blockId) {
+        var host = inst && inst.root && inst.root.closest ? inst.root.closest('.tm-document-editor') : null;
+        if (!host || !host.querySelectorAll) return;
+        var active = _asText(blockId || '');
+        Array.from(host.querySelectorAll('[data-testid="document-outline-item"][data-block-id]')).forEach(function (item) {
+            var selected = !!active && item.getAttribute('data-block-id') === active;
+            item.setAttribute('data-active', selected ? 'true' : 'false');
+            var link = item.querySelector && item.querySelector('.tm-document-outline-panel__link');
+            if (link && link.classList) {
+                link.classList.toggle('tm-document-outline-panel__link--active', selected);
+                if (selected) link.setAttribute('aria-current', 'location');
+                else link.removeAttribute('aria-current');
+            }
+        });
+        Array.from(host.querySelectorAll('[data-testid="document-outline-minimap-marker"][data-block-id]')).forEach(function (item) {
+            var selected = !!active && item.getAttribute('data-block-id') === active;
+            item.classList.toggle('tm-document-outline-panel__minimap-marker--active', selected);
+            if (selected) item.setAttribute('aria-current', 'location');
+            else item.removeAttribute('aria-current');
+        });
+    }
+
+    function getPageMetrics(instanceId) {
+        var lookup = _get(instanceId, 'getPageMetrics');
+        if (lookup.error) return lookup.error;
+        return buildPageMetricsPayload(lookup.inst);
+    }
+
+    function updateActivePageAndHeadingFromViewport(inst, source) {
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return;
+        var rootRect = inst.root.getBoundingClientRect ? inst.root.getBoundingClientRect() : { top: 0, height: 0 };
+        var viewportHeight = typeof window !== 'undefined' ? (window.innerHeight || 900) : 900;
+        var rootCanScroll = inst.root.scrollHeight > inst.root.clientHeight + 2;
+        var documentScroller = typeof document !== 'undefined'
+            ? (document.scrollingElement || document.documentElement || document.body)
+            : null;
+        var rootAtScrollEnd = rootCanScroll
+            && inst.root.scrollHeight - inst.root.clientHeight - inst.root.scrollTop <= 4;
+        var documentAtScrollEnd = !rootCanScroll
+            && documentScroller
+            && documentScroller.scrollHeight - documentScroller.clientHeight - documentScroller.scrollTop <= 4;
+        var atScrollEnd = rootAtScrollEnd || documentAtScrollEnd;
+        var viewportTop = rootCanScroll ? rootRect.top : 0;
+        var viewportBottom = rootCanScroll
+            ? rootRect.top + (rootRect.height || viewportHeight)
+            : viewportHeight;
+        var threshold = rootCanScroll
+            ? rootRect.top + Math.min(Math.max((rootRect.height || viewportHeight) * 0.2, 96), 240)
+            : Math.min(Math.max(viewportHeight * 0.2, 96), 240);
+        var pages = Array.from(inst.root.querySelectorAll('.tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)[data-page-index]'));
+        var activePageIndex = Number(inst.activePageIndex || 0) || 0;
+        var firstVisiblePageIndex = null;
+        pages.forEach(function (page) {
+            if (!page || !page.getBoundingClientRect) return;
+            var rect = page.getBoundingClientRect();
+            var pageIndex = Number(page.getAttribute('data-page-index') || 0) || 0;
+            if (firstVisiblePageIndex === null && rect.bottom >= threshold) firstVisiblePageIndex = pageIndex;
+            if (rect.top <= threshold + 4) activePageIndex = pageIndex;
+        });
+        if (firstVisiblePageIndex !== null && activePageIndex === null) activePageIndex = firstVisiblePageIndex;
+        activePageIndex = Math.max(0, Math.min(activePageIndex, Math.max(0, _asArray(inst.layout && inst.layout.pages).length - 1)));
+
+        var pageChanged = activePageIndex !== (Number(inst.activePageIndex || 0) || 0);
+        if (pageChanged) {
+            inst.activePageIndex = activePageIndex;
+            if (inst.layout) inst.layout.activePageIndex = activePageIndex;
+            recordTimeline(inst, 'active-page-changed', { pageIndex: activePageIndex, source: source || '' });
+        }
+
+        var headingRects = Array.from(inst.root.querySelectorAll('.tm-wysiwyg-heading[data-block-id], h1.tm-wysiwyg-block[data-block-id], h2.tm-wysiwyg-block[data-block-id], h3.tm-wysiwyg-block[data-block-id], h4.tm-wysiwyg-block[data-block-id], h5.tm-wysiwyg-block[data-block-id], h6.tm-wysiwyg-block[data-block-id]'))
+            .map(function (heading) {
+                var rect = heading && heading.getBoundingClientRect ? heading.getBoundingClientRect() : null;
+                if (!rect) return null;
+                return {
+                    id: heading.getAttribute('data-block-id') || '',
+                    top: rect.top,
+                    bottom: rect.bottom
+                };
+            })
+            .filter(function (rect) { return rect && rect.id; })
+            .sort(function (a, b) { return a.top - b.top; });
+        var activeHeading = findActiveHeadingBlockIdFromRects(headingRects, threshold);
+        if (atScrollEnd && headingRects.length) {
+            var visibleEndHeadings = headingRects.filter(function (rect) {
+                return rect.bottom >= viewportTop && rect.top <= viewportBottom;
+            });
+            if (visibleEndHeadings.length) {
+                activeHeading = visibleEndHeadings[visibleEndHeadings.length - 1].id || activeHeading;
+            }
+        }
+        if (!activeHeading && headingRects.length) {
+            var nextHeading = headingRects.find(function (rect) { return rect.bottom >= threshold; }) || headingRects[0];
+            activeHeading = nextHeading && nextHeading.id || '';
+        }
+        if (_asText(activeHeading || '') !== _asText(inst.activeHeadingBlockId || '')) {
+            inst.activeHeadingBlockId = activeHeading || '';
+            syncOutlineActiveHeadingDom(inst, activeHeading || '');
+            invokeBoundaryMethod(inst, 'HandleActiveHeadingChanged', activeHeading || null, 'active-heading-changed-failed');
+            recordTimeline(inst, 'active-heading-changed', { blockId: activeHeading || '', source: source || '' });
+        } else if (activeHeading) {
+            syncOutlineActiveHeadingDom(inst, activeHeading);
+        }
+        if (pageChanged) {
+            notifyPageMetricsChanged(inst);
+        }
     }
 
     function getDebugMetrics(instanceId) {
@@ -19638,24 +23260,48 @@ window.tmDocumentEditorEngine = (function () {
         }
     }
 
+    function _setHostClass(inst, className, enabled) {
+        _setRootClass(inst && inst.root, className, enabled);
+        var host = inst && inst.root && inst.root.closest ? inst.root.closest('[data-testid="document-wysiwyg-host"]') : null;
+        if (host && host !== inst.root) _setRootClass(host, className, enabled);
+    }
+
     function setShowBlocks(instanceId, show) {
         var lookup = _get(instanceId, 'setShowBlocks');
         if (lookup.error) return lookup.error;
-        _setRootClass(lookup.inst.root, 'tm-wysiwyg--show-blocks', show === true);
+        _setHostClass(lookup.inst, 'tm-wysiwyg--show-blocks', show === true);
         return { ok: true, instanceId: instanceId, show: show === true };
     }
 
     function setShowNonPrintingCharacters(instanceId, show) {
         var lookup = _get(instanceId, 'setShowNonPrintingCharacters');
         if (lookup.error) return lookup.error;
-        _setRootClass(lookup.inst.root, 'tm-wysiwyg--show-nonprinting', show === true);
+        lookup.inst.showNonPrintingCharacters = show === true;
+        _setHostClass(lookup.inst, 'tm-wysiwyg--show-nonprinting', show === true);
+        render(lookup.inst);
+        _setHostClass(lookup.inst, 'tm-wysiwyg--show-nonprinting', show === true);
         return { ok: true, instanceId: instanceId, show: show === true };
     }
 
     function setProtectionMode(instanceId, isProtected, markers) {
         var lookup = _get(instanceId, 'setProtectionMode');
         if (lookup.error) return lookup.error;
-        lookup.inst.protectionMarkers = _clone(markers || []);
+        lookup.inst.protectionMarkers = _asArray(markers).map(function (marker, index) {
+            var item = _clone(marker || {});
+            var range = item.range || item.Range || {
+                startBlockId: item.startBlockId || item.StartBlockId || item.blockId || item.BlockId || '',
+                endBlockId: item.endBlockId || item.EndBlockId || item.blockId || item.BlockId || '',
+                startOffset: Number(item.startOffset ?? item.StartOffset ?? 0) || 0,
+                endOffset: Number(item.endOffset ?? item.EndOffset ?? item.startOffset ?? item.StartOffset ?? 0) || 0
+            };
+            item.id = item.id || item.Id || ('restricted-region-' + index);
+            item.targetId = item.targetId || item.TargetId || item.id;
+            item.type = item.type || item.Type || 'restrictedRegion';
+            item.range = range;
+            item.source = item.source || item.Source || 'protection';
+            item.affectsData = false;
+            return _sortObject(item);
+        });
         lookup.inst._protectedMarkers = lookup.inst.protectionMarkers;
         lookup.inst._isProtected = isProtected === true;
         _setRootClass(lookup.inst.root, 'tm-wysiwyg--protected', isProtected === true);
@@ -19683,12 +23329,15 @@ window.tmDocumentEditorEngine = (function () {
             var start = Math.max(0, offset);
             var end = Math.max(start, start + Math.max(0, length));
             if (!blockId || end <= start) return null;
+            var active = objectSource ? source.active === true || source.Active === true : index === 0;
             return {
                 id: id,
                 targetId: id,
-                type: 'search',
+                type: active ? 'searchActive' : 'search',
                 blockId: blockId,
-                active: objectSource ? source.active === true || source.Active === true : false,
+                active: active,
+                source: 'transient',
+                affectsData: false,
                 range: {
                     startBlockId: blockId,
                     endBlockId: blockId,
@@ -19743,6 +23392,17 @@ window.tmDocumentEditorEngine = (function () {
         if (target && typeof target.scrollIntoView === 'function') {
             target.scrollIntoView({ block: 'nearest' });
         }
+        if (pageIndex >= 0) {
+            lookup.inst.activePageIndex = pageIndex;
+            if (lookup.inst.layout) lookup.inst.layout.activePageIndex = pageIndex;
+            notifyPageMetricsChanged(lookup.inst);
+        }
+        if (target && target.matches && target.matches('.tm-wysiwyg-heading, h1.tm-wysiwyg-block, h2.tm-wysiwyg-block, h3.tm-wysiwyg-block, h4.tm-wysiwyg-block, h5.tm-wysiwyg-block, h6.tm-wysiwyg-block')) {
+            lookup.inst.activeHeadingBlockId = blockId || '';
+            invokeBoundaryMethod(lookup.inst, 'HandleActiveHeadingChanged', blockId || null, 'active-heading-changed-failed');
+        } else {
+            setTimeout(function () { updateActivePageAndHeadingFromViewport(lookup.inst, 'scroll-to-block'); }, 0);
+        }
         return { ok: !!target || materialized, instanceId: instanceId, blockId: blockId || '', pageIndex: pageIndex, materialized: materialized };
     }
 
@@ -19755,11 +23415,39 @@ window.tmDocumentEditorEngine = (function () {
         if (target && typeof target.scrollIntoView === 'function') {
             target.scrollIntoView({ block: 'nearest' });
         }
+        lookup.inst.activePageIndex = normalizedPageIndex;
+        if (lookup.inst.layout) lookup.inst.layout.activePageIndex = normalizedPageIndex;
+        notifyPageMetricsChanged(lookup.inst);
+        setTimeout(function () { updateActivePageAndHeadingFromViewport(lookup.inst, 'scroll-to-page'); }, 0);
         return { ok: !!target || materialized, instanceId: instanceId, pageIndex: normalizedPageIndex, materialized: materialized };
     }
 
-    function getLinkInfo() {
-        return { HasLink: false, Href: '', Text: '' };
+    function getLinkInfo(instanceId) {
+        var lookup = _get(instanceId, 'getLinkInfo');
+        if (lookup.error) return { HasLink: false, Href: '', Title: '', Text: '' };
+        var selection = createSelectionSnapshot(lookup.inst.selection || firstModelSelection(lookup.inst.model));
+        var range = selectionTextRange(selection);
+        var block = _findBlock(lookup.inst.model, range.blockId);
+        if (!block || block.type !== 'paragraph') return { HasLink: false, Href: '', Title: '', Text: '' };
+
+        var linkMark = null;
+        var runs = runsForRange(block, range);
+        for (var i = 0; i < runs.length && !linkMark; i++) {
+            linkMark = _asArray(runs[i] && (runs[i].marks || runs[i].Marks))
+                .find(function (mark) { return markType(mark) === 'link'; }) || null;
+        }
+
+        if (!linkMark) return { HasLink: false, Href: '', Title: '', Text: '' };
+        var text = _asArray(block.content && block.content.runs)
+            .map(function (run) { return _asText(run && (run.text || run.Text)); })
+            .join('')
+            .slice(Math.max(0, range.start), Math.max(range.start, range.end));
+        return {
+            HasLink: true,
+            Href: _asText(markValue(linkMark)),
+            Title: _asText(linkMark.title || linkMark.Title || linkMark.link?.title || linkMark.Link?.Title || ''),
+            Text: text
+        };
     }
 
     function copySelection(instanceId) {
@@ -19774,11 +23462,60 @@ window.tmDocumentEditorEngine = (function () {
         return applyStrictRemoteOperations(instanceId, batch || { operations: [] });
     }
 
+    function remoteCursorMarkerFromCursor(cursor, index) {
+        var item = cursor || {};
+        var blockId = _asText(item.blockId || item.BlockId || item.startBlockId || item.StartBlockId || '');
+        var offset = Number(item.offset ?? item.Offset ?? item.startOffset ?? item.StartOffset ?? 0) || 0;
+        return _sortObject({
+            id: 'remote-cursor:' + _asText(item.sessionId || item.SessionId || index),
+            targetId: _asText(item.sessionId || item.SessionId || index),
+            type: 'remoteSelection',
+            source: 'presence',
+            affectsData: false,
+            blockId: blockId,
+            displayName: _asText(item.displayName || item.DisplayName || ''),
+            color: _asText(item.color || item.Color || ''),
+            range: {
+                startBlockId: blockId,
+                endBlockId: blockId,
+                startOffset: offset,
+                endOffset: offset
+            }
+        });
+    }
+
+    function remoteCursorMarkers(inst) {
+        return _asArray(inst && inst.remoteCursors).map(remoteCursorMarkerFromCursor);
+    }
+
+    function renderRemoteCursorSentinels(inst) {
+        if (!inst || !inst.root || !inst.root.ownerDocument) return;
+        Array.from(inst.root.querySelectorAll('[data-testid="document-wysiwyg-remote-cursor"]')).forEach(function (node) {
+            if (node.parentNode) node.parentNode.removeChild(node);
+        });
+        remoteCursorMarkers(inst).forEach(function (marker) {
+            var node = inst.root.ownerDocument.createElement('span');
+            node.setAttribute('data-testid', 'document-wysiwyg-remote-cursor');
+            node.setAttribute('data-session-id', marker.targetId);
+            node.setAttribute('data-block-id', marker.blockId);
+            node.setAttribute('data-offset', String(marker.range && marker.range.startOffset || 0));
+            node.className = 'tm-wysiwyg-remote-cursor';
+            node.style.position = 'absolute';
+            node.style.width = '1px';
+            node.style.height = '1em';
+            node.style.overflow = 'hidden';
+            node.style.pointerEvents = 'none';
+            node.textContent = '';
+            inst.root.appendChild(node);
+        });
+    }
+
     function applyRemoteCursor(instanceId, cursor) {
         var lookup = _get(instanceId, 'applyRemoteCursor');
         if (lookup.error) return lookup.error;
         lookup.inst.remoteCursors = lookup.inst.remoteCursors || [];
         lookup.inst.remoteCursors.push(_clone(cursor || {}));
+        renderRemoteCursorSentinels(lookup.inst);
         return { ok: true, instanceId: instanceId };
     }
 
@@ -19889,6 +23626,236 @@ window.tmDocumentEditorEngine = (function () {
         updateImageToolbarOpenDom(inst, false);
         syncWysiwygObjectLayerPositions(inst.root);
         scheduleImageFloatingPanelPosition(inst, selectedFigure);
+        syncObjectSelectionPaneLauncher(inst, selectedFigure);
+    }
+
+    function updateSelectedPageBreakDom(inst) {
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return;
+        var selectedId = _asText(inst.selectedPageBreakId || '');
+        Array.from(inst.root.querySelectorAll('[data-testid="document-wysiwyg-page-break"][data-block-id]')).forEach(function (node) {
+            var selected = !!selectedId && node.getAttribute('data-block-id') === selectedId;
+            node.classList.toggle('tm-wysiwyg-page-break--selected', selected);
+            node.setAttribute('aria-selected', selected ? 'true' : 'false');
+        });
+    }
+
+    function selectPageBreakBlock(inst, blockId, source) {
+        if (!inst || !blockId) return { ok: false, error: { code: 'missing-page-break' } };
+        inst.selectedPageBreakId = _asText(blockId);
+        removeObjectSelectionPane(inst, true);
+        updateActiveImageSelectionDom(inst);
+        updateSelectedPageBreakDom(inst);
+        var element = inst.root && inst.root.querySelector && inst.root.querySelector('[data-testid="document-wysiwyg-page-break"][data-block-id="' + _escape(inst.selectedPageBreakId) + '"]');
+        if (element && typeof element.focus === 'function') element.focus({ preventScroll: true });
+        recordTimeline(inst, 'page-break-selected', { blockId: inst.selectedPageBreakId, source: source || '' });
+        return { ok: true, blockId: inst.selectedPageBreakId };
+    }
+
+    function deleteSelectedPageBreak(inst, source) {
+        if (!inst || !inst.model || !inst.selectedPageBreakId) {
+            return { ok: false, error: { code: 'no-selected-page-break' } };
+        }
+        var beforeModel = _clone(inst.model);
+        var breakId = _asText(inst.selectedPageBreakId);
+        var nextModel = _clone(inst.model);
+        var container = _findBlockContainer(nextModel, breakId);
+        if (!container || !container.blocks || !container.block || container.block.type !== 'pageBreak') {
+            inst.selectedPageBreakId = '';
+            updateSelectedPageBreakDom(inst);
+            return { ok: false, error: { code: 'selected-page-break-not-found', blockId: breakId } };
+        }
+        var previousSelection = createSelectionSnapshot(inst.selection || firstModelSelection(inst.model));
+        container.blocks.splice(container.index, 1);
+        if (!container.blocks.length) {
+            container.blocks.push(createEmptyParagraphBlock(_stableId('paragraph', breakId + '-replacement'), breakId + '-replacement'));
+        }
+        buildIndexes(nextModel);
+        var nextBlock = container.blocks[Math.min(container.index, container.blocks.length - 1)] || _firstTextBlock(nextModel);
+        var afterSelection = createSelectionPostFixer(inst.schema).fix(nextModel, {
+            region: previousSelection.region || 'Body',
+            blockId: nextBlock && nextBlock.id || '',
+            offset: 0,
+            isCollapsed: true,
+            headerFooterId: previousSelection.headerFooterId || null,
+            tableId: previousSelection.activeTableId || previousSelection.tableId || null,
+            cellId: previousSelection.activeTableCellId || previousSelection.cellId || null
+        });
+        inst.selectedPageBreakId = '';
+        return applyCommand(inst.id, OPERATION_TYPES.RestoreSnapshot, {
+            snapshot: nextModel,
+            previousSnapshot: beforeModel,
+            selection: afterSelection,
+            previousSelection: previousSelection,
+            affectedScopeIds: _unique(['document', breakId, nextBlock && nextBlock.id].filter(Boolean)),
+            source: source || 'delete-page-break',
+            transactionType: TRANSACTION_TYPES.Default,
+            beforeSelection: previousSelection,
+            label: 'Delete page break'
+        });
+    }
+
+    function scheduleActiveImageSelectionDomSync(inst) {
+        if (!inst || !inst.root) return;
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(function () { updateActiveImageSelectionDom(inst); });
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () { updateActiveImageSelectionDom(inst); });
+            });
+        }
+        setTimeout(function () { updateActiveImageSelectionDom(inst); }, 60);
+        setTimeout(function () { updateActiveImageSelectionDom(inst); }, 160);
+    }
+
+    function objectSelectionPaneHost(inst) {
+        return inst && inst.root && (inst.root.closest && inst.root.closest('.tm-document-editor') || inst.root);
+    }
+
+    function removeObjectSelectionPane(inst, removeLauncher) {
+        var host = objectSelectionPaneHost(inst);
+        if (!host || !host.querySelectorAll) return;
+        Array.from(host.querySelectorAll('[data-testid="document-wysiwyg-object-selection-pane"]')).forEach(function (pane) {
+            if (pane.parentNode) pane.parentNode.removeChild(pane);
+        });
+        if (removeLauncher) {
+            Array.from(host.querySelectorAll('[data-testid="document-wysiwyg-image-selection-pane"]')).forEach(function (button) {
+                if (button.parentNode) button.parentNode.removeChild(button);
+            });
+        }
+    }
+
+    function collectObjectSelectionPaneItems(inst) {
+        if (!inst || !inst.root || !inst.root.querySelectorAll) return [];
+        var seen = new Set();
+        return Array.from(inst.root.querySelectorAll('.tm-wysiwyg-object-layer-item[data-object-id]'))
+            .filter(isDomHitTestElementVisible)
+            .map(function (item) {
+                var objectId = item.getAttribute('data-object-id') || item.getAttribute('data-render-object-id') || '';
+                if (!objectId || seen.has(objectId)) return null;
+                seen.add(objectId);
+                return {
+                    objectId: objectId,
+                    blockId: item.getAttribute('data-block-id') || item.getAttribute('data-render-block-id') || objectId,
+                    label: item.getAttribute('aria-label') || item.getAttribute('data-wrap-mode') || objectId,
+                    zIndex: Number(item.style && item.style.zIndex || item.getAttribute('data-object-z-index') || 0) || 0
+                };
+            })
+            .filter(Boolean)
+            .sort(function (a, b) { return b.zIndex - a.zIndex || a.objectId.localeCompare(b.objectId); });
+    }
+
+    function selectObjectById(inst, objectId, blockId, source) {
+        if (!inst || !objectId) return false;
+        var modelTarget = resolveImageObjectPointerModelTarget(inst, {
+            objectId: objectId,
+            blockId: blockId || objectId
+        });
+        if (!modelTarget || !modelTarget.object) return false;
+        var selection = createObjectSelectionSnapshot(inst.model, {
+            region: modelTarget.object.anchorRegion || 'Body',
+            blockId: modelTarget.blockId,
+            objectId: modelTarget.objectId,
+            anchorBlockId: modelTarget.object.anchorBlockId || modelTarget.blockId,
+            anchorOffset: modelTarget.object.anchorOffset || 0,
+            anchorInlineIndex: modelTarget.object.anchorInlineIndex ?? -1
+        }, inst.selection || null);
+        inst.selection = createSelectionPostFixer(inst.schema).fix(inst.model, selection);
+        inst.suppressTextSelectionChangeUntil = Date.now() + 1500;
+        markSelectionChanged(inst, source || 'object-selection-pane');
+        updateActiveImageSelectionDom(inst);
+        focusEditableSurfaceForObjectSelection(inst, inst.selection);
+        scheduleFormattingStatePublish(inst, source || 'object-selection-pane', { immediate: true });
+        invokeBoundaryMethod(inst, 'HandleSelectionChanged', boundarySelectionSnapshot(inst.selection, inst), 'selection-changed-failed');
+        return true;
+    }
+
+    function renderObjectSelectionPane(inst, anchorButton) {
+        var host = objectSelectionPaneHost(inst);
+        if (!host || !host.ownerDocument) return;
+        removeObjectSelectionPane(inst, false);
+        var doc = host.ownerDocument;
+        var pane = doc.createElement('div');
+        pane.setAttribute('data-testid', 'document-wysiwyg-object-selection-pane');
+        pane.className = 'tm-wysiwyg-object-selection-pane';
+        pane.style.position = 'fixed';
+        pane.style.zIndex = '10020';
+        pane.style.minWidth = '180px';
+        pane.style.padding = '6px';
+        pane.style.border = '1px solid var(--tm-color-border, #d1d5db)';
+        pane.style.borderRadius = '6px';
+        pane.style.background = 'var(--tm-color-surface-elevated, #fff)';
+        pane.style.boxShadow = 'var(--tm-shadow-md, 0 12px 24px rgba(15,23,42,.16))';
+        var anchorRect = anchorButton && anchorButton.getBoundingClientRect ? anchorButton.getBoundingClientRect() : { left: 16, bottom: 16 };
+        pane.style.left = Math.max(8, Math.min((window.innerWidth || 1024) - 220, anchorRect.left)) + 'px';
+        pane.style.top = Math.max(8, Math.min((window.innerHeight || 768) - 220, anchorRect.bottom + 6)) + 'px';
+
+        var close = doc.createElement('button');
+        close.type = 'button';
+        close.setAttribute('data-testid', 'document-wysiwyg-object-selection-pane-close');
+        close.textContent = 'Close';
+        close.style.display = 'block';
+        close.style.marginLeft = 'auto';
+        close.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            removeObjectSelectionPane(inst, false);
+        });
+        pane.appendChild(close);
+
+        collectObjectSelectionPaneItems(inst).forEach(function (item) {
+            var button = doc.createElement('button');
+            button.type = 'button';
+            button.setAttribute('data-testid', 'document-wysiwyg-object-selection-pane-item');
+            button.setAttribute('data-object-id', item.objectId);
+            button.setAttribute('data-block-id', item.blockId);
+            button.textContent = item.label || item.objectId;
+            button.style.display = 'block';
+            button.style.width = '100%';
+            button.style.margin = '4px 0 0';
+            button.style.textAlign = 'left';
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                selectObjectById(inst, item.objectId, item.blockId, 'object-selection-pane-item');
+            });
+            pane.appendChild(button);
+        });
+
+        host.appendChild(pane);
+    }
+
+    function syncObjectSelectionPaneLauncher(inst, selectedFigure) {
+        var host = objectSelectionPaneHost(inst);
+        if (!host || !host.ownerDocument) return;
+        if (!selectedFigure) {
+            removeObjectSelectionPane(inst, true);
+            return;
+        }
+
+        var button = host.querySelector('[data-testid="document-wysiwyg-image-selection-pane"]');
+        if (!button) {
+            button = host.ownerDocument.createElement('button');
+            button.type = 'button';
+            button.className = 'tm-wysiwyg-image-selection-pane-button';
+            button.setAttribute('data-testid', 'document-wysiwyg-image-selection-pane');
+            button.textContent = 'Objects';
+            button.style.position = 'fixed';
+            button.style.zIndex = '10010';
+            button.style.padding = '4px 8px';
+            button.style.border = '1px solid var(--tm-color-border, #d1d5db)';
+            button.style.borderRadius = '6px';
+            button.style.background = 'var(--tm-color-surface-elevated, #fff)';
+            button.style.boxShadow = 'var(--tm-shadow-sm, 0 4px 12px rgba(15,23,42,.12))';
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                renderObjectSelectionPane(inst, button);
+            });
+            host.appendChild(button);
+        }
+
+        var rect = selectedFigure.getBoundingClientRect();
+        button.style.left = Math.max(8, Math.min((window.innerWidth || 1024) - 96, rect.right + 8)) + 'px';
+        button.style.top = Math.max(8, Math.min((window.innerHeight || 768) - 36, rect.top)) + 'px';
     }
 
     function scheduleImageFloatingPanelPosition(inst, selectedFigure) {
@@ -20068,6 +24035,9 @@ window.tmDocumentEditorEngine = (function () {
         var index = comments.findIndex(function (existing) { return (existing.id || existing.Id) === id; });
         if (index >= 0) comments[index] = item; else comments.push(item);
         lookup.inst.model.comments = comments;
+        var range = rangeFromCommentAnchor(lookup.inst.model, item);
+        clearCommentFromRuns(lookup.inst.model, id);
+        setCommentForRange(lookup.inst.model, id, range);
         buildIndexes(lookup.inst.model);
         refreshRuntimeMarkerStore(lookup.inst);
         render(lookup.inst);
@@ -20080,6 +24050,7 @@ window.tmDocumentEditorEngine = (function () {
         lookup.inst.model.comments = _asArray(lookup.inst.model.comments).filter(function (comment) {
             return (comment.id || comment.Id) !== commentId;
         });
+        clearCommentFromRuns(lookup.inst.model, commentId);
         buildIndexes(lookup.inst.model);
         refreshRuntimeMarkerStore(lookup.inst);
         render(lookup.inst);
@@ -20093,6 +24064,7 @@ window.tmDocumentEditorEngine = (function () {
         return _clone([].concat(
             lookup.inst.searchMarkers || [],
             lookup.inst.protectionMarkers || [],
+            remoteCursorMarkers(lookup.inst),
             lookup.inst.markerStore ? lookup.inst.markerStore.all : [],
             lookup.inst.markers || []));
     }
@@ -20221,19 +24193,54 @@ window.tmDocumentEditorEngine = (function () {
         var config = getVirtualizationOptions(inst);
         var allBlocks = _asArray(blocks);
         var pages = [];
-        for (var index = 0; index < allBlocks.length || index === 0 && allBlocks.length === 0; index += config.blocksPerPage) {
+        var chunks = [];
+        var current = [];
+        var endedWithManualBreak = false;
+        function pushChunk(reason) {
+            chunks.push({
+                blocks: current.slice(),
+                splitReason: reason || 'auto'
+            });
+            current = [];
+        }
+        if (!allBlocks.length) {
+            chunks.push({ blocks: [], splitReason: 'empty' });
+        } else {
+            allBlocks.forEach(function (block) {
+                if (current.length >= config.blocksPerPage) {
+                    pushChunk('auto');
+                }
+                current.push(block);
+                endedWithManualBreak = block && block.type === 'pageBreak';
+                if (endedWithManualBreak) {
+                    pushChunk('manual');
+                }
+            });
+            if (current.length) {
+                pushChunk('content');
+            } else if (endedWithManualBreak) {
+                chunks.push({ blocks: [], splitReason: 'after-manual' });
+            }
+        }
+        chunks.forEach(function (chunk, index) {
+            var pageBlocks = _asArray(chunk.blocks);
+            var nextChunk = chunks[index + 1] || null;
+            var hasAutomaticOverflow = !!nextChunk
+                && chunk.splitReason !== 'manual'
+                && chunk.splitReason !== 'after-manual'
+                && pageBlocks.length >= config.blocksPerPage;
             pages.push({
                 pageIndex: pages.length,
                 pageNumber: pages.length + 1,
-                blocks: allBlocks.slice(index, index + config.blocksPerPage),
-                blockIds: allBlocks.slice(index, index + config.blocksPerPage).map(function (block) { return block.id; }),
+                blocks: pageBlocks,
+                blockIds: pageBlocks.map(function (block) { return block.id; }),
+                overflowBlocks: hasAutomaticOverflow ? _asArray(nextChunk.blocks).map(function (block) { return block && block.id || ''; }).filter(Boolean) : [],
                 header: null,
                 footer: null,
                 headerBlockIds: [],
                 footerBlockIds: []
             });
-            if (allBlocks.length === 0) break;
-        }
+        });
         var activeBlockId = previousSelection && previousSelection.blockId || inst && inst.selection && inst.selection.blockId || '';
         var activePageIndex = Number(inst && inst.activePageIndex || 0) || 0;
         pages.forEach(function (page) {
@@ -20294,10 +24301,77 @@ window.tmDocumentEditorEngine = (function () {
         return false;
     }
 
-    function restoreDomSelectionFromSnapshot(inst, selection) {
-        if (!inst || !inst.root || !selection || selection.isObjectSelection === true || selection.isCellSelection === true) return false;
+    function captureProgrammaticSelectionScrollState(root) {
+        var states = [];
+        var seen = new Set();
+        function addElement(element) {
+            if (!element || seen.has(element)) return;
+            seen.add(element);
+            if (element.scrollHeight > element.clientHeight + 1 || element.scrollWidth > element.clientWidth + 1) {
+                states.push({
+                    kind: 'element',
+                    element: element,
+                    scrollTop: element.scrollTop,
+                    scrollLeft: element.scrollLeft
+                });
+            }
+        }
+        for (var node = root; node; node = node.parentElement) {
+            addElement(node);
+        }
+        var doc = root && root.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        var scrollingElement = doc && (doc.scrollingElement || doc.documentElement || doc.body);
+        addElement(scrollingElement);
+        if (typeof window !== 'undefined') {
+            states.push({
+                kind: 'window',
+                scrollX: window.scrollX || window.pageXOffset || 0,
+                scrollY: window.scrollY || window.pageYOffset || 0
+            });
+        }
+        return states;
+    }
+
+    function restoreProgrammaticSelectionScrollState(states) {
+        _asArray(states).forEach(function (state) {
+            try {
+                if (state && state.kind === 'window' && typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+                    window.scrollTo(state.scrollX || 0, state.scrollY || 0);
+                } else if (state && state.kind === 'element' && state.element) {
+                    state.element.scrollTop = state.scrollTop || 0;
+                    state.element.scrollLeft = state.scrollLeft || 0;
+                }
+            } catch (_) {
+                // Scroll restoration is best-effort around browser-native selection.
+            }
+        });
+    }
+
+    function restoreDomSelectionFromSnapshot(inst, selection, options) {
+        if (!inst || !inst.root || !selection || selection.isObjectSelection === true) {
+            if (inst) recordTimeline(inst, 'selection-restore-failed', { error: 'invalid-selection-restore-target' });
+            return false;
+        }
+        var restoreOptions = options || {};
+        var scrollState = restoreOptions.preserveScroll === true
+            ? captureProgrammaticSelectionScrollState(inst.root)
+            : null;
+        function restoreScrollAfterSelection() {
+            if (!scrollState) return;
+            restoreProgrammaticSelectionScrollState(scrollState);
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(function () { restoreProgrammaticSelectionScrollState(scrollState); });
+            }
+        }
         var snapshot = createSelectionSnapshot(selection);
-        if (!snapshot.blockId) return false;
+        if (snapshot.isCellSelection === true && !snapshot.blockId) {
+            recordTimeline(inst, 'selection-restore-failed', { error: 'cell-selection-without-text-block' });
+            return false;
+        }
+        if (!snapshot.blockId) {
+            recordTimeline(inst, 'selection-restore-failed', { error: 'missing-selection-block-id' });
+            return false;
+        }
         if (snapshot.isCollapsed === false) {
             if (snapshot.anchor.blockId !== snapshot.focus.blockId) return false;
             var selectedBlock = inst.root.querySelector('[data-block-id="' + cssEscape(snapshot.anchor.blockId) + '"]');
@@ -20311,12 +24385,14 @@ window.tmDocumentEditorEngine = (function () {
                 var range = document.createRange();
                 range.setStart(startPoint.node, startPoint.offset);
                 range.setEnd(endPoint.node, endPoint.offset);
-                var editable = selectedBlock.closest('[contenteditable="true"]');
+                var editable = selectedBlock.closest('[contenteditable]');
                 if (editable && typeof editable.focus === 'function') editable.focus({ preventScroll: true });
                 var rangeSelection = window.getSelection && window.getSelection();
                 if (!rangeSelection) return false;
                 rangeSelection.removeAllRanges();
                 rangeSelection.addRange(range);
+                restoreScrollAfterSelection();
+                updateTableSelectionDom(inst, snapshot);
                 return true;
             } catch (error) {
                 recordTimeline(inst, 'selection-restore-failed', { error: String(error && error.message || error) });
@@ -20324,22 +24400,35 @@ window.tmDocumentEditorEngine = (function () {
             }
         }
         var mapped = logicalToDomRange(inst.root, inst.model, snapshot);
-        if (!mapped.ok || !mapped.range) return false;
+        if (!mapped.ok || !mapped.range) {
+            recordTimeline(inst, 'selection-restore-failed', {
+                error: mapped && mapped.error && mapped.error.code || 'missing-dom-range',
+                blockId: snapshot.blockId || '',
+                region: snapshot.region || '',
+                cellId: snapshot.activeTableCellId || snapshot.cellId || null,
+                tableId: snapshot.activeTableId || snapshot.tableId || null
+            });
+            return false;
+        }
         try {
             var editable = null;
-            if (snapshot.region === 'Header' || snapshot.region === 'Footer') {
-                var regionSelector = '.tm-wysiwyg-page__' + snapshot.region.toLowerCase() + '[contenteditable="true"]';
+            var mappedBlock = inst.root.querySelector('[data-block-id="' + cssEscape(snapshot.blockId) + '"]');
+            if (mappedBlock) editable = mappedBlock.closest('[contenteditable]');
+            if (!editable && (snapshot.region === 'Header' || snapshot.region === 'Footer')) {
+                var regionSelector = '.tm-wysiwyg-page__' + snapshot.region.toLowerCase() + '[contenteditable]';
                 var hfSelector = snapshot.headerFooterId
                     ? regionSelector + '[data-hf-id="' + cssEscape(snapshot.headerFooterId) + '"]'
                     : regionSelector;
                 editable = inst.root.querySelector(hfSelector) || inst.root.querySelector(regionSelector);
             }
-            if (!editable) editable = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable="true"]');
+            if (!editable) editable = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable]');
             if (editable && typeof editable.focus === 'function') editable.focus({ preventScroll: true });
             var current = window.getSelection && window.getSelection();
             if (!current) return false;
             current.removeAllRanges();
             current.addRange(mapped.range);
+            restoreScrollAfterSelection();
+            updateTableSelectionDom(inst, snapshot);
             return true;
         } catch (error) {
             recordTimeline(inst, 'selection-restore-failed', { error: String(error && error.message || error) });
@@ -20381,8 +24470,15 @@ window.tmDocumentEditorEngine = (function () {
             }
             if (isCaretPlaceholderNode(node)) {
                 last = node;
+                if (target <= currentOffset) {
+                    var placeholderParent = node.parentNode || block;
+                    var placeholderChildren = placeholderParent.childNodes || [];
+                    var placeholderIndex = Array.prototype.indexOf.call(placeholderChildren, node);
+                    return { node: placeholderParent, offset: Math.max(0, placeholderIndex) };
+                }
                 return null;
             }
+            if (isNonPrintingMarkerNode(node)) return null;
             var children = node.childNodes || [];
             for (var i = 0; i < children.length; i++) {
                 var found = visit(children[i]);
@@ -20536,7 +24632,17 @@ window.tmDocumentEditorEngine = (function () {
         var width = Math.max(1, Number(fallbackWidth || object && object.width || 120) || 120);
         var height = Math.max(1, Number(fallbackHeight || object && object.height || 80) || 80);
         var rect = explicitObjectLayerRect(object);
-        if (!rect) return { x: 0, y: 0, width: width, height: height, explicit: false };
+        if (!rect) {
+            var horizontal = object && object.horizontalPosition || {};
+            var vertical = object && object.verticalPosition || {};
+            return {
+                x: Number(horizontal.offset ?? horizontal.Offset ?? 0) || 0,
+                y: Number(vertical.offset ?? vertical.Offset ?? 0) || 0,
+                width: width,
+                height: height,
+                explicit: false
+            };
+        }
         return {
             x: Number(rect.x || 0) || 0,
             y: Number(rect.y || 0) || 0,
@@ -20688,12 +24794,30 @@ window.tmDocumentEditorEngine = (function () {
         return html.join('');
     }
 
+    function renderNonPrintingInlineMarkerHtml(inst, text) {
+        if (!inst || inst.showNonPrintingCharacters !== true) return '';
+        var markers = Array.from(_asText(text)).map(function (ch) {
+            if (ch === ' ') return '\u00b7';
+            if (ch === '\t') return '\u2192';
+            if (ch === '\n') return '\u00b6';
+            return '';
+        }).join('');
+        if (!markers) return '';
+        return '<span class="tm-wysiwyg-nonprinting-text" data-testid="document-wysiwyg-nonprinting-text" aria-hidden="true">' + _escape(markers) + '</span>';
+    }
+
+    function renderNonPrintingParagraphMarkerHtml(inst) {
+        if (!inst || inst.showNonPrintingCharacters !== true) return '';
+        return '<span class="tm-wysiwyg-nonprinting-text" data-testid="document-wysiwyg-nonprinting-text" aria-hidden="true">\u00b6</span>';
+    }
+
     function renderFormattedInlineHtml(run, chunk, innerHtml) {
         var marks = _asArray(run && (run.marks || run.Marks));
         var classes = ['tm-document-inline'];
         var styles = [];
         var textDecoration = [];
         var href = '';
+        var linkTitle = '';
         marks.forEach(function (mark) {
             var type = markType(mark);
             var value = markValue(mark);
@@ -20730,7 +24854,8 @@ window.tmDocumentEditorEngine = (function () {
                 styles.push('background-color:' + value);
             } else if (type === 'link') {
                 classes.push('tm-document-inline--link');
-                href = _asText(mark && (mark.href || mark.Href || mark.url || mark.Url || value || ''));
+                href = _asText(mark && (mark.href || mark.Href || mark.url || mark.Url || mark.link?.href || mark.Link?.Href || value || ''));
+                linkTitle = _asText(mark && (mark.title || mark.Title || mark.link?.title || mark.Link?.Title || ''));
             }
         });
         if (textDecoration.length) {
@@ -20746,8 +24871,35 @@ window.tmDocumentEditorEngine = (function () {
             'data-node-id="' + _escape(inlineId) + '"'
         ];
         if (styles.length) attrs.push('style="' + _escape(styles.join(';')) + '"');
-        if (href) attrs.push('data-href="' + _escape(href) + '"');
+        if (href) {
+            attrs.push('data-href="' + _escape(href) + '"');
+            attrs.push('data-link-href="' + _escape(href) + '"');
+            attrs.push('role="link"');
+        }
+        if (linkTitle) attrs.push('title="' + _escape(linkTitle) + '"');
         return '<span ' + attrs.join(' ') + '>' + contentHtml + '</span>';
+    }
+
+    function renderTokenInlineHtml(run, text) {
+        var inlineId = _asText(run && (run.id || run.Id) || '');
+        var key = _asText(run && (run.key || run.Key || ''));
+        var tokenType = _asText(run && (run.tokenType || run.TokenType || ''));
+        var description = _asText(run && (run.description || run.Description || ''));
+        var colorClass = _asText(run && (run.colorClass || run.ColorClass || ''));
+        var classes = ['tm-wysiwyg-token', 'tm-document-inline', 'tm-document-inline--token'];
+        if (colorClass) classes.push(colorClass);
+        var attrs = [
+            'class="' + classes.map(_escape).join(' ') + '"',
+            'data-inline-atomic="true"',
+            'data-inline-id="' + _escape(inlineId) + '"',
+            'data-node-id="' + _escape(inlineId) + '"',
+            'data-token-key="' + _escape(key) + '"',
+            'data-token-type="' + _escape(tokenType) + '"',
+            'contenteditable="false"',
+            'role="button"'
+        ];
+        if (description || key) attrs.push('title="' + _escape(description || key) + '"');
+        return '<span ' + attrs.join(' ') + '>' + renderInlineTextHtml(text || key) + '</span>';
     }
 
     function renderCommentSpanHtml(inst, commentId, text, status, innerHtml) {
@@ -20803,7 +24955,11 @@ window.tmDocumentEditorEngine = (function () {
             'tm-wysiwyg-search-match'
         ];
         if (active) classes.push('tm-wysiwyg-marker--search-active', 'tm-wysiwyg-search-match--active');
-        return '<span class="' + classes.join(' ') + '" data-testid="document-search-marker" data-marker-id="search:' + _escape(id) + '" data-search-marker-id="' + _escape(id) + '" data-marker-kind="search" aria-current="' + (active ? 'true' : 'false') + '">' + (innerHtml !== undefined ? innerHtml : _escape(text)) + '</span>';
+        var contentHtml = innerHtml !== undefined ? innerHtml : _escape(text);
+        if (active) {
+            contentHtml = '<span data-testid="document-search-marker-active">' + contentHtml + '</span>';
+        }
+        return '<span class="' + classes.join(' ') + '" data-testid="document-search-marker" data-marker-id="search:' + _escape(id) + '" data-search-marker-id="' + _escape(id) + '" data-marker-kind="search" aria-current="' + (active ? 'true' : 'false') + '">' + contentHtml + '</span>';
     }
 
     function inlineDrawingIsSelected(inst, block, run, object) {
@@ -21010,6 +25166,11 @@ window.tmDocumentEditorEngine = (function () {
         var entries = [];
         _asArray(blocks).forEach(function (block) {
             if (!block) return;
+            if (block.type === 'image') {
+                var imageEntry = createWysiwygObjectRenderEntry(inst, block, block, -1, 'image-block');
+                if (imageEntry) entries.push(imageEntry);
+                return;
+            }
             if (block.type !== 'paragraph') return;
             _asArray(block.content && block.content.runs).forEach(function (run, runIndex) {
                 if (run && (run.kind === 'drawing' || isDrawingRunSource(run))) {
@@ -21033,8 +25194,16 @@ window.tmDocumentEditorEngine = (function () {
         var domBlockId = objectId || modelBlockId;
         var alt = _asText(object.altText || '');
         var caption = _asText(object.caption || '');
-        var label = alt || caption || 'Image';
+        var isDecorative = object.isDecorative === true;
+        var imageAltMissing = inst && inst.options && (inst.options.ImageAltMissing || inst.options.imageAltMissing) || 'Image is missing alternative text.';
+        var hasAltWarning = !isDecorative && !alt;
+        var label = isDecorative
+            ? 'Decorative image'
+            : (hasAltWarning ? (caption ? caption + ' - ' + imageAltMissing : imageAltMissing) : (alt || caption || 'Image'));
         var mode = normalizeWrapModeName(object.wrapMode || 'Inline');
+        var accessibleSize = Math.round(width) + ' by ' + Math.round(height) + ' pixels';
+        var accessibleLabel = label + '. Wrap mode ' + mode + ', ' + accessibleSize + '.';
+        var wrapContourPoints = normalizeWrapContourPointsForGeometry(object.wrapContourPoints || object.WrapContourPoints);
         var layer = drawingLayerForWrapMode(mode);
         var zIndex = Number(object.zIndex || 0) || 0;
         var imageClasses = renderImageFigureClasses(entry && entry.selected, object)
@@ -21072,6 +25241,7 @@ window.tmDocumentEditorEngine = (function () {
             'data-object-layer="' + _escape(layer || 'object') + '"',
             'data-wrap-mode="' + _escape(mode) + '"',
             'data-wrap-side="' + _escape(object.wrapSide || 'BothSides') + '"',
+            'data-wrap-contour-points="' + _escape(JSON.stringify(wrapContourPoints)) + '"',
             'data-horizontal-align="' + _escape(object.horizontalPosition && object.horizontalPosition.align || 'Left') + '"',
             'data-horizontal-offset="' + _escape(object.horizontalPosition && object.horizontalPosition.offset || 0) + '"',
             'data-vertical-offset="' + _escape(object.verticalPosition && object.verticalPosition.offset || 0) + '"',
@@ -21085,10 +25255,16 @@ window.tmDocumentEditorEngine = (function () {
             'data-object-height="' + _escape(height) + '"',
             'data-object-x="' + _escape(rect.x) + '"',
             'data-object-y="' + _escape(rect.y) + '"',
+            'data-image-x="' + _escape(rect.x) + '"',
+            'data-image-y="' + _escape(rect.y) + '"',
+            'data-image-natural-width="' + _escape(object.naturalWidth || width) + '"',
+            'data-image-natural-height="' + _escape(object.naturalHeight || height) + '"',
+            'data-image-alt-warning="' + (hasAltWarning ? 'true' : 'false') + '"',
+            'data-image-decorative="' + (isDecorative ? 'true' : 'false') + '"',
             'contenteditable="false"',
             'draggable="false"',
             'role="img"',
-            'aria-label="' + _escape(label) + '"',
+            'aria-label="' + _escape(accessibleLabel) + '"',
             'style="' + _escape(styles.join(';')) + '"'
         ];
         if (rect.explicit === true && object.isInline !== true) attrs.push('data-object-position-source="layout-rect"');
@@ -21101,7 +25277,11 @@ window.tmDocumentEditorEngine = (function () {
         } else {
             html.push('<span class="tm-wysiwyg-inline-drawing__placeholder" aria-hidden="true"></span>');
         }
+        if (hasAltWarning) {
+            html.push('<span class="tm-document-wysiwyg-host__sr-only" data-testid="document-wysiwyg-image-alt-warning" role="status" aria-live="polite">' + _escape(imageAltMissing) + '</span>');
+        }
         if (caption) html.push('<figcaption>' + _escape(caption) + '</figcaption>');
+        html.push(renderImageLayoutBubbleHtml(object));
         html.push('</figure>');
         return html.join('');
     }
@@ -21213,6 +25393,41 @@ window.tmDocumentEditorEngine = (function () {
         return '<span ' + attrs.join(' ') + '>' + renderImageLayoutBubbleHtml(object) + '</span>';
     }
 
+    function renderWysiwygBehindObjectHandleHtml(entry) {
+        if (!entry || objectEntryPaintLayer(entry) !== 'behind-text') return '';
+        var object = entry.object || {};
+        var width = Math.max(1, Number(object.width || 120) || 120);
+        var height = Math.max(1, Number(object.height || 80) || 80);
+        var rect = objectLayerRectFromObject(object, width, height);
+        width = rect.width;
+        var objectId = _asText(entry.objectId || object.objectId || '');
+        var modelBlockId = _asText(entry.blockId || object.blockId || object.anchorBlockId || '');
+        var domBlockId = objectId || modelBlockId;
+        var mode = normalizeWrapModeName(object.wrapMode || 'Inline');
+        var left = Math.max(0, Number(rect.x || 0) + Math.min(width - 10, 10));
+        var top = Math.max(0, Number(rect.y || 0) - 10);
+        var attrs = [
+            'type="button"',
+            'class="tm-wysiwyg-behind-object-handle"',
+            'data-testid="document-wysiwyg-behind-object-handle"',
+            'data-object-id="' + _escape(objectId) + '"',
+            'data-render-object-id="' + _escape(objectId) + '"',
+            'data-block-id="' + _escape(domBlockId) + '"',
+            'data-model-block-id="' + _escape(modelBlockId) + '"',
+            'data-object-layer="behind-text"',
+            'data-wrap-mode="' + _escape(mode) + '"',
+            'data-wrap-side="' + _escape(object.wrapSide || 'BothSides') + '"',
+            'data-object-width="' + _escape(width) + '"',
+            'data-object-height="' + _escape(rect.height || height) + '"',
+            'data-object-x="' + _escape(rect.x) + '"',
+            'data-object-y="' + _escape(rect.y) + '"',
+            'contenteditable="false"',
+            'aria-label="Select image behind text"',
+            'style="left:' + _escape(left) + 'px;top:' + _escape(top) + 'px"'
+        ];
+        return '<button ' + attrs.join(' ') + '></button>';
+    }
+
     function objectEntryPaintLayer(entry) {
         var object = entry && entry.object || {};
         return drawingLayerForWrapMode(object.wrapMode || object.WrapMode || 'Inline');
@@ -21234,6 +25449,7 @@ window.tmDocumentEditorEngine = (function () {
         html.push('<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--selection" data-testid="document-wysiwyg-selection-layer">');
         _asArray(entries).forEach(function (entry) {
             html.push(renderWysiwygObjectSelectionOverlayHtml(inst, entry));
+            html.push(renderWysiwygBehindObjectHandleHtml(entry));
         });
         html.push('</div>');
         html.push('<div class="tm-wysiwyg-page__layer tm-wysiwyg-page__layer--guides" data-testid="document-wysiwyg-guides-layer">');
@@ -21247,6 +25463,7 @@ window.tmDocumentEditorEngine = (function () {
     function renderParagraphRunsHtml(inst, block, pageNumber, totalPages, renderOptions) {
         var options = renderOptions || {};
         var commentMarkers = commentMarkersForBlock(inst, block && block.id || '');
+        var useCommentMarkers = commentMarkers.length > 0;
         var revisionMarkers = revisionMarkersForBlock(inst, block && block.id || '');
         var searchMarkers = searchMarkersForBlock(inst, block && block.id || '');
         var markers = commentMarkers.concat(revisionMarkers).concat(searchMarkers);
@@ -21267,7 +25484,12 @@ window.tmDocumentEditorEngine = (function () {
             var text = resolveInlineRunDisplayText(run, pageNumber, totalPages);
             var runStart = cursor;
             var runEnd = cursor + text.length;
-            var inlineCommentIds = readCommentIdsFromRun(run);
+            if (run && run.kind === 'token') {
+                html.push(renderTokenInlineHtml(run, text));
+                cursor = runEnd;
+                return;
+            }
+            var inlineCommentIds = useCommentMarkers ? [] : readCommentIdsFromRun(run);
             var inlineRevisionIds = readRevisionIdsFromRun(run);
             var boundaries = [0, text.length];
             markers.forEach(function (marker) {
@@ -21321,6 +25543,7 @@ window.tmDocumentEditorEngine = (function () {
                 if (revisionId) chunkHtml = renderRevisionSpanHtml(inst, revisionId, chunk, revisionMarker, chunkHtml);
                 if (searchMarker) chunkHtml = renderSearchSpanHtml(inst, searchMarker, chunk, chunkHtml);
                 html.push(chunkHtml);
+                html.push(renderNonPrintingInlineMarkerHtml(inst, chunk));
             }
             if (text.length === 0 && inlineCommentIds[0]) {
                 html.push(renderCommentSpanHtml(inst, inlineCommentIds[0], '', readCommentStatus(commentById(inst && inst.model, inlineCommentIds[0]))));
@@ -21330,14 +25553,85 @@ window.tmDocumentEditorEngine = (function () {
         return html.join('');
     }
 
+    function readParagraphRenderValue(blockContent, blockStyle, pascalKey, camelKey, fallback) {
+        var direct = _read(blockContent, pascalKey, camelKey, undefined);
+        if (direct !== undefined && direct !== null && direct !== '') return direct;
+        var contentStyle = blockContent && (blockContent.style || blockContent.Style) || {};
+        direct = _read(contentStyle, pascalKey, camelKey, undefined);
+        if (direct !== undefined && direct !== null && direct !== '') return direct;
+        direct = _read(blockStyle, pascalKey, camelKey, undefined);
+        if (direct !== undefined && direct !== null && direct !== '') return direct;
+        return fallback;
+    }
+
+    function normalizeParagraphRenderNumber(value, fallback) {
+        if (value === undefined || value === null || value === '') return fallback;
+        var number = Number(value);
+        return Number.isFinite(number) ? number : fallback;
+    }
+
+    function formatParagraphRenderNumber(value) {
+        var number = Number(value);
+        if (!Number.isFinite(number)) return '';
+        return String(Math.round(number * 1000) / 1000);
+    }
+
+    function renderParagraphBlockAttributes(block, alignment) {
+        var blockContent = block && block.content || {};
+        var blockStyle = block && block.style || {};
+        var lineSpacing = normalizeParagraphRenderNumber(readParagraphRenderValue(blockContent, blockStyle, 'LineSpacing', 'lineSpacing', null), null);
+        var spacingBefore = normalizeParagraphRenderNumber(readParagraphRenderValue(blockContent, blockStyle, 'SpacingBefore', 'spacingBefore', null), null);
+        var spacingAfter = normalizeParagraphRenderNumber(readParagraphRenderValue(blockContent, blockStyle, 'SpacingAfter', 'spacingAfter', null), null);
+        var leftIndent = normalizeParagraphRenderNumber(readParagraphRenderValue(blockContent, blockStyle, 'LeftIndent', 'leftIndent', null), null);
+        var rightIndent = normalizeParagraphRenderNumber(readParagraphRenderValue(blockContent, blockStyle, 'RightIndent', 'rightIndent', null), null);
+        var indentLevel = Math.max(0, normalizeParagraphRenderNumber(readParagraphRenderValue(blockContent, blockStyle, 'IndentLevel', 'indentLevel', 0), 0) || 0);
+        if ((leftIndent === null || leftIndent <= 0) && indentLevel > 0) leftIndent = indentLevel * 36;
+
+        var attrs = ['data-alignment="' + _escape(alignment) + '"'];
+        var styles = ['text-align:' + _escape(alignment)];
+        if (lineSpacing !== null && lineSpacing > 0) {
+            attrs.push('data-line-spacing="' + _escape(formatParagraphRenderNumber(lineSpacing)) + '"');
+            styles.push('line-height:' + _escape(formatParagraphRenderNumber(lineSpacing)));
+        }
+        if (spacingBefore !== null) {
+            attrs.push('data-spacing-before="' + _escape(formatParagraphRenderNumber(spacingBefore)) + '"');
+            styles.push('margin-top:' + _escape(formatParagraphRenderNumber(Math.max(0, spacingBefore))) + 'pt');
+        }
+        if (spacingAfter !== null) {
+            attrs.push('data-spacing-after="' + _escape(formatParagraphRenderNumber(spacingAfter)) + '"');
+            styles.push('margin-bottom:' + _escape(formatParagraphRenderNumber(Math.max(0, spacingAfter))) + 'pt');
+        }
+        if (leftIndent !== null && leftIndent > 0) {
+            attrs.push('data-left-indent="' + _escape(formatParagraphRenderNumber(leftIndent)) + '"');
+            styles.push('margin-left:' + _escape(formatParagraphRenderNumber(leftIndent)) + 'pt');
+        }
+        if (rightIndent !== null && rightIndent > 0) {
+            attrs.push('data-right-indent="' + _escape(formatParagraphRenderNumber(rightIndent)) + '"');
+            styles.push('margin-right:' + _escape(formatParagraphRenderNumber(rightIndent)) + 'pt');
+        }
+
+        attrs.push('style="' + styles.join(';') + '"');
+        return attrs.join(' ');
+    }
+
     function renderWysiwygTextBlockHtml(inst, block, imageAltMissing, pageNumber, totalPages) {
         if (!block) return '';
-        if (block.type === 'paragraph') {
+        if (block.type === 'paragraph' || block.type === 'heading') {
             var content = renderParagraphRunsHtml(inst, block, pageNumber, totalPages, { drawingMode: 'text-layer-anchor' });
             var blockContent = block.content || {};
             var blockStyle = block.style || {};
             var alignment = normalizeParagraphAlignment(blockContent.alignment ?? blockContent.Alignment ?? blockStyle.alignment ?? blockStyle.Alignment ?? 'left');
-            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" data-alignment="' + _escape(alignment) + '" style="text-align:' + _escape(alignment) + '" role="paragraph">' + (content || '<br data-caret-placeholder="true">') + '</p>';
+            var paragraphEndMark = renderNonPrintingParagraphMarkerHtml(inst);
+            if (block.type === 'heading') {
+                var level = Math.max(1, Math.min(6, Number(blockContent.level ?? blockContent.Level ?? 1) || 1));
+                return '<h' + level + ' class="tm-wysiwyg-block tm-wysiwyg-heading tm-wysiwyg-heading--h' + level + '" data-block-id="' + _escape(block.id) + '" data-heading-level="' + _escape(level) + '" ' + renderParagraphBlockAttributes(block, alignment) + ' role="heading" aria-level="' + _escape(level) + '">' + (content || '<br data-caret-placeholder="true">') + paragraphEndMark + '</h' + level + '>';
+            }
+            var listType = normalizeParagraphListType(blockContent.listType ?? blockContent.ListType);
+            if (listType) {
+                var tagName = paragraphListTagName(listType);
+                return '<' + tagName + ' class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" data-list-type="' + _escape(listType) + '" ' + renderParagraphBlockAttributes(block, alignment) + ' role="list"><li class="tm-wysiwyg-list-item" data-list-item="true">' + (content || '<br data-caret-placeholder="true">') + paragraphEndMark + '</li></' + tagName + '>';
+            }
+            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" ' + renderParagraphBlockAttributes(block, alignment) + ' role="paragraph">' + (content || '<br data-caret-placeholder="true">') + paragraphEndMark + '</p>';
         }
         if (block.type === 'image') {
             var object = normalizeImageObject(block);
@@ -21504,6 +25798,39 @@ window.tmDocumentEditorEngine = (function () {
         return changed;
     }
 
+    function refreshWysiwygTextExclusionLayoutForTest(instanceId, options) {
+        var lookup = _get(instanceId, 'refreshWysiwygTextExclusionLayoutForTest');
+        if (lookup.error) return lookup.error;
+        var opts = Object.assign({
+            reason: 'test-refresh-text-exclusion',
+            maxPasses: 8
+        }, options || {});
+        syncWysiwygObjectLayerPositions(lookup.inst.root);
+        var changed = applyWysiwygTextExclusionLayout(lookup.inst, opts);
+        syncWysiwygObjectLayerPositions(lookup.inst.root);
+        var projected = Array.from(lookup.inst.root.querySelectorAll('[data-wysiwyg-projected-layout="true"][data-block-id]'))
+            .map(function (block) { return block.getAttribute('data-block-id') || ''; })
+            .filter(Boolean);
+        var result = _sortObject({
+            ok: true,
+            instanceId: instanceId,
+            changed: changed === true,
+            projectedBlockIds: _unique(projected),
+            metrics: getDebugMetrics(instanceId)
+        });
+        lookup.inst.lastTextExclusionLayoutRefreshForTest = _clone(result);
+        return result;
+    }
+
+    function markWysiwygTextExclusionLayoutPending(inst, pending, reason) {
+        if (!inst || !inst.root || typeof inst.root.setAttribute !== 'function') return;
+        var isPending = pending === true;
+        inst.textExclusionLayoutPending = isPending;
+        inst.root.setAttribute('data-text-exclusion-layout-pending', isPending ? 'true' : 'false');
+        if (reason) inst.root.setAttribute('data-text-exclusion-layout-reason', _asText(reason));
+        if (!isPending) inst.root.setAttribute('data-text-exclusion-layout-settled-at', String(Date.now()));
+    }
+
     function scheduleWysiwygTextExclusionLayout(inst, reason, delayMs) {
         if (!inst || !inst.root || inst.disposed) return;
         if (inst.pendingTextExclusionLayoutTimer) {
@@ -21511,17 +25838,23 @@ window.tmDocumentEditorEngine = (function () {
             inst.pendingTextExclusionLayoutTimer = null;
         }
         var delay = Math.max(40, Number(delayMs || 160) || 160);
+        markWysiwygTextExclusionLayoutPending(inst, true, reason || 'idle-text-exclusion');
         inst.pendingTextExclusionLayoutTimer = setTimeout(function () {
             inst.pendingTextExclusionLayoutTimer = null;
             if (!inst || inst.disposed || !inst.root) return;
             var stats = ensureStrictPerformanceStats(inst);
             stats.textExclusionIdlePassCount = Number(stats.textExclusionIdlePassCount || 0) + 1;
             var selectionBeforeLayout = inst.selection ? createSelectionSnapshot(inst.selection) : null;
-            syncWysiwygObjectLayerPositions(inst.root);
-            applyWysiwygTextExclusionLayout(inst, { reason: reason || 'idle-text-exclusion' });
-            if (inst.pendingDomSelectionRestore || selectionBeforeLayout) {
-                restoreDomSelectionFromSnapshot(inst, inst.pendingDomSelectionRestore || selectionBeforeLayout);
-                inst.pendingDomSelectionRestore = null;
+            try {
+                syncWysiwygObjectLayerPositions(inst.root);
+                applyWysiwygTextExclusionLayout(inst, { reason: reason || 'idle-text-exclusion' });
+                syncWysiwygObjectLayerPositions(inst.root);
+                if (inst.pendingDomSelectionRestore || selectionBeforeLayout) {
+                    restoreDomSelectionFromSnapshot(inst, inst.pendingDomSelectionRestore || selectionBeforeLayout);
+                    inst.pendingDomSelectionRestore = null;
+                }
+            } finally {
+                markWysiwygTextExclusionLayoutPending(inst, false, reason || 'idle-text-exclusion');
             }
         }, delay);
         if (inst.timers && inst.timers.indexOf(inst.pendingTextExclusionLayoutTimer) < 0) inst.timers.push(inst.pendingTextExclusionLayoutTimer);
@@ -21569,29 +25902,50 @@ window.tmDocumentEditorEngine = (function () {
 
     function collectWysiwygDomTextExclusions(body, bodyRect, frame) {
         var result = [];
+        function readWrapContourPoints(item) {
+            var raw = item.getAttribute('data-wrap-contour-points') || '';
+            if (!raw) return [];
+            try {
+                return normalizeWrapContourPointsForGeometry(JSON.parse(raw));
+            } catch (_) {
+                return [];
+            }
+        }
+        function getVisibleChildRect(item, selector) {
+            var child = item && item.querySelector ? item.querySelector(selector) : null;
+            if (!child || !isWysiwygLayoutElementVisible(child)) return null;
+            return getWysiwygRectRelativeTo(child.getBoundingClientRect(), bodyRect);
+        }
         Array.from(body.querySelectorAll('.tm-wysiwyg-page__layer--object .tm-wysiwyg-object-layer-item[data-object-id]')).forEach(function (item) {
             if (!isWysiwygLayoutElementVisible(item)) return;
             if ((item.getAttribute('data-object-layer-kind') || '') === 'inline') return;
             var mode = normalizeWrapModeName(item.getAttribute('data-wrap-mode') || 'Inline');
             if (!wrapModeCreatesTextExclusion(mode)) return;
-            var objectRect = getWysiwygObjectVisualRectRelativeTo(item, bodyRect);
+            var objectRect = getVisibleChildRect(item, 'img') || getWysiwygObjectVisualRectRelativeTo(item, bodyRect);
             if (!objectRect || objectRect.width <= 0 || objectRect.height <= 0) return;
             var anchorBlockId = item.getAttribute('data-anchor-block-id') || item.getAttribute('data-model-block-id') || item.getAttribute('data-block-id') || '';
+            var objectId = item.getAttribute('data-object-id') || '';
+            var wrapSide = normalizeWrapSideName(item.getAttribute('data-wrap-side') || 'BothSides');
+            var distanceLeft = Number(item.getAttribute('data-distance-left') || 0) || 0;
+            var distanceRight = Number(item.getAttribute('data-distance-right') || 0) || 0;
+            var distanceTop = Number(item.getAttribute('data-distance-top') || 0) || 0;
+            var distanceBottom = Number(item.getAttribute('data-distance-bottom') || 0) || 0;
             var object = {
-                objectId: item.getAttribute('data-object-id') || '',
+                objectId: objectId,
                 blockId: anchorBlockId,
                 anchorBlockId: anchorBlockId,
                 pageIndex: 0,
                 region: 'Body',
                 wrapMode: mode,
-                wrapSide: normalizeWrapSideName(item.getAttribute('data-wrap-side') || 'BothSides'),
+                wrapSide: wrapSide,
                 rect: objectRect,
                 width: objectRect.width,
                 height: objectRect.height,
-                distanceLeft: Number(item.getAttribute('data-distance-left') || 0) || 0,
-                distanceRight: Number(item.getAttribute('data-distance-right') || 0) || 0,
-                distanceTop: Number(item.getAttribute('data-distance-top') || 0) || 0,
-                distanceBottom: Number(item.getAttribute('data-distance-bottom') || 0) || 0,
+                wrapContourPoints: readWrapContourPoints(item),
+                distanceLeft: distanceLeft,
+                distanceRight: distanceRight,
+                distanceTop: distanceTop,
+                distanceBottom: distanceBottom,
                 allowOverlap: false
             };
             var exclusion = createTextExclusion(object, frame);
@@ -21599,6 +25953,32 @@ window.tmDocumentEditorEngine = (function () {
             exclusion.anchorBlockId = anchorBlockId;
             exclusion.objectElement = item;
             result.push(exclusion);
+            var captionRect = getVisibleChildRect(item, 'figcaption');
+            if (captionRect && captionRect.width > 0 && captionRect.height > 0) {
+                var captionExclusion = createTextExclusion({
+                    objectId: objectId ? objectId + ':caption' : anchorBlockId + ':caption',
+                    blockId: anchorBlockId,
+                    anchorBlockId: anchorBlockId,
+                    pageIndex: 0,
+                    region: 'Body',
+                    wrapMode: mode === 'TopBottom' ? 'TopBottom' : 'Square',
+                    wrapSide: wrapSide,
+                    rect: captionRect,
+                    width: captionRect.width,
+                    height: captionRect.height,
+                    distanceLeft: distanceLeft,
+                    distanceRight: distanceRight,
+                    distanceTop: 0,
+                    distanceBottom: distanceBottom,
+                    allowOverlap: false
+                }, frame);
+                if (captionExclusion) {
+                    captionExclusion.anchorBlockId = anchorBlockId;
+                    captionExclusion.objectElement = item;
+                    captionExclusion.captionElement = item.querySelector ? item.querySelector('figcaption') : null;
+                    result.push(captionExclusion);
+                }
+            }
         });
         return result;
     }
@@ -21650,7 +26030,12 @@ window.tmDocumentEditorEngine = (function () {
 
     function shouldProjectWysiwygParagraph(paragraph, block) {
         if (!paragraph || !block || block.type !== 'paragraph') return false;
-        if (!_blockText(block).trim()) return false;
+        var hasText = !!_blockText(block).trim();
+        var content = block && (block.content || block.Content) || {};
+        var hasDrawingObject = _asArray(content.runs || content.Runs || content.inlines || content.Inlines).some(function (run) {
+            return run && (run.kind === 'drawing' || isDrawingRunSource(run));
+        });
+        if (!hasText && !hasDrawingObject) return false;
         if (paragraph.querySelector('.tm-wysiwyg-marker, .tm-document-inline--comment-anchor, .tm-document-inline--revision')) return false;
         return true;
     }
@@ -21697,8 +26082,20 @@ window.tmDocumentEditorEngine = (function () {
         var segments = _asArray(layout && layout.segments).filter(function (segment) {
             return segment && segment.inlineObject !== true && segment.text !== undefined;
         });
-        if (!segments.length) return restoreWysiwygProjectedParagraph(paragraph);
-        segments = splitProjectedWysiwygSegmentsForReflow(segments, paragraphInput.style);
+        if (!segments.length) {
+            segments = [{
+                id: (block.id || 'paragraph') + '-virtual-caret',
+                blockId: block.id || '',
+                text: '',
+                start: 0,
+                end: 0,
+                rect: { x: 0, y: paragraphTop, width: 1, height: lineHeight },
+                style: paragraphInput.style,
+                virtualCaret: true
+            }];
+        } else {
+            segments = splitProjectedWysiwygSegmentsForReflow(segments, paragraphInput.style);
+        }
         var projected = reflowProjectedWysiwygSegments(segments, paragraphTop, lineHeight, bodyWidth, frame, allExclusions);
         segments = projected.segments;
         var lines = projected.lines.length ? projected.lines : _asArray(layout && layout.lines);
@@ -21730,8 +26127,28 @@ window.tmDocumentEditorEngine = (function () {
         paragraph.replaceChildren();
         lines.forEach(function (line) {
             var marker = document.createElement('span');
+            var lineSegments = segments.filter(function (segment) {
+                return Math.abs(Number(segment && segment.rect && segment.rect.y || 0) - Number(line && line.rect && line.rect.y || 0)) < 0.5;
+            });
+            var lineStart = lineSegments.length ? Math.min.apply(null, lineSegments.map(function (segment) { return Number(segment.start ?? segment.Start ?? 0) || 0; })) : 0;
+            var lineEnd = lineSegments.length ? Math.max.apply(null, lineSegments.map(function (segment) { return Number(segment.end ?? segment.End ?? segment.start ?? segment.Start ?? 0) || 0; })) : lineStart;
             marker.className = 'tm-wysiwyg-layout-line';
             marker.setAttribute('data-layout-line-id', line.id || '');
+            marker.setAttribute('data-layout-block-id', block.id || '');
+            marker.setAttribute('data-layout-start', lineStart);
+            marker.setAttribute('data-layout-end', lineEnd);
+            marker.setAttribute('data-layout-line-rect', JSON.stringify(line.rect || {}));
+            marker.setAttribute('data-layout-available-intervals', JSON.stringify(_asArray(line.availableIntervals).map(function (interval, index) {
+                return Object.assign({
+                    id: (line.id || 'projected-line') + '-interval-' + index,
+                    blockId: block.id || '',
+                    lineId: line.id || '',
+                    start: lineStart,
+                    end: lineEnd,
+                    collapsedOffset: lineStart === lineEnd ? lineStart : null,
+                    virtualCaret: lineStart === lineEnd
+                }, interval || {});
+            })));
             marker.setAttribute('aria-hidden', 'true');
             marker.style.left = Math.round(Number(line.rect && line.rect.x || 0) * 100) / 100 + 'px';
             marker.style.top = Math.round((Number(line.rect && line.rect.y || paragraphTop) - paragraphTop) * 100) / 100 + 'px';
@@ -21815,6 +26232,10 @@ window.tmDocumentEditorEngine = (function () {
             startNewLine();
         }
 
+        function tokenCanFitDocumentWidth(width) {
+            return width <= bodyWidth + 0.0001;
+        }
+
         source.forEach(function (segment) {
             var text = _asText(segment.text || '');
             var width = Math.max(1, Number(segment.rect && segment.rect.width || 1) || 1);
@@ -21824,7 +26245,8 @@ window.tmDocumentEditorEngine = (function () {
             while (guard++ < 100) {
                 var interval = currentInterval();
                 var intervalRight = Number(interval.x || 0) + Number(interval.width || 0);
-                if (cursorX + width <= intervalRight + 0.0001 || width > Number(interval.width || 0)) break;
+                if (cursorX + width <= intervalRight + 0.0001) break;
+                if (!tokenCanFitDocumentWidth(width) && width > Number(interval.width || 0)) break;
                 moveToNextIntervalOrLine(width);
                 if (isSpace && !hasContentOnLine) return;
             }
@@ -21995,13 +26417,26 @@ window.tmDocumentEditorEngine = (function () {
         var empty = !blocks.length || blocks.every(function (block) { return !_blockText(block).trim(); });
         var classes = ['tm-wysiwyg-page__' + cssName];
         if (empty) classes.push('tm-wysiwyg-page__' + cssName + '--empty');
-        var html = ['<div class="' + classes.join(' ') + '" data-render-region="' + regionName + '" data-testid="' + (isHeader ? 'document-page-header' : 'document-page-footer') + '" data-hf-id="' + _escape(region && region.id || '') + '" data-placeholder="' + _escape(placeholder) + '" contenteditable="' + (readOnly ? 'false' : 'true') + '" spellcheck="false" autocorrect="off" autocapitalize="off" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(label) + '" tabindex="0">'];
+        var html = [
+            '<div class="tm-wysiwyg-page__' + cssName + '-shell" data-testid="' + (isHeader ? 'document-page-header' : 'document-page-footer') + '">',
+            '<div class="' + classes.join(' ') + '" data-render-region="' + regionName + '" data-testid="' + (isHeader ? 'document-wysiwyg-header' : 'document-wysiwyg-footer') + '" data-hf-id="' + _escape(region && region.id || '') + '" data-placeholder="' + _escape(placeholder) + '" contenteditable="' + (readOnly ? 'false' : 'true') + '" spellcheck="false" autocorrect="off" autocapitalize="off" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(label) + '" tabindex="0">'
+        ];
         blocks.forEach(function (block) {
             html.push(renderEngineBlockHtml(inst, block, inst.options.ImageAltMissing || inst.options.imageAltMissing || 'Image is missing alternative text.', page.pageNumber, totalPages));
         });
         if (!blocks.length) html.push('<p class="tm-wysiwyg-block" data-block-id="' + _escape((region && region.id || cssName) + '-empty') + '"><br></p>');
-        html.push('</div>');
+        html.push('</div></div>');
         return html.join('');
+    }
+
+    function renderPageOverflowWarningHtml(inst, page) {
+        if (!_asArray(page && page.overflowBlocks).length) return '';
+        var warning = inst && inst.options && (inst.options.PageOverflowWarning || inst.options.pageOverflowWarning) || 'Page content overflow';
+        var label = inst && inst.options && (inst.options.InsertPageBreakLabel || inst.options.insertPageBreakLabel) || 'Insert page break';
+        return '<div class="tm-wysiwyg-page__overflow-warning" data-testid="document-page-overflow-warning" role="status">' +
+            '<span>' + _escape(warning) + '</span>' +
+            '<button type="button" data-testid="document-page-overflow-insert-page-break">' + _escape(label) + '</button>' +
+            '</div>';
     }
 
     function buildSimpleHeaderFooterLayoutRegions(root, pagePlan) {
@@ -22036,24 +26471,36 @@ window.tmDocumentEditorEngine = (function () {
 
     function renderEngineBlockHtml(inst, block, imageAltMissing, pageNumber, totalPages) {
         if (!block) return '';
-        if (block.type === 'paragraph') {
+        if (block.type === 'paragraph' || block.type === 'heading') {
             var content = renderParagraphRunsHtml(inst, block, pageNumber, totalPages);
             var blockContent = block.content || {};
             var blockStyle = block.style || {};
             var alignment = normalizeParagraphAlignment(blockContent.alignment ?? blockContent.Alignment ?? blockStyle.alignment ?? blockStyle.Alignment ?? 'left');
-            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" data-alignment="' + _escape(alignment) + '" style="text-align:' + _escape(alignment) + '" role="paragraph">' + (content || '<br data-caret-placeholder="true">') + '</p>';
+            var paragraphEndMark = renderNonPrintingParagraphMarkerHtml(inst);
+            if (block.type === 'heading') {
+                var level = Math.max(1, Math.min(6, Number(blockContent.level ?? blockContent.Level ?? 1) || 1));
+                return '<h' + level + ' class="tm-wysiwyg-block tm-wysiwyg-heading tm-wysiwyg-heading--h' + level + '" data-block-id="' + _escape(block.id) + '" data-heading-level="' + _escape(level) + '" ' + renderParagraphBlockAttributes(block, alignment) + ' role="heading" aria-level="' + _escape(level) + '">' + (content || '<br data-caret-placeholder="true">') + paragraphEndMark + '</h' + level + '>';
+            }
+            var listType = normalizeParagraphListType(blockContent.listType ?? blockContent.ListType);
+            if (listType) {
+                var tagName = paragraphListTagName(listType);
+                return '<' + tagName + ' class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" data-list-type="' + _escape(listType) + '" ' + renderParagraphBlockAttributes(block, alignment) + ' role="list"><li class="tm-wysiwyg-list-item" data-list-item="true">' + (content || '<br data-caret-placeholder="true">') + paragraphEndMark + '</li></' + tagName + '>';
+            }
+            return '<p class="tm-wysiwyg-block" data-block-id="' + _escape(block.id) + '" ' + renderParagraphBlockAttributes(block, alignment) + ' role="paragraph">' + (content || '<br data-caret-placeholder="true">') + paragraphEndMark + '</p>';
         }
         if (block.type === 'image') {
             var object = normalizeImageObject(block);
             var alt = block.content.altText || '';
             var caption = block.content.caption || '';
             var warningId = 'tm-wysiwyg-image-alt-warning-' + _escape(block.id);
-            var selected = inst.selection && (inst.selection.activeImageBlockId === block.id || inst.selection.blockId === block.id && inst.selection.isObjectSelection === true);
+            var activeObjectId = _asText(inst.selection && (inst.selection.activeObjectId || inst.selection.ActiveObjectId || inst.selection.objectId || inst.selection.ObjectId || inst.selection.objectSelection && (inst.selection.objectSelection.objectId || inst.selection.objectSelection.ObjectId)) || '');
+            var objectId = _asText(object && object.objectId || block.id || '');
+            var selected = inst.selection && (inst.selection.activeImageBlockId === block.id || inst.selection.blockId === block.id && inst.selection.isObjectSelection === true || activeObjectId && activeObjectId === objectId);
             var describedBy = appendAriaDescribedByToken(!alt ? warningId : '', activeObjectStatusId(inst), selected === true);
             var ariaDescription = describedBy ? ' aria-describedby="' + _escape(describedBy) + '"' : '';
             var src = _asText(object.url || '');
             var height = Math.max(1, Number(object.height || 80) || 80);
-            var html = ['<figure class="' + renderImageFigureClasses(selected, object) + '" style="' + _escape(renderDrawingFigureStyle(object)) + '" data-block-id="' + _escape(block.id) + '" data-wrap-mode="' + _escape(object.wrapMode) + '" role="figure" aria-label="' + _escape(alt || caption || 'Image') + '"' + ariaDescription + renderObjectFocusPolicyAttributes(selected) + '>'];
+            var html = ['<figure class="' + renderImageFigureClasses(selected, object) + '" style="' + _escape(renderDrawingFigureStyle(object)) + '" data-block-id="' + _escape(block.id) + '" data-object-id="' + _escape(objectId) + '" data-wrap-mode="' + _escape(object.wrapMode) + '" role="figure" aria-label="' + _escape(alt || caption || 'Image') + '"' + ariaDescription + renderObjectFocusPolicyAttributes(selected) + '>'];
             if (src) {
                 html.push('<img src="' + _escape(src) + '" alt="' + _escape(alt) + '" role="img" style="width:100%;height:' + height + 'px;object-fit:contain" draggable="false" />');
             } else {
@@ -22070,7 +26517,16 @@ window.tmDocumentEditorEngine = (function () {
             return html.join('');
         }
         if (block.type === 'table') {
-            return renderEngineTableHtml(block);
+            return renderEngineTableHtml(inst, block, imageAltMissing, pageNumber, totalPages);
+        }
+        if (block.type === 'pageBreak') {
+            var interactive = block.content && block.content.runtimeInteractive === true;
+            if (!interactive) {
+                return '<div class="tm-wysiwyg-block tm-wysiwyg-page-break-boundary" data-block-id="' + _escape(block.id) + '" data-page-break="true" aria-hidden="true"></div>';
+            }
+            var selected = inst && inst.selectedPageBreakId === block.id;
+            var label = inst && inst.options && (inst.options.InsertPageBreakLabel || inst.options.insertPageBreakLabel) || 'Page break';
+            return '<div class="tm-wysiwyg-block tm-wysiwyg-page-break' + (selected ? ' tm-wysiwyg-page-break--selected' : '') + '" data-block-id="' + _escape(block.id) + '" data-testid="document-wysiwyg-page-break" data-page-break="true" contenteditable="false" tabindex="0" role="separator" aria-label="' + _escape(label) + '"></div>';
         }
         return '';
     }
@@ -22109,9 +26565,14 @@ window.tmDocumentEditorEngine = (function () {
                     html.push('<div class="tm-wysiwyg-page__virtual-placeholder" data-testid="document-wysiwyg-virtual-page" data-block-count="' + page.blockIds.length + '"></div>');
                 } else {
                     html.push(renderHeaderFooterHtml(inst, page, 'header', readOnly, pagePlan.pages.length));
-                    html.push('<div class="tm-wysiwyg-page__body tm-wysiwyg-page__body--layout" data-render-region="Body" contenteditable="' + (readOnly ? 'false' : 'true') + '" spellcheck="false" autocorrect="off" autocapitalize="off" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(currentBodyLabel) + '" tabindex="0">');
+                    var bodyEmpty = !page.blocks.length || page.blocks.every(function (block) { return !_blockText(block).trim(); });
+                    var bodyClasses = ['tm-wysiwyg-page__body', 'tm-wysiwyg-page__body--layout'];
+                    if (bodyEmpty) bodyClasses.push('tm-wysiwyg-page__body--empty');
+                    var bodyPlaceholder = inst.options.BodyPlaceholder || inst.options.bodyPlaceholder || 'Document body';
+                    html.push('<div class="' + bodyClasses.join(' ') + '" data-render-region="Body" data-placeholder="' + _escape(bodyPlaceholder) + '" contenteditable="' + (readOnly ? 'false' : 'true') + '" spellcheck="false" autocorrect="off" autocapitalize="off" role="textbox" aria-multiline="true" aria-readonly="' + (readOnly ? 'true' : 'false') + '" aria-label="' + _escape(currentBodyLabel) + '" tabindex="0">');
                     html.push(renderWysiwygBodyLayersHtml(inst, page.blocks, imageAltMissing, page.pageNumber, pagePlan.pages.length));
                     html.push('</div>');
+                    html.push(renderPageOverflowWarningHtml(inst, page));
                     html.push(renderHeaderFooterHtml(inst, page, 'footer', readOnly, pagePlan.pages.length));
                 }
                 html.push('</section>');
@@ -22120,7 +26581,9 @@ window.tmDocumentEditorEngine = (function () {
             inst.root.innerHTML = html.join('');
             recordFullRenderSwap(inst, 'render', invalidatedScopeIds, pagePlan);
             syncWysiwygObjectLayerPositions(inst.root);
-            applyWysiwygTextExclusionLayout(inst);
+            applyWysiwygTextExclusionLayout(inst, { reason: 'full-render' });
+            syncWysiwygObjectLayerPositions(inst.root);
+            scheduleWysiwygTextExclusionLayout(inst, 'idle-after-full-render', 40);
             var layoutStart = strictPerformanceNow();
             if (diagnostics.forceLayoutFailure) {
                 diagnostics.forceLayoutFailure = false;
@@ -22135,6 +26598,7 @@ window.tmDocumentEditorEngine = (function () {
                         headerFooterIds: [page.header && page.header.id, page.footer && page.footer.id].filter(Boolean),
                         headerBlockIds: page.headerBlockIds.slice(),
                         footerBlockIds: page.footerBlockIds.slice(),
+                        overflowBlocks: _asArray(page.overflowBlocks).slice(),
                         exclusions: [],
                         isVirtual: page.isVirtual === true,
                         isRendered: page.isRendered === true
@@ -22180,9 +26644,12 @@ window.tmDocumentEditorEngine = (function () {
             updateActiveCommentDom(inst);
             updateActiveRevisionDom(inst);
             updateActiveImageSelectionDom(inst);
+            updateSelectedPageBreakDom(inst);
             updateActiveObjectStatusDom(inst);
             updateImageToolbarOpenDom(inst, false);
             focusEditableSurfaceForObjectSelection(inst, inst.selection);
+            notifyPageMetricsChanged(inst);
+            updateActivePageAndHeadingFromViewport(inst, 'render');
             inst.root.removeAttribute('data-debug-recovery');
         } catch (error) {
             var message = String(error && error.message || error);
@@ -22226,21 +26693,109 @@ window.tmDocumentEditorEngine = (function () {
         root.classList.add(className);
     }
 
-    function renderEngineTableHtml(block) {
+    function tableLayoutValue(block, key, fallback) {
+        var layout = block && block.content && (block.content.layout || block.content.Layout) || {};
+        var style = block && block.content && (block.content.style || block.content.Style) || {};
+        return layout[key] ?? layout[key.charAt(0).toUpperCase() + key.slice(1)] ?? style[key] ?? style[key.charAt(0).toUpperCase() + key.slice(1)] ?? fallback;
+    }
+
+    function tableCellValue(cell, key, fallback) {
+        var style = cell && (cell.style || cell.Style) || {};
+        var pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+        if (cell && cell[key] !== null && cell[key] !== undefined) return cell[key];
+        if (cell && cell[pascalKey] !== null && cell[pascalKey] !== undefined) return cell[pascalKey];
+        if (style[key] !== null && style[key] !== undefined) return style[key];
+        if (style[pascalKey] !== null && style[pascalKey] !== undefined) return style[pascalKey];
+        return fallback;
+    }
+
+    function tableBorderValue(source, side) {
+        var borders = source && (source.borders || source.Borders) || {};
+        var key = side.charAt(0).toUpperCase() + side.slice(1);
+        var style = source && (source.style || source.Style) || {};
+        return borders[side] ?? borders[key] ?? style['border' + key] ?? null;
+    }
+
+    function renderEngineTableHtml(inst, block, imageAltMissing, pageNumber, totalPages) {
         var rows = _asArray(block && block.content && block.content.rows);
-        var html = ['<table class="tm-wysiwyg-block tm-wysiwyg-table" data-block-id="' + _escape(block.id) + '" role="table" aria-label="Table"><tbody>'];
+        var tableStyle = [];
+        var tableAttrs = [
+            'class="tm-wysiwyg-block tm-wysiwyg-table"',
+            'data-block-id="' + _escape(block.id) + '"',
+            'role="table"',
+            'aria-label="Table"'
+        ];
+        var tableWidth = nullableNumber(tableLayoutValue(block, 'width', null));
+        if (tableWidth !== null) {
+            tableAttrs.push('data-table-width="' + _escape(tableWidth) + '"');
+            tableStyle.push('width:' + tableWidth + 'px');
+        }
+        var tableAlignment = normalizeTableAlignmentValue(tableLayoutValue(block, 'alignment', 0));
+        tableAttrs.push('data-table-alignment="' + _escape(tableAlignment) + '"');
+        if (tableAlignment === 'center') tableStyle.push('margin-left:auto', 'margin-right:auto');
+        else if (tableAlignment === 'right') tableStyle.push('margin-left:auto', 'margin-right:0');
+        else tableStyle.push('margin-left:0', 'margin-right:auto');
+        var tableCellPadding = nullableNumber(tableLayoutValue(block, 'cellPadding', null));
+        if (tableCellPadding !== null) {
+            tableAttrs.push('data-table-cell-padding="' + _escape(tableCellPadding) + '"');
+            tableStyle.push('--tm-document-table-cell-padding:' + tableCellPadding + 'px');
+        }
+        var tableBackground = tableLayoutValue(block, 'backgroundColor', null);
+        if (tableBackground) {
+            tableAttrs.push('data-table-background="' + _escape(tableBackground) + '"');
+            tableStyle.push('background-color:' + _escape(tableBackground));
+        }
+        if (tableStyle.length) tableAttrs.push('style="' + tableStyle.join(';') + '"');
+        var html = ['<table ' + tableAttrs.join(' ') + '><tbody>'];
         rows.forEach(function (row) {
             html.push('<tr data-row-id="' + _escape(row.id) + '" role="row">');
             _asArray(row.cells).forEach(function (cell, cellIndex) {
                 var style = [];
-                if (cell.style && cell.style.background) style.push('background:' + _escape(cell.style.background));
+                var cellBlocks = ensureEditableBlocks(cell.blocks, (cell.id || block.id || 'cell') + '-render-empty');
+                var cellEmpty = !cellBlocks.length || cellBlocks.every(function (child) { return !_blockText(child).trim(); });
+                var cellClasses = ['tm-wysiwyg-table-cell'];
+                if (cellEmpty) cellClasses.push('tm-wysiwyg-table-cell--empty');
+                var attrs = [
+                    'class="' + cellClasses.join(' ') + '"',
+                    'data-cell-id="' + _escape(cell.id) + '"',
+                    'data-column-index="' + _escape(cellIndex) + '"',
+                    'data-placeholder="' + _escape(inst && inst.options && (inst.options.TableCellPlaceholder || inst.options.tableCellPlaceholder) || '') + '"',
+                    'colspan="' + _escape(cell.colSpan || cell.columnSpan || 1) + '"',
+                    'rowspan="' + _escape(cell.rowSpan || 1) + '"',
+                    'role="gridcell"',
+                    'tabindex="-1"',
+                    'aria-label="Table cell ' + (cellIndex + 1) + '"'
+                ];
+                var cellWidth = nullableNumber(tableCellValue(cell, 'width', null));
+                if (cellWidth !== null) {
+                    attrs.push('data-cell-width="' + _escape(cellWidth) + '"');
+                    style.push('width:' + cellWidth + 'px');
+                }
+                var background = tableCellValue(cell, 'backgroundColor', null) || tableCellValue(cell, 'background', null);
+                if (background) {
+                    attrs.push('data-cell-background="' + _escape(background) + '"');
+                    style.push('background-color:' + _escape(background));
+                }
+                var padding = nullableNumber(tableCellValue(cell, 'padding', null));
+                if (padding !== null) {
+                    attrs.push('data-cell-padding="' + _escape(padding) + '"');
+                    style.push('padding:' + padding + 'px');
+                }
+                var verticalAlign = normalizeTableCellVerticalAlignment(tableCellValue(cell, 'verticalAlignment', 'top'));
+                attrs.push('data-cell-vertical-align="' + _escape(verticalAlign) + '"');
+                style.push('vertical-align:' + verticalAlign);
+                ['top', 'right', 'bottom', 'left'].forEach(function (side) {
+                    var border = tableBorderValue(cell, side);
+                    if (!border) return;
+                    attrs.push('data-cell-border-' + side + '="' + _escape(border) + '"');
+                    style.push('border-' + side + ':' + _escape(border));
+                });
                 if (cell.style && cell.style.border) style.push('border:' + _escape(cell.style.border));
-                if (cell.style && cell.style.padding !== undefined) style.push('padding:' + Number(cell.style.padding || 0) + 'px');
-                html.push('<td data-cell-id="' + _escape(cell.id) + '" data-column-index="' + _escape(cellIndex) + '" colspan="' + _escape(cell.colSpan || 1) + '" rowspan="' + _escape(cell.rowSpan || 1) + '" role="gridcell" tabindex="-1" aria-label="Table cell ' + (cellIndex + 1) + '"' + (style.length ? ' style="' + style.join(';') + '"' : '') + '>');
-                _asArray(cell.blocks).forEach(function (child) {
-                    if (child.type === 'paragraph') {
-                        html.push('<p class="tm-wysiwyg-block" data-block-id="' + _escape(child.id) + '">' + _escape(_textFromRuns(child.content && child.content.runs)) + '</p>');
-                    }
+                if (style.length) attrs.push('style="' + style.join(';') + '"');
+                html.push('<td ' + attrs.join(' ') + '>');
+                cell.blocks = cellBlocks;
+                cellBlocks.forEach(function (child) {
+                    html.push(renderEngineBlockHtml(inst, child, imageAltMissing, pageNumber, totalPages));
                 });
                 html.push('</td>');
             });
@@ -22637,6 +27192,286 @@ window.tmDocumentEditorEngine = (function () {
         return { Pages: [page] };
     }
 
+    function domRectForHitTest(rect) {
+        var normalized = rectFromAny(rect);
+        return {
+            X: normalized.X,
+            Y: normalized.Y,
+            Width: normalized.Width,
+            Height: normalized.Height,
+            x: normalized.X,
+            y: normalized.Y,
+            width: normalized.Width,
+            height: normalized.Height
+        };
+    }
+
+    function isDomHitTestElementVisible(element) {
+        if (!element || typeof element.getBoundingClientRect !== 'function') return false;
+        if (element.closest && element.closest('.tm-wysiwyg-page--virtual, [hidden]')) return false;
+        var rect = element.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+        var style = typeof getComputedStyle === 'function' ? getComputedStyle(element) : null;
+        return !style || (style.display !== 'none' && style.visibility !== 'hidden');
+    }
+
+    function collectDomHitTestTextLines(root) {
+        if (!root || typeof root.querySelectorAll !== 'function') return [];
+        var ownerDocument = root.ownerDocument || (typeof document !== 'undefined' ? document : null);
+        if (!ownerDocument || typeof ownerDocument.createTreeWalker !== 'function') return [];
+        var lines = [];
+        var blocks = Array.from(root.querySelectorAll('.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id], .tm-wysiwyg-page__header .tm-wysiwyg-block[data-block-id], .tm-wysiwyg-page__footer .tm-wysiwyg-block[data-block-id]'));
+        blocks.forEach(function (block) {
+            if (!isDomHitTestElementVisible(block)) return;
+            if (block.matches && block.matches('.tm-wysiwyg-legacy-image-placeholder, [data-legacy-image-block="true"], [role="img"][contenteditable="false"]')) return;
+            if (block.closest && block.closest('.tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides, figure, [role="toolbar"], .tm-document-editor__ribbon')) return;
+            var blockId = block.getAttribute('data-block-id') || block.getAttribute('data-render-block-id') || '';
+            if (!blockId) return;
+            var textOffset = 0;
+            var lineIndex = lines.length;
+            Array.from(block.querySelectorAll(':scope > .tm-wysiwyg-layout-line[data-layout-available-intervals]')).forEach(function (marker) {
+                if (!isDomHitTestElementVisible(marker)) return;
+                var markerRect = domRectForHitTest(marker.getBoundingClientRect());
+                var lineRect = {};
+                var intervals = [];
+                try {
+                    lineRect = JSON.parse(marker.getAttribute('data-layout-line-rect') || '{}') || {};
+                } catch (_) {
+                    lineRect = {};
+                }
+                try {
+                    intervals = JSON.parse(marker.getAttribute('data-layout-available-intervals') || '[]') || [];
+                } catch (_) {
+                    intervals = [];
+                }
+                var lineId = marker.getAttribute('data-layout-line-id') || ('dom-projected-line-' + blockId + '-' + lineIndex);
+                var lineStart = Number(marker.getAttribute('data-layout-start') || 0) || 0;
+                var lineEnd = Math.max(lineStart, Number(marker.getAttribute('data-layout-end') || lineStart) || lineStart);
+                var originX = markerRect.X - (Number(lineRect.x ?? lineRect.X ?? 0) || 0);
+                var originY = markerRect.Y - (Number(lineRect.y ?? lineRect.Y ?? 0) || 0);
+                lines.push({
+                    Id: lineId,
+                    BlockId: blockId,
+                    VisualLineIndex: lineIndex,
+                    Rect: markerRect,
+                    Segments: [{
+                        Id: 'dom-projected-segment-' + blockId + '-' + lineIndex,
+                        LineId: lineId,
+                        BlockId: blockId,
+                        TextLength: Math.max(0, lineEnd - lineStart),
+                        Length: Math.max(0, lineEnd - lineStart),
+                        StartOffset: lineStart,
+                        BlockStartOffset: lineStart,
+                        Rect: markerRect
+                    }],
+                    AvailableIntervals: _asArray(intervals).map(function (interval, intervalIndex) {
+                        var ix = Number(interval && (interval.x ?? interval.X) || 0) || 0;
+                        var iy = Number(interval && (interval.y ?? interval.Y) || 0) || 0;
+                        var iw = Math.max(1, Number(interval && (interval.width ?? interval.Width) || 1) || 1);
+                        var ih = Math.max(1, Number(interval && (interval.height ?? interval.Height) || markerRect.Height) || markerRect.Height);
+                        var intervalStart = interval ? (interval.start ?? interval.Start) : undefined;
+                        var intervalEnd = interval ? (interval.end ?? interval.End) : undefined;
+                        var rect = domRectForHitTest({ left: originX + ix, top: originY + iy, width: iw, height: ih });
+                        return {
+                            id: interval && (interval.id || interval.Id) || lineId + '-interval-' + intervalIndex,
+                            lineId: lineId,
+                            blockId: blockId,
+                            x: rect.X,
+                            y: rect.Y,
+                            width: rect.Width,
+                            height: rect.Height,
+                            rect: rect,
+                            start: Number(intervalStart ?? lineStart) || lineStart,
+                            end: Math.max(lineStart, Number(intervalEnd ?? lineEnd) || lineEnd),
+                            collapsedOffset: interval && (interval.collapsedOffset ?? interval.CollapsedOffset ?? null),
+                            virtualCaret: interval && (interval.virtualCaret === true || interval.VirtualCaret === true)
+                        };
+                    })
+                });
+                lineIndex++;
+            });
+            var walker = ownerDocument.createTreeWalker(
+                block,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode: function (node) {
+                        var text = node && node.textContent || '';
+                        if (!text.trim()) {
+                            textOffset += text.length;
+                            return NodeFilter.FILTER_REJECT;
+                        }
+
+                        var parent = node.parentElement;
+                        if (parent && parent.closest && parent.closest('[contenteditable="false"], .tm-wysiwyg-drawing-anchor, figure, button, input, textarea, select, script, style')) {
+                            textOffset += text.length;
+                            return NodeFilter.FILTER_REJECT;
+                        }
+
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                });
+            var range = ownerDocument.createRange();
+            for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+                var text = node.textContent || '';
+                var start = textOffset;
+                var end = start + text.length;
+                textOffset = end;
+                range.selectNodeContents(node);
+                Array.from(range.getClientRects()).forEach(function (rect) {
+                    if (!rect || rect.width <= 1 || rect.height <= 1) return;
+                    var hitRect = domRectForHitTest(rect);
+                    var lineId = 'dom-line-' + blockId + '-' + lineIndex;
+                    var intervalId = lineId + '-interval-0';
+                    lines.push({
+                        Id: lineId,
+                        BlockId: blockId,
+                        VisualLineIndex: lineIndex,
+                        Rect: hitRect,
+                        Segments: [{
+                            Id: 'dom-segment-' + blockId + '-' + lineIndex,
+                            LineId: lineId,
+                            BlockId: blockId,
+                            TextLength: text.length,
+                            Length: text.length,
+                            StartOffset: start,
+                            BlockStartOffset: start,
+                            Rect: hitRect
+                        }],
+                        AvailableIntervals: [{
+                            id: intervalId,
+                            lineId: lineId,
+                            blockId: blockId,
+                            x: hitRect.X,
+                            y: hitRect.Y,
+                            width: hitRect.Width,
+                            height: hitRect.Height,
+                            rect: hitRect,
+                            start: start,
+                            end: end
+                        }]
+                    });
+                    lineIndex++;
+                });
+            }
+            range.detach();
+            if (lineIndex === lines.length && block.querySelector('br[data-caret-placeholder]')) {
+                var blockRect = domRectForHitTest(block.getBoundingClientRect());
+                blockRect.Width = Math.max(1, blockRect.Width);
+                blockRect.width = blockRect.Width;
+                lines.push({
+                    Id: 'dom-line-' + blockId + '-' + lineIndex,
+                    BlockId: blockId,
+                    VisualLineIndex: lineIndex,
+                    Rect: blockRect,
+                    Segments: [{
+                        Id: 'dom-segment-' + blockId + '-' + lineIndex,
+                        LineId: 'dom-line-' + blockId + '-' + lineIndex,
+                        BlockId: blockId,
+                        TextLength: 0,
+                        Length: 0,
+                        StartOffset: 0,
+                        BlockStartOffset: 0,
+                        Rect: blockRect
+                    }],
+                    AvailableIntervals: [{
+                        id: 'dom-line-' + blockId + '-' + lineIndex + '-interval-0',
+                        lineId: 'dom-line-' + blockId + '-' + lineIndex,
+                        blockId: blockId,
+                        x: blockRect.X,
+                        y: blockRect.Y,
+                        width: blockRect.Width,
+                        height: blockRect.Height,
+                        rect: blockRect,
+                        start: 0,
+                        end: 0,
+                        collapsedOffset: 0
+                    }]
+                });
+            }
+        });
+        return lines;
+    }
+
+    function collectDomHitTestObjects(root) {
+        if (!root || typeof root.querySelectorAll !== 'function') return [];
+        var seen = new Set();
+        return Array.from(root.querySelectorAll('.tm-wysiwyg-object-layer-item[data-object-id], figure.tm-wysiwyg-image[data-object-id], .tm-render-image-widget[data-render-object-id], .tm-wysiwyg-inline-drawing[data-object-id]'))
+            .filter(isDomHitTestElementVisible)
+            .map(function (item) {
+                var objectId = item.getAttribute('data-object-id') || item.getAttribute('data-render-object-id') || '';
+                var blockId = item.getAttribute('data-block-id') || item.getAttribute('data-render-block-id') || item.getAttribute('data-model-block-id') || objectId;
+                var key = objectId + '|' + blockId + '|' + (item.getAttribute('data-wrap-mode') || '');
+                if (seen.has(key)) return null;
+                seen.add(key);
+                var layer = item.getAttribute('data-object-layer') || '';
+                if (!layer && item.closest) {
+                    if (item.closest('.tm-wysiwyg-page__layer--behind-text')) layer = 'behind-text';
+                    else if (item.closest('.tm-wysiwyg-page__layer--in-front-of-text')) layer = 'in-front-of-text';
+                    else layer = 'object';
+                }
+
+                var visualTarget = item.querySelector && (item.querySelector('img') || item.querySelector('.tm-wysiwyg-inline-drawing__placeholder')) || item;
+                var rect = domRectForHitTest((visualTarget || item).getBoundingClientRect());
+                var itemRect = domRectForHitTest(item.getBoundingClientRect());
+                var zIndex = Number(item.getAttribute('data-object-z-index') || item.style && item.style.zIndex || 0) || 0;
+                var wrapMode = normalizeWrapModeName(item.getAttribute('data-wrap-mode') || 'Inline');
+                return {
+                    Kind: 'ImageObject',
+                    ObjectId: objectId,
+                    ActiveObjectId: objectId,
+                    BlockId: blockId,
+                    ActiveImageBlockId: blockId,
+                    AnchorBlockId: item.getAttribute('data-anchor-block-id') || item.getAttribute('data-model-block-id') || blockId,
+                    Layer: layer || drawingLayerForWrapMode(wrapMode),
+                    WrapMode: wrapMode,
+                    WrapSide: item.getAttribute('data-wrap-side') || 'BothSides',
+                    ZIndex: zIndex,
+                    Selectable: true,
+                    Rect: rect,
+                    ObjectRect: rect,
+                    VisualRects: [rect],
+                    WrapRect: itemRect,
+                    DistanceLeft: Number(item.getAttribute('data-distance-left') || 0) || 0,
+                    DistanceRight: Number(item.getAttribute('data-distance-right') || 0) || 0,
+                    DistanceTop: Number(item.getAttribute('data-distance-top') || 0) || 0,
+                    DistanceBottom: Number(item.getAttribute('data-distance-bottom') || 0) || 0
+                };
+            })
+            .filter(Boolean);
+    }
+
+    function collectDomHitTestRects(root, selector) {
+        if (!root || typeof root.querySelectorAll !== 'function') return [];
+        return Array.from(root.querySelectorAll(selector))
+            .filter(isDomHitTestElementVisible)
+            .map(function (element) { return { Rect: domRectForHitTest(element.getBoundingClientRect()) }; });
+    }
+
+    function createDomHitTestRequest(root, x, y) {
+        var host = root && typeof root.querySelectorAll === 'function'
+            ? root
+            : (typeof document !== 'undefined' ? document.querySelector('[data-testid="document-wysiwyg-host"]') : null);
+        return {
+            X: Number(x || 0) || 0,
+            Y: Number(y || 0) || 0,
+            Lines: collectDomHitTestTextLines(host),
+            Objects: collectDomHitTestObjects(host),
+            BodyRects: collectDomHitTestRects(host, '.tm-wysiwyg-page__body--layout, .tm-wysiwyg-page__body[contenteditable]'),
+            PageRects: collectDomHitTestRects(host, '.tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)'),
+            HeaderFooters: collectDomHitTestRects(host, '.tm-wysiwyg-page__header, .tm-wysiwyg-page__footer'),
+            TableCells: collectDomHitTestRects(host, '.tm-wysiwyg-table td, .tm-wysiwyg-table th, .tm-wysiwyg-table-cell')
+        };
+    }
+
+    function createDocumentHitTestService(root) {
+        return {
+            hitTest: function (input, y) {
+                if (input && typeof input === 'object') return hitTestLayoutGeometry(input);
+                return hitTestLayoutGeometry(createDomHitTestRequest(root, input, y));
+            }
+        };
+    }
+
     function hitTestLayoutGeometry(request) {
         var source = request || {};
         var x = Number(source.X ?? source.x ?? 0) || 0;
@@ -22664,6 +27499,41 @@ window.tmDocumentEditorEngine = (function () {
             if (layer === 'behind-text' || layer === 'behindtext' || layer === 'in-front-of-text' || layer === 'infrontoftext') return false;
             var rect = objectTextExclusionRectForHitTest(item, bodyFrameForTextExclusion(item));
             return !!rect && hitRectContains(rect, x, y);
+        }
+        function caretFromObjectSideInterval(item) {
+            var mode = normalizeWrapModeName(item && (item.WrapMode || item.wrapMode));
+            var layer = String(item && (item.Layer || item.layer) || '').toLowerCase();
+            if (!wrapModeCreatesTextExclusion(mode) || layer === 'behind-text' || layer === 'behindtext' || layer === 'in-front-of-text' || layer === 'infrontoftext') return null;
+            if (pointInVisual(item)) return null;
+            var body = bodyFrameForTextExclusion(item);
+            var exclusion = objectTextExclusionRectForHitTest(item, body);
+            if (!body || !exclusion) return null;
+            var bodyRect = hitRectFromAny(body);
+            var exclusionRect = hitRectFromAny(exclusion);
+            var visualRect = hitRectFromAny(item.ObjectRect || item.objectRect || item.Rect || item.rect);
+            var distanceLeft = Math.max(0, Number(item.DistanceLeft ?? item.distanceLeft ?? 0) || 0);
+            var distanceRight = Math.max(0, Number(item.DistanceRight ?? item.distanceRight ?? 0) || 0);
+            var sameBand = y >= exclusionRect.y && y <= exclusionRect.y + exclusionRect.height;
+            if (!sameBand || x < bodyRect.x || x > bodyRect.x + bodyRect.width) return null;
+            var leftSide = x < exclusionRect.x;
+            var rightSide = x > exclusionRect.x + exclusionRect.width;
+            if (!leftSide && !rightSide) return null;
+            if (leftSide && x > visualRect.x - distanceLeft - 0.5) return null;
+            if (rightSide && x < visualRect.x + visualRect.width + distanceRight + 0.5) return null;
+            var blockId = item.AnchorBlockId || item.anchorBlockId || item.ModelBlockId || item.modelBlockId || item.BlockId || item.blockId || null;
+            if (!blockId) return null;
+            return {
+                Kind: 'TextCaret',
+                LayoutLineId: 'object-side-' + (item.ObjectId || item.objectId || blockId),
+                LayoutIntervalId: 'object-side-' + (leftSide ? 'left' : 'right'),
+                VisualLineIndex: 0,
+                Offset: 0,
+                BlockId: blockId,
+                Affinity: leftSide ? 'before' : 'after',
+                VirtualCaret: true,
+                ActiveImageBlockId: null,
+                ActiveObjectId: null
+            };
         }
         function caretFromLine(line) {
             var rect = rectFromAny(line.Rect || line.rect);
@@ -22718,9 +27588,6 @@ window.tmDocumentEditorEngine = (function () {
             .sort(function (a, b) { return (Number(b.LayerPriority || 0) - Number(a.LayerPriority || 0)) || (Number(b.ZIndex || 0) - Number(a.ZIndex || 0)); })[0];
         if (control) return Object.assign(base(control.Kind || 'Control'), control);
         var tableCell = _asArray(source.TableCells).find(function (item) { return rectContains(item.Rect, x, y); });
-        if (tableCell) return Object.assign(base('TableCell'), tableCell);
-        var region = _asArray(source.HeaderFooters).find(function (item) { return rectContains(item.Rect, x, y); });
-        if (region) return Object.assign(base('HeaderFooter'), region);
 
         var lineHit = null;
         _asArray(source.Lines).some(function (line) {
@@ -22748,6 +27615,17 @@ window.tmDocumentEditorEngine = (function () {
             });
         }
         if (lineHit && !textExclusionHit) return lineHit;
+        if (!textExclusionHit) {
+            var sideCaretHit = null;
+            _asArray(source.Objects).some(function (item) {
+                sideCaretHit = caretFromObjectSideInterval(item);
+                return !!sideCaretHit;
+            });
+            if (sideCaretHit) return sideCaretHit;
+        }
+        if (tableCell) return Object.assign(base('TableCell'), tableCell);
+        var region = _asArray(source.HeaderFooters).find(function (item) { return rectContains(item.Rect, x, y); });
+        if (region) return Object.assign(base('HeaderFooter'), region);
         var body = _asArray(source.BodyRects).find(function (item) { return rectContains(item.Rect, x, y); });
         if (body) return base('Body');
         var page = _asArray(source.PageRects).find(function (item) { return rectContains(item.Rect, x, y); });
@@ -22937,7 +27815,7 @@ window.tmDocumentEditorEngine = (function () {
     }
 
     function rangeFromCommentAnchor(model, comment) {
-        var anchor = comment && (comment.anchor || comment.Anchor) || {};
+        var anchor = comment && (comment.Anchor || comment.anchor) || {};
         var blockId = _asText(anchor.BlockId || anchor.blockId || anchor.StartBlockId || anchor.startBlockId || '');
         if (!blockId) return null;
         var block = _findBlock(model, blockId);
@@ -22988,7 +27866,7 @@ window.tmDocumentEditorEngine = (function () {
         return _asArray(model && model.comments).map(function (comment) {
             var commentId = readCommentId(comment);
             if (!commentId) return null;
-            var range = inlineRanges[commentId] || rangeFromCommentAnchor(model, comment);
+            var range = rangeFromCommentAnchor(model, comment) || inlineRanges[commentId];
             if (!range || !range.startBlockId || range.endOffset <= range.startOffset) return null;
             var status = readCommentStatus(comment);
             return _sortObject({
@@ -23044,6 +27922,7 @@ window.tmDocumentEditorEngine = (function () {
 
     function refreshRuntimeMarkerStore(inst) {
         if (!inst) return null;
+        synchronizeAllCommentRunsFromComments(inst.model);
         inst.markerStore = createMarkerStore([].concat(
             buildRuntimeCommentMarkers(inst.model),
             buildRuntimeRevisionMarkers(inst.model)));
@@ -23065,6 +27944,135 @@ window.tmDocumentEditorEngine = (function () {
             query: query,
             startOffset: before.length - marker.length - query.length,
             endOffset: before.length
+        };
+    }
+
+    function runtimeAutocompleteRequestFromSelection(inst, selection) {
+        if (!inst || !inst.model) return null;
+        var snapshot = createSelectionSnapshot(selection || inst.selection || firstModelSelection(inst.model));
+        if (!snapshot.blockId || snapshot.isCollapsed === false || isObjectSelectionSnapshot(snapshot)) return null;
+        var block = _findBlock(inst.model, snapshot.blockId);
+        if (!_isEditableTextBlock(block)) return null;
+        var text = _blockText(block);
+        var offset = Math.max(0, Math.min(text.length, Number(snapshot.offset || 0) || 0));
+        var trigger = detectAutocompleteTriggerText(text, offset);
+        if (!trigger) return null;
+        return _sortObject({
+            TriggerId: trigger.triggerId,
+            Marker: trigger.marker,
+            Query: trigger.query,
+            BlockId: snapshot.blockId,
+            StartOffset: trigger.startOffset,
+            EndOffset: trigger.endOffset,
+            Region: snapshot.region || 'Body',
+            HeaderFooterId: snapshot.headerFooterId || null,
+            TableId: snapshot.activeTableId || snapshot.tableId || null,
+            CellId: snapshot.activeTableCellId || snapshot.cellId || null,
+            triggerId: trigger.triggerId,
+            marker: trigger.marker,
+            query: trigger.query,
+            blockId: snapshot.blockId,
+            startOffset: trigger.startOffset,
+            endOffset: trigger.endOffset
+        });
+    }
+
+    function runtimeAutocompleteKey(request) {
+        if (!request) return '';
+        return [
+            _asText(request.TriggerId || request.triggerId),
+            _asText(request.BlockId || request.blockId),
+            Number(request.StartOffset ?? request.startOffset ?? 0) || 0,
+            Number(request.EndOffset ?? request.endOffset ?? 0) || 0,
+            _asText(request.Query ?? request.query ?? '')
+        ].join('|');
+    }
+
+    function setRuntimeAutocompleteQuery(inst, request) {
+        if (!inst) return null;
+        inst.activeAutocompleteQuery = request ? _clone(request) : null;
+        if (inst.root) {
+            if (request) {
+                inst.root.setAttribute('data-autocomplete-active', _asText(request.TriggerId || request.triggerId));
+                inst.root.setAttribute('data-autocomplete-query', _asText(request.Query ?? request.query ?? ''));
+            } else {
+                inst.root.removeAttribute('data-autocomplete-active');
+                inst.root.removeAttribute('data-autocomplete-query');
+            }
+        }
+        return inst.activeAutocompleteQuery;
+    }
+
+    function closeRuntimeAutocomplete(inst, notify) {
+        if (!inst || !inst.activeAutocompleteQuery) return false;
+        setRuntimeAutocompleteQuery(inst, null);
+        if (notify !== false) {
+            invokeBoundaryMethod(inst, 'HandleAutocompleteClosed', null, 'autocomplete-close-failed');
+        }
+        return true;
+    }
+
+    function syncRuntimeAutocompleteForSelection(inst, selection, source) {
+        if (!inst || !inst.dotNetRef) return null;
+        var request = runtimeAutocompleteRequestFromSelection(inst, selection);
+        if (!request) {
+            closeRuntimeAutocomplete(inst, true);
+            return null;
+        }
+
+        var previousKey = runtimeAutocompleteKey(inst.activeAutocompleteQuery);
+        var nextKey = runtimeAutocompleteKey(request);
+        setRuntimeAutocompleteQuery(inst, request);
+        if (previousKey !== nextKey) {
+            recordTimeline(inst, 'autocomplete-trigger', {
+                source: source || '',
+                triggerId: request.TriggerId || '',
+                blockId: request.BlockId || '',
+                query: request.Query || ''
+            });
+            invokeBoundaryMethod(inst, 'HandleAutocompleteTriggerRequested', request, 'autocomplete-trigger-failed');
+        }
+        return request;
+    }
+
+    function handleRuntimeAutocompleteKeyboard(inst, event, key) {
+        if (!inst || !inst.activeAutocompleteQuery) return null;
+        if (['enter', 'escape', 'arrowdown', 'arrowup'].indexOf(key) < 0) return null;
+        if (typeof event.preventDefault === 'function') event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        var requestedKey = key === 'escape'
+            ? 'Escape'
+            : key === 'arrowdown'
+                ? 'ArrowDown'
+                : key === 'arrowup'
+                    ? 'ArrowUp'
+                    : 'Enter';
+        invokeBoundaryMethod(inst, 'HandleAutocompleteKeyRequested', requestedKey, 'autocomplete-key-failed');
+        if (requestedKey === 'Escape') {
+            setRuntimeAutocompleteQuery(inst, null);
+        }
+        return { handled: true, command: 'autocomplete' + requestedKey };
+    }
+
+    function activeRuntimeAutocompleteRange(inst) {
+        var query = inst && inst.activeAutocompleteQuery;
+        if (!query) query = runtimeAutocompleteRequestFromSelection(inst, inst && inst.selection);
+        if (!query) return null;
+        var blockId = _asText(query.BlockId || query.blockId || '');
+        if (!blockId) return null;
+        var block = _findBlock(inst.model, blockId);
+        if (!_isEditableTextBlock(block)) return null;
+        var length = _blockText(block).length;
+        var start = Math.max(0, Math.min(length, Number(query.StartOffset ?? query.startOffset ?? 0) || 0));
+        var end = Math.max(start, Math.min(length, Number(query.EndOffset ?? query.endOffset ?? start) || start));
+        return {
+            blockId: blockId,
+            start: start,
+            end: end,
+            region: query.Region || query.region || 'Body',
+            headerFooterId: query.HeaderFooterId || query.headerFooterId || null,
+            tableId: query.TableId || query.tableId || null,
+            cellId: query.CellId || query.cellId || null
         };
     }
 
@@ -24485,6 +29493,7 @@ window.tmDocumentEditorEngine = (function () {
         importCanonicalSnapshot: importCanonicalSnapshot,
         getLayoutProbe: getLayoutProbe,
         runFrameProbe: runFrameProbe,
+        refreshWysiwygTextExclusionLayoutForTest: refreshWysiwygTextExclusionLayoutForTest,
         simulateWatchdogFailure: simulateWatchdogFailure,
         exportFailureArtifact: exportFailureArtifact,
         getBoundaryPanelData: getBoundaryPanelData,
@@ -24530,9 +29539,7 @@ window.tmDocumentEditorEngine = (function () {
         applyOfflineState: applyOfflineState,
         getOfflineState: getOfflineState,
         markSaved: markSaved,
-        DocumentHitTestService: function () {
-            return { hitTest: hitTestLayoutGeometry };
-        },
+        DocumentHitTestService: createDocumentHitTestService,
         model: {
             importFromCSharpJson: importFromCSharpJson,
             exportToCSharpJson: exportToCSharpJson,
@@ -24654,6 +29661,7 @@ window.tmDocumentEditorEngine = (function () {
             insertDrawingRunAtTextOffset: insertDrawingRunAtTextOffset,
             getDrawingRuntimeDiagnostics: getDrawingRuntimeDiagnostics,
             getImageRuntimeSourceDiagnostics: getImageRuntimeSourceDiagnostics,
+            refreshWysiwygTextExclusionLayoutForTest: refreshWysiwygTextExclusionLayoutForTest,
             createTextExclusion: createTextExclusion,
             createTextExclusionManager: createTextExclusionManager,
             getAvailableIntervals: getAvailableIntervals,
@@ -24682,6 +29690,7 @@ window.tmDocumentEditorEngine = (function () {
             setActiveFocusRegion: setActiveFocusRegion,
             handleEditorKeyDown: handleEditorKeyDown,
             collectObjectNavigationTargets: collectObjectNavigationTargets,
+            selectObjectById: selectObjectById,
             selectAdjacentObjectForKeyboard: selectAdjacentObjectForKeyboard,
             openImageToolbarForSelectedObject: openImageToolbarForSelectedObject,
             closeFloatingUiForKeyboard: closeFloatingUiForKeyboard,
@@ -24910,6 +29919,7 @@ window.tmDocumentEditorEngine = (function () {
             setActiveFocusRegion: setActiveFocusRegion,
             handleEditorKeyDown: handleEditorKeyDown,
             collectObjectNavigationTargets: collectObjectNavigationTargets,
+            selectObjectById: selectObjectById,
             selectAdjacentObjectForKeyboard: selectAdjacentObjectForKeyboard,
             openImageToolbarForSelectedObject: openImageToolbarForSelectedObject,
             activeObjectAccessibilityStatus: activeObjectAccessibilityStatus,

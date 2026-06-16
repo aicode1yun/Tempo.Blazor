@@ -27,15 +27,17 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
     protected async Task<IPage> OpenDocumentEditorAsync(int width = 1280, int height = 720)
     {
         var context = await CreateContextAsync();
+        await InstallDocumentEditorClientStateIsolationAsync(context);
         var page = await context.NewPageAsync();
         StartMandatoryDocumentEditorConsoleCapture(page);
         await page.SetViewportSizeAsync(width, height);
-        await page.GotoAsync($"{BaseUrl}/document-editor", new PageGotoOptions
+        await page.GotoAsync($"{BaseUrl}/document-editor?renderEngine=Legacy", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000
         });
         await WaitForDocumentEditorReadyAsync(page);
+        await ResetDocumentEditorTransientClientStateAsync(page);
         return page;
     }
 
@@ -43,15 +45,17 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
     protected async Task<IPage> OpenRecoveryDocumentAsync(int width = 1280, int height = 720)
     {
         var context = await CreateContextAsync();
+        await InstallDocumentEditorClientStateIsolationAsync(context);
         var page = await context.NewPageAsync();
         StartMandatoryDocumentEditorConsoleCapture(page);
         await page.SetViewportSizeAsync(width, height);
-        await page.GotoAsync($"{BaseUrl}/document-editor?tmDocumentEditorEngine=google-docs&recovery=2026-05-23", new PageGotoOptions
+        await page.GotoAsync($"{BaseUrl}/document-editor?renderEngine=Legacy&recovery=2026-05-23", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000
         });
         await WaitForDocumentEditorReadyAsync(page);
+        await ResetDocumentEditorTransientClientStateAsync(page);
         return page;
     }
 
@@ -59,24 +63,35 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
     protected async Task<IPage> OpenOnlyOfficeParityDocumentAsync(int width = 1280, int height = 720)
     {
         var context = await CreateContextAsync();
+        await InstallDocumentEditorClientStateIsolationAsync(context);
         var page = await context.NewPageAsync();
         StartMandatoryDocumentEditorConsoleCapture(page);
         await page.SetViewportSizeAsync(width, height);
-        await page.GotoAsync($"{BaseUrl}/document-editor?documentId=onlyoffice-parity-2026-05-24", new PageGotoOptions
+        await page.GotoAsync($"{BaseUrl}/document-editor?documentId=onlyoffice-parity-2026-05-24&renderEngine=Legacy", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.DOMContentLoaded,
             Timeout = 60000
         });
         await WaitForDocumentEditorReadyAsync(page);
+        await ResetDocumentEditorTransientClientStateAsync(page);
         return page;
     }
+
+    /// <summary>Installs per-context client state isolation for document editor routes.</summary>
+    protected static Task InstallDocumentEditorClientStateIsolationAsync(IBrowserContext context)
+        => DocumentEditorE2EReset.InstallClientStateIsolationAsync(context);
+
+    /// <summary>Clears transient editor UI state after a fresh legacy route becomes ready.</summary>
+    protected static Task ResetDocumentEditorTransientClientStateAsync(IPage page)
+        => DocumentEditorE2EReset.ResetTransientClientStateAsync(page);
 
     /// <summary>Types text into the visible document body.</summary>
     protected static async Task EditorTypeAsync(IPage page, string text)
     {
-        var body = await WaitForWysiwygBodyAsync(page);
-        var textBlock = body.Locator(".tm-wysiwyg-block[data-block-id]:not(figure):not(table):not(hr)").First;
-        await textBlock.ClickAsync(new() { Position = new() { X = 12, Y = 12 } });
+        await WaitForWysiwygBodyAsync(page);
+        var target = await FindEditorTypingTargetAsync(page);
+        await page.Mouse.ClickAsync((float)target.X, (float)target.Y);
+        await RestoreEditorTypingSelectionAsync(page, target);
         await page.Keyboard.TypeAsync(text);
     }
 
@@ -136,7 +151,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         string text,
         string hostSelector = DocumentEditorHostSelector)
     {
-        var target = await ReadTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
+        var target = await ReadVerifiedTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
         await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
         await page.Mouse.DownAsync();
         await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new() { Steps = 12 });
@@ -150,7 +165,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         string text,
         string hostSelector = DocumentEditorHostSelector)
     {
-        var target = await ReadTextSelectionMouseTargetAsync(page, null, text, hostSelector);
+        var target = await ReadVerifiedTextSelectionMouseTargetAsync(page, null, text, hostSelector);
         await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
         await page.Mouse.DownAsync();
         await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new() { Steps = 12 });
@@ -166,7 +181,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         int endOffset,
         string hostSelector = DocumentEditorHostSelector)
     {
-        var target = await ReadTextSelectionMouseTargetAsync(page, blockId, startOffset, endOffset, hostSelector);
+        var target = await ReadVerifiedTextSelectionMouseTargetAsync(page, blockId, startOffset, endOffset, hostSelector);
         await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
         await page.Mouse.DownAsync();
         await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new() { Steps = 12 });
@@ -200,7 +215,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         string text,
         string hostSelector = DocumentEditorHostSelector)
     {
-        var target = await ReadTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
+        var target = await ReadVerifiedTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
         if (target.TextNodeCount < 2)
         {
             throw new AssertFailedException($"Expected '{text}' in block '{blockId}' to span at least two text nodes/inline runs, but target node count was {target.TextNodeCount}. Target: {target.Debug}");
@@ -266,7 +281,12 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     hasRuntimeSelectionToken: !!runtimeToken,
                     debug: ''
                 };
+                const runtimeSnapshot = snapshotFromRuntimeSelection(runtimeSelection, runtimeToken);
                 if (!selection || selection.rangeCount === 0) {
+                    if (runtimeSnapshot) {
+                        return runtimeSnapshot;
+                    }
+
                     empty.debug = safeJson({ reason: 'no native selection range', runtimeSelection });
                     return empty;
                 }
@@ -277,7 +297,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 const start = positionOf(range.startContainer, range.startOffset);
                 const end = positionOf(range.endContainer, range.endOffset);
                 const rect = unionRects(Array.from(range.getClientRects()).filter(rect => rect.width > 0.5 && rect.height > 0.5));
-                return {
+                const nativeSnapshot = {
                     targetBlockId: '',
                     expectedText: '',
                     selectedText: selection.toString() || '',
@@ -301,6 +321,101 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     hasRuntimeSelectionToken: !!runtimeToken,
                     debug: safeJson({ selectedText: selection.toString(), anchor, focus, start, end, rect, runtimeSelection, runtimeToken })
                 };
+                if ((nativeSnapshot.isCollapsed || !nativeSnapshot.selectedText) && runtimeSnapshot) {
+                    return runtimeSnapshot;
+                }
+
+                return nativeSnapshot;
+
+                function snapshotFromRuntimeSelection(value, token) {
+                    const source = value?.TextSelection || value?.textSelection || value;
+                    if (!source) return null;
+                    const anchorPosition = source.anchor || source.Anchor || {};
+                    const focusPosition = source.focus || source.Focus || {};
+                    const anchorBlockId = source.AnchorBlockId || source.anchorBlockId || anchorPosition.blockId || anchorPosition.BlockId || value?.AnchorBlockId || value?.anchorBlockId || '';
+                    const focusBlockId = source.FocusBlockId || source.focusBlockId || focusPosition.blockId || focusPosition.BlockId || value?.FocusBlockId || value?.focusBlockId || anchorBlockId;
+                    const anchorInlineId = source.AnchorInlineId || source.anchorInlineId || anchorPosition.inlineId || anchorPosition.InlineId || value?.AnchorInlineId || value?.anchorInlineId || '';
+                    const focusInlineId = source.FocusInlineId || source.focusInlineId || focusPosition.inlineId || focusPosition.InlineId || value?.FocusInlineId || value?.focusInlineId || '';
+                    const anchorOffset = Number(source.AnchorBlockOffset ?? source.anchorBlockOffset ?? source.AnchorOffset ?? source.anchorOffset ?? anchorPosition.offset ?? anchorPosition.Offset ?? value?.AnchorBlockOffset ?? value?.anchorBlockOffset ?? value?.AnchorOffset ?? value?.anchorOffset ?? -1);
+                    const focusOffset = Number(source.FocusBlockOffset ?? source.focusBlockOffset ?? source.FocusOffset ?? source.focusOffset ?? focusPosition.offset ?? focusPosition.Offset ?? value?.FocusBlockOffset ?? value?.focusBlockOffset ?? value?.FocusOffset ?? value?.focusOffset ?? -1);
+                    if (!anchorBlockId || !focusBlockId || anchorOffset < 0 || focusOffset < 0) return null;
+                    const collapsedFallback = (anchorOffset === focusOffset) && (anchorBlockId === focusBlockId);
+                    const isCollapsed = (source.IsCollapsed ?? source.isCollapsed ?? value?.IsCollapsed ?? value?.isCollapsed ?? collapsedFallback) !== false;
+                    if (isCollapsed) return null;
+                    const sameBlock = anchorBlockId === focusBlockId;
+                    const startOffset = sameBlock ? Math.min(anchorOffset, focusOffset) : anchorOffset;
+                    const endOffset = sameBlock ? Math.max(anchorOffset, focusOffset) : focusOffset;
+                    const startBlock = findBlock(anchorBlockId);
+                    const endBlock = sameBlock ? startBlock : findBlock(focusBlockId);
+                    const selectedText = sameBlock && startBlock
+                        ? blockText(startBlock).slice(startOffset, endOffset)
+                        : '';
+                    const rect = sameBlock && startBlock ? rectForBlockOffsets(startBlock, startOffset, endOffset) : zeroRect();
+                    return {
+                        targetBlockId: '',
+                        expectedText: '',
+                        selectedText,
+                        isCollapsed: false,
+                        anchorBlockId,
+                        anchorInlineId,
+                        anchorBlockOffset: anchorOffset,
+                        focusBlockId,
+                        focusInlineId,
+                        focusBlockOffset: focusOffset,
+                        startBlockId: sameBlock && anchorOffset <= focusOffset ? anchorBlockId : focusBlockId,
+                        startInlineId: sameBlock && anchorOffset <= focusOffset ? anchorInlineId : focusInlineId,
+                        startBlockOffset: startOffset,
+                        endBlockId: sameBlock && anchorOffset <= focusOffset ? focusBlockId : anchorBlockId,
+                        endInlineId: sameBlock && anchorOffset <= focusOffset ? focusInlineId : anchorInlineId,
+                        endBlockOffset: endOffset,
+                        rect,
+                        runtimeSelectionJson: safeJson(runtimeSelection),
+                        runtimeSelectionToken: token,
+                        hasRuntimeSelection: !!runtimeSelection,
+                        hasRuntimeSelectionToken: !!token,
+                        debug: safeJson({ selectedText, anchorBlockId, focusBlockId, anchorOffset, focusOffset, rect, source: 'runtime-selection', runtimeSelection, runtimeToken: token })
+                    };
+                }
+
+                function findBlock(blockId) {
+                    if (!host || !blockId || typeof CSS === 'undefined' || typeof CSS.escape !== 'function') return null;
+                    const escaped = CSS.escape(blockId);
+                    return host.querySelector(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
+                }
+
+                function blockText(block) {
+                    return block ? (block.innerText || block.textContent || '') : '';
+                }
+
+                function rectForBlockOffsets(block, startOffset, endOffset) {
+                    const start = textPositionAt(block, startOffset);
+                    const end = textPositionAt(block, endOffset);
+                    if (!start || !end) return zeroRect();
+                    const runtimeRange = document.createRange();
+                    runtimeRange.setStart(start.node, start.offset);
+                    runtimeRange.setEnd(end.node, end.offset);
+                    return unionRects(Array.from(runtimeRange.getClientRects()).filter(rect => rect.width > 0.5 && rect.height > 0.5));
+                }
+
+                function textPositionAt(block, requestedOffset) {
+                    const targetOffset = Math.max(0, Number(requestedOffset) || 0);
+                    let offset = 0;
+                    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+                        acceptNode(node) {
+                            return node.nodeValue && node.nodeValue.length > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }
+                    });
+                    while (walker.nextNode()) {
+                        const node = walker.currentNode;
+                        const length = node.nodeValue?.length || 0;
+                        if (targetOffset <= offset + length) {
+                            return { node, offset: Math.max(0, Math.min(length, targetOffset - offset)) };
+                        }
+                        offset += length;
+                    }
+
+                    return null;
+                }
 
                 function positionOf(node, offset) {
                     const element = elementOf(node);
@@ -560,7 +675,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             requireRuntimeSelectionToken,
             hostSelector,
             assertCommandStatePublished: false);
-        await Assertions.Expect(page.GetByTestId(pickerTestId).Locator(".tm-color-picker-dropdown")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await EnsureColorPickerDropdownOpenAsync(page, pickerTestId);
         return action;
     }
 
@@ -581,8 +696,20 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             requireRuntimeSelectionToken,
             hostSelector,
             assertCommandStatePublished: false);
-        await Assertions.Expect(page.GetByTestId(pickerTestId).Locator(".tm-color-picker-dropdown")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await EnsureColorPickerDropdownOpenAsync(page, pickerTestId);
         return action;
+    }
+
+    private static async Task EnsureColorPickerDropdownOpenAsync(IPage page, string pickerTestId)
+    {
+        var picker = page.GetByTestId(pickerTestId);
+        var dropdown = picker.Locator(".tm-color-picker-dropdown");
+        if (!await dropdown.IsVisibleAsync())
+        {
+            await picker.Locator(".tm-color-picker-trigger").EvaluateAsync("element => element.click()");
+        }
+
+        await Assertions.Expect(dropdown).ToBeVisibleAsync(new() { Timeout = 5000 });
     }
 
     /// <summary>Chooses an open color-palette swatch by hex value with a real mouse click.</summary>
@@ -971,7 +1098,8 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             """
             ({ hostSelector, blockId, offset }) => {
                 const host = document.querySelector(hostSelector);
-                const block = host?.querySelector(`[data-block-id="${cssEscape(blockId)}"], [data-render-block-id="${cssEscape(blockId)}"]`);
+                const escaped = cssEscape(blockId);
+                const block = visibleBlock(host, escaped);
                 if (!block) throw new Error(`Could not find visible block '${blockId}'.`);
                 block.scrollIntoView({ block: 'center', inline: 'nearest' });
                 const textNode = firstTextNode(block);
@@ -1005,6 +1133,20 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     return walker.nextNode();
                 }
 
+                function visibleBlock(root, escapedId) {
+                    return Array.from(root?.querySelectorAll(`.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id="${escapedId}"], .tm-wysiwyg-page__header .tm-wysiwyg-block[data-block-id="${escapedId}"], .tm-wysiwyg-page__footer .tm-wysiwyg-block[data-block-id="${escapedId}"], [data-render-block-id="${escapedId}"]`) || [])
+                        .find(node => {
+                            const rect = node.getBoundingClientRect();
+                            const style = getComputedStyle(node);
+                            return rect.width > 1
+                                && rect.height > 1
+                                && style.display !== 'none'
+                                && style.visibility !== 'hidden'
+                                && !node.closest('.tm-wysiwyg-page--virtual')
+                                && !node.closest('.tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides');
+                        });
+                }
+
                 function cssEscape(value) {
                     return window.CSS?.escape ? window.CSS.escape(String(value)) : String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 }
@@ -1017,7 +1159,17 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             ({ hostSelector, blockId, offset }) => {
                 const host = document.querySelector(hostSelector);
                 const escaped = window.CSS?.escape ? window.CSS.escape(blockId) : String(blockId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                const block = host?.querySelector(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
+                const block = Array.from(host?.querySelectorAll(`.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id="${escaped}"], .tm-wysiwyg-page__header .tm-wysiwyg-block[data-block-id="${escaped}"], .tm-wysiwyg-page__footer .tm-wysiwyg-block[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`) || [])
+                    .find(node => {
+                        const rect = node.getBoundingClientRect();
+                        const style = getComputedStyle(node);
+                        return rect.width > 1
+                            && rect.height > 1
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && !node.closest('.tm-wysiwyg-page--virtual')
+                            && !node.closest('.tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides');
+                    });
                 if (!block) throw new Error(`Could not find visible block '${blockId}' after click.`);
                 const body = block.closest('[contenteditable="true"]');
                 if (!body) throw new Error(`Block '${blockId}' is not inside an editable document body.`);
@@ -1234,6 +1386,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 const imageCenterTarget = getImageCenterTarget(imageRect);
                 const caretRect = getCaretRect();
                 const lineIntervals = getLineIntervalsAroundImage(host, imageRect);
+                const targetBlockProjection = getTargetBlockProjection(host, targetImage.anchorBlockId || modelImage.anchorBlockId || '');
                 const topLevelImageBlockCount = countTopLevelImageBlocks(documentModel);
                 const drawingRunCount = countDrawingRuns(documentModel);
                 const activeElement = document.activeElement;
@@ -1269,12 +1422,14 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                         imageRect,
                         imageCenterTarget,
                         lineIntervals,
+                        targetBlockProjection,
                         topLevelImageBlockCount,
                         drawingRunCount,
                         activeElement: describeElement(activeElement),
                         hostHasFocus,
                         imageToolbarVisible,
                         runtimeSelection,
+                        textExclusionLayoutRefreshForTest: engineDebug?.textExclusionLayoutRefreshForTest || engineDebug?.TextExclusionLayoutRefreshForTest || null,
                         objectPointer: engineDebug?.lastObjectPointerInteraction || null,
                         commandCount: engineDebug?.commandCount ?? null,
                         lastTransaction: engineDebug?.lastTransaction || null,
@@ -1282,6 +1437,24 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                         lastOperationValidation: engineDebug?.lastOperationValidation || null
                     })
                 };
+
+                function getTargetBlockProjection(root, blockId) {
+                    if (!root || !blockId) return null;
+                    const escaped = cssEscape(blockId);
+                    const block = root.querySelector(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
+                    if (!block) return { blockId, found: false };
+                    return {
+                        blockId,
+                        found: true,
+                        projected: block.getAttribute('data-wysiwyg-projected-layout') === 'true',
+                        className: block.className || '',
+                        childCount: block.children?.length || 0,
+                        projectedSegmentCount: block.querySelectorAll?.('.tm-wysiwyg-layout-segment--projected')?.length || 0,
+                        projectedLineCount: block.querySelectorAll?.('.tm-wysiwyg-layout-line')?.length || 0,
+                        text: (block.innerText || block.textContent || '').trim().slice(0, 240),
+                        html: block.outerHTML?.slice(0, 1200) || ''
+                    };
+                }
 
                 function getRuntimeSelection(id) {
                     try {
@@ -2011,7 +2184,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 for (let i = 0; i < textRects.length; i++) {
                     for (let j = i + 1; j < textRects.length; j++) {
                         if (textRects[i].sourceId === textRects[j].sourceId) continue;
-                        if (intersects(textRects[i].rect, textRects[j].rect, 1.5)) {
+                        if (textRectsOverlap(textRects[i].rect, textRects[j].rect, 1.5)) {
                             textTextOverlapCount++;
                             issues.push(`text/text overlap: ${textRects[i].blockId || '?'} <-> ${textRects[j].blockId || '?'}`);
                         }
@@ -2019,13 +2192,13 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 }
                 for (const text of textRects) {
                     for (const image of imageRects) {
-                        if (intersects(text.rect, image.rect, 1.5)) {
+                        if (!allowsIntentionalTextObjectOverlap(image) && intersects(text.rect, image.rect, 1.5)) {
                             textImageOverlapCount++;
                             issues.push(`text/image overlap: ${text.blockId || '?'} -> ${image.blockId || '?'}`);
                         }
                     }
                     for (const caption of captionRects) {
-                        if (caption.blockId !== text.blockId && intersects(text.rect, caption.rect, 1.5)) {
+                        if (caption.blockId !== text.blockId && !allowsIntentionalTextObjectOverlap(caption) && intersects(text.rect, caption.rect, 1.5)) {
                             textCaptionOverlapCount++;
                             issues.push(`text/caption overlap: ${text.blockId || '?'} -> ${caption.blockId || '?'}`);
                         }
@@ -2115,6 +2288,8 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     return Array.from(root?.querySelectorAll('figure[data-block-id], figure.tm-wysiwyg-image, .tm-render-image-widget, .tm-wysiwyg-inline-drawing[data-object-id], .tm-wysiwyg-object-layer-item[data-object-id], [data-testid="phase18-image"]') || [])
                         .map((figure, index) => ({
                             blockId: figure.getAttribute('data-block-id') || figure.getAttribute('data-render-block-id') || `image-${index}`,
+                            wrapMode: figure.getAttribute('data-wrap-mode') || '',
+                            objectLayer: figure.getAttribute('data-object-layer') || '',
                             rect: toRect((figure.querySelector('img') || figure).getBoundingClientRect())
                         }))
                         .filter(item => item.rect.width > 0.5 && item.rect.height > 0.5);
@@ -2126,6 +2301,8 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                             const figure = caption.closest('[data-block-id], [data-render-block-id], figure');
                             return {
                                 blockId: figure?.getAttribute('data-block-id') || figure?.getAttribute('data-render-block-id') || `caption-${index}`,
+                                wrapMode: figure?.getAttribute('data-wrap-mode') || '',
+                                objectLayer: figure?.getAttribute('data-object-layer') || '',
                                 rect: toRect(caption.getBoundingClientRect())
                             };
                         })
@@ -2232,6 +2409,26 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
                     const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
                     return x * y > tolerance;
+                }
+
+                function textRectsOverlap(a, b, tolerance) {
+                    const x = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+                    const y = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+                    if (x * y <= tolerance) return false;
+                    return y > 2.75;
+                }
+
+                function allowsIntentionalTextObjectOverlap(item) {
+                    const mode = normalizeProbeWrapMode(item?.wrapMode);
+                    const layer = String(item?.objectLayer || '').replace(/\s+/g, '').replace(/-/g, '').toLowerCase();
+                    return mode === 'behindtext'
+                        || mode === 'infrontoftext'
+                        || layer === 'behindtext'
+                        || layer === 'infrontoftext';
+                }
+
+                function normalizeProbeWrapMode(value) {
+                    return String(value || '').replace(/\s+/g, '').replace(/-/g, '').toLowerCase();
                 }
 
                 function rectInside(inner, outer, tolerance) {
@@ -2619,18 +2816,79 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
     /// <summary>Waits until the document editor host has rendered at least one WYSIWYG block.</summary>
     protected static async Task WaitForDocumentEditorReadyAsync(IPage page)
     {
-        await page.WaitForSelectorAsync("[data-testid='document-editor-demo']", new PageWaitForSelectorOptions
+        try
         {
-            State = WaitForSelectorState.Attached,
-            Timeout = 60000
-        });
-        await page.WaitForSelectorAsync("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-block", new PageWaitForSelectorOptions
+            await page.WaitForSelectorAsync("[data-testid='document-editor-demo']", new PageWaitForSelectorOptions
+            {
+                State = WaitForSelectorState.Attached,
+                Timeout = 60000
+            });
+            await page.WaitForSelectorAsync("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-block", new PageWaitForSelectorOptions
+            {
+                State = WaitForSelectorState.Attached,
+                Timeout = 60000
+            });
+            await WaitForEditorStableAsync(page, "initial editor ready", timeoutMs: 60000);
+        }
+        catch (Exception ex) when (ex is TimeoutException || ex is PlaywrightException)
         {
-            State = WaitForSelectorState.Attached,
-            Timeout = 60000
-        });
-        await WaitForEditorStableAsync(page, "initial editor ready", timeoutMs: 60000);
+            var diagnostics = await ReadDocumentEditorReadyDiagnosticsAsync(page);
+            throw new AssertFailedException($"Document editor did not become ready. Diagnostics: {diagnostics}", ex);
+        }
     }
+
+    /// <summary>Captures route/render diagnostics when the editor never reaches the WYSIWYG ready state.</summary>
+    protected static Task<string> ReadDocumentEditorReadyDiagnosticsAsync(IPage page)
+        => page.EvaluateAsync<string>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const demo = document.querySelector('[data-testid="document-editor-demo"]');
+                const floatingSelectors = [
+                    '[data-testid="document-image-inspector"]',
+                    '[data-testid="document-mini-toolbar"]',
+                    '[data-testid="document-context-menu"]',
+                    '[data-testid="document-table-toolbar"]',
+                    '[data-testid="document-wysiwyg-object-selection-pane"]'
+                ];
+                const visible = node => {
+                    const rect = node?.getBoundingClientRect?.();
+                    const style = node ? getComputedStyle(node) : null;
+                    return !!(rect && style && rect.width > 0.5 && rect.height > 0.5 && style.display !== 'none' && style.visibility !== 'hidden');
+                };
+                const errorNodes = Array.from(document.querySelectorAll('#blazor-error-ui, .blazor-error-boundary, [data-testid="document-runtime-error"], [data-testid="document-editor-runtime-message"]'))
+                    .filter(visible)
+                    .map(node => (node.innerText || node.textContent || '').trim().slice(0, 500))
+                    .filter(Boolean);
+                const blockSelector = '.tm-wysiwyg-block, [data-block-id], [data-render-block-id]';
+                const blocks = Array.from(host?.querySelectorAll(blockSelector) || []);
+                const visibleBlocks = blocks.filter(node => visible(node) && !node.closest('.tm-wysiwyg-page--virtual'));
+                const floatingUi = floatingSelectors
+                    .flatMap(selector => Array.from(document.querySelectorAll(selector)))
+                    .filter(visible)
+                    .map(node => ({
+                        testId: node.getAttribute('data-testid') || '',
+                        text: (node.innerText || node.textContent || '').trim().slice(0, 160)
+                    }));
+                const active = document.activeElement;
+                return JSON.stringify({
+                    url: location.href,
+                    readyState: document.readyState,
+                    demoFound: !!demo,
+                    hostFound: !!host,
+                    renderEngine: demo?.getAttribute('data-render-engine') || host?.getAttribute('data-render-engine') || '',
+                    engineMode: host?.getAttribute('data-engine-mode') || '',
+                    activeRegion: host?.getAttribute('data-active-region') || '',
+                    focusOwner: host?.getAttribute('data-focus-owner') || '',
+                    blockCount: blocks.length,
+                    visibleBlockCount: visibleBlocks.length,
+                    hostHtml: host?.outerHTML?.slice(0, 1000) || '',
+                    floatingUi,
+                    errorTexts: errorNodes,
+                    activeElement: active?.outerHTML?.slice(0, 500) || ''
+                });
+            }
+            """);
 
     /// <summary>
     /// Waits for a local editor assertion point: host attached, visible blocks rendered, expected text visible when supplied,
@@ -2674,6 +2932,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                         const targetText = textOf(targetBlock);
                         const hostText = textOf(host);
                         const errorTexts = visibleErrorTexts();
+                        const textExclusionPending = host?.getAttribute('data-text-exclusion-layout-pending') === 'true';
                         const expectedFound = !input.expectedVisibleText
                             || targetText.includes(input.expectedVisibleText)
                             || hostText.includes(input.expectedVisibleText);
@@ -2684,11 +2943,13 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                                 && visibleBlocks.length > 0
                                 && (!input.targetBlockId || !!targetBlock)
                                 && expectedFound
+                                && !textExclusionPending
                                 && errorTexts.length === 0,
                             hostFound: !!host,
                             visibleBlockCount: visibleBlocks.length,
                             targetBlockFound: !input.targetBlockId || !!targetBlock,
                             expectedTextFound: expectedFound,
+                            textExclusionPending,
                             blazorErrorVisible: errorTexts.length > 0,
                             documentReadyState: document.readyState || '',
                             selectionText: window.getSelection?.()?.toString?.() || '',
@@ -2705,6 +2966,9 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                             targetBlockFound: probe.targetBlockFound,
                             expectedVisibleText: input.expectedVisibleText,
                             expectedTextFound: probe.expectedTextFound,
+                            textExclusionPending: probe.textExclusionPending,
+                            textExclusionReason: host?.getAttribute('data-text-exclusion-layout-reason') || '',
+                            textExclusionSettledAt: host?.getAttribute('data-text-exclusion-layout-settled-at') || '',
                             errorTexts,
                             documentReadyState: probe.documentReadyState,
                             selectionText: probe.selectionText,
@@ -2781,14 +3045,16 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 const errorText = Array.from(document.querySelectorAll('#blazor-error-ui, .blazor-error-boundary, [data-testid="document-runtime-error"], [data-testid="document-editor-runtime-message"]'))
                     .map(node => (node.innerText || node.textContent || '').trim())
                     .filter(Boolean);
+                const textExclusionPending = host?.getAttribute('data-text-exclusion-layout-pending') === 'true';
                 const expectedFound = !args.expectedVisibleText || targetText.includes(args.expectedVisibleText) || hostText.includes(args.expectedVisibleText);
                 const probe = {
                     reason: args.reason || '',
-                    isStable: !!host && blocks.length > 0 && (!args.targetBlockId || !!target) && expectedFound && errorText.length === 0,
+                    isStable: !!host && blocks.length > 0 && (!args.targetBlockId || !!target) && expectedFound && !textExclusionPending && errorText.length === 0,
                     hostFound: !!host,
                     visibleBlockCount: blocks.length,
                     targetBlockFound: !args.targetBlockId || !!target,
                     expectedTextFound: expectedFound,
+                    textExclusionPending,
                     blazorErrorVisible: errorText.length > 0,
                     documentReadyState: document.readyState || '',
                     selectionText: window.getSelection?.()?.toString?.() || '',
@@ -2797,7 +3063,12 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     hostText: hostText.slice(0, 500),
                     debug: ''
                 };
-                probe.debug = JSON.stringify({ ...probe, errorText });
+                probe.debug = JSON.stringify({
+                    ...probe,
+                    textExclusionReason: host?.getAttribute('data-text-exclusion-layout-reason') || '',
+                    textExclusionSettledAt: host?.getAttribute('data-text-exclusion-layout-settled-at') || '',
+                    errorText
+                });
                 return probe;
             }
             """,
@@ -2812,6 +3083,154 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         await body.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 60000 });
         return body;
     }
+
+    private static Task<DocumentEditorTypingTarget> FindEditorTypingTargetAsync(IPage page)
+        => page.EvaluateAsync<DocumentEditorTypingTarget>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const body = host?.querySelector('.tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-page__body[contenteditable]');
+                if (!host || !body) {
+                    throw new Error('Could not find a visible WYSIWYG body for typing.');
+                }
+
+                const isVisible = element => {
+                    const style = getComputedStyle(element);
+                    const rect = element.getBoundingClientRect();
+                    return rect.width > 1
+                        && rect.height > 1
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const isBlockedTarget = element => !!element?.closest?.([
+                    'button',
+                    'input',
+                    'select',
+                    'textarea',
+                    'aside',
+                    '[role="toolbar"]',
+                    '[role="menu"]',
+                    '[role="menuitem"]',
+                    '[data-testid="document-toolbar"]',
+                    '[data-testid="document-side-panel"]',
+                    '[data-testid="document-image-inspector"]',
+                    '[data-testid="document-mini-toolbar"]',
+                    '[data-testid="document-context-menu"]',
+                    '[data-testid="document-table-toolbar"]',
+                    '[data-testid="document-wysiwyg-object-selection-pane"]',
+                    '.tm-document-editor__ribbon',
+                    '.tm-wysiwyg-behind-object-handle',
+                    '.tm-wysiwyg-object-layer-item',
+                    '.tm-wysiwyg-page__layer--selection',
+                    '.tm-wysiwyg-page__layer--guides',
+                    'figure',
+                    'table'
+                ].join(','));
+                const inViewport = point => point.x >= 0
+                    && point.y >= 0
+                    && point.x <= window.innerWidth
+                    && point.y <= window.innerHeight;
+                const candidatePoints = rect => [
+                    { x: rect.left + Math.min(24, Math.max(6, rect.width * 0.20)), y: rect.top + Math.min(14, Math.max(6, rect.height * 0.50)) },
+                    { x: rect.left + rect.width * 0.35, y: rect.top + rect.height * 0.50 },
+                    { x: rect.left + rect.width * 0.65, y: rect.top + rect.height * 0.50 },
+                    { x: rect.left + Math.max(6, rect.width - 8), y: rect.top + rect.height * 0.50 },
+                    { x: rect.left + rect.width * 0.50, y: rect.top + Math.max(6, rect.height - 6) }
+                ];
+
+                const blocks = Array.from(body.querySelectorAll('.tm-wysiwyg-block[data-block-id]:not(figure):not(table):not(hr)'))
+                    .filter(block => !block.closest('.tm-wysiwyg-page--virtual'))
+                    .filter(isVisible)
+                    .filter(block => (block.innerText || block.textContent || '').trim().length > 0);
+                const debug = [];
+                for (const block of blocks) {
+                    block.scrollIntoView({ block: 'center', inline: 'nearest' });
+                    const blockId = block.getAttribute('data-block-id') || '';
+                    for (const rect of Array.from(block.getClientRects())) {
+                        if (rect.width <= 4 || rect.height <= 4) {
+                            continue;
+                        }
+
+                        for (const point of candidatePoints(rect)) {
+                            if (!inViewport(point)) {
+                                continue;
+                            }
+
+                            const top = document.elementFromPoint(point.x, point.y);
+                            const topBlock = top?.closest?.('.tm-wysiwyg-block[data-block-id]');
+                            if (top && !isBlockedTarget(top) && (block.contains(top) || topBlock === block)) {
+                                return {
+                                    x: point.x,
+                                    y: point.y,
+                                    blockId,
+                                    offset: (block.innerText || block.textContent || '').length,
+                                    debug: `hit ${top.tagName?.toLowerCase?.() || ''} for ${blockId}`
+                                };
+                            }
+                        }
+
+                        const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                        const top = inViewport(center) ? document.elementFromPoint(center.x, center.y) : null;
+                        debug.push({
+                            blockId,
+                            rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+                            top: top?.outerHTML?.slice(0, 160) || ''
+                        });
+                    }
+                }
+
+                const fallback = blocks.find(block => {
+                    const blockId = block.getAttribute('data-block-id') || '';
+                    return !!blockId && !isBlockedTarget(block);
+                });
+                if (fallback) {
+                    const bodyRect = body.getBoundingClientRect();
+                    const x = Math.max(8, Math.min(window.innerWidth - 8, Math.max(8, bodyRect.left + Math.min(48, Math.max(12, bodyRect.width * 0.08)))));
+                    const y = Math.max(8, Math.min(window.innerHeight - 8, Math.max(8, bodyRect.top + Math.min(48, Math.max(12, bodyRect.height * 0.02)))));
+                    const blockId = fallback.getAttribute('data-block-id') || '';
+                    return {
+                        x,
+                        y,
+                        blockId,
+                        offset: (fallback.innerText || fallback.textContent || '').length,
+                        debug: `fallback focus target for ${blockId}`
+                    };
+                }
+
+                throw new Error(`Could not find an unobstructed text block for typing. ${JSON.stringify(debug).slice(0, 2000)}`);
+            }
+            """);
+
+    private static Task RestoreEditorTypingSelectionAsync(IPage page, DocumentEditorTypingTarget target)
+        => page.EvaluateAsync(
+            """
+            ({ blockId, offset }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtime = window.tmDocumentEditorRuntime || window.tmDocumentEditorEngine;
+                if (!instanceId || !runtime?.restoreSelection) {
+                    throw new Error('Document editor restoreSelection runtime API is not available.');
+                }
+
+                const result = runtime.restoreSelection(instanceId, {
+                    region: 'Body',
+                    blockId,
+                    offset: Number(offset || 0),
+                    isCollapsed: true
+                });
+                if (!result || result.ok === false) {
+                    throw new Error(`Could not restore editor typing selection: ${JSON.stringify(result || {})}`);
+                }
+
+                const block = host?.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+                const editable = block?.closest?.('[contenteditable="true"]')
+                    || host?.querySelector('.tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-page__body[contenteditable]');
+                if (editable && typeof editable.focus === 'function') {
+                    editable.focus({ preventScroll: true });
+                }
+            }
+            """,
+            target);
 
     /// <summary>Captures screenshot plus JSON diagnostics for a human-facing document editor failure.</summary>
     protected async Task<string> CaptureDocumentEditorDiagnosticArtifactAsync(
@@ -2899,6 +3318,118 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         return artifactPath;
     }
 
+    private static async Task<DocumentEditorTextSelectionMouseTarget> ReadVerifiedTextSelectionMouseTargetAsync(
+        IPage page,
+        string? blockId,
+        string text,
+        string hostSelector)
+    {
+        DocumentEditorTextSelectionMouseTarget? lastTarget = null;
+        DocumentEditorMouseTargetHitProbe? lastProbe = null;
+        for (var attempt = 0; attempt < 4; attempt++)
+        {
+            lastTarget = await ReadTextSelectionMouseTargetAsync(page, blockId, text, hostSelector);
+            await page.Mouse.MoveAsync((float)lastTarget.StartX, (float)lastTarget.StartY);
+            await page.WaitForTimeoutAsync(80);
+            lastProbe = await ReadTextSelectionMouseTargetHitProbeAsync(page, lastTarget, hostSelector);
+            if (lastProbe.Ok)
+            {
+                return lastTarget;
+            }
+
+            await page.WaitForTimeoutAsync(120);
+        }
+
+        throw new AssertFailedException($"Mouse target for '{text}' in '{blockId ?? "<any>"}' did not stay under the expected block after layout settled. Target: {lastTarget?.Debug}. Probe: {lastProbe?.Debug}");
+    }
+
+    private static async Task<DocumentEditorTextSelectionMouseTarget> ReadVerifiedTextSelectionMouseTargetAsync(
+        IPage page,
+        string blockId,
+        int startOffset,
+        int endOffset,
+        string hostSelector)
+    {
+        DocumentEditorTextSelectionMouseTarget? lastTarget = null;
+        DocumentEditorMouseTargetHitProbe? lastProbe = null;
+        for (var attempt = 0; attempt < 4; attempt++)
+        {
+            lastTarget = await ReadTextSelectionMouseTargetAsync(page, blockId, startOffset, endOffset, hostSelector);
+            await page.Mouse.MoveAsync((float)lastTarget.StartX, (float)lastTarget.StartY);
+            await page.WaitForTimeoutAsync(80);
+            lastProbe = await ReadTextSelectionMouseTargetHitProbeAsync(page, lastTarget, hostSelector);
+            if (lastProbe.Ok)
+            {
+                return lastTarget;
+            }
+
+            await page.WaitForTimeoutAsync(120);
+        }
+
+        throw new AssertFailedException($"Mouse target for offsets {startOffset}-{endOffset} in '{blockId}' did not stay under the expected block after layout settled. Target: {lastTarget?.Debug}. Probe: {lastProbe?.Debug}");
+    }
+
+    private static Task<DocumentEditorMouseTargetHitProbe> ReadTextSelectionMouseTargetHitProbeAsync(
+        IPage page,
+        DocumentEditorTextSelectionMouseTarget target,
+        string hostSelector)
+        => page.EvaluateAsync<DocumentEditorMouseTargetHitProbe>(
+            """
+            ({ hostSelector, target }) => {
+                const host = document.querySelector(hostSelector);
+                const expectedBlockId = target.blockId || target.BlockId || '';
+                const targetBlock = findBlock(expectedBlockId);
+                const start = pointHit(Number(target.startX ?? target.StartX ?? 0) || 0, Number(target.startY ?? target.StartY ?? 0) || 0);
+                const end = pointHit(Number(target.endX ?? target.EndX ?? 0) || 0, Number(target.endY ?? target.EndY ?? 0) || 0);
+                const probe = {
+                    ok: start.ok && end.ok,
+                    debug: ''
+                };
+                probe.debug = JSON.stringify({
+                    expectedBlockId,
+                    targetRect: rectOf(targetBlock),
+                    start,
+                    end,
+                    scrollY: window.scrollY,
+                    activeElement: document.activeElement?.outerHTML?.slice(0, 220) || ''
+                });
+                return probe;
+
+                function findBlock(blockId) {
+                    if (!host || !blockId || typeof CSS === 'undefined' || typeof CSS.escape !== 'function') {
+                        return null;
+                    }
+
+                    const escaped = CSS.escape(blockId);
+                    return host.querySelector(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
+                }
+
+                function pointHit(x, y) {
+                    const top = document.elementFromPoint(x, y);
+                    const topBlock = top?.closest?.('[data-block-id], [data-render-block-id]');
+                    const actualBlockId = idOf(topBlock);
+                    return {
+                        ok: !!top && !!targetBlock && (targetBlock.contains(top) || topBlock === targetBlock || actualBlockId === expectedBlockId),
+                        x,
+                        y,
+                        top: top?.tagName?.toLowerCase?.() || '',
+                        topBlockId: actualBlockId,
+                        topHtml: top?.outerHTML?.slice(0, 220) || ''
+                    };
+                }
+
+                function idOf(node) {
+                    return node?.getAttribute?.('data-block-id') || node?.getAttribute?.('data-render-block-id') || '';
+                }
+
+                function rectOf(node) {
+                    const rect = node?.getBoundingClientRect?.();
+                    return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+                }
+            }
+            """,
+            new { hostSelector, target });
+
     private static Task<DocumentEditorTextSelectionMouseTarget> ReadTextSelectionMouseTargetAsync(
         IPage page,
         string? blockId,
@@ -2908,28 +3439,67 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             """
             async ({ hostSelector, blockId, text }) => {
                 const host = document.querySelector(hostSelector);
-                const block = blockId ? visibleBlock(host, blockId) : visibleBlocks(host).find(candidate => (candidate.textContent || '').includes(text));
-                if (!block) throw new Error(blockId ? `Could not find visible block '${blockId}'.` : `Could not find visible block containing '${text}'.`);
-                await scrollIntoMouseViewport(block);
-                const entries = collectTextEntries(block);
-                const blockText = entries.map(entry => entry.text).join('');
-                const start = blockText.indexOf(text);
-                if (start < 0) throw new Error(`Text '${text}' was not found in block text '${blockText}'.`);
-                return createTarget(block, entries, start, start + text.length, text);
+                const candidates = blockId
+                    ? visibleBlocks(host).filter(candidate => blockMatches(candidate, blockId))
+                    : visibleBlocks(host).filter(candidate => (candidate.textContent || '').includes(text));
+                if (!candidates.length) {
+                    throw new Error(blockId ? `Could not find visible block '${blockId}'.` : `Could not find visible block containing '${text}'.`);
+                }
+
+                const attempts = [];
+                for (const block of candidates) {
+                    await scrollIntoMouseViewport(block);
+                    const entries = collectTextEntries(block);
+                    const blockText = entries.map(entry => entry.text).join('');
+                    const start = blockText.indexOf(text);
+                    if (start < 0) {
+                        attempts.push({ blockId: idOf(block), reason: 'missing-text', blockText });
+                        continue;
+                    }
+
+                    const target = createTarget(block, entries, start, start + text.length, text);
+                    const usability = targetUsability(block, target);
+                    if (usability.ok) {
+                        return target;
+                    }
+
+                    attempts.push({
+                        blockId: idOf(block),
+                        reason: 'obstructed-target',
+                        rect: target.rect,
+                        start: usability.start,
+                        end: usability.end
+                    });
+                }
+
+                throw new Error(`Could not find an unobstructed mouse target for '${text}' in '${blockId || '<any>'}'. ${JSON.stringify(attempts).slice(0, 3000)}`);
 
                 function visibleBlocks(root) {
-                    return Array.from(root?.querySelectorAll('[data-block-id], [data-render-block-id]') || [])
+                    const wysiwygBlocks = Array.from(root?.querySelectorAll('.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id], .tm-wysiwyg-page__header .tm-wysiwyg-block[data-block-id], .tm-wysiwyg-page__footer .tm-wysiwyg-block[data-block-id]') || []);
+                    const renderBlocks = Array.from(root?.querySelectorAll('[data-render-block-id]') || []);
+                    const candidates = wysiwygBlocks.concat(renderBlocks);
+                    return Array.from(new Set(candidates))
                         .filter(node => {
                             const rect = node.getBoundingClientRect();
                             const style = getComputedStyle(node);
-                            return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && !node.closest('.tm-wysiwyg-page--virtual');
+                            return rect.width > 1
+                                && rect.height > 1
+                                && style.display !== 'none'
+                                && style.visibility !== 'hidden'
+                                && !node.closest('.tm-wysiwyg-page--virtual')
+                                && !node.closest('.tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides');
                         });
                 }
 
-                function visibleBlock(root, id) {
+                function blockMatches(node, id) {
                     const escaped = CSS.escape(id);
-                    return visibleBlocks(root)
-                        .find(node => node.getAttribute('data-block-id') === id || node.getAttribute('data-render-block-id') === id || node.matches(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`));
+                    return node.getAttribute('data-block-id') === id
+                        || node.getAttribute('data-render-block-id') === id
+                        || node.matches(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`);
+                }
+
+                function idOf(node) {
+                    return node?.getAttribute?.('data-block-id') || node?.getAttribute?.('data-render-block-id') || '';
                 }
 
                 function collectTextEntries(root) {
@@ -2961,19 +3531,47 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     const rect = unionRects(Array.from(range.getClientRects()).filter(item => item.width > 0.5 && item.height > 0.5));
                     const blockIdValue = block.getAttribute('data-block-id') || block.getAttribute('data-render-block-id') || '';
                     const selectedEntries = entries.filter(entry => entry.end > start && entry.start < end);
+                    const startPoint = pointerPoint(block, startRect, startRect.left + 1);
+                    const endPoint = pointerPoint(block, endRect, endRect.right - 1);
                     return {
                         blockId: blockIdValue,
                         startOffset: start,
                         endOffset: end,
                         expectedText,
-                        startX: startRect.left + 1,
-                        startY: pointerY(startRect),
-                        endX: endRect.right - 1,
-                        endY: pointerY(endRect),
+                        startX: startPoint.x,
+                        startY: startPoint.y,
+                        endX: endPoint.x,
+                        endY: endPoint.y,
                         rect,
                         blockText: entries.map(entry => entry.text).join(''),
                         textNodeCount: selectedEntries.length,
-                        debug: JSON.stringify({ blockId: blockIdValue, start, end, expectedText, rect, selectedEntries: selectedEntries.map(entry => ({ text: entry.text, start: entry.start, end: entry.end })) })
+                        debug: JSON.stringify({ blockId: blockIdValue, start, end, expectedText, rect, startPoint, endPoint, selectedEntries: selectedEntries.map(entry => ({ text: entry.text, start: entry.start, end: entry.end })) })
+                    };
+                }
+
+                function targetUsability(block, target) {
+                    const start = pointHit(block, target.startX, target.startY);
+                    const end = pointHit(block, target.endX, target.endY);
+                    return {
+                        ok: start.ok && end.ok,
+                        start,
+                        end
+                    };
+                }
+
+                function pointHit(block, x, y) {
+                    const top = document.elementFromPoint(x, y);
+                    const topBlock = top?.closest?.('[data-block-id], [data-render-block-id]');
+                    const expectedId = idOf(block);
+                    const actualId = idOf(topBlock);
+                    const ok = !!top && (block.contains(top) || topBlock === block || (!!expectedId && expectedId === actualId));
+                    return {
+                        ok,
+                        x,
+                        y,
+                        top: top?.tagName?.toLowerCase?.() || '',
+                        topBlockId: actualId,
+                        topHtml: top?.outerHTML?.slice(0, 220) || ''
                     };
                 }
 
@@ -2997,8 +3595,28 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     return Array.from(range.getClientRects())[0] || fallback.getBoundingClientRect();
                 }
 
+                function pointerPoint(block, rect, requestedX) {
+                    const x = Math.max(rect.left + 1, Math.min(rect.right - 1, requestedX));
+                    for (const y of pointerYCandidates(rect)) {
+                        if (pointHit(block, x, y).ok) {
+                            return { x, y };
+                        }
+                    }
+
+                    return { x, y: pointerY(rect) };
+                }
+
+                function pointerYCandidates(rect) {
+                    const top = rect.top + 1;
+                    const bottom = rect.bottom - 1;
+                    const height = Math.max(1, rect.height);
+                    return [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74]
+                        .map(ratio => Math.max(top, Math.min(bottom, rect.top + height * ratio)))
+                        .filter((value, index, values) => values.indexOf(value) === index);
+                }
+
                 function pointerY(rect) {
-                    return Math.max(rect.top + 1, Math.min(rect.bottom - 1, rect.top + Math.min(10, Math.max(4, rect.height * 0.38))));
+                    return Math.max(rect.top + 1, Math.min(rect.bottom - 1, rect.top + rect.height * 0.5));
                 }
 
                 function unionRects(rects) {
@@ -3027,10 +3645,12 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                             await nextFrame();
                         }
                     }
+                    await settleLayout(node);
                     const rect = node.getBoundingClientRect();
                     if (rect.top < 80 || rect.bottom > window.innerHeight - 40) {
                         window.scrollBy({ top: rect.top - (window.innerHeight / 2) + (rect.height / 2), behavior: 'instant' });
                         await nextFrame();
+                        await settleLayout(node);
                     }
                 }
 
@@ -3050,6 +3670,38 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 function nextFrame() {
                     return new Promise(resolve => requestAnimationFrame(() => resolve()));
                 }
+
+                async function settleLayout(node) {
+                    await new Promise(resolve => setTimeout(resolve, 80));
+                    let previous = rectSnapshot(node);
+                    let stableFrames = 0;
+                    for (let index = 0; index < 24; index++) {
+                        await nextFrame();
+                        const current = rectSnapshot(node);
+                        if (rectsClose(previous, current)) {
+                            stableFrames++;
+                            if (stableFrames >= 3) {
+                                return;
+                            }
+                        } else {
+                            stableFrames = 0;
+                        }
+
+                        previous = current;
+                    }
+                }
+
+                function rectSnapshot(node) {
+                    const rect = node.getBoundingClientRect();
+                    return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+                }
+
+                function rectsClose(left, right) {
+                    return Math.abs(left.left - right.left) < 0.5
+                        && Math.abs(left.top - right.top) < 0.5
+                        && Math.abs(left.width - right.width) < 0.5
+                        && Math.abs(left.height - right.height) < 0.5;
+                }
             }
             """,
             new { hostSelector, blockId = blockId ?? string.Empty, text });
@@ -3065,11 +3717,16 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
             async ({ hostSelector, blockId, startOffset, endOffset }) => {
                 const host = document.querySelector(hostSelector);
                 const escaped = CSS.escape(blockId);
-                const block = Array.from(host?.querySelectorAll(`[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`) || [])
+                const block = Array.from(host?.querySelectorAll(`.tm-wysiwyg-page__layer--body-text .tm-wysiwyg-block[data-block-id="${escaped}"], .tm-wysiwyg-page__header .tm-wysiwyg-block[data-block-id="${escaped}"], .tm-wysiwyg-page__footer .tm-wysiwyg-block[data-block-id="${escaped}"], [data-render-block-id="${escaped}"]`) || [])
                     .find(node => {
                         const rect = node.getBoundingClientRect();
                         const style = getComputedStyle(node);
-                        return rect.width > 1 && rect.height > 1 && style.display !== 'none' && style.visibility !== 'hidden' && !node.closest('.tm-wysiwyg-page--virtual');
+                        return rect.width > 1
+                            && rect.height > 1
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && !node.closest('.tm-wysiwyg-page--virtual')
+                            && !node.closest('.tm-wysiwyg-page__layer--object, .tm-wysiwyg-page__layer--selection, .tm-wysiwyg-page__layer--guides');
                     });
                 if (!block) throw new Error(`Could not find visible block '${blockId}'.`);
                 await scrollIntoMouseViewport(block);
@@ -3098,19 +3755,21 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                 range.setEnd(endPos.node, endPos.offset);
                 const rect = unionRects(Array.from(range.getClientRects()).filter(item => item.width > 0.5 && item.height > 0.5));
                 const selectedEntries = entries.filter(entry => entry.end > start && entry.start < end);
+                const startPoint = pointerPoint(startRect, startRect.left + 1);
+                const endPoint = pointerPoint(endRect, endRect.right - 1);
                 return {
                     blockId,
                     startOffset: start,
                     endOffset: end,
                     expectedText: text.slice(start, end),
-                    startX: startRect.left + 1,
-                    startY: pointerY(startRect),
-                    endX: endRect.right - 1,
-                    endY: pointerY(endRect),
+                    startX: startPoint.x,
+                    startY: startPoint.y,
+                    endX: endPoint.x,
+                    endY: endPoint.y,
                     rect,
                     blockText: text,
                     textNodeCount: selectedEntries.length,
-                    debug: JSON.stringify({ blockId, start, end, expectedText: text.slice(start, end), rect })
+                    debug: JSON.stringify({ blockId, start, end, expectedText: text.slice(start, end), rect, startPoint, endPoint })
                 };
 
                 function positionAt(offset) {
@@ -3133,8 +3792,15 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                     return Array.from(range.getClientRects())[0] || fallback.getBoundingClientRect();
                 }
 
+                function pointerPoint(rect, requestedX) {
+                    return {
+                        x: Math.max(rect.left + 1, Math.min(rect.right - 1, requestedX)),
+                        y: pointerY(rect)
+                    };
+                }
+
                 function pointerY(rect) {
-                    return Math.max(rect.top + 1, Math.min(rect.bottom - 1, rect.top + Math.min(10, Math.max(4, rect.height * 0.38))));
+                    return Math.max(rect.top + 1, Math.min(rect.bottom - 1, rect.top + rect.height * 0.5));
                 }
 
                 function unionRects(rects) {
@@ -3163,10 +3829,12 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
                             await nextFrame();
                         }
                     }
+                    await settleLayout(node);
                     const rect = node.getBoundingClientRect();
                     if (rect.top < 80 || rect.bottom > window.innerHeight - 40) {
                         window.scrollBy({ top: rect.top - (window.innerHeight / 2) + (rect.height / 2), behavior: 'instant' });
                         await nextFrame();
+                        await settleLayout(node);
                     }
                 }
 
@@ -3185,6 +3853,38 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
 
                 function nextFrame() {
                     return new Promise(resolve => requestAnimationFrame(() => resolve()));
+                }
+
+                async function settleLayout(node) {
+                    await new Promise(resolve => setTimeout(resolve, 80));
+                    let previous = rectSnapshot(node);
+                    let stableFrames = 0;
+                    for (let index = 0; index < 24; index++) {
+                        await nextFrame();
+                        const current = rectSnapshot(node);
+                        if (rectsClose(previous, current)) {
+                            stableFrames++;
+                            if (stableFrames >= 3) {
+                                return;
+                            }
+                        } else {
+                            stableFrames = 0;
+                        }
+
+                        previous = current;
+                    }
+                }
+
+                function rectSnapshot(node) {
+                    const rect = node.getBoundingClientRect();
+                    return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+                }
+
+                function rectsClose(left, right) {
+                    return Math.abs(left.left - right.left) < 0.5
+                        && Math.abs(left.top - right.top) < 0.5
+                        && Math.abs(left.width - right.width) < 0.5
+                        && Math.abs(left.height - right.height) < 0.5;
                 }
             }
             """,
@@ -3250,7 +3950,7 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         var y = box.Y + box.Height / 2;
         await page.Mouse.MoveAsync((float)x, (float)y);
         await page.Mouse.DownAsync();
-        var pointerDownSelection = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+        var pointerDownSelection = await WaitForToolbarPointerDownSelectionAsync(page, beforeSelection, name, requireRuntimeSelectionToken, hostSelector);
         var pointerDownFailure = ValidatePointerDownSelection(beforeSelection, pointerDownSelection, name, requireRuntimeSelectionToken);
         await page.Mouse.UpAsync();
         await WaitForEditorStableAsync(page, $"toolbar {scope} '{name}'", beforeSelection.StartBlockId, beforeSelection.SelectedText, hostSelector);
@@ -3280,6 +3980,29 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         }
 
         return result;
+    }
+
+    private static async Task<DocumentEditorSelectionSnapshot> WaitForToolbarPointerDownSelectionAsync(
+        IPage page,
+        DocumentEditorSelectionSnapshot beforeSelection,
+        string actionName,
+        bool requireRuntimeSelectionToken,
+        string hostSelector)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddMilliseconds(350);
+        DocumentEditorSelectionSnapshot? last = null;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            last = await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
+            if (ValidatePointerDownSelection(beforeSelection, last, actionName, requireRuntimeSelectionToken) is null)
+            {
+                return last;
+            }
+
+            await page.WaitForTimeoutAsync(25);
+        }
+
+        return last ?? await ReadDocumentEditorSelectionSnapshotAsync(page, hostSelector);
     }
 
     private static string? ValidatePointerDownSelection(
@@ -3646,6 +4369,16 @@ public abstract class DocumentEditorE2ETestBase : WasmTestBase
         => string.Concat(value.Select(ch => char.IsLetterOrDigit(ch) || ch is '_' or '-' ? ch : '_'));
 }
 
+/// <summary>Safe browser viewport point for typing into the editor body.</summary>
+public sealed class DocumentEditorTypingTarget
+{
+    [JsonPropertyName("x")] public double X { get; set; }
+    [JsonPropertyName("y")] public double Y { get; set; }
+    [JsonPropertyName("blockId")] public string BlockId { get; set; } = string.Empty;
+    [JsonPropertyName("offset")] public int Offset { get; set; }
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
 /// <summary>Best-effort toolbar state snapshot for document editor E2E tests.</summary>
 public sealed record DocumentEditorToolbarState(
     [property: JsonPropertyName("bold")] bool Bold,
@@ -3716,6 +4449,13 @@ public sealed class DocumentEditorTextSelectionMouseTarget
     [JsonPropertyName("rect")] public DocumentEditorRectProbe Rect { get; set; } = new();
     [JsonPropertyName("blockText")] public string BlockText { get; set; } = string.Empty;
     [JsonPropertyName("textNodeCount")] public int TextNodeCount { get; set; }
+    [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
+}
+
+/// <summary>Hit-test probe for a previously computed mouse text target.</summary>
+public sealed class DocumentEditorMouseTargetHitProbe
+{
+    [JsonPropertyName("ok")] public bool Ok { get; set; }
     [JsonPropertyName("debug")] public string Debug { get; set; } = string.Empty;
 }
 

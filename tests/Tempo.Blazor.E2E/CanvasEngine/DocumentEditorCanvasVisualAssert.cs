@@ -373,11 +373,34 @@ public static class DocumentEditorCanvasVisualAssert
 
     private static async Task AssertVisibleRectAsync(ILocator locator, string name)
     {
+        Exception? lastException = null;
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            try
+            {
+                if (await locator.IsVisibleAsync())
+                {
+                    var box = await locator.BoundingBoxAsync();
+                    if (box is not null && box.Width > 0 && box.Height > 0)
+                    {
+                        return;
+                    }
+                }
+            }
+            catch (PlaywrightException ex)
+            {
+                lastException = ex;
+            }
+
+            await Task.Delay(100);
+        }
+
         Assert.IsTrue(await locator.IsVisibleAsync(), $"{name} must be visible.");
-        var box = await locator.BoundingBoxAsync();
-        Assert.IsNotNull(box, $"{name} must expose a bounding box.");
-        Assert.IsTrue(box.Width > 0, $"{name} width must be greater than zero.");
-        Assert.IsTrue(box.Height > 0, $"{name} height must be greater than zero.");
+        var finalBox = await locator.BoundingBoxAsync();
+        Assert.IsNotNull(finalBox, $"{name} must expose a bounding box. Last transient exception: {lastException?.Message}");
+        Assert.IsTrue(finalBox.Width > 0, $"{name} width must be greater than zero.");
+        Assert.IsTrue(finalBox.Height > 0, $"{name} height must be greater than zero.");
     }
 
     private static async Task AssertNoOverlapAsync(IPage page, string selector, string label)

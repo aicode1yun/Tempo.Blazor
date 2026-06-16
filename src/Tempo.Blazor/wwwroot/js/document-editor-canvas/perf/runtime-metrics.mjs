@@ -24,7 +24,7 @@ export function createPerformanceMetrics(options = {}) {
     }
 
     function recordTypingLatency(durationMs) {
-        pushBounded(typingLatencies, normalizeDuration(durationMs), maxSamples);
+        pushBounded(typingLatencies, normalizeObservedLatencyDuration(durationMs), maxSamples);
         return latencySnapshot();
     }
 
@@ -90,6 +90,13 @@ function percentile(values, percentileValue) {
 function normalizeDuration(value) {
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function normalizeObservedLatencyDuration(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0
+        ? Math.max(parsed, 0.01)
+        : 0.01;
 }
 
 function round(value) {

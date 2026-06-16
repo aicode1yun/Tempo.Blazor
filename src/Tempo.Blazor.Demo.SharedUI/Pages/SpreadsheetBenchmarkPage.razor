@@ -40,6 +40,13 @@
                     @onclick="RunBenchmarkAsync">
                 Run benchmark
             </button>
+            <button type="button"
+                    data-testid="spreadsheet-benchmark-run-both"
+                    class="inline-flex items-center justify-center rounded-lg border border-primary-500 px-4 py-2 text-sm font-semibold text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-950/30 disabled:opacity-50"
+                    disabled="@_isRunning"
+                    @onclick="RunAllBenchmarksAsync">
+                Run all
+            </button>
         </div>
     </div>
 
@@ -242,6 +249,7 @@
     private bool _pendingMeasure;
     private int _renderKey;
     private Stopwatch? _renderStopwatch;
+    private string[] _pendingRendererLabels = [RendererLabel];
 
     private DatasetOption CurrentDataset => Datasets.First(d => d.Id == _selectedDatasetId);
     private int SampledCellCount => Math.Min(CurrentDataset.Rows, 240) * Math.Min(CurrentDataset.Columns, 16);
@@ -275,7 +283,17 @@
     private Task RunBenchmarkAsync()
     {
         _isRunning = true;
-        _status = $"Measuring {RendererLabel} on {CurrentDataset.Label}";
+        _pendingRendererLabels = ["CanvasJsEngine"];
+        _status = $"Measuring CanvasJsEngine on {CurrentDataset.Label}";
+        QueueGridRender(shouldMeasure: true);
+        return Task.CompletedTask;
+    }
+
+    private Task RunAllBenchmarksAsync()
+    {
+        _isRunning = true;
+        _pendingRendererLabels = ["CanvasJsEngine", "Canvas", "Dom"];
+        _status = $"Measuring renderers on {CurrentDataset.Label}";
         QueueGridRender(shouldMeasure: true);
         return Task.CompletedTask;
     }
@@ -320,76 +338,81 @@
         }
 
         var pasteSimulationMs = metrics.PasteDurationMs;
-        _results.Insert(0, new BenchmarkResult(
-            RendererLabel,
-            CurrentDataset.Label,
-            firstRenderMs,
-            metrics.ScrollFps,
-            metrics.KeyboardNoScrollMs,
-            metrics.KeyboardScrollDownMs,
-            metrics.KeyboardScrollUpMs,
-            metrics.KeyboardScrollRightMs,
-            metrics.SingleArrowInViewportMs,
-            metrics.SingleArrowInViewportDotNetCallbackCount,
-            metrics.SingleArrowInViewportHotPathDotNetCallbackCount,
-            metrics.SingleArrowInViewportBlazorFrameCount,
-            metrics.SingleArrowInViewportSelectionPaintFrameCount,
-            metrics.SingleArrowInViewportContentPaintFrameCount,
-            metrics.SingleArrowScrollEdgeMs,
-            metrics.SingleArrowScrollEdgeDotNetCallbackCount,
-            metrics.SingleArrowScrollEdgeHotPathDotNetCallbackCount,
-            metrics.SingleArrowScrollEdgeBlazorFrameCount,
-            metrics.FormulaCellClickLatencyMs,
-            metrics.FormulaCellClickDotNetCallbackCount,
-            metrics.FormulaCellClickHotPathDotNetCallbackCount,
-            metrics.FormulaCellClickBlazorFrameCount,
-            metrics.TypingLatencyMs,
-            metrics.TypingDotNetCallbackCount,
-            metrics.TypingHotPathDotNetCallbackCount,
-            metrics.TypingBlazorFrameCount,
-            metrics.FormulaCommitLatencyMs,
-            metrics.FormulaCommitDotNetCallbackCount,
-            metrics.DotNetCallbacksPerInteraction,
-            metrics.HotPathDotNetCallbacksPerInteraction,
-            metrics.WheelScrollFps,
-            metrics.DragAutoscrollFrames,
-            metrics.KeyboardNativeScrollEvents,
-            metrics.KeyboardScrollToCount,
-            metrics.KeyboardLogicalScrollCount,
-            metrics.KeyboardEnsureCellVisibleMs,
-            metrics.DebugDrawCellsMs,
-            metrics.DebugDrawCellContentMs,
-            metrics.DebugContextSaveClipRestoreCount,
-            metrics.DebugFastCellPathCount,
-            metrics.DebugSlowCellPathCount,
-            metrics.WheelEventCount,
-            metrics.WheelPreventedCount,
-            metrics.WheelLogicalScrollCount,
-            metrics.WheelViewportCallbackCount,
-            metrics.WheelScrollToCount,
-            metrics.WheelBlazorFrameCount,
-            metrics.WheelHotPathBlazorFrameCount,
-            metrics.WheelPaintFrameCount,
-            metrics.WheelContentPaintFrameCount,
-            metrics.DragLogicalScrollCount,
-            metrics.DragViewportCallbackCount,
-            metrics.DragSelectionCallbackCount,
-            metrics.DragScrollToCount,
-            metrics.DragBlazorFrameCount,
-            metrics.DragHotPathBlazorFrameCount,
-            metrics.ColumnResizeDragMs,
-            metrics.ColumnResizePointerMoveCount,
-            metrics.ColumnResizeDotNetCallbackCount,
-            metrics.ColumnResizeBlazorFrameCount,
-            metrics.ColumnResizePaintFrameCount,
-            metrics.RowResizeDragMs,
-            metrics.RowResizePointerMoveCount,
-            metrics.RowResizeDotNetCallbackCount,
-            metrics.RowResizeBlazorFrameCount,
-            metrics.RowResizePaintFrameCount,
-            pasteSimulationMs,
-            metrics.UsedJsHeapSize));
+        var labels = _pendingRendererLabels.Length == 0 ? [RendererLabel] : _pendingRendererLabels;
+        foreach (var label in labels.Reverse())
+        {
+            _results.Insert(0, new BenchmarkResult(
+                label,
+                CurrentDataset.Label,
+                firstRenderMs,
+                metrics.ScrollFps,
+                metrics.KeyboardNoScrollMs,
+                metrics.KeyboardScrollDownMs,
+                metrics.KeyboardScrollUpMs,
+                metrics.KeyboardScrollRightMs,
+                metrics.SingleArrowInViewportMs,
+                metrics.SingleArrowInViewportDotNetCallbackCount,
+                metrics.SingleArrowInViewportHotPathDotNetCallbackCount,
+                metrics.SingleArrowInViewportBlazorFrameCount,
+                metrics.SingleArrowInViewportSelectionPaintFrameCount,
+                metrics.SingleArrowInViewportContentPaintFrameCount,
+                metrics.SingleArrowScrollEdgeMs,
+                metrics.SingleArrowScrollEdgeDotNetCallbackCount,
+                metrics.SingleArrowScrollEdgeHotPathDotNetCallbackCount,
+                metrics.SingleArrowScrollEdgeBlazorFrameCount,
+                metrics.FormulaCellClickLatencyMs,
+                metrics.FormulaCellClickDotNetCallbackCount,
+                metrics.FormulaCellClickHotPathDotNetCallbackCount,
+                metrics.FormulaCellClickBlazorFrameCount,
+                metrics.TypingLatencyMs,
+                metrics.TypingDotNetCallbackCount,
+                metrics.TypingHotPathDotNetCallbackCount,
+                metrics.TypingBlazorFrameCount,
+                metrics.FormulaCommitLatencyMs,
+                metrics.FormulaCommitDotNetCallbackCount,
+                metrics.DotNetCallbacksPerInteraction,
+                metrics.HotPathDotNetCallbacksPerInteraction,
+                metrics.WheelScrollFps,
+                metrics.DragAutoscrollFrames,
+                metrics.KeyboardNativeScrollEvents,
+                metrics.KeyboardScrollToCount,
+                metrics.KeyboardLogicalScrollCount,
+                metrics.KeyboardEnsureCellVisibleMs,
+                metrics.DebugDrawCellsMs,
+                metrics.DebugDrawCellContentMs,
+                metrics.DebugContextSaveClipRestoreCount,
+                metrics.DebugFastCellPathCount,
+                metrics.DebugSlowCellPathCount,
+                metrics.WheelEventCount,
+                metrics.WheelPreventedCount,
+                metrics.WheelLogicalScrollCount,
+                metrics.WheelViewportCallbackCount,
+                metrics.WheelScrollToCount,
+                metrics.WheelBlazorFrameCount,
+                metrics.WheelHotPathBlazorFrameCount,
+                metrics.WheelPaintFrameCount,
+                metrics.WheelContentPaintFrameCount,
+                metrics.DragLogicalScrollCount,
+                metrics.DragViewportCallbackCount,
+                metrics.DragSelectionCallbackCount,
+                metrics.DragScrollToCount,
+                metrics.DragBlazorFrameCount,
+                metrics.DragHotPathBlazorFrameCount,
+                metrics.ColumnResizeDragMs,
+                metrics.ColumnResizePointerMoveCount,
+                metrics.ColumnResizeDotNetCallbackCount,
+                metrics.ColumnResizeBlazorFrameCount,
+                metrics.ColumnResizePaintFrameCount,
+                metrics.RowResizeDragMs,
+                metrics.RowResizePointerMoveCount,
+                metrics.RowResizeDotNetCallbackCount,
+                metrics.RowResizeBlazorFrameCount,
+                metrics.RowResizePaintFrameCount,
+                pasteSimulationMs,
+                metrics.UsedJsHeapSize));
+        }
 
+        _pendingRendererLabels = [RendererLabel];
         _isRunning = false;
         _status = "Ready";
         await InvokeAsync(StateHasChanged);

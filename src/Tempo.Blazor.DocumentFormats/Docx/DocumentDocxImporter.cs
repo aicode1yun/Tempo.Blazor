@@ -433,7 +433,11 @@ public sealed class DocxPackageReader
             inlines.RemoveAll(inline => inline is TextRun);
         }
 
-        if (inlines.Count > 0 || blocks.Count == 0)
+        if (TryCreateTempoImageBlock(paragraph, inlines, out var imageBlock))
+        {
+            blocks.Insert(0, imageBlock);
+        }
+        else if (inlines.Count > 0 || blocks.Count == 0)
         {
             var blockType = GetParagraphType(paragraph, out var headingLevel, out var ordered, out var indent);
             var content = CreateTextContent(blockType, inlines, headingLevel, ordered, indent);
@@ -471,6 +475,45 @@ public sealed class DocxPackageReader
 
         return blocks;
     }
+
+    private bool TryCreateTempoImageBlock(W.Paragraph paragraph, IReadOnlyList<InlineContent> inlines, out DocumentBlock block)
+    {
+        block = new DocumentBlock();
+        var drawing = inlines.OfType<DocumentDrawingRun>().SingleOrDefault();
+        if (drawing is null)
+        {
+            return false;
+        }
+
+        var isTempoImageBlock = string.Equals(GetTempoAttribute(paragraph, "block-type"), "image", StringComparison.OrdinalIgnoreCase)
+            || DocumentImagePersistence.IsImageBlockOrigin(drawing);
+        if (!isTempoImageBlock || HasNonImageBlockInlineContent(inlines, drawing))
+        {
+            return false;
+        }
+
+        var blockId = ReadElementId(paragraph, "block-id");
+        drawing.Layout ??= DocumentObjectLayout.Inline();
+        drawing.Layout.Anchor ??= new DocumentObjectAnchor();
+        drawing.Layout.Anchor.BlockId ??= blockId;
+        block = new DocumentBlock
+        {
+            Id = blockId,
+            SectionId = GetTempoAttribute(paragraph, "section-id"),
+            Type = DocumentBlockType.Image,
+            Order = _order++,
+            Content = DocumentImagePersistence.ToImageBlockContent(drawing)
+        };
+        return true;
+    }
+
+    private static bool HasNonImageBlockInlineContent(IReadOnlyList<InlineContent> inlines, DocumentDrawingRun imageDrawing)
+        => inlines.Any(inline => inline switch
+        {
+            DocumentDrawingRun drawing => !ReferenceEquals(drawing, imageDrawing),
+            TextRun text => !string.IsNullOrWhiteSpace(text.Text),
+            _ => true
+        });
 
     private static void NormalizeDrawingAnchors(DocumentBlock block, IReadOnlyList<InlineContent> inlines)
     {
@@ -898,6 +941,7 @@ public sealed class DocxPackageReader
             .ToList();
         ApplyImportContext(drawingRun.Layout.Anchor, context);
         ApplyImportedDrawingIdentity(drawingRun, drawing, drawingRun.Docx!, context);
+        ApplyImportedImageBlockOrigin(drawingRun, drawing);
         return drawingRun;
     }
 
@@ -917,6 +961,21 @@ public sealed class DocxPackageReader
 
         var runId = host is null ? null : GetTempoAttribute(host, "run-id");
         drawingRun.Id = FirstNonWhiteSpace(runId, drawingRun.Id, $"{drawingRun.ObjectId}-run");
+    }
+
+    private static void ApplyImportedImageBlockOrigin(DocumentDrawingRun drawingRun, W.Drawing drawing)
+    {
+        var host = GetDrawingHost(drawing);
+        if (host is null || !ParseBool(GetTempoAttribute(host, "image-block-origin"), false))
+        {
+            return;
+        }
+
+        DocumentImagePersistence.MarkImageBlockOrigin(
+            drawingRun,
+            GetTempoAttribute(host, "image-block-id")
+            ?? drawingRun.Layout?.Anchor?.BlockId
+            ?? drawingRun.ObjectId);
     }
 
     private static OpenXmlElement? GetDrawingHost(W.Drawing drawing)

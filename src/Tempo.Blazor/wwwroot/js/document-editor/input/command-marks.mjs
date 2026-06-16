@@ -45,7 +45,11 @@ export function commandMark(id, payload) {
                 value: normalizeCommandColorValue(body.color || body.Color || body.value || body.Value || null),
             };
         case 'link':
-            return { type: 6, href: body.href || body.Href || body.url || body.Url || '' };
+            return {
+                type: 6,
+                href: body.href || body.Href || body.url || body.Url || '',
+                title: body.title || body.Title || null,
+            };
         default:
             return null;
     }

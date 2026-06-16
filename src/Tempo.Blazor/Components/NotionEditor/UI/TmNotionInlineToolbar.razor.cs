@@ -177,7 +177,7 @@ public partial class TmNotionInlineToolbar : ComponentBase
     private async Task HandleRemoveLinkAsync()
     {
         try { await JS.InvokeVoidAsync("tmNotionEditor.restoreSavedSelection"); } catch { }
-        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "unlink"); }
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "unlink", CurrentHref, BlockId); }
         catch { }
         _showLinkInput = false;
     }

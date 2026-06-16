@@ -10,7 +10,7 @@
 }
 else
 {
-    <div class="tm-spreadsheet-canvas-grid @(Sheet.ShowGridLines ? "" : "tm-spreadsheet-grid--no-gridlines") @(IsInFormulaPointMode ? "tm-spreadsheet-grid--formula-point" : "") @(IsFormatPainterActive ? "tm-spreadsheet-grid--format-painter" : "")"
+    <div class="tm-spreadsheet-canvas-grid tm-spreadsheet-grid @(Sheet.ShowGridLines ? "" : "tm-spreadsheet-grid--no-gridlines") @(IsInFormulaPointMode ? "tm-spreadsheet-grid--formula-point" : "") @(IsFormatPainterActive ? "tm-spreadsheet-grid--format-painter" : "")"
          role="grid"
          aria-rowcount="@Sheet.RowCount"
          aria-colcount="@Sheet.ColumnCount"

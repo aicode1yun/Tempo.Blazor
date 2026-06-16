@@ -67,6 +67,17 @@ test('performance metrics expose bounded typing p50 and p95 samples', () => {
     assert.equal(snapshot.scroll.count, 1);
 });
 
+test('performance metrics publish non-zero typing latency for sub-resolution samples', () => {
+    const metrics = createPerformanceMetrics();
+
+    metrics.recordTypingLatency(0);
+
+    const snapshot = metrics.snapshot();
+    assert.equal(snapshot.typing.count, 1);
+    assert.equal(snapshot.typing.p50Ms, 0.01);
+    assert.equal(snapshot.typing.p95Ms, 0.01);
+});
+
 test('font measurement cache enforces bounded LRU entries', () => {
     const service = createFontMetricsService({ cacheLimit: 2, createMeasureContext: () => null });
 

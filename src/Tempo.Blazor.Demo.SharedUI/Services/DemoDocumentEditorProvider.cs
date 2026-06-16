@@ -1027,24 +1027,19 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             }
         });
 
-        document.Blocks.Add(new DocumentBlock
-        {
-            Id = "canvas-history-image",
-            SectionId = sectionId,
-            Type = DocumentBlockType.Image,
-            Order = 40,
-            Content = new ImageBlockContent
-            {
-                Source = DocumentImageSource.Url,
-                Url = DemoImageUrl,
-                AltText = "Canvas history save image",
-                Caption = "Canvas image persists through save and reload",
-                Size = new DocumentImageSize { Width = 180, Height = 120 },
-                NaturalSize = new DocumentImageSize { Width = 320, Height = 180 },
-                Alignment = DocumentImageAlignment.Center,
-                Layout = DocumentObjectLayout.Inline()
-            }
-        });
+        document.Blocks.Add(CreateImageDrawingParagraph(
+            "canvas-history-image",
+            40,
+            DocumentImageSource.Url,
+            DemoImageUrl,
+            null,
+            "Canvas history save image",
+            "Canvas image persists through save and reload",
+            180,
+            120,
+            DocumentImageAlignment.Center,
+            DocumentObjectLayout.Inline(),
+            sectionId));
 
         document.Comments.Add(new DocumentComment
         {
@@ -1492,32 +1487,27 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             spacingAfter: 14,
             lineSpacing: 1.16));
 
-        document.Blocks.Add(new DocumentBlock
-        {
-            Id = "canvas-image-phase15-main",
-            SectionId = sectionId,
-            Type = DocumentBlockType.Image,
-            Order = 20,
-            Content = new ImageBlockContent
+        document.Blocks.Add(CreateImageDrawingParagraph(
+            "canvas-image-phase15-main",
+            20,
+            DocumentImageSource.Url,
+            DemoImageUrl,
+            null,
+            "Canvas phase 15 exhibit",
+            "Phase 15 square wrapped image caption",
+            168,
+            96,
+            DocumentImageAlignment.Start,
+            new DocumentObjectLayout
             {
-                Source = DocumentImageSource.Url,
-                Url = DemoImageUrl,
-                AltText = "Canvas phase 15 exhibit",
-                Caption = "Phase 15 square wrapped image caption",
-                Size = new DocumentImageSize { Width = 168, Height = 96, LockAspectRatio = true },
-                NaturalSize = new DocumentImageSize { Width = 320, Height = 180, LockAspectRatio = true },
-                Alignment = DocumentImageAlignment.Start,
-                Layout = new DocumentObjectLayout
-                {
-                    Kind = DocumentObjectLayoutKind.Anchored,
-                    Anchor = { BlockId = "canvas-images-wrap-text", Offset = 0, MoveWithText = true },
-                    Wrap = { Mode = DocumentWrapMode.Square, DistanceLeft = 12, DistanceRight = 14, DistanceTop = 6, DistanceBottom = 8 },
-                    Position = { X = 0, Y = 34, HorizontalAlignment = DocumentImageHorizontalPosition.Left },
-                    Transform = { Width = 168, Height = 96, LockAspectRatio = true },
-                    Stacking = { ZIndex = 2 }
-                }
-            }
-        });
+                Kind = DocumentObjectLayoutKind.Anchored,
+                Anchor = { BlockId = "canvas-images-wrap-text", Offset = 0, MoveWithText = true },
+                Wrap = { Mode = DocumentWrapMode.Square, DistanceLeft = 12, DistanceRight = 14, DistanceTop = 6, DistanceBottom = 8 },
+                Position = { X = 0, Y = 34, HorizontalAlignment = DocumentImageHorizontalPosition.Left },
+                Transform = { Width = 168, Height = 96, LockAspectRatio = true },
+                Stacking = { ZIndex = 2 }
+            },
+            sectionId));
 
         document.Blocks.Add(TextParagraph(
             sectionId,
@@ -3661,11 +3651,11 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         contract.Blocks.Add(CreateImageDrawingParagraph(
             "contract-left-wrap-image",
             31,
-            DocumentImageSource.Asset,
+            DocumentImageSource.Url,
+            "/document-editor-evidence.svg",
             null,
-            ContractAssetId,
-            "Asset evidence preview",
-            "Evidence preview loaded from the demo image provider",
+            "URL evidence preview",
+            "Evidence preview loaded from a URL",
             148,
             84,
             DocumentImageAlignment.Start,

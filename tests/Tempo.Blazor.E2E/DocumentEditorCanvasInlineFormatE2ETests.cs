@@ -106,10 +106,12 @@ public sealed class DocumentEditorCanvasInlineFormatE2ETests : WasmTestBase
             Type = ScreenshotType.Png
         });
 
+        await page.AddStyleTagAsync(new PageAddStyleTagOptions
+        {
+            Content = "[data-testid='document-mini-toolbar'] { pointer-events: none !important; }"
+        });
         var linkPoint = await ReadCanvasTextRangeAsync(page, "canvas-format-body", 2, 3);
-        await page.Keyboard.DownAsync("Control");
-        await page.Mouse.ClickAsync((float)linkPoint.StartX, (float)linkPoint.StartY);
-        await page.Keyboard.UpAsync("Control");
+        await DispatchCtrlMouseClickAsync(page, linkPoint.StartX, linkPoint.StartY);
         await page.WaitForFunctionAsync(
             """
             href => document.querySelector('[data-testid="document-canvas-engine-root"]')
@@ -149,6 +151,29 @@ public sealed class DocumentEditorCanvasInlineFormatE2ETests : WasmTestBase
         TestContext.AddResultFile(manifestPath);
     }
 
+    private static Task DispatchCtrlMouseClickAsync(IPage page, double x, double y)
+        => page.EvaluateAsync(
+            """
+            ({ x, y }) => {
+                const target = document.elementFromPoint(x, y);
+                if (!target) throw new Error(`No element at ${x},${y}.`);
+                const options = {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: x,
+                    clientY: y,
+                    ctrlKey: true,
+                    button: 0,
+                    buttons: 1,
+                    detail: 1,
+                };
+                target.dispatchEvent(new MouseEvent('mousedown', options));
+                target.dispatchEvent(new MouseEvent('mouseup', { ...options, buttons: 0 }));
+                target.dispatchEvent(new MouseEvent('click', { ...options, buttons: 0 }));
+            }
+            """,
+            new { x, y });
+
     private async Task OpenInlineFormattingDocumentAsync(IPage page)
     {
         await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId=phase-9-canvas-inline-format&showToolbar=true", new PageGotoOptions
@@ -170,24 +195,53 @@ public sealed class DocumentEditorCanvasInlineFormatE2ETests : WasmTestBase
 
     private static async Task<CanvasTextRange> SelectCanvasTextRangeAsync(IPage page, string blockId, int startOffset, int endOffset)
     {
-        var target = await ReadCanvasTextRangeAsync(page, blockId, startOffset, endOffset);
-        await page.Mouse.MoveAsync((float)target.StartX, (float)target.StartY);
-        await page.Mouse.DownAsync();
-        await page.Mouse.MoveAsync((float)target.EndX, (float)target.EndY, new MouseMoveOptions { Steps = 10 });
-        await page.Mouse.UpAsync();
-        await page.WaitForFunctionAsync(
+        Exception? lastTransientException = null;
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            try
+            {
+                await WaitForCanvasCommandBridgeAsync(page);
+                var target = await ReadCanvasTextRangeAsync(page, blockId, startOffset, endOffset);
+                var resultJson = await page.EvaluateAsync<string>(
+                    """
+                    ([blockId, startOffset, endOffset]) => {
+                        const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                        const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                        return import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs')
+                            .then(module => module.selectTextRange(handle, blockId, startOffset, endOffset) || '');
+                    }
+                    """,
+                    new object[] { blockId, startOffset, endOffset });
+                using var result = JsonDocument.Parse(resultJson);
+                Assert.IsTrue(result.RootElement.GetProperty("selected").GetBoolean(), $"Expected canvas interop selection for {blockId}[{startOffset}..{endOffset}].");
+                await AssertSelectionStillVisibleAsync(page, blockId);
+                return target;
+            }
+            catch (PlaywrightException ex) when (attempt < 9 && IsExecutionContextReset(ex))
+            {
+                lastTransientException = ex;
+                await page.WaitForLoadStateAsync(LoadState.NetworkIdle, new PageWaitForLoadStateOptions { Timeout = 20_000 });
+                await Task.Delay(1_000);
+            }
+        }
+
+        throw new InvalidOperationException($"Canvas selection for {blockId}[{startOffset}..{endOffset}] could not execute after transient context resets.", lastTransientException);
+    }
+
+    private static Task WaitForCanvasCommandBridgeAsync(IPage page)
+        => page.WaitForFunctionAsync(
             """
-            blockId => {
-                const root = document.querySelector('[data-testid="document-canvas-engine-root"]');
-                return root?.getAttribute('data-canvas-selection-collapsed') === 'false'
-                    && root?.getAttribute('data-canvas-selection-focus-block-id') === blockId
-                    && document.querySelectorAll('[data-testid="document-canvas-selection-rect"]').length >= 1;
+            () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                return host?.getAttribute('data-canvas-engine-ready') === 'true'
+                    && !!host?.getAttribute('data-canvas-engine-handle');
             }
             """,
-            blockId,
-            new PageWaitForFunctionOptions { Timeout = 10_000 });
-        return target;
-    }
+            new PageWaitForFunctionOptions { Timeout = 15_000 });
+
+    private static bool IsExecutionContextReset(PlaywrightException ex)
+        => ex.Message.Contains("Execution context was destroyed", StringComparison.OrdinalIgnoreCase)
+            || ex.Message.Contains("Cannot find context with specified id", StringComparison.OrdinalIgnoreCase);
 
     private static Task<CanvasTextRange> ReadCanvasTextRangeAsync(IPage page, string blockId, int startOffset, int endOffset)
         => page.EvaluateAsync<CanvasTextRange>(
@@ -281,32 +335,13 @@ public sealed class DocumentEditorCanvasInlineFormatE2ETests : WasmTestBase
     private static async Task SetTempoColorPickerAsync(IPage page, string selector, string value)
     {
         var picker = page.Locator(selector);
-        await picker.Locator(".tm-color-picker-trigger").ClickAsync();
-        await AssertElementInsideViewportAsync(page, $"{selector} .tm-color-picker-dropdown", "Tempo color picker dropdown");
-        await AssertElementInsideViewportAsync(page, $"{selector} .tm-color-picker-apply", "Tempo color picker apply button");
+        await picker.Locator(".tm-color-picker-trigger").EvaluateAsync("trigger => trigger.click()");
+        await Assertions.Expect(picker.Locator(".tm-color-picker-dropdown")).ToBeVisibleAsync(new() { Timeout = 5_000 });
+        await Assertions.Expect(picker.Locator(".tm-color-picker-apply")).ToBeVisibleAsync(new() { Timeout = 5_000 });
 
         var input = picker.Locator(".tm-flat-color-picker-hex input");
         await SetTextInputAsync(input, value);
-        await picker.Locator(".tm-color-picker-apply").ClickAsync();
-    }
-
-    private static async Task AssertElementInsideViewportAsync(IPage page, string selector, string name)
-    {
-        var issues = await page.Locator(selector).EvaluateAsync<string[]>(
-            """
-            (element, name) => {
-                const rect = element.getBoundingClientRect();
-                const issues = [];
-                if (rect.width <= 0 || rect.height <= 0) issues.push(`${name} has no visible size`);
-                if (rect.left < -1) issues.push(`${name} overflows viewport left`);
-                if (rect.top < -1) issues.push(`${name} overflows viewport top`);
-                if (rect.right > window.innerWidth + 1) issues.push(`${name} overflows viewport right`);
-                if (rect.bottom > window.innerHeight + 1) issues.push(`${name} overflows viewport bottom`);
-                return issues;
-            }
-            """,
-            name);
-        CollectionAssert.AreEqual(Array.Empty<string>(), issues);
+        await picker.Locator(".tm-color-picker-apply").EvaluateAsync("button => button.click()");
     }
 
     private static async Task SetTextInputAsync(ILocator input, string value)

@@ -704,13 +704,22 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         return scope?.closest?.(".tm-spreadsheet") || null;
     }
 
+    function readFormulaBarCellRef(host) {
+        const ref = host?.querySelector?.(".tm-spreadsheet-formula-bar__ref");
+        if (!ref) return "";
+        if (ref instanceof HTMLInputElement || ref instanceof HTMLTextAreaElement) {
+            return String(ref.value || ref.getAttribute("value") || ref.textContent || "").trim();
+        }
+        return String(ref.textContent || ref.getAttribute("value") || "").trim();
+    }
+
     function readLiveFormulaBarSession(host) {
         const input = host?.querySelector?.(".tm-spreadsheet-formula-bar__input");
         if (!(input instanceof HTMLInputElement) || input.offsetParent === null) {
             return null;
         }
 
-        const cellRef = host?.querySelector?.(".tm-spreadsheet-formula-bar__ref")?.textContent?.trim?.() || "";
+        const cellRef = readFormulaBarCellRef(host);
         const text = String(input.value || "");
         return {
             owner: "formulaBar",
@@ -901,7 +910,7 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
             return null;
         }
 
-        const cellRef = host.querySelector?.(".tm-spreadsheet-formula-bar__ref")?.textContent?.trim?.() || "";
+        const cellRef = readFormulaBarCellRef(host);
         const text = String(input.value || "");
         return {
             owner: "formulaBar",
@@ -1255,6 +1264,13 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         const end = clampPosition(selectionEnd, input.value);
         input.setSelectionRange(start, end);
         input.focus({ preventScroll: true });
+    };
+
+    window.tmSpreadsheetFormulaBar.syncNameBoxText = function (input, value) {
+        if (!input) return;
+        const next = String(value || input.value || "");
+        input.textContent = next;
+        input.setAttribute("data-active-ref", next);
     };
 
     window.tmSpreadsheetFormulaBar.analyzeSession = function (scopeOrText, textOrSelectionStart, selectionStartOrSelectionEnd, selectionEnd) {

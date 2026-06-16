@@ -21,6 +21,17 @@ public class DemoEmailTemplateStoreTests
     }
 
     [Fact]
+    public async Task NewsletterSeed_IncludesEmptyColumnForDragDropTarget()
+    {
+        var store = new DemoEmailTemplateStore();
+        var newsletter = (await store.ListAsync()).First(t => t.Name == "Newsletter");
+        var detail = (await store.GetAsync(newsletter.Id))!;
+        var document = EmailTemplateSerializer.Deserialize(detail.ContentJson);
+
+        document.Sections.Should().Contain(section => section.Columns.Any(column => column.Blocks.Count == 0));
+    }
+
+    [Fact]
     public async Task Create_AddsTemplate_WithNewId()
     {
         var store = new DemoEmailTemplateStore();

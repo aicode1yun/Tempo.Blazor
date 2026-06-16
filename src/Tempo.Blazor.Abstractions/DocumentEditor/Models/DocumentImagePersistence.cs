@@ -3,6 +3,9 @@ namespace Tempo.Blazor.DocumentEditor.Models;
 /// <summary>Persistence normalization helpers for image blocks and drawing runs.</summary>
 public static class DocumentImagePersistence
 {
+    private const string ImageBlockOriginMetadataKey = "tempo:image-block-origin";
+    private const string ImageBlockIdMetadataKey = "tempo:image-block-id";
+
     /// <summary>Converts legacy top-level image blocks into paragraph drawing runs for provider persistence.</summary>
     public static void ConvertImageBlocksToDrawingRuns(DocumentEditorDocument? document)
     {
@@ -20,6 +23,26 @@ public static class DocumentImagePersistence
         foreach (var note in document.Notes)
         {
             ConvertImageBlocksToDrawingRuns(note.Blocks);
+        }
+    }
+
+    /// <summary>Restores image blocks that were temporarily represented as drawing-only paragraphs.</summary>
+    public static void RestoreImageBlocksFromDrawingRuns(DocumentEditorDocument? document)
+    {
+        if (document is null)
+        {
+            return;
+        }
+
+        RestoreImageBlocksFromDrawingRuns(document.Blocks);
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            RestoreImageBlocksFromDrawingRuns(headerFooter.Blocks);
+        }
+
+        foreach (var note in document.Notes)
+        {
+            RestoreImageBlocksFromDrawingRuns(note.Blocks);
         }
     }
 
@@ -136,6 +159,49 @@ public static class DocumentImagePersistence
         {
             drawing.Url = ToPersistentImageUrl(drawing.Source, drawing.AssetId, drawing.Url);
         }
+    }
+
+    /// <summary>Marks a drawing run as a temporary representation of a standalone image block.</summary>
+    public static void MarkImageBlockOrigin(DocumentDrawingRun drawing, string? blockId)
+    {
+        ArgumentNullException.ThrowIfNull(drawing);
+
+        drawing.Metadata ??= [];
+        drawing.Metadata[ImageBlockOriginMetadataKey] = "true";
+        if (!string.IsNullOrWhiteSpace(blockId))
+        {
+            drawing.Metadata[ImageBlockIdMetadataKey] = blockId;
+            drawing.ObjectId = blockId;
+            drawing.Layout ??= DocumentObjectLayout.Inline();
+            drawing.Layout.Anchor ??= new DocumentObjectAnchor();
+            drawing.Layout.Anchor.BlockId ??= blockId;
+        }
+    }
+
+    /// <summary>Determines whether a drawing run originated from a standalone image block.</summary>
+    public static bool IsImageBlockOrigin(DocumentDrawingRun? drawing)
+        => drawing?.Metadata is not null
+        && drawing.Metadata.TryGetValue(ImageBlockOriginMetadataKey, out var marker)
+        && string.Equals(marker, "true", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Creates an image block payload from a drawing run.</summary>
+    public static ImageBlockContent ToImageBlockContent(DocumentDrawingRun drawing)
+    {
+        ArgumentNullException.ThrowIfNull(drawing);
+
+        return new ImageBlockContent
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size ?? new DocumentImageSize(),
+            NaturalSize = drawing.NaturalSize ?? new DocumentImageSize(),
+            Layout = drawing.Layout ?? DocumentObjectLayout.Inline(),
+            LinkUrl = drawing.LinkUrl
+        };
     }
 
     /// <summary>Enumerates drawing runs in a full document, including table cells, headers, footers, and notes.</summary>
@@ -289,8 +355,69 @@ public static class DocumentImagePersistence
             Size = image.Size ?? new DocumentImageSize(),
             NaturalSize = image.NaturalSize ?? new DocumentImageSize(),
             Layout = layout,
-            LinkUrl = image.LinkUrl
+            LinkUrl = image.LinkUrl,
+            Metadata =
+            {
+                [ImageBlockOriginMetadataKey] = "true",
+                [ImageBlockIdMetadataKey] = block.Id
+            }
         };
+    }
+
+    private static void RestoreImageBlocksFromDrawingRuns(List<DocumentBlock>? blocks)
+    {
+        if (blocks is null)
+        {
+            return;
+        }
+
+        foreach (var block in blocks)
+        {
+            if (TryCreateImageBlockContent(block, out var image))
+            {
+                block.Type = DocumentBlockType.Image;
+                block.Content = image;
+            }
+
+            if (block.Content is not TableBlockContent table)
+            {
+                continue;
+            }
+
+            foreach (var cell in table.Rows.SelectMany(row => row.Cells ?? []))
+            {
+                RestoreImageBlocksFromDrawingRuns(cell.Blocks);
+            }
+        }
+    }
+
+    private static bool TryCreateImageBlockContent(DocumentBlock block, out ImageBlockContent image)
+    {
+        image = new ImageBlockContent();
+        if (block.Content is not ParagraphBlockContent paragraph)
+        {
+            return false;
+        }
+
+        var drawing = paragraph.Inlines.OfType<DocumentDrawingRun>().SingleOrDefault();
+        if (!IsImageBlockOrigin(drawing))
+        {
+            return false;
+        }
+
+        var hasOtherContent = paragraph.Inlines.Any(inline => inline switch
+        {
+            DocumentDrawingRun run => !ReferenceEquals(run, drawing),
+            TextRun text => !string.IsNullOrWhiteSpace(text.Text),
+            _ => true
+        });
+        if (hasOtherContent)
+        {
+            return false;
+        }
+
+        image = ToImageBlockContent(drawing!);
+        return true;
     }
 
     private static IEnumerable<DocumentDrawingRun> EnumerateDrawingRuns(DocumentBlockContent? content)

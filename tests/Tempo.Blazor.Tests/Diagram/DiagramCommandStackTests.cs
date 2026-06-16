@@ -329,10 +329,10 @@ public class DiagramCommandStackTests
         var newData = new Dictionary<string, object>(node.Data) { ["name"] = "New" };
         var cmd = new UpdateNodeDataCommand(doc, node.Id, oldData, newData);
         cmd.Execute();
-        node.Data["name"].Should().BeOfType<System.Text.Json.JsonElement>().Which.GetString().Should().Be("New");
+        node.Data["name"].Should().Be("New");
 
         cmd.Undo();
-        node.Data["name"].Should().BeOfType<System.Text.Json.JsonElement>().Which.GetString().Should().Be("Old");
+        node.Data["name"].Should().Be("Old");
     }
 
     [Fact]

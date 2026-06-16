@@ -18,7 +18,14 @@
      @onkeydown="HandleEditorKeyDownAsync"
      @onclick="CloseContextMenusFromRootClick"
      @attributes="AdditionalAttributes">
-    <TmDocumentEditorLiveRegion Message="@LiveRegionMessage" />
+    <div @key="_liveRegionVersion"
+         class="tm-document-editor__live-region"
+         role="status"
+         aria-live="polite"
+         aria-atomic="true"
+         data-testid="document-editor-live-region">
+        @LiveRegionMessage
+    </div>
 
     @if (Provider is null)
     {
@@ -159,7 +166,7 @@
                                      OnClearFormatting="ClearInlineFormattingAsync"
                                      OnToggleInsert="ToggleInsertPanelAsync"
                                      OnInsertTable="() => InsertTableAsync()"
-                                     OnInsertTableWithDimensions="d => InsertTableAsync(d.Rows, d.Columns)"
+                                     OnInsertTableWithDimensions="d => InsertTableAsync(d.Rows, d.Columns, appendToBodyEnd: true)"
                                      ShowBlockStyle="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CoreEnginePreview || EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
                                      CurrentBlockStyle="@_coreBlockStyle"
                                      OnBlockStyleChanged="ApplyBlockStyleAsync"
@@ -944,7 +951,7 @@
 
         <TmDocumentEditorStatusBar IsDirty="@_isDirty"
                                    PendingCount="@_pendingActions.Count"
-                                   PendingMessage="@_pendingActions.FirstMessage"
+                                   PendingMessage="@PendingStatusMessage"
                                    SaveMessage="@_saveMessage"
                                    CanRetrySave="@_canRetrySave"
                                    OnRetrySave="RetrySaveAsync"
@@ -1185,12 +1192,16 @@
             @if (_textContextMenu is not null)
             {
                 <section class="tm-document-editor__text-context-menu"
+                         @ref="_textContextMenuElement"
                          style="@FloatingStyle(_textContextMenu)"
                          role="menu"
+                         tabindex="-1"
                          aria-label="@Loc["TmDocumentEditor_TextContextMenuLabel"]"
                          data-testid="document-text-context-menu"
                          @onpointerdown:preventDefault="true"
                          @onpointerdown:stopPropagation="true"
+                         @onkeydown="HandleFloatingContextMenuKeyDownAsync"
+                         @onkeydown:stopPropagation="true"
                          @onclick:stopPropagation="true">
                     <button type="button"
                             role="menuitem"

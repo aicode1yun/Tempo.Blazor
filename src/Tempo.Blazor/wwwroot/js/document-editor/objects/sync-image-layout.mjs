@@ -23,6 +23,7 @@ export function syncImageLayoutCase(layout) {
     const position = source.Position || source.position || {};
     const anchor = source.Anchor || source.anchor || {};
     const transform = source.Transform || source.transform || {};
+    const size = source.Size || source.size || {};
     const stacking = source.Stacking || source.stacking || {};
     const mode = wrap.Mode ?? wrap.mode ?? 0;
     const modeName = normalizeWrapModeName(mode);
@@ -78,12 +79,18 @@ export function syncImageLayoutCase(layout) {
     anchor.HeaderFooterId = anchor.HeaderFooterId ?? anchor.headerFooterId ?? null;
     anchor.headerFooterId = anchor.HeaderFooterId;
 
-    transform.Width = Number(transform.Width ?? transform.width ?? 120) || 120;
+    transform.Width = Number(transform.Width ?? transform.width ?? size.Width ?? size.width ?? 120) || 120;
     transform.width = transform.Width;
-    transform.Height = Number(transform.Height ?? transform.height ?? 80) || 80;
+    transform.Height = Number(transform.Height ?? transform.height ?? size.Height ?? size.height ?? 80) || 80;
     transform.height = transform.Height;
-    transform.LockAspectRatio = (transform.LockAspectRatio ?? transform.lockAspectRatio ?? true) !== false;
+    transform.LockAspectRatio = (transform.LockAspectRatio ?? transform.lockAspectRatio ?? size.LockAspectRatio ?? size.lockAspectRatio ?? true) !== false;
     transform.lockAspectRatio = transform.LockAspectRatio;
+    size.Width = transform.Width;
+    size.width = transform.Width;
+    size.Height = transform.Height;
+    size.height = transform.Height;
+    size.LockAspectRatio = transform.LockAspectRatio;
+    size.lockAspectRatio = transform.LockAspectRatio;
 
     stacking.ZIndex = Number(stacking.ZIndex ?? stacking.zIndex ?? 0) || 0;
     stacking.zIndex = stacking.ZIndex;
@@ -110,6 +117,8 @@ export function syncImageLayoutCase(layout) {
     source.position = position;
     source.Wrap = wrap;
     source.wrap = wrap;
+    source.Size = size;
+    source.size = size;
     source.Transform = transform;
     source.transform = transform;
     source.Stacking = stacking;

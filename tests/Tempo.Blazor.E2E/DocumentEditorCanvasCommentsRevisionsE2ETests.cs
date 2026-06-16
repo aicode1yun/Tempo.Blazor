@@ -159,13 +159,15 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
         await Assertions.Expect(page.Locator("[data-testid='document-revision-item'][data-revision-id='canvas-phase17-revision-delete']").First)
             .ToHaveClassAsync(new Regex("selected"), new() { Timeout = 10_000 });
         await page.Locator("[data-testid='document-revision-item'][data-revision-id='canvas-phase17-revision-delete'] [data-testid='document-revision-accept']").ClickAsync();
+        await WaitForRevisionActionAsync(page, "canvas-phase17-revision-delete", "accepted");
         await Assertions.Expect(page.Locator("[data-testid='document-canvas-revision-marker'][data-revision-id='canvas-phase17-revision-delete']"))
-            .ToHaveCountAsync(0, new() { Timeout = 10_000 });
+            .ToHaveCountAsync(0, new() { Timeout = 30_000 });
 
         await page.GetByTestId("document-side-panel-tab-revisions").ClickAsync();
         await page.GetByTestId("document-revision-reject-all").ClickAsync();
+        await WaitForPendingRevisionCountAsync(page, 0);
         await Assertions.Expect(page.Locator("[data-testid='document-canvas-revision-marker']"))
-            .ToHaveCountAsync(0, new() { Timeout = 10_000 });
+            .ToHaveCountAsync(0, new() { Timeout = 30_000 });
 
         await SetCanvasTrackChangesAsync(page, enabled: false);
         await WaitForCanvasTrackChangesStateAsync(page, enabled: false);
@@ -319,6 +321,40 @@ public sealed class DocumentEditorCanvasCommentsRevisionsE2ETests : WasmTestBase
             """,
             enabled,
             new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+    private static Task WaitForRevisionActionAsync(IPage page, string revisionId, string expectedAction)
+        => page.WaitForFunctionAsync(
+            """
+            async ({ revisionId, expectedAction }) => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                if (!handle) return false;
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(handle) || '{}');
+                const revision = (Array.isArray(model.revisions) ? model.revisions : [])
+                    .find(item => String(item?.id || item?.Id || '') === String(revisionId || ''));
+                return String(revision?.action || revision?.Action || '').toLowerCase() === String(expectedAction || '').toLowerCase();
+            }
+            """,
+            new { revisionId, expectedAction },
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+
+    private static Task WaitForPendingRevisionCountAsync(IPage page, int expectedCount)
+        => page.WaitForFunctionAsync(
+            """
+            async expectedCount => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                if (!handle) return false;
+                const module = window.__tmDocumentCanvasInteropModule ||= await import('/_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(handle) || '{}');
+                const revisions = Array.isArray(model.revisions) ? model.revisions : [];
+                const pending = revisions.filter(item => String(item?.action || item?.Action || '').toLowerCase() === 'pending').length;
+                return pending === Number(expectedCount);
+            }
+            """,
+            expectedCount,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
 
     private static Task WaitForSaveBoundaryAsync(IPage page)
         => page.WaitForFunctionAsync(

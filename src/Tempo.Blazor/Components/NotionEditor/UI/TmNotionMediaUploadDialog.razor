@@ -36,6 +36,13 @@
                         @Loc["TmNotionMediaUploadDialog_TabUpload"]
                     </button>
                 }
+                <button class="tm-media-dialog__tab @(_activeTab == "embed" ? "tm-media-dialog__tab--active" : "")"
+                        role="tab"
+                        aria-selected="@(_activeTab == "embed").ToString().ToLower()"
+                        type="button"
+                        @onclick='() => SetTab("embed")'>
+                    @Loc["TmNotionMediaUploadDialog_TabEmbed"]
+                </button>
                 @if (CanBrowseLibrary)
                 {
                     <button class="tm-media-dialog__tab @(_activeTab == "library" ? "tm-media-dialog__tab--active" : "")"
@@ -47,13 +54,6 @@
                         @Loc["TmNotionMediaUploadDialog_TabLibrary"]
                     </button>
                 }
-                <button class="tm-media-dialog__tab @(_activeTab == "embed" ? "tm-media-dialog__tab--active" : "")"
-                        role="tab"
-                        aria-selected="@(_activeTab == "embed").ToString().ToLower()"
-                        type="button"
-                        @onclick='() => SetTab("embed")'>
-                    @Loc["TmNotionMediaUploadDialog_TabEmbed"]
-                </button>
             </div>
 
             <div class="tm-media-dialog__body">

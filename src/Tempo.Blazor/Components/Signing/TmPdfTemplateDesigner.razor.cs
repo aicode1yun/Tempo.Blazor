@@ -457,6 +457,8 @@ public partial class TmPdfTemplateDesigner
             return;
         }
 
+        var point = await ToPointAsync(page, args);
+        _drawState.Area = CreateAreaFromPoints(_drawState.Page, _drawState.StartX, _drawState.StartY, point.X, point.Y, _drawState.Area.Uuid);
         await HandlePointerUpAsync(args);
     }
 

@@ -182,18 +182,69 @@ public sealed class BpmnNotationProfileM17Tests : LocalizationTestBase
             && issue.Message.Contains("No node stencil mapping", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void Generator_allows_unknown_bpmn_task_in_supported_viewpoint_and_uses_fallback()
+    {
+        var generator = CreateGeneratorWithViewpointRules();
+        var model = CreateBpmnModel(
+            [
+                Element("pool", "Pool", "Sales pool"),
+                Element("ai-task", "AiTask", "AI classify order", poolId: "pool")
+            ],
+            []);
+        model.Views.Add(new ModelingViewDto
+        {
+            Id = "process-view",
+            Name = "Process",
+            Notation = "bpmn2",
+            ViewpointKey = "Process",
+            Nodes =
+            [
+                new() { ElementId = "pool", X = 40, Y = 40, Width = 480, Height = 180 },
+                new() { ElementId = "ai-task", X = 120, Y = 100, Width = 160, Height = 92, ParentNodeId = "pool" }
+            ]
+        });
+
+        var result = generator.Generate(model, new ModelingDiagramGenerationOptionsDto
+        {
+            ViewId = "process-view",
+            ViewpointKey = "Process",
+            IncludeIssues = true
+        });
+
+        result.Document!.Nodes.Single(node => node.Data["modelElementId"].ToString() == "ai-task")
+            .StencilId.Should().Be("general.rectangle");
+        result.Issues.Should().Contain(issue =>
+            issue.Severity == ModelingIssueSeverity.Warning
+            && issue.SourceElementId == "ai-task"
+            && issue.Message.Contains("AiTask", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static BpmnRelationshipRulesProvider CreateRules()
     {
-        var registry = new ModelingNotationProfileRegistry([
+        var registry = CreateProfileRegistry();
+        return new BpmnRelationshipRulesProvider(registry);
+    }
+
+    private static ModelingNotationProfileRegistry CreateProfileRegistry()
+        => new([
             new BpmnNotationProfile(),
             new BpmnLegacyModelingNotationProfile(),
             new ArchimateModelingNotationProfile()
         ]);
-        return new BpmnRelationshipRulesProvider(registry);
-    }
 
     private static ModelingDiagramGenerator CreateGenerator()
         => new(new BuiltInModelingStencilMapper(), CreateStencilRegistry(), relationshipRules: CreateRules());
+
+    private static ModelingDiagramGenerator CreateGeneratorWithViewpointRules()
+    {
+        var profiles = CreateProfileRegistry();
+        return new ModelingDiagramGenerator(
+            new BuiltInModelingStencilMapper(),
+            CreateStencilRegistry(),
+            relationshipRules: new BpmnRelationshipRulesProvider(profiles),
+            viewpointRules: new BuiltInModelingViewpointRulesProvider(profiles));
+    }
 
     private static DiagramStencilRegistry CreateStencilRegistry()
     {

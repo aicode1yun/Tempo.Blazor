@@ -780,11 +780,28 @@ public sealed class DocumentEditorCanvasUxFixE2ETests : WasmTestBase
 
     private async Task OpenDocumentAsync(IPage page, string documentId, string? blockId)
     {
-        await page.GotoAsync($"{BaseUrl}/document-editor?documentId={documentId}", new PageGotoOptions
+        var url = $"{BaseUrl}/document-editor?documentId={documentId}";
+        for (var attempt = 0; attempt < 2; attempt++)
         {
-            WaitUntil = WaitUntilState.Load,
-            Timeout = 120_000
-        });
+            try
+            {
+                await page.GotoAsync(url, new PageGotoOptions
+                {
+                    WaitUntil = WaitUntilState.DOMContentLoaded,
+                    Timeout = 120_000
+                });
+                await WaitForCanvasDocumentReadyAsync(page, blockId);
+                return;
+            }
+            catch (TimeoutException) when (attempt == 0)
+            {
+                await TryResetCanvasDocumentNavigationAsync(page);
+            }
+        }
+    }
+
+    private static async Task WaitForCanvasDocumentReadyAsync(IPage page, string? blockId)
+    {
         await page.WaitForSelectorAsync(
             "[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']",
             new PageWaitForSelectorOptions { State = WaitForSelectorState.Attached, Timeout = 120_000 });
@@ -803,6 +820,22 @@ public sealed class DocumentEditorCanvasUxFixE2ETests : WasmTestBase
             await page.WaitForFunctionAsync(
                 "() => document.querySelectorAll('[data-canvas-text-rect]').length >= 1",
                 new PageWaitForFunctionOptions { Timeout = 60_000 });
+        }
+    }
+
+    private static async Task TryResetCanvasDocumentNavigationAsync(IPage page)
+    {
+        try
+        {
+            await page.GotoAsync("about:blank", new PageGotoOptions
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 10_000
+            });
+        }
+        catch (TimeoutException)
+        {
+            // The retry below is the authoritative readiness check for these canvas UX tests.
         }
     }
 

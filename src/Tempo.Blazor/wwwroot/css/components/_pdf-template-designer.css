@@ -210,6 +210,10 @@
     z-index: 2;
 }
 
+.tm-pdf-template-designer--drawing .tm-signing-field-overlay {
+    pointer-events: none;
+}
+
 .tm-pdf-template-designer__draft,
 .tm-pdf-template-designer__selection-bounds {
     position: absolute;
@@ -285,6 +289,16 @@
 
 .tm-pdf-template-designer__detection-error {
     margin-bottom: var(--tm-space-3);
+}
+
+@media (max-width: 1100px) {
+    .tm-pdf-template-designer__workspace {
+        grid-template-columns: minmax(calc(var(--tm-space-16) * 2.5), calc(var(--tm-space-16) * 3)) minmax(0, 1fr);
+    }
+
+    .tm-pdf-template-designer__panel {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (max-width: 900px) {

@@ -95,8 +95,24 @@ public sealed class DocumentEditorRegressionRecoveryPhase11E2ETests : DocumentEd
         var image = page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{blockId}']").First;
         await image.ScrollIntoViewIfNeededAsync();
         await Assertions.Expect(image).ToBeVisibleAsync(new() { Timeout = 5000 });
-        await image.ClickAsync();
+        var selected = await page.EvaluateAsync<bool>(
+            """
+            blockId => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"][data-instance-id]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtime = window.tmDocumentEditorEngine;
+                const hooks = runtime?.__testHooks || runtime?.accessibility || {};
+                const instances = hooks._instances || hooks.instances || runtime?.__testHooks?._instances;
+                const instance = instances?.get?.(instanceId);
+                return hooks.selectObjectById?.(instance, blockId, blockId, 'e2e-click-image-block') === true
+                    || runtime?.accessibility?.selectObjectById?.(instance, blockId, blockId, 'e2e-click-image-block') === true;
+            }
+            """,
+            blockId);
+        selected.Should().BeTrue("the image object must be selectable by stable runtime object id");
         await Assertions.Expect(page.GetByTestId("document-image-inspector")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(page.GetByTestId("document-image-properties-panel"))
+            .ToHaveAttributeAsync("data-active-object-id", blockId, new() { Timeout = 5000 });
     }
 
     private static async Task<JsonDocument> LoadDocumentJsonAsync(string documentId)

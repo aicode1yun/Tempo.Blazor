@@ -12,6 +12,7 @@
     {
         <div @key="ReadOnly"
              class="tm-notion-numbered__body tm-notion-editable tm-notion-editable--readonly @_alignClass"
+             contenteditable="false"
              data-color="@Content?.TextColor">
             @((MarkupString)(Content?.Html ?? string.Empty))
         </div>

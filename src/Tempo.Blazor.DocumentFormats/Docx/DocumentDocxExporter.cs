@@ -815,10 +815,17 @@ public sealed class DocxPackageWriter
         CancellationToken cancellationToken)
     {
         var drawing = DocxDrawingRunAdapter.FromImageBlock(image);
+        if (!string.IsNullOrWhiteSpace(blockId))
+        {
+            drawing.Id = string.IsNullOrWhiteSpace(drawing.Id) ? $"{blockId}-drawing" : drawing.Id;
+        }
+
+        DocumentImagePersistence.MarkImageBlockOrigin(drawing, blockId);
         var imageRun = await WriteDrawingRunAsync(drawing, context, cancellationToken);
         var paragraph = imageRun is null ? new W.Paragraph() : new W.Paragraph(imageRun);
         SetTempoAttribute(paragraph, "block-id", blockId);
         SetTempoAttribute(paragraph, "section-id", sectionId);
+        SetTempoAttribute(paragraph, "block-type", "image");
         if (imageRun is not null && !string.IsNullOrWhiteSpace(image.Caption))
         {
             paragraph.Append(new W.Run(new W.Break()), WriteRun(image.Caption, []));
@@ -940,6 +947,11 @@ public sealed class DocxPackageWriter
     {
         SetTempoAttribute(element, "object-id", drawing.ObjectId);
         SetTempoAttribute(element, "run-id", drawing.Id);
+        if (DocumentImagePersistence.IsImageBlockOrigin(drawing))
+        {
+            SetTempoAttribute(element, "image-block-origin", "true");
+            SetTempoAttribute(element, "image-block-id", drawing.Layout?.Anchor?.BlockId ?? drawing.ObjectId);
+        }
     }
 
     private void WriteOffice2010AnchorAttributes(DW.Anchor anchor, DocumentDocxDrawingMetadata? metadata)

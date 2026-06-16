@@ -21996,6 +21996,27 @@ public sealed class PhaseDModuleExtractionTests
                     _visible: visible !== false,
                     _rect: rect,
                     getAttribute(k) { return a[k] ?? null; },
+                    querySelector() { return null; },
+                };
+            }
+
+            function figure(attrs, visible, rect, children) {
+                const el = item(attrs, visible, rect);
+                el.querySelector = selector => children?.[selector] || null;
+                return el;
+            }
+
+            function child(rect, visible = true) {
+                return {
+                    _visible: visible,
+                    getBoundingClientRect() {
+                        return {
+                            left: rect.x,
+                            top: rect.y,
+                            width: rect.width,
+                            height: rect.height,
+                        };
+                    },
                 };
             }
 
@@ -22017,6 +22038,23 @@ public sealed class PhaseDModuleExtractionTests
             assert.strictEqual(result[0].objectId, 'o1');
             assert.strictEqual(result[0].anchorBlockId, 'b1');
             assert.strictEqual(result[0].objectElement, squareItem);
+
+            // Captions reserve their own rectangular exclusion while the image keeps the media rect.
+            const captioned = figure({
+                'data-object-id': 'cap1',
+                'data-anchor-block-id': 'bcap',
+                'data-wrap-mode': 'Tight',
+            }, true, { x: 0, y: 0, width: 140, height: 90 }, {
+                img: child({ x: 20, y: 30, width: 100, height: 60 }),
+                figcaption: child({ x: 20, y: 96, width: 100, height: 24 }),
+            });
+            const captionResult = fn(body([captioned]), { left: 10, top: 20 }, { x: 0, y: 0, width: 600, height: 800 });
+            assert.strictEqual(captionResult.length, 2);
+            assert.strictEqual(captionResult[0].objectId, 'cap1');
+            assert.deepStrictEqual(captionResult[0].rect, { x: 10, y: 10, width: 100, height: 60 });
+            assert.strictEqual(captionResult[1].objectId, 'cap1:caption');
+            assert.deepStrictEqual(captionResult[1].rect, { x: 10, y: 76, width: 100, height: 24 });
+            assert.strictEqual(captionResult[1].captionElement, captioned.querySelector('figcaption'));
 
             // Hidden item skipped
             const hidden = item({ 'data-object-id': 'h', 'data-wrap-mode': 'Square' }, false, { x: 0, y: 0, width: 50, height: 50 });

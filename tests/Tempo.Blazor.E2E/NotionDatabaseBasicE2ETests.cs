@@ -16,6 +16,8 @@ public class NotionDatabaseBasicE2ETests : WasmTestBase
 
     private async Task<IPage> OpenNotionEditorAsync()
     {
+        await ResetNotionDatabaseAsync();
+
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
         await page.GotoAsync($"{BaseUrl}/notion-editor");
@@ -23,6 +25,24 @@ public class NotionDatabaseBasicE2ETests : WasmTestBase
         await page.WaitForSelectorAsync(".tm-notion-editor", new PageWaitForSelectorOptions { Timeout = 30000 });
         await page.WaitForTimeoutAsync(2000);
         return page;
+    }
+
+    private static async Task ResetNotionDatabaseAsync()
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://localhost:5100")
+        };
+
+        using var notionResponse = await http.PostAsync("/api/notion/reset", null);
+        notionResponse.EnsureSuccessStatusCode();
+
+        using var databaseResponse = await http.PostAsync("/api/notion/databases/e2e/seed/default", null);
+        databaseResponse.EnsureSuccessStatusCode();
     }
 
     /// <summary>
@@ -278,12 +298,20 @@ public class NotionDatabaseBasicE2ETests : WasmTestBase
         await checkboxCell.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
 
         var initialState = await checkboxCell.GetAttributeAsync("aria-checked");
+        Assert.IsTrue(initialState is "true" or "false",
+            $"Checkbox aria-checked should be explicitly rendered before clicking (was '{initialState}')");
+        var expectedState = initialState == "true" ? "false" : "true";
+
+        await checkboxCell.ScrollIntoViewIfNeededAsync();
         await checkboxCell.ClickAsync();
-        await page.WaitForTimeoutAsync(600);
+        await Assertions.Expect(checkboxCell).ToHaveAttributeAsync(
+            "aria-checked",
+            expectedState,
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 5000 });
 
         var newState = await checkboxCell.GetAttributeAsync("aria-checked");
-        Assert.AreNotEqual(initialState, newState,
-            $"Checkbox aria-checked should toggle after clicking (was '{initialState}', now '{newState}')");
+        Assert.AreEqual(expectedState, newState,
+            $"Checkbox aria-checked should toggle after clicking (was '{initialState}', expected '{expectedState}', now '{newState}')");
 
         await TakeScreenshotAsync(page, "db_cell_checkbox_toggle");
     }

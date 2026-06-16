@@ -320,12 +320,18 @@ export function createAtomicRendererFactory(factoryDeps) {
                 return tp === 'link' || tp === 'hyperlink';
             });
             if (linkMark) {
-                const href = linkMark.value ?? linkMark.Value ?? linkMark.href ?? linkMark.Href ?? '';
+                const href = linkMark.value ?? linkMark.Value ?? linkMark.href ?? linkMark.Href ?? linkMark.link?.href ?? linkMark.Link?.Href ?? '';
+                const title = linkMark.title ?? linkMark.Title ?? linkMark.link?.title ?? linkMark.Link?.Title ?? '';
                 span.setAttribute('data-href', String(href));
+                span.setAttribute('data-link-href', String(href));
                 span.setAttribute('role', 'link');
+                if (title) span.setAttribute('title', String(title));
+                else span.removeAttribute('title');
                 span.style.cursor = 'pointer';
             } else if (typeof span.removeAttribute === 'function') {
                 span.removeAttribute('data-href');
+                span.removeAttribute('data-link-href');
+                span.removeAttribute('title');
             }
             // R.5.5 — bookmark anchor: surface the name so navigation can scroll to it.
             const bookmarkMark = asArray(segment.marks).find(function (m) {

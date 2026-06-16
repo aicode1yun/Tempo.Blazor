@@ -115,6 +115,7 @@ public static class ServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationRelationshipRulesProvider, UmlRelationshipRulesProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationRelationshipRulesProvider, Archimate32RelationshipRulesProvider>());
         services.TryAddSingleton<IModelingRelationshipRulesProvider, BuiltInModelingRelationshipRulesProvider>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationViewpointRulesProvider, BpmnViewpointRulesProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationViewpointRulesProvider, UmlViewpointRulesProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingNotationViewpointRulesProvider, Archimate32ViewpointRulesProvider>());
         services.TryAddSingleton<IModelingViewpointRulesProvider, BuiltInModelingViewpointRulesProvider>();

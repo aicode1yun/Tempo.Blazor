@@ -15,9 +15,9 @@
             title="@AriaLabelText"
             @onclick="ToggleAsync">
         <TmIcon Name="@IconNames.Bell" Size="IconSize.Sm" />
-        @if (_unreadCount > 0)
+        @if (BadgeCount > 0)
         {
-            <span class="tm-notification-bell__badge" data-testid="notion-notification-badge">@_unreadCount</span>
+            <span class="tm-notification-bell__badge" data-testid="notion-notification-badge">@BadgeCount</span>
         }
     </button>
 
@@ -120,8 +120,10 @@
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _pollCts;
 
-    private string AriaLabelText => _unreadCount > 0
-        ? Loc["TmNotificationBell_NewCount", _unreadCount]
+    private int BadgeCount => Math.Max(_unreadCount, BadgeState.UnreadCount);
+
+    private string AriaLabelText => BadgeCount > 0
+        ? Loc["TmNotificationBell_NewCount", BadgeCount]
         : Loc["Notion_Notifications_Title"];
 
     private IEnumerable<INotification> VisibleNotifications =>

@@ -205,6 +205,7 @@ public partial class TmModelingEditor : IDisposable
         var keepLoadedSurface = force && _state == ModelingEditorState.Loaded && _model is not null;
         if (keepLoadedSurface)
         {
+            _state = ModelingEditorState.Loading;
             _isReloading = true;
             _errorMessage = null;
             _showLongLoadingMessage = false;

@@ -19,18 +19,26 @@ public class DiagramLayoutE2ETests : WasmTestBase
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
 
-        // Navigate first, then set locale and reload so localStorage is accessible
-        await page.GotoAsync($"{BaseUrl}{DiagramEditorUrl}");
-        await page.EvaluateAsync("() => localStorage.setItem('tm-demo-culture', 'en')");
-        await page.ReloadAsync();
-        await WaitForAppReadyAsync(page);
-
-        // Wait for diagram editor to be fully rendered (toolbar + canvas)
-        await page.WaitForSelectorAsync(".tm-diagram-editor__toolbar", new PageWaitForSelectorOptions
+        await page.AddInitScriptAsync("() => localStorage.setItem('tm-demo-culture', 'en')");
+        for (var attempt = 0; attempt < 2; attempt++)
         {
-            State = WaitForSelectorState.Visible,
-            Timeout = 15000
-        });
+            try
+            {
+                await page.GotoAsync($"{BaseUrl}{DiagramEditorUrl}", new PageGotoOptions
+                {
+                    WaitUntil = WaitUntilState.DOMContentLoaded,
+                    Timeout = 60_000
+                });
+                await WaitForAppReadyAsync(page);
+                await WaitForDiagramEditorReadyAsync(page);
+                break;
+            }
+            catch (TimeoutException) when (attempt == 0)
+            {
+                await TryResetDiagramNavigationAsync(page);
+            }
+        }
+
         await page.WaitForTimeoutAsync(2000);
 
         // Load UML sample (creates multiple nodes locally – no HTTP wait needed)
@@ -46,6 +54,44 @@ public class DiagramLayoutE2ETests : WasmTestBase
         await page.WaitForTimeoutAsync(300);
 
         return page;
+    }
+
+    private static async Task WaitForDiagramEditorReadyAsync(IPage page)
+    {
+        await page.WaitForSelectorAsync(".tm-diagram-editor__toolbar", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30_000
+        });
+        await page.WaitForSelectorAsync(".tm-diagram-canvas", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30_000
+        });
+        await page.WaitForFunctionAsync("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !canvas.id) return false;
+                const editor = window.tmDiagramEditor;
+                return !!(editor && editor.instances && editor.instances.get(canvas.id));
+            }
+        """, null, new PageWaitForFunctionOptions { Timeout = 30_000 });
+    }
+
+    private static async Task TryResetDiagramNavigationAsync(IPage page)
+    {
+        try
+        {
+            await page.GotoAsync("about:blank", new PageGotoOptions
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 10_000
+            });
+        }
+        catch (TimeoutException)
+        {
+            // A fresh diagram route attempt below is the authoritative readiness check.
+        }
     }
 
     private async Task SelectAllNodesAsync(IPage page)
@@ -336,5 +382,4 @@ public class DiagramLayoutE2ETests : WasmTestBase
         Assert.IsTrue(xs.Count > 1, "Distribute Horizontal should spread nodes across different X coordinates");
     }
 }
-
 

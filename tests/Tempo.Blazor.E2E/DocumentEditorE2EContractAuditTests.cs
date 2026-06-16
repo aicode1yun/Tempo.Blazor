@@ -48,6 +48,7 @@ public sealed class DocumentEditorE2EContractAuditTests
         new("DocumentEditorRegressionRecoveryPhase11E2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "Undo recovery workflow and visible state coverage."),
         new("DocumentEditorRegressionRecoveryPhase12E2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "Side panel recovery workflow and layout coverage."),
         new("DocumentEditorRegressionRecoveryPhase13E2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.LayoutVisual, "Final recovery workflow suite for visible P0/P1 behavior."),
+        new("DocumentEditorSigningBridgeE2ETests.cs", E2EContractKind.HumanWorkflow | E2EContractKind.ProviderBoundary | E2EContractKind.LayoutVisual, "Signing bridge workflow coverage for editor page export, inline signing fields and runner preview."),
         new("DocumentEditorStrictEnginePhase0E2ETests.cs", E2EContractKind.DiagnosticRuntime | E2EContractKind.LayoutVisual, "Strict frame diagnostics for live typing/layout."),
         new("DocumentEditorStrictEnginePhase1And2E2ETests.cs", E2EContractKind.DiagnosticRuntime | E2EContractKind.LayoutVisual, "Strict engine diagnostics for early runtime phases."),
         new("DocumentEditorStrictEnginePhase3E2ETests.cs", E2EContractKind.DiagnosticRuntime, "Strict command/runtime diagnostics."),

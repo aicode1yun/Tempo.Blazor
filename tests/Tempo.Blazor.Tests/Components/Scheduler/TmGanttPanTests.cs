@@ -45,10 +45,10 @@ public class TmGanttPanTests : LocalizationTestBase
 
         // Assert that JS interop was invoked for scrollLeft
         var invocations = JSInterop.Invocations
-            .Where(i => i.Identifier == "eval")
+            .Where(i => i.Identifier is "tmGantt.getScrollLeft" or "tmGantt.setScrollLeft")
             .ToList();
 
-        invocations.Should().NotBeEmpty("panning should invoke JS eval to read or write scrollLeft");
+        invocations.Should().NotBeEmpty("panning should invoke JS helpers to read or write scrollLeft");
     }
 
     /// <summary>

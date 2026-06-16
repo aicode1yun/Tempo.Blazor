@@ -30,7 +30,7 @@ import { OperationTypes } from './operation-types.mjs';
 
 const INLINE_COMMAND_IDS = [
     'bold', 'italic', 'underline', 'strike', 'fontFamily', 'fontSize',
-    'textColor', 'backgroundColor', 'link', 'clearFormatting',
+    'textColor', 'backgroundColor', 'link', 'removeLink', 'clearFormatting',
 ];
 const TABLE_COMMAND_IDS = [
     'insertTable', 'insertRowAbove', 'insertRowBelow', 'insertColumnLeft',
@@ -129,6 +129,13 @@ export function createCommandDispatcherFactory(options) {
             if (id === 'clearFormatting') {
                 clearFormattingInRange(block, effectiveRange);
                 const removeOp = createOperation(OperationTypes.RemoveMark, { range: effectiveRange, mark: { type: 'AllFormatting' } }, { source: 'command' });
+                committedOperations.push(removeOp.toJSON());
+                buildIndexes(model);
+                return { ok: true, operation: removeOp, nextSelection: selection };
+            }
+            if (id === 'removeLink') {
+                removeMarksForCommandInRange(block, effectiveRange, 'link');
+                const removeOp = createOperation(OperationTypes.RemoveMark, { range: effectiveRange, mark: { type: 'link' } }, { source: 'command' });
                 committedOperations.push(removeOp.toJSON());
                 buildIndexes(model);
                 return { ok: true, operation: removeOp, nextSelection: selection };

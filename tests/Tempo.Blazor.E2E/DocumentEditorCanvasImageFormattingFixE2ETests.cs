@@ -519,9 +519,9 @@ public sealed class DocumentEditorCanvasImageFormattingFixE2ETests : WasmTestBas
             WaitUntil = WaitUntilState.Load,
             Timeout = 120_000
         });
-        await page.WaitForSelectorAsync(
-            "[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']",
-            new PageWaitForSelectorOptions { State = WaitForSelectorState.Attached, Timeout = 120_000 });
+        var host = page.GetByTestId("document-canvas-engine-host");
+        await Assertions.Expect(host).ToBeVisibleAsync(new() { Timeout = 120_000 });
+        await Assertions.Expect(host).ToHaveAttributeAsync("data-canvas-engine-ready", "true", new() { Timeout = 120_000 });
         await page.WaitForFunctionAsync(
             """
             blockId => document.querySelectorAll(`[data-canvas-text-rect][data-block-id="${blockId}"]`).length >= 1
@@ -538,9 +538,9 @@ public sealed class DocumentEditorCanvasImageFormattingFixE2ETests : WasmTestBas
             WaitUntil = WaitUntilState.Load,
             Timeout = 120_000
         });
-        await page.WaitForSelectorAsync(
-            "[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']",
-            new PageWaitForSelectorOptions { State = WaitForSelectorState.Attached, Timeout = 120_000 });
+        var host = page.GetByTestId("document-canvas-engine-host");
+        await Assertions.Expect(host).ToBeVisibleAsync(new() { Timeout = 120_000 });
+        await Assertions.Expect(host).ToHaveAttributeAsync("data-canvas-engine-ready", "true", new() { Timeout = 120_000 });
         await page.WaitForFunctionAsync(
             "objectId => !!document.querySelector(`[data-canvas-object][data-object-id=\"${objectId}\"]`)",
             LeftWrapImageId,
