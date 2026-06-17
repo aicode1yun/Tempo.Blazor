@@ -7,7 +7,7 @@ public sealed class EmailSection
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>Gets the columns contained in this section.</summary>
-    public List<EmailColumn> Columns { get; set; } = new();
+    public IList<EmailColumn> Columns { get; set; } = new List<EmailColumn>();
 
     /// <summary>Gets or sets the background colour (<c>background-color</c>).</summary>
     public string? BackgroundColor { get; set; }
@@ -46,8 +46,8 @@ public sealed class EmailSection
     public string? CssClass { get; set; }
 
     /// <summary>Gets or sets the referenced named MJML classes (<c>mj-class</c>).</summary>
-    public List<string> MjClasses { get; set; } = new();
+    public IList<string> MjClasses { get; set; } = new List<string>();
 
     /// <summary>Gets or sets unmodelled attributes preserved for round-trip fidelity.</summary>
-    public Dictionary<string, string> ExtraAttributes { get; set; } = new();
+    public IDictionary<string, string> ExtraAttributes { get; set; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }

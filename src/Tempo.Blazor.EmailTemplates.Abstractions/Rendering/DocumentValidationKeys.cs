@@ -1,0 +1,17 @@
+namespace Tempo.Blazor.EmailTemplates.Abstractions.Rendering;
+
+/// <summary>Localization keys for block-level document validation findings.</summary>
+public static class DocumentValidationKeys
+{
+    /// <summary>A button has no link target.</summary>
+    public const string ButtonHrefMissing = "validation.button.href_missing";
+
+    /// <summary>An image has no source URL.</summary>
+    public const string ImageSrcMissing = "validation.image.src_missing";
+
+    /// <summary>An image has no alternative text (accessibility).</summary>
+    public const string ImageAltMissing = "validation.image.alt_missing";
+
+    /// <summary>A carousel image has no source URL.</summary>
+    public const string CarouselImageSrcMissing = "validation.carousel.src_missing";
+}

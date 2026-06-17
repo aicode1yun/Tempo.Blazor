@@ -10,5 +10,5 @@ public interface IBlockContainer
     Guid Id { get; }
 
     /// <summary>Gets the blocks held directly by this container.</summary>
-    List<EmailBlockBase> Blocks { get; }
+    IList<EmailBlockBase> Blocks { get; }
 }

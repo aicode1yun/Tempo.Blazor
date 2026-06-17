@@ -7,11 +7,11 @@ namespace Tempo.Blazor.EmailTemplates.Abstractions.Templating;
 public static class SampleDataGenerator
 {
     /// <summary>Builds a nested sample model (dictionaries/lists) covering all the given variables.</summary>
-    public static Dictionary<string, object?> Generate(IReadOnlyList<TemplateVariableInfo> variables)
+    public static IDictionary<string, object?> Generate(IReadOnlyList<TemplateVariableInfo> variables)
     {
-        var root = new Dictionary<string, object?>();
-        var collections = variables.Where(v => v.Kind == VariableKind.Collection).Select(v => v.Path).ToList();
-        var scalars = variables.Where(v => v.Kind == VariableKind.Scalar).Select(v => v.Path).ToList();
+        var root = new Dictionary<string, object?>(StringComparer.Ordinal);
+        var collections = variables.Where(v => v.Kind is VariableKind.Collection).Select(v => v.Path).ToList();
+        var scalars = variables.Where(v => v.Kind is VariableKind.Scalar).Select(v => v.Path).ToList();
 
         // Shallow paths first so deeper paths can turn an intermediate into a nested object.
         foreach (var path in scalars.OrderBy(p => p.Count(c => c == '.')))
@@ -40,7 +40,7 @@ public static class SampleDataGenerator
             if (elementProps.Count == 0)
                 return SampleValue(Singularize(LastSegment(collectionPath)));
 
-            var element = new Dictionary<string, object?>();
+            var element = new Dictionary<string, object?>(StringComparer.Ordinal);
             foreach (var prop in elementProps)
                 SetPath(element, prop.Split('.'), SampleValue(LastSegment(prop)));
             return element;
@@ -58,7 +58,7 @@ public static class SampleDataGenerator
                 current = dict;
             else
             {
-                var created = new Dictionary<string, object?>();
+                var created = new Dictionary<string, object?>(StringComparer.Ordinal);
                 current[segments[i]] = created;
                 current = created;
             }
@@ -70,8 +70,8 @@ public static class SampleDataGenerator
     {
         var n = name.ToLowerInvariant();
 
-        if (n.StartsWith("is_") || n.StartsWith("has_") || n.StartsWith("can_") ||
-            n.StartsWith("show_") || n.StartsWith("enable"))
+        if (n.StartsWith("is_", StringComparison.Ordinal) || n.StartsWith("has_", StringComparison.Ordinal) || n.StartsWith("can_", StringComparison.Ordinal) ||
+            n.StartsWith("show_", StringComparison.Ordinal) || n.StartsWith("enable", StringComparison.Ordinal))
             return true;
 
         if (Contains(n, "email")) return "sample@example.com";

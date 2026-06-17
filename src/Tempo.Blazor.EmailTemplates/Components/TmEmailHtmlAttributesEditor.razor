@@ -22,7 +22,7 @@
 
 @code {
     /// <summary>The <c>mj-html-attributes</c> selectors (round-trip only; not rendered by Mjml.Net).</summary>
-    [Parameter, EditorRequired] public List<MjHtmlSelector> Selectors { get; set; } = default!;
+    [Parameter, EditorRequired] public IList<MjHtmlSelector> Selectors { get; set; } = default!;
 
     /// <summary>Raised after the selectors change.</summary>
     [Parameter] public EventCallback OnChanged { get; set; }

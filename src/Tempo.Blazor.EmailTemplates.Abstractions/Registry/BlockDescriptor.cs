@@ -2,9 +2,7 @@ using Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks;
 
 namespace Tempo.Blazor.EmailTemplates.Abstractions.Registry;
 
-/// <summary>
-/// Describes a block kind available in the editor toolbox: how to present it and how to create one.
-/// </summary>
+/// <summary>Describes a block kind available in the editor toolbox: how to present it and how to create one.</summary>
 /// <param name="Id">Stable identifier (the JSON discriminator token for built-ins, or a custom id).</param>
 /// <param name="Type">The underlying block type the factory produces.</param>
 /// <param name="NameKey">Localization key for the toolbox display name.</param>

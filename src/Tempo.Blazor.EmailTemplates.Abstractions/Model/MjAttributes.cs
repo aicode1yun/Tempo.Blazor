@@ -8,13 +8,13 @@ namespace Tempo.Blazor.EmailTemplates.Abstractions.Model;
 public sealed class MjAttributes
 {
     /// <summary>Gets the attributes applied to every component (<c>mj-all</c>).</summary>
-    public Dictionary<string, string> All { get; set; } = new();
+    public IDictionary<string, string> All { get; set; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>Gets the per-component default attributes, keyed by MJML tag name (e.g. <c>mj-text</c>).</summary>
-    public Dictionary<string, Dictionary<string, string>> PerTag { get; set; } = new();
+    public IDictionary<string, Dictionary<string, string>> PerTag { get; set; } = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
 
     /// <summary>Gets the named class definitions (<c>mj-class</c>), keyed by class name.</summary>
-    public Dictionary<string, Dictionary<string, string>> Classes { get; set; } = new();
+    public IDictionary<string, Dictionary<string, string>> Classes { get; set; } = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
 
     /// <summary>
     /// Resolves the head-level value of an attribute for a component, following MJML precedence:
@@ -34,17 +34,4 @@ public sealed class MjAttributes
 
         return All.TryGetValue(attribute, out var fromAll) ? fromAll : null;
     }
-}
-
-/// <summary>
-/// A single <c>mj-html-attributes</c> selector: a CSS path and the custom HTML attributes to apply.
-/// Carried for lossless round-trip; the default renderer (Mjml.Net) does not emit it (see E0.9).
-/// </summary>
-public sealed class MjHtmlSelector
-{
-    /// <summary>Gets or sets the CSS selector path (<c>mj-selector path</c>).</summary>
-    public string Path { get; set; } = string.Empty;
-
-    /// <summary>Gets the custom HTML attributes to apply to matching elements.</summary>
-    public Dictionary<string, string> Attributes { get; set; } = new();
 }

@@ -261,7 +261,7 @@
 
         if (_selectedId is Guid id && _document.FindParentColumn(id) is { } column)
         {
-            var index = column.Blocks.FindIndex(b => b.Id == id);
+            var index = IndexOf(column.Blocks, b => b.Id == id);
             column.Blocks.Insert(index + 1, copy);
         }
         else
@@ -271,6 +271,15 @@
 
         _selectedId = copy.Id;
         await CommitAsync();
+    }
+
+    private static int IndexOf<T>(IList<T> items, Predicate<T> predicate)
+    {
+        for (var i = 0; i < items.Count; i++)
+            if (predicate(items[i]))
+                return i;
+
+        return -1;
     }
 
     // ── Keyboard ────────────────────────────────────────────────────────────────────────────

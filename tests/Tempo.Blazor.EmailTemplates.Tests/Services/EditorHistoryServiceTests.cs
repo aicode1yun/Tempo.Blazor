@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Time.Testing;
 using Tempo.Blazor.EmailTemplates.Abstractions.Model;
 using Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks;
@@ -108,7 +109,7 @@ public class EditorHistoryServiceTests
     {
         var history = new EditorHistoryService(maxDepth: 3);
         history.Initialize(DocWithSubject("0"));
-        for (var i = 1; i <= 10; i++) history.Push(DocWithSubject(i.ToString()));
+        for (var i = 1; i <= 10; i++) history.Push(DocWithSubject(i.ToString(CultureInfo.InvariantCulture)));
 
         var count = 0;
         while (history.CanUndo) { history.Undo(); count++; }

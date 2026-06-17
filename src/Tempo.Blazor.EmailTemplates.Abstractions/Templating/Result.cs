@@ -21,8 +21,8 @@ public readonly struct Result<T>
     public string? Error { get; }
 
     /// <summary>Creates a successful result.</summary>
-    public static Result<T> Success(T value) => new(true, value, null);
+    public static Result<T> Success(T value) => new(isSuccess: true, value: value, error: null);
 
     /// <summary>Creates a failed result with an error message.</summary>
-    public static Result<T> Failure(string error) => new(false, default, error);
+    public static Result<T> Failure(string error) => new(isSuccess: false, value: default, error: error);
 }

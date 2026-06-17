@@ -7,7 +7,7 @@ public sealed class EmailGroupBlock : EmailBlockBase
     public override BlockType Type => BlockType.Group;
 
     /// <summary>Gets the columns held by the group.</summary>
-    public List<EmailColumn> Columns { get; set; } = new();
+    public IList<EmailColumn> Columns { get; set; } = new List<EmailColumn>();
 
     /// <summary>Gets or sets the background colour (<c>background-color</c>).</summary>
     public string? BackgroundColor { get; set; }

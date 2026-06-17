@@ -35,13 +35,13 @@ public abstract class EmailBlockBase
     public string? CssClass { get; set; }
 
     /// <summary>Gets or sets the referenced named MJML classes (<c>mj-class</c>).</summary>
-    public List<string> MjClasses { get; set; } = new();
+    public IList<string> MjClasses { get; set; } = new List<string>();
 
     /// <summary>
     /// Gets or sets attributes that are not modelled explicitly. Populated on import and re-emitted
     /// on export so unknown/future MJML attributes survive a round-trip without loss.
     /// </summary>
-    public Dictionary<string, string> ExtraAttributes { get; set; } = new();
+    public IDictionary<string, string> ExtraAttributes { get; set; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>
     /// Gets or sets an optional Scriban boolean expression. When set, the generator wraps the block

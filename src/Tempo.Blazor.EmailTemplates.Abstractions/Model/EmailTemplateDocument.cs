@@ -26,7 +26,7 @@ public sealed class EmailTemplateDocument
     public TemplateStyles Styles { get; set; } = new();
 
     /// <summary>Gets the ordered sections that make up the body.</summary>
-    public List<EmailSection> Sections { get; set; } = new();
+    public IList<EmailSection> Sections { get; set; } = new List<EmailSection>();
 
     /// <summary>Gets or sets the creation timestamp (UTC).</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

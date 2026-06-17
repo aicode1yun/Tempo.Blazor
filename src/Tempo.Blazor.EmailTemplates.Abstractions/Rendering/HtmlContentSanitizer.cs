@@ -95,7 +95,7 @@ public static class HtmlContentSanitizer
     private static bool IsSafeUrl(string value)
     {
         var trimmed = value.TrimStart();
-        var colon = trimmed.IndexOf(':');
+        var colon = trimmed.IndexOf(':', StringComparison.Ordinal);
         if (colon < 0) return true; // relative URL (no scheme)
         // A scheme contains only letters/digits/+-.; anything else before ':' is not a scheme (e.g. a path).
         var scheme = trimmed[..colon];
@@ -106,6 +106,8 @@ public static class HtmlContentSanitizer
     private static bool IsSafeStyle(string value)
     {
         var lowered = value.ToLowerInvariant();
-        return !lowered.Contains("javascript:") && !lowered.Contains("expression(") && !lowered.Contains("url(");
+        return !lowered.Contains("javascript:", StringComparison.Ordinal) &&
+            !lowered.Contains("expression(", StringComparison.Ordinal) &&
+            !lowered.Contains("url(", StringComparison.Ordinal);
     }
 }

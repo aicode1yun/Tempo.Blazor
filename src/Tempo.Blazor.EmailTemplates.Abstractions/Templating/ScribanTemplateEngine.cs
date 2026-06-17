@@ -60,7 +60,7 @@ public sealed class ScribanTemplateEngine : ITemplateEngine
 
     private TemplateContext CreateContext()
     {
-        var context = new TemplateContext
+        var context = new TemplateContext(StringComparer.Ordinal)
         {
             LoopLimit = _options.LoopLimit,
             RecursiveLimit = _options.RecursiveLimit,

@@ -10,7 +10,8 @@ public class DocumentEditingTests
         var doc = new EmailTemplateDocument();
         var section = new EmailSection();
         var col = new EmailColumn();
-        col.Blocks.AddRange(blocks);
+        foreach (var block in blocks)
+            col.Blocks.Add(block);
         section.Columns.Add(col);
         doc.Sections.Add(section);
         return (doc, col);

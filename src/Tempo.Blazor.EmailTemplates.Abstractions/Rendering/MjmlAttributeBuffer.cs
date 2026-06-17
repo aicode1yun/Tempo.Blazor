@@ -41,7 +41,7 @@ internal sealed class MjmlAttributeBuffer
     }
 
     /// <summary>Adds <c>css-class</c>, <c>mj-class</c> and any preserved extra attributes.</summary>
-    public MjmlAttributeBuffer Common(string? cssClass, List<string> mjClasses, Dictionary<string, string> extra)
+    public MjmlAttributeBuffer Common(string? cssClass, IList<string> mjClasses, IDictionary<string, string> extra)
     {
         Optional("css-class", cssClass);
         if (mjClasses.Count > 0) Raw("mj-class", string.Join(' ', mjClasses));

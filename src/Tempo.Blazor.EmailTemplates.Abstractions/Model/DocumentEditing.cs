@@ -27,7 +27,7 @@ public static class DocumentEditing
     public static bool RemoveBlock(this EmailTemplateDocument document, Guid blockId)
     {
         foreach (var list in DocumentTree.AllBlockLists(document))
-            if (list.RemoveAll(b => b.Id == blockId) > 0)
+            if (RemoveFirst(list, b => b.Id == blockId))
                 return true;
         return false;
     }
@@ -67,7 +67,7 @@ public static class DocumentEditing
     {
         foreach (var list in DocumentTree.AllBlockLists(document))
         {
-            var index = list.FindIndex(b => b.Id == blockId);
+            var index = IndexOf(list, b => b.Id == blockId);
             if (index >= 0)
             {
                 var copy = list[index].CloneWithNewIds();
@@ -86,7 +86,7 @@ public static class DocumentEditing
 
     /// <summary>Removes a top-level section by id. Returns whether it was found.</summary>
     public static bool RemoveSection(this EmailTemplateDocument document, Guid sectionId)
-        => document.Sections.RemoveAll(s => s.Id == sectionId) > 0;
+        => RemoveFirst(document.Sections, s => s.Id == sectionId);
 
     /// <summary>Moves a top-level section to <paramref name="index"/> (clamped after removal).</summary>
     public static bool MoveSection(this EmailTemplateDocument document, Guid sectionId, int index)
@@ -104,7 +104,7 @@ public static class DocumentEditing
     /// </summary>
     public static EmailSection? DuplicateSection(this EmailTemplateDocument document, Guid sectionId)
     {
-        var index = document.Sections.FindIndex(s => s.Id == sectionId);
+        var index = IndexOf(document.Sections, s => s.Id == sectionId);
         if (index < 0) return null;
 
         var copy = EmailTemplateSerializer.Clone(document.Sections[index]);
@@ -125,7 +125,7 @@ public static class DocumentEditing
     /// <summary>Removes a column by id and rebalances the remaining columns. Returns whether found.</summary>
     public static bool RemoveColumn(this EmailSection section, Guid columnId)
     {
-        if (section.Columns.RemoveAll(c => c.Id == columnId) == 0) return false;
+        if (!RemoveFirst(section.Columns, c => c.Id == columnId)) return false;
         RebalanceColumns(section);
         return true;
     }
@@ -139,4 +139,22 @@ public static class DocumentEditing
     }
 
     private static int Clamp(int index, int count) => index < 0 ? 0 : index > count ? count : index;
+
+    private static int IndexOf<T>(IList<T> items, Predicate<T> predicate)
+    {
+        for (var i = 0; i < items.Count; i++)
+            if (predicate(items[i]))
+                return i;
+
+        return -1;
+    }
+
+    private static bool RemoveFirst<T>(IList<T> items, Predicate<T> predicate)
+    {
+        var index = IndexOf(items, predicate);
+        if (index < 0) return false;
+
+        items.RemoveAt(index);
+        return true;
+    }
 }

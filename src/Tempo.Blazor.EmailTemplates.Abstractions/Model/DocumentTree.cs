@@ -25,9 +25,9 @@ public static class DocumentTree
     }
 
     /// <summary>Enumerates every block list (a column's or a hero's <c>Blocks</c>) in the document.</summary>
-    public static IEnumerable<List<EmailBlockBase>> AllBlockLists(EmailTemplateDocument document)
+    public static IEnumerable<IList<EmailBlockBase>> AllBlockLists(EmailTemplateDocument document)
     {
-        var acc = new List<List<EmailBlockBase>>();
+        var acc = new List<IList<EmailBlockBase>>();
         foreach (var section in document.Sections)
             foreach (var column in section.Columns)
                 CollectBlockLists(column.Blocks, acc);
@@ -115,7 +115,7 @@ public static class DocumentTree
         }
     }
 
-    private static void CollectBlockLists(List<EmailBlockBase> list, List<List<EmailBlockBase>> acc)
+    private static void CollectBlockLists(IList<EmailBlockBase> list, IList<IList<EmailBlockBase>> acc)
     {
         acc.Add(list);
         foreach (var block in list)

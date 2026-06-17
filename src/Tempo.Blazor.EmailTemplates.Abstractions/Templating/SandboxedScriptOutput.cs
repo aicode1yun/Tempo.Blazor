@@ -22,18 +22,21 @@ internal sealed class SandboxedScriptOutput : IScriptOutput
     }
 
     public void Write(string text, int offset, int count)
+        => Append(text, offset, count);
+
+    public ValueTask WriteAsync(string text, int offset, int count, CancellationToken cancellationToken)
+    {
+        Append(text, offset, count);
+        return default;
+    }
+
+    private void Append(string text, int offset, int count)
     {
         if (_stopwatch.Elapsed > _timeout)
             throw new TimeoutException("Template rendering exceeded the allowed time.");
         if (_builder.Length + count > _maxLength)
             throw new InvalidOperationException("Template output exceeded the maximum allowed length.");
         _builder.Append(text, offset, count);
-    }
-
-    public ValueTask WriteAsync(string text, int offset, int count, CancellationToken cancellationToken)
-    {
-        Write(text, offset, count);
-        return default;
     }
 
     public override string ToString() => _builder.ToString();

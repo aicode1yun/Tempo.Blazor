@@ -53,64 +53,104 @@ public sealed partial class TextVersionGenerator
                 sb.AppendLine(StripHtml(r.Content));
                 break;
             case EmailTableBlock table:
-                foreach (var row in table.Rows)
-                    sb.AppendLine(string.Join("\t", row.Cells.Select(c => c.Text)));
+                WriteTable(sb, table);
                 break;
             case EmailSocialBlock social:
-                foreach (var e in social.Elements)
-                    sb.AppendLine(string.IsNullOrEmpty(e.Href) ? (e.Label ?? e.Name ?? "") : $"{e.Label ?? e.Name} ({e.Href})");
+                WriteSocial(sb, social);
                 break;
             case EmailNavbarBlock navbar:
-                foreach (var link in navbar.Links)
-                    sb.AppendLine(string.IsNullOrEmpty(link.Href) ? link.Text : $"{link.Text} ({link.Href})");
+                WriteNavbar(sb, navbar);
                 break;
             case EmailCarouselBlock carousel:
-                foreach (var img in carousel.Images.Where(im => !string.IsNullOrEmpty(im.Alt)))
-                    sb.AppendLine(img.Alt);
+                WriteCarousel(sb, carousel);
                 break;
             case EmailAccordionBlock accordion:
-                foreach (var item in accordion.Items)
-                {
-                    sb.AppendLine(item.Title);
-                    sb.AppendLine(StripHtml(item.Content));
-                }
+                WriteAccordion(sb, accordion);
                 break;
             case EmailHeroBlock hero:
-                foreach (var b in hero.Blocks) WriteBlock(sb, b);
+                WriteBlocks(sb, hero.Blocks);
                 break;
             case EmailGroupBlock group:
-                foreach (var column in group.Columns)
-                    foreach (var b in column.Blocks) WriteBlock(sb, b);
+                WriteColumns(sb, group.Columns);
                 break;
             case EmailWrapperBlock wrapper:
-                foreach (var section in wrapper.Sections)
-                    foreach (var column in section.Columns)
-                        foreach (var b in column.Blocks) WriteBlock(sb, b);
+                WriteSections(sb, wrapper.Sections);
                 break;
         }
+    }
+
+    private static void WriteTable(StringBuilder sb, EmailTableBlock table)
+    {
+        foreach (var row in table.Rows)
+            sb.AppendLine(string.Join("\t", row.Cells.Select(c => c.Text)));
+    }
+
+    private static void WriteSocial(StringBuilder sb, EmailSocialBlock social)
+    {
+        foreach (var e in social.Elements)
+            sb.AppendLine(string.IsNullOrEmpty(e.Href) ? (e.Label ?? e.Name ?? "") : $"{e.Label ?? e.Name} ({e.Href})");
+    }
+
+    private static void WriteNavbar(StringBuilder sb, EmailNavbarBlock navbar)
+    {
+        foreach (var link in navbar.Links)
+            sb.AppendLine(string.IsNullOrEmpty(link.Href) ? link.Text : $"{link.Text} ({link.Href})");
+    }
+
+    private static void WriteCarousel(StringBuilder sb, EmailCarouselBlock carousel)
+    {
+        foreach (var img in carousel.Images.Where(im => !string.IsNullOrEmpty(im.Alt)))
+            sb.AppendLine(img.Alt);
+    }
+
+    private static void WriteAccordion(StringBuilder sb, EmailAccordionBlock accordion)
+    {
+        foreach (var item in accordion.Items)
+        {
+            sb.AppendLine(item.Title);
+            sb.AppendLine(StripHtml(item.Content));
+        }
+    }
+
+    private static void WriteSections(StringBuilder sb, IEnumerable<EmailSection> sections)
+    {
+        foreach (var section in sections)
+            WriteColumns(sb, section.Columns);
+    }
+
+    private static void WriteColumns(StringBuilder sb, IEnumerable<EmailColumn> columns)
+    {
+        foreach (var column in columns)
+            WriteBlocks(sb, column.Blocks);
+    }
+
+    private static void WriteBlocks(StringBuilder sb, IEnumerable<EmailBlockBase> blocks)
+    {
+        foreach (var block in blocks)
+            WriteBlock(sb, block);
     }
 
     private static string StripHtml(string html)
     {
         if (string.IsNullOrEmpty(html)) return string.Empty;
-        var withoutTags = TagRegex().Replace(html, " ");
+        var withoutTags = TagRegex.Replace(html, " ");
         return WebUtility.HtmlDecode(withoutTags);
     }
 
     private static string Collapse(string text)
     {
         // Collapse 3+ newlines to a single blank line and trim trailing spaces on each line.
-        var normalized = SpacesRegex().Replace(text, " ");
-        normalized = BlankLinesRegex().Replace(normalized, "\n\n");
+        var normalized = SpacesRegex.Replace(text, " ");
+        normalized = BlankLinesRegex.Replace(normalized, "\n\n");
         return normalized.Trim();
     }
 
-    [GeneratedRegex("<[^>]+>")]
-    private static partial Regex TagRegex();
+    [GeneratedRegex("<[^>]+>", RegexOptions.None, 1000)]
+    private static partial Regex TagRegex { get; }
 
-    [GeneratedRegex("[ \\t]+")]
-    private static partial Regex SpacesRegex();
+    [GeneratedRegex("[ \\t]+", RegexOptions.None, 1000)]
+    private static partial Regex SpacesRegex { get; }
 
-    [GeneratedRegex("\\n{3,}")]
-    private static partial Regex BlankLinesRegex();
+    [GeneratedRegex("\\n{3,}", RegexOptions.None, 1000)]
+    private static partial Regex BlankLinesRegex { get; }
 }

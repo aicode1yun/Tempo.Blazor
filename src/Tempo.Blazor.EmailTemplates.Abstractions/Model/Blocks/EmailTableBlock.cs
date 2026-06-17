@@ -7,7 +7,7 @@ public sealed class EmailTableBlock : EmailBlockBase
     public override BlockType Type => BlockType.Table;
 
     /// <summary>Gets the table rows.</summary>
-    public List<EmailTableRow> Rows { get; set; } = new();
+    public IList<EmailTableRow> Rows { get; set; } = new List<EmailTableRow>();
 
     /// <summary>Gets or sets the table alignment (<c>align</c>).</summary>
     public string Align { get; set; } = "left";
@@ -41,30 +41,4 @@ public sealed class EmailTableBlock : EmailBlockBase
 
     /// <summary>Initializes a new instance of the <see cref="EmailTableBlock"/> class.</summary>
     public EmailTableBlock() => Padding = "10px 25px";
-}
-
-/// <summary>A single row of an <see cref="EmailTableBlock"/>.</summary>
-public sealed class EmailTableRow
-{
-    /// <summary>Gets or sets whether the row is a header row (rendered with bold cells).</summary>
-    public bool IsHeader { get; set; }
-
-    /// <summary>Gets the cells in this row.</summary>
-    public List<EmailTableCell> Cells { get; set; } = new();
-}
-
-/// <summary>A single cell of an <see cref="EmailTableRow"/>.</summary>
-public sealed class EmailTableCell
-{
-    /// <summary>Gets or sets the cell text content.</summary>
-    public string Text { get; set; } = string.Empty;
-
-    /// <summary>Gets or sets the cell text alignment (<c>align</c>).</summary>
-    public string? Align { get; set; }
-
-    /// <summary>Gets or sets the column span (<c>colspan</c>), when greater than one.</summary>
-    public int? ColSpan { get; set; }
-
-    /// <summary>Gets or sets the row span (<c>rowspan</c>), when greater than one.</summary>
-    public int? RowSpan { get; set; }
 }

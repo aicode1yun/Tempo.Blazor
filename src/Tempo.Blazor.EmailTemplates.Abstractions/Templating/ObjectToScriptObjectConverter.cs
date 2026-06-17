@@ -14,7 +14,7 @@ public static class ObjectToScriptObjectConverter
     /// <summary>Builds a script object usable as the global scope for rendering.</summary>
     public static ScriptObject ToScriptObject(object? model)
     {
-        var scriptObject = new ScriptObject();
+        var scriptObject = new ScriptObject(StringComparer.Ordinal);
         switch (model)
         {
             case null:
@@ -27,7 +27,7 @@ public static class ObjectToScriptObjectConverter
                 break;
             case IDictionary loose:
                 foreach (DictionaryEntry entry in loose)
-                    scriptObject[entry.Key.ToString()!] = Convert(entry.Value);
+                    scriptObject[System.Convert.ToString(entry.Key, System.Globalization.CultureInfo.InvariantCulture)!] = Convert(entry.Value);
                 break;
             default:
                 scriptObject.Import(model);

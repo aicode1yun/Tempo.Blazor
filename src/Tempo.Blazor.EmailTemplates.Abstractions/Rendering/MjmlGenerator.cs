@@ -40,7 +40,7 @@ public sealed class MjmlGenerator
             sb.Append("<mj-title>").Append(MjmlEscape.Text(document.Subject)).Append("</mj-title>\n");
         if (!string.IsNullOrEmpty(document.Preheader))
             sb.Append("<mj-preview>").Append(MjmlEscape.Text(document.Preheader)).Append("</mj-preview>\n");
-        if (!string.IsNullOrEmpty(styles.Breakpoint) && styles.Breakpoint != "480px")
+        if (!string.IsNullOrEmpty(styles.Breakpoint) && !string.Equals(styles.Breakpoint, "480px", StringComparison.Ordinal))
             sb.Append("<mj-breakpoint width=\"").Append(MjmlEscape.Attribute(styles.Breakpoint)).Append("\" />\n");
 
         foreach (var font in styles.Fonts)
@@ -64,7 +64,7 @@ public sealed class MjmlGenerator
     private static void WriteAttributes(StringBuilder sb, TemplateStyles styles)
     {
         // Apply the global font-family as an mj-all default unless the cascade already sets one.
-        var all = new Dictionary<string, string>(styles.Attributes.All);
+        var all = new Dictionary<string, string>(styles.Attributes.All, StringComparer.Ordinal);
         if (!all.ContainsKey("font-family") && !string.IsNullOrEmpty(styles.FontFamily))
             all["font-family"] = styles.FontFamily;
 

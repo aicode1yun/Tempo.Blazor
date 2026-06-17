@@ -7,7 +7,7 @@ public sealed class EmailHeroBlock : EmailBlockBase, IBlockContainer
     public override BlockType Type => BlockType.Hero;
 
     /// <summary>Gets the blocks rendered inside the hero.</summary>
-    public List<EmailBlockBase> Blocks { get; set; } = new();
+    public IList<EmailBlockBase> Blocks { get; set; } = new List<EmailBlockBase>();
 
     /// <summary>Gets or sets the sizing mode, <c>fluid-height</c> or <c>fixed-height</c> (<c>mode</c>).</summary>
     public string Mode { get; set; } = "fluid-height";

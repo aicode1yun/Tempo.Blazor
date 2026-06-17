@@ -33,11 +33,11 @@ public sealed class EmailColumn : IBlockContainer
     public string? CssClass { get; set; }
 
     /// <summary>Gets or sets the referenced named MJML classes (<c>mj-class</c>).</summary>
-    public List<string> MjClasses { get; set; } = new();
+    public IList<string> MjClasses { get; set; } = new List<string>();
 
     /// <summary>Gets or sets unmodelled attributes preserved for round-trip fidelity.</summary>
-    public Dictionary<string, string> ExtraAttributes { get; set; } = new();
+    public IDictionary<string, string> ExtraAttributes { get; set; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>Gets the content blocks held by this column.</summary>
-    public List<EmailBlockBase> Blocks { get; set; } = new();
+    public IList<EmailBlockBase> Blocks { get; set; } = new List<EmailBlockBase>();
 }

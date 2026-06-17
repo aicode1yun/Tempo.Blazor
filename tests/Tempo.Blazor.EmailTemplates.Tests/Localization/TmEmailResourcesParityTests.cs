@@ -34,7 +34,7 @@ public class TmEmailResourcesParityTests
         var neutral = KeysFor(CultureInfo.InvariantCulture);
         var translated = KeysFor(new CultureInfo(culture));
 
-        neutral.Except(translated).Should().BeEmpty(
+        neutral.Except(translated, StringComparer.Ordinal).Should().BeEmpty(
             $"every neutral resource key must have a {culture} translation");
     }
 
@@ -46,7 +46,7 @@ public class TmEmailResourcesParityTests
         var neutral = KeysFor(CultureInfo.InvariantCulture);
         var translated = KeysFor(new CultureInfo(culture));
 
-        translated.Except(neutral).Should().BeEmpty(
+        translated.Except(neutral, StringComparer.Ordinal).Should().BeEmpty(
             $"the {culture} resource must not define keys missing from the neutral resource");
     }
 }

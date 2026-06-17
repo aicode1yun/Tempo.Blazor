@@ -19,7 +19,7 @@ public sealed class UpdateEmailTemplateRequestValidator : AbstractValidator<Upda
             .MaximumLength(300).WithMessage(_ => localizer["Subject_TooLong"]);
 
         RuleFor(x => x.Language)
-            .Must(lang => !string.IsNullOrEmpty(lang) && LanguagePattern.Regex().IsMatch(lang))
+            .Must(lang => !string.IsNullOrEmpty(lang) && LanguagePattern.Regex.IsMatch(lang))
             .WithMessage(_ => localizer["Language_Invalid"]);
 
         RuleFor(x => x.ContentJson)

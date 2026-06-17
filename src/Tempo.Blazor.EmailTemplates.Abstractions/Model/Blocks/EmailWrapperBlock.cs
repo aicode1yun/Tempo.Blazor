@@ -7,7 +7,7 @@ public sealed class EmailWrapperBlock : EmailBlockBase
     public override BlockType Type => BlockType.Wrapper;
 
     /// <summary>Gets the sections held by the wrapper.</summary>
-    public List<EmailSection> Sections { get; set; } = new();
+    public IList<EmailSection> Sections { get; set; } = new List<EmailSection>();
 
     /// <summary>Gets or sets the background colour (<c>background-color</c>).</summary>
     public string? BackgroundColor { get; set; }

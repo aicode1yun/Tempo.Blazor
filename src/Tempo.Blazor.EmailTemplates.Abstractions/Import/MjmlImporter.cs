@@ -73,16 +73,16 @@ public sealed partial class MjmlImporter
     // ── Raw shim ──────────────────────────────────────────────────────────────────────────────
 
     private string ShimRaw(string mjml)
-        => RawRegex().Replace(mjml, m =>
+        => RawRegex.Replace(mjml, m =>
         {
-            _rawStore.Add(m.Groups[2].Value);
-            return m.Groups[1].Value + RawTokenPrefix + (_rawStore.Count - 1) + RawTokenSuffix + m.Groups[3].Value;
+            _rawStore.Add(m.Groups["content"].Value);
+            return m.Groups["open"].Value + RawTokenPrefix + (_rawStore.Count - 1) + RawTokenSuffix + m.Groups["close"].Value;
         });
 
     private string RestoreRaw(string placeholderText)
     {
-        var match = RawTokenRegex().Match(placeholderText);
-        return match.Success && int.TryParse(match.Groups[1].Value, out var i) && i < _rawStore.Count
+        var match = RawTokenRegex.Match(placeholderText);
+        return match.Success && int.TryParse(match.Groups["index"].Value, null, out var i) && i < _rawStore.Count
             ? _rawStore[i]
             : placeholderText;
     }
@@ -113,7 +113,7 @@ public sealed partial class MjmlImporter
                     styles.Styles.Add(new EmailStyle
                     {
                         Css = e.Value,
-                        Inline = e.Attribute("inline")?.Value == "inline",
+                Inline = string.Equals(e.Attribute("inline")?.Value, "inline", StringComparison.Ordinal),
                     });
                     break;
                 case "mj-attributes": ImportAttributes(e, styles.Attributes); break;
@@ -127,8 +127,8 @@ public sealed partial class MjmlImporter
         foreach (var child in element.Elements())
         {
             var pairs = child.Attributes()
-                .Where(a => a.Name.LocalName != "name")
-                .ToDictionary(a => a.Name.LocalName, a => a.Value);
+                .Where(a => !string.Equals(a.Name.LocalName, "name", StringComparison.Ordinal))
+                .ToDictionary(a => a.Name.LocalName, a => a.Value, StringComparer.Ordinal);
 
             switch (child.Name.LocalName)
             {
@@ -148,10 +148,10 @@ public sealed partial class MjmlImporter
 
     private static void ImportHtmlAttributes(XElement element, TemplateStyles styles)
     {
-        foreach (var selectorEl in element.Elements().Where(e => e.Name.LocalName == "mj-selector"))
+        foreach (var selectorEl in element.Elements().Where(e => NameIs(e, "mj-selector")))
         {
             var selector = new MjHtmlSelector { Path = selectorEl.Attribute("path")?.Value ?? string.Empty };
-            foreach (var attrEl in selectorEl.Elements().Where(e => e.Name.LocalName == "mj-html-attribute"))
+            foreach (var attrEl in selectorEl.Elements().Where(e => NameIs(e, "mj-html-attribute")))
             {
                 var attrName = attrEl.Attribute("name")?.Value;
                 if (!string.IsNullOrEmpty(attrName)) selector.Attributes[attrName] = attrEl.Value;
@@ -260,15 +260,15 @@ public sealed partial class MjmlImporter
     /// Imports the block children of a container, reattaching any <c>{{ if expr }}…{{ end }}</c>
     /// Scriban wrapper emitted around a block as that block's <see cref="EmailBlockBase.VisibleWhen"/>.
     /// </summary>
-    private void ImportBlocks(XElement parent, List<EmailBlockBase> target)
+    private void ImportBlocks(XElement parent, IList<EmailBlockBase> target)
     {
         string? pendingCondition = null;
         foreach (var node in parent.Nodes())
         {
             if (node is XText text)
             {
-                var match = IfRegex().Match(text.Value);
-                if (match.Success) pendingCondition = match.Groups[1].Value.Trim();
+                var match = IfRegex.Match(text.Value);
+                if (match.Success) pendingCondition = match.Groups["condition"].Value.Trim();
                 continue;
             }
             if (node is XElement element)
@@ -432,14 +432,14 @@ public sealed partial class MjmlImporter
         b.Width = a.Take("width") ?? b.Width;
         ApplyBlockCommon(a, b);
 
-        foreach (var tr in e.Elements().Where(x => x.Name.LocalName == "tr"))
+        foreach (var tr in e.Elements().Where(x => NameIs(x, "tr")))
         {
             var cells = tr.Elements().Where(x => x.Name.LocalName is "td" or "th").ToList();
-            var row = new EmailTableRow { IsHeader = cells.Count > 0 && cells.All(c => c.Name.LocalName == "th") };
+            var row = new EmailTableRow { IsHeader = cells.Count > 0 && cells.All(c => NameIs(c, "th")) };
             foreach (var cell in cells)
             {
-                int? colSpan = int.TryParse(cell.Attribute("colspan")?.Value, out var cs) ? cs : null;
-                int? rowSpan = int.TryParse(cell.Attribute("rowspan")?.Value, out var rs) ? rs : null;
+                int? colSpan = int.TryParse(cell.Attribute("colspan")?.Value, null, out var cs) ? cs : null;
+                int? rowSpan = int.TryParse(cell.Attribute("rowspan")?.Value, null, out var rs) ? rs : null;
                 row.Cells.Add(new EmailTableCell
                 {
                     Text = cell.Value,
@@ -469,7 +469,7 @@ public sealed partial class MjmlImporter
         b.TextDecoration = a.Take("text-decoration") ?? b.TextDecoration;
         ApplyBlockCommon(a, b);
 
-        foreach (var el in e.Elements().Where(x => x.Name.LocalName == "mj-social-element"))
+        foreach (var el in e.Elements().Where(x => NameIs(x, "mj-social-element")))
         {
             b.Elements.Add(new EmailSocialElement
             {
@@ -494,7 +494,7 @@ public sealed partial class MjmlImporter
         b.Hamburger = a.Take("hamburger");
         ApplyBlockCommon(a, b);
 
-        foreach (var el in e.Elements().Where(x => x.Name.LocalName == "mj-navbar-link"))
+        foreach (var el in e.Elements().Where(x => NameIs(x, "mj-navbar-link")))
         {
             b.Links.Add(new EmailNavbarLink
             {
@@ -528,7 +528,7 @@ public sealed partial class MjmlImporter
         b.TbBorderRadius = a.Take("tb-border-radius") ?? b.TbBorderRadius;
         ApplyBlockCommon(a, b);
 
-        foreach (var el in e.Elements().Where(x => x.Name.LocalName == "mj-carousel-image"))
+        foreach (var el in e.Elements().Where(x => NameIs(x, "mj-carousel-image")))
         {
             b.Images.Add(new EmailCarouselImage
             {
@@ -558,10 +558,10 @@ public sealed partial class MjmlImporter
         b.FontFamily = a.Take("font-family");
         ApplyBlockCommon(a, b);
 
-        foreach (var el in e.Elements().Where(x => x.Name.LocalName == "mj-accordion-element"))
+        foreach (var el in e.Elements().Where(x => NameIs(x, "mj-accordion-element")))
         {
-            var title = el.Elements().FirstOrDefault(x => x.Name.LocalName == "mj-accordion-title");
-            var text = el.Elements().FirstOrDefault(x => x.Name.LocalName == "mj-accordion-text");
+            var title = el.Elements().FirstOrDefault(x => NameIs(x, "mj-accordion-title"));
+            var text = el.Elements().FirstOrDefault(x => NameIs(x, "mj-accordion-text"));
             b.Items.Add(new EmailAccordionItem
             {
                 Title = title?.Value ?? string.Empty,
@@ -659,36 +659,37 @@ public sealed partial class MjmlImporter
         ApplyCommon(a, v => block.CssClass = v, block.MjClasses, block.ExtraAttributes);
     }
 
-    private static void ApplyCommon(AttrBag a, Action<string?> setCss, List<string> mjClasses, Dictionary<string, string> extra)
+    private static void ApplyCommon(AttrBag a, Action<string?> setCss, IList<string> mjClasses, IDictionary<string, string> extra)
     {
         setCss(a.Take("css-class"));
         var mj = a.Take("mj-class");
         if (!string.IsNullOrEmpty(mj))
-            mjClasses.AddRange(mj.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            foreach (var mjClass in mj.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                mjClasses.Add(mjClass);
         foreach (var (name, value) in a.Rest())
             extra[name] = value;
     }
 
-    private static void Merge(Dictionary<string, string> target, Dictionary<string, string> source)
+    private static void Merge(IDictionary<string, string> target, IReadOnlyDictionary<string, string> source)
     {
         foreach (var (k, v) in source) target[k] = v;
     }
 
-    private static bool NameIs(XElement e, string local) => e.Name.LocalName == local;
+    private static bool NameIs(XElement e, string local) => string.Equals(e.Name.LocalName, local, StringComparison.Ordinal);
 
     private static bool IsComment(XElement e) => false; // comments are XComment nodes, never XElement
 
     private static string InnerMarkup(XElement e)
         => string.Concat(e.Nodes().Select(n => n.ToString(SaveOptions.DisableFormatting))).Trim();
 
-    [GeneratedRegex(@"(<mj-raw\b[^>]*>)(.*?)(</mj-raw>)", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
-    private static partial Regex RawRegex();
+    [GeneratedRegex(@"(?<open><mj-raw\b[^>]*>)(?<content>.*?)(?<close></mj-raw>)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, 1000)]
+    private static partial Regex RawRegex { get; }
 
-    [GeneratedRegex(RawTokenPrefix + @"(\d+)" + RawTokenSuffix)]
-    private static partial Regex RawTokenRegex();
+    [GeneratedRegex(RawTokenPrefix + @"(?<index>\d+)" + RawTokenSuffix, RegexOptions.ExplicitCapture, 1000)]
+    private static partial Regex RawTokenRegex { get; }
 
-    [GeneratedRegex(@"\{\{\s*if\s+(.+?)\s*\}\}")]
-    private static partial Regex IfRegex();
+    [GeneratedRegex(@"\{\{\s*if\s+(?<condition>.+?)\s*\}\}", RegexOptions.ExplicitCapture, 1000)]
+    private static partial Regex IfRegex { get; }
 
     /// <summary>Mutable attribute lookup that tracks which attributes have been consumed.</summary>
     private sealed class AttrBag
@@ -698,7 +699,7 @@ public sealed partial class MjmlImporter
         public AttrBag(XElement element)
             => _attrs = element.Attributes()
                 .Where(a => !a.IsNamespaceDeclaration)
-                .ToDictionary(a => a.Name.LocalName, a => a.Value);
+                .ToDictionary(a => a.Name.LocalName, a => a.Value, StringComparer.Ordinal);
 
         public string? Take(string name)
         {

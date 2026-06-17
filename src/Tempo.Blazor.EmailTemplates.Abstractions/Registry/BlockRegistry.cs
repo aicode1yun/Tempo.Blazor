@@ -48,7 +48,7 @@ public sealed class BlockRegistry : IBlockRegistry
     /// <inheritdoc />
     public EmailBlockBase CreateById(string id)
     {
-        var descriptor = _descriptors.FirstOrDefault(d => d.Id == id)
+        var descriptor = _descriptors.FirstOrDefault(d => string.Equals(d.Id, id, StringComparison.Ordinal))
             ?? throw new ArgumentException($"No block descriptor registered with id '{id}'.", nameof(id));
         return descriptor.Factory();
     }

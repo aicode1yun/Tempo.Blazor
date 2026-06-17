@@ -72,12 +72,12 @@ public class PropertyPanelTests : TestContext
     public void BlockPanel_CoversEveryScalarAttribute()
     {
         var (doc, button) = DocWithButton();
-        var expected = PropertyReflection.GetFields(button).Select(f => f.Name).ToHashSet();
+        var expected = PropertyReflection.GetFields(button).Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
 
         var cut = RenderComponent<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, button.Id));
 
-        var rendered = cut.FindAll("[data-tm-prop]").Select(e => e.GetAttribute("data-tm-prop")).ToHashSet();
+        var rendered = cut.FindAll("[data-tm-prop]").Select(e => e.GetAttribute("data-tm-prop")).ToHashSet(StringComparer.Ordinal);
         rendered.Should().BeEquivalentTo(expected, "every scalar attribute must have an editor (parity)");
     }
 

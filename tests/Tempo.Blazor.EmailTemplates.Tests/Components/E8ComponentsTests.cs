@@ -162,7 +162,7 @@ public class E8ComponentsTests : TestContext
 
         cut.FindAll("[data-tm-validation-message]").Should().NotBeEmpty();
         cut.FindAll("[data-tm-validation-message]")
-            .First(m => m.GetAttribute("data-tm-validation-severity") == "Error").Click();
+            .First(m => string.Equals(m.GetAttribute("data-tm-validation-severity"), "Error", StringComparison.Ordinal)).Click();
 
         navigated.Should().Be(button.Id);
     }

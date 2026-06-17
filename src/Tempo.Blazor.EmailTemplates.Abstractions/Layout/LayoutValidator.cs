@@ -4,35 +4,6 @@ using Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks;
 
 namespace Tempo.Blazor.EmailTemplates.Abstractions.Layout;
 
-/// <summary>Severity of a layout validation message.</summary>
-public enum LayoutSeverity
-{
-    /// <summary>A non-fatal issue worth surfacing.</summary>
-    Warning,
-
-    /// <summary>A structural problem that would produce broken or invalid output.</summary>
-    Error,
-}
-
-/// <summary>Localization keys for layout validation messages (never raw text).</summary>
-public static class LayoutValidationKeys
-{
-    /// <summary>Explicit column widths in a section do not sum to 100%.</summary>
-    public const string ColumnWidths = "layout.column_widths";
-
-    /// <summary>A section has no columns.</summary>
-    public const string EmptySection = "layout.empty_section";
-
-    /// <summary>Container nesting exceeds the supported depth.</summary>
-    public const string MaxNesting = "layout.max_nesting";
-}
-
-/// <summary>A single layout validation finding.</summary>
-/// <param name="Severity">How serious the finding is.</param>
-/// <param name="Key">The localization key describing the finding.</param>
-/// <param name="Path">A locator for the offending node (section/block identifier).</param>
-public sealed record LayoutValidationMessage(LayoutSeverity Severity, string Key, string Path);
-
 /// <summary>
 /// Validates the structural layout of a document: column-width totals, empty sections and excessive
 /// container nesting. Findings carry localization keys, never localized text.

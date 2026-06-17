@@ -35,52 +35,81 @@ public static class EmailDocumentVariableExtractor
             // VisibleWhen is a bare Scriban expression; wrap it so its variables are extracted.
             if (!string.IsNullOrWhiteSpace(block.VisibleWhen)) yield return "{{ " + block.VisibleWhen + " }}";
 
-            switch (block)
-            {
-                case EmailTextBlock t: yield return t.Content; break;
-                case EmailButtonBlock b:
-                    yield return b.Text;
-                    if (b.Href is not null) yield return b.Href;
-                    break;
-                case EmailImageBlock i:
-                    yield return i.Alt;
-                    if (i.Href is not null) yield return i.Href;
-                    if (i.Src is not null) yield return i.Src;
-                    break;
-                case EmailRawBlock r: yield return r.Content; break;
-                case EmailTableBlock table:
-                    foreach (var row in table.Rows)
-                        foreach (var cell in row.Cells) yield return cell.Text;
-                    break;
-                case EmailSocialBlock social:
-                    foreach (var e in social.Elements)
-                    {
-                        if (e.Label is not null) yield return e.Label;
-                        if (e.Href is not null) yield return e.Href;
-                    }
-                    break;
-                case EmailNavbarBlock navbar:
-                    foreach (var link in navbar.Links)
-                    {
-                        yield return link.Text;
-                        if (link.Href is not null) yield return link.Href;
-                    }
-                    break;
-                case EmailCarouselBlock carousel:
-                    foreach (var img in carousel.Images)
-                    {
-                        yield return img.Alt;
-                        if (img.Href is not null) yield return img.Href;
-                    }
-                    break;
-                case EmailAccordionBlock accordion:
-                    foreach (var item in accordion.Items)
-                    {
-                        yield return item.Title;
-                        yield return item.Content;
-                    }
-                    break;
-            }
+            foreach (var value in EnumerateBlockTemplateStrings(block))
+                yield return value;
+        }
+    }
+
+    private static IEnumerable<string> EnumerateBlockTemplateStrings(EmailBlockBase block)
+    {
+        return block switch
+        {
+            EmailTextBlock t => new[] { t.Content },
+            EmailButtonBlock b => EnumerateButtonStrings(b),
+            EmailImageBlock i => EnumerateImageStrings(i),
+            EmailRawBlock r => new[] { r.Content },
+            EmailTableBlock table => EnumerateTableStrings(table),
+            EmailSocialBlock social => EnumerateSocialStrings(social),
+            EmailNavbarBlock navbar => EnumerateNavbarStrings(navbar),
+            EmailCarouselBlock carousel => EnumerateCarouselStrings(carousel),
+            EmailAccordionBlock accordion => EnumerateAccordionStrings(accordion),
+            _ => Array.Empty<string>(),
+        };
+    }
+
+    private static IEnumerable<string> EnumerateButtonStrings(EmailButtonBlock button)
+    {
+        yield return button.Text;
+        if (button.Href is not null) yield return button.Href;
+    }
+
+    private static IEnumerable<string> EnumerateImageStrings(EmailImageBlock image)
+    {
+        yield return image.Alt;
+        if (image.Href is not null) yield return image.Href;
+        if (image.Src is not null) yield return image.Src;
+    }
+
+    private static IEnumerable<string> EnumerateTableStrings(EmailTableBlock table)
+    {
+        foreach (var row in table.Rows)
+            foreach (var cell in row.Cells)
+                yield return cell.Text;
+    }
+
+    private static IEnumerable<string> EnumerateSocialStrings(EmailSocialBlock social)
+    {
+        foreach (var e in social.Elements)
+        {
+            if (e.Label is not null) yield return e.Label;
+            if (e.Href is not null) yield return e.Href;
+        }
+    }
+
+    private static IEnumerable<string> EnumerateNavbarStrings(EmailNavbarBlock navbar)
+    {
+        foreach (var link in navbar.Links)
+        {
+            yield return link.Text;
+            if (link.Href is not null) yield return link.Href;
+        }
+    }
+
+    private static IEnumerable<string> EnumerateCarouselStrings(EmailCarouselBlock carousel)
+    {
+        foreach (var img in carousel.Images)
+        {
+            yield return img.Alt;
+            if (img.Href is not null) yield return img.Href;
+        }
+    }
+
+    private static IEnumerable<string> EnumerateAccordionStrings(EmailAccordionBlock accordion)
+    {
+        foreach (var item in accordion.Items)
+        {
+            yield return item.Title;
+            yield return item.Content;
         }
     }
 }
