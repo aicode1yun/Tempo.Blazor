@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Represents a user-selected mapping from CSV column to diagram semantic field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/CsvColumnMapping.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IsRequired",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "SelectedColumn",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "SemanticField",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "CsvColumnMapping"
+}

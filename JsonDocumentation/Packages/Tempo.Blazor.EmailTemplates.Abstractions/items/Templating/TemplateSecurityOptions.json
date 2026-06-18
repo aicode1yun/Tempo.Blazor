@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "Sandbox limits applied when rendering user-authored templates, bounding loops, recursion, output size and wall-clock time so a malicious or buggy template cannot hang or exhaust memory.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateSecurityOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "LoopLimit",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum total loop iterations before rendering aborts (default 5000)."
+    },
+    {
+      "name": "MaxOutputLength",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum length of the rendered output in characters (default 5,000,000)."
+    },
+    {
+      "name": "RecursiveLimit",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum recursion depth before rendering aborts (default 100)."
+    },
+    {
+      "name": "StrictVariables",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When , referencing an undefined variable is an error; otherwise it renders as empty (the default, lenient behaviour)."
+    },
+    {
+      "name": "Timeout",
+      "kind": "Property",
+      "type": "TimeSpan",
+      "description": "Maximum wall-clock time for a single render (default 5 seconds, cooperative)."
+    }
+  ],
+  "itemName": "TemplateSecurityOptions"
+}

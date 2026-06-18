@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Thrown when an import source returns HTTP 401 Unauthorized.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttImportAuthException.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttImportAuthException"
+}

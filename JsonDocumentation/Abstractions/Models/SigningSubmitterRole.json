@@ -1,0 +1,90 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Role or signer definition used by signing templates and submissions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningSubmitterRole.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Color used to identify the role in field overlays."
+    },
+    {
+      "name": "Email",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional signer email for submission recipient editing."
+    },
+    {
+      "name": "FullName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional signer full name for submission recipient editing."
+    },
+    {
+      "name": "InviteByRoleUuid",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Role UUID that must invite this signer."
+    },
+    {
+      "name": "InviteViaFieldUuid",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Field UUID whose value can invite this signer."
+    },
+    {
+      "name": "IsOptional",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this invite is optional."
+    },
+    {
+      "name": "IsRequester",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this role represents the requester."
+    },
+    {
+      "name": "Labels",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized display names of the signer role."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name of the signer role."
+    },
+    {
+      "name": "OptionalInviteByRoleUuid",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Role UUID that may optionally invite this signer."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based signing order."
+    },
+    {
+      "name": "Phone",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional signer phone number for submission recipient editing."
+    },
+    {
+      "name": "Uuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable role identifier used by fields."
+    }
+  ],
+  "itemName": "SigningSubmitterRole"
+}

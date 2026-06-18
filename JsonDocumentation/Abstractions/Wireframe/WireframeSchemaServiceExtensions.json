@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "DI extension methods for the wireframe schema infrastructure. Use AddWireframeSchemas() in projects that reference only Tempo.Blazor.Abstractions (e.g. an API/MCP server project). The full AddTempoBlazor() call in the main Blazor package already calls this automatically.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/WireframeSchemaServiceExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddWireframeSchemas",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers and so that can be injected anywhere.",
+      "parameters": [
+        {
+          "name": "services",
+          "type": "this IServiceCollection"
+        }
+      ]
+    }
+  ],
+  "itemName": "WireframeSchemaServiceExtensions"
+}

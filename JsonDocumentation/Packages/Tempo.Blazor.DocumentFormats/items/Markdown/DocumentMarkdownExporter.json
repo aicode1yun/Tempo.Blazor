@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Markdown",
+  "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
+  "description": "Exports a to Markdown.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownExporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Export",
+      "kind": "Method",
+      "type": "string",
+      "description": "Exports a document to Markdown text.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentMarkdownExporter"
+}

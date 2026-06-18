@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Current viewport region in document coordinates.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Wireframe/TmWireframeMinimap.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "MinimapViewport"
+}

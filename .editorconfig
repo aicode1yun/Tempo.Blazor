@@ -1,0 +1,7 @@
+root = true
+
+[*.cs]
+# Keep Meziantou.Analyzer adoptable for the current baseline; violations remain visible as warnings.
+dotnet_diagnostic.MA0037.severity = warning
+dotnet_diagnostic.MA0039.severity = warning
+dotnet_diagnostic.MA0049.severity = warning

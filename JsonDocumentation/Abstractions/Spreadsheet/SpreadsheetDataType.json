@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Enums",
+  "description": "Specifies the data type of a spreadsheet cell value.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Enums/SpreadsheetDataType.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetDataType"
+}

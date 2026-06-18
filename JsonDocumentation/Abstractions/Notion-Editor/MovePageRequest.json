@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Request payload for moving a Notion page under another page or to the root.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/MovePageRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "MovePageRequest"
+}

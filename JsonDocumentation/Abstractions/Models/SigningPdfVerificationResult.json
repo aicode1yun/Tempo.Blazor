@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Provider-agnostic PDF verification result.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningPdfVerificationResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Checksum",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Document checksum, typically SHA-256."
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Verified file name."
+    },
+    {
+      "name": "Message",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional provider message."
+    },
+    {
+      "name": "Signatures",
+      "kind": "Property",
+      "type": "IReadOnlyList<SigningPdfSignatureInfo>",
+      "description": "Signatures found in the PDF."
+    },
+    {
+      "name": "Status",
+      "kind": "Property",
+      "type": "SigningPdfVerificationStatus",
+      "description": "Current verification status."
+    }
+  ],
+  "itemName": "SigningPdfVerificationResult"
+}

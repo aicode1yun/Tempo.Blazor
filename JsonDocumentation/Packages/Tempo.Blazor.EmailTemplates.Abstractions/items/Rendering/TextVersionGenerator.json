@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "Produces the plain-text alternative of a document: HTML stripped, links rendered as text (url), sections separated by blank lines, tables row-by-row.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/TextVersionGenerator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Generate",
+      "kind": "Method",
+      "type": "string",
+      "description": "Generates the plain-text version of the document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "TextVersionGenerator"
+}

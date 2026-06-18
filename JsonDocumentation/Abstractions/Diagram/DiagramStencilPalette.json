@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Data-driven palette grouping related stencils inside a stencil library.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilPalette.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "NameResourceKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Localization resource key used for the palette display name."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Display order within the library."
+    },
+    {
+      "name": "PaletteId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique palette identifier within the library."
+    },
+    {
+      "name": "Stencils",
+      "kind": "Property",
+      "type": "List<DiagramStencil>",
+      "description": "Stencils included in this palette."
+    }
+  ],
+  "itemName": "DiagramStencilPalette"
+}

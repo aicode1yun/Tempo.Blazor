@@ -1,0 +1,68 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Converts document object transforms to and from DrawingML transforms.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxTransformConverter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ReadFlip",
+      "kind": "Method",
+      "type": "DocumentObjectFlip?",
+      "description": "Reads horizontal and vertical flip flags from the first picture transform in a drawing.",
+      "parameters": [
+        {
+          "name": "drawing",
+          "type": "W.Drawing"
+        }
+      ]
+    },
+    {
+      "name": "ReadRotation",
+      "kind": "Method",
+      "type": "double",
+      "description": "Reads rotation in degrees from the first picture transform in a drawing.",
+      "parameters": [
+        {
+          "name": "drawing",
+          "type": "W.Drawing"
+        }
+      ]
+    },
+    {
+      "name": "ToRotation",
+      "kind": "Method",
+      "type": "Int32Value?",
+      "description": "Converts degrees to a DrawingML rotation value.",
+      "parameters": [
+        {
+          "name": "rotation",
+          "type": "double"
+        }
+      ]
+    },
+    {
+      "name": "ToTransform2D",
+      "kind": "Method",
+      "type": "A.Transform2D",
+      "description": "Creates an a:xfrm element with dimensions, rotation, and flip flags.",
+      "parameters": [
+        {
+          "name": "transform",
+          "type": "DocumentObjectTransform"
+        },
+        {
+          "name": "cx",
+          "type": "long"
+        },
+        {
+          "name": "cy",
+          "type": "long"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocxTransformConverter"
+}

@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Aligns selected elements along the specified axis (undoable).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Wireframe/Commands/AlignElementsCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "AlignElementsCommand"
+}

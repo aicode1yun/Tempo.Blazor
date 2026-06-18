@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableCell.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "NotionTableCell"
+    },
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "ColSpan",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "Html",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "IsMergeHidden",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "MergeOriginColumn",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "MergeOriginRow",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "RowSpan",
+      "kind": "Property",
+      "type": "int"
+    }
+  ],
+  "itemName": "NotionTableCell"
+}

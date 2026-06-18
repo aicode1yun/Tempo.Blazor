@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Helpers",
+  "description": "Extracts inline status chips from stored Notion editor HTML.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Helpers/StatusParser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExtractStatuses",
+      "kind": "Method",
+      "type": "IReadOnlyList<InlineStatus>",
+      "description": "Returns every inline status chip found in the supplied HTML fragment.",
+      "parameters": [
+        {
+          "name": "html",
+          "type": "string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "StatusParser"
+}

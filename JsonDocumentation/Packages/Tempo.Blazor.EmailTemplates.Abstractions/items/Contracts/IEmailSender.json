@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Contracts",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Contracts",
+  "description": "Delivery contract implemented by the host application (e.g. an SMTP sender).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Contracts/IEmailSender.cs",
+  "documentationStatus": "generated",
+  "itemName": "IEmailSender"
+}

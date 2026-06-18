@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Field a orders its results by.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/DocumentLibrarySortField.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentLibrarySortField"
+}

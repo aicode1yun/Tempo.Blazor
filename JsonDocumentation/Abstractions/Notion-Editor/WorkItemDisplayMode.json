@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Enums",
+  "description": "Display variants for external work-item blocks.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Enums/WorkItemDisplayMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "WorkItemDisplayMode"
+}

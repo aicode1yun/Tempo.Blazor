@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttResourceCalendar.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AssigneeId",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "DaysOff",
+      "kind": "Property",
+      "type": "IReadOnlyList<DateTime>"
+    },
+    {
+      "name": "VacationDays",
+      "kind": "Property",
+      "type": "IReadOnlyList<DateRange>"
+    }
+  ],
+  "itemName": "GanttResourceCalendar"
+}

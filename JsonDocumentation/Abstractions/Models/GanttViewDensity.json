@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Controls row height density in the Gantt grid.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttViewDensity.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttViewDensity"
+}

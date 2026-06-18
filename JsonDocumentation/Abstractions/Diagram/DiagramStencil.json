@@ -1,0 +1,168 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A declarative stencil definition used to create diagram nodes.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencil.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Category",
+      "kind": "Property",
+      "type": "string",
+      "description": "Category used for grouping in the toolbox (e.g. \"UML\", \"BPMN\", \"General\")."
+    },
+    {
+      "name": "ConnectionPoints",
+      "kind": "Property",
+      "type": "List<DiagramStencilConnectionPoint>",
+      "description": "Predefined fixed connection points on the stencil perimeter, draw.io style. When populated, these render as hover dots and create edges with instead of floating port snapping."
+    },
+    {
+      "name": "DefaultData",
+      "kind": "Property",
+      "type": "Dictionary<string, object>",
+      "description": "Default data values for nodes created from this stencil."
+    },
+    {
+      "name": "DefaultHeight",
+      "kind": "Property",
+      "type": "double",
+      "description": "Default height when dropped onto the canvas."
+    },
+    {
+      "name": "DefaultWidth",
+      "kind": "Property",
+      "type": "double",
+      "description": "Default width when dropped onto the canvas."
+    },
+    {
+      "name": "EdgeDefaults",
+      "kind": "Property",
+      "type": "DiagramEdgeStencilDefaults?",
+      "description": "Default edge values when is ."
+    },
+    {
+      "name": "ExternalAssetSourceId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional external asset source identifier. Built-in Tempo stencils leave this empty."
+    },
+    {
+      "name": "IconSvg",
+      "kind": "Property",
+      "type": "string",
+      "description": "Compact SVG icon for the toolbox."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique stencil identifier (e.g. \"uml.class\")."
+    },
+    {
+      "name": "IsCollapsible",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether nodes created from this stencil support collapse/expand."
+    },
+    {
+      "name": "IsSwimlane",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether nodes created from this stencil act as swimlane containers."
+    },
+    {
+      "name": "IsTable",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether nodes created from this stencil act as tables."
+    },
+    {
+      "name": "Keywords",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "Additional search keywords for toolbox discovery."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "DiagramStencilKind",
+      "description": "Kind of diagram element created by this stencil."
+    },
+    {
+      "name": "Layout",
+      "kind": "Property",
+      "type": "DiagramStencilLayout",
+      "description": "Declarative layout defining the visual appearance."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable name displayed in the toolbox."
+    },
+    {
+      "name": "NameResourceKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Localization resource key used for the stencil display name."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Display order within the palette."
+    },
+    {
+      "name": "Origin",
+      "kind": "Property",
+      "type": "DiagramStencilOrigin",
+      "description": "Origin metadata used to keep built-in stencil libraries license-safe."
+    },
+    {
+      "name": "PaletteId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Logical palette identifier within the set (e.g. \"uml25.class\")."
+    },
+    {
+      "name": "PaletteNameResourceKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Localization resource key used for the owning palette display name."
+    },
+    {
+      "name": "PaletteOrder",
+      "kind": "Property",
+      "type": "int",
+      "description": "Display order of the owning palette within the set."
+    },
+    {
+      "name": "Ports",
+      "kind": "Property",
+      "type": "List<DiagramStencilPortDef>",
+      "description": "Default ports generated for nodes created from this stencil."
+    },
+    {
+      "name": "SetId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Logical stencil set identifier (e.g. \"uml25\", \"bpmn2\")."
+    },
+    {
+      "name": "SetNameResourceKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Localization resource key used for the owning set display name."
+    },
+    {
+      "name": "Tags",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "Search tags for toolbox discovery."
+    }
+  ],
+  "itemName": "DiagramStencil"
+}

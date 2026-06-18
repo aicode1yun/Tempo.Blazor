@@ -1,0 +1,233 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Collaboration",
+    "title": "Tempo.Blazor.Collaboration",
+    "description": "SignalR collaboration providers for Tempo.Blazor document editor abstractions.",
+    "authors": "Tempo",
+    "targetFrameworks": [
+      "net10.0"
+    ],
+    "tags": "blazor;documents;collaboration;signalr;document-editor",
+    "repositoryUrl": "https://github.com/tempo/tempo-blazor",
+    "projectUrl": null,
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Collaboration"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.SignalR.Client",
+        "version": "10.0.5"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.DocumentEditor.Services",
+      "Tempo.Blazor.DocumentLibrary.Collaboration"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Collaboration",
+    "overview": "SignalR collaboration providers for Tempo.Blazor document editor abstractions.",
+    "targetFramework": "net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Collaboration"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNetCore.SignalR.Client",
+        "version": "10.0.5"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "SignalRDocumentCollaborationProvider",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "SignalR-backed realtime document collaboration provider.",
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRDocumentCollaborationProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BroadcastCursor",
+          "kind": "Field",
+          "type": "string",
+          "description": "Broadcasts a local cursor."
+        },
+        {
+          "name": "BroadcastOperationBatch",
+          "kind": "Field",
+          "type": "string",
+          "description": "Broadcasts a local operation batch."
+        },
+        {
+          "name": "GetCursors",
+          "kind": "Field",
+          "type": "string",
+          "description": "Gets currently active cursors for reconnect recovery."
+        },
+        {
+          "name": "GetOperationBatches",
+          "kind": "Field",
+          "type": "string",
+          "description": "Gets missed operation batches for reconnect recovery."
+        },
+        {
+          "name": "JoinDocument",
+          "kind": "Field",
+          "type": "string",
+          "description": "Joins a document collaboration group."
+        },
+        {
+          "name": "LeaveDocument",
+          "kind": "Field",
+          "type": "string",
+          "description": "Leaves a document collaboration group."
+        },
+        {
+          "name": "RemoteCursorReceived",
+          "kind": "Field",
+          "type": "string",
+          "description": "Client event carrying a remote cursor."
+        },
+        {
+          "name": "RemoteOperationBatchReceived",
+          "kind": "Field",
+          "type": "string",
+          "description": "Client event carrying a remote operation batch."
+        },
+        {
+          "name": "BroadcastCursorAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "cursor",
+              "type": "DocumentCollaborationCursor"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        },
+        {
+          "name": "DisposeAsync",
+          "kind": "Method",
+          "type": "ValueTask"
+        },
+        {
+          "name": "LeaveAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "sessionId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "SignalRDocumentCollaborationProvider.HubMethods",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentEditor.Services",
+      "description": "Hub method names used by the provider.",
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRDocumentCollaborationProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "SignalRTempoDocumentChangeNotifier",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentLibrary.Collaboration",
+      "description": "SignalR-backed . A client subscribes to the specific documents it displays; the server broadcasts to the matching group so open editors and embedded blocks refresh without polling.",
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRTempoDocumentChangeNotifier.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "JoinDocument",
+          "kind": "Field",
+          "type": "string",
+          "description": "Joins the group for a specific document."
+        },
+        {
+          "name": "LeaveDocument",
+          "kind": "Field",
+          "type": "string",
+          "description": "Leaves the group for a specific document."
+        },
+        {
+          "name": "RemoteDocumentChanged",
+          "kind": "Field",
+          "type": "string",
+          "description": "Client event carrying a remote document change."
+        },
+        {
+          "name": "DisposeAsync",
+          "kind": "Method",
+          "type": "ValueTask"
+        },
+        {
+          "name": "GroupName",
+          "kind": "Method",
+          "type": "string",
+          "description": "The SignalR group name for a given document.",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "TempoDocumentKind"
+            },
+            {
+              "name": "documentId",
+              "type": "Guid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "SignalRTempoDocumentChangeNotifier.HubMethods",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentLibrary.Collaboration",
+      "description": "Hub method and group-name conventions shared by the client and the server hub.",
+      "packageId": "Tempo.Blazor.Collaboration",
+      "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRTempoDocumentChangeNotifier.cs",
+      "documentationStatus": "merged"
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Register SignalR document collaboration",
+      "category": "Setup",
+      "code": "services.AddSingleton<IDocumentCollaborationRealtimeProvider>(_ => new SignalRDocumentCollaborationProvider(hubUrl));"
+    }
+  ],
+  "summary": {
+    "itemCount": 4,
+    "manualItemCount": 4,
+    "generatedItemCount": 4,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 4
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Pickers",
+  "description": "An event displayed on the calendar view.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Pickers/CalendarEvent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AllDay",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the event spans the entire day."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Color indicator (CSS color value)."
+    },
+    {
+      "name": "Date",
+      "kind": "Property",
+      "type": "required DateOnly",
+      "description": "Date of the event."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Event title."
+    }
+  ],
+  "itemName": "CalendarEvent"
+}

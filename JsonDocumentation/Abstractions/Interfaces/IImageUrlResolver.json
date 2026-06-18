@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Strategy for resolving the display URL of a full-size image on demand. Called FRESH for every image when the lightbox navigates to it. IMPORTANT: Do NOT cache results — tickets are single-use and will fail on reuse. Built-in implementations (Tempo.Blazor.Models): - DirectImageUrlResolver : imageId IS the URL (default when no resolver provided) - FuncImageUrlResolver : wraps a Func<string, Task<string>> lambda Usage factory: ImageUrlResolvers.Direct() / ImageUrlResolvers.FromFunc(...)",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IImageUrlResolver.cs",
+  "documentationStatus": "generated",
+  "itemName": "IImageUrlResolver"
+}

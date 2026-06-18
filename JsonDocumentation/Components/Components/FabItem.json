@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Buttons",
+  "description": "Represents an item in the floating action button speed dial menu.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Buttons/FabItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "FabItem"
+}

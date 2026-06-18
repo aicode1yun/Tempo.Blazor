@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Data for a single cell inside a diagram table node.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramTableCellData.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColSpan",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of columns this cell spans."
+    },
+    {
+      "name": "Column",
+      "kind": "Property",
+      "type": "int",
+      "description": "Column index of the cell."
+    },
+    {
+      "name": "Row",
+      "kind": "Property",
+      "type": "int",
+      "description": "Row index of the cell."
+    },
+    {
+      "name": "RowSpan",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of rows this cell spans."
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "DiagramTableCellStyle?",
+      "description": "Visual style overrides for this cell."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "Text content of the cell."
+    }
+  ],
+  "itemName": "DiagramTableCellData"
+}

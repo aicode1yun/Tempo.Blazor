@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/SelectFieldConfig.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "IReadOnlyList<SelectFieldOption>"
+    }
+  ],
+  "itemName": "SelectFieldConfig"
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "description": "Describes a modeling element dropped onto a diagram preview.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Modeling/ModelingNodeDroppedEventArgs.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Element",
+      "kind": "Property",
+      "type": "required ModelingElementDto",
+      "description": "Existing semantic model element reused by the new diagram node."
+    },
+    {
+      "name": "NodeId",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Identifier of the diagram node created for this dropped occurrence."
+    },
+    {
+      "name": "Point",
+      "kind": "Property",
+      "type": "required DiagramPoint",
+      "description": "Drop point in diagram document coordinates."
+    }
+  ],
+  "itemName": "ModelingNodeDroppedEventArgs"
+}

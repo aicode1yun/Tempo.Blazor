@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PagedResult.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "T",
+      "description": "Generic type parameter T."
+    }
+  ],
+  "members": [
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IReadOnlyList<T>"
+    },
+    {
+      "name": "Page",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "PageSize",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "TotalCount",
+      "kind": "Property",
+      "type": "int"
+    }
+  ],
+  "itemName": "Tempo.Blazor.NotionEditor.Models.PagedResult<T>"
+}

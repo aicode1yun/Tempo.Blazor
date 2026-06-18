@@ -1,0 +1,21 @@
+{
+  "itemName": "TmNotionDiagramBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDiagramBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/TempoBlocks/TmNotionDiagramBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
+  ],
+  "parameters": [
+    {
+      "name": "OnContentSaved",
+      "type": "EventCallback<DiagramBlockContent>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Tempo Blocks"
+}

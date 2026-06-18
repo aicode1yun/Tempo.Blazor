@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Request to join a document collaboration session.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentOperationalModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentCollaborationJoinRequest"
+}

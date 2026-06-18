@@ -1,0 +1,36 @@
+{
+  "itemName": "TmNotionNotificationCenter",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionNotificationCenter Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmNotionNotificationCenter.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor"
+  ],
+  "parameters": [
+    {
+      "name": "CurrentUserId",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"demo\"",
+      "description": "Additional CSS class on the notification center root."
+    },
+    {
+      "name": "OnDropdownOpenChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "User whose notifications should be shown in the center."
+    },
+    {
+      "name": "PollInterval",
+      "type": "TimeSpan",
+      "isRequired": false,
+      "default": "TimeSpan.FromMilliseconds(2500)",
+      "description": "Raised whenever the dropdown is opened or closed."
+    }
+  ],
+  "subcategory": "UI"
+}

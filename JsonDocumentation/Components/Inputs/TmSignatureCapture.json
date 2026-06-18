@@ -1,0 +1,166 @@
+{
+  "itemName": "TmSignatureCapture",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "Captures signatures by drawing, typing, or uploading an image.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCapture.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "BackgroundColor",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Canvas height used for SVG export."
+    },
+    {
+      "name": "Changed",
+      "type": "EventCallback<TmSignatureCaptureChangedEventArgs>",
+      "isRequired": false,
+      "description": "Callback invoked when the captured signature value changes."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when QR/mobile signing is requested."
+    },
+    {
+      "name": "Confirmed",
+      "type": "EventCallback<TmSignatureCaptureChangedEventArgs>",
+      "isRequired": false,
+      "description": "Whether to show an explicit confirmation button for the current signature."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the signature is required."
+    },
+    {
+      "name": "ExportFormat",
+      "type": "TmSignatureCaptureExportFormat",
+      "isRequired": false,
+      "default": "TmSignatureCaptureExportFormat.Svg",
+      "description": "Capture modes shown in the mode selector."
+    },
+    {
+      "name": "Height",
+      "type": "int",
+      "isRequired": false,
+      "default": "180",
+      "description": "Canvas width used for SVG export."
+    },
+    {
+      "name": "Initials",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the component is disabled."
+    },
+    {
+      "name": "Mode",
+      "type": "TmSignatureCaptureMode",
+      "isRequired": false,
+      "default": "TmSignatureCaptureMode.Draw",
+      "description": "Callback invoked when the signature value or signing metadata changes."
+    },
+    {
+      "name": "ModeChanged",
+      "type": "EventCallback<TmSignatureCaptureMode>",
+      "isRequired": false,
+      "description": "Current capture mode. Defaults to draw mode."
+    },
+    {
+      "name": "Modes",
+      "type": "IReadOnlyList<TmSignatureCaptureMode>?",
+      "isRequired": false,
+      "description": "Callback invoked when the active capture mode changes."
+    },
+    {
+      "name": "OnQrSigningRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Callback invoked when the upload flow should be opened."
+    },
+    {
+      "name": "OnUploadRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Previously saved signature value that can be reused."
+    },
+    {
+      "name": "PreviousValue",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the current signature is explicitly confirmed."
+    },
+    {
+      "name": "Required",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Export format used when drawing signatures. Defaults to SVG."
+    },
+    {
+      "name": "RequireReason",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Optional SVG background color."
+    },
+    {
+      "name": "ShowConfirmButton",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show a QR/mobile signing button."
+    },
+    {
+      "name": "ShowQrSigningButton",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show the remember signature checkbox."
+    },
+    {
+      "name": "ShowRememberSignature",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether a reason input should be shown."
+    },
+    {
+      "name": "StrokeColor",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"currentColor\"",
+      "description": "Typed signature font key. Supported values are script, serif, and sans."
+    },
+    {
+      "name": "StrokeWidth",
+      "type": "double",
+      "isRequired": false,
+      "default": "2.4",
+      "description": "Stroke color used for draw mode. Defaults to the current text color."
+    },
+    {
+      "name": "TypedFont",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"script\"",
+      "description": "Whether typed mode should collect initials instead of a full signature."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Captured signature value."
+    },
+    {
+      "name": "Width",
+      "type": "int",
+      "isRequired": false,
+      "default": "520",
+      "description": "Stroke width used for draw mode."
+    }
+  ]
+}

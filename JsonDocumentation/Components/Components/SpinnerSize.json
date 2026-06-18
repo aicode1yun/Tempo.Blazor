@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Feedback",
+  "description": "Display sizes for TmSpinner.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Feedback/SpinnerSize.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpinnerSize"
+}

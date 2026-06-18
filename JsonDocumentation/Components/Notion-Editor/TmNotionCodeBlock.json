@@ -1,0 +1,45 @@
+{
+  "itemName": "TmNotionCodeBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Self-contained code block with language selector, textarea editor, copy button, and optional caption. Uses a dedicated JS keyboard handler (initCodeKeyboardHandler) that handles Tab/Shift+Tab indentation and Backspace-on-empty — Tab does NOT move focus like other text blocks.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Text",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Text/TmNotionCodeBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Text"
+  ],
+  "parameters": [
+    {
+      "name": "OnCaptionSaved",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fired when the user selects a new language. Arg = language name (null → plain text)."
+    },
+    {
+      "name": "OnCodeSaved",
+      "type": "EventCallback<string>",
+      "isRequired": false
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired on caption blur when the caption has changed. Arg = new caption (null if empty)."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when Backspace is pressed in an empty code block."
+    },
+    {
+      "name": "OnLanguageChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fired on blur when the code text has changed. Arg = new code string."
+    }
+  ],
+  "subcategory": "Blocks / Text"
+}

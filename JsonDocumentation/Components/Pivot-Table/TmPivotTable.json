@@ -1,0 +1,174 @@
+{
+  "itemName": "TmPivotTable",
+  "kind": "Component",
+  "category": "Pivot Table",
+  "description": "A fully-featured pivot table component that transforms flat data into a matrix view. Supports multi-level row and column dimensions, multiple aggregations, filters, and totals.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.PivotTable",
+  "sourcePath": "src/Tempo.Blazor/Components/PivotTable/TmPivotTable.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.PivotTable"
+  ],
+  "parameters": [
+    {
+      "name": "AllowDragDrop",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, shows a checkbox tree instead of the Unused zone in the configuration panel. Default: false."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Custom template for column dimension header cells."
+    },
+    {
+      "name": "ColumnFieldKeys",
+      "type": "List<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Keys of fields placed in the row area."
+    },
+    {
+      "name": "ColumnHeadersWidth",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Heading shown in the empty state when no data is available."
+    },
+    {
+      "name": "ColumnHeaderTemplate",
+      "type": "RenderFragment<PivotColumnHeaderContext>?",
+      "isRequired": false,
+      "description": "Custom template for row dimension header cells."
+    },
+    {
+      "name": "DataCellTemplate",
+      "type": "RenderFragment<PivotCellContext>?",
+      "isRequired": false,
+      "description": "Fires after the pivot data is refreshed or recomputed."
+    },
+    {
+      "name": "DataProvider",
+      "type": "IPivotDataProvider<TItem>?",
+      "isRequired": false,
+      "description": "Source data items for in-memory pivot transformation."
+    },
+    {
+      "name": "DataProviderType",
+      "type": "PivotDataProviderType",
+      "isRequired": false,
+      "default": "PivotDataProviderType.Client",
+      "description": "XMLA (OLAP) data provider. Used when is ."
+    },
+    {
+      "name": "EmptyTitle",
+      "type": "string?",
+      "isRequired": false,
+      "description": "When true, shows a loading spinner instead of the table."
+    },
+    {
+      "name": "Fields",
+      "type": "List<PivotField<TItem>>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Determines which data provider backs the pivot table. Default: Client."
+    },
+    {
+      "name": "FilterFields",
+      "type": "Dictionary<string, List<object?>>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Value field configurations for the data area."
+    },
+    {
+      "name": "Height",
+      "type": "string?",
+      "isRequired": false,
+      "description": "CSS width applied to row dimension header cells (e.g. \"120px\", \"15%\")."
+    },
+    {
+      "name": "IsLoading",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true, enables drag-and-drop in the configuration panel. Default: true."
+    },
+    {
+      "name": "OnConfigurationChanged",
+      "type": "EventCallback<PivotTableConfiguration>",
+      "isRequired": false,
+      "description": "CSS width applied to the wrapper div (e.g. \"100%\", \"800px\")."
+    },
+    {
+      "name": "OnDataChanged",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when the pivot configuration changes."
+    },
+    {
+      "name": "RowFieldKeys",
+      "type": "List<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "All available field definitions for the pivot table."
+    },
+    {
+      "name": "RowHeadersWidth",
+      "type": "string?",
+      "isRequired": false,
+      "description": "CSS width applied to column header cells (e.g. \"120px\", \"15%\")."
+    },
+    {
+      "name": "RowHeaderTemplate",
+      "type": "RenderFragment<PivotRowHeaderContext>?",
+      "isRequired": false,
+      "description": "Custom template for data cells (inner matrix values)."
+    },
+    {
+      "name": "ShowConfigurationPanel",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Filter field configurations. Key = field key, Value = allowed values."
+    },
+    {
+      "name": "ShowFieldTree",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true, shows the filter bar. Default: true."
+    },
+    {
+      "name": "ShowFilterBar",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, shows the configuration panel. Default: true."
+    },
+    {
+      "name": "ValueFields",
+      "type": "List<PivotValueFieldConfiguration>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Keys of fields placed in the column area."
+    },
+    {
+      "name": "Width",
+      "type": "string?",
+      "isRequired": false,
+      "description": "CSS height applied to the wrapper div (e.g. \"400px\", \"60vh\")."
+    },
+    {
+      "name": "XmlaDataProvider",
+      "type": "IXmlaPivotDataProvider?",
+      "isRequired": false,
+      "description": "Server-side data provider. When set, overrides Items and calls GetPivotDataAsync."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ]
+}

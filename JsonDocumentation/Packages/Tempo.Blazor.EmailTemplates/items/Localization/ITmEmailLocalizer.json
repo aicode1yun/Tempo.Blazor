@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Localization",
+  "namespace": "Tempo.Blazor.EmailTemplates.Localization",
+  "description": "Localization accessor for the email template editor UI. Backed by IStringLocalizer<TmEmailResources>; hosts may replace it to fully control strings.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Localization/ITmEmailLocalizer.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITmEmailLocalizer"
+}

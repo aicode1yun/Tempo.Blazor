@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Feedback",
+  "description": "Visual variant for the alert component.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Feedback/AlertEnums.cs",
+  "documentationStatus": "generated",
+  "itemName": "AlertVariant"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Source kind for a document image.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentImageSource"
+}

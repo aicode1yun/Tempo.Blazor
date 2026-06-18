@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Enums",
+  "description": "Controls the display and interaction mode of the component.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Enums/SpreadsheetMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetMode"
+}

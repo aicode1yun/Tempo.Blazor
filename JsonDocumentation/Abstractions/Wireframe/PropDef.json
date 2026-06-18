@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "description": "Describes a single property of a wireframe component. Drives rendering in the Properties Panel.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/PropDef.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Category",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Groups related props under a collapsible section header in the Properties Panel. E.g. \"Content\", \"Appearance\", \"Behavior\"."
+    },
+    {
+      "name": "Default",
+      "kind": "Property",
+      "type": "object?",
+      "description": "Default value applied when a new element is created."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "required string",
+      "description": "Human-readable label shown in the Properties Panel."
+    },
+    {
+      "name": "IsRequired",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true the Properties Panel marks this field with an asterisk."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "required string",
+      "description": "camelCase property key – matches the key in ."
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "string[]?",
+      "description": "Allowed values for properties."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "PropType",
+      "description": "Data type that determines which input control is rendered."
+    },
+    {
+      "name": "ValidationRegex",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional regex validated in the Properties Panel (String type only)."
+    }
+  ],
+  "itemName": "PropDef"
+}

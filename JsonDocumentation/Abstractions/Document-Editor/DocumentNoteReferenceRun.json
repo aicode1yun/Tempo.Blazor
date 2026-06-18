@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Reference to a footnote or endnote.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentInline.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentNoteReferenceRun"
+}

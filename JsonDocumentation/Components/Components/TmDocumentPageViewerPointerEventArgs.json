@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "description": "Pointer event data for a document page viewer interaction.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmDocumentPageViewerPointerEventArgs.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmDocumentPageViewerPointerEventArgs"
+}

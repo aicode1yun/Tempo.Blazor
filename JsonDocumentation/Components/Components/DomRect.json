@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
+  "description": "Simple DOMRect wrapper for JS interop.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Page/TmNotionPage.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "DomRect"
+}

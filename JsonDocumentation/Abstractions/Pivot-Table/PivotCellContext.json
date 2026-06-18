@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Context passed to . Contains the aggregated cell value and its position in the pivot matrix.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotCellContext.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColumnFieldValues",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Display values of the column dimension keys for this cell."
+    },
+    {
+      "name": "ColumnIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based column index of the leaf column."
+    },
+    {
+      "name": "FormattedValue",
+      "kind": "Property",
+      "type": "string",
+      "description": "The formatted string representation of the value."
+    },
+    {
+      "name": "IsNull",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the cell has no data."
+    },
+    {
+      "name": "RowFieldValues",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Display values of the row dimension keys for this cell."
+    },
+    {
+      "name": "RowIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based row index of the leaf row."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "object?",
+      "description": "The raw aggregated value (may be null)."
+    },
+    {
+      "name": "ValueFieldIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based index of the value field (measure) within the leaf column."
+    }
+  ],
+  "itemName": "PivotCellContext"
+}

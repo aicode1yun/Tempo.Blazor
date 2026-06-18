@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Display mode for the file manager content area.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/FileManagerViewMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "FileManagerViewMode"
+}

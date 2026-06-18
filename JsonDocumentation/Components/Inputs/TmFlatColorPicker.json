@@ -1,0 +1,89 @@
+{
+  "itemName": "TmFlatColorPicker",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A flat color picker that combines the color gradient, palette, and preview in a single panel.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmFlatColorPicker.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether to show the clear button in the palette. Default true."
+    },
+    {
+      "name": "Format",
+      "type": "ColorFormat",
+      "isRequired": false,
+      "default": "ColorFormat.Hex",
+      "description": "Event fired when the color value changes."
+    },
+    {
+      "name": "PaletteColors",
+      "type": "IReadOnlyList<string>?",
+      "isRequired": false,
+      "description": "Whether to show the color palette. Default true."
+    },
+    {
+      "name": "PaletteColumns",
+      "type": "int",
+      "isRequired": false,
+      "default": "8",
+      "description": "Predefined colors to display in the palette."
+    },
+    {
+      "name": "ShowAlpha",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Output format. Default is ."
+    },
+    {
+      "name": "ShowClearButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the preview row. Default true."
+    },
+    {
+      "name": "ShowGradient",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the alpha channel. Default true."
+    },
+    {
+      "name": "ShowHexInput",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the gradient color area. Default true."
+    },
+    {
+      "name": "ShowPalette",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether to show the hex color input. Default true."
+    },
+    {
+      "name": "ShowPreview",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Number of columns in the palette grid. Default 8."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "The current color value."
+    }
+  ]
+}

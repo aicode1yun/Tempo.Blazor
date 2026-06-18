@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.EmailTemplates",
+  "description": "DI registration for the Tempo.Blazor email template editor UI.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "ServiceCollectionExtensions"
+}

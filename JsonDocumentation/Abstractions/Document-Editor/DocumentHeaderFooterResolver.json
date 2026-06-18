@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Resolves and creates section-scoped document headers and footers.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentHeaderFooterResolver.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "EnsurePrimaryHeadersFooters",
+      "kind": "Method",
+      "type": "void",
+      "description": "Ensures every document section has editable primary header and footer definitions.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    },
+    {
+      "name": "FindById",
+      "kind": "Method",
+      "type": "DocumentHeaderFooter?",
+      "description": "Finds a header/footer by id.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "headerFooterId",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "SetDifferentFirstPage",
+      "kind": "Method",
+      "type": "void",
+      "description": "Sets different first-page mode and creates first-page header/footer targets when enabled.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "enabled",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "SetDifferentOddAndEvenPages",
+      "kind": "Method",
+      "type": "void",
+      "description": "Sets different odd/even mode and creates odd/even header/footer targets when enabled.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "enabled",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentHeaderFooterResolver"
+}

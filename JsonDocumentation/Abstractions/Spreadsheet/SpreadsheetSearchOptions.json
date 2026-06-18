@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Options controlling a spreadsheet find/replace operation, mirroring the OnlyOffice search panel.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetSearchOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "MatchCase",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the search is case sensitive."
+    },
+    {
+      "name": "Query",
+      "kind": "Property",
+      "type": "string",
+      "description": "The text to search for. An empty query yields no hits."
+    },
+    {
+      "name": "Scope",
+      "kind": "Property",
+      "type": "SpreadsheetSearchScope",
+      "description": "Whether to search the active sheet only or the whole workbook."
+    },
+    {
+      "name": "SearchIn",
+      "kind": "Property",
+      "type": "SpreadsheetSearchIn",
+      "description": "Whether to search displayed values or formulas."
+    },
+    {
+      "name": "WholeCell",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the entire cell text must equal the query (rather than a substring match)."
+    }
+  ],
+  "itemName": "SpreadsheetSearchOptions"
+}

@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Compares document snapshots without relying on version history.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentComparisonService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Compare",
+      "kind": "Method",
+      "type": "DocumentCompareResult",
+      "description": "Compares two document snapshots.",
+      "parameters": [
+        {
+          "name": "baseDocument",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "compareDocument",
+          "type": "DocumentEditorDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentComparisonService"
+}

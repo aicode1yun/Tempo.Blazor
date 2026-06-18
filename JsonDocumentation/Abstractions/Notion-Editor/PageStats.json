@@ -1,0 +1,47 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Immutable reading statistics for a Notion page.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageStats.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Calculate",
+      "kind": "Method",
+      "type": "PageStats",
+      "description": "Calculates page statistics from HTML or plain-text fragments.",
+      "parameters": [
+        {
+          "name": "fragments",
+          "type": "IEnumerable<string?>"
+        },
+        {
+          "name": "wordsPerMinute",
+          "type": "int",
+          "default": "DefaultWordsPerMinute"
+        }
+      ]
+    },
+    {
+      "name": "CountWords",
+      "kind": "Method",
+      "type": "int",
+      "description": "Counts words in a single HTML or plain-text fragment.",
+      "parameters": [
+        {
+          "name": "htmlOrText",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "Empty",
+      "kind": "Property",
+      "type": "static PageStats",
+      "description": "Returns zero page statistics."
+    }
+  ],
+  "itemName": "PageStats"
+}

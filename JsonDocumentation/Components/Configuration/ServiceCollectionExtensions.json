@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Extension methods for registering Tempo.Blazor services.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Configuration/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddInMemoryNotifications",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Replaces the default with so notifications are kept in memory. Also replaces with the same store so the badge count is live. Use this in demo / test applications where you want to see notifications without a real backend.",
+      "parameters": [
+        {
+          "name": "services",
+          "type": "this IServiceCollection"
+        }
+      ]
+    },
+    {
+      "name": "AddTempoBlazor",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers all required Tempo.Blazor services. : Singleton (stateless, thread-safe, backed by .resx) : Scoped (per-circuit in Server mode, per-tab in WASM) : Scoped (per-circuit in Server mode, per-tab in WASM) : Singleton, pre-loaded with Add this call to your Blazor Program.cs: builder.Services.AddTempoBlazor(); To add custom wireframe components, call after AddTempoBlazor(): builder.Services.AddTempoBlazor(); builder.Services.AddWireframeComponentProvider<MyCustomProvider>(); To override the built-in localization with your own strings, register a custom ITmLocalizer AFTER this call: builder.Services.AddTempoBlazor(); builder.Services.AddSingleton<ITmLocalizer, MyCustomTmLocalizer>(); To support Czech localization, configure culture in Program.cs: var culture = new System.Globalization.CultureInfo(\"cs\"); System.Globalization.CultureInfo.DefaultThreadCurrentCulture = culture; System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;",
+      "parameters": [
+        {
+          "name": "services",
+          "type": "this IServiceCollection"
+        }
+      ]
+    }
+  ],
+  "itemName": "ServiceCollectionExtensions"
+}

@@ -1,0 +1,78 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "description": "A single page within a . Each page has its own canvas dimensions, elements, and connectors.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframePage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "EnsureDefaultLayer",
+      "kind": "Method",
+      "type": "void",
+      "description": "Ensures the page has at least a default layer."
+    },
+    {
+      "name": "ActiveLayerId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Id of the layer where newly created elements are placed."
+    },
+    {
+      "name": "Connectors",
+      "kind": "Property",
+      "type": "List<WireframeConnector>",
+      "description": "Connectors (arrows) between elements on this page."
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "UTC timestamp of page creation."
+    },
+    {
+      "name": "Elements",
+      "kind": "Property",
+      "type": "List<WireframeElement>",
+      "description": "All elements placed on this page's canvas."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double",
+      "description": "Canvas height in pixels."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier (short Guid, e.g. \"p3f8c21b\")."
+    },
+    {
+      "name": "Layers",
+      "kind": "Property",
+      "type": "List<WireframeLayer>",
+      "description": "Layers on this page. Always contains at least a default layer."
+    },
+    {
+      "name": "ModifiedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "UTC timestamp of last modification."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable page name shown in the page tab."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double",
+      "description": "Canvas width in pixels."
+    }
+  ],
+  "itemName": "WireframePage"
+}

@@ -1,0 +1,21 @@
+{
+  "itemName": "TmNotionAudioBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionAudioBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Media",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Media/TmNotionAudioBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Media"
+  ],
+  "parameters": [
+    {
+      "name": "OnMediaSet",
+      "type": "EventCallback<(string? FileId, string? Url)>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Media"
+}

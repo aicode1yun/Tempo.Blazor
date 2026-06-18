@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Generates an ER diagram from parsed SQL table definitions.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Services/SqlToErDiagramGenerator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Generate",
+      "kind": "Method",
+      "type": "DiagramDocument",
+      "parameters": [
+        {
+          "name": "tables",
+          "type": "List<SqlTableDefinition>"
+        }
+      ]
+    }
+  ],
+  "itemName": "SqlToErDiagramGenerator"
+}

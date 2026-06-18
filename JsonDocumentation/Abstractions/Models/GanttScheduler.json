@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Schedules Gantt tasks respecting all 4 dependency types and lag/lead. Uses Kahn's topological sort to detect cycles and process in dependency order.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttScheduler.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Schedule",
+      "kind": "Method",
+      "type": "void",
+      "description": "Adjusts task start/end dates so all dependency constraints are satisfied. Modifies in place.",
+      "parameters": [
+        {
+          "name": "tasks",
+          "type": "IList<GanttTask>"
+        },
+        {
+          "name": "dependencies",
+          "type": "IEnumerable<GanttDependency>"
+        }
+      ]
+    }
+  ],
+  "itemName": "GanttScheduler"
+}

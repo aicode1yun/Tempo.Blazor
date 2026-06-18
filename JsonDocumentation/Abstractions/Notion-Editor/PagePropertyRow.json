@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PagePropertyRow.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "ValueHtml",
+      "kind": "Property",
+      "type": "string?"
+    }
+  ],
+  "itemName": "PagePropertyRow"
+}

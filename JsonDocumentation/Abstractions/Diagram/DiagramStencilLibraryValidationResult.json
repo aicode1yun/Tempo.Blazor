@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Validation result for a data-driven diagram stencil library.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilLibraryValidationResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Errors",
+      "kind": "Property",
+      "type": "List<DiagramStencilLibraryValidationError>",
+      "description": "Validation errors. Empty means the library is valid."
+    }
+  ],
+  "itemName": "DiagramStencilLibraryValidationResult"
+}

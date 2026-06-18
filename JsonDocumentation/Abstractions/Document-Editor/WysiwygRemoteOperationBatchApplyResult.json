@@ -1,0 +1,77 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Result returned by the JS-owned WYSIWYG remote operation batch patcher.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygRemoteOperationBatchApplyResult.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Failed",
+      "kind": "Method",
+      "type": "WysiwygRemoteOperationBatchApplyResult",
+      "description": "Creates a failed result for a specific operation or bridge failure.",
+      "parameters": [
+        {
+          "name": "operationIds",
+          "type": "params string[]"
+        }
+      ]
+    },
+    {
+      "name": "Ok",
+      "kind": "Method",
+      "type": "WysiwygRemoteOperationBatchApplyResult",
+      "description": "Creates a successful result.",
+      "parameters": [
+        {
+          "name": "applied",
+          "type": "int",
+          "default": "0"
+        },
+        {
+          "name": "skipped",
+          "type": "int",
+          "default": "0"
+        },
+        {
+          "name": "queued",
+          "type": "int",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "name": "Applied",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of operations applied to the live DOM."
+    },
+    {
+      "name": "FailedOperationIds",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "Operation ids that could not be applied."
+    },
+    {
+      "name": "Queued",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of operations queued because the editor is still inside a local input transaction."
+    },
+    {
+      "name": "Skipped",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of operations skipped because their operation id was already applied."
+    },
+    {
+      "name": "Success",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether all operations in the batch were applied or skipped as already applied."
+    }
+  ],
+  "itemName": "WysiwygRemoteOperationBatchApplyResult"
+}

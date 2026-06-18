@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "An error or warning produced while compiling MJML to HTML.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/RenderError.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenderError"
+}

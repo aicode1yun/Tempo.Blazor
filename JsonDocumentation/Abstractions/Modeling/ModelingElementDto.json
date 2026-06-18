@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "A semantic model element before it is projected into a diagram node.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingElementDto"
+}

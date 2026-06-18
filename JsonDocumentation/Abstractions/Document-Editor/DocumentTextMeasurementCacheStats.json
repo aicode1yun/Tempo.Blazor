@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Text measurement cache statistics.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentLayoutEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentTextMeasurementCacheStats"
+}

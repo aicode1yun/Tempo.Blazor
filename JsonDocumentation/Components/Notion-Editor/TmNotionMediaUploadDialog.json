@@ -1,0 +1,28 @@
+{
+  "itemName": "TmNotionMediaUploadDialog",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionMediaUploadDialog Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmNotionMediaUploadDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "MediaType",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"file\""
+    },
+    {
+      "name": "OnConfirmed",
+      "type": "EventCallback<(string? FileId, string? Url)>",
+      "isRequired": false,
+      "description": "\"image\" | \"video\" | \"audio\" | \"pdf\" | \"file\""
+    }
+  ],
+  "subcategory": "UI"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Subject kind for a page restriction entry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageRestrictionDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "PageRestrictionSubjectType"
+}

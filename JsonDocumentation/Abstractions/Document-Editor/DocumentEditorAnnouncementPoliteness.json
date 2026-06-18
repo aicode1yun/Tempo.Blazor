@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Aria-live politeness level.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorAnnouncer.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorAnnouncementPoliteness"
+}

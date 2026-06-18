@@ -1,0 +1,368 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.Mcp",
+    "title": "Tempo.Blazor.Mcp",
+    "description": "Model Context Protocol (MCP) tools for designing Tempo.Blazor wireframes with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net8.0",
+      "net9.0",
+      "net10.0"
+    ],
+    "tags": "blazor;mcp;wireframe;ai;llm;tools",
+    "repositoryUrl": null,
+    "projectUrl": null,
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Mcp"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "ModelContextProtocol.Core",
+        "version": "1.2.0"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.Mcp",
+      "Tempo.Blazor.Mcp.Wireframe"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Mcp",
+    "overview": "Model Context Protocol (MCP) tools for designing Tempo.Blazor wireframes with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.",
+    "targetFramework": "net8.0 / net9.0 / net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.Mcp"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "ModelContextProtocol.Core",
+        "version": "1.2.0"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "McpJson",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Shared JSON options for MCP tool input parsing and output formatting.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/McpJson.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "McpToolResults",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Builds the JSON envelope every wireframe MCP tool returns, so the LLM can reliably tell success from failure: { \"success\": true, ... } or { \"success\": false, \"error\": \"...\", \"message\": \"...\", \"validationErrors\": [...] }.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/McpToolResults.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Conflict",
+          "kind": "Field",
+          "type": "string",
+          "description": "Error code for an optimistic-concurrency conflict."
+        },
+        {
+          "name": "Error",
+          "kind": "Field",
+          "type": "string",
+          "description": "Generic error code."
+        },
+        {
+          "name": "NotFound",
+          "kind": "Field",
+          "type": "string",
+          "description": "Error code for a missing resource."
+        },
+        {
+          "name": "ValidationFailed",
+          "kind": "Field",
+          "type": "string",
+          "description": "Error code for a payload that failed validation."
+        },
+        {
+          "name": "Success",
+          "kind": "Method",
+          "type": "string",
+          "description": "A successful result. The properties of are merged at the top level next to success: true.",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "object?",
+              "default": "null"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "TempoWireframeMcp",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Registration helpers for the wireframe MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AddTempoWireframeMcpTools",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers the dependencies the wireframe MCP tools resolve from DI (the component schema registry). The host must additionally supply an ITempoDocumentLibraryProvider and an IWireframeDocumentProvider, and register the tools with its MCP server via .",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        },
+        {
+          "name": "ToolTypes",
+          "kind": "Property",
+          "type": "static IReadOnlyList<Type>",
+          "description": "The wireframe tool types, exposed for hosts that register tools by type. Prefer WithToolsFromAssembly(typeof(TempoWireframeMcp).Assembly), which also advertises the tools capability in the handshake."
+        }
+      ]
+    },
+    {
+      "itemName": "BriefComponent",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "A component type and how many times it is used.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "BriefElement",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "One placed component in an implementation-brief region.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "BriefFlow",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "A navigation flow between two elements, derived from a connector.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "BriefPage",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "One page rendered as an implementation section.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "BriefRegion",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "A layout region (header / sidebar / content / footer) derived from element geometry.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeBrief",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "The full implementation brief for a wireframe document.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeBriefTools",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeBriefTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeCatalog",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Pure helpers that project entries into LLM-friendly shapes and suggest the nearest type name for typos. Used by the catalog MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeCatalog.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Compact",
+          "kind": "Method",
+          "type": "object",
+          "description": "Compact projection: just enough to pick a component.",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "WireframeComponentSchema"
+            }
+          ]
+        },
+        {
+          "name": "Full",
+          "kind": "Method",
+          "type": "object",
+          "description": "Full projection: dimensions and the property contract.",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "WireframeComponentSchema"
+            }
+          ]
+        },
+        {
+          "name": "SuggestType",
+          "kind": "Method",
+          "type": "string?",
+          "description": "Returns the registered type whose name is closest to , if reasonably near.",
+          "parameters": [
+            {
+              "name": "registry",
+              "type": "WireframeSchemaRegistry"
+            },
+            {
+              "name": "unknown",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeComponentCatalogTools",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeComponentCatalogTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeDocumentTools",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeImplementationBrief",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Deterministically transforms a wireframe into an implementation-oriented brief: pages become sections, geometry becomes layout regions, connectors become navigation flows, and component usage is summarised — the artifact a plan/use-case consumes to build the real page.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeImplementationBrief.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeOperationEngine",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Applies a granular operation batch (add/update/remove elements, connectors and pages, set title and canvas size) to a wireframe document. Operations are applied in order; the first failure aborts the batch (callers apply to a copy and only persist on success).",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationEngine.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeOperationResult",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Outcome of applying a granular operation batch to a wireframe document.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationEngine.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeOperationTools",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeValidationEngine",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Validates a against the , producing precise, actionable messages with JSON-style paths — the main feedback loop that lets an LLM correct a design instead of silently producing a broken one.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationEngine.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeValidationResult",
+      "kind": "Record",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "The outcome of validating a wireframe document against the schema registry.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationEngine.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "WireframeValidationTools",
+      "kind": "Class",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Mcp.Wireframe",
+      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationTools.cs",
+      "documentationStatus": "merged"
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Register wireframe MCP tools",
+      "category": "MCP",
+      "code": "builder.Services.AddTempoWireframeMcpTools();\\nbuilder.Services.AddMcpServer()\\n    .WithHttpTransport()\\n    .WithToolsFromAssembly(typeof(TempoWireframeMcp).Assembly);"
+    }
+  ],
+  "summary": {
+    "itemCount": 20,
+    "manualItemCount": 20,
+    "generatedItemCount": 20,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 20
+  }
+}

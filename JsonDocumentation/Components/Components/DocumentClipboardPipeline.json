@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Runs clipboard input through detection, normalization, conversion, insertion policy stages.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Clipboard/DocumentClipboardPipeline.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Detect",
+      "kind": "Method",
+      "type": "DocumentClipboardSourceDetectionResult",
+      "description": "Detects the likely source for raw clipboard payload.",
+      "parameters": [
+        {
+          "name": "raw",
+          "type": "DocumentClipboardRawInput"
+        }
+      ]
+    },
+    {
+      "name": "Process",
+      "kind": "Method",
+      "type": "DocumentClipboardOutput",
+      "description": "Processes clipboard input and returns normalized blocks.",
+      "parameters": [
+        {
+          "name": "input",
+          "type": "DocumentClipboardInput"
+        }
+      ]
+    },
+    {
+      "name": "ProcessForInsertion",
+      "kind": "Method",
+      "type": "DocumentClipboardInsertionResult",
+      "description": "Processes raw clipboard input and applies insertion policy for the target region.",
+      "parameters": [
+        {
+          "name": "raw",
+          "type": "DocumentClipboardRawInput"
+        },
+        {
+          "name": "region",
+          "type": "DocumentEditorRegion"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentClipboardPipeline"
+}

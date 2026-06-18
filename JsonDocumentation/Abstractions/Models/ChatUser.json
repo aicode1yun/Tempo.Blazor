@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a user participating in a chat conversation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatUser.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Avatar",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional avatar URL or initials fallback."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier."
+    },
+    {
+      "name": "IsOnline",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Online status indicator."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name."
+    },
+    {
+      "name": "Status",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Custom status text (e.g. \"Typing…\", \"Away\")."
+    }
+  ],
+  "itemName": "ChatUser"
+}

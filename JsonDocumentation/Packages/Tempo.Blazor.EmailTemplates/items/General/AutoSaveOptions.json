@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.EmailTemplates",
+  "description": "Configures the editor's debounced auto-save behaviour.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/AutoSaveOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Enabled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Gets or sets whether auto-save is enabled."
+    },
+    {
+      "name": "Interval",
+      "kind": "Property",
+      "type": "TimeSpan",
+      "description": "Gets or sets the debounce interval after the last change before auto-saving."
+    }
+  ],
+  "itemName": "AutoSaveOptions"
+}

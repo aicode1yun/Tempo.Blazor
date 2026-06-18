@@ -1,0 +1,81 @@
+{
+  "itemName": "TmNotionToggleBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Self-contained toggle block. Owns the header contenteditable JS lifecycle and manages child blocks (lazy-loaded from ). Arrow click fires OnOpenChanged so the parent can persist the new IsOpen state. Enter on an empty header fires OnTypeConvert(\"paragraph\") to escape the toggle. Enter on a non-empty header fires OnEnterSplit to create a new sibling block after.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Lists",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Lists/TmNotionToggleBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Lists"
+  ],
+  "parameters": [
+    {
+      "name": "Block",
+      "type": "IPageBlock",
+      "isRequired": true,
+      "editorRequired": true
+    },
+    {
+      "name": "OnContentSaved",
+      "type": "EventCallback<string>",
+      "isRequired": false
+    },
+    {
+      "name": "OnDeleteRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when Enter is pressed on a non-empty header. Arg = HTML after the split point."
+    },
+    {
+      "name": "OnEnterSplit",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fired on blur when header HTML has changed. Arg = new HTML."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when a markdown or conversion shortcut is detected. Special value \"paragraph\" means the user pressed Enter on an empty header."
+    },
+    {
+      "name": "OnMentionMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when '/' is typed. Args = (blockId, top, left) caret coords."
+    },
+    {
+      "name": "OnOpenChanged",
+      "type": "EventCallback<(bool IsOpen, string? Html)>",
+      "isRequired": false,
+      "description": "Fired when the header editable receives focus."
+    },
+    {
+      "name": "OnPageLinkMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when '@' is typed. Args = (blockId, top, left) caret coords."
+    },
+    {
+      "name": "OnSlashMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when the open/closed state changes. Arg = new IsOpen value."
+    },
+    {
+      "name": "OnTokenMenu",
+      "type": "EventCallback<(string BlockId, double Top, double Left)>",
+      "isRequired": false,
+      "description": "Fired when '[[' is typed. Args = (blockId, top, left) caret coords."
+    },
+    {
+      "name": "OnTypeConvert",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fired when Backspace is pressed on an empty header."
+    }
+  ],
+  "subcategory": "Blocks / Lists"
+}

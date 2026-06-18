@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Layout",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+  "description": "Localization keys for layout validation messages (never raw text).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutValidationKeys.cs",
+  "documentationStatus": "generated",
+  "itemName": "LayoutValidationKeys"
+}

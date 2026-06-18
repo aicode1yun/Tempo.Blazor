@@ -1,0 +1,21 @@
+{
+  "itemName": "TmNotionSpreadsheetBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionSpreadsheetBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/TempoBlocks/TmNotionSpreadsheetBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
+  ],
+  "parameters": [
+    {
+      "name": "OnContentSaved",
+      "type": "EventCallback<SpreadsheetBlockContent>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "Blocks / Tempo Blocks"
+}

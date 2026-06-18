@@ -1,0 +1,40 @@
+{
+  "itemName": "TmNotionExcerptIncludeBlock",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionExcerptIncludeBlock Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Special",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Special/TmNotionExcerptIncludeBlock.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Special"
+  ],
+  "parameters": [
+    {
+      "name": "Content",
+      "type": "IExcerptIncludeBlockContent?",
+      "isRequired": false,
+      "description": "Owning page block used for persistence and focus context."
+    },
+    {
+      "name": "OnFocused",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised after source page selection changes."
+    },
+    {
+      "name": "OnUpdated",
+      "type": "EventCallback<IPageBlock>",
+      "isRequired": false,
+      "description": "Whether editing controls are hidden."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Saved Excerpt Include configuration."
+    }
+  ],
+  "subcategory": "Blocks / Special"
+}

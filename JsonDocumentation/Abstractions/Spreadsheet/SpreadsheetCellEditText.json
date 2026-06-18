@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Format",
+  "description": "Produces the re-editable text for a cell — the value as the user would type it, rather than the formatted display. A formula returns its expression; a percentage returns e.g. 50%; a date/time returns its (re-parseable) formatted form; a number returns its canonical form without thousands separators. This is the inverse intent of .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Format/SpreadsheetCellEditText.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetEditText",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the editable text for using .",
+      "parameters": [
+        {
+          "name": "cell",
+          "type": "SpreadsheetCell?"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        }
+      ]
+    }
+  ],
+  "itemName": "SpreadsheetCellEditText"
+}

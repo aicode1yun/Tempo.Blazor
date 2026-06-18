@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents basic user information used by TmAvatar, TmUserAvatar, and TmTopBar.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IUserInfo.cs",
+  "documentationStatus": "generated",
+  "itemName": "IUserInfo"
+}

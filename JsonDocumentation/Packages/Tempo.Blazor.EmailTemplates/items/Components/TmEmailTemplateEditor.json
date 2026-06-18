@@ -1,0 +1,59 @@
+{
+  "itemName": "TmEmailTemplateEditor",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailTemplateEditor Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "AutoSave",
+      "type": "AutoSaveOptions?",
+      "isRequired": false,
+      "description": "Raised when the user requests a save."
+    },
+    {
+      "name": "DocumentChanged",
+      "type": "EventCallback<EmailTemplateDocument>",
+      "isRequired": false,
+      "description": "Gets or sets the edited document. Two-way bindable via ."
+    },
+    {
+      "name": "OnAutoSave",
+      "type": "EventCallback<EmailTemplateDocument>",
+      "isRequired": false,
+      "description": "Auto-save configuration; when enabled, edits are saved after a debounce interval."
+    },
+    {
+      "name": "OnImageUpload",
+      "type": "Func<IBrowserFile, Task<string>>?",
+      "isRequired": false,
+      "description": "Host-provided variables offered by the variable picker (merged with extracted ones)."
+    },
+    {
+      "name": "OnSave",
+      "type": "EventCallback<EmailTemplateDocument>",
+      "isRequired": false,
+      "description": "Raised when the document changes (for @bind-Document)."
+    },
+    {
+      "name": "TimeProvider",
+      "type": "TimeProvider",
+      "isRequired": false,
+      "default": "TimeProvider.System",
+      "description": "Raised by auto-save with the current document."
+    },
+    {
+      "name": "Variables",
+      "type": "IReadOnlyList<TemplateVariableInfo>",
+      "isRequired": false,
+      "default": "Array.Empty<TemplateVariableInfo>()",
+      "description": "Clock used for auto-save debouncing (overridable in tests)."
+    }
+  ]
+}

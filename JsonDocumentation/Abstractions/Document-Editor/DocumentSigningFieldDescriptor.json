@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Canvas engine descriptor for one signing field, as derived from the editor layout (plan S2). Areas are normalized 0..1 page rectangles — one for a body field, one per page for a header/footer field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentSigningField.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentSigningFieldDescriptor"
+}

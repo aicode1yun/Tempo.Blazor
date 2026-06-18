@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "description": "Marker type identifying the Tempo.Blazor.EmailTemplates.Abstractions assembly.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/EmailTemplatesAbstractions.cs",
+  "documentationStatus": "generated",
+  "itemName": "EmailTemplatesAbstractions"
+}

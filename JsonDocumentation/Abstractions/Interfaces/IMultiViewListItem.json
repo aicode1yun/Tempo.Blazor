@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents an item displayed in TmMultiViewList (Table / Card / List views).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IMultiViewListItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "IMultiViewListItem"
+}

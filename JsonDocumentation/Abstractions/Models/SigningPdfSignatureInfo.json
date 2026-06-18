@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Signature found in a verified PDF.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningPdfSignatureInfo.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CertificateSubject",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Certificate subject or signing provider identity."
+    },
+    {
+      "name": "SignedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset?",
+      "description": "Time when the signature was applied."
+    },
+    {
+      "name": "SignerEmail",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Signer email address."
+    },
+    {
+      "name": "SignerName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Signer display name."
+    },
+    {
+      "name": "VerificationMethod",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Verification method such as email, SMS, ID check, or KBA."
+    }
+  ],
+  "itemName": "SigningPdfSignatureInfo"
+}

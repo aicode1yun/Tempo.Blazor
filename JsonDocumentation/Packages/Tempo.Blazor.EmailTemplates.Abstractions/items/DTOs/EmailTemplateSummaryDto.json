@@ -1,0 +1,48 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+  "description": "List projection of an email template.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/EmailTemplateSummaryDto.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid",
+      "description": "Gets the template identifier."
+    },
+    {
+      "name": "IsActive",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Gets whether the template is active."
+    },
+    {
+      "name": "Language",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the language code."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the template name."
+    },
+    {
+      "name": "Subject",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the email subject."
+    },
+    {
+      "name": "UpdatedAt",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Gets the last update timestamp."
+    }
+  ],
+  "itemName": "EmailTemplateSummaryDto"
+}

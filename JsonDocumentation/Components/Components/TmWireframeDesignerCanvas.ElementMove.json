@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Payload sent by JS for a bulk move operation.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Wireframe/TmWireframeDesignerCanvas.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmWireframeDesignerCanvas.ElementMove"
+}

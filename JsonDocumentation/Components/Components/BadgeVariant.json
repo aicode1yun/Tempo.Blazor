@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "Color variant for TmBadge.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/BadgeVariant.cs",
+  "documentationStatus": "generated",
+  "itemName": "BadgeVariant"
+}

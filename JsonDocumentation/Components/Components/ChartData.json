@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Data for TmChart.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChartData"
+}

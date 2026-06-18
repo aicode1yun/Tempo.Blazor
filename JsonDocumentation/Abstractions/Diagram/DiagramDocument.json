@@ -1,0 +1,78 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramDocument.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "EnsurePages",
+      "kind": "Method",
+      "type": "void",
+      "description": "Guarantees that contains at least one page."
+    },
+    {
+      "name": "SnapToGrid",
+      "kind": "Method",
+      "type": "void",
+      "description": "Snap all node positions and sizes to the given grid size.",
+      "parameters": [
+        {
+          "name": "gridSize",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "ActivePageIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Index of the page currently being edited."
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "UTC timestamp of document creation."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique document identifier."
+    },
+    {
+      "name": "LastUsedEdgeStyle",
+      "kind": "Property",
+      "type": "DiagramEdgeStyleSnapshot?",
+      "description": "Most recently applied edge style (stroke, arrow, routing preferences…). When a new edge is created, this snapshot is cloned onto it so the style sticks across edges until the user edits one through the properties panel. `null` → use built-in defaults."
+    },
+    {
+      "name": "ModifiedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "UTC timestamp of last modification."
+    },
+    {
+      "name": "Pages",
+      "kind": "Property",
+      "type": "List<DiagramPage>",
+      "description": "All pages in the diagram. The first page is used by default."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable title shown in the editor toolbar."
+    },
+    {
+      "name": "Version",
+      "kind": "Property",
+      "type": "string",
+      "description": "Schema version. Bumped on breaking changes to enable migration."
+    }
+  ],
+  "itemName": "DiagramDocument"
+}

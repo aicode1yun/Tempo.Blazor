@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Abstractions.Wireframe.Export",
+  "description": "Options that control wireframe export output (PNG / PDF).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Export/WireframeExportOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Background colour hex string (e.g. #ffffff). Empty = transparent."
+    },
+    {
+      "name": "IncludeBackground",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Include page background colour in the output. Default true."
+    },
+    {
+      "name": "PageRange",
+      "kind": "Property",
+      "type": "string",
+      "description": "For PDF exports: \"all\" or comma-separated page indices (0-based). Ignored for PNG."
+    },
+    {
+      "name": "Scale",
+      "kind": "Property",
+      "type": "int",
+      "description": "Raster scale factor for PNG exports (1 = 1×, 2 = 2× retina, 3 = 3×). Ignored for PDF."
+    }
+  ],
+  "itemName": "WireframeExportOptions"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Searches a diagram document for nodes and edges matching a free-text query.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Services/DiagramSearchService.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramSearchService"
+}

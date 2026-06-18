@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionMediaLibraryItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "FileSizeBytes",
+      "kind": "Property",
+      "type": "long?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "ThumbnailUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "NotionMediaLibraryItem"
+}

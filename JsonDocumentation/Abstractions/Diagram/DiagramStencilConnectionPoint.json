@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A predefined connection point on a stencil, similar to draw.io constraints. When an edge connects to this point, it uses a fixed instead of floating port snapping.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilConnectionPoint.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable name (e.g. \"N\", \"NE\", \"Center\")."
+    },
+    {
+      "name": "Perimeter",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, the point is projected onto the node perimeter based on its background shape. When false, the point is kept at the exact relative coordinate inside the bounding box."
+    },
+    {
+      "name": "RelativeX",
+      "kind": "Property",
+      "type": "double",
+      "description": "Relative X position (0–1) within the stencil bounding box. 0 = left edge, 1 = right edge."
+    },
+    {
+      "name": "RelativeY",
+      "kind": "Property",
+      "type": "double",
+      "description": "Relative Y position (0–1) within the stencil bounding box. 0 = top edge, 1 = bottom edge."
+    }
+  ],
+  "itemName": "DiagramStencilConnectionPoint"
+}

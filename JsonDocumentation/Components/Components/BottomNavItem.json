@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Navigation",
+  "description": "Represents an item in the bottom navigation bar.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Navigation/BottomNavItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Disabled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the item is disabled."
+    },
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The navigation URL. If provided, the item renders as a link."
+    },
+    {
+      "name": "Icon",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The icon name for the item."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "The display text of the item."
+    }
+  ],
+  "itemName": "BottomNavItem"
+}

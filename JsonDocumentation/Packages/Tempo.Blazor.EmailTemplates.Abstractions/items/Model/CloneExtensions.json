@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "Deep-copy helpers for documents and blocks (used by undo/redo and clipboard).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/CloneExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "EmailBlockBase",
+      "description": "Creates an independent deep copy of a block. Identifiers are preserved.",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "this EmailBlockBase"
+        }
+      ]
+    },
+    {
+      "name": "CloneWithNewIds",
+      "kind": "Method",
+      "type": "EmailBlockBase",
+      "description": "Creates an independent deep copy of a block with a fresh identifier on every node (used when pasting/duplicating so the copy does not collide with the original).",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "this EmailBlockBase"
+        }
+      ]
+    },
+    {
+      "name": "DeepClone",
+      "kind": "Method",
+      "type": "EmailTemplateDocument",
+      "description": "Creates an independent deep copy of the document. Identifiers are preserved.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "CloneExtensions"
+}

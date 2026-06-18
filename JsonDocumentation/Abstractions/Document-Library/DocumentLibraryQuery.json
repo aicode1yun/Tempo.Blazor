@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Describes a single page of a browse/search request against the document library.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/DocumentLibraryQuery.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Descending",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether to sort descending. Defaults to ascending."
+    },
+    {
+      "name": "FolderPath",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Folder to list. Null or \"/\" lists the root. Ignored by flat stores."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "required TempoDocumentKind",
+      "description": "Which kind of documents to list."
+    },
+    {
+      "name": "Search",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Free-text search across document names. Null or empty returns the folder contents unfiltered. Only honoured when the provider advertises ."
+    },
+    {
+      "name": "Skip",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of items to skip (pagination offset)."
+    },
+    {
+      "name": "SortField",
+      "kind": "Property",
+      "type": "DocumentLibrarySortField",
+      "description": "Field to order results by. Defaults to ."
+    },
+    {
+      "name": "Take",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum number of items to return. Defaults to 50."
+    }
+  ],
+  "itemName": "DocumentLibraryQuery"
+}

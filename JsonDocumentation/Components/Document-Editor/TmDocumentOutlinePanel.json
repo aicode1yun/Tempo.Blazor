@@ -1,0 +1,27 @@
+{
+  "itemName": "TmDocumentOutlinePanel",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentOutlinePanel Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/TmDocumentOutlinePanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "ActiveBlockId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Document heading outline to display."
+    },
+    {
+      "name": "OnNavigateToBlock",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Currently active heading block id reported by the WYSIWYG runtime."
+    }
+  ]
+}

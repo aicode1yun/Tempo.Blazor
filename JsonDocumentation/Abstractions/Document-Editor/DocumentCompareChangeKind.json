@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Kind of a block-level document comparison change.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentComparison.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentCompareChangeKind"
+}

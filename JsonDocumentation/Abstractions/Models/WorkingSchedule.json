@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Defines the working calendar for a Gantt chart: which days are non-working, public holidays, and working hours per day.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/WorkingSchedule.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Holidays",
+      "kind": "Property",
+      "type": "DateTime[]",
+      "description": "Specific dates treated as public holidays (non-working)."
+    },
+    {
+      "name": "NonWorkingDaysOfWeek",
+      "kind": "Property",
+      "type": "DayOfWeek[]",
+      "description": "Days of the week treated as non-working. Default: Saturday + Sunday."
+    },
+    {
+      "name": "WorkDayEndHour",
+      "kind": "Property",
+      "type": "int",
+      "description": "Hour at which the working day ends (0–23). Default: 17."
+    },
+    {
+      "name": "WorkDayStartHour",
+      "kind": "Property",
+      "type": "int",
+      "description": "Hour at which the working day starts (0–23). Default: 8."
+    }
+  ],
+  "itemName": "WorkingSchedule"
+}

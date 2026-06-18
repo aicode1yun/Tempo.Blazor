@@ -1,0 +1,27 @@
+{
+  "itemName": "TmNotionSpreadsheetEditModal",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionSpreadsheetEditModal Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/TempoBlocks/TmNotionSpreadsheetEditModal.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks"
+  ],
+  "parameters": [
+    {
+      "name": "Provider",
+      "type": "ISpreadsheetDocumentProvider?",
+      "isRequired": false
+    },
+    {
+      "name": "SpreadsheetDocumentId",
+      "type": "Guid",
+      "isRequired": true,
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Blocks / Tempo Blocks"
+}

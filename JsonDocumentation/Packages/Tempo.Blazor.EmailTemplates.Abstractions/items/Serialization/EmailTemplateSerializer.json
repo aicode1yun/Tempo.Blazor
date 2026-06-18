@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Serialization",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Serialization",
+  "description": "Serializes to and from JSON. Block polymorphism uses the type discriminator declared on . Unknown properties are ignored (forward compatibility); unknown block types and malformed JSON surface as .",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Serialization/EmailTemplateSerializer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CloneBlock",
+      "kind": "Method",
+      "type": "EmailBlockBase",
+      "description": "Creates an independent deep copy of a single block (same identifiers).",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "EmailBlockBase"
+        }
+      ]
+    },
+    {
+      "name": "Deserialize",
+      "kind": "Method",
+      "type": "EmailTemplateDocument",
+      "description": "Deserializes a document from JSON.",
+      "parameters": [
+        {
+          "name": "json",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Serialize",
+      "kind": "Method",
+      "type": "string",
+      "description": "Serializes a document to a compact JSON string.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "static JsonSerializerOptions",
+      "description": "Gets the canonical serialization options used for documents, blocks and cloning."
+    }
+  ],
+  "itemName": "EmailTemplateSerializer"
+}

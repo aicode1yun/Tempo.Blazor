@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Reaction metadata stored with a document comment.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentComments.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentCommentReaction"
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Summary of a saved diagram returned by the history API.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramSummaryDto.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DiagramId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Diagram identifier."
+    },
+    {
+      "name": "LatestSavedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "UTC timestamp of the most recent save."
+    },
+    {
+      "name": "LatestVersion",
+      "kind": "Property",
+      "type": "int",
+      "description": "Latest persisted version number."
+    }
+  ],
+  "itemName": "DiagramSummaryDto"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "A named date range shortcut for TmDateRangePicker and TmDateTimeRangePicker.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DateRangePreset.cs",
+  "documentationStatus": "generated",
+  "itemName": "DateRangePreset"
+}

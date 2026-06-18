@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Available widget categories with built-in options.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DashboardModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "WidgetCategories"
+}

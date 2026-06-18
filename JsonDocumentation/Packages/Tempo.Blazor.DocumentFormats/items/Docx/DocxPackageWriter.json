@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Writes an editor document to a WordprocessingML package.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxExporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocxPackageWriter"
+}

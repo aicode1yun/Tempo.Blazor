@@ -1,0 +1,143 @@
+{
+  "itemName": "TmTreeList",
+  "kind": "Component",
+  "category": "Data Table",
+  "description": "A hierarchical data table that displays flat data with parent/child relationships as an expandable tree. Supports columns, row selection, inline editing, pagination, and drag-to-select multi-selection.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmTreeList.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DataTable"
+  ],
+  "parameters": [
+    {
+      "name": "ChildContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Function that returns the parent id, or null for root items."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional page-size dropdown values. When null the dropdown is hidden."
+    },
+    {
+      "name": "Columns",
+      "type": "List<TmTreeListColumn<TItem>>?",
+      "isRequired": false,
+      "description": "Column definitions (TmTreeListColumn children)."
+    },
+    {
+      "name": "CurrentPage",
+      "type": "int",
+      "isRequired": false,
+      "default": "1",
+      "description": "Page size for pagination. 0 disables pagination."
+    },
+    {
+      "name": "Editable",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Enables multi-selection via Ctrl/Shift click and drag-to-select."
+    },
+    {
+      "name": "ExpandedIds",
+      "type": "IReadOnlySet<object>?",
+      "isRequired": false,
+      "description": "Alternative column definitions provided as a list (useful when CascadingValue does not propagate)."
+    },
+    {
+      "name": "Filter",
+      "type": "Func<TItem, bool>?",
+      "isRequired": false,
+      "description": "When true, sorts in descending order. Default is ascending."
+    },
+    {
+      "name": "IdSelector",
+      "type": "Func<TItem, object>",
+      "isRequired": true,
+      "description": "Flat list of items. Each item must expose an id and a parent id."
+    },
+    {
+      "name": "IndentSize",
+      "type": "double",
+      "isRequired": false,
+      "default": "1.5",
+      "description": "Enables inline row editing via double-click."
+    },
+    {
+      "name": "MultiSelect",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Enables row click selection."
+    },
+    {
+      "name": "OnCollapse",
+      "type": "EventCallback<object>",
+      "isRequired": false,
+      "description": "Fires when an item is expanded."
+    },
+    {
+      "name": "OnExpand",
+      "type": "EventCallback<object>",
+      "isRequired": false,
+      "description": "Fires when the selection changes (multi-select mode)."
+    },
+    {
+      "name": "OnRowEdit",
+      "type": "EventCallback<TItem>",
+      "isRequired": false,
+      "description": "Fires when an item is collapsed."
+    },
+    {
+      "name": "OnSelectionChange",
+      "type": "EventCallback<IReadOnlySet<object>>",
+      "isRequired": false,
+      "description": "Fires when a row is clicked (only when is true)."
+    },
+    {
+      "name": "PageSize",
+      "type": "int",
+      "isRequired": false,
+      "description": "Indent size per level in rem units. Default: 1.5."
+    },
+    {
+      "name": "PageSizeOptions",
+      "type": "IReadOnlyList<int>?",
+      "isRequired": false,
+      "description": "Current page when pagination is enabled."
+    },
+    {
+      "name": "ParentIdSelector",
+      "type": "Func<TItem, object?>",
+      "isRequired": true,
+      "description": "Function that returns the unique id of an item."
+    },
+    {
+      "name": "Selectable",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Initial set of expanded item ids. Mutated by user interaction."
+    },
+    {
+      "name": "SortBy",
+      "type": "Func<TItem, object>?",
+      "isRequired": false,
+      "description": "Additional CSS class for the wrapper element."
+    },
+    {
+      "name": "SortDescending",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Optional sort key selector. When set, siblings are sorted by this value."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ]
+}

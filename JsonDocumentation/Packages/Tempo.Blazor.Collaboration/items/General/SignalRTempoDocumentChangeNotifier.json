@@ -1,0 +1,33 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DocumentLibrary.Collaboration",
+  "description": "SignalR-backed . A client subscribes to the specific documents it displays; the server broadcasts to the matching group so open editors and embedded blocks refresh without polling.",
+  "packageId": "Tempo.Blazor.Collaboration",
+  "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRTempoDocumentChangeNotifier.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DisposeAsync",
+      "kind": "Method",
+      "type": "ValueTask"
+    },
+    {
+      "name": "GroupName",
+      "kind": "Method",
+      "type": "string",
+      "description": "The SignalR group name for a given document.",
+      "parameters": [
+        {
+          "name": "kind",
+          "type": "TempoDocumentKind"
+        },
+        {
+          "name": "documentId",
+          "type": "Guid"
+        }
+      ]
+    }
+  ],
+  "itemName": "SignalRTempoDocumentChangeNotifier"
+}

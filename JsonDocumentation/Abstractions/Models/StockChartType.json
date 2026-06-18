@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Type of stock chart rendering.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/StockChartDataPoint.cs",
+  "documentationStatus": "generated",
+  "itemName": "StockChartType"
+}

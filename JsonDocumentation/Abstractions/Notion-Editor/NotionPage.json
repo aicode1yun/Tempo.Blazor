@@ -1,0 +1,112 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionPage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CoverImagePositionY",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "CoverImageUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "CreatedByUserId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "DeletedAt",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "IconEmoji",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "IconImageUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "IsDeleted",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsFavorite",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsFullWidth",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsLocked",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsSmallText",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Labels",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>"
+    },
+    {
+      "name": "LastEditedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "LastEditedByUserId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "ParentId",
+      "kind": "Property",
+      "type": "Guid?"
+    },
+    {
+      "name": "SpaceId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "NotionPage"
+}

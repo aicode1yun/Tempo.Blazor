@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Commands",
+  "description": "An undoable / redoable async mutation of the Notion editor state. Each implementation must be self-contained: it holds all state needed to both apply and reverse the operation, including provider references.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Commands/INotionCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotionCommand"
+}

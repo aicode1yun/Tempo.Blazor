@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Icons",
+  "description": "Icon display sizes.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Icons/IconSize.cs",
+  "documentationStatus": "generated",
+  "itemName": "IconSize"
+}

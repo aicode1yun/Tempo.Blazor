@@ -1,0 +1,111 @@
+{
+  "kind": "Class",
+  "category": "DTOs",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+  "description": "Maps between the editable and transport DTOs.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/EmailTemplateMapper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ApplyCreate",
+      "kind": "Method",
+      "type": "EmailTemplateDocument",
+      "description": "Builds a new document from a create request (content + overridden metadata).",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "CreateEmailTemplateRequest"
+        }
+      ]
+    },
+    {
+      "name": "ApplyUpdate",
+      "kind": "Method",
+      "type": "EmailTemplateDocument",
+      "description": "Applies an update request's content and metadata onto a document.",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "UpdateEmailTemplateRequest"
+        }
+      ]
+    },
+    {
+      "name": "RequiredVariables",
+      "kind": "Method",
+      "type": "IReadOnlyList<string>",
+      "description": "Computes the distinct root variable names a document requires.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    },
+    {
+      "name": "ToContentJson",
+      "kind": "Method",
+      "type": "string",
+      "description": "Serializes a document to its canonical content JSON.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    },
+    {
+      "name": "ToDetailDto",
+      "kind": "Method",
+      "type": "EmailTemplateDetailDto",
+      "description": "Builds the full detail DTO from a document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        },
+        {
+          "name": "isActive",
+          "type": "bool",
+          "default": "true"
+        },
+        {
+          "name": "sampleDataJson",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "ToDocument",
+      "kind": "Method",
+      "type": "EmailTemplateDocument",
+      "description": "Deserializes a document from content JSON.",
+      "parameters": [
+        {
+          "name": "contentJson",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ToSummaryDto",
+      "kind": "Method",
+      "type": "EmailTemplateSummaryDto",
+      "description": "Builds the list summary DTO from a document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        },
+        {
+          "name": "isActive",
+          "type": "bool",
+          "default": "true"
+        }
+      ]
+    }
+  ],
+  "itemName": "EmailTemplateMapper"
+}

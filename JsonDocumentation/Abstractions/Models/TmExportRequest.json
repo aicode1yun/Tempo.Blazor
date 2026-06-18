@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a user's export request with selected format and entity types.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TmExportRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmExportRequest"
+}

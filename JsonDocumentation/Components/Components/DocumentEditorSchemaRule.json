@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Features",
+  "description": "Schema rule definition owned by a feature.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Features/DocumentEditorFeatureInfrastructure.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorSchemaRule"
+}

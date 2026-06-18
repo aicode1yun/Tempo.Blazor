@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "description": "Public enum defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGantt.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttView"
+}

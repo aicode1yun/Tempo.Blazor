@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Logical operation joining a condition with the previous condition.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningConditionOperation.cs",
+  "documentationStatus": "generated",
+  "itemName": "SigningConditionOperation"
+}

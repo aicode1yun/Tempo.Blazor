@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "Visual style variants for TmCard.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/CardVariant.cs",
+  "documentationStatus": "generated",
+  "itemName": "CardVariant"
+}

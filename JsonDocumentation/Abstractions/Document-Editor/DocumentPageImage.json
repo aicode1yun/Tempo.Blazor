@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "One rendered editor page exported as a flat bitmap (plan S1). The canvas engine paints the page's printable layers into an opaque image so the document can be used as a signing template page.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentPageImage.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentPageImage"
+}

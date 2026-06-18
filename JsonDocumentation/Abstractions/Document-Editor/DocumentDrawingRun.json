@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Drawing object anchored in a text run, such as an inline or floating image.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentInline.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentDrawingRun"
+}

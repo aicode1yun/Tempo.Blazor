@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Request body for querying Notion-style database records.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/DatabaseRecordsQueryRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "DatabaseRecordsQueryRequest"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Navigation",
+  "description": "Represents an item in a menu.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Navigation/MenuItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "MenuItem"
+}

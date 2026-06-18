@@ -1,0 +1,33 @@
+{
+  "itemName": "TmGanttImportDialog",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "Dialog for importing tasks from Excel, MS Project XML, or JIRA.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttImportDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": [
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when import fails with an error message."
+    },
+    {
+      "name": "OnImportCompleted",
+      "type": "EventCallback<IReadOnlyList<GanttTask>>",
+      "isRequired": false,
+      "description": "Whether the dialog is visible."
+    },
+    {
+      "name": "OnImportError",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when import completes successfully."
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "itemName": "TmCommentComposer",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmCommentComposer Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmCommentComposer.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AriaLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Placeholder text."
+    },
+    {
+      "name": "AutoFocus",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show a cancel button."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when editing is canceled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Textarea row count."
+    },
+    {
+      "name": "MentionsChanged",
+      "type": "EventCallback<IReadOnlyList<DocumentCommentMention>>",
+      "isRequired": false,
+      "description": "Users available for mention suggestions."
+    },
+    {
+      "name": "MentionUsers",
+      "type": "IReadOnlyList<DocumentCommentUser>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Whether Enter submits the composer when mention selection is not open. Defaults to false."
+    },
+    {
+      "name": "OnCancel",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Callback invoked when the text is submitted."
+    },
+    {
+      "name": "OnSubmit",
+      "type": "EventCallback<DocumentCommentComposerSubmitEventArgs>",
+      "isRequired": false,
+      "description": "Callback invoked when the selected mention list changes."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the text changes."
+    },
+    {
+      "name": "Rows",
+      "type": "int",
+      "isRequired": false,
+      "default": "3",
+      "description": "Submit button label."
+    },
+    {
+      "name": "ShowCancel",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the composer is disabled."
+    },
+    {
+      "name": "SubmitOnEnter",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the textarea should request focus when rendered."
+    },
+    {
+      "name": "SubmitText",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Accessible label for the textarea."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Current text value."
+    }
+  ]
+}

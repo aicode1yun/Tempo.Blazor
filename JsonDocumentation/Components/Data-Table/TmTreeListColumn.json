@@ -1,0 +1,76 @@
+{
+  "itemName": "TmTreeListColumn",
+  "kind": "Component",
+  "category": "Data Table",
+  "description": "TmTreeListColumn Blazor component in the Data Table category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmTreeListColumn.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DataTable"
+  ],
+  "parameters": [
+    {
+      "name": "Align",
+      "type": "ColumnAlign",
+      "isRequired": false,
+      "default": "ColumnAlign.Left",
+      "description": "Column width CSS value (e.g. \"200px\", \"20%\")."
+    },
+    {
+      "name": "CellTemplate",
+      "type": "RenderFragment<TItem>?",
+      "isRequired": false,
+      "description": "Field accessor that returns the cell value for a given row item."
+    },
+    {
+      "name": "CssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Horizontal text alignment in cells."
+    },
+    {
+      "name": "Editable",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Optional custom cell template. When set, overrides rendering."
+    },
+    {
+      "name": "EditTemplate",
+      "type": "RenderFragment<TItem>?",
+      "isRequired": false,
+      "description": "Whether this column supports inline editing."
+    },
+    {
+      "name": "Field",
+      "type": "Func<TItem, object?>?",
+      "isRequired": false,
+      "description": "Column header text."
+    },
+    {
+      "name": "Format",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Custom header render fragment (replaces plain text when set)."
+    },
+    {
+      "name": "HeaderTemplate",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to each data cell in this column."
+    },
+    {
+      "name": "Width",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Template rendered when the row is in edit mode. Replaces and ."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "QR code error correction levels.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/QRErrorCorrectionLevel.cs",
+  "documentationStatus": "generated",
+  "itemName": "QRErrorCorrectionLevel"
+}

@@ -1,0 +1,88 @@
+{
+  "itemName": "TmSigningExternalStep",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "Provider-agnostic placeholder step for verification, KBA, and payment flows.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmSigningExternalStep.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "AnswersChanged",
+      "type": "EventCallback<IReadOnlyDictionary<string, string?>>",
+      "isRequired": false,
+      "description": "KBA questions to answer inline."
+    },
+    {
+      "name": "AppearsOn",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when payment checkout should start."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fallback culture used when localized field text is missing."
+    },
+    {
+      "name": "Culture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the controls are disabled."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Short text describing where the field appears in the document."
+    },
+    {
+      "name": "Error",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the external provider operation is loading."
+    },
+    {
+      "name": "ExternalUrl",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Error message shown for the external provider operation."
+    },
+    {
+      "name": "FallbackCulture",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Culture used to resolve localized field text."
+    },
+    {
+      "name": "IsLoading",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Signing field represented by this step."
+    },
+    {
+      "name": "OnCheckout",
+      "type": "EventCallback<SigningField>",
+      "isRequired": false,
+      "description": "Callback invoked when verification or KBA should start."
+    },
+    {
+      "name": "OnStart",
+      "type": "EventCallback<SigningField>",
+      "isRequired": false,
+      "description": "Callback invoked when KBA answers change."
+    },
+    {
+      "name": "Questions",
+      "type": "IReadOnlyList<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "External URL for provider-hosted verification or checkout."
+    }
+  ]
+}

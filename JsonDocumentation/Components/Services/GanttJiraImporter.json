@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Imports Gantt tasks from a JIRA REST API (v3) project.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/GanttJiraImporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Dispose",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "GanttJiraImporter"
+}

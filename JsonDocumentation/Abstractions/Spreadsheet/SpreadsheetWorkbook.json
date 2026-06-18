@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents the root workbook containing one or more spreadsheet sheets.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetWorkbook.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddSheet",
+      "kind": "Method",
+      "type": "SpreadsheetSheet",
+      "description": "Adds a new sheet with the given name.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "SpreadsheetWorkbook",
+      "description": "Creates a deep copy of this workbook including all sheets and cells."
+    },
+    {
+      "name": "RecalculateNamedRangeDependents",
+      "kind": "Method",
+      "type": "void",
+      "description": "Re-evaluates every formula in the workbook that references the given named range, then recalculates all of their transitive dependents.",
+      "parameters": [
+        {
+          "name": "namedRangeName",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "RemoveSheet",
+      "kind": "Method",
+      "type": "void",
+      "description": "Removes the sheet at the given index.",
+      "parameters": [
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "ActiveSheetIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based index of the active sheet."
+    },
+    {
+      "name": "NamedRanges",
+      "kind": "Property",
+      "type": "List<SpreadsheetNamedRange>",
+      "description": "Named ranges defined in this workbook."
+    },
+    {
+      "name": "Sheets",
+      "kind": "Property",
+      "type": "List<SpreadsheetSheet>",
+      "description": "All sheets in the workbook."
+    }
+  ],
+  "itemName": "SpreadsheetWorkbook"
+}

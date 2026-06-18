@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Odt",
+  "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+  "description": "Reads OpenDocument package XML into the editor model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "OdtPackageReader"
+}

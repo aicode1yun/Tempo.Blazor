@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Evaluates whether a candidate cell value satisfies a rule.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetValidationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetValidationEngine"
+}

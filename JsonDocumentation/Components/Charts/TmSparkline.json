@@ -1,0 +1,14 @@
+{
+  "itemName": "TmSparkline",
+  "kind": "Component",
+  "category": "Charts",
+  "description": "TmSparkline Blazor component in the Charts category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/TmSparkline.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Charts"
+  ],
+  "parameters": []
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "A data validation rule applied to a cell range within a sheet.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetDataValidation.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetDataValidation"
+}

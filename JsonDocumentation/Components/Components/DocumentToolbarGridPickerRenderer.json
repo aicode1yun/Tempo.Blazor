@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Default renderer for document toolbar grid pickers.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Registry/DocumentToolbarGridPickerRenderer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Render",
+      "kind": "Method",
+      "type": "RenderFragment",
+      "parameters": [
+        {
+          "name": "context",
+          "type": "DocumentToolbarRenderContext"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentToolbarGridPickerRenderer"
+}

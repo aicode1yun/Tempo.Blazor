@@ -1,0 +1,44 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "High-level facade for the formula engine: lex, parse and evaluate.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FormulaEngine.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Evaluate",
+      "kind": "Method",
+      "type": "object?",
+      "description": "Evaluates a formula string against the given sheet.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string"
+        },
+        {
+          "name": "sheet",
+          "type": "SpreadsheetSheet"
+        }
+      ]
+    },
+    {
+      "name": "RegisterFunction",
+      "kind": "Method",
+      "type": "void",
+      "description": "Registers a custom function.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "implementation",
+          "type": "object?>"
+        }
+      ]
+    }
+  ],
+  "itemName": "FormulaEngine"
+}

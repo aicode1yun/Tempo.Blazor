@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Document checksum included in an audit trail.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningAuditTrailDocument.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Checksum",
+      "kind": "Property",
+      "type": "string",
+      "description": "Document checksum, typically SHA-256."
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Document file name."
+    }
+  ],
+  "itemName": "SigningAuditTrailDocument"
+}

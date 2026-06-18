@@ -1,0 +1,36 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+  "description": "Request to render and send a stored template to recipients.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/SendEmailRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Cc",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Gets the carbon-copy recipients."
+    },
+    {
+      "name": "TemplateId",
+      "kind": "Property",
+      "type": "Guid",
+      "description": "Gets the template identifier."
+    },
+    {
+      "name": "To",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Gets the primary recipients."
+    },
+    {
+      "name": "VariablesJson",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets the variable data as JSON."
+    }
+  ],
+  "itemName": "SendEmailRequest"
+}

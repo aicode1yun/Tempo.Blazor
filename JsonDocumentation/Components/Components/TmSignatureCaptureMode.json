@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Capture modes supported by .",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSignatureCaptureMode"
+}

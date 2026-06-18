@@ -1,0 +1,14 @@
+{
+  "itemName": "TmGauge",
+  "kind": "Component",
+  "category": "Charts",
+  "description": "TmGauge Blazor component in the Charts category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/TmGauge.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Charts"
+  ],
+  "parameters": []
+}

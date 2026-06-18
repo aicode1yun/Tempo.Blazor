@@ -1,0 +1,27 @@
+{
+  "itemName": "MarkdownToolbar",
+  "kind": "Component",
+  "category": "Activity",
+  "description": "MarkdownToolbar Blazor component in the Activity category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Activity",
+  "sourcePath": "src/Tempo.Blazor/Components/Activity/MarkdownToolbar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Activity"
+  ],
+  "parameters": [
+    {
+      "name": "ActiveFormats",
+      "type": "List<string>",
+      "isRequired": true,
+      "description": "Whether the toolbar is disabled."
+    },
+    {
+      "name": "OnFormat",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "List of currently active format names returned by tmMarkdownEditor.getActiveFormats() (e.g. \"bold\", \"h2\", \"ul\")."
+    }
+  ]
+}

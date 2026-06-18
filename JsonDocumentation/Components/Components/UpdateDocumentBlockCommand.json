@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Commands",
+  "description": "Updates one block content payload and stores before/after snapshots.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Commands/UpdateDocumentBlockCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExecuteAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "UndoAsync",
+      "kind": "Method",
+      "type": "Task"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "UpdateDocumentBlockCommand"
+}

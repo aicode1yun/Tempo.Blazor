@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Detected clipboard source and confidence score.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Clipboard/DocumentClipboardStageModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentClipboardSourceDetectionResult"
+}

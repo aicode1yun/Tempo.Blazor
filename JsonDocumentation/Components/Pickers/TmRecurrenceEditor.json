@@ -1,0 +1,47 @@
+{
+  "itemName": "TmRecurrenceEditor",
+  "kind": "Component",
+  "category": "Pickers",
+  "description": "A standalone editor for configuring recurring event rules in iCal RRULE format. Supports Daily, Weekly, Monthly, and Yearly patterns with flexible end conditions.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Pickers",
+  "sourcePath": "src/Tempo.Blazor/Components/Pickers/TmRecurrenceEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Pickers"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Disables the editor."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show the generated RRULE summary. Default is true."
+    },
+    {
+      "name": "ShowSummary",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "The start date used when parsing the rule. Default is today."
+    },
+    {
+      "name": "StartDate",
+      "type": "DateTime",
+      "isRequired": false,
+      "default": "DateTime.Today",
+      "description": "Fires when the rule changes."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "The recurrence rule value (iCal RRULE string)."
+    }
+  ]
+}

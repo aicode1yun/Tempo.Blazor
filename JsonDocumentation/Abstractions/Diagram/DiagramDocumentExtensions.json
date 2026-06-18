@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Extension methods for .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramDocumentExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CloneWithNewIds",
+      "kind": "Method",
+      "type": "DiagramDocument",
+      "description": "Creates a deep clone of the document with all IDs re-seeded. Edge and node references (SourceNodeId, TargetNodeId, ParentNodeId, ParentGroupId, GroupId, LayerId, port IDs) are remapped accordingly.",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "this DiagramDocument"
+        }
+      ]
+    }
+  ],
+  "itemName": "DiagramDocumentExtensions"
+}

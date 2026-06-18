@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "description": "Information about an available column.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmViewManager.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "ViewColumnInfo"
+}

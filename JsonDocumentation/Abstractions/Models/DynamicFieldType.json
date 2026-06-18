@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Field types supported by TmDynamicFormRenderer.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DynamicFieldType.cs",
+  "documentationStatus": "generated",
+  "itemName": "DynamicFieldType"
+}

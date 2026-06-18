@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A collection of related diagram stencils (e.g. all UML stencils).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilSet.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier of the set."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable name displayed in the toolbox."
+    },
+    {
+      "name": "NameResourceKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "Localization resource key used for the stencil set display name."
+    },
+    {
+      "name": "Stencils",
+      "kind": "Property",
+      "type": "List<DiagramStencil>",
+      "description": "Stencils belonging to this set."
+    }
+  ],
+  "itemName": "DiagramStencilSet"
+}

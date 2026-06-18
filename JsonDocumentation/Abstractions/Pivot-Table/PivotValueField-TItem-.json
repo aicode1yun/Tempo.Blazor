@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Defines a data/aggregation field in the pivot table values area.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotValueField.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ],
+  "members": [
+    {
+      "name": "FormatValue",
+      "kind": "Method",
+      "type": "string",
+      "description": "Formats a raw aggregated value using the configured format string.",
+      "parameters": [
+        {
+          "name": "rawValue",
+          "type": "object?"
+        }
+      ]
+    },
+    {
+      "name": "Aggregation",
+      "kind": "Property",
+      "type": "AggregateType",
+      "description": "The aggregation function to apply."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name shown in the column/row header."
+    },
+    {
+      "name": "FieldKey",
+      "kind": "Property",
+      "type": "string",
+      "description": "The source field key this value field references."
+    },
+    {
+      "name": "Format",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional .NET format string (e.g. \"C\", \"N2\", \"P\")."
+    },
+    {
+      "name": "Visible",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Show the value in the pivot table. Default true."
+    }
+  ],
+  "itemName": "PivotValueField<TItem>"
+}

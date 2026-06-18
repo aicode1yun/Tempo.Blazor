@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Thrown when a circular dependency is detected in the Gantt task graph.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttCircularDependencyException.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttCircularDependencyException"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Identifies the type of pivot data provider backing the component.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotDataProviderType.cs",
+  "documentationStatus": "generated",
+  "itemName": "PivotDataProviderType"
+}

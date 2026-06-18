@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Provides chronological Notion blog posts for a space.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionBlogProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotionBlogProvider"
+}

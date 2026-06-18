@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Updates edge waypoints after a segment drag. Semantically equivalent to but named to reflect that the change originated from dragging an orthogonal/elbow segment rather than an individual waypoint.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Commands/UpdateEdgeSegmentOffsetCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "UpdateEdgeSegmentOffsetCommand"
+}

@@ -1,0 +1,43 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Static engine that transforms flat data into a pivot table matrix. Supports multi-level row/column dimensions, multiple value fields with aggregations, filters, and totals.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/PivotEngine.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Compare",
+      "kind": "Method",
+      "type": "int",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "object?"
+        },
+        {
+          "name": "y",
+          "type": "object?"
+        }
+      ]
+    },
+    {
+      "name": "Equals",
+      "kind": "Method",
+      "type": "bool",
+      "parameters": [
+        {
+          "name": "other",
+          "type": "DimensionKey?"
+        }
+      ]
+    },
+    {
+      "name": "GetHashCode",
+      "kind": "Method",
+      "type": "int"
+    }
+  ],
+  "itemName": "PivotEngine"
+}

@@ -1,0 +1,100 @@
+{
+  "itemName": "TmDockPane",
+  "kind": "Component",
+  "category": "Layout",
+  "description": "Declares a dockable pane inside a . The pane registers itself via cascading parameter and its content is rendered by the manager in the appropriate docking zone.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Layout",
+  "sourcePath": "src/Tempo.Blazor/Components/Layout/TmDockPane.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Layout"
+  ],
+  "parameters": [
+    {
+      "name": "CanClose",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the pane can be floated."
+    },
+    {
+      "name": "CanFloat",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Optional icon name."
+    },
+    {
+      "name": "ChildContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Floating Y position."
+    },
+    {
+      "name": "FloatX",
+      "type": "double",
+      "isRequired": false,
+      "default": "100",
+      "description": "Display order."
+    },
+    {
+      "name": "FloatY",
+      "type": "double",
+      "isRequired": false,
+      "default": "100",
+      "description": "Floating X position."
+    },
+    {
+      "name": "Height",
+      "type": "double?",
+      "isRequired": false,
+      "description": "Desired width in pixels."
+    },
+    {
+      "name": "Icon",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Display title."
+    },
+    {
+      "name": "IsActive",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the pane is visible."
+    },
+    {
+      "name": "IsVisible",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the pane can be closed."
+    },
+    {
+      "name": "Order",
+      "type": "int",
+      "isRequired": false,
+      "description": "Desired height in pixels."
+    },
+    {
+      "name": "Position",
+      "type": "DockPosition",
+      "isRequired": false,
+      "default": "DockPosition.Center",
+      "description": "Whether the pane is the active tab in its group."
+    },
+    {
+      "name": "Title",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"\"",
+      "description": "Unique identifier."
+    },
+    {
+      "name": "Width",
+      "type": "double?",
+      "isRequired": false,
+      "description": "Current docking position."
+    }
+  ]
+}

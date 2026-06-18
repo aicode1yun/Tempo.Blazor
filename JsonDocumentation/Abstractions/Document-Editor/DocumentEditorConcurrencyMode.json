@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Optimistic concurrency mode for document saves.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentProviderContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorConcurrencyMode"
+}

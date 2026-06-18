@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "The comparison operator used by a single filter condition.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetFilterEnums.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetFilterOperator"
+}

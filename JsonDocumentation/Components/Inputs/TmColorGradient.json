@@ -1,0 +1,41 @@
+{
+  "itemName": "TmColorGradient",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A color gradient picker that allows users to select a color by adjusting saturation/value on a 2D gradient, hue on a slider, and optionally alpha.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmColorGradient.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether to show the alpha slider and input. Default true."
+    },
+    {
+      "name": "Format",
+      "type": "ColorFormat",
+      "isRequired": false,
+      "default": "ColorFormat.Hex",
+      "description": "Event fired when the color value changes."
+    },
+    {
+      "name": "ShowAlpha",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Output format. Default is ."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "The current color value (hex, rgb, or rgba)."
+    }
+  ]
+}

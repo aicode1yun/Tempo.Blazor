@@ -1,0 +1,65 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "Registry of built-in spreadsheet functions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FunctionRegistry.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Invoke",
+      "kind": "Method",
+      "type": "object?",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "context",
+          "type": "FormulaContext"
+        },
+        {
+          "name": "args",
+          "type": "List<object?>"
+        }
+      ]
+    },
+    {
+      "name": "Register",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "implementation",
+          "type": "object?>"
+        }
+      ]
+    },
+    {
+      "name": "TryGet",
+      "kind": "Method",
+      "type": "bool",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "Func<FormulaContext",
+          "type": "out"
+        },
+        {
+          "name": "implementation",
+          "type": "object?>?"
+        }
+      ]
+    }
+  ],
+  "itemName": "FunctionRegistry"
+}

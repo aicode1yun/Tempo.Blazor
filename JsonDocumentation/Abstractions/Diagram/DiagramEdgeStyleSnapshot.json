@@ -1,0 +1,136 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Immutable snapshot of edge style properties for undo/redo.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramEdgeStyleSnapshot.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ApplyTo",
+      "kind": "Method",
+      "type": "void",
+      "description": "Applies this snapshot to an edge.",
+      "parameters": [
+        {
+          "name": "edge",
+          "type": "DiagramEdge"
+        }
+      ]
+    },
+    {
+      "name": "FromEdge",
+      "kind": "Method",
+      "type": "DiagramEdgeStyleSnapshot",
+      "description": "Creates a snapshot from the current state of an edge.",
+      "parameters": [
+        {
+          "name": "edge",
+          "type": "DiagramEdge"
+        }
+      ]
+    },
+    {
+      "name": "ArcSize",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "EndArrow",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "EndArrowFill",
+      "kind": "Property",
+      "type": "bool?"
+    },
+    {
+      "name": "EndArrowSize",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "JumpSize",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "JumpStyle",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "LabelPositionT",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "LayerId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Rounded",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Shape",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "SourceCardinality",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "SourceEdgeT",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "SourceSpacing",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "StartArrow",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "StartArrowFill",
+      "kind": "Property",
+      "type": "bool?"
+    },
+    {
+      "name": "StartArrowSize",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "DiagramStyle"
+    },
+    {
+      "name": "TargetCardinality",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "TargetEdgeT",
+      "kind": "Property",
+      "type": "double?"
+    },
+    {
+      "name": "TargetSpacing",
+      "kind": "Property",
+      "type": "double?"
+    }
+  ],
+  "itemName": "DiagramEdgeStyleSnapshot"
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+  "description": "Provides Tempo-original templates for extended stencil libraries.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Templates/ExtendedDiagramTemplateProvider.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetTemplateCategoriesAsync",
+      "kind": "Method",
+      "type": "Task<IEnumerable<DiagramTemplateCategory>>"
+    }
+  ],
+  "itemName": "ExtendedDiagramTemplateProvider"
+}

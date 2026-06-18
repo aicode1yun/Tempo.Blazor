@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Enums",
+  "description": "Determines which textual representation of a cell the search engine inspects.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Enums/SpreadsheetSearchIn.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetSearchIn"
+}

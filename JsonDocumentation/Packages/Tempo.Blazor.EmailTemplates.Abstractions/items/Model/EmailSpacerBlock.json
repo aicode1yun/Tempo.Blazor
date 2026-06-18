@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "Vertical spacing (mj-spacer).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailSpacerBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the spacer height (height)."
+    }
+  ],
+  "itemName": "EmailSpacerBlock"
+}

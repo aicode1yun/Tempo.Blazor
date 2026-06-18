@@ -1,0 +1,84 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A single page within a multi-page diagram document. Each page has its own canvas dimensions, nodes, edges, and layers.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramPage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Edges",
+      "kind": "Property",
+      "type": "List<DiagramEdge>",
+      "description": "All edges (connections) on this page."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double",
+      "description": "Canvas height in pixels."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique page identifier."
+    },
+    {
+      "name": "Layers",
+      "kind": "Property",
+      "type": "List<DiagramLayer>",
+      "description": "All layers on this page."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name shown in the page tab."
+    },
+    {
+      "name": "Nodes",
+      "kind": "Property",
+      "type": "List<DiagramNode>",
+      "description": "All nodes placed on this page."
+    },
+    {
+      "name": "PageOrientation",
+      "kind": "Property",
+      "type": "DiagramPageOrientation",
+      "description": "Page orientation."
+    },
+    {
+      "name": "PageScale",
+      "kind": "Property",
+      "type": "double",
+      "description": "Page scale factor (1.0 = 1:1)."
+    },
+    {
+      "name": "PageSize",
+      "kind": "Property",
+      "type": "DiagramPageSize",
+      "description": "Predefined page size. Changing this updates and ."
+    },
+    {
+      "name": "RulerUnit",
+      "kind": "Property",
+      "type": "MeasurementUnit",
+      "description": "Measurement unit used by the rulers."
+    },
+    {
+      "name": "Scale",
+      "kind": "Property",
+      "type": "double",
+      "description": "Canvas display scale for this page (zoom applied to page content)."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double",
+      "description": "Canvas width in pixels."
+    }
+  ],
+  "itemName": "DiagramPage"
+}

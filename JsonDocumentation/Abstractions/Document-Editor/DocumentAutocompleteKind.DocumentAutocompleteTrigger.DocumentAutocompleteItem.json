@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Autocomplete item rendered by the document editor menu.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentAutocomplete.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentAutocompleteKind.DocumentAutocompleteTrigger.DocumentAutocompleteItem"
+}

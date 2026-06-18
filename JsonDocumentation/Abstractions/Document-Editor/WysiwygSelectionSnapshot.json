@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Selection state snapshot produced by the WYSIWYG JS engine.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygSelectionSnapshot.cs",
+  "documentationStatus": "generated",
+  "itemName": "WysiwygSelectionSnapshot"
+}

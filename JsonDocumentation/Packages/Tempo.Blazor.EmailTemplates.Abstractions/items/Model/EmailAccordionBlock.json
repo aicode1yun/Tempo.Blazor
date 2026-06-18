@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "An accordion (mj-accordion).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailAccordionBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Border",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the border shorthand (border)."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the font family (font-family)."
+    },
+    {
+      "name": "IconAlign",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the icon alignment (icon-align)."
+    },
+    {
+      "name": "IconHeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the icon height (icon-height)."
+    },
+    {
+      "name": "IconPosition",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the icon position, left or right (icon-position)."
+    },
+    {
+      "name": "IconUnwrappedUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the URL of the expanded-state icon (icon-unwrapped-url)."
+    },
+    {
+      "name": "IconWidth",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the icon width (icon-width)."
+    },
+    {
+      "name": "IconWrappedUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the URL of the collapsed-state icon (icon-wrapped-url)."
+    },
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IList<EmailAccordionItem>",
+      "description": "Gets the accordion items."
+    }
+  ],
+  "itemName": "EmailAccordionBlock"
+}

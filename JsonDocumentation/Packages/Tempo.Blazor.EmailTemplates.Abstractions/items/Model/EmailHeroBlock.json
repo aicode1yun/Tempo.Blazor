@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A hero banner (mj-hero) that holds content blocks over a background.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailHeroBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the background colour (background-color)."
+    },
+    {
+      "name": "BackgroundHeight",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the background height (background-height)."
+    },
+    {
+      "name": "BackgroundPosition",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the background position (background-position)."
+    },
+    {
+      "name": "BackgroundUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the background image URL (background-url)."
+    },
+    {
+      "name": "BackgroundWidth",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the background width (background-width)."
+    },
+    {
+      "name": "Blocks",
+      "kind": "Property",
+      "type": "IList<EmailBlockBase>",
+      "description": "Gets the blocks rendered inside the hero."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the hero height, used in fixed-height mode (height)."
+    },
+    {
+      "name": "Mode",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the sizing mode, fluid-height or fixed-height (mode)."
+    },
+    {
+      "name": "VerticalAlign",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the vertical alignment of content (vertical-align)."
+    }
+  ],
+  "itemName": "EmailHeroBlock"
+}

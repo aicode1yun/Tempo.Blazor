@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "A single entry in the document heading outline.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentOutlineService.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentOutlineItem"
+}

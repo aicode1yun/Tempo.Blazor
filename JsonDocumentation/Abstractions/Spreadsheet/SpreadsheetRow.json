@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents metadata for a single row in a spreadsheet sheet.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetRow.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double?",
+      "description": "The row height in pixels. Null means use the sheet default."
+    },
+    {
+      "name": "Index",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based row index."
+    },
+    {
+      "name": "IsHidden",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the row is hidden."
+    }
+  ],
+  "itemName": "SpreadsheetRow"
+}

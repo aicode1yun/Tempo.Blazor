@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents an image in TmImageGallery, TmImageLightbox, and TmImagePreview.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IGalleryImage.cs",
+  "documentationStatus": "generated",
+  "itemName": "IGalleryImage"
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "Interface",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Server-side (or async) data provider for TmPivotTable. Implement this interface to power pivot transformations from an API or database.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/IPivotDataProvider.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ],
+  "itemName": "IPivotDataProvider<TItem>"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Struct",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Fluent block rule builder.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorSchema.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentBlockRuleBuilder"
+}

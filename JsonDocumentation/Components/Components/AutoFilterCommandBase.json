@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+  "description": "Shared helpers for auto-filter commands: snapshotting and restoring the hidden state of the data rows in a filter range so undo restores row visibility exactly.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/Commands/AutoFilterCommandBase.cs",
+  "documentationStatus": "generated",
+  "itemName": "AutoFilterCommandBase"
+}

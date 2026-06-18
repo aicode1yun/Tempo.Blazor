@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Mcp",
+  "description": "Registration helpers for the wireframe MCP tools.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddTempoWireframeMcpTools",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers the dependencies the wireframe MCP tools resolve from DI (the component schema registry). The host must additionally supply an ITempoDocumentLibraryProvider and an IWireframeDocumentProvider, and register the tools with its MCP server via .",
+      "parameters": [
+        {
+          "name": "services",
+          "type": "this IServiceCollection"
+        }
+      ]
+    },
+    {
+      "name": "ToolTypes",
+      "kind": "Property",
+      "type": "static IReadOnlyList<Type>",
+      "description": "The wireframe tool types, exposed for hosts that register tools by type. Prefer WithToolsFromAssembly(typeof(TempoWireframeMcp).Assembly), which also advertises the tools capability in the handshake."
+    }
+  ],
+  "itemName": "TempoWireframeMcp"
+}

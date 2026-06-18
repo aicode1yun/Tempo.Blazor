@@ -1,0 +1,27 @@
+{
+  "itemName": "TmPdfSignatureVerification",
+  "kind": "Component",
+  "category": "Signing",
+  "description": "TmPdfSignatureVerification Blazor component in the Signing category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Signing",
+  "sourcePath": "src/Tempo.Blazor/Components/Signing/TmPdfSignatureVerification.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Signing"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the user requests verification."
+    },
+    {
+      "name": "OnVerifyRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Verification result to render."
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "itemName": "TmNotionPageSettingsMenu",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionPageSettingsMenu Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Page/TmNotionPageSettingsMenu.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Page"
+  ],
+  "parameters": [
+    {
+      "name": "OnAIAskPageRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when user picks the AI page summary action."
+    },
+    {
+      "name": "OnAISummarizeRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when user picks \"Page restrictions\"."
+    },
+    {
+      "name": "OnNavigateToImportedPage",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Raised when user picks the AI page question action."
+    },
+    {
+      "name": "OnPageDeleted",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when page metadata (IsFullWidth, IsSmallText, IsLocked, IsFavorite) changes."
+    },
+    {
+      "name": "OnPageHistoryRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised after page is moved to trash — parent should navigate away."
+    },
+    {
+      "name": "OnPageInfoRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when user picks \"Page history\"."
+    },
+    {
+      "name": "OnPageUpdated",
+      "type": "EventCallback<INotionPage>",
+      "isRequired": false
+    },
+    {
+      "name": "OnRestrictionsRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when user picks \"Share\"."
+    },
+    {
+      "name": "OnShareRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when user picks \"Page info\"."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": true,
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Page"
+}

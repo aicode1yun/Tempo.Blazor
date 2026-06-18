@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Identifies a clicked segment.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/ChartModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChartSegment"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Helpers",
+  "description": "Generates page-level notifications for users watching a page or subtree.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Helpers/PageNotificationOrchestrator.cs",
+  "documentationStatus": "generated",
+  "itemName": "PageNotificationOrchestrator"
+}

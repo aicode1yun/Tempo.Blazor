@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a single entry in TmTimeline / TmActivityTimeline (activity log, audit trail, history).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ITimelineEntry.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITimelineEntry"
+}

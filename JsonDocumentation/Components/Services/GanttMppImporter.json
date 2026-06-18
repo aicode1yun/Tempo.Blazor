@@ -1,0 +1,23 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Imports Gantt tasks from a Microsoft Project XML (MPP XML) stream.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/GanttMppImporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Import",
+      "kind": "Method",
+      "type": "IReadOnlyList<GanttTask>",
+      "parameters": [
+        {
+          "name": "stream",
+          "type": "Stream"
+        }
+      ]
+    }
+  ],
+  "itemName": "GanttMppImporter"
+}

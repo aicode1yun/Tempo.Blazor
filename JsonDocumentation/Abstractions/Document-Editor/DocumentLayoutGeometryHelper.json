@@ -1,0 +1,150 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Geometry helpers used by document page layout and object wrapping.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentLayoutGeometryHelper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ClampToBody",
+      "kind": "Method",
+      "type": "DocumentLayoutRect",
+      "description": "Clamps a rectangle origin into the page body while preserving the rectangle size when possible.",
+      "parameters": [
+        {
+          "name": "rect",
+          "type": "DocumentLayoutRect"
+        },
+        {
+          "name": "bodyRect",
+          "type": "DocumentLayoutRect"
+        }
+      ]
+    },
+    {
+      "name": "ComputeWrapRect",
+      "kind": "Method",
+      "type": "DocumentLayoutRect",
+      "description": "Expands an object rectangle by the configured wrap distances.",
+      "parameters": [
+        {
+          "name": "objectRect",
+          "type": "DocumentLayoutRect"
+        },
+        {
+          "name": "wrap",
+          "type": "DocumentObjectWrap"
+        }
+      ]
+    },
+    {
+      "name": "CreateDefaultWrapContourPoints",
+      "kind": "Method",
+      "type": "IReadOnlyList<DocumentObjectWrapPoint>",
+      "description": "Returns the default rectangular wrap contour in normalized object coordinates."
+    },
+    {
+      "name": "CreateExclusionZone",
+      "kind": "Method",
+      "type": "DocumentExclusionZone?",
+      "description": "Creates a text exclusion zone for one object, or returns null when the wrap mode does not block text.",
+      "parameters": [
+        {
+          "name": "objectBox",
+          "type": "DocumentObjectLayoutBox"
+        },
+        {
+          "name": "pageBodyRect",
+          "type": "DocumentLayoutRect"
+        }
+      ]
+    },
+    {
+      "name": "GetObjectFootprintRect",
+      "kind": "Method",
+      "type": "DocumentLayoutRect",
+      "description": "Returns the object's visible layout footprint, falling back to the media rectangle when no caption footprint exists.",
+      "parameters": [
+        {
+          "name": "objectBox",
+          "type": "DocumentObjectLayoutBox"
+        }
+      ]
+    },
+    {
+      "name": "Intersection",
+      "kind": "Method",
+      "type": "DocumentLayoutRect",
+      "description": "Returns the overlapping area of two rectangles, or an empty rectangle if they do not overlap.",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "DocumentLayoutRect"
+        },
+        {
+          "name": "b",
+          "type": "DocumentLayoutRect"
+        }
+      ]
+    },
+    {
+      "name": "Intersects",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns whether two rectangles overlap with positive area.",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "DocumentLayoutRect"
+        },
+        {
+          "name": "b",
+          "type": "DocumentLayoutRect"
+        }
+      ]
+    },
+    {
+      "name": "NormalizeWrapContourPoints",
+      "kind": "Method",
+      "type": "IReadOnlyList<DocumentObjectWrapPoint>",
+      "description": "Clamps wrap contour points to normalized coordinates and falls back to a rectangle when too few valid points are provided.",
+      "parameters": [
+        {
+          "name": "points",
+          "type": "IEnumerable<DocumentObjectWrapPoint>?"
+        }
+      ]
+    },
+    {
+      "name": "OrderByZIndex",
+      "kind": "Method",
+      "type": "IReadOnlyList<DocumentObjectLayoutBox>",
+      "description": "Orders object boxes by page and z-index while preserving stable relative order for equal z-index values.",
+      "parameters": [
+        {
+          "name": "objects",
+          "type": "IEnumerable<DocumentObjectLayoutBox>"
+        }
+      ]
+    },
+    {
+      "name": "Union",
+      "kind": "Method",
+      "type": "DocumentLayoutRect",
+      "description": "Returns the smallest rectangle containing both input rectangles.",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "DocumentLayoutRect"
+        },
+        {
+          "name": "b",
+          "type": "DocumentLayoutRect"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentLayoutGeometryHelper"
+}

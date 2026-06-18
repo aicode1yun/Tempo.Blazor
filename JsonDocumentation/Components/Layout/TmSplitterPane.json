@@ -1,0 +1,63 @@
+{
+  "itemName": "TmSplitterPane",
+  "kind": "Component",
+  "category": "Layout",
+  "description": "A pane within a splitter component.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Layout",
+  "sourcePath": "src/Tempo.Blazor/Components/Layout/TmSplitterPane.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Layout"
+  ],
+  "parameters": [
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Event fired when collapsed state changes."
+    },
+    {
+      "name": "Collapsed",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the pane can be collapsed."
+    },
+    {
+      "name": "CollapsedChanged",
+      "type": "EventCallback<bool>",
+      "isRequired": false,
+      "description": "Whether the pane is collapsed."
+    },
+    {
+      "name": "Collapsible",
+      "type": "bool",
+      "isRequired": false,
+      "description": "The maximum size of the pane."
+    },
+    {
+      "name": "MaxSize",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The minimum size of the pane."
+    },
+    {
+      "name": "MinSize",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The initial size of the pane (in pixels or percentage)."
+    },
+    {
+      "name": "Parent",
+      "type": "TmSplitter?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    },
+    {
+      "name": "Size",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The content to render inside the pane."
+    }
+  ]
+}

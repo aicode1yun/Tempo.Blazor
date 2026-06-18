@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Renders a declarative document toolbar item.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Registry/IDocumentToolbarItemRenderer.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentToolbarItemRenderer"
+}

@@ -1,0 +1,198 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Debug snapshot of the live WYSIWYG editor state for failed E2E diagnostics.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygDebugSnapshot.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AcceptingNativeInput",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the engine is currently accepting browser-native input."
+    },
+    {
+      "name": "ActiveBlockId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Active block id inferred from selection or focused element."
+    },
+    {
+      "name": "ActiveDomPath",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Compact DOM path from the host root to the selected/focused node."
+    },
+    {
+      "name": "ActiveElementClasses",
+      "kind": "Property",
+      "type": "string?",
+      "description": "CSS classes of the active DOM element."
+    },
+    {
+      "name": "ActiveElementTagName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Tag name of the active DOM element."
+    },
+    {
+      "name": "ActiveElementTestId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Test id of the active DOM element, if present."
+    },
+    {
+      "name": "ActiveInlineId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Active inline id inferred from selection or focused element."
+    },
+    {
+      "name": "ActiveTextOffset",
+      "kind": "Property",
+      "type": "int",
+      "description": "Text offset of the active caret within the active inline."
+    },
+    {
+      "name": "BodyTextLength",
+      "kind": "Property",
+      "type": "int",
+      "description": "Total text length visible in the WYSIWYG host root."
+    },
+    {
+      "name": "CompositionActive",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether IME/composition input is currently active."
+    },
+    {
+      "name": "CurrentSelection",
+      "kind": "Property",
+      "type": "WysiwygSelectionSnapshot?",
+      "description": "Current browser selection mapped to document ids."
+    },
+    {
+      "name": "CurrentTransactionId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Current typing transaction id, if any."
+    },
+    {
+      "name": "HasInstance",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the JavaScript engine instance was found."
+    },
+    {
+      "name": "ImageElementCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of rendered image elements."
+    },
+    {
+      "name": "InstanceId",
+      "kind": "Property",
+      "type": "string",
+      "description": "WYSIWYG engine instance id."
+    },
+    {
+      "name": "IsDisposed",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the JavaScript engine instance has been disposed."
+    },
+    {
+      "name": "IsReadOnly",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the live surface is read-only."
+    },
+    {
+      "name": "LastInputDataLength",
+      "kind": "Property",
+      "type": "int",
+      "description": "Length of the last browser input data payload."
+    },
+    {
+      "name": "LastInputType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Last browser input type observed by the engine."
+    },
+    {
+      "name": "LastPatchAt",
+      "kind": "Property",
+      "type": "string?",
+      "description": "ISO timestamp of the last patch dispatch."
+    },
+    {
+      "name": "LastPatchId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Last patch id, if the patch carried one."
+    },
+    {
+      "name": "LastPatchTransactionId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Last patch transaction id."
+    },
+    {
+      "name": "LastPatchType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Last patch type dispatched to Blazor."
+    },
+    {
+      "name": "LastSelection",
+      "kind": "Property",
+      "type": "WysiwygSelectionSnapshot?",
+      "description": "Last selection snapshot remembered by the engine."
+    },
+    {
+      "name": "PendingPatchType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Pending patch type, if a patch is queued."
+    },
+    {
+      "name": "PendingTransactionId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Pending patch transaction id, if a patch is queued."
+    },
+    {
+      "name": "QueuedRemoteBatchCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of remote operation batches waiting for the local input transaction to finish."
+    },
+    {
+      "name": "RenderedBlockCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of rendered document blocks."
+    },
+    {
+      "name": "RevisionElementCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of rendered revision decorations."
+    },
+    {
+      "name": "RootHasFocus",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether focus is currently inside the WYSIWYG host root."
+    },
+    {
+      "name": "TrackChangesEnabled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether track changes is currently enabled in the live surface."
+    }
+  ],
+  "itemName": "WysiwygDebugSnapshot"
+}

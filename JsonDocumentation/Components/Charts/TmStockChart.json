@@ -1,0 +1,14 @@
+{
+  "itemName": "TmStockChart",
+  "kind": "Component",
+  "category": "Charts",
+  "description": "TmStockChart Blazor component in the Charts category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/TmStockChart.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Charts"
+  ],
+  "parameters": []
+}

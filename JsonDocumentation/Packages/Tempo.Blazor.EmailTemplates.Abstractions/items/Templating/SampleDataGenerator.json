@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "Generates a plausible sample data model from a template's extracted variables, so previews and the \"fill from template\" action produce realistic, fully-populated output.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/SampleDataGenerator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Generate",
+      "kind": "Method",
+      "type": "IDictionary<string, object?>",
+      "description": "Builds a nested sample model (dictionaries/lists) covering all the given variables.",
+      "parameters": [
+        {
+          "name": "variables",
+          "type": "IReadOnlyList<TemplateVariableInfo>"
+        }
+      ]
+    }
+  ],
+  "itemName": "SampleDataGenerator"
+}

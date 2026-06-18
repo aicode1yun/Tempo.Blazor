@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Adapter between the document editor JSON model and the existing Notion block model.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorNotionAdapter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ToNotionBlocks",
+      "kind": "Method",
+      "type": "IReadOnlyList<NotionBlock>",
+      "description": "Converts a document editor document to Notion blocks.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "pageId",
+          "type": "Guid"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentEditorNotionAdapter"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Payload used when applying or editing a WYSIWYG hyperlink.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygLinkModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "WysiwygLinkPayload"
+}

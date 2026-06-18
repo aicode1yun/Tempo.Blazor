@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Computes status-bar aggregations over an arbitrary set of cell values. Numeric aggregations (Sum/Average/Min/Max) ignore text and empty cells; counts every non-empty cell while counts only numeric cells.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetAggregation.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetAggregation"
+}

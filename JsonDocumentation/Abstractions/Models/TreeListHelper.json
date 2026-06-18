@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Helper methods for converting flat data into a hierarchical tree-list representation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/TreeListHelper.cs",
+  "documentationStatus": "generated",
+  "itemName": "TreeListHelper"
+}

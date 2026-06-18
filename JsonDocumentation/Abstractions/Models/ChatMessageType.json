@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Direction / type of a chat message.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatMessage.cs",
+  "documentationStatus": "generated",
+  "itemName": "ChatMessageType"
+}

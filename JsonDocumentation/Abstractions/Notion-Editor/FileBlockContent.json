@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/FileBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Caption",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "FileId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "FileSizeBytes",
+      "kind": "Property",
+      "type": "long"
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "int?"
+    }
+  ],
+  "itemName": "FileBlockContent"
+}

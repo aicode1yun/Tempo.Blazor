@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Export formats produced by .",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureExportFormat.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSignatureCaptureExportFormat"
+}

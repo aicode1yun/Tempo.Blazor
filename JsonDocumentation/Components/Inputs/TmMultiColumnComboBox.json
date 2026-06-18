@@ -1,0 +1,88 @@
+{
+  "itemName": "TmMultiColumnComboBox",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A combo box that displays a multi-column grid in its dropdown for rich item selection.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmMultiColumnComboBox.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Disables the component."
+    },
+    {
+      "name": "Data",
+      "type": "IReadOnlyList<TItem>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Fires when the selection changes."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show a clear button. Default is true."
+    },
+    {
+      "name": "Filterable",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Placeholder shown when no value is selected."
+    },
+    {
+      "name": "FilterPlaceholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether the user can filter the dropdown list. Default is true."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Expression that returns the display text for the trigger when an item is selected."
+    },
+    {
+      "name": "ShowClearButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Placeholder for the filter input."
+    },
+    {
+      "name": "TextField",
+      "type": "Func<TItem, string>",
+      "isRequired": true,
+      "description": "Expression that returns the value for a given item. Required for selection matching."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<TValue?>",
+      "isRequired": false,
+      "description": "Selected value."
+    },
+    {
+      "name": "ValueField",
+      "type": "Func<TItem, TValue>",
+      "isRequired": true,
+      "description": "Data source for the dropdown grid."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    },
+    {
+      "name": "TValue",
+      "description": "Generic type parameter TValue."
+    }
+  ]
+}

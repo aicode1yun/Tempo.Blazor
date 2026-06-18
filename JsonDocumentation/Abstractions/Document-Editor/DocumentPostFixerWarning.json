@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Post-fixer warning with a stable code.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorSchema.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentPostFixerWarning"
+}

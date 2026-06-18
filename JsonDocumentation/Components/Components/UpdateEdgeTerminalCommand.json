@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Updates an edge terminal (source or target) between node/port, point, or constraint modes.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Commands/UpdateEdgeTerminalCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "UpdateEdgeTerminalCommand"
+}

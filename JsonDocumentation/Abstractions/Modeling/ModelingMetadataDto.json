@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Metadata describing where a modeling model came from and whether it is fresh.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingMetadataDto"
+}

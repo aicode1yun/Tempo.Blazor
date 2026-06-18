@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+  "description": "Request to render a preview of a template body with optional variable data.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/RenderPreviewRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContentJson",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the serialized document content (JSON)."
+    },
+    {
+      "name": "VariablesJson",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets the optional variable data as JSON."
+    }
+  ],
+  "itemName": "RenderPreviewRequest"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Scope of the view - personal (user-only) or tenant (shared).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableView.cs",
+  "documentationStatus": "generated",
+  "itemName": "ViewScope"
+}

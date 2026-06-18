@@ -1,0 +1,240 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "Structural edit operations over an : finding, adding, moving, removing and duplicating blocks, sections and columns. All operations work across nested hero/group/wrapper containers via .",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/DocumentEditing.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddBlock",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Inserts a block into the column with the given id at (clamped). Returns if no such column exists.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "columnId",
+          "type": "Guid"
+        },
+        {
+          "name": "block",
+          "type": "EmailBlockBase"
+        },
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "AddColumn",
+      "kind": "Method",
+      "type": "void",
+      "description": "Adds a column to the section and rebalances all columns to equal widths.",
+      "parameters": [
+        {
+          "name": "section",
+          "type": "this EmailSection"
+        },
+        {
+          "name": "column",
+          "type": "EmailColumn"
+        }
+      ]
+    },
+    {
+      "name": "AddSection",
+      "kind": "Method",
+      "type": "void",
+      "description": "Inserts a top-level section at (clamped).",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "section",
+          "type": "EmailSection"
+        },
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "DuplicateBlock",
+      "kind": "Method",
+      "type": "EmailBlockBase?",
+      "description": "Inserts a deep copy (with fresh ids) of the block immediately after the original, in the same container. Returns the copy, or if the block was not found.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "blockId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "DuplicateSection",
+      "kind": "Method",
+      "type": "EmailSection?",
+      "description": "Inserts a deep copy (with fresh ids) of a top-level section immediately after the original. Returns the copy, or if the section was not found.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "sectionId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "FindBlock",
+      "kind": "Method",
+      "type": "EmailBlockBase?",
+      "description": "Finds a block anywhere in the document by id, or returns .",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "blockId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "FindParentColumn",
+      "kind": "Method",
+      "type": "EmailColumn?",
+      "description": "Returns the column that directly contains the given block, or when the block is held by a non-column container (e.g. a hero) or does not exist.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "blockId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "MoveBlock",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Moves a block to the target column at (clamped, evaluated after removal). Returns if the block or target column is missing.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "blockId",
+          "type": "Guid"
+        },
+        {
+          "name": "targetColumnId",
+          "type": "Guid"
+        },
+        {
+          "name": "targetIndex",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "MoveSection",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Moves a top-level section to (clamped after removal).",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "sectionId",
+          "type": "Guid"
+        },
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "RebalanceColumns",
+      "kind": "Method",
+      "type": "void",
+      "description": "Sets every column in the section to an equal share of the width (summing to 100%).",
+      "parameters": [
+        {
+          "name": "section",
+          "type": "EmailSection"
+        }
+      ]
+    },
+    {
+      "name": "RemoveBlock",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Removes a block from wherever it lives in the tree. Returns whether it was found.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "blockId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "RemoveColumn",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Removes a column by id and rebalances the remaining columns. Returns whether found.",
+      "parameters": [
+        {
+          "name": "section",
+          "type": "this EmailSection"
+        },
+        {
+          "name": "columnId",
+          "type": "Guid"
+        }
+      ]
+    },
+    {
+      "name": "RemoveSection",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Removes a top-level section by id. Returns whether it was found.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "this EmailTemplateDocument"
+        },
+        {
+          "name": "sectionId",
+          "type": "Guid"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentEditing"
+}

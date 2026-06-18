@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Serializable snapshot of a dock-manager layout used for persistence.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DockLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "DockLayout"
+}

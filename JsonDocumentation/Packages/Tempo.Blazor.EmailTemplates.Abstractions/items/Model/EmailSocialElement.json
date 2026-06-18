@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A single icon within an (mj-social-element).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailSocialElement.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Alt",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the icon alternative text (alt)."
+    },
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the background colour override (background-color)."
+    },
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link target (href)."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the optional label text shown next to the icon."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the network name mapping to a built-in icon (name)."
+    },
+    {
+      "name": "Src",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets a custom icon URL overriding (src)."
+    },
+    {
+      "name": "Target",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the link target window (target)."
+    }
+  ],
+  "itemName": "EmailSocialElement"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "An auto-filter over a rectangular range. The first row of the range is the header row that carries the filter buttons; the rows below are filtered. Column filters are combined with AND.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetAutoFilter.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetAutoFilter"
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "An imported web font (mj-font).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailFont.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the stylesheet URL providing the font (href)."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font family name (name)."
+    }
+  ],
+  "itemName": "EmailFont"
+}

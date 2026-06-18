@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Layout direction for TmRadioGroup.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/RadioLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "RadioLayout"
+}

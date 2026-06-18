@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A single cell of an .",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTableCell.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the cell text alignment (align)."
+    },
+    {
+      "name": "ColSpan",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Gets or sets the column span (colspan), when greater than one."
+    },
+    {
+      "name": "RowSpan",
+      "kind": "Property",
+      "type": "int?",
+      "description": "Gets or sets the row span (rowspan), when greater than one."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the cell text content."
+    }
+  ],
+  "itemName": "EmailTableCell"
+}

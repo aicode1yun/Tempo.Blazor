@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "Global, document-wide styling and head settings (maps to the MJML <mj-head> globals and the mj-body attributes).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/TemplateStyles.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Attributes",
+      "kind": "Property",
+      "type": "MjAttributes",
+      "description": "Gets or sets the default-attribute cascade (mj-attributes: mj-all, per-tag, mj-class)."
+    },
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the body background colour (mj-body background-color)."
+    },
+    {
+      "name": "Breakpoint",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the mobile breakpoint width (mj-breakpoint width)."
+    },
+    {
+      "name": "ContentWidth",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the body content width (mj-body width)."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the default font family applied across the template."
+    },
+    {
+      "name": "Fonts",
+      "kind": "Property",
+      "type": "IList<EmailFont>",
+      "description": "Gets the imported web fonts (mj-font)."
+    },
+    {
+      "name": "HtmlAttributes",
+      "kind": "Property",
+      "type": "IList<MjHtmlSelector>",
+      "description": "Gets the custom HTML attribute selectors (mj-html-attributes, round-trip only)."
+    },
+    {
+      "name": "Styles",
+      "kind": "Property",
+      "type": "IList<EmailStyle>",
+      "description": "Gets the custom style blocks (mj-style)."
+    }
+  ],
+  "itemName": "TemplateStyles"
+}

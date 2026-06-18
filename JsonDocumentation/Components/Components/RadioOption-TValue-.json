@@ -1,0 +1,24 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "A single option in a TmRadioGroup.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/RadioOption.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TValue",
+      "description": "Generic type parameter TValue."
+    }
+  ],
+  "members": [
+    {
+      "name": "IsDisabled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Disables this specific option."
+    }
+  ],
+  "itemName": "RadioOption<TValue>"
+}

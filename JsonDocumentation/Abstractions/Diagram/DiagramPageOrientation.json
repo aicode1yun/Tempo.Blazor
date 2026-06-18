@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Page orientation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramPageSize.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramPageOrientation"
+}

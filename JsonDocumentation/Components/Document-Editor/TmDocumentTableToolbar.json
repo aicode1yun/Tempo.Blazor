@@ -1,0 +1,69 @@
+{
+  "itemName": "TmDocumentTableToolbar",
+  "kind": "Component",
+  "category": "Document Editor",
+  "description": "TmDocumentTableToolbar Blazor component in the Document Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/TmDocumentTableToolbar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DocumentEditor"
+  ],
+  "parameters": [
+    {
+      "name": "CellProperties",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when table properties should open."
+    },
+    {
+      "name": "DeleteColumn",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the current row should be deleted."
+    },
+    {
+      "name": "DeleteRow",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when a column should be inserted after the current column."
+    },
+    {
+      "name": "InsertColumnAfter",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when a column should be inserted before the current column."
+    },
+    {
+      "name": "InsertColumnBefore",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when a row should be inserted after the current row."
+    },
+    {
+      "name": "InsertRowAfter",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when a row should be inserted before the current row."
+    },
+    {
+      "name": "MergeCells",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the current column should be deleted."
+    },
+    {
+      "name": "SplitCell",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when selected cells should merge."
+    },
+    {
+      "name": "TableProperties",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the current merged cell should split."
+    }
+  ]
+}

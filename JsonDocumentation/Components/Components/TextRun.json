@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Model",
+  "description": "Text run with optional formatting marks.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Wysiwyg/Model/Inlines.cs",
+  "documentationStatus": "generated",
+  "itemName": "TextRun"
+}

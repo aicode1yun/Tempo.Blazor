@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Performs find-and-replace operations on a .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentReplaceService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ReplaceAll",
+      "kind": "Method",
+      "type": "int",
+      "description": "Replaces all occurrences matching with . Returns the number of replacements made.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "query",
+          "type": "DocumentSearchQuery"
+        },
+        {
+          "name": "replacement",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ReplaceOne",
+      "kind": "Method",
+      "type": "void",
+      "description": "Replaces the single occurrence identified by with .",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "result",
+          "type": "DocumentSearchResult"
+        },
+        {
+          "name": "replacement",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentReplaceService"
+}

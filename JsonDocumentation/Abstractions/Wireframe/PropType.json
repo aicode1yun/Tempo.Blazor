@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "description": "Data type of a wireframe component property.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/PropType.cs",
+  "documentationStatus": "generated",
+  "itemName": "PropType"
+}

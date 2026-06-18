@@ -1,0 +1,37 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Controls which events trigger email or push notifications for the current user.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttNotificationSettings.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "EmailOnAssign",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "EmailOnMention",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "PushOnAssign",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "PushOnDeadline",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "PushOnMention",
+      "kind": "Property",
+      "type": "bool"
+    }
+  ],
+  "itemName": "GanttNotificationSettings"
+}

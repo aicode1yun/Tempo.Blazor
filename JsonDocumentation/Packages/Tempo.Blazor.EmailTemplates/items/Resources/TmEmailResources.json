@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Resources",
+  "namespace": "Tempo.Blazor.EmailTemplates.Resources",
+  "description": "Marker class for the Tempo.Blazor.EmailTemplates UI string resources. Used with IStringLocalizer<TmEmailResources> and the accompanying .resx files (English default, Czech and French).",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Resources/TmEmailResources.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmEmailResources"
+}

@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Browser IndexedDB-backed offline store for document editor drafts.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/IndexedDbDocumentOfflineStore.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DeleteDraftAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "draftId",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "LoadDraftAsync",
+      "kind": "Method",
+      "type": "Task<DocumentOfflineDraft?>",
+      "parameters": [
+        {
+          "name": "draftId",
+          "type": "string"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "SaveDraftAsync",
+      "kind": "Method",
+      "type": "Task",
+      "parameters": [
+        {
+          "name": "draft",
+          "type": "DocumentOfflineDraft"
+        },
+        {
+          "name": "cancellationToken",
+          "type": "CancellationToken",
+          "default": "default"
+        }
+      ]
+    }
+  ],
+  "itemName": "IndexedDbDocumentOfflineStore"
+}

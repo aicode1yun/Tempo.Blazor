@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Workflow",
+  "description": "State type in the workflow canvas.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Workflow/WorkflowCanvasModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "CanvasStateType"
+}

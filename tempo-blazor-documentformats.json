@@ -1,0 +1,742 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.DocumentFormats",
+    "title": "Tempo.Blazor.DocumentFormats",
+    "description": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor.",
+    "authors": "Tempo",
+    "targetFrameworks": [
+      "net10.0"
+    ],
+    "tags": "blazor;documents;docx;odt;openxml;document-editor",
+    "repositoryUrl": "https://github.com/tempo/tempo-blazor",
+    "projectUrl": null,
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.DocumentFormats"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      }
+    ],
+    "projectReferences": [
+      "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.DocumentFormats",
+      "Tempo.Blazor.DocumentFormats.Docx",
+      "Tempo.Blazor.DocumentFormats.Html",
+      "Tempo.Blazor.DocumentFormats.Markdown",
+      "Tempo.Blazor.DocumentFormats.Notion",
+      "Tempo.Blazor.DocumentFormats.Odt"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.DocumentFormats",
+    "overview": "Optional server-side DOCX and ODT import/export support for TmDocumentEditor.",
+    "targetFramework": "net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.DocumentFormats"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "DocumentFormat.OpenXml",
+        "version": "3.3.0"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "DocumentDocxExporter",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Exports document editor JSON models as DOCX packages.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxExporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentDocxImporter",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Imports DOCX packages into the document editor JSON model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocxCropConverter",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Converts document image crop values to and from DrawingML source rectangles.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxCropConverter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "FromSourceRectangle",
+          "kind": "Method",
+          "type": "DocumentObjectCrop",
+          "description": "Reads normalized crop percentages from an a:srcRect element.",
+          "parameters": [
+            {
+              "name": "crop",
+              "type": "SourceRectangle?"
+            }
+          ]
+        },
+        {
+          "name": "IsEmpty",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns true when the crop rectangle has no visible crop.",
+          "parameters": [
+            {
+              "name": "crop",
+              "type": "DocumentObjectCrop?"
+            }
+          ]
+        },
+        {
+          "name": "ToSourceRectangle",
+          "kind": "Method",
+          "type": "SourceRectangle?",
+          "description": "Creates an a:srcRect element from normalized crop percentages.",
+          "parameters": [
+            {
+              "name": "crop",
+              "type": "DocumentObjectCrop?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DocxImageContentTypeMapper",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Maps document image data to DOCX image part metadata.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxImageContentTypeMapper.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocxImageData",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Decoded image data from a data URL.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxImageContentTypeMapper.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocxImagePartInfo",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Resolved DOCX image part metadata.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxImageContentTypeMapper.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocxPackageReader",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Reads WordprocessingML package parts into the editor model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocxPackageWriter",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Writes an editor document to a WordprocessingML package.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocumentDocxExporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocxTransformConverter",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Converts document object transforms to and from DrawingML transforms.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxTransformConverter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ReadFlip",
+          "kind": "Method",
+          "type": "DocumentObjectFlip?",
+          "description": "Reads horizontal and vertical flip flags from the first picture transform in a drawing.",
+          "parameters": [
+            {
+              "name": "drawing",
+              "type": "W.Drawing"
+            }
+          ]
+        },
+        {
+          "name": "ReadRotation",
+          "kind": "Method",
+          "type": "double",
+          "description": "Reads rotation in degrees from the first picture transform in a drawing.",
+          "parameters": [
+            {
+              "name": "drawing",
+              "type": "W.Drawing"
+            }
+          ]
+        },
+        {
+          "name": "ToRotation",
+          "kind": "Method",
+          "type": "Int32Value?",
+          "description": "Converts degrees to a DrawingML rotation value.",
+          "parameters": [
+            {
+              "name": "rotation",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "ToTransform2D",
+          "kind": "Method",
+          "type": "A.Transform2D",
+          "description": "Creates an a:xfrm element with dimensions, rotation, and flip flags.",
+          "parameters": [
+            {
+              "name": "transform",
+              "type": "DocumentObjectTransform"
+            },
+            {
+              "name": "cx",
+              "type": "long"
+            },
+            {
+              "name": "cy",
+              "type": "long"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DocxUnitConverter",
+      "kind": "Class",
+      "category": "Docx",
+      "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+      "description": "Centralized unit conversions used by DOCX WordprocessingML and DrawingML import/export.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxUnitConverter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CropUnitsPerPercent",
+          "kind": "Field",
+          "type": "int",
+          "description": "DrawingML crop units per percent."
+        },
+        {
+          "name": "EmusPerInch",
+          "kind": "Field",
+          "type": "long",
+          "description": "EMU units per inch."
+        },
+        {
+          "name": "EmusPerPoint",
+          "kind": "Field",
+          "type": "double",
+          "description": "EMU units per point."
+        },
+        {
+          "name": "PointsPerInch",
+          "kind": "Field",
+          "type": "double",
+          "description": "Points per inch."
+        },
+        {
+          "name": "RotationUnitsPerDegree",
+          "kind": "Field",
+          "type": "int",
+          "description": "DrawingML rotation units per degree."
+        },
+        {
+          "name": "TwipsPerPoint",
+          "kind": "Field",
+          "type": "double",
+          "description": "Twips per point."
+        },
+        {
+          "name": "CropToPercent",
+          "kind": "Method",
+          "type": "double",
+          "description": "Converts DrawingML crop units to a percent crop value.",
+          "parameters": [
+            {
+              "name": "crop",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "DegreeToRotation",
+          "kind": "Method",
+          "type": "int",
+          "description": "Converts degrees to DrawingML rotation units.",
+          "parameters": [
+            {
+              "name": "degrees",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "EmuToPoint",
+          "kind": "Method",
+          "type": "double",
+          "description": "Converts EMUs to points.",
+          "parameters": [
+            {
+              "name": "emus",
+              "type": "long"
+            }
+          ]
+        },
+        {
+          "name": "InchToEmu",
+          "kind": "Method",
+          "type": "long",
+          "description": "Converts inches to EMUs.",
+          "parameters": [
+            {
+              "name": "inches",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "PercentToCrop",
+          "kind": "Method",
+          "type": "int",
+          "description": "Converts a percent crop value to DrawingML crop units.",
+          "parameters": [
+            {
+              "name": "percent",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "PixelToEmu",
+          "kind": "Method",
+          "type": "long",
+          "description": "Converts pixels to EMUs using the supplied DPI.",
+          "parameters": [
+            {
+              "name": "pixels",
+              "type": "double"
+            },
+            {
+              "name": "dpi",
+              "type": "double",
+              "default": "96d"
+            }
+          ]
+        },
+        {
+          "name": "PointToEmu",
+          "kind": "Method",
+          "type": "long",
+          "description": "Converts points to EMUs.",
+          "parameters": [
+            {
+              "name": "points",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "PointToTwip",
+          "kind": "Method",
+          "type": "int",
+          "description": "Converts points to twips.",
+          "parameters": [
+            {
+              "name": "points",
+              "type": "double"
+            }
+          ]
+        },
+        {
+          "name": "RotationToDegree",
+          "kind": "Method",
+          "type": "double",
+          "description": "Converts DrawingML rotation units to degrees.",
+          "parameters": [
+            {
+              "name": "rotation",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "TwipToPoint",
+          "kind": "Method",
+          "type": "double",
+          "description": "Converts twips to points.",
+          "parameters": [
+            {
+              "name": "twips",
+              "type": "double"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DocumentFormatCompatibilitySeverity",
+      "kind": "Enum",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Severity of an import/export compatibility message.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatCompatibilityWarning",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Compatibility warning emitted by an importer or exporter.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatExportOptions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Options used when exporting an external package.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatExportResult",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Result returned from an external package exporter.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatImageExportRequest",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Image requested during export.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatImageExportResult",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Image bytes resolved during export.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatImageImportRequest",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Image extracted during import.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatImageImportResult",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Image import callback result.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatImportOptions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Options used when importing an external package.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatImportResult",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Result returned from an external package importer.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatKind",
+      "kind": "Enum",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Supported external document format.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentFormatPreservedPart",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Package part preserved outside the semantic document model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentPackageRoundTripReport",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "Summary of an import/export round-trip through the editor document model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IDocumentFormatExporter",
+      "kind": "Interface",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "External package exporter.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IDocumentFormatImporter",
+      "kind": "Interface",
+      "category": "General",
+      "namespace": "Tempo.Blazor.DocumentFormats",
+      "description": "External package importer.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentHtmlExporter",
+      "kind": "Class",
+      "category": "Html",
+      "namespace": "Tempo.Blazor.DocumentFormats.Html",
+      "description": "Exports a to safe, semantic HTML.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlExporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentHtmlExportOptions",
+      "kind": "Class",
+      "category": "Html",
+      "namespace": "Tempo.Blazor.DocumentFormats.Html",
+      "description": "Options used when exporting an editor document to HTML.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlExporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentHtmlImporter",
+      "kind": "Class",
+      "category": "Html",
+      "namespace": "Tempo.Blazor.DocumentFormats.Html",
+      "description": "Imports a safe subset of semantic HTML into a .",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentHtmlImportOptions",
+      "kind": "Class",
+      "category": "Html",
+      "namespace": "Tempo.Blazor.DocumentFormats.Html",
+      "description": "Options used when importing HTML into the editor document model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentMarkdownExporter",
+      "kind": "Class",
+      "category": "Markdown",
+      "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
+      "description": "Exports a to Markdown.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownExporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Export",
+          "kind": "Method",
+          "type": "string",
+          "description": "Exports a document to Markdown text.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "DocumentEditorDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DocumentMarkdownImporter",
+      "kind": "Class",
+      "category": "Markdown",
+      "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
+      "description": "Imports common safe Markdown document structures into a .",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentMarkdownImportOptions",
+      "kind": "Class",
+      "category": "Markdown",
+      "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
+      "description": "Options used when importing Markdown into the editor document model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentModelToNotionConversionResult",
+      "kind": "Record",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.DocumentFormats.Notion",
+      "description": "Result of converting a document model into Notion page blocks.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Notion/DocumentModelToNotionConverter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentModelToNotionConverter",
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.DocumentFormats.Notion",
+      "description": "Converts the Tempo document editor model into Notion editor page blocks.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Notion/DocumentModelToNotionConverter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionToDocumentModelConversionResult",
+      "kind": "Record",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.DocumentFormats.Notion",
+      "description": "Result of converting Notion blocks into a document model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Notion/NotionToDocumentModelConverter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionToDocumentModelConverter",
+      "kind": "Class",
+      "category": "Notion",
+      "namespace": "Tempo.Blazor.DocumentFormats.Notion",
+      "description": "Converts Notion editor page blocks into the document editor model consumed by Tempo.Blazor.DocumentFormats exporters.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Notion/NotionToDocumentModelConverter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentOdtExporter",
+      "kind": "Class",
+      "category": "Odt",
+      "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+      "description": "Exports document editor JSON models as ODT packages.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtExporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentOdtImporter",
+      "kind": "Class",
+      "category": "Odt",
+      "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+      "description": "Imports ODT packages into the document editor JSON model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "OdtPackageReader",
+      "kind": "Class",
+      "category": "Odt",
+      "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+      "description": "Reads OpenDocument package XML into the editor model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtImporter.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "OdtPackageWriter",
+      "kind": "Class",
+      "category": "Odt",
+      "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+      "description": "Writes OpenDocument package XML from the editor model.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtExporter.cs",
+      "documentationStatus": "merged"
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Import and export DOCX",
+      "category": "Document Formats",
+      "code": "var importer = new DocumentDocxImporter();\\nvar imported = await importer.ImportAsync(stream);\\n\\nvar exporter = new DocumentDocxExporter();\\nvar exported = await exporter.ExportAsync(imported.Document);"
+    }
+  ],
+  "summary": {
+    "itemCount": 40,
+    "manualItemCount": 40,
+    "generatedItemCount": 40,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 40
+  }
+}

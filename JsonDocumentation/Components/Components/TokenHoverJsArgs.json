@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Activity",
+  "description": "Internal DTO deserialized from the JS hover event object. Property names match the camelCase keys sent by tmRichEditor.initTokenHoverPreview.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Activity/TokenHoverJsArgs.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColorClass",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Icon",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "RectBottom",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "RectHeight",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "RectLeft",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "RectRight",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "RectTop",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "RectWidth",
+      "kind": "Property",
+      "type": "double"
+    },
+    {
+      "name": "TypeLabel",
+      "kind": "Property",
+      "type": "string?"
+    }
+  ],
+  "itemName": "TokenHoverJsArgs"
+}

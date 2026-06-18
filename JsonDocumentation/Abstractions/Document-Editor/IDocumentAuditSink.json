@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Interfaces",
+  "description": "Audit sink for host applications that persist editor events.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Interfaces/DocumentEditorProviders.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentAuditSink"
+}

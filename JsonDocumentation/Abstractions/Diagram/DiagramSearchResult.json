@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A single result from a diagram search operation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramSearchResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramSearchResult"
+}

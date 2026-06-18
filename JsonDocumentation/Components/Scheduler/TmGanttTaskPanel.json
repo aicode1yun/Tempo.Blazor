@@ -1,0 +1,95 @@
+{
+  "itemName": "TmGanttTaskPanel",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "A task editor panel for the Gantt chart. Allows editing selected task properties and dependencies.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttTaskPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": [
+    {
+      "name": "ActiveTimerTaskId",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Fires when the user closes the panel via the close button."
+    },
+    {
+      "name": "AllTasks",
+      "type": "IReadOnlyList<GanttTask>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "The task being edited."
+    },
+    {
+      "name": "Dependencies",
+      "type": "IReadOnlyList<GanttDependency>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "All tasks for parent selection."
+    },
+    {
+      "name": "OnAttachmentRemoved",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when the user selects a file to attach."
+    },
+    {
+      "name": "OnAttachmentUpload",
+      "type": "EventCallback<IBrowserFile>",
+      "isRequired": false,
+      "description": "Fires when the description textarea changes (live)."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when the user submits a new comment."
+    },
+    {
+      "name": "OnCommentAdded",
+      "type": "EventCallback<GanttComment>",
+      "isRequired": false,
+      "description": "Fires when the user removes an attachment (by attachment Id)."
+    },
+    {
+      "name": "OnDependencyAdded",
+      "type": "EventCallback<GanttDependency>",
+      "isRequired": false,
+      "description": "Fires when the task is saved with valid data."
+    },
+    {
+      "name": "OnDependencyRemoved",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when a new dependency is added."
+    },
+    {
+      "name": "OnDescriptionChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fires when a dependency is removed (by its Id)."
+    },
+    {
+      "name": "OnTaskUpdated",
+      "type": "EventCallback<GanttTask>",
+      "isRequired": false,
+      "description": "Existing dependencies."
+    },
+    {
+      "name": "OnTimerStarted",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Id of the task whose timer is currently running. Null if none."
+    },
+    {
+      "name": "OnTimerStopped",
+      "type": "EventCallback<(string TaskId, GanttTimeLogEntry Entry)>",
+      "isRequired": false,
+      "description": "Fires when the user starts the timer for this task (arg = taskId)."
+    }
+  ]
+}

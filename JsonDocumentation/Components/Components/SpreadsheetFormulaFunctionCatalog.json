@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Built-in formula function metadata used by spreadsheet editing UX helpers.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/SpreadsheetFormulaFunctionCatalog.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "All",
+      "kind": "Property",
+      "type": "static IReadOnlyList<SpreadsheetFormulaFunctionMetadata>",
+      "description": "All built-in spreadsheet functions exposed to formula autocomplete."
+    }
+  ],
+  "itemName": "SpreadsheetFormulaFunctionCatalog"
+}

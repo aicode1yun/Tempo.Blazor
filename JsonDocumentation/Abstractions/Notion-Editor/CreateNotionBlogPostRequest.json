@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Request for creating a draft Notion blog post.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/CreateNotionBlogPostRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AuthorId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Author user identifier."
+    },
+    {
+      "name": "Blocks",
+      "kind": "Property",
+      "type": "IReadOnlyList<PageBlock>",
+      "description": "Initial body blocks. When empty, provider may create a valid blank body."
+    },
+    {
+      "name": "SpaceId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Owning space identifier."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Initial post title."
+    }
+  ],
+  "itemName": "CreateNotionBlogPostRequest"
+}

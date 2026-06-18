@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Model",
+  "description": "Header/footer scope.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Wysiwyg/Model/DocumentModel.cs",
+  "documentationStatus": "generated",
+  "itemName": "HeaderFooterScope"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Block content for an embedded external work item.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/IWorkItemBlockContent.cs",
+  "documentationStatus": "generated",
+  "itemName": "IWorkItemBlockContent"
+}

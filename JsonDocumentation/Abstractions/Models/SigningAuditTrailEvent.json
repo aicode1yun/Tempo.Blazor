@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Audit event captured during a signing ceremony.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningAuditTrailEvent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Actor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Actor display name or system label."
+    },
+    {
+      "name": "IpAddress",
+      "kind": "Property",
+      "type": "string?",
+      "description": "IP address observed for the event."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable event label."
+    },
+    {
+      "name": "OccurredAt",
+      "kind": "Property",
+      "type": "DateTimeOffset",
+      "description": "Time when the event occurred."
+    },
+    {
+      "name": "TimeZone",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Timezone observed for the event."
+    },
+    {
+      "name": "UserAgent",
+      "kind": "Property",
+      "type": "string?",
+      "description": "User agent observed for the event."
+    },
+    {
+      "name": "Uuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable event identifier."
+    },
+    {
+      "name": "VerificationMethod",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Verification method associated with the event."
+    }
+  ],
+  "itemName": "SigningAuditTrailEvent"
+}

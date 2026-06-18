@@ -1,0 +1,16 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+  "description": "Contract for providing data to . All operations use as the stable primary key instead of path.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDocumentManagerDataProvider.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TMetadata",
+      "description": "Generic type parameter TMetadata."
+    }
+  ],
+  "itemName": "IDocumentManagerDataProvider<TMetadata>"
+}

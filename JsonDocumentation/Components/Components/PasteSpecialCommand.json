@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+  "description": "Pastes the internal clipboard into a target range with paste-special semantics: selectable content (values / formulas / formats / all / all-except-borders), an optional arithmetic operation against the existing target values, skip-blanks, and transpose. Relative formula references are shifted by the paste offset (except when transposing, where formulas are flattened to their computed value to avoid producing wrong references). restores the overwritten cells exactly.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/Commands/PasteSpecialCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "PasteSpecialCommand"
+}

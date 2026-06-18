@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/DatabaseField.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Config",
+      "kind": "Property",
+      "type": "IFieldConfig?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "IsPrimary",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsVisible",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "DatabaseFieldType"
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "int?"
+    }
+  ],
+  "itemName": "DatabaseField"
+}

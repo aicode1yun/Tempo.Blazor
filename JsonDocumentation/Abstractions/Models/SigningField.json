@@ -1,0 +1,126 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Field definition used by signing templates and submission snapshots.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningField.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Areas",
+      "kind": "Property",
+      "type": "List<SigningFieldArea>",
+      "description": "Document areas where this field appears."
+    },
+    {
+      "name": "Conditions",
+      "kind": "Property",
+      "type": "List<SigningFieldCondition>",
+      "description": "Conditional rules controlling this field."
+    },
+    {
+      "name": "DefaultValue",
+      "kind": "Property",
+      "type": "object?",
+      "description": "Default field value. The concrete type depends on the field type."
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional user-facing field description."
+    },
+    {
+      "name": "Descriptions",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized user-facing descriptions and help text."
+    },
+    {
+      "name": "Labels",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized user-facing labels shown to signers."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Internal field name."
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "List<SigningFieldOption>",
+      "description": "Choice options for select, radio, and multiple-choice fields."
+    },
+    {
+      "name": "Placeholders",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized input placeholders."
+    },
+    {
+      "name": "Preferences",
+      "kind": "Property",
+      "type": "SigningFieldPreferences",
+      "description": "Display and behavior preferences."
+    },
+    {
+      "name": "Prefillable",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the field can be prefilled before sending."
+    },
+    {
+      "name": "ReadOnly",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the field value is read-only for the signer."
+    },
+    {
+      "name": "Required",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the signer must provide a value."
+    },
+    {
+      "name": "SubmitterUuid",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Signer role identifier this field belongs to."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional user-facing title shown during signing."
+    },
+    {
+      "name": "Titles",
+      "kind": "Property",
+      "type": "SigningLocalizedText",
+      "description": "Localized user-facing titles shown during signing."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "SigningFieldType",
+      "description": "Field type."
+    },
+    {
+      "name": "Uuid",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable field identifier."
+    },
+    {
+      "name": "Validation",
+      "kind": "Property",
+      "type": "SigningFieldValidation?",
+      "description": "Optional validation settings."
+    }
+  ],
+  "itemName": "SigningField"
+}

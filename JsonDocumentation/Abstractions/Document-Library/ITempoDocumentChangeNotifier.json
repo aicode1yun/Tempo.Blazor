@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Client-side subscription to document change notifications. A consumer (an open editor, or an embedded block such as a NotionEditor wireframe block) subscribes to the specific documents it displays and refreshes when fires for one of them.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/ITempoDocumentChangeNotifier.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITempoDocumentChangeNotifier"
+}

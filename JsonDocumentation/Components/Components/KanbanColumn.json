@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "Definition of a Kanban board column.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/KanbanModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "KanbanColumn"
+}

@@ -1,0 +1,14 @@
+{
+  "itemName": "TmSpreadsheetFormatCellsDialog",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "TmSpreadsheetFormatCellsDialog Blazor component in the Spreadsheet category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/TmSpreadsheetFormatCellsDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet"
+  ],
+  "parameters": []
+}

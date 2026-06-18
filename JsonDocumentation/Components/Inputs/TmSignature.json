@@ -1,0 +1,173 @@
+{
+  "itemName": "TmSignature",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A signature pad component that captures freehand drawing via pointer events and renders strokes as SVG polylines. Supports customization of stroke color, width, background, and disabled state.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignature.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "BackgroundColor",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Stroke width in pixels. Default is 2."
+    },
+    {
+      "name": "Changed",
+      "type": "EventCallback<TmSignatureCaptureChangedEventArgs>",
+      "isRequired": false,
+      "description": "Callback invoked when the captured signature value changes."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Whether to show the clear button. Default is true."
+    },
+    {
+      "name": "Confirmed",
+      "type": "EventCallback<TmSignatureCaptureChangedEventArgs>",
+      "isRequired": false,
+      "description": "Whether to show an explicit confirmation button for the current signature."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Canvas height in pixels. Default is 200."
+    },
+    {
+      "name": "ExportFormat",
+      "type": "TmSignatureCaptureExportFormat",
+      "isRequired": false,
+      "default": "TmSignatureCaptureExportFormat.Svg",
+      "description": "Capture modes shown in the mode selector."
+    },
+    {
+      "name": "Height",
+      "type": "int",
+      "isRequired": false,
+      "default": "200",
+      "description": "Canvas width in pixels. Default is 400."
+    },
+    {
+      "name": "Initials",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the component is disabled."
+    },
+    {
+      "name": "Mode",
+      "type": "TmSignatureCaptureMode",
+      "isRequired": false,
+      "default": "TmSignatureCaptureMode.Draw",
+      "description": "Callback invoked when the signature value or signing metadata changes."
+    },
+    {
+      "name": "ModeChanged",
+      "type": "EventCallback<TmSignatureCaptureMode>",
+      "isRequired": false,
+      "description": "Current capture mode. Defaults to draw mode."
+    },
+    {
+      "name": "Modes",
+      "type": "IReadOnlyList<TmSignatureCaptureMode>?",
+      "isRequired": false,
+      "description": "Callback invoked when the active capture mode changes."
+    },
+    {
+      "name": "OnQrSigningRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Callback invoked when the upload flow should be opened."
+    },
+    {
+      "name": "OnUploadRequested",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Previously saved signature value that can be reused."
+    },
+    {
+      "name": "PreviousValue",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback invoked when the current signature is explicitly confirmed."
+    },
+    {
+      "name": "Required",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Export format used when drawing signatures. Defaults to SVG."
+    },
+    {
+      "name": "RequireReason",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Optional SVG background color."
+    },
+    {
+      "name": "ShowClearButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When true, the canvas is read-only and the clear button is hidden."
+    },
+    {
+      "name": "ShowConfirmButton",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show a QR/mobile signing button."
+    },
+    {
+      "name": "ShowQrSigningButton",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show the remember signature checkbox."
+    },
+    {
+      "name": "ShowRememberSignature",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether a reason input should be shown."
+    },
+    {
+      "name": "StrokeColor",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"#000000\"",
+      "description": "Event fired when the signature value changes."
+    },
+    {
+      "name": "StrokeWidth",
+      "type": "double",
+      "isRequired": false,
+      "default": "2",
+      "description": "Stroke color. Default is #000000."
+    },
+    {
+      "name": "TypedFont",
+      "type": "string",
+      "isRequired": false,
+      "default": "\"script\"",
+      "description": "Whether typed mode should collect initials instead of a full signature."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "The current signature value as an SVG data URL or raw SVG markup."
+    },
+    {
+      "name": "Width",
+      "type": "int",
+      "isRequired": false,
+      "default": "400",
+      "description": "Background color of the canvas. When null, the canvas is transparent."
+    }
+  ]
+}

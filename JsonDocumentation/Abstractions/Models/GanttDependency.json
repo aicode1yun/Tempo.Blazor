@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Describes a dependency relationship between two Gantt tasks.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttDependency.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FromId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Source task identifier."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier of the dependency."
+    },
+    {
+      "name": "LagDays",
+      "kind": "Property",
+      "type": "int",
+      "description": "Lag (positive) or lead (negative) in calendar days."
+    },
+    {
+      "name": "ToId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Target task identifier."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "int",
+      "description": "Type of dependency: 0=Finish-Start (default), 1=Start-Start, 2=Finish-Finish, 3=Start-Finish."
+    }
+  ],
+  "itemName": "GanttDependency"
+}

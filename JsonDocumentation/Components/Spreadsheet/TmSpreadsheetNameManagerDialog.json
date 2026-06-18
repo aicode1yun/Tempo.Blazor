@@ -1,0 +1,41 @@
+{
+  "itemName": "TmSpreadsheetNameManagerDialog",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "Name Manager dialog that lists all named ranges in the workbook, allows filtering, and raises events for New / Edit / Delete.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/Dialogs/TmSpreadsheetNameManagerDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+  ],
+  "parameters": [
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user wants to delete the selected named range."
+    },
+    {
+      "name": "OnDelete",
+      "type": "EventCallback<SpreadsheetNamedRange>",
+      "isRequired": false,
+      "description": "Raised when the user wants to edit the selected named range."
+    },
+    {
+      "name": "OnEdit",
+      "type": "EventCallback<SpreadsheetNamedRange>",
+      "isRequired": false,
+      "description": "Raised when the user wants to create a new named range."
+    },
+    {
+      "name": "OnNew",
+      "type": "EventCallback",
+      "isRequired": true,
+      "description": "The workbook whose named ranges are being managed.",
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Dialogs"
+}

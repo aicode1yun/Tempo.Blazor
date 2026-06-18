@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a tag in TmTagPicker and TmTagEditorDialog.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/ITag.cs",
+  "documentationStatus": "generated",
+  "itemName": "ITag"
+}

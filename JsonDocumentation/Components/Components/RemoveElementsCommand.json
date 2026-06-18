@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Removes one or more elements from the document (Delete key / toolbar).",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Wireframe/Commands/RemoveElementsCommand.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Execute",
+      "kind": "Method",
+      "type": "void"
+    },
+    {
+      "name": "Undo",
+      "kind": "Method",
+      "type": "void"
+    }
+  ],
+  "itemName": "RemoveElementsCommand"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Icons",
+  "description": "String constants for all available icon names in TmIcon. Use these constants to avoid typos and enable refactoring support.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Icons/IconNames.cs",
+  "documentationStatus": "generated",
+  "itemName": "IconNames"
+}

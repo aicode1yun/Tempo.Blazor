@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Options that control how editor pages are exported to images (plan S1, O1).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentPageImage.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentPageImageExportOptions"
+}

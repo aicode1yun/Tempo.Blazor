@@ -1,0 +1,3925 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+    "title": "Tempo.Blazor.EmailTemplates.Abstractions",
+    "description": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net10.0"
+    ],
+    "tags": "blazor;email;mjml;templates;scriban",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.EmailTemplates.Abstractions"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "AngleSharp",
+        "version": "1.1.2"
+      },
+      {
+        "name": "Mjml.Net",
+        "version": "4.11.0"
+      },
+      {
+        "name": "Scriban",
+        "version": "7.2.4"
+      },
+      {
+        "name": "FluentValidation",
+        "version": "12.1.1"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "10.0.0"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "10.0.0"
+      },
+      {
+        "name": "Microsoft.Extensions.Logging.Abstractions",
+        "version": "10.0.0"
+      }
+    ],
+    "projectReferences": [],
+    "namespaces": [
+      "Tempo.Blazor.EmailTemplates.Abstractions",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Contracts",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Resources",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Serialization",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "Tempo.Blazor.EmailTemplates.Abstractions.Validation"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.EmailTemplates.Abstractions",
+    "overview": "Logic and contracts for the Tempo.Blazor email template editor: block model, MJML generation and import, Scriban templating sandbox, variable extraction, render pipeline, DTOs and validators. No Blazor dependency – safe to reference from API/service projects.",
+    "targetFramework": "net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.EmailTemplates.Abstractions"
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "AngleSharp",
+        "version": "1.1.2"
+      },
+      {
+        "name": "Mjml.Net",
+        "version": "4.11.0"
+      },
+      {
+        "name": "Scriban",
+        "version": "7.2.4"
+      },
+      {
+        "name": "FluentValidation",
+        "version": "12.1.1"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "10.0.0"
+      },
+      {
+        "name": "Microsoft.Extensions.Localization.Abstractions",
+        "version": "10.0.0"
+      },
+      {
+        "name": "Microsoft.Extensions.Logging.Abstractions",
+        "version": "10.0.0"
+      }
+    ]
+  },
+  "items": [
+    {
+      "itemName": "EmailMessage",
+      "kind": "Record",
+      "category": "Contracts",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Contracts",
+      "description": "A fully rendered email ready to be delivered.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Contracts/EmailMessage.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IEmailSender",
+      "kind": "Interface",
+      "category": "Contracts",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Contracts",
+      "description": "Delivery contract implemented by the host application (e.g. an SMTP sender).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Contracts/IEmailSender.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IEmailTemplateStore",
+      "kind": "Interface",
+      "category": "Contracts",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Contracts",
+      "description": "Persistence contract for email templates, implemented by the host application. Operations are asynchronous and cancellable; mutations are expected to be atomic (unit of work).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Contracts/IEmailTemplateStore.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CreateEmailTemplateRequest",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "Request to create a new email template.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/CreateEmailTemplateRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentJson",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the serialized document content (JSON)."
+        },
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the language code."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the template name."
+        },
+        {
+          "name": "Preheader",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the preheader text."
+        },
+        {
+          "name": "SampleDataJson",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the optional sample data JSON."
+        },
+        {
+          "name": "Subject",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the email subject."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplateDetailDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "Full detail of an email template, including the serialized content.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/EmailTemplateDetailDto.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentJson",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the serialized document content (JSON)."
+        },
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "Guid",
+          "description": "Gets the template identifier."
+        },
+        {
+          "name": "IsActive",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets whether the template is active."
+        },
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the language code."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the template name."
+        },
+        {
+          "name": "Preheader",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the preview/preheader text."
+        },
+        {
+          "name": "RequiredVariables",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>",
+          "description": "Gets the variables the template requires."
+        },
+        {
+          "name": "SampleDataJson",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the sample data JSON used for previews."
+        },
+        {
+          "name": "Subject",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the email subject."
+        },
+        {
+          "name": "UpdatedAt",
+          "kind": "Property",
+          "type": "DateTime?",
+          "description": "Gets the last update timestamp."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplateMapper",
+      "kind": "Class",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "Maps between the editable and transport DTOs.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/EmailTemplateMapper.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ApplyCreate",
+          "kind": "Method",
+          "type": "EmailTemplateDocument",
+          "description": "Builds a new document from a create request (content + overridden metadata).",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "CreateEmailTemplateRequest"
+            }
+          ]
+        },
+        {
+          "name": "ApplyUpdate",
+          "kind": "Method",
+          "type": "EmailTemplateDocument",
+          "description": "Applies an update request's content and metadata onto a document.",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "UpdateEmailTemplateRequest"
+            }
+          ]
+        },
+        {
+          "name": "RequiredVariables",
+          "kind": "Method",
+          "type": "IReadOnlyList<string>",
+          "description": "Computes the distinct root variable names a document requires.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "ToContentJson",
+          "kind": "Method",
+          "type": "string",
+          "description": "Serializes a document to its canonical content JSON.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "ToDetailDto",
+          "kind": "Method",
+          "type": "EmailTemplateDetailDto",
+          "description": "Builds the full detail DTO from a document.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            },
+            {
+              "name": "isActive",
+              "type": "bool",
+              "default": "true"
+            },
+            {
+              "name": "sampleDataJson",
+              "type": "string?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "ToDocument",
+          "kind": "Method",
+          "type": "EmailTemplateDocument",
+          "description": "Deserializes a document from content JSON.",
+          "parameters": [
+            {
+              "name": "contentJson",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "ToSummaryDto",
+          "kind": "Method",
+          "type": "EmailTemplateSummaryDto",
+          "description": "Builds the list summary DTO from a document.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            },
+            {
+              "name": "isActive",
+              "type": "bool",
+              "default": "true"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplateSummaryDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "List projection of an email template.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/EmailTemplateSummaryDto.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "Guid",
+          "description": "Gets the template identifier."
+        },
+        {
+          "name": "IsActive",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets whether the template is active."
+        },
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the language code."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the template name."
+        },
+        {
+          "name": "Subject",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the email subject."
+        },
+        {
+          "name": "UpdatedAt",
+          "kind": "Property",
+          "type": "DateTime?",
+          "description": "Gets the last update timestamp."
+        }
+      ]
+    },
+    {
+      "itemName": "RenderErrorDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "A render error projected for transport.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/RenderErrorDto.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RenderPreviewRequest",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "Request to render a preview of a template body with optional variable data.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/RenderPreviewRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentJson",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the serialized document content (JSON)."
+        },
+        {
+          "name": "VariablesJson",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the optional variable data as JSON."
+        }
+      ]
+    },
+    {
+      "itemName": "RenderPreviewResponse",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "The result of a preview render.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/RenderPreviewResponse.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Errors",
+          "kind": "Property",
+          "type": "IReadOnlyList<RenderErrorDto>",
+          "description": "Gets the render errors, if any."
+        },
+        {
+          "name": "Html",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the rendered HTML."
+        },
+        {
+          "name": "Preheader",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the substituted preheader."
+        },
+        {
+          "name": "Subject",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the substituted subject."
+        },
+        {
+          "name": "Text",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the rendered plain-text version."
+        }
+      ]
+    },
+    {
+      "itemName": "SendEmailRequest",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "Request to render and send a stored template to recipients.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/SendEmailRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Cc",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>",
+          "description": "Gets the carbon-copy recipients."
+        },
+        {
+          "name": "TemplateId",
+          "kind": "Property",
+          "type": "Guid",
+          "description": "Gets the template identifier."
+        },
+        {
+          "name": "To",
+          "kind": "Property",
+          "type": "IReadOnlyList<string>",
+          "description": "Gets the primary recipients."
+        },
+        {
+          "name": "VariablesJson",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the variable data as JSON."
+        }
+      ]
+    },
+    {
+      "itemName": "UpdateEmailTemplateRequest",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+      "description": "Request to update an existing email template.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/UpdateEmailTemplateRequest.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentJson",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the serialized document content (JSON)."
+        },
+        {
+          "name": "IsActive",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets whether the template is active."
+        },
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the language code."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the template name."
+        },
+        {
+          "name": "Preheader",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the preheader text."
+        },
+        {
+          "name": "SampleDataJson",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the optional sample data JSON."
+        },
+        {
+          "name": "Subject",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets the email subject."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplatesAbstractions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "description": "Marker type identifying the Tempo.Blazor.EmailTemplates.Abstractions assembly.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/EmailTemplatesAbstractions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Assembly",
+          "kind": "Field",
+          "type": "System.Reflection.Assembly",
+          "description": "Gets the assembly that contains the email template engine, model and contracts."
+        }
+      ]
+    },
+    {
+      "itemName": "ServiceCollectionExtensions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "description": "DI registration for the email template engine (model, generation, rendering, validation).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/ServiceCollectionExtensions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IMjmlIncludeResolver",
+      "kind": "Interface",
+      "category": "Import",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+      "description": "Resolves the content referenced by an mj-include element.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/IMjmlIncludeResolver.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ImportKeys",
+      "kind": "Class",
+      "category": "Import",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+      "description": "Localization keys for import diagnostics.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/ImportKeys.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ElementWrapped",
+          "kind": "Field",
+          "type": "string",
+          "description": "A body- or section-level element was wrapped in a column to fit the model."
+        },
+        {
+          "name": "Empty",
+          "kind": "Field",
+          "type": "string",
+          "description": "Input was empty."
+        },
+        {
+          "name": "IncludeUnresolved",
+          "kind": "Field",
+          "type": "string",
+          "description": "An mj-include could not be resolved."
+        },
+        {
+          "name": "NotMjml",
+          "kind": "Field",
+          "type": "string",
+          "description": "The root element was not mjml."
+        },
+        {
+          "name": "ParseError",
+          "kind": "Field",
+          "type": "string",
+          "description": "The markup could not be parsed as XML."
+        },
+        {
+          "name": "UnknownElement",
+          "kind": "Field",
+          "type": "string",
+          "description": "An unknown element was preserved as a raw block."
+        },
+        {
+          "name": "WrapperFlattened",
+          "kind": "Field",
+          "type": "string",
+          "description": "A body-level wrapper's sections were hoisted to the top level."
+        }
+      ]
+    },
+    {
+      "itemName": "ImportMessage",
+      "kind": "Record",
+      "category": "Import",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+      "description": "A single import diagnostic (localization key plus optional detail and position).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/ImportMessage.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ImportResult",
+      "kind": "Class",
+      "category": "Import",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+      "description": "The outcome of importing MJML markup. is only when a fatal error prevented producing a model; warnings describe lossy or unsupported parts.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/ImportResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Document",
+          "kind": "Property",
+          "type": "EmailTemplateDocument?",
+          "description": "Gets the imported document, or on fatal error."
+        },
+        {
+          "name": "Errors",
+          "kind": "Property",
+          "type": "IReadOnlyList<ImportMessage>",
+          "description": "Gets the fatal errors that prevented (or degraded) the import."
+        },
+        {
+          "name": "Warnings",
+          "kind": "Property",
+          "type": "IReadOnlyList<ImportMessage>",
+          "description": "Gets the non-fatal findings (lossy fallbacks, unsupported features)."
+        }
+      ]
+    },
+    {
+      "itemName": "MjmlImporter",
+      "kind": "Class",
+      "category": "Import",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+      "description": "Imports MJML markup into an . Parsing is XML-based with an mj-raw shim (raw content may be non-well-formed HTML), tolerates comments, preserves unknown elements as raw blocks and unknown attributes in , and never throws — failures are returned as s.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/MjmlImporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Import",
+          "kind": "Method",
+          "type": "ImportResult",
+          "description": "Imports the given MJML markup, optionally resolving mj-include references.",
+          "parameters": [
+            {
+              "name": "mjml",
+              "type": "string"
+            },
+            {
+              "name": "includeResolver",
+              "type": "IMjmlIncludeResolver?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "Rest",
+          "kind": "Method",
+          "type": "IEnumerable<KeyValuePair<string, string>>"
+        },
+        {
+          "name": "Take",
+          "kind": "Method",
+          "type": "string?",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "LayoutPreset",
+      "kind": "Enum",
+      "category": "Layout",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "description": "The available column-layout presets offered when adding a new section.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutPreset.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LayoutPresetDescriptor",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "description": "Describes a layout preset for presentation in the toolbox.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutPresetDescriptor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LayoutPresets",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "description": "Builds sections from predefined column layouts whose widths always total 100%.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutPresets.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Create",
+          "kind": "Method",
+          "type": "EmailSection",
+          "description": "Creates a new section populated with the columns of the given preset.",
+          "parameters": [
+            {
+              "name": "preset",
+              "type": "LayoutPreset"
+            }
+          ]
+        },
+        {
+          "name": "All",
+          "kind": "Property",
+          "type": "static IReadOnlyList<LayoutPresetDescriptor>",
+          "description": "Gets the catalogue of available presets."
+        }
+      ]
+    },
+    {
+      "itemName": "LayoutSeverity",
+      "kind": "Enum",
+      "category": "Layout",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "description": "Severity of a layout validation message.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutSeverity.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LayoutValidationKeys",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "description": "Localization keys for layout validation messages (never raw text).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutValidationKeys.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ColumnWidths",
+          "kind": "Field",
+          "type": "string",
+          "description": "Explicit column widths in a section do not sum to 100%."
+        },
+        {
+          "name": "EmptySection",
+          "kind": "Field",
+          "type": "string",
+          "description": "A section has no columns."
+        },
+        {
+          "name": "MaxNesting",
+          "kind": "Field",
+          "type": "string",
+          "description": "Container nesting exceeds the supported depth."
+        }
+      ]
+    },
+    {
+      "itemName": "LayoutValidationMessage",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "description": "A single layout validation finding.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutValidationMessage.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LayoutValidator",
+      "kind": "Class",
+      "category": "Layout",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+      "description": "Validates the structural layout of a document: column-width totals, empty sections and excessive container nesting. Findings carry localization keys, never localized text.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutValidator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "MaxNestingDepth",
+          "kind": "Field",
+          "type": "int",
+          "description": "The maximum supported depth of nested wrapper/group/hero containers."
+        },
+        {
+          "name": "Validate",
+          "kind": "Method",
+          "type": "IReadOnlyList<LayoutValidationMessage>",
+          "description": "Validates the document and returns all layout findings.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "BlockType",
+      "kind": "Enum",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "Identifies the kind of an . Each value maps to one MJML body component and is used as the JSON polymorphic discriminator token.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/BlockType.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CloneExtensions",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "Deep-copy helpers for documents and blocks (used by undo/redo and clipboard).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/CloneExtensions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Clone",
+          "kind": "Method",
+          "type": "EmailBlockBase",
+          "description": "Creates an independent deep copy of a block. Identifiers are preserved.",
+          "parameters": [
+            {
+              "name": "block",
+              "type": "this EmailBlockBase"
+            }
+          ]
+        },
+        {
+          "name": "CloneWithNewIds",
+          "kind": "Method",
+          "type": "EmailBlockBase",
+          "description": "Creates an independent deep copy of a block with a fresh identifier on every node (used when pasting/duplicating so the copy does not collide with the original).",
+          "parameters": [
+            {
+              "name": "block",
+              "type": "this EmailBlockBase"
+            }
+          ]
+        },
+        {
+          "name": "DeepClone",
+          "kind": "Method",
+          "type": "EmailTemplateDocument",
+          "description": "Creates an independent deep copy of the document. Identifiers are preserved.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DocumentEditing",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "Structural edit operations over an : finding, adding, moving, removing and duplicating blocks, sections and columns. All operations work across nested hero/group/wrapper containers via .",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/DocumentEditing.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AddBlock",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Inserts a block into the column with the given id at (clamped). Returns if no such column exists.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "columnId",
+              "type": "Guid"
+            },
+            {
+              "name": "block",
+              "type": "EmailBlockBase"
+            },
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "AddColumn",
+          "kind": "Method",
+          "type": "void",
+          "description": "Adds a column to the section and rebalances all columns to equal widths.",
+          "parameters": [
+            {
+              "name": "section",
+              "type": "this EmailSection"
+            },
+            {
+              "name": "column",
+              "type": "EmailColumn"
+            }
+          ]
+        },
+        {
+          "name": "AddSection",
+          "kind": "Method",
+          "type": "void",
+          "description": "Inserts a top-level section at (clamped).",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "section",
+              "type": "EmailSection"
+            },
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "DuplicateBlock",
+          "kind": "Method",
+          "type": "EmailBlockBase?",
+          "description": "Inserts a deep copy (with fresh ids) of the block immediately after the original, in the same container. Returns the copy, or if the block was not found.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "blockId",
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "DuplicateSection",
+          "kind": "Method",
+          "type": "EmailSection?",
+          "description": "Inserts a deep copy (with fresh ids) of a top-level section immediately after the original. Returns the copy, or if the section was not found.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "sectionId",
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "FindBlock",
+          "kind": "Method",
+          "type": "EmailBlockBase?",
+          "description": "Finds a block anywhere in the document by id, or returns .",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "blockId",
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "FindParentColumn",
+          "kind": "Method",
+          "type": "EmailColumn?",
+          "description": "Returns the column that directly contains the given block, or when the block is held by a non-column container (e.g. a hero) or does not exist.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "blockId",
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "MoveBlock",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Moves a block to the target column at (clamped, evaluated after removal). Returns if the block or target column is missing.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "blockId",
+              "type": "Guid"
+            },
+            {
+              "name": "targetColumnId",
+              "type": "Guid"
+            },
+            {
+              "name": "targetIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "MoveSection",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Moves a top-level section to (clamped after removal).",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "sectionId",
+              "type": "Guid"
+            },
+            {
+              "name": "index",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "RebalanceColumns",
+          "kind": "Method",
+          "type": "void",
+          "description": "Sets every column in the section to an equal share of the width (summing to 100%).",
+          "parameters": [
+            {
+              "name": "section",
+              "type": "EmailSection"
+            }
+          ]
+        },
+        {
+          "name": "RemoveBlock",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Removes a block from wherever it lives in the tree. Returns whether it was found.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "blockId",
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "RemoveColumn",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Removes a column by id and rebalances the remaining columns. Returns whether found.",
+          "parameters": [
+            {
+              "name": "section",
+              "type": "this EmailSection"
+            },
+            {
+              "name": "columnId",
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "RemoveSection",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Removes a top-level section by id. Returns whether it was found.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            },
+            {
+              "name": "sectionId",
+              "type": "Guid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DocumentInspection",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "Read-only queries over a document used by the editor UI.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/DocumentInspection.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContainsRawContent",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns whether the document contains any non-empty raw block. The editor surfaces this as a warning because raw content is emitted verbatim and bypasses sanitization.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "this EmailTemplateDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DocumentTree",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "Traversal helpers over the nested document structure (sections → columns → blocks, recursing into hero, group and wrapper containers) plus identifier reassignment used by clone-with-new-ids.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/DocumentTree.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AllBlockLists",
+          "kind": "Method",
+          "type": "IEnumerable<IList<EmailBlockBase>>",
+          "description": "Enumerates every block list (a column's or a hero's Blocks) in the document.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "AllBlocks",
+          "kind": "Method",
+          "type": "IEnumerable<EmailBlockBase>",
+          "description": "Enumerates every block anywhere in the document.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "AllColumns",
+          "kind": "Method",
+          "type": "IEnumerable<EmailColumn>",
+          "description": "Enumerates every column anywhere in the document, recursing into all containers.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "AllSections",
+          "kind": "Method",
+          "type": "IEnumerable<EmailSection>",
+          "description": "Enumerates every section, including those nested inside wrapper blocks.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "ReassignIds",
+          "kind": "Method",
+          "type": "void",
+          "description": "Assigns a fresh identifier to a block and to every node nested beneath it.",
+          "parameters": [
+            {
+              "name": "block",
+              "type": "EmailBlockBase"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "EmailAccordionBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "An accordion (mj-accordion).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailAccordionBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Border",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the border shorthand (border)."
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the font family (font-family)."
+        },
+        {
+          "name": "IconAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the icon alignment (icon-align)."
+        },
+        {
+          "name": "IconHeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the icon height (icon-height)."
+        },
+        {
+          "name": "IconPosition",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the icon position, left or right (icon-position)."
+        },
+        {
+          "name": "IconUnwrappedUrl",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the URL of the expanded-state icon (icon-unwrapped-url)."
+        },
+        {
+          "name": "IconWidth",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the icon width (icon-width)."
+        },
+        {
+          "name": "IconWrappedUrl",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the URL of the collapsed-state icon (icon-wrapped-url)."
+        },
+        {
+          "name": "Items",
+          "kind": "Property",
+          "type": "IList<EmailAccordionItem>",
+          "description": "Gets the accordion items."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailAccordionItem",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A single item within an (mj-accordion-element).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailAccordionItem.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the item background colour (background-color)."
+        },
+        {
+          "name": "Content",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the item content (inline HTML)."
+        },
+        {
+          "name": "Title",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the item title text."
+        },
+        {
+          "name": "TitleColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the title text colour (color)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailBlockBase",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "Public class defined by Tempo.Blazor.EmailTemplates.Abstractions.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailBlockBase.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContainerBackgroundColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the container background colour (container-background-color)."
+        },
+        {
+          "name": "CssClass",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the space-separated CSS class names (css-class)."
+        },
+        {
+          "name": "ExtraAttributes",
+          "kind": "Property",
+          "type": "IDictionary<string, string>",
+          "description": "Gets or sets attributes that are not modelled explicitly. Populated on import and re-emitted on export so unknown/future MJML attributes survive a round-trip without loss."
+        },
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "Guid",
+          "description": "Gets or sets the unique identifier of this block."
+        },
+        {
+          "name": "MjClasses",
+          "kind": "Property",
+          "type": "IList<string>",
+          "description": "Gets or sets the referenced named MJML classes (mj-class)."
+        },
+        {
+          "name": "Padding",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the padding shorthand (padding)."
+        },
+        {
+          "name": "PaddingBottom",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the bottom padding (padding-bottom)."
+        },
+        {
+          "name": "PaddingLeft",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the left padding (padding-left)."
+        },
+        {
+          "name": "PaddingRight",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the right padding (padding-right)."
+        },
+        {
+          "name": "PaddingTop",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the top padding (padding-top)."
+        },
+        {
+          "name": "Type",
+          "kind": "Property",
+          "type": "abstract BlockType"
+        },
+        {
+          "name": "VisibleWhen",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets an optional Scriban boolean expression. When set, the generator wraps the block in {{ if <expr> }}…{{ end }} so it only renders when the expression is truthy. This is a Tempo extension, not an MJML attribute."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailButtonBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A call-to-action button (mj-button). is the label.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailButtonBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the block alignment within the column (align)."
+        },
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the background colour (background-color)."
+        },
+        {
+          "name": "Border",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the border shorthand (border)."
+        },
+        {
+          "name": "BorderRadius",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the border radius (border-radius)."
+        },
+        {
+          "name": "Color",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text colour (color)."
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the font family (font-family)."
+        },
+        {
+          "name": "FontSize",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font size (font-size)."
+        },
+        {
+          "name": "FontStyle",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the font style (font-style)."
+        },
+        {
+          "name": "FontWeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font weight (font-weight)."
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the explicit height (height)."
+        },
+        {
+          "name": "Href",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link target (href)."
+        },
+        {
+          "name": "InnerPadding",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the inner padding (inner-padding)."
+        },
+        {
+          "name": "LetterSpacing",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the letter spacing (letter-spacing)."
+        },
+        {
+          "name": "LineHeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line height (line-height)."
+        },
+        {
+          "name": "Rel",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link rel attribute."
+        },
+        {
+          "name": "Target",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the link target window (target)."
+        },
+        {
+          "name": "Text",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the button label text."
+        },
+        {
+          "name": "TextAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the content text alignment (text-align)."
+        },
+        {
+          "name": "TextDecoration",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text decoration (text-decoration)."
+        },
+        {
+          "name": "TextTransform",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the text transform (text-transform)."
+        },
+        {
+          "name": "VerticalAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the vertical alignment (vertical-align)."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the explicit width (width)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailCarouselBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "An image carousel (mj-carousel).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailCarouselBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the alignment (align)."
+        },
+        {
+          "name": "BorderRadius",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the image border radius (border-radius)."
+        },
+        {
+          "name": "IconWidth",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the navigation icon width (icon-width)."
+        },
+        {
+          "name": "Images",
+          "kind": "Property",
+          "type": "IList<EmailCarouselImage>",
+          "description": "Gets the carousel images."
+        },
+        {
+          "name": "LeftIcon",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the left navigation icon URL (left-icon)."
+        },
+        {
+          "name": "RightIcon",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the right navigation icon URL (right-icon)."
+        },
+        {
+          "name": "TbBorderRadius",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the thumbnail border radius (tb-border-radius)."
+        },
+        {
+          "name": "Thumbnails",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets whether thumbnails are visible or hidden (thumbnails)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailCarouselImage",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A single image within an (mj-carousel-image).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailCarouselImage.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Alt",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the alternative text (alt)."
+        },
+        {
+          "name": "Href",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link target (href)."
+        },
+        {
+          "name": "Rel",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link rel attribute."
+        },
+        {
+          "name": "Src",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the image source URL (src)."
+        },
+        {
+          "name": "Target",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the link target window (target)."
+        },
+        {
+          "name": "ThumbnailsSrc",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets a distinct thumbnail source (thumbnails-src)."
+        },
+        {
+          "name": "Title",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the image title (title)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailColumn",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "A column (mj-column) inside a section; holds content blocks.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailColumn.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background colour (background-color)."
+        },
+        {
+          "name": "Blocks",
+          "kind": "Property",
+          "type": "IList<EmailBlockBase>",
+          "description": "Gets the content blocks held by this column."
+        },
+        {
+          "name": "Border",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the border shorthand (border)."
+        },
+        {
+          "name": "BorderRadius",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the border radius (border-radius)."
+        },
+        {
+          "name": "CssClass",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the space-separated CSS class names (css-class)."
+        },
+        {
+          "name": "ExtraAttributes",
+          "kind": "Property",
+          "type": "IDictionary<string, string>",
+          "description": "Gets or sets unmodelled attributes preserved for round-trip fidelity."
+        },
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "Guid",
+          "description": "Gets or sets the unique identifier of this column."
+        },
+        {
+          "name": "MjClasses",
+          "kind": "Property",
+          "type": "IList<string>",
+          "description": "Gets or sets the referenced named MJML classes (mj-class)."
+        },
+        {
+          "name": "Padding",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the padding shorthand (padding)."
+        },
+        {
+          "name": "VerticalAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the vertical alignment of content (vertical-align)."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the column width (width), e.g. \"50%\" or \"200px\". means MJML splits the section width equally between columns."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailDividerBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A horizontal rule (mj-divider).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailDividerBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the alignment (align)."
+        },
+        {
+          "name": "BorderColor",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line colour (border-color)."
+        },
+        {
+          "name": "BorderStyle",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line style (border-style)."
+        },
+        {
+          "name": "BorderWidth",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line thickness (border-width)."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line width (width)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailFont",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "An imported web font (mj-font).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailFont.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Href",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the stylesheet URL providing the font (href)."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font family name (name)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailGroupBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A group of columns (mj-group) that stay side-by-side on mobile instead of stacking.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailGroupBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background colour (background-color)."
+        },
+        {
+          "name": "Columns",
+          "kind": "Property",
+          "type": "IList<EmailColumn>",
+          "description": "Gets the columns held by the group."
+        },
+        {
+          "name": "Direction",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the layout direction (direction)."
+        },
+        {
+          "name": "VerticalAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the vertical alignment (vertical-align)."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the explicit width (width)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailHeroBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A hero banner (mj-hero) that holds content blocks over a background.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailHeroBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the background colour (background-color)."
+        },
+        {
+          "name": "BackgroundHeight",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background height (background-height)."
+        },
+        {
+          "name": "BackgroundPosition",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the background position (background-position)."
+        },
+        {
+          "name": "BackgroundUrl",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background image URL (background-url)."
+        },
+        {
+          "name": "BackgroundWidth",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background width (background-width)."
+        },
+        {
+          "name": "Blocks",
+          "kind": "Property",
+          "type": "IList<EmailBlockBase>",
+          "description": "Gets the blocks rendered inside the hero."
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the hero height, used in fixed-height mode (height)."
+        },
+        {
+          "name": "Mode",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the sizing mode, fluid-height or fixed-height (mode)."
+        },
+        {
+          "name": "VerticalAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the vertical alignment of content (vertical-align)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailImageBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "An image (mj-image). is required; matters for a11y.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailImageBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the horizontal alignment (align)."
+        },
+        {
+          "name": "Alt",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the alternative text (alt). Required for accessibility."
+        },
+        {
+          "name": "Border",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the border shorthand (border)."
+        },
+        {
+          "name": "BorderRadius",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the border radius (border-radius)."
+        },
+        {
+          "name": "FluidOnMobile",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets whether the image becomes fluid on mobile (fluid-on-mobile)."
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the explicit height (height)."
+        },
+        {
+          "name": "Href",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link target (href)."
+        },
+        {
+          "name": "Rel",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link rel attribute."
+        },
+        {
+          "name": "Src",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the image source URL (src)."
+        },
+        {
+          "name": "Target",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the link target window (target)."
+        },
+        {
+          "name": "Title",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the image title (title)."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the explicit width (width)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailNavbarBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A navigation bar (mj-navbar).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailNavbarBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the alignment (align)."
+        },
+        {
+          "name": "BaseUrl",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the base URL prepended to relative link hrefs (base-url)."
+        },
+        {
+          "name": "Hamburger",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets whether a hamburger menu is shown on mobile (hamburger)."
+        },
+        {
+          "name": "Links",
+          "kind": "Property",
+          "type": "IList<EmailNavbarLink>",
+          "description": "Gets the navigation links."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailNavbarLink",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A single link within an (mj-navbar-link).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailNavbarLink.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Color",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text colour (color)."
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the font family (font-family)."
+        },
+        {
+          "name": "FontSize",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font size (font-size)."
+        },
+        {
+          "name": "FontWeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font weight (font-weight)."
+        },
+        {
+          "name": "Href",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link target (href)."
+        },
+        {
+          "name": "LineHeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line height (line-height)."
+        },
+        {
+          "name": "Padding",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the padding (padding)."
+        },
+        {
+          "name": "Rel",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link rel attribute."
+        },
+        {
+          "name": "Target",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the link target window (target)."
+        },
+        {
+          "name": "Text",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the link text."
+        },
+        {
+          "name": "TextDecoration",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text decoration (text-decoration)."
+        },
+        {
+          "name": "TextTransform",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text transform (text-transform)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailRawBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "Verbatim HTML/MJML passthrough (mj-raw). is emitted without escaping.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailRawBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Content",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the raw content emitted verbatim into the MJML output."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailSection",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "A section (mj-section); the top-level horizontal band that holds columns.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailSection.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background colour (background-color)."
+        },
+        {
+          "name": "BackgroundPosition",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background position (background-position)."
+        },
+        {
+          "name": "BackgroundRepeat",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background repeat (background-repeat)."
+        },
+        {
+          "name": "BackgroundSize",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background size (background-size)."
+        },
+        {
+          "name": "BackgroundUrl",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background image URL (background-url)."
+        },
+        {
+          "name": "Border",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the border shorthand (border)."
+        },
+        {
+          "name": "BorderRadius",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the border radius (border-radius)."
+        },
+        {
+          "name": "Columns",
+          "kind": "Property",
+          "type": "IList<EmailColumn>",
+          "description": "Gets the columns contained in this section."
+        },
+        {
+          "name": "CssClass",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the space-separated CSS class names (css-class)."
+        },
+        {
+          "name": "Direction",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the layout direction (direction)."
+        },
+        {
+          "name": "ExtraAttributes",
+          "kind": "Property",
+          "type": "IDictionary<string, string>",
+          "description": "Gets or sets unmodelled attributes preserved for round-trip fidelity."
+        },
+        {
+          "name": "FullWidth",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets or sets whether the section spans the full window width (full-width)."
+        },
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "Guid",
+          "description": "Gets or sets the unique identifier of this section."
+        },
+        {
+          "name": "MjClasses",
+          "kind": "Property",
+          "type": "IList<string>",
+          "description": "Gets or sets the referenced named MJML classes (mj-class)."
+        },
+        {
+          "name": "Padding",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the padding shorthand (padding)."
+        },
+        {
+          "name": "TextAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text alignment (text-align)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailSocialBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A row of social-network icons (mj-social).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailSocialBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the alignment (align)."
+        },
+        {
+          "name": "BorderRadius",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the border radius of icons (border-radius)."
+        },
+        {
+          "name": "Color",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the label colour (color)."
+        },
+        {
+          "name": "Elements",
+          "kind": "Property",
+          "type": "IList<EmailSocialElement>",
+          "description": "Gets the social elements."
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the font family (font-family)."
+        },
+        {
+          "name": "FontSize",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font size (font-size)."
+        },
+        {
+          "name": "IconSize",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the icon size (icon-size)."
+        },
+        {
+          "name": "LineHeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line height (line-height)."
+        },
+        {
+          "name": "Mode",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the layout mode, horizontal or vertical (mode)."
+        },
+        {
+          "name": "TextDecoration",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text decoration (text-decoration)."
+        },
+        {
+          "name": "TextPadding",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text padding (text-padding)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailSocialElement",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A single icon within an (mj-social-element).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailSocialElement.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Alt",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the icon alternative text (alt)."
+        },
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background colour override (background-color)."
+        },
+        {
+          "name": "Href",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the link target (href)."
+        },
+        {
+          "name": "Label",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the optional label text shown next to the icon."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the network name mapping to a built-in icon (name)."
+        },
+        {
+          "name": "Src",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets a custom icon URL overriding (src)."
+        },
+        {
+          "name": "Target",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the link target window (target)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailSpacerBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "Vertical spacing (mj-spacer).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailSpacerBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the spacer height (height)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailStyle",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "A custom CSS style block (mj-style).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailStyle.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Css",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the raw CSS text."
+        },
+        {
+          "name": "Inline",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets or sets whether the CSS should be inlined into element style attributes (mj-style inline=\"inline\") rather than emitted as an embedded stylesheet."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTableBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A data table (mj-table). Rows and cells are modelled, not raw HTML.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTableBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the table alignment (align)."
+        },
+        {
+          "name": "Border",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the table border shorthand (border)."
+        },
+        {
+          "name": "CellPadding",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the cell padding (cellpadding)."
+        },
+        {
+          "name": "CellSpacing",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the cell spacing (cellspacing)."
+        },
+        {
+          "name": "Color",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text colour (color)."
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font family (font-family)."
+        },
+        {
+          "name": "FontSize",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font size (font-size)."
+        },
+        {
+          "name": "LineHeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line height (line-height)."
+        },
+        {
+          "name": "Rows",
+          "kind": "Property",
+          "type": "IList<EmailTableRow>",
+          "description": "Gets the table rows."
+        },
+        {
+          "name": "TableLayout",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the table layout algorithm (table-layout)."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the table width (width)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTableCell",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A single cell of an .",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTableCell.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the cell text alignment (align)."
+        },
+        {
+          "name": "ColSpan",
+          "kind": "Property",
+          "type": "int?",
+          "description": "Gets or sets the column span (colspan), when greater than one."
+        },
+        {
+          "name": "RowSpan",
+          "kind": "Property",
+          "type": "int?",
+          "description": "Gets or sets the row span (rowspan), when greater than one."
+        },
+        {
+          "name": "Text",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the cell text content."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTableRow",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A single row of an .",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTableRow.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Cells",
+          "kind": "Property",
+          "type": "IList<EmailTableCell>",
+          "description": "Gets the cells in this row."
+        },
+        {
+          "name": "IsHeader",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets or sets whether the row is a header row (rendered with bold cells)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplateDocument",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "The root of an email template: subject/preheader metadata, global and the ordered list of . This is the canonical editable model that the generator turns into MJML and the importer produces from MJML.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailTemplateDocument.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CreatedAt",
+          "kind": "Property",
+          "type": "DateTime",
+          "description": "Gets or sets the creation timestamp (UTC)."
+        },
+        {
+          "name": "Id",
+          "kind": "Property",
+          "type": "Guid",
+          "description": "Gets or sets the unique identifier of this document."
+        },
+        {
+          "name": "Language",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the language code (defaults to Czech, \"cs\")."
+        },
+        {
+          "name": "Name",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the human-readable template name."
+        },
+        {
+          "name": "Preheader",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the preview text shown in inboxes (mj-preview)."
+        },
+        {
+          "name": "Sections",
+          "kind": "Property",
+          "type": "IList<EmailSection>",
+          "description": "Gets the ordered sections that make up the body."
+        },
+        {
+          "name": "Styles",
+          "kind": "Property",
+          "type": "TemplateStyles",
+          "description": "Gets or sets the global styles and head settings."
+        },
+        {
+          "name": "Subject",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the email subject line (mj-title / mail subject)."
+        },
+        {
+          "name": "UpdatedAt",
+          "kind": "Property",
+          "type": "DateTime?",
+          "description": "Gets or sets the last update timestamp (UTC), when known."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTextBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A text block (mj-text). may contain inline HTML.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailTextBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "Align",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the horizontal alignment (align)."
+        },
+        {
+          "name": "Color",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text colour (color)."
+        },
+        {
+          "name": "Content",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the inline HTML content of the block."
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font family (font-family)."
+        },
+        {
+          "name": "FontSize",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the font size (font-size)."
+        },
+        {
+          "name": "FontStyle",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the font style, e.g. italic (font-style)."
+        },
+        {
+          "name": "FontWeight",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the font weight (font-weight)."
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the explicit height (height)."
+        },
+        {
+          "name": "LetterSpacing",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the letter spacing (letter-spacing)."
+        },
+        {
+          "name": "LineHeight",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the line height (line-height)."
+        },
+        {
+          "name": "TextDecoration",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the text decoration (text-decoration)."
+        },
+        {
+          "name": "TextTransform",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the text transform (text-transform)."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailWrapperBlock",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "A full-width wrapper (mj-wrapper) that groups whole sections under one background.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailWrapperBlock.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Type",
+          "kind": "Field",
+          "type": "override BlockType"
+        },
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background colour (background-color)."
+        },
+        {
+          "name": "BackgroundUrl",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the background image URL (background-url)."
+        },
+        {
+          "name": "Border",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the border shorthand (border)."
+        },
+        {
+          "name": "BorderRadius",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets or sets the border radius (border-radius)."
+        },
+        {
+          "name": "FullWidth",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets or sets whether the wrapper spans the full width (full-width)."
+        },
+        {
+          "name": "Sections",
+          "kind": "Property",
+          "type": "IList<EmailSection>",
+          "description": "Gets the sections held by the wrapper."
+        },
+        {
+          "name": "TextAlign",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the text alignment (text-align)."
+        }
+      ]
+    },
+    {
+      "itemName": "IBlockContainer",
+      "kind": "Interface",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+      "description": "Implemented by anything that directly holds a list of content blocks (a column or a hero). Used by the document tree operations to find, add, move and remove blocks uniformly.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/IBlockContainer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "LayoutMath",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "Column-width arithmetic shared by section editing and layout presets.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/LayoutMath.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "EqualWidths",
+          "kind": "Method",
+          "type": "string[]",
+          "description": "Computes equal column widths as percentage strings that always total exactly 100% (the last column absorbs any rounding remainder).",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "name": "Format",
+          "kind": "Method",
+          "type": "string",
+          "description": "Formats a percentage value, trimming trailing zeros (e.g. 50%, 33.33%).",
+          "parameters": [
+            {
+              "name": "percent",
+              "type": "decimal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "MjAttributes",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "Models the MJML <mj-attributes> head section: global defaults (mj-all), per-component defaults and named classes (mj-class). The importer keeps this cascade intact rather than flattening it onto blocks, preserving both fidelity and editability of global styles.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/MjAttributes.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Resolve",
+          "kind": "Method",
+          "type": "string?",
+          "description": "Resolves the head-level value of an attribute for a component, following MJML precedence: referenced classes (later class wins) > per-tag default > mj-all. Returns when no head rule supplies the attribute (the block's own value or the MJML built-in default then applies). The block's own inline value is not considered here.",
+          "parameters": [
+            {
+              "name": "tag",
+              "type": "string"
+            },
+            {
+              "name": "mjClasses",
+              "type": "IReadOnlyList<string>"
+            },
+            {
+              "name": "attribute",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "All",
+          "kind": "Property",
+          "type": "IDictionary<string, string>",
+          "description": "Gets the attributes applied to every component (mj-all)."
+        },
+        {
+          "name": "Classes",
+          "kind": "Property",
+          "type": "IDictionary<string, Dictionary<string, string>>",
+          "description": "Gets the named class definitions (mj-class), keyed by class name."
+        },
+        {
+          "name": "PerTag",
+          "kind": "Property",
+          "type": "IDictionary<string, Dictionary<string, string>>",
+          "description": "Gets the per-component default attributes, keyed by MJML tag name (e.g. mj-text)."
+        }
+      ]
+    },
+    {
+      "itemName": "MjHtmlSelector",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "A single mj-html-attributes selector: a CSS path and the custom HTML attributes to apply. Carried for lossless round-trip; the default renderer (Mjml.Net) does not emit it (see E0.9).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/MjHtmlSelector.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Attributes",
+          "kind": "Property",
+          "type": "IDictionary<string, string>",
+          "description": "Gets the custom HTML attributes to apply to matching elements."
+        },
+        {
+          "name": "Path",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the CSS selector path (mj-selector path)."
+        }
+      ]
+    },
+    {
+      "itemName": "TemplateStyles",
+      "kind": "Class",
+      "category": "Model",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+      "description": "Global, document-wide styling and head settings (maps to the MJML <mj-head> globals and the mj-body attributes).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/TemplateStyles.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Attributes",
+          "kind": "Property",
+          "type": "MjAttributes",
+          "description": "Gets or sets the default-attribute cascade (mj-attributes: mj-all, per-tag, mj-class)."
+        },
+        {
+          "name": "BackgroundColor",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the body background colour (mj-body background-color)."
+        },
+        {
+          "name": "Breakpoint",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the mobile breakpoint width (mj-breakpoint width)."
+        },
+        {
+          "name": "ContentWidth",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the body content width (mj-body width)."
+        },
+        {
+          "name": "FontFamily",
+          "kind": "Property",
+          "type": "string",
+          "description": "Gets or sets the default font family applied across the template."
+        },
+        {
+          "name": "Fonts",
+          "kind": "Property",
+          "type": "IList<EmailFont>",
+          "description": "Gets the imported web fonts (mj-font)."
+        },
+        {
+          "name": "HtmlAttributes",
+          "kind": "Property",
+          "type": "IList<MjHtmlSelector>",
+          "description": "Gets the custom HTML attribute selectors (mj-html-attributes, round-trip only)."
+        },
+        {
+          "name": "Styles",
+          "kind": "Property",
+          "type": "IList<EmailStyle>",
+          "description": "Gets the custom style blocks (mj-style)."
+        }
+      ]
+    },
+    {
+      "itemName": "BlockDescriptor",
+      "kind": "Record",
+      "category": "Registry",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
+      "description": "Describes a block kind available in the editor toolbox: how to present it and how to create one.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Registry/BlockDescriptor.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "BlockRegistry",
+      "kind": "Class",
+      "category": "Registry",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
+      "description": "Default seeded with the 14 built-in MJML block kinds.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Registry/BlockRegistry.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CreateById",
+          "kind": "Method",
+          "type": "EmailBlockBase",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "CreateInstance",
+          "kind": "Method",
+          "type": "EmailBlockBase",
+          "parameters": [
+            {
+              "name": "type",
+              "type": "BlockType"
+            }
+          ]
+        },
+        {
+          "name": "GetAll",
+          "kind": "Method",
+          "type": "IReadOnlyList<BlockDescriptor>"
+        },
+        {
+          "name": "RegisterCustom",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "descriptor",
+              "type": "BlockDescriptor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "IBlockRegistry",
+      "kind": "Interface",
+      "category": "Registry",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
+      "description": "Catalogue of block kinds available to the editor, with factories to create them.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Registry/IBlockRegistry.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DocumentValidationKeys",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Localization keys for block-level document validation findings.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/DocumentValidationKeys.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ButtonHrefMissing",
+          "kind": "Field",
+          "type": "string",
+          "description": "A button has no link target."
+        },
+        {
+          "name": "CarouselImageSrcMissing",
+          "kind": "Field",
+          "type": "string",
+          "description": "A carousel image has no source URL."
+        },
+        {
+          "name": "ImageAltMissing",
+          "kind": "Field",
+          "type": "string",
+          "description": "An image has no alternative text (accessibility)."
+        },
+        {
+          "name": "ImageSrcMissing",
+          "kind": "Field",
+          "type": "string",
+          "description": "An image has no source URL."
+        }
+      ]
+    },
+    {
+      "itemName": "DocumentValidationMessage",
+      "kind": "Record",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "A single document validation finding (reuses ).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/DocumentValidationMessage.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "EmailDocumentValidator",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Validates a document for structural and content correctness: layout (via ) plus per-block rules such as required button hrefs and image sources/alt text. Findings carry localization keys, never localized text.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/EmailDocumentValidator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Validate",
+          "kind": "Method",
+          "type": "IReadOnlyList<DocumentValidationMessage>",
+          "description": "Validates the document and returns all findings (layout + block level).",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplateRenderer",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Default render pipeline: Scriban substitution on subject/preheader, MJML generation + Scriban substitution (resolving variables and VisibleWhen conditions) + Mjml.Net compilation for the HTML, and a substituted plain-text version. Errors from every phase are aggregated in order.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/EmailTemplateRenderer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "RenderAsync",
+          "kind": "Method",
+          "type": "Task<RenderResult>",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            },
+            {
+              "name": "model",
+              "type": "object?",
+              "default": "null"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "HtmlContentSanitizer",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Sanitizes the inline HTML allowed inside text-bearing blocks: only a small safe whitelist of tags and attributes survives; scripts/styles are dropped with their content, event handlers and unsafe URL schemes are stripped. Built on AngleSharp's HTML parser so it is robust against evasion.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/HtmlContentSanitizer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Sanitize",
+          "kind": "Method",
+          "type": "string",
+          "description": "Returns a sanitized copy of safe to embed in generated markup.",
+          "parameters": [
+            {
+              "name": "html",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "IEmailTemplateRenderer",
+      "kind": "Interface",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Renders an with a data model into HTML and text.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/IEmailTemplateRenderer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IMjmlCompiler",
+      "kind": "Interface",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Compiles MJML markup into responsive HTML.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/IMjmlCompiler.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "MjmlCompileResult",
+      "kind": "Record",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "The outcome of compiling MJML markup to HTML.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/MjmlCompileResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Success",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Gets whether compilation produced no errors."
+        }
+      ]
+    },
+    {
+      "itemName": "MjmlGenerator",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Generates MJML markup from an . Default attribute values are omitted for clean output, attribute values are escaped, text-block HTML is sanitized, and a block's wraps it in a Scriban condition.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/MjmlGenerator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Generate",
+          "kind": "Method",
+          "type": "string",
+          "description": "Generates MJML for the document using the given options (render-safe by default).",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            },
+            {
+              "name": "options",
+              "type": "MjmlGeneratorOptions?",
+              "default": "null"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "MjmlGeneratorOptions",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Options controlling MJML generation.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/MjmlGeneratorOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Default",
+          "kind": "Property",
+          "type": "static MjmlGeneratorOptions",
+          "description": "The default options (render-safe)."
+        },
+        {
+          "name": "EmitHtmlAttributes",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets or sets whether to emit mj-html-attributes. Off by default because the render engine (Mjml.Net) does not support it; turn on only when generating MJML for export so the markup round-trips losslessly."
+        },
+        {
+          "name": "ForExport",
+          "kind": "Property",
+          "type": "static MjmlGeneratorOptions",
+          "description": "Options for producing MJML intended for export/round-trip (includes everything)."
+        }
+      ]
+    },
+    {
+      "itemName": "MjmlNetCompiler",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Default backed by Mjml.Net. Validation errors are mapped to s and parser exceptions (e.g. truncated MJML, see E0.9) are caught and reported instead of propagating.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/MjmlNetCompiler.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Compile",
+          "kind": "Method",
+          "type": "MjmlCompileResult",
+          "parameters": [
+            {
+              "name": "mjml",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "RenderError",
+      "kind": "Record",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "An error or warning produced while compiling MJML to HTML.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/RenderError.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RenderResult",
+      "kind": "Record",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "The fully rendered output of a template: substituted subject/preheader, HTML and text.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/RenderResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Success",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Gets whether rendering completed without errors."
+        }
+      ]
+    },
+    {
+      "itemName": "TextVersionGenerator",
+      "kind": "Class",
+      "category": "Rendering",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+      "description": "Produces the plain-text alternative of a document: HTML stripped, links rendered as text (url), sections separated by blank lines, tables row-by-row.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/TextVersionGenerator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Generate",
+          "kind": "Method",
+          "type": "string",
+          "description": "Generates the plain-text version of the document.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplateValidationResources",
+      "kind": "Class",
+      "category": "Resources",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Resources",
+      "description": "Marker type for the email template validation resources. Used with IStringLocalizer<EmailTemplateValidationResources> to resolve localized validation messages from the accompanying .resx files (neutral/English, Czech, French).",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Resources/EmailTemplateValidationResources.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "EmailTemplateSerializationException",
+      "kind": "Class",
+      "category": "Serialization",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Serialization",
+      "description": "Thrown when an email template document cannot be (de)serialized — for example malformed JSON or an unknown block type discriminator. Carries a clear, surfaced message instead of crashing.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Serialization/EmailTemplateSerializationException.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "EmailTemplateSerializer",
+      "kind": "Class",
+      "category": "Serialization",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Serialization",
+      "description": "Serializes to and from JSON. Block polymorphism uses the type discriminator declared on . Unknown properties are ignored (forward compatibility); unknown block types and malformed JSON surface as .",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Serialization/EmailTemplateSerializer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CloneBlock",
+          "kind": "Method",
+          "type": "EmailBlockBase",
+          "description": "Creates an independent deep copy of a single block (same identifiers).",
+          "parameters": [
+            {
+              "name": "block",
+              "type": "EmailBlockBase"
+            }
+          ]
+        },
+        {
+          "name": "Deserialize",
+          "kind": "Method",
+          "type": "EmailTemplateDocument",
+          "description": "Deserializes a document from JSON.",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Serialize",
+          "kind": "Method",
+          "type": "string",
+          "description": "Serializes a document to a compact JSON string.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "static JsonSerializerOptions",
+          "description": "Gets the canonical serialization options used for documents, blocks and cloning."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailDocumentVariableExtractor",
+      "kind": "Class",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "Extracts every template variable referenced anywhere in a document — subject, preheader, block content and URLs, visibility conditions and raw block content — as a merged, de-duplicated set.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/EmailDocumentVariableExtractor.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Extract",
+          "kind": "Method",
+          "type": "IReadOnlyList<TemplateVariableInfo>",
+          "description": "Returns the variables referenced across the whole document.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ITemplateEngine",
+      "kind": "Interface",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "Renders, validates and analyzes Scriban-syntax templates within a sandbox.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/ITemplateEngine.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ObjectToScriptObjectConverter",
+      "kind": "Class",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "Converts an arbitrary model into a Scriban . Dictionaries become script objects keyed by their entries (so JSON-derived models work), lists are converted element-wise, and POCO/anonymous objects are imported with the default snake_case member renamer.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/ObjectToScriptObjectConverter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ToScriptObject",
+          "kind": "Method",
+          "type": "ScriptObject",
+          "description": "Builds a script object usable as the global scope for rendering.",
+          "parameters": [
+            {
+              "name": "model",
+              "type": "object?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "Result<T>",
+      "kind": "Struct",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "A success-or-error result that avoids throwing for expected failures.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/Result.cs",
+      "documentationStatus": "merged",
+      "typeParameters": [
+        {
+          "name": "T",
+          "description": "Generic type parameter T."
+        }
+      ],
+      "members": [
+        {
+          "name": "Failure",
+          "kind": "Method",
+          "type": "Result<T>",
+          "description": "Creates a failed result with an error message.",
+          "parameters": [
+            {
+              "name": "error",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Success",
+          "kind": "Method",
+          "type": "Result<T>",
+          "description": "Creates a successful result.",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "T"
+            }
+          ]
+        },
+        {
+          "name": "Error",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Gets the error message (null when succeeded)."
+        },
+        {
+          "name": "IsSuccess",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets whether the operation succeeded."
+        },
+        {
+          "name": "Value",
+          "kind": "Property",
+          "type": "T?",
+          "description": "Gets the success value (default when failed)."
+        }
+      ]
+    },
+    {
+      "itemName": "SampleDataGenerator",
+      "kind": "Class",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "Generates a plausible sample data model from a template's extracted variables, so previews and the \"fill from template\" action produce realistic, fully-populated output.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/SampleDataGenerator.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Generate",
+          "kind": "Method",
+          "type": "IDictionary<string, object?>",
+          "description": "Builds a nested sample model (dictionaries/lists) covering all the given variables.",
+          "parameters": [
+            {
+              "name": "variables",
+              "type": "IReadOnlyList<TemplateVariableInfo>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "ScribanTemplateEngine",
+      "kind": "Class",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "A sandboxed built on Scriban. Rendering is bounded by (loops, recursion, output size, time), include is disabled (no template loader) and no .NET reflection is exposed.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/ScribanTemplateEngine.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ExtractVariables",
+          "kind": "Method",
+          "type": "IReadOnlyList<string>",
+          "parameters": [
+            {
+              "name": "template",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Render",
+          "kind": "Method",
+          "type": "Result<string>",
+          "parameters": [
+            {
+              "name": "template",
+              "type": "string"
+            },
+            {
+              "name": "model",
+              "type": "object?"
+            }
+          ]
+        },
+        {
+          "name": "Validate",
+          "kind": "Method",
+          "type": "TemplateValidationResult",
+          "parameters": [
+            {
+              "name": "template",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "TemplateError",
+      "kind": "Record",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "A single template syntax error with its source position.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateError.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TemplateSecurityOptions",
+      "kind": "Class",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "Sandbox limits applied when rendering user-authored templates, bounding loops, recursion, output size and wall-clock time so a malicious or buggy template cannot hang or exhaust memory.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateSecurityOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "LoopLimit",
+          "kind": "Property",
+          "type": "int",
+          "description": "Maximum total loop iterations before rendering aborts (default 5000)."
+        },
+        {
+          "name": "MaxOutputLength",
+          "kind": "Property",
+          "type": "int",
+          "description": "Maximum length of the rendered output in characters (default 5,000,000)."
+        },
+        {
+          "name": "RecursiveLimit",
+          "kind": "Property",
+          "type": "int",
+          "description": "Maximum recursion depth before rendering aborts (default 100)."
+        },
+        {
+          "name": "StrictVariables",
+          "kind": "Property",
+          "type": "bool",
+          "description": "When , referencing an undefined variable is an error; otherwise it renders as empty (the default, lenient behaviour)."
+        },
+        {
+          "name": "Timeout",
+          "kind": "Property",
+          "type": "TimeSpan",
+          "description": "Maximum wall-clock time for a single render (default 5 seconds, cooperative)."
+        }
+      ]
+    },
+    {
+      "itemName": "TemplateValidationResult",
+      "kind": "Class",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "The result of validating a template's syntax.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateValidationResult.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "IsValid",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Gets whether the template is syntactically valid."
+        },
+        {
+          "name": "SyntaxErrorKey",
+          "kind": "Field",
+          "type": "string",
+          "description": "Localization key used for template syntax errors."
+        },
+        {
+          "name": "Invalid",
+          "kind": "Method",
+          "type": "TemplateValidationResult",
+          "description": "Creates an invalid result with the given errors.",
+          "parameters": [
+            {
+              "name": "errors",
+              "type": "IReadOnlyList<TemplateError>"
+            }
+          ]
+        },
+        {
+          "name": "Errors",
+          "kind": "Property",
+          "type": "IReadOnlyList<TemplateError>",
+          "description": "Gets the syntax errors found (empty when valid)."
+        },
+        {
+          "name": "Valid",
+          "kind": "Property",
+          "type": "static TemplateValidationResult",
+          "description": "A valid result."
+        }
+      ]
+    },
+    {
+      "itemName": "TemplateVariableExtractor",
+      "kind": "Class",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "Extracts the variable paths referenced by a template by walking the parsed AST. Loop variables are excluded automatically (they parse as locals, not globals); loop pseudo-objects (for, while…) are ignored explicitly. Both the full dotted path and its root are reported.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateVariableExtractor.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BuildInfos",
+          "kind": "Method",
+          "type": "IReadOnlyList<TemplateVariableInfo>"
+        },
+        {
+          "name": "Extract",
+          "kind": "Method",
+          "type": "IReadOnlyList<string>",
+          "description": "Returns the distinct variable paths referenced by the template (empty when it has syntax errors).",
+          "parameters": [
+            {
+              "name": "template",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "ExtractInfos",
+          "kind": "Method",
+          "type": "IReadOnlyList<TemplateVariableInfo>",
+          "description": "Returns the distinct variables referenced by the template, each marked as a scalar or a collection (when used as a for iterator). Empty when the template has syntax errors.",
+          "parameters": [
+            {
+              "name": "template",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Visit",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "ScriptVariableGlobal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "TemplateVariableInfo",
+      "kind": "Record",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "A variable referenced by a template, with its dotted path and inferred kind.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateVariableInfo.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "VariableKind",
+      "kind": "Enum",
+      "category": "Templating",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+      "description": "Whether a template variable is used as a single value or iterated as a collection.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/VariableKind.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CreateEmailTemplateRequestValidator",
+      "kind": "Class",
+      "category": "Validation",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Validation",
+      "description": "Validates with localized messages.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Validation/CreateEmailTemplateRequestValidator.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "SendEmailRequestValidator",
+      "kind": "Class",
+      "category": "Validation",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Validation",
+      "description": "Validates with localized messages.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Validation/SendEmailRequestValidator.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "UpdateEmailTemplateRequestValidator",
+      "kind": "Class",
+      "category": "Validation",
+      "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Validation",
+      "description": "Validates with localized messages.",
+      "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Validation/UpdateEmailTemplateRequestValidator.cs",
+      "documentationStatus": "merged"
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Render an email template",
+      "category": "Rendering",
+      "code": "services.AddTempoEmailTemplateEngine();\\nvar result = await renderer.RenderAsync(document, data, cancellationToken);"
+    }
+  ],
+  "summary": {
+    "itemCount": 97,
+    "manualItemCount": 97,
+    "generatedItemCount": 97,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 0,
+    "publicApiTypeCount": 97
+  }
+}

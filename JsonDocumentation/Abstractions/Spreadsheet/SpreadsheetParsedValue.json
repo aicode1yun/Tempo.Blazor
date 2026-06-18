@@ -1,0 +1,71 @@
+{
+  "kind": "RecordStruct",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Format",
+  "description": "The result of parsing a raw cell input string via . Carries the typed value, the detected data type, an optional formula, an optional implied number format (applied only when the target cell still uses the General format), and a flag indicating the input was forced to text with a leading apostrophe.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Format/SpreadsheetParsedValue.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ForFormula",
+      "kind": "Method",
+      "type": "SpreadsheetParsedValue",
+      "description": "Creates a formula result.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Text",
+      "kind": "Method",
+      "type": "SpreadsheetParsedValue",
+      "description": "Creates a text result with the given string value.",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "string?"
+        },
+        {
+          "name": "forced",
+          "type": "bool",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "name": "Formula",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The formula expression (including the leading =) when the input is a formula; otherwise null."
+    },
+    {
+      "name": "ImpliedNumberFormat",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The number format implied by the input (e.g. 0%, #,##0.00), or null when no specific format is implied."
+    },
+    {
+      "name": "IsForcedText",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the input was explicitly forced to text via a leading apostrophe."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "SpreadsheetDataType",
+      "description": "The detected data type of the value."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "object?",
+      "description": "The typed value (e.g. , , , or ). Null for formulas and empty input."
+    }
+  ],
+  "itemName": "SpreadsheetParsedValue"
+}

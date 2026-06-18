@@ -1,0 +1,61 @@
+{
+  "itemName": "TmPivotFieldTree",
+  "kind": "Component",
+  "category": "Pivot Table",
+  "description": "TmPivotFieldTree Blazor component in the Pivot Table category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.PivotTable",
+  "sourcePath": "src/Tempo.Blazor/Components/PivotTable/TmPivotFieldTree.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.PivotTable"
+  ],
+  "parameters": [
+    {
+      "name": "ColumnFieldKeys",
+      "type": "List<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Keys of fields currently in the row area."
+    },
+    {
+      "name": "DataFieldKeys",
+      "type": "List<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Keys of fields currently in the column area."
+    },
+    {
+      "name": "FilterFields",
+      "type": "Dictionary<string, List<object?>>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Keys of fields currently in the data area."
+    },
+    {
+      "name": "OnAddToArea",
+      "type": "EventCallback<(string FieldKey, PivotArea Area)>",
+      "isRequired": false,
+      "description": "Keys of fields currently in the filter area."
+    },
+    {
+      "name": "OnRemove",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Fires when a field should be added/moved to a target area."
+    },
+    {
+      "name": "RowFieldKeys",
+      "type": "List<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "All available field definitions."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ]
+}

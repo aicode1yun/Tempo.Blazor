@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Notion",
+  "namespace": "Tempo.Blazor.DocumentFormats.Notion",
+  "description": "Result of converting Notion blocks into a document model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Notion/NotionToDocumentModelConverter.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionToDocumentModelConversionResult"
+}

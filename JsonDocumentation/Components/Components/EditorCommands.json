@@ -1,0 +1,90 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Activity",
+  "description": "Wrapper for document.execCommand JavaScript commands used by rich text editors.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Activity/EditorCommands.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FormatBold",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for bold formatting."
+    },
+    {
+      "name": "FormatHeadingCommand",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for formatting as heading.",
+      "parameters": [
+        {
+          "name": "level",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "FormatItalic",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for italic formatting."
+    },
+    {
+      "name": "FormatStrikethrough",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for strikethrough formatting."
+    },
+    {
+      "name": "FormatUnderline",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for underline formatting."
+    },
+    {
+      "name": "InsertLinkCommand",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for inserting a link.",
+      "parameters": [
+        {
+          "name": "url",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "InsertOrderedListCommand",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for inserting an ordered list."
+    },
+    {
+      "name": "InsertUnorderedListCommand",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript command string for inserting an unordered list."
+    },
+    {
+      "name": "QueryBoldState",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript query string for checking bold state."
+    },
+    {
+      "name": "QueryItalicState",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript query string for checking italic state."
+    },
+    {
+      "name": "QueryUnderlineState",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the JavaScript query string for checking underline state."
+    }
+  ],
+  "itemName": "EditorCommands"
+}

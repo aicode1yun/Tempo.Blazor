@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Helper class for mask parsing and validation.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmMaskedTextBox.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "MaskHelper"
+}

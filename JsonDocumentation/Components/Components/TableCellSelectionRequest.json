@@ -1,0 +1,10 @@
+{
+  "kind": "RecordStruct",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
+  "description": "Public recordstruct defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Table/TableCellSelectionRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "TableCellSelectionRequest"
+}

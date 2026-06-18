@@ -1,0 +1,14 @@
+{
+  "itemName": "TmNotificationToastContainer",
+  "kind": "Component",
+  "category": "Notifications",
+  "description": "TmNotificationToastContainer Blazor component in the Notifications category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Notifications",
+  "sourcePath": "src/Tempo.Blazor/Components/Notifications/TmNotificationToastContainer.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Notifications"
+  ],
+  "parameters": []
+}

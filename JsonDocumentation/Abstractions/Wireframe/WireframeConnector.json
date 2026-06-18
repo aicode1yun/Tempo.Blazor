@@ -1,0 +1,90 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "description": "A directed connector (arrow) between two elements on the canvas.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframeConnector.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DeepCopy",
+      "kind": "Method",
+      "type": "WireframeConnector",
+      "description": "Deep clone of this connector with a new Id."
+    },
+    {
+      "name": "EndArrow",
+      "kind": "Property",
+      "type": "string",
+      "description": "End arrowhead style. Supported: none, classic, block, open, oval, diamond."
+    },
+    {
+      "name": "FromId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Id of the source element."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional label rendered along the connector path."
+    },
+    {
+      "name": "Routing",
+      "kind": "Property",
+      "type": "string",
+      "description": "Routing type. Supported: \"straight\", \"orthogonal\", \"curved\"."
+    },
+    {
+      "name": "StartArrow",
+      "kind": "Property",
+      "type": "string",
+      "description": "Start arrowhead style. Supported: none, classic, block, open, oval, diamond."
+    },
+    {
+      "name": "Stroke",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stroke color (hex or named color)."
+    },
+    {
+      "name": "StrokeDasharray",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional SVG stroke-dasharray value (e.g. \"4 2\")."
+    },
+    {
+      "name": "StrokeWidth",
+      "kind": "Property",
+      "type": "double",
+      "description": "Stroke width in pixels."
+    },
+    {
+      "name": "ToId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Id of the target element."
+    },
+    {
+      "name": "Waypoints",
+      "kind": "Property",
+      "type": "List<DiagramPoint>",
+      "description": "Intermediate waypoints for the edge path. Empty for auto-routed lines."
+    },
+    {
+      "name": "ZIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Z-order index. Higher values render on top."
+    }
+  ],
+  "itemName": "WireframeConnector"
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Localized text with a default fallback and culture-specific translations.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningLocalizedText.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Resolve",
+      "kind": "Method",
+      "type": "string",
+      "description": "Resolves the best matching text for the requested culture.",
+      "parameters": [
+        {
+          "name": "culture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "fallbackCulture",
+          "type": "string?",
+          "default": "null"
+        },
+        {
+          "name": "legacyFallback",
+          "type": "string?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "Default",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Default text used when no culture-specific translation matches."
+    },
+    {
+      "name": "Translations",
+      "kind": "Property",
+      "type": "Dictionary<string, string>",
+      "description": "Translations keyed by culture name, for example en, cs, or cs-CZ."
+    }
+  ],
+  "itemName": "SigningLocalizedText"
+}

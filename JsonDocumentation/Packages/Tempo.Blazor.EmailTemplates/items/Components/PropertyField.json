@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "description": "A single editable scalar property of a model object, with reflective get/set.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/PropertyReflection.cs",
+  "documentationStatus": "generated",
+  "itemName": "PropertyField"
+}

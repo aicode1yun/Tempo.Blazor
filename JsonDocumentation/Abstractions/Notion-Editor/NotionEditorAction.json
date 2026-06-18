@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Enums",
+  "description": "All actions that can be dispatched by NotionKeyboardManager in response to a registered keyboard shortcut.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Enums/NotionEditorAction.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionEditorAction"
+}

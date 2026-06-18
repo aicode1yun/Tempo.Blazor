@@ -1,0 +1,22 @@
+{
+  "itemName": "TmEmailValidationPanel",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailValidationPanel Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailValidationPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnNavigate",
+      "type": "EventCallback<Guid?>",
+      "isRequired": true,
+      "description": "The document to validate.",
+      "editorRequired": true
+    }
+  ]
+}

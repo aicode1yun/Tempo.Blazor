@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Defines where a dock pane is anchored inside a dock manager.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DockPosition.cs",
+  "documentationStatus": "generated",
+  "itemName": "DockPosition"
+}

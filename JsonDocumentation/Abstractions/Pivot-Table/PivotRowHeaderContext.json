@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Context passed to . Contains the row dimension header text and its position in the hierarchy.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotRowHeaderContext.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Level",
+      "kind": "Property",
+      "type": "int",
+      "description": "The hierarchy level (0-based) of this header."
+    },
+    {
+      "name": "RowFieldValues",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>",
+      "description": "Display values of all row dimension keys for this row."
+    },
+    {
+      "name": "RowIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based row index of the leaf row."
+    },
+    {
+      "name": "RowSpan",
+      "kind": "Property",
+      "type": "int",
+      "description": "The number of rows this header spans."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "The display text of this row header cell."
+    }
+  ],
+  "itemName": "PivotRowHeaderContext"
+}

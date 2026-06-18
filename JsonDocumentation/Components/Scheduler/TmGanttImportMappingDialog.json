@@ -1,0 +1,33 @@
+{
+  "itemName": "TmGanttImportMappingDialog",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "Dialog for mapping source spreadsheet columns to Gantt task properties.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttImportMappingDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": [
+    {
+      "name": "IsOpen",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Source column names from the imported file."
+    },
+    {
+      "name": "OnClose",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when the user confirms the mapping."
+    },
+    {
+      "name": "OnImport",
+      "type": "EventCallback<IReadOnlyList<GanttColumnMapping>>",
+      "isRequired": false,
+      "description": "Whether the dialog is visible."
+    }
+  ]
+}

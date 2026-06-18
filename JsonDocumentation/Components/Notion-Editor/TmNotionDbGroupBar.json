@@ -1,0 +1,22 @@
+{
+  "itemName": "TmNotionDbGroupBar",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionDbGroupBar Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Database",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Blocks/Database/TmNotionDbGroupBar.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.Blocks.Database"
+  ],
+  "parameters": [
+    {
+      "name": "OnGroupingChanged",
+      "type": "EventCallback<NotionDatabaseGrouping?>",
+      "isRequired": true,
+      "editorRequired": true
+    }
+  ],
+  "subcategory": "Blocks / Database"
+}

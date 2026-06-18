@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Defines a field that can be used for grouping in TmMultiViewList.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GroupFieldDefinition.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ],
+  "members": [
+    {
+      "name": "Aggregations",
+      "kind": "Property",
+      "type": "IReadOnlyList<AggregateType>",
+      "description": "Aggregation types to compute for this group. Default: Count only."
+    },
+    {
+      "name": "DisplayFormatter",
+      "kind": "Property",
+      "type": "Func<object?, string>?",
+      "description": "Optional custom display formatter for group header values."
+    },
+    {
+      "name": "FieldAccessor",
+      "kind": "Property",
+      "type": "Func<TItem, object?>",
+      "description": "Accessor function to get the group key value from an item."
+    },
+    {
+      "name": "FieldName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique field name (stored in views)."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display label shown in the grouping picker."
+    }
+  ],
+  "itemName": "GroupFieldDefinition<TItem>"
+}

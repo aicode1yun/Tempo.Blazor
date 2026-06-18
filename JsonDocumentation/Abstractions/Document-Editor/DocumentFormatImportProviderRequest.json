@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Request passed to a provider-backed document import operation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentFormatProviderModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFormatImportProviderRequest"
+}

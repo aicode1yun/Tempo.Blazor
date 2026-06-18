@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "Traversal helpers over the nested document structure (sections → columns → blocks, recursing into hero, group and wrapper containers) plus identifier reassignment used by clone-with-new-ids.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/DocumentTree.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AllBlockLists",
+      "kind": "Method",
+      "type": "IEnumerable<IList<EmailBlockBase>>",
+      "description": "Enumerates every block list (a column's or a hero's Blocks) in the document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    },
+    {
+      "name": "AllBlocks",
+      "kind": "Method",
+      "type": "IEnumerable<EmailBlockBase>",
+      "description": "Enumerates every block anywhere in the document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    },
+    {
+      "name": "AllColumns",
+      "kind": "Method",
+      "type": "IEnumerable<EmailColumn>",
+      "description": "Enumerates every column anywhere in the document, recursing into all containers.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    },
+    {
+      "name": "AllSections",
+      "kind": "Method",
+      "type": "IEnumerable<EmailSection>",
+      "description": "Enumerates every section, including those nested inside wrapper blocks.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "EmailTemplateDocument"
+        }
+      ]
+    },
+    {
+      "name": "ReassignIds",
+      "kind": "Method",
+      "type": "void",
+      "description": "Assigns a fresh identifier to a block and to every node nested beneath it.",
+      "parameters": [
+        {
+          "name": "block",
+          "type": "EmailBlockBase"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentTree"
+}

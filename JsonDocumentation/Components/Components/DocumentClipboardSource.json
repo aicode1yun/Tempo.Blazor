@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Identifies the origin application of pasted clipboard content.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Clipboard/DocumentClipboardSource.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentClipboardSource"
+}

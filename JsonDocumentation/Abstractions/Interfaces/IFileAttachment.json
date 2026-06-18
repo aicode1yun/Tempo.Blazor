@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a file attachment in TmActivityAttachments and TmFileDropZone.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileAttachment.cs",
+  "documentationStatus": "generated",
+  "itemName": "IFileAttachment"
+}

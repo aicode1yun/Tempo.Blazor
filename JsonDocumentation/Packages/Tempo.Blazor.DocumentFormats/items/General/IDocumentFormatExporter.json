@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DocumentFormats",
+  "description": "External package exporter.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/DocumentFormatContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDocumentFormatExporter"
+}

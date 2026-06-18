@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Severity level of a notification.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/INotificationItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotificationSeverity"
+}

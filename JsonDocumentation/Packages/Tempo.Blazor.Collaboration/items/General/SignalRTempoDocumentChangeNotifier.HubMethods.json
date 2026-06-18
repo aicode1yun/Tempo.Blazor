@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.DocumentLibrary.Collaboration",
+  "description": "Hub method and group-name conventions shared by the client and the server hub.",
+  "packageId": "Tempo.Blazor.Collaboration",
+  "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRTempoDocumentChangeNotifier.cs",
+  "documentationStatus": "generated",
+  "itemName": "SignalRTempoDocumentChangeNotifier.HubMethods"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "The kind of filter applied to a single auto-filter column.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetFilterEnums.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetFilterKind"
+}

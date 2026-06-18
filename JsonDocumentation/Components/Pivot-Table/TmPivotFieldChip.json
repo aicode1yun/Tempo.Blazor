@@ -1,0 +1,95 @@
+{
+  "itemName": "TmPivotFieldChip",
+  "kind": "Component",
+  "category": "Pivot Table",
+  "description": "TmPivotFieldChip Blazor component in the Pivot Table category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.PivotTable",
+  "sourcePath": "src/Tempo.Blazor/Components/PivotTable/TmPivotFieldChip.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.PivotTable"
+  ],
+  "parameters": [
+    {
+      "name": "AllowDragDrop",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "The area where this chip is currently placed."
+    },
+    {
+      "name": "Area",
+      "type": "PivotArea",
+      "isRequired": false,
+      "default": "PivotArea.Unused",
+      "description": "The field this chip represents."
+    },
+    {
+      "name": "OnDragEnd",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when drag starts."
+    },
+    {
+      "name": "OnDragStart",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Whether to show the remove button."
+    },
+    {
+      "name": "OnRemoveClick",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when settings button is clicked."
+    },
+    {
+      "name": "OnSettingsClick",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fires when sort direction or criterion changes."
+    },
+    {
+      "name": "OnSortChanged",
+      "type": "EventCallback<(PivotSortDirection Direction, PivotSortBy SortBy)>",
+      "isRequired": false,
+      "description": "Fires when drag ends."
+    },
+    {
+      "name": "ShowRemove",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to show the settings button."
+    },
+    {
+      "name": "ShowSettings",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Current sort criterion displayed on the chip."
+    },
+    {
+      "name": "ShowSortMenu",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the chip can be dragged."
+    },
+    {
+      "name": "SortBy",
+      "type": "PivotSortBy",
+      "isRequired": true,
+      "description": "Current sort direction displayed on the chip."
+    },
+    {
+      "name": "SortDirection",
+      "type": "PivotSortDirection",
+      "isRequired": true,
+      "description": "Whether to show the sort menu button."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ]
+}

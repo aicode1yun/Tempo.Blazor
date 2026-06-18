@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Adapts the existing document token provider to the generic autocomplete contract.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentAutocomplete.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentAutocompleteKind.DocumentAutocompleteTrigger.TokenDocumentAutocompleteProvider"
+}

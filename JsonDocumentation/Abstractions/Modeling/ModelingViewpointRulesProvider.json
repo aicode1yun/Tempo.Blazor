@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Default viewpoint rules provider backed by notation profile capabilities.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingNotationProfiles.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingViewpointRulesProvider"
+}

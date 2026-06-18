@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A layout section inside a diagram stencil.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilSection.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CssClass",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional CSS class for fine-grained styling."
+    },
+    {
+      "name": "DataKey",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Data key referencing (e.g. \"name\", \"attributes\")."
+    },
+    {
+      "name": "DefaultText",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Fallback text when the data key is missing or empty."
+    },
+    {
+      "name": "Padding",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Uniform padding in pixels for this section."
+    },
+    {
+      "name": "TextStyle",
+      "kind": "Property",
+      "type": "DiagramStencilTextStyle?",
+      "description": "Text style overrides for this section."
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "string",
+      "description": "Section type. Supported: \"text\", \"list\", \"divider\", \"icon\", \"swimlane\"."
+    }
+  ],
+  "itemName": "DiagramStencilSection"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Associates a key combination with an editor action and a human-readable label.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Services/NotionKeyboardManager.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionKeyboardManager.NotionKeyboardBinding"
+}

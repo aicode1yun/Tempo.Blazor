@@ -1,0 +1,62 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotificationEvent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "DeepLink",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "EntryId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Message",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "RecipientUserId",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "SenderAvatarUrl",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "SenderName",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "SenderUserId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "ThreadId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "NotificationType"
+    }
+  ],
+  "itemName": "NotificationEvent"
+}

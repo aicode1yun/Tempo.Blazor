@@ -1,0 +1,42 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a file attachment within a chat message.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/ChatAttachment.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string?",
+      "description": "MIME content type."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display file name."
+    },
+    {
+      "name": "Size",
+      "kind": "Property",
+      "type": "long?",
+      "description": "File size in bytes."
+    },
+    {
+      "name": "Url",
+      "kind": "Property",
+      "type": "string",
+      "description": "Download or preview URL."
+    }
+  ],
+  "itemName": "ChatAttachment"
+}

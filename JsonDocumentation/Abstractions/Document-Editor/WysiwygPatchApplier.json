@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Applies WYSIWYG patches to a .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/WysiwygPatchApplier.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ApplyPatch",
+      "kind": "Method",
+      "type": "void",
+      "description": "Applies a single patch to the document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "patch",
+          "type": "WysiwygPatch"
+        }
+      ]
+    }
+  ],
+  "itemName": "WysiwygPatchApplier"
+}

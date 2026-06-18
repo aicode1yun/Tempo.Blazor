@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Persistence provider for TmDataTable/TmMultiViewList saved views. Views are scoped by ViewContext to support multiple tables on the same or different pages.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDataTableViewProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDataTableViewProvider"
+}

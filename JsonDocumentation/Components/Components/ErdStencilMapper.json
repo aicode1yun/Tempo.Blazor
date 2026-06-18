@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "description": "ERD stencil mapper placeholder. It intentionally returns no mappings until a consumer registers ERD stencils.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Modeling/BuiltInModelingProfiles.cs",
+  "documentationStatus": "generated",
+  "itemName": "ErdStencilMapper"
+}

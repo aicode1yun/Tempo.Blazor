@@ -1,0 +1,96 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Display and behavior preferences for a signing field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningFieldPreferences.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AdditionalSettings",
+      "kind": "Property",
+      "type": "Dictionary<string, object?>",
+      "description": "Additional provider or application-specific settings."
+    },
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Text alignment, such as left, center, or right."
+    },
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Field text or stroke color."
+    },
+    {
+      "name": "Currency",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Currency code for payment fields."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Font family used when rendering text into a document."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Font size used when rendering text into a document."
+    },
+    {
+      "name": "Format",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Field format, such as date format, number format, or signature capture mode."
+    },
+    {
+      "name": "Formula",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Formula expression used for computed number or payment fields."
+    },
+    {
+      "name": "PaymentLinkId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider-specific payment link identifier."
+    },
+    {
+      "name": "Price",
+      "kind": "Property",
+      "type": "decimal?",
+      "description": "Static price for payment fields."
+    },
+    {
+      "name": "PriceId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Provider-specific external price identifier."
+    },
+    {
+      "name": "ReasonFieldUuid",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Field UUID containing the signing reason for a signature field."
+    },
+    {
+      "name": "WithLogo",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether generated stamp fields should include a logo."
+    },
+    {
+      "name": "WithSignatureId",
+      "kind": "Property",
+      "type": "bool?",
+      "description": "Whether a signature identifier should be shown near the signature."
+    }
+  ],
+  "itemName": "SigningFieldPreferences"
+}

@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Clipboard",
+  "description": "Developer-only snapshot of the latest clipboard normalization pipeline run.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Clipboard/DocumentClipboardDebugSnapshot.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CapturedAt",
+      "kind": "Property",
+      "type": "DateTimeOffset",
+      "description": "UTC timestamp when the snapshot was captured."
+    },
+    {
+      "name": "NormalizedJson",
+      "kind": "Property",
+      "type": "string",
+      "description": "Normalized Tempo document blocks as JSON."
+    },
+    {
+      "name": "PlainText",
+      "kind": "Property",
+      "type": "string",
+      "description": "Raw plain-text payload received from the browser clipboard."
+    },
+    {
+      "name": "RawHtml",
+      "kind": "Property",
+      "type": "string",
+      "description": "Raw HTML payload received from the browser clipboard."
+    },
+    {
+      "name": "Region",
+      "kind": "Property",
+      "type": "DocumentEditorRegion",
+      "description": "Target editor region used for insertion policy normalization."
+    },
+    {
+      "name": "Source",
+      "kind": "Property",
+      "type": "DocumentClipboardSource",
+      "description": "Detected clipboard source."
+    },
+    {
+      "name": "Warnings",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentClipboardWarning>",
+      "description": "Non-fatal clipboard pipeline warnings."
+    }
+  ],
+  "itemName": "DocumentClipboardDebugSnapshot"
+}

@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "The root of an email template: subject/preheader metadata, global and the ordered list of . This is the canonical editable model that the generator turns into MJML and the importer produces from MJML.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailTemplateDocument.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "Gets or sets the creation timestamp (UTC)."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid",
+      "description": "Gets or sets the unique identifier of this document."
+    },
+    {
+      "name": "Language",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the language code (defaults to Czech, \"cs\")."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the human-readable template name."
+    },
+    {
+      "name": "Preheader",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the preview text shown in inboxes (mj-preview)."
+    },
+    {
+      "name": "Sections",
+      "kind": "Property",
+      "type": "IList<EmailSection>",
+      "description": "Gets the ordered sections that make up the body."
+    },
+    {
+      "name": "Styles",
+      "kind": "Property",
+      "type": "TemplateStyles",
+      "description": "Gets or sets the global styles and head settings."
+    },
+    {
+      "name": "Subject",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the email subject line (mj-title / mail subject)."
+    },
+    {
+      "name": "UpdatedAt",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Gets or sets the last update timestamp (UTC), when known."
+    }
+  ],
+  "itemName": "EmailTemplateDocument"
+}

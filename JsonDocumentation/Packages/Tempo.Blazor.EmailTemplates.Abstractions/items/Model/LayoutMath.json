@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "Column-width arithmetic shared by section editing and layout presets.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/LayoutMath.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "EqualWidths",
+      "kind": "Method",
+      "type": "string[]",
+      "description": "Computes equal column widths as percentage strings that always total exactly 100% (the last column absorbs any rounding remainder).",
+      "parameters": [
+        {
+          "name": "count",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "Format",
+      "kind": "Method",
+      "type": "string",
+      "description": "Formats a percentage value, trimming trailing zeros (e.g. 50%, 33.33%).",
+      "parameters": [
+        {
+          "name": "percent",
+          "type": "decimal"
+        }
+      ]
+    }
+  ],
+  "itemName": "LayoutMath"
+}

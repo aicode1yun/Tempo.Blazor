@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "Implemented by anything that directly holds a list of content blocks (a column or a hero). Used by the document tree operations to find, add, move and remove blocks uniformly.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/IBlockContainer.cs",
+  "documentationStatus": "generated",
+  "itemName": "IBlockContainer"
+}

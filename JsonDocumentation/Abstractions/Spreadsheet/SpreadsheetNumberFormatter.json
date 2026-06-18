@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Format",
+  "description": "Formats cell values according to Excel-style number format strings. Supports General, Number, Currency, Percentage, Date, Time, Text and Scientific formats.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Format/SpreadsheetNumberFormatter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Format",
+      "kind": "Method",
+      "type": "string",
+      "description": "Formats a value using the provided Excel number format string.",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "object?"
+        },
+        {
+          "name": "format",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "SpreadsheetNumberFormatter"
+}

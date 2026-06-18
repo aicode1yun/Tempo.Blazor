@@ -1,0 +1,41 @@
+{
+  "itemName": "TmEmailPropertyPanel",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailPropertyPanel Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailPropertyPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnChanged",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "The selected node id (block, section or column); null edits the document settings."
+    },
+    {
+      "name": "OnImageUpload",
+      "type": "Func<IBrowserFile, Task<string>>?",
+      "isRequired": false,
+      "description": "Host-provided variables, merged with those extracted from the document."
+    },
+    {
+      "name": "SelectedId",
+      "type": "Guid?",
+      "isRequired": true,
+      "description": "The document being edited.",
+      "editorRequired": true
+    },
+    {
+      "name": "Variables",
+      "type": "IReadOnlyList<TemplateVariableInfo>",
+      "isRequired": false,
+      "default": "Array.Empty<TemplateVariableInfo>()",
+      "description": "Raised after any property changes."
+    }
+  ]
+}

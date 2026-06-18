@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "An image carousel (mj-carousel).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailCarouselBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Align",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the alignment (align)."
+    },
+    {
+      "name": "BorderRadius",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the image border radius (border-radius)."
+    },
+    {
+      "name": "IconWidth",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the navigation icon width (icon-width)."
+    },
+    {
+      "name": "Images",
+      "kind": "Property",
+      "type": "IList<EmailCarouselImage>",
+      "description": "Gets the carousel images."
+    },
+    {
+      "name": "LeftIcon",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the left navigation icon URL (left-icon)."
+    },
+    {
+      "name": "RightIcon",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the right navigation icon URL (right-icon)."
+    },
+    {
+      "name": "TbBorderRadius",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the thumbnail border radius (tb-border-radius)."
+    },
+    {
+      "name": "Thumbnails",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets whether thumbnails are visible or hidden (thumbnails)."
+    }
+  ],
+  "itemName": "EmailCarouselBlock"
+}

@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Activity",
+  "description": "Represents a token/variable item in the editor autocomplete.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Activity/TokenItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Category",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the optional category for grouping (e.g. \"User\", \"System\")."
+    },
+    {
+      "name": "ColorClass",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets an optional CSS class applied to the token chip in the editor (e.g. \"token-secret\")."
+    },
+    {
+      "name": "Description",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the optional description of the token."
+    },
+    {
+      "name": "DisplayName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the display name of the token (e.g. \"User Email\")."
+    },
+    {
+      "name": "Icon",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets an optional icon (emoji or CSS class) shown in the dropdown and hover preview."
+    },
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the unique key of the token (e.g. \"user.email\")."
+    },
+    {
+      "name": "TypeLabel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets an optional short type label shown in the dropdown and hover preview (e.g. \"Secret\")."
+    }
+  ],
+  "itemName": "TokenItem"
+}

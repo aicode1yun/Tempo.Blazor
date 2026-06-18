@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Maps strings to .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramShapeKindExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "GetNativeShapeKind",
+      "kind": "Method",
+      "type": "DiagramShapeKind",
+      "description": "Returns the native SVG primitive kind for this stencil layout, or when the background requires the HTML/CSS fallback (custom ShapeSvg, or a complex background like cylinder/cloud/actor).",
+      "parameters": [
+        {
+          "name": "layout",
+          "type": "this DiagramStencilLayout?"
+        }
+      ]
+    }
+  ],
+  "itemName": "DiagramShapeKindExtensions"
+}

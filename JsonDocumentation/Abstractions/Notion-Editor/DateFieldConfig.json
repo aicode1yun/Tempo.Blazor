@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/DateFieldConfig.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DateFormat",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "IncludeTime",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "TimeFormat",
+      "kind": "Property",
+      "type": "string?"
+    }
+  ],
+  "itemName": "DateFieldConfig"
+}

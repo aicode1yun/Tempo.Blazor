@@ -1,0 +1,84 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A single link within an (mj-navbar-link).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailNavbarLink.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text colour (color)."
+    },
+    {
+      "name": "FontFamily",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the font family (font-family)."
+    },
+    {
+      "name": "FontSize",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font size (font-size)."
+    },
+    {
+      "name": "FontWeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the font weight (font-weight)."
+    },
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link target (href)."
+    },
+    {
+      "name": "LineHeight",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the line height (line-height)."
+    },
+    {
+      "name": "Padding",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the padding (padding)."
+    },
+    {
+      "name": "Rel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link rel attribute."
+    },
+    {
+      "name": "Target",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the link target window (target)."
+    },
+    {
+      "name": "Text",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the link text."
+    },
+    {
+      "name": "TextDecoration",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text decoration (text-decoration)."
+    },
+    {
+      "name": "TextTransform",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the text transform (text-transform)."
+    }
+  ],
+  "itemName": "EmailNavbarLink"
+}

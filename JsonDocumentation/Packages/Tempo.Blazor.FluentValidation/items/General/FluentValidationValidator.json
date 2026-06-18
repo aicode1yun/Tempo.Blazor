@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.FluentValidation",
+  "description": "A Blazor component that integrates FluentValidation with EditForm. Place inside an EditForm to enable FluentValidation-based validation. Works as a drop-in replacement for DataAnnotationsValidator.",
+  "packageId": "Tempo.Blazor.FluentValidation",
+  "sourcePath": "src/Tempo.Blazor.FluentValidation/FluentValidationValidator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Dispose",
+      "kind": "Method",
+      "type": "void",
+      "description": "Unsubscribes from EditContext validation events and releases resources."
+    }
+  ],
+  "itemName": "FluentValidationValidator"
+}

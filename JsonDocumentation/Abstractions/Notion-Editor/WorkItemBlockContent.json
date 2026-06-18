@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Block content for an embedded external work item.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/WorkItemBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CachedSnapshot",
+      "kind": "Property",
+      "type": "WorkItemDto?"
+    },
+    {
+      "name": "DisplayMode",
+      "kind": "Property",
+      "type": "WorkItemDisplayMode"
+    },
+    {
+      "name": "ExternalId",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "ProviderKey",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "WorkItemBlockContent"
+}

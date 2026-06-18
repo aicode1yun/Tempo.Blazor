@@ -1,0 +1,22 @@
+{
+  "itemName": "TmEmailTableEditor",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailTableEditor Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTableEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnChanged",
+      "type": "EventCallback",
+      "isRequired": true,
+      "description": "The table block being edited (mutated in place).",
+      "editorRequired": true
+    }
+  ]
+}

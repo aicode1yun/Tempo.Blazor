@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Semantic metadata preserved for generated table-of-contents entry paragraphs.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentBlocks.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentTableOfContentsMetadata"
+}

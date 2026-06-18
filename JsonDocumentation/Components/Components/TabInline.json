@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Model",
+  "description": "Tab character inline.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Wysiwyg/Model/Inlines.cs",
+  "documentationStatus": "generated",
+  "itemName": "TabInline"
+}

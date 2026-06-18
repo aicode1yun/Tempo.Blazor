@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Identifies which editor produced a stored document, so that a generic document library (browse/open dialog, MCP tooling) can route to the correct payload type and provider without knowing the concrete document model.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/TempoDocumentKind.cs",
+  "documentationStatus": "generated",
+  "itemName": "TempoDocumentKind"
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttReport.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Config",
+      "kind": "Property",
+      "type": "Dictionary<string, string>"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "GanttReportType"
+    }
+  ],
+  "itemName": "GanttReport"
+}

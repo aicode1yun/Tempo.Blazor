@@ -1,0 +1,58 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Small autosave state machine inspired by CKEditor pending action and autosave behavior.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentAutosaveStateMachine.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DebounceElapsed",
+      "kind": "Method",
+      "type": "DocumentAutosaveState",
+      "description": "Starts a save when the debounce interval elapsed."
+    },
+    {
+      "name": "RegisterLocalChange",
+      "kind": "Method",
+      "type": "DocumentAutosaveState",
+      "description": "Records a local editor change."
+    },
+    {
+      "name": "ResetSynchronized",
+      "kind": "Method",
+      "type": "DocumentAutosaveState",
+      "description": "Resets the state machine after a document load or explicit synchronization."
+    },
+    {
+      "name": "Retry",
+      "kind": "Method",
+      "type": "DocumentAutosaveState",
+      "description": "Starts a retry after a recoverable save error."
+    },
+    {
+      "name": "SaveFailed",
+      "kind": "Method",
+      "type": "DocumentAutosaveState",
+      "description": "Marks the current save as failed.",
+      "parameters": [
+        {
+          "name": "errorMessage",
+          "type": "string?"
+        },
+        {
+          "name": "recoverable",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "SaveSucceeded",
+      "kind": "Method",
+      "type": "DocumentAutosaveState",
+      "description": "Marks the current save as successful."
+    }
+  ],
+  "itemName": "DocumentAutosaveStateMachine"
+}

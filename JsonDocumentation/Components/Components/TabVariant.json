@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Navigation",
+  "description": "Visual variant for the tab strip.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Navigation/TabVariant.cs",
+  "documentationStatus": "generated",
+  "itemName": "TabVariant"
+}

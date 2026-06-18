@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Serialization",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Serialization",
+  "description": "Thrown when an email template document cannot be (de)serialized — for example malformed JSON or an unknown block type discriminator. Carries a clear, surfaced message instead of crashing.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Serialization/EmailTemplateSerializationException.cs",
+  "documentationStatus": "generated",
+  "itemName": "EmailTemplateSerializationException"
+}

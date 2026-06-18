@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionDatabaseFilter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Conditions",
+      "kind": "Property",
+      "type": "IReadOnlyList<NotionFilterCondition>"
+    },
+    {
+      "name": "Logic",
+      "kind": "Property",
+      "type": "FilterLogic"
+    },
+    {
+      "name": "NestedFilters",
+      "kind": "Property",
+      "type": "IReadOnlyList<INotionDatabaseFilter>"
+    }
+  ],
+  "itemName": "NotionDatabaseFilter"
+}

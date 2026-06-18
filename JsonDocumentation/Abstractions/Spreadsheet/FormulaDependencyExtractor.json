@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "Extracts cell references and named ranges from a formula string for dependency tracking.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FormulaDependencyExtractor.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExtractCellRefs",
+      "kind": "Method",
+      "type": "HashSet<string>",
+      "description": "Returns all unique cell references found in the formula.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ExtractNamedRanges",
+      "kind": "Method",
+      "type": "HashSet<string>",
+      "description": "Returns all unique named range identifiers found in the formula.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "FormulaDependencyExtractor"
+}

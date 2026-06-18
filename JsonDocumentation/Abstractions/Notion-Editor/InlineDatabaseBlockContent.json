@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/InlineDatabaseBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ActiveViewId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "DatabaseId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "Fields",
+      "kind": "Property",
+      "type": "IReadOnlyList<IDatabaseField>"
+    },
+    {
+      "name": "IconEmoji",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Views",
+      "kind": "Property",
+      "type": "IReadOnlyList<IDatabaseView>"
+    }
+  ],
+  "itemName": "InlineDatabaseBlockContent"
+}

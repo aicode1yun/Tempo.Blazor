@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Severity of an import/export compatibility warning.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentFormatProviderModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFormatProviderWarningSeverity"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "description": "Types of context menu for the wireframe editor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Wireframe/TmWireframeContextMenu.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeContextMenuType"
+}

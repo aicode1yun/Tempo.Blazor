@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Represents a column parsed from SQL DDL.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/SqlColumnDefinition.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "DataType",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "IsForeignKey",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsNullable",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsPrimaryKey",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "IsUnique",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "SqlColumnDefinition"
+}

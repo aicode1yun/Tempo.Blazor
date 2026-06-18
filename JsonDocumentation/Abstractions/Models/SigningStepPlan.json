@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Linear signing step plan and document overlay items for a signing ceremony.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningStepPlan.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "OverlayFields",
+      "kind": "Property",
+      "type": "IReadOnlyList<SigningStepOverlayItem>",
+      "description": "Fields rendered over document pages, including read-only computed fields."
+    },
+    {
+      "name": "Steps",
+      "kind": "Property",
+      "type": "IReadOnlyList<SigningStepItem>",
+      "description": "Interactive steps shown to the signer."
+    }
+  ],
+  "itemName": "SigningStepPlan"
+}

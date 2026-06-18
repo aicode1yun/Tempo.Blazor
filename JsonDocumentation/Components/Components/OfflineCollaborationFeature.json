@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Features",
+  "description": "Offline collaboration feature skeleton.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Features/DocumentEditorBuiltInFeatures.cs",
+  "documentationStatus": "generated",
+  "itemName": "OfflineCollaborationFeature"
+}

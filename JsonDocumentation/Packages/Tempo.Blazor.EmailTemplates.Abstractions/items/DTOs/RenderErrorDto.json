@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+  "description": "A render error projected for transport.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/RenderErrorDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "RenderErrorDto"
+}

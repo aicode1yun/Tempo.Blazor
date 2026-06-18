@@ -1,0 +1,88 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Helpers for signing formula field tokens and dependency validation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningFormulaHelper.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ExtractTokens",
+      "kind": "Method",
+      "type": "IReadOnlyList<string>",
+      "description": "Extracts formula token contents without surrounding braces.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "GetFieldLabel",
+      "kind": "Method",
+      "type": "string",
+      "description": "Gets a user-facing label for a signing field.",
+      "parameters": [
+        {
+          "name": "field",
+          "type": "SigningField"
+        }
+      ]
+    },
+    {
+      "name": "Humanize",
+      "kind": "Method",
+      "type": "string",
+      "description": "Replaces stable field UUID tokens in a formula with user-facing field labels.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string?"
+        },
+        {
+          "name": "fields",
+          "type": "IReadOnlyList<SigningField>"
+        }
+      ]
+    },
+    {
+      "name": "Normalize",
+      "kind": "Method",
+      "type": "SigningFormulaResult",
+      "description": "Replaces field label tokens in a formula with stable field UUID tokens.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string?"
+        },
+        {
+          "name": "fields",
+          "type": "IReadOnlyList<SigningField>"
+        }
+      ]
+    },
+    {
+      "name": "Validate",
+      "kind": "Method",
+      "type": "SigningFormulaResult",
+      "description": "Normalizes a formula and validates that it does not introduce a field dependency cycle.",
+      "parameters": [
+        {
+          "name": "formula",
+          "type": "string?"
+        },
+        {
+          "name": "fields",
+          "type": "IReadOnlyList<SigningField>"
+        },
+        {
+          "name": "currentFieldUuid",
+          "type": "string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "SigningFormulaHelper"
+}

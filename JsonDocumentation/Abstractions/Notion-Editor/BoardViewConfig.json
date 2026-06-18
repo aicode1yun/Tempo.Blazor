@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/BoardViewConfig.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CardCoverFieldId",
+      "kind": "Property",
+      "type": "Guid?"
+    },
+    {
+      "name": "CardPreviewFieldIds",
+      "kind": "Property",
+      "type": "IReadOnlyList<Guid>"
+    },
+    {
+      "name": "GroupByFieldId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "HiddenGroupIds",
+      "kind": "Property",
+      "type": "IReadOnlyList<string>"
+    }
+  ],
+  "itemName": "BoardViewConfig"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Value and metadata emitted by .",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureChangedEventArgs.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSignatureCaptureChangedEventArgs"
+}

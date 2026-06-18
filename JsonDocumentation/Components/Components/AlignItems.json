@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Layout",
+  "description": "Defines how items are aligned along the cross axis.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Layout/StackOrientation.cs",
+  "documentationStatus": "generated",
+  "itemName": "AlignItems"
+}

@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Concrete implementation of .",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/CommentReaction.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Emoji",
+      "kind": "Property",
+      "type": "required string"
+    },
+    {
+      "name": "UserIds",
+      "kind": "Property",
+      "type": "List<string>"
+    }
+  ],
+  "itemName": "CommentReaction"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Metadata about a persisted diagram version.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramHistoryStore.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramHistoryVersion"
+}

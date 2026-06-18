@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Filter and paging options for querying aggregated Notion tasks.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTaskQuery.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AssigneeId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional assigned user id filter."
+    },
+    {
+      "name": "DueAfter",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Inclusive lower due-date bound."
+    },
+    {
+      "name": "DueBefore",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Inclusive upper due-date bound."
+    },
+    {
+      "name": "IncludeCompleted",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Includes completed tasks when true."
+    },
+    {
+      "name": "PageId",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional source page id filter."
+    },
+    {
+      "name": "Skip",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of filtered records to skip."
+    },
+    {
+      "name": "Take",
+      "kind": "Property",
+      "type": "int",
+      "description": "Maximum number of records to return."
+    }
+  ],
+  "itemName": "NotionTaskQuery"
+}

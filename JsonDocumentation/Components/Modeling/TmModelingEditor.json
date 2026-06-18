@@ -1,0 +1,76 @@
+{
+  "itemName": "TmModelingEditor",
+  "kind": "Component",
+  "category": "Modeling",
+  "description": "Loads a semantic modeling source and presents an initial modeling editor shell.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Modeling",
+  "sourcePath": "src/Tempo.Blazor/Components/Modeling/TmModelingEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Modeling"
+  ],
+  "parameters": [
+    {
+      "name": "AllowNodeDrop",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Callback raised when the editor viewpoint selection changes."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Callback raised after a model tree element is reused as a new preview node."
+    },
+    {
+      "name": "ModelLoaderOverride",
+      "type": "Func<ModelingModelRequest, CancellationToken, Task<ModelingModelDto>>?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to the editor root."
+    },
+    {
+      "name": "NotationKey",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Provider key used to select the semantic model provider. Null or empty values render the empty state."
+    },
+    {
+      "name": "OnDiagramGenerated",
+      "type": "EventCallback<DiagramDocument>",
+      "isRequired": false,
+      "description": "Optional viewpoint key passed to the selected provider and used to choose the initial model view."
+    },
+    {
+      "name": "OnNodeDropped",
+      "type": "EventCallback<ModelingNodeDroppedEventArgs>",
+      "isRequired": false,
+      "description": "Whether model tree elements can be reused by dropping them onto the preview canvas."
+    },
+    {
+      "name": "OnNotationChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Callback raised when the user opens the generated diagram in the full diagram editor."
+    },
+    {
+      "name": "OnOpenInEditor",
+      "type": "EventCallback<DiagramDocument>",
+      "isRequired": false,
+      "description": "Callback raised after a model is loaded and converted into a diagram document."
+    },
+    {
+      "name": "OnViewpointChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Callback raised when the editor notation selection changes."
+    },
+    {
+      "name": "ViewpointKey",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional notation key passed to the selected provider and generator."
+    }
+  ]
+}

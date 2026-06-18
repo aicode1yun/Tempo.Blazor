@@ -1,0 +1,168 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Options passed to the WYSIWYG JavaScript editing engine during initialization.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygEditorOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AccessibilityHelp",
+      "kind": "Property",
+      "type": "string",
+      "description": "Screen reader help text announced by the editable surface."
+    },
+    {
+      "name": "Author",
+      "kind": "Property",
+      "type": "DocumentEditorAuthor?",
+      "description": "Current editing author used by JS-owned runtime revisions."
+    },
+    {
+      "name": "BodyLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Body label template. Use {0} for the one-based page number."
+    },
+    {
+      "name": "BodyPlaceholder",
+      "kind": "Property",
+      "type": "string",
+      "description": "Placeholder shown when a document body page has no blocks."
+    },
+    {
+      "name": "EnableMutationGuard",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether to enable the MutationObserver guard/fallback."
+    },
+    {
+      "name": "FontFamilies",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentFontFamily>",
+      "description": "Font families allowed for font family marks."
+    },
+    {
+      "name": "FooterLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Footer label template. Use {0} for the one-based page number."
+    },
+    {
+      "name": "FooterPlaceholder",
+      "kind": "Property",
+      "type": "string",
+      "description": "Placeholder shown when a footer region is empty."
+    },
+    {
+      "name": "HasImageAssetOptions",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the host exposes provider-managed image assets that can be selected by the editor UI."
+    },
+    {
+      "name": "HeaderLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Header label template. Use {0} for the one-based page number."
+    },
+    {
+      "name": "HeaderPlaceholder",
+      "kind": "Property",
+      "type": "string",
+      "description": "Placeholder shown when a header region is empty."
+    },
+    {
+      "name": "ImageAltMissing",
+      "kind": "Property",
+      "type": "string",
+      "description": "Accessible warning text shown for images without alternative text."
+    },
+    {
+      "name": "ImageResizeHandleLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Accessible label for floating image resize handles."
+    },
+    {
+      "name": "ImageRetryLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Label for retrying a failed image load."
+    },
+    {
+      "name": "InsertPageBreakLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Label for the overflow action that inserts a page break."
+    },
+    {
+      "name": "InstanceId",
+      "kind": "Property",
+      "type": "string",
+      "description": "Stable identifier for this editor instance."
+    },
+    {
+      "name": "PageLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Page label template. Use {0} for the one-based page number."
+    },
+    {
+      "name": "PageOverflowWarning",
+      "kind": "Property",
+      "type": "string",
+      "description": "Status text shown when a page overflows its printable area."
+    },
+    {
+      "name": "ProtocolVersion",
+      "kind": "Property",
+      "type": "int",
+      "description": "Schema version of the snapshot protocol."
+    },
+    {
+      "name": "ReadOnly",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the surface should be read-only."
+    },
+    {
+      "name": "ReviewDisplayMode",
+      "kind": "Property",
+      "type": "DocumentReviewDisplayMode",
+      "description": "How tracked changes should be displayed in the JS-owned surface."
+    },
+    {
+      "name": "SuggestionDeleteLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Accessible label used for deletion suggestion decorations."
+    },
+    {
+      "name": "SuggestionInsertLabel",
+      "kind": "Property",
+      "type": "string",
+      "description": "Accessible label used for insertion suggestion decorations."
+    },
+    {
+      "name": "TableCellPlaceholder",
+      "kind": "Property",
+      "type": "string",
+      "description": "Placeholder shown when a table cell is empty."
+    },
+    {
+      "name": "TrackChangesEnabled",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the JS surface should render live track-changes decorations."
+    },
+    {
+      "name": "TypingBatchMs",
+      "kind": "Property",
+      "type": "int",
+      "description": "Debounce interval in milliseconds for typing batching."
+    }
+  ],
+  "itemName": "WysiwygEditorOptions"
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Context passed to the EditForm render fragment of TmDocumentManager<TMetadata>.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentManagerContexts.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TMetadata",
+      "description": "Generic type parameter TMetadata."
+    }
+  ],
+  "itemName": "EditContext<TMetadata>"
+}

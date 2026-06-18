@@ -1,0 +1,35 @@
+{
+  "itemName": "TmSpreadsheetHyperlinkDialog",
+  "kind": "Component",
+  "category": "Spreadsheet",
+  "description": "Dialog for inserting or editing a structured hyperlink on a cell. Supports four link kinds: Web, Email, InternalRef, NamedRange.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/Dialogs/TmSpreadsheetHyperlinkDialog.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Spreadsheet.Dialogs"
+  ],
+  "parameters": [
+    {
+      "name": "Hyperlink",
+      "type": "SpreadsheetHyperlink?",
+      "isRequired": true,
+      "description": "The workbook (used for named range choices).",
+      "editorRequired": true
+    },
+    {
+      "name": "OnCancel",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when the user saves the dialog."
+    },
+    {
+      "name": "OnSave",
+      "type": "EventCallback<SpreadsheetHyperlink>",
+      "isRequired": false,
+      "description": "The existing hyperlink to edit, or null for a new one."
+    }
+  ],
+  "subcategory": "Dialogs"
+}

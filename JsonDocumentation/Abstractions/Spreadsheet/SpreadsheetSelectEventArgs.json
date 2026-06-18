@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Event arguments fired when the active cell or selection changes.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Events/SpreadsheetSelectEventArgs.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ActiveCellRef",
+      "kind": "Property",
+      "type": "string",
+      "description": "The A1 reference of the active cell."
+    },
+    {
+      "name": "SelectionEndRef",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The end cell of the range selection."
+    },
+    {
+      "name": "SelectionStartRef",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The start cell of the range selection (same as ActiveCellRef for single cell)."
+    },
+    {
+      "name": "Sheet",
+      "kind": "Property",
+      "type": "SpreadsheetSheet",
+      "description": "The affected sheet."
+    }
+  ],
+  "itemName": "SpreadsheetSelectEventArgs"
+}

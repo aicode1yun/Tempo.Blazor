@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Rendering",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
+  "description": "Options controlling MJML generation.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/MjmlGeneratorOptions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Default",
+      "kind": "Property",
+      "type": "static MjmlGeneratorOptions",
+      "description": "The default options (render-safe)."
+    },
+    {
+      "name": "EmitHtmlAttributes",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Gets or sets whether to emit mj-html-attributes. Off by default because the render engine (Mjml.Net) does not support it; turn on only when generating MJML for export so the markup round-trips losslessly."
+    },
+    {
+      "name": "ForExport",
+      "kind": "Property",
+      "type": "static MjmlGeneratorOptions",
+      "description": "Options for producing MJML intended for export/round-trip (includes everything)."
+    }
+  ],
+  "itemName": "MjmlGeneratorOptions"
+}

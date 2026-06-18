@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Represents a foreign key relationship parsed from SQL DDL.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/SqlForeignKeyDefinition.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColumnName",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "ReferenceColumn",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "ReferenceTable",
+      "kind": "Property",
+      "type": "string"
+    }
+  ],
+  "itemName": "SqlForeignKeyDefinition"
+}

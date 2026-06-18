@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Enums",
+  "description": "Visual color of an inline Notion status chip.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Enums/NotionStatusColor.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionStatusColor"
+}

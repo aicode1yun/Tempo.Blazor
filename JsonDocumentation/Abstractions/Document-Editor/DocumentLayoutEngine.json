@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Layouts document pages, text line boxes, positioned objects, and text exclusion zones.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentLayoutEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentLayoutEngine"
+}

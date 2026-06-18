@@ -1,0 +1,53 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Append-only idempotent operation log for document collaboration prototypes.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentOperationLog.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Append",
+      "kind": "Method",
+      "type": "DocumentOperationValidationResult",
+      "description": "Appends a batch after validation and keeps only operations not already present in the log.",
+      "parameters": [
+        {
+          "name": "batch",
+          "type": "DocumentOperationBatch"
+        }
+      ]
+    },
+    {
+      "name": "Replay",
+      "kind": "Method",
+      "type": "DocumentOperationValidationResult",
+      "description": "Replays the log into a document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "applier",
+          "type": "DocumentOperationApplier?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "Validate",
+      "kind": "Method",
+      "type": "DocumentOperationValidationResult",
+      "description": "Validates a batch.",
+      "parameters": [
+        {
+          "name": "batch",
+          "type": "DocumentOperationBatch"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentOperationLog"
+}

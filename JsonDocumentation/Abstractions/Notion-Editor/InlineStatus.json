@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Represents an inline Confluence-style status macro stored inside rich text HTML.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/InlineStatus.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Color",
+      "kind": "Property",
+      "type": "NotionStatusColor",
+      "description": "Visual color of the status chip."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string",
+      "description": "Text displayed inside the status chip."
+    }
+  ],
+  "itemName": "InlineStatus"
+}

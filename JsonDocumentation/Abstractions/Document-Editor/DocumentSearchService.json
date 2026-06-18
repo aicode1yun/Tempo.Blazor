@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Searches a for text matches.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentSearchService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Search",
+      "kind": "Method",
+      "type": "IReadOnlyList<DocumentSearchResult>",
+      "description": "Finds all occurrences of in .",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "query",
+          "type": "DocumentSearchQuery"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentSearchService"
+}

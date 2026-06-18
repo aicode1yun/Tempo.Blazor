@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Options controlling a Gantt chart export operation.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttExportOptions.cs",
+  "documentationStatus": "generated",
+  "itemName": "GanttExportOptions"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Request body for updating Notion page metadata.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/UpdateNotionPageRequest.cs",
+  "documentationStatus": "generated",
+  "itemName": "UpdateNotionPageRequest"
+}

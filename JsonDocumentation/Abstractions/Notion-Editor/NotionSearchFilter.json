@@ -1,0 +1,67 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionSearchFilter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Author",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "BlockType",
+      "kind": "Property",
+      "type": "BlockType?"
+    },
+    {
+      "name": "ContentType",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "CreatedAfter",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "CreatedBefore",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "CreatedByUserId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "InPageId",
+      "kind": "Property",
+      "type": "Guid?"
+    },
+    {
+      "name": "LabelFilter",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "LastEditedAfter",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "LastEditedBefore",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "SpaceId",
+      "kind": "Property",
+      "type": "string?"
+    }
+  ],
+  "itemName": "NotionSearchFilter"
+}

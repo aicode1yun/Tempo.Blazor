@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Resources",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Resources",
+  "description": "Marker type for the email template validation resources. Used with IStringLocalizer<EmailTemplateValidationResources> to resolve localized validation messages from the accompanying .resx files (neutral/English, Czech, French).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Resources/EmailTemplateValidationResources.cs",
+  "documentationStatus": "generated",
+  "itemName": "EmailTemplateValidationResources"
+}

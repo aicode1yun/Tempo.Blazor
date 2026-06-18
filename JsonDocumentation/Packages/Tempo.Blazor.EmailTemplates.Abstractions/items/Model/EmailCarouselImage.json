@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A single image within an (mj-carousel-image).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailCarouselImage.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Alt",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the alternative text (alt)."
+    },
+    {
+      "name": "Href",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link target (href)."
+    },
+    {
+      "name": "Rel",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the link rel attribute."
+    },
+    {
+      "name": "Src",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the image source URL (src)."
+    },
+    {
+      "name": "Target",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the link target window (target)."
+    },
+    {
+      "name": "ThumbnailsSrc",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets a distinct thumbnail source (thumbnails-src)."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the image title (title)."
+    }
+  ],
+  "itemName": "EmailCarouselImage"
+}

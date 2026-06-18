@@ -1,0 +1,740 @@
+{
+  "package": {
+    "packageId": "Tempo.Blazor.EmailTemplates",
+    "title": "Tempo.Blazor.EmailTemplates",
+    "description": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components.",
+    "authors": "ptyll",
+    "targetFrameworks": [
+      "net10.0"
+    ],
+    "tags": "blazor;email;mjml;templates;editor;component",
+    "repositoryUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "projectUrl": "https://github.com/ptyll/Tempo.Blazor",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.EmailTemplates"
+      ]
+    },
+    "dependencies": [],
+    "projectReferences": [
+      "../Tempo.Blazor/Tempo.Blazor.csproj",
+      "../Tempo.Blazor.EmailTemplates.Abstractions/Tempo.Blazor.EmailTemplates.Abstractions.csproj",
+      "../Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj"
+    ],
+    "namespaces": [
+      "Tempo.Blazor.EmailTemplates",
+      "Tempo.Blazor.EmailTemplates.Components",
+      "Tempo.Blazor.EmailTemplates.Localization",
+      "Tempo.Blazor.EmailTemplates.Resources",
+      "Tempo.Blazor.EmailTemplates.Services"
+    ]
+  },
+  "gettingStarted": {
+    "title": "Tempo.Blazor.EmailTemplates",
+    "overview": "Drag-and-drop email template editor component (TmEmailTemplateEditor) for Tempo.Blazor. Visual MJML editor with full MJML 4 parity, bidirectional MJML import/export, Scriban variable templating and live preview. Built entirely on Tempo.Blazor components.",
+    "targetFramework": "net10.0",
+    "installation": {
+      "nuget": [
+        "dotnet add package Tempo.Blazor.EmailTemplates"
+      ]
+    },
+    "dependencies": []
+  },
+  "items": [
+    {
+      "itemName": "PropertyField",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "A single editable scalar property of a model object, with reflective get/set.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/PropertyReflection.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "PropertyFieldKind",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "The kind of editor a property maps to.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/PropertyReflection.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "PropertyReflection",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "Enumerates the editable scalar properties of email model objects via reflection.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/PropertyReflection.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmEmailClassesEditor",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailClassesEditor Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailClassesEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": true,
+          "description": "The head attributes containing the named-class definitions (mj-class).",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailExportDialog",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailExportDialog Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailExportDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "Document",
+          "type": "EmailTemplateDocument",
+          "isRequired": true,
+          "description": "Whether the dialog is shown."
+        },
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": true,
+          "description": "The document to export.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailHtmlAttributesEditor",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailHtmlAttributesEditor Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailHtmlAttributesEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": true,
+          "description": "The mj-html-attributes selectors (round-trip only; not rendered by Mjml.Net).",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailImportDialog",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailImportDialog Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailImportDialog.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnClose",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised with the imported document when the user confirms."
+        },
+        {
+          "name": "OnImport",
+          "type": "EventCallback<EmailTemplateDocument>",
+          "isRequired": false,
+          "description": "Whether the dialog is shown."
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailKeyValueEditor",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailKeyValueEditor Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailKeyValueEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": true,
+          "description": "The dictionary being edited (rebuilt in place on every change).",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailListEditor",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailListEditor Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailListEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "typeParameters": [
+        {
+          "name": "TItem",
+          "description": "Generic type parameter TItem."
+        }
+      ],
+      "parameters": [
+        {
+          "name": "ItemPrimary",
+          "type": "IReadOnlyList<string>",
+          "isRequired": true,
+          "default": "Array.Empty<string>()",
+          "description": "The list of sub-elements being edited (mutated in place).",
+          "editorRequired": true
+        },
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Property names shown first for each item."
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailObjectFields",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailObjectFields Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailObjectFields.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "Exclude",
+          "type": "IReadOnlyList<string>",
+          "isRequired": false,
+          "default": "Array.Empty<string>()",
+          "description": "Property names shown above the \"Advanced\" section, in order."
+        },
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Property names to omit (rendered by a dedicated editor elsewhere)."
+        },
+        {
+          "name": "Primary",
+          "type": "IReadOnlyList<string>",
+          "isRequired": true,
+          "default": "Array.Empty<string>()",
+          "description": "The model object whose scalar properties are edited.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailPropertyPanel",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailPropertyPanel Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailPropertyPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "The selected node id (block, section or column); null edits the document settings."
+        },
+        {
+          "name": "OnImageUpload",
+          "type": "Func<IBrowserFile, Task<string>>?",
+          "isRequired": false,
+          "description": "Host-provided variables, merged with those extracted from the document."
+        },
+        {
+          "name": "SelectedId",
+          "type": "Guid?",
+          "isRequired": true,
+          "description": "The document being edited.",
+          "editorRequired": true
+        },
+        {
+          "name": "Variables",
+          "type": "IReadOnlyList<TemplateVariableInfo>",
+          "isRequired": false,
+          "default": "Array.Empty<TemplateVariableInfo>()",
+          "description": "Raised after any property changes."
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailTableEditor",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailTableEditor Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTableEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnChanged",
+          "type": "EventCallback",
+          "isRequired": true,
+          "description": "The table block being edited (mutated in place).",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailTemplateCanvas",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailTemplateCanvas Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateCanvas.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "DragActive",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Raised after the document is mutated by a block/section/column action."
+        },
+        {
+          "name": "OnBlockDragStart",
+          "type": "EventCallback<Guid>",
+          "isRequired": false,
+          "description": "Raised when a block is dropped into a column at an index."
+        },
+        {
+          "name": "OnDocumentChanged",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when the selection changes."
+        },
+        {
+          "name": "OnDropInColumn",
+          "type": "EventCallback<(Guid ColumnId, int Index)>",
+          "isRequired": false,
+          "description": "Whether a drag is in progress (shows drop zones between blocks)."
+        },
+        {
+          "name": "SelectedId",
+          "type": "Guid?",
+          "isRequired": true,
+          "description": "The document being displayed.",
+          "editorRequired": true
+        },
+        {
+          "name": "SelectedIdChanged",
+          "type": "EventCallback<Guid?>",
+          "isRequired": false,
+          "description": "The currently selected node id (block, column or section), if any."
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailTemplateEditor",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailTemplateEditor Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateEditor.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "AutoSave",
+          "type": "AutoSaveOptions?",
+          "isRequired": false,
+          "description": "Raised when the user requests a save."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<EmailTemplateDocument>",
+          "isRequired": false,
+          "description": "Gets or sets the edited document. Two-way bindable via ."
+        },
+        {
+          "name": "OnAutoSave",
+          "type": "EventCallback<EmailTemplateDocument>",
+          "isRequired": false,
+          "description": "Auto-save configuration; when enabled, edits are saved after a debounce interval."
+        },
+        {
+          "name": "OnImageUpload",
+          "type": "Func<IBrowserFile, Task<string>>?",
+          "isRequired": false,
+          "description": "Host-provided variables offered by the variable picker (merged with extracted ones)."
+        },
+        {
+          "name": "OnSave",
+          "type": "EventCallback<EmailTemplateDocument>",
+          "isRequired": false,
+          "description": "Raised when the document changes (for @bind-Document)."
+        },
+        {
+          "name": "TimeProvider",
+          "type": "TimeProvider",
+          "isRequired": false,
+          "default": "TimeProvider.System",
+          "description": "Raised by auto-save with the current document."
+        },
+        {
+          "name": "Variables",
+          "type": "IReadOnlyList<TemplateVariableInfo>",
+          "isRequired": false,
+          "default": "Array.Empty<TemplateVariableInfo>()",
+          "description": "Clock used for auto-save debouncing (overridable in tests)."
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailTemplatePreview",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailTemplatePreview Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplatePreview.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "TimeProvider",
+          "type": "TimeProvider",
+          "isRequired": false,
+          "default": "TimeProvider.System",
+          "description": "Optional variable data (JSON). When null, sample data is generated from the template."
+        },
+        {
+          "name": "VariablesJson",
+          "type": "string?",
+          "isRequired": true,
+          "description": "The document to preview.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailTemplateToolbox",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailTemplateToolbox Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateToolbox.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnAddSection",
+          "type": "EventCallback<LayoutPreset>",
+          "isRequired": false,
+          "description": "Raised when a block drag starts (for drag-and-drop onto the canvas)."
+        },
+        {
+          "name": "OnDragBlockStart",
+          "type": "EventCallback<BlockDescriptor>",
+          "isRequired": false,
+          "description": "Raised when a block is chosen (clicked) to be added."
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailValidationPanel",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailValidationPanel Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailValidationPanel.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnNavigate",
+          "type": "EventCallback<Guid?>",
+          "isRequired": true,
+          "description": "The document to validate.",
+          "editorRequired": true
+        }
+      ]
+    },
+    {
+      "itemName": "TmEmailVariablePicker",
+      "kind": "Component",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.EmailTemplates.Components",
+      "description": "TmEmailVariablePicker Blazor component in the Components category.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailVariablePicker.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.EmailTemplates.Components"
+      ],
+      "parameters": [
+        {
+          "name": "OnInsert",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "The variables available to insert (extracted from the document plus host-provided)."
+        }
+      ]
+    },
+    {
+      "itemName": "AutoSaveOptions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.EmailTemplates",
+      "description": "Configures the editor's debounced auto-save behaviour.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/AutoSaveOptions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Enabled",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Gets or sets whether auto-save is enabled."
+        },
+        {
+          "name": "Interval",
+          "kind": "Property",
+          "type": "TimeSpan",
+          "description": "Gets or sets the debounce interval after the last change before auto-saving."
+        }
+      ]
+    },
+    {
+      "itemName": "EmailTemplatesUI",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.EmailTemplates",
+      "description": "Marker type identifying the Tempo.Blazor.EmailTemplates UI assembly. Used as the assembly anchor for localization resource resolution and component discovery.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/EmailTemplatesUI.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Assembly",
+          "kind": "Field",
+          "type": "System.Reflection.Assembly",
+          "description": "Gets the assembly that contains the email template editor components."
+        }
+      ]
+    },
+    {
+      "itemName": "ServiceCollectionExtensions",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.EmailTemplates",
+      "description": "DI registration for the Tempo.Blazor email template editor UI.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/ServiceCollectionExtensions.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ITmEmailLocalizer",
+      "kind": "Interface",
+      "category": "Localization",
+      "namespace": "Tempo.Blazor.EmailTemplates.Localization",
+      "description": "Localization accessor for the email template editor UI. Backed by IStringLocalizer<TmEmailResources>; hosts may replace it to fully control strings.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Localization/ITmEmailLocalizer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TmEmailResources",
+      "kind": "Class",
+      "category": "Resources",
+      "namespace": "Tempo.Blazor.EmailTemplates.Resources",
+      "description": "Marker class for the Tempo.Blazor.EmailTemplates UI string resources. Used with IStringLocalizer<TmEmailResources> and the accompanying .resx files (English default, Czech and French).",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Resources/TmEmailResources.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ClipboardService",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.EmailTemplates.Services",
+      "description": "In-memory, block-level clipboard for the editor. Copy stores an independent snapshot; paste returns a fresh copy with new identifiers each time, so repeated pastes never collide.",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Services/ClipboardService.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CanPaste",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Gets whether a block is available to paste."
+        },
+        {
+          "name": "Clear",
+          "kind": "Method",
+          "type": "void",
+          "description": "Clears the clipboard."
+        },
+        {
+          "name": "Copy",
+          "kind": "Method",
+          "type": "void",
+          "description": "Stores an independent copy of the block on the clipboard.",
+          "parameters": [
+            {
+              "name": "block",
+              "type": "EmailBlockBase"
+            }
+          ]
+        },
+        {
+          "name": "Paste",
+          "kind": "Method",
+          "type": "EmailBlockBase?",
+          "description": "Returns a fresh copy (with new ids) of the clipboard block, or if empty."
+        }
+      ]
+    },
+    {
+      "itemName": "EditorHistoryService",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.EmailTemplates.Services",
+      "description": "Maintains undo/redo history of document snapshots. Each pushed state is a deep, independent copy, the depth is bounded, and rapid edits sharing a coalesce key within a short window merge into a single undo step (so typing is one undo, not one per keystroke).",
+      "packageId": "Tempo.Blazor.EmailTemplates",
+      "sourcePath": "src/Tempo.Blazor.EmailTemplates/Services/EditorHistoryService.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "CanRedo",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Gets whether a redo is available."
+        },
+        {
+          "name": "CanUndo",
+          "kind": "Field",
+          "type": "bool",
+          "description": "Gets whether an undo is available."
+        },
+        {
+          "name": "Initialize",
+          "kind": "Method",
+          "type": "void",
+          "description": "Resets the history to a single baseline state.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            }
+          ]
+        },
+        {
+          "name": "Push",
+          "kind": "Method",
+          "type": "void",
+          "description": "Records a new document state. When matches the previous push and falls within the coalesce window, it replaces the current state instead of adding a new step.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "EmailTemplateDocument"
+            },
+            {
+              "name": "coalesceKey",
+              "type": "string?",
+              "default": "null"
+            }
+          ]
+        },
+        {
+          "name": "Redo",
+          "kind": "Method",
+          "type": "EmailTemplateDocument?",
+          "description": "Moves one step forward and returns an independent copy of that state, or ."
+        },
+        {
+          "name": "Undo",
+          "kind": "Method",
+          "type": "EmailTemplateDocument?",
+          "description": "Moves one step back and returns an independent copy of that state, or ."
+        }
+      ]
+    }
+  ],
+  "libraryExamples": [
+    {
+      "title": "Use the email template editor",
+      "category": "Components",
+      "code": "<TmEmailTemplateEditor @bind-Document=\"document\" OnSave=\"SaveAsync\" />"
+    }
+  ],
+  "assets": [
+    {
+      "path": "src/Tempo.Blazor.EmailTemplates/wwwroot/tm-email-variable-insert.js",
+      "kind": "JavaScript"
+    }
+  ],
+  "summary": {
+    "itemCount": 25,
+    "manualItemCount": 25,
+    "generatedItemCount": 25,
+    "generatedOnlyItemCount": 0,
+    "componentCount": 15,
+    "publicApiTypeCount": 10
+  }
+}

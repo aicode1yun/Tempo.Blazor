@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Generates an org-chart diagram from CSV data.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Services/CsvToOrgChartGenerator.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Generate",
+      "kind": "Method",
+      "type": "DiagramDocument",
+      "parameters": [
+        {
+          "name": "parseResult",
+          "type": "CsvParseResult"
+        },
+        {
+          "name": "mappings",
+          "type": "IReadOnlyList<CsvColumnMapping>"
+        }
+      ]
+    }
+  ],
+  "itemName": "CsvToOrgChartGenerator"
+}

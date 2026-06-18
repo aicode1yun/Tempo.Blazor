@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Layout",
+  "description": "Defines the orientation of a splitter.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Layout/SplitterOrientation.cs",
+  "documentationStatus": "generated",
+  "itemName": "SplitterOrientation"
+}

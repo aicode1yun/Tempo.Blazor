@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Models",
+  "description": "Transforms plain-text quote lines (starting with '>') into HTML blockquotes.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/Models/CommentHtmlFormatter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Format",
+      "kind": "Method",
+      "type": "string",
+      "description": "Finds consecutive lines starting with > and wraps them in <blockquote class=\"tm-comment-quote\">...</blockquote>. Existing <br> tags are normalized to newlines first.",
+      "parameters": [
+        {
+          "name": "html",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "CommentHtmlFormatter"
+}

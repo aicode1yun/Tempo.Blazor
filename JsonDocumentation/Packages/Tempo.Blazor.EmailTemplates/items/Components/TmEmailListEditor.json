@@ -1,0 +1,35 @@
+{
+  "itemName": "TmEmailListEditor",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailListEditor Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailListEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "ItemPrimary",
+      "type": "IReadOnlyList<string>",
+      "isRequired": true,
+      "default": "Array.Empty<string>()",
+      "description": "The list of sub-elements being edited (mutated in place).",
+      "editorRequired": true
+    },
+    {
+      "name": "OnChanged",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Property names shown first for each item."
+    }
+  ],
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ]
+}

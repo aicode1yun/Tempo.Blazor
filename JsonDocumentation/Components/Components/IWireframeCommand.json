@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
+  "description": "Represents a single reversible user action in the wireframe editor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Wireframe/Commands/IWireframeCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "IWireframeCommand"
+}

@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Static clipboard holding the last copied style, size, nodes and edges for diagram editing.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Commands/DiagramClipboard.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Edges",
+      "kind": "Property",
+      "type": "static List<DiagramEdge>",
+      "description": "Copied edges."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "static double?",
+      "description": "Copied height."
+    },
+    {
+      "name": "Nodes",
+      "kind": "Property",
+      "type": "static List<DiagramNode>",
+      "description": "Copied nodes."
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "static DiagramStyle?",
+      "description": "Copied style snapshot."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "static double?",
+      "description": "Copied width."
+    }
+  ],
+  "itemName": "DiagramClipboard"
+}

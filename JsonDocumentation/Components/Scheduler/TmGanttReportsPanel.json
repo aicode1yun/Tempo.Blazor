@@ -1,0 +1,20 @@
+{
+  "itemName": "TmGanttReportsPanel",
+  "kind": "Component",
+  "category": "Scheduler",
+  "description": "TmGanttReportsPanel Blazor component in the Scheduler category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Scheduler",
+  "sourcePath": "src/Tempo.Blazor/Components/Scheduler/TmGanttReportsPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Scheduler"
+  ],
+  "parameters": [
+    {
+      "name": "OnReportRun",
+      "type": "EventCallback<GanttReport>",
+      "isRequired": false
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "A column (mj-column) inside a section; holds content blocks.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailColumn.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the background colour (background-color)."
+    },
+    {
+      "name": "Blocks",
+      "kind": "Property",
+      "type": "IList<EmailBlockBase>",
+      "description": "Gets the content blocks held by this column."
+    },
+    {
+      "name": "Border",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the border shorthand (border)."
+    },
+    {
+      "name": "BorderRadius",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the border radius (border-radius)."
+    },
+    {
+      "name": "CssClass",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the space-separated CSS class names (css-class)."
+    },
+    {
+      "name": "ExtraAttributes",
+      "kind": "Property",
+      "type": "IDictionary<string, string>",
+      "description": "Gets or sets unmodelled attributes preserved for round-trip fidelity."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid",
+      "description": "Gets or sets the unique identifier of this column."
+    },
+    {
+      "name": "MjClasses",
+      "kind": "Property",
+      "type": "IList<string>",
+      "description": "Gets or sets the referenced named MJML classes (mj-class)."
+    },
+    {
+      "name": "Padding",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the padding shorthand (padding)."
+    },
+    {
+      "name": "VerticalAlign",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the vertical alignment of content (vertical-align)."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the column width (width), e.g. \"50%\" or \"200px\". means MJML splits the section width equally between columns."
+    }
+  ],
+  "itemName": "EmailColumn"
+}

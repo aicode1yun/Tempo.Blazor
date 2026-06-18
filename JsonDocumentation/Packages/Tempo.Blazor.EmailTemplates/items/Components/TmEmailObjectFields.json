@@ -1,0 +1,36 @@
+{
+  "itemName": "TmEmailObjectFields",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailObjectFields Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailObjectFields.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "Exclude",
+      "type": "IReadOnlyList<string>",
+      "isRequired": false,
+      "default": "Array.Empty<string>()",
+      "description": "Property names shown above the \"Advanced\" section, in order."
+    },
+    {
+      "name": "OnChanged",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Property names to omit (rendered by a dedicated editor elsewhere)."
+    },
+    {
+      "name": "Primary",
+      "type": "IReadOnlyList<string>",
+      "isRequired": true,
+      "default": "Array.Empty<string>()",
+      "description": "The model object whose scalar properties are edited.",
+      "editorRequired": true
+    }
+  ]
+}

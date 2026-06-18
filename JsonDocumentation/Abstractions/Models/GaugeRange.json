@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "A colored range band for gauges.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GaugeRange.cs",
+  "documentationStatus": "generated",
+  "itemName": "GaugeRange"
+}

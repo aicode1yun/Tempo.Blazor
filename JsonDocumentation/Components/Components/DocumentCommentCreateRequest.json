@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor",
+  "description": "Request emitted when the user wants to add a comment anchored to the document.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/DocumentEditorEditRequests.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentCommentCreateRequest"
+}

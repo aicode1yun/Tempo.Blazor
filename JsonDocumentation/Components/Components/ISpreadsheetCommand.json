@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
+  "description": "Marker interface for spreadsheet undo/redo commands.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/Commands/ISpreadsheetCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "ISpreadsheetCommand"
+}

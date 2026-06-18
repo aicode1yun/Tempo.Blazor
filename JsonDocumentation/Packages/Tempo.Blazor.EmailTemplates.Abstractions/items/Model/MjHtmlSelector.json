@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
+  "description": "A single mj-html-attributes selector: a CSS path and the custom HTML attributes to apply. Carried for lossless round-trip; the default renderer (Mjml.Net) does not emit it (see E0.9).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/MjHtmlSelector.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Attributes",
+      "kind": "Property",
+      "type": "IDictionary<string, string>",
+      "description": "Gets the custom HTML attributes to apply to matching elements."
+    },
+    {
+      "name": "Path",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the CSS selector path (mj-selector path)."
+    }
+  ],
+  "itemName": "MjHtmlSelector"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Templating",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
+  "description": "A variable referenced by a template, with its dotted path and inferred kind.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/TemplateVariableInfo.cs",
+  "documentationStatus": "generated",
+  "itemName": "TemplateVariableInfo"
+}

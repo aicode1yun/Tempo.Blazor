@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Pagination metadata for items within a single group.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GroupedPagedResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "GroupPagination"
+}

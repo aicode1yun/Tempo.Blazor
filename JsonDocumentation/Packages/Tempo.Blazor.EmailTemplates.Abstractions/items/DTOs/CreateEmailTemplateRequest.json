@@ -1,0 +1,48 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
+  "description": "Request to create a new email template.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/CreateEmailTemplateRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContentJson",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the serialized document content (JSON)."
+    },
+    {
+      "name": "Language",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the language code."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the template name."
+    },
+    {
+      "name": "Preheader",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets the preheader text."
+    },
+    {
+      "name": "SampleDataJson",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets the optional sample data JSON."
+    },
+    {
+      "name": "Subject",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets the email subject."
+    }
+  ],
+  "itemName": "CreateEmailTemplateRequest"
+}

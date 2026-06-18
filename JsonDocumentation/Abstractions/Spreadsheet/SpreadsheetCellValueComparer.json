@@ -1,0 +1,132 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
+  "description": "Classifies and compares spreadsheet cell values using Excel's sort ordering: numbers (and dates) first, then text, then booleans (FALSE < TRUE), then errors, with blanks always sorted last regardless of direction. Shared by the sort and filter engines.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetCellValueComparer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Classified",
+      "kind": "Method",
+      "type": "readonly record struct",
+      "description": "A type-classified, comparable view of a cell value.",
+      "parameters": [
+        {
+          "name": "Rank",
+          "type": "int"
+        },
+        {
+          "name": "Number",
+          "type": "double"
+        },
+        {
+          "name": "Text",
+          "type": "string"
+        },
+        {
+          "name": "IsBlank",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "Classify",
+      "kind": "Method",
+      "type": "Classified",
+      "description": "Classifies a cell value for comparison.",
+      "parameters": [
+        {
+          "name": "cell",
+          "type": "SpreadsheetCell?"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        }
+      ]
+    },
+    {
+      "name": "CompareValues",
+      "kind": "Method",
+      "type": "int",
+      "description": "Compares two cells for an ascending value sort. Blanks always compare greater (sorted last).",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "SpreadsheetCell?"
+        },
+        {
+          "name": "b",
+          "type": "SpreadsheetCell?"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        },
+        {
+          "name": "caseSensitive",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "GetDisplayText",
+      "kind": "Method",
+      "type": "string",
+      "description": "Returns the display text the filter list shows for a cell (formatted value).",
+      "parameters": [
+        {
+          "name": "cell",
+          "type": "SpreadsheetCell?"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        }
+      ]
+    },
+    {
+      "name": "TryGetDate",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Attempts to read a cell's date value.",
+      "parameters": [
+        {
+          "name": "cell",
+          "type": "SpreadsheetCell?"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        },
+        {
+          "name": "date",
+          "type": "out DateTime"
+        }
+      ]
+    },
+    {
+      "name": "TryGetNumber",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Attempts to read a cell's numeric value (number, percentage, currency or date serial).",
+      "parameters": [
+        {
+          "name": "cell",
+          "type": "SpreadsheetCell?"
+        },
+        {
+          "name": "culture",
+          "type": "CultureInfo"
+        },
+        {
+          "name": "number",
+          "type": "out double"
+        }
+      ]
+    }
+  ],
+  "itemName": "SpreadsheetCellValueComparer"
+}

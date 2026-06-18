@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Logical document editor focus target.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorFocusManager.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorFocusTarget"
+}

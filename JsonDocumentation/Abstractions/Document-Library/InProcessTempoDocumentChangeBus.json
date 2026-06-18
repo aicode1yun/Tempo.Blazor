@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "In-process implementation of the document change channel: writers call and subscribers receive for documents they registered via . Suitable for single-process scenarios and as the in-process transport behind a SignalR adapter.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/InProcessTempoDocumentChangeBus.cs",
+  "documentationStatus": "generated",
+  "itemName": "InProcessTempoDocumentChangeBus"
+}

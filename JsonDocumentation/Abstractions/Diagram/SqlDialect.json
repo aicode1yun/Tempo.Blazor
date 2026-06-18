@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Supported SQL dialects for parsing.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/SqlTableDefinition.cs",
+  "documentationStatus": "generated",
+  "itemName": "SqlDialect"
+}

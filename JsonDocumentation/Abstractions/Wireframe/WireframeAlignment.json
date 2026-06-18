@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "description": "Alignment options for the Align command.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframeAlignment.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeAlignment"
+}

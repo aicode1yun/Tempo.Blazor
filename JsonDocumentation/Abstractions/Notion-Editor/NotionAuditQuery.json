@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Paging settings for querying Notion audit entries.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/AuditEntryDto.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionAuditQuery"
+}

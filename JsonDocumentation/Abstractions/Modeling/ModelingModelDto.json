@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Root modeling model exchanged between providers and the modeling editor.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingModelDto"
+}

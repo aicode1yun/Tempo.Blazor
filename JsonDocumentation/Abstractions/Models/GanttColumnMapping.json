@@ -1,0 +1,22 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Maps a source spreadsheet column header to a Gantt task property.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttColumnMapping.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "SourceColumn",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "TargetProperty",
+      "kind": "Property",
+      "type": "GanttColumnKey"
+    }
+  ],
+  "itemName": "GanttColumnMapping"
+}

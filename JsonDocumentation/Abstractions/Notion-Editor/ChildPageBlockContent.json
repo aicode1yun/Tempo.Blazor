@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/ChildPageBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ChildPageId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "IconEmoji",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string?"
+    }
+  ],
+  "itemName": "ChildPageBlockContent"
+}

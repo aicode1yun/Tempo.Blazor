@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Telemetry detail emitted by the WYSIWYG watchdog during runtime recovery.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygRuntimeRecoveryDetail.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Attempt",
+      "kind": "Property",
+      "type": "int",
+      "description": "One-based recovery attempt number."
+    },
+    {
+      "name": "BackoffMs",
+      "kind": "Property",
+      "type": "int",
+      "description": "Backoff delay used for this attempt."
+    },
+    {
+      "name": "ErrorMessage",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Error message captured from the failed runtime operation, if available."
+    },
+    {
+      "name": "Event",
+      "kind": "Property",
+      "type": "string",
+      "description": "Recovery event name, such as runtimeRecovered or runtimeRecoveryFailed."
+    },
+    {
+      "name": "MaxAttempts",
+      "kind": "Property",
+      "type": "int",
+      "description": "Configured recovery attempt limit."
+    },
+    {
+      "name": "Source",
+      "kind": "Property",
+      "type": "string",
+      "description": "Runtime area that raised the failure, such as command, remoteOperation, render, or serialization."
+    },
+    {
+      "name": "State",
+      "kind": "Property",
+      "type": "string",
+      "description": "Current watchdog state."
+    },
+    {
+      "name": "Timestamp",
+      "kind": "Property",
+      "type": "string?",
+      "description": "ISO timestamp reported by the runtime watchdog."
+    },
+    {
+      "name": "UsedSnapshotFallback",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether recovery used the last stable snapshot instead of a live snapshot."
+    }
+  ],
+  "itemName": "WysiwygRuntimeRecoveryDetail"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "A single data point for stock / financial charts.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/StockChartDataPoint.cs",
+  "documentationStatus": "generated",
+  "itemName": "StockChartDataPoint"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Immutable placement rule for a semantic insertion kind.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorSchema.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentInsertionRule"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Buttons",
+  "description": "Visual style variants for TmButton.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Buttons/ButtonVariant.cs",
+  "documentationStatus": "generated",
+  "itemName": "ButtonVariant"
+}

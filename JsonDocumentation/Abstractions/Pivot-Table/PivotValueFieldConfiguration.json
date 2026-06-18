@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Serializable configuration for a single value field.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotTableConfiguration.cs",
+  "documentationStatus": "generated",
+  "itemName": "PivotValueFieldConfiguration"
+}

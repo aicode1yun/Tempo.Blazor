@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "One document editor aria-live announcement.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorAnnouncer.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorAnnouncement"
+}

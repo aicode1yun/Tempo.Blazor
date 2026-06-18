@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Describes a modeling notation profile and the semantic keys it supports.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingNotationProfiles.cs",
+  "documentationStatus": "generated",
+  "itemName": "IModelingNotationProfile"
+}

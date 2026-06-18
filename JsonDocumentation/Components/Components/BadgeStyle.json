@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataDisplay",
+  "description": "Visual fill style for TmBadge.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataDisplay/BadgeStyle.cs",
+  "documentationStatus": "generated",
+  "itemName": "BadgeStyle"
+}

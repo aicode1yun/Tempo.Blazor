@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Enums",
+  "description": "Specifies the vertical alignment of cell content.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Enums/SpreadsheetVerticalAlign.cs",
+  "documentationStatus": "generated",
+  "itemName": "SpreadsheetVerticalAlign"
+}

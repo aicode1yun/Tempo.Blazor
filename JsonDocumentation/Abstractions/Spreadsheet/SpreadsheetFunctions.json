@@ -1,0 +1,67 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
+  "description": "Built-in spreadsheet functions registry helper.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/Functions/SpreadsheetFunctions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "RegisterDateTimeFunctions",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "registry",
+          "type": "FunctionRegistry"
+        }
+      ]
+    },
+    {
+      "name": "RegisterLogicalFunctions",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "registry",
+          "type": "FunctionRegistry"
+        }
+      ]
+    },
+    {
+      "name": "RegisterLookupFunctions",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "registry",
+          "type": "FunctionRegistry"
+        }
+      ]
+    },
+    {
+      "name": "RegisterMathFunctions",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "registry",
+          "type": "FunctionRegistry"
+        }
+      ]
+    },
+    {
+      "name": "RegisterTextFunctions",
+      "kind": "Method",
+      "type": "void",
+      "parameters": [
+        {
+          "name": "registry",
+          "type": "FunctionRegistry"
+        }
+      ]
+    }
+  ],
+  "itemName": "SpreadsheetFunctions"
+}

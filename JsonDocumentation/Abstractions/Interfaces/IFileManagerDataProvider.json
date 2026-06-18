@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Abstractions.Interfaces",
+  "description": "Contract for providing data to the component. Implementations handle file system operations, cloud storage APIs, or virtual file systems.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IFileManagerDataProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "IFileManagerDataProvider"
+}

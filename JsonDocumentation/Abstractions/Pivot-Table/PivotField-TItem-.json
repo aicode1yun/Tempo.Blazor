@@ -1,0 +1,84 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Defines a field that can be used in a pivot table configuration.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotField.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ],
+  "members": [
+    {
+      "name": "FormatValue",
+      "kind": "Method",
+      "type": "string",
+      "description": "Gets the formatted display value for a given raw value.",
+      "parameters": [
+        {
+          "name": "rawValue",
+          "type": "object?"
+        }
+      ]
+    },
+    {
+      "name": "Accessor",
+      "kind": "Property",
+      "type": "Func<TItem, object?>",
+      "description": "Accessor function to extract the raw value from a data item."
+    },
+    {
+      "name": "Area",
+      "kind": "Property",
+      "type": "PivotArea",
+      "description": "The current area where this field is placed."
+    },
+    {
+      "name": "DisplayFormatter",
+      "kind": "Property",
+      "type": "Func<object?, string>?",
+      "description": "Optional formatter for displaying the field value."
+    },
+    {
+      "name": "HeaderClass",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional CSS class applied to header cells for this field."
+    },
+    {
+      "name": "HeaderStyle",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional inline style applied to header cells for this field."
+    },
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier for the field."
+    },
+    {
+      "name": "SortBy",
+      "kind": "Property",
+      "type": "PivotSortBy",
+      "description": "Sort criterion for this dimension field. Default: Value."
+    },
+    {
+      "name": "SortDirection",
+      "kind": "Property",
+      "type": "PivotSortDirection",
+      "description": "Sort direction applied to this dimension field. Default: None."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display title shown in the UI."
+    }
+  ],
+  "itemName": "PivotField<TItem>"
+}

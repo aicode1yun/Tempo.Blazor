@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Document Library",
+  "namespace": "Tempo.Blazor.DocumentLibrary",
+  "description": "Notification that a stored document changed, so that open editors and embedded blocks can refresh (or, on delete, degrade) without polling.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/TempoDocumentChange.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ChangeType",
+      "kind": "Property",
+      "type": "TempoDocumentChangeType",
+      "description": "What happened to the document."
+    },
+    {
+      "name": "DocumentId",
+      "kind": "Property",
+      "type": "required Guid",
+      "description": "Identifier of the document that changed."
+    },
+    {
+      "name": "Kind",
+      "kind": "Property",
+      "type": "required TempoDocumentKind",
+      "description": "Kind of the document that changed."
+    },
+    {
+      "name": "ModifiedAt",
+      "kind": "Property",
+      "type": "DateTime",
+      "description": "The document's new last-modified timestamp (after the change)."
+    },
+    {
+      "name": "Origin",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional identifier of who/what produced the change (user, session, or \"mcp\"), so a subscriber can ignore echoes of its own writes."
+    }
+  ],
+  "itemName": "TempoDocumentChange"
+}

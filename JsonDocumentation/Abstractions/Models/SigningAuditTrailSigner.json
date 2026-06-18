@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Signer identity information captured in an audit trail.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/SigningAuditTrailSigner.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Email",
+      "kind": "Property",
+      "type": "string",
+      "description": "Signer email address."
+    },
+    {
+      "name": "FullName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Signer display name."
+    },
+    {
+      "name": "IpAddress",
+      "kind": "Property",
+      "type": "string?",
+      "description": "IP address observed during signing."
+    },
+    {
+      "name": "TimeZone",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Signer timezone."
+    },
+    {
+      "name": "UserAgent",
+      "kind": "Property",
+      "type": "string?",
+      "description": "User agent observed during signing."
+    },
+    {
+      "name": "VerificationMethod",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Verification method used for this signer."
+    }
+  ],
+  "itemName": "SigningAuditTrailSigner"
+}

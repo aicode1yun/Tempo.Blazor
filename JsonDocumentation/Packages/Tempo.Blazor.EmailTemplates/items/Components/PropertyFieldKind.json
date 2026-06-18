@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "description": "The kind of editor a property maps to.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/PropertyReflection.cs",
+  "documentationStatus": "generated",
+  "itemName": "PropertyFieldKind"
+}

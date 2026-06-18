@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Inputs",
+  "description": "Visual mode for displaying selected items in TmMultiSelect.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Inputs/MultiSelectMode.cs",
+  "documentationStatus": "generated",
+  "itemName": "MultiSelectMode"
+}

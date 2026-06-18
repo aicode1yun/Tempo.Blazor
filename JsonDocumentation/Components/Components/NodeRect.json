@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Commands",
+  "description": "Simple rectangle record for resize commands.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/Commands/ResizeGroupCommand.cs",
+  "documentationStatus": "generated",
+  "itemName": "NodeRect"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Odt",
+  "namespace": "Tempo.Blazor.DocumentFormats.Odt",
+  "description": "Imports ODT packages into the document editor JSON model.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Odt/DocumentOdtImporter.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentOdtImporter"
+}

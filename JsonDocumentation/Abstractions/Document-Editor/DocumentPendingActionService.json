@@ -1,0 +1,58 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Tracks in-flight async operations (save, export, upload, sync) that the user should know are pending.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentPendingActionService.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Add",
+      "kind": "Method",
+      "type": "void",
+      "description": "Registers or updates a pending action. If an action with already exists its message is replaced.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "message",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Clear",
+      "kind": "Method",
+      "type": "void",
+      "description": "Removes all pending actions."
+    },
+    {
+      "name": "GetMessage",
+      "kind": "Method",
+      "type": "string?",
+      "description": "Returns the message for a pending action, or null when the action is not registered.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Remove",
+      "kind": "Method",
+      "type": "void",
+      "description": "Removes the pending action with the given . No-op if not found.",
+      "parameters": [
+        {
+          "name": "id",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentPendingActionService"
+}

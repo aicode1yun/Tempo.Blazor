@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/BlockComment.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BlockId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "IsResolved",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "LastActivityAt",
+      "kind": "Property",
+      "type": "DateTime?",
+      "description": "Timestamp of the most recent activity (new entry, reaction, resolve)."
+    },
+    {
+      "name": "ReadByUserIds",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "User IDs who have marked this thread as read/dismissed."
+    },
+    {
+      "name": "ResolvedAt",
+      "kind": "Property",
+      "type": "DateTime?"
+    },
+    {
+      "name": "ResolvedByUserId",
+      "kind": "Property",
+      "type": "string?"
+    },
+    {
+      "name": "SubscribedUserIds",
+      "kind": "Property",
+      "type": "List<string>",
+      "description": "User IDs subscribed to this thread (receive notifications)."
+    },
+    {
+      "name": "Thread",
+      "kind": "Property",
+      "type": "IReadOnlyList<INotionCommentEntry>"
+    }
+  ],
+  "itemName": "BlockComment"
+}

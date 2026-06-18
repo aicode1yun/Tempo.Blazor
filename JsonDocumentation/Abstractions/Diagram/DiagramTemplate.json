@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Templates",
+  "description": "Represents a single diagram template that can be instantiated into a new document.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Templates/DiagramTemplate.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Category",
+      "kind": "Property",
+      "type": "string",
+      "description": "Category name used for grouping in the gallery."
+    },
+    {
+      "name": "DocumentJson",
+      "kind": "Property",
+      "type": "string",
+      "description": "Embedded diagram JSON representing the template content."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique template identifier."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Human-readable name shown in the gallery."
+    },
+    {
+      "name": "Tags",
+      "kind": "Property",
+      "type": "string[]",
+      "description": "Optional search tags."
+    },
+    {
+      "name": "ThumbnailUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Thumbnail image URL (relative or absolute)."
+    }
+  ],
+  "itemName": "DiagramTemplate"
+}

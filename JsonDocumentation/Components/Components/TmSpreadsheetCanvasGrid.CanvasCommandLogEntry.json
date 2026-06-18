@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet",
+  "description": "Represents one command emitted by the canvas JavaScript engine.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Spreadsheet/TmSpreadsheetCanvasGrid.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "TmSpreadsheetCanvasGrid.CanvasCommandLogEntry"
+}

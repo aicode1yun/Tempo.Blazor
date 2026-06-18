@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Docx",
+  "namespace": "Tempo.Blazor.DocumentFormats.Docx",
+  "description": "Decoded image data from a data URL.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/Docx/DocxImageContentTypeMapper.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocxImageData"
+}

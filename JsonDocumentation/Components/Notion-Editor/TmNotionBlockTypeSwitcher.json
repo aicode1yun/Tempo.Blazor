@@ -1,0 +1,21 @@
+{
+  "itemName": "TmNotionBlockTypeSwitcher",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "TmNotionBlockTypeSwitcher Blazor component in the Notion Editor category.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmNotionBlockTypeSwitcher.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "OnTypeChanged",
+      "type": "EventCallback<BlockType>",
+      "isRequired": false
+    }
+  ],
+  "subcategory": "UI"
+}

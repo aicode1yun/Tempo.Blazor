@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Defines a column for the multi-column combo box dropdown grid.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/MultiColumnComboBoxColumn.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ],
+  "members": [
+    {
+      "name": "Field",
+      "kind": "Property",
+      "type": "Func<TItem, object?>",
+      "description": "Func that extracts the cell value from a data item."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Column header text."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional column width CSS value (e.g. \"120px\", \"30%\")."
+    }
+  ],
+  "itemName": "MultiColumnComboBoxColumn<TItem>"
+}

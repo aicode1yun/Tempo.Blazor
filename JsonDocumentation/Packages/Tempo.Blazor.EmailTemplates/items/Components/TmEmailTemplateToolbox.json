@@ -1,0 +1,27 @@
+{
+  "itemName": "TmEmailTemplateToolbox",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailTemplateToolbox Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailTemplateToolbox.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnAddSection",
+      "type": "EventCallback<LayoutPreset>",
+      "isRequired": false,
+      "description": "Raised when a block drag starts (for drag-and-drop onto the canvas)."
+    },
+    {
+      "name": "OnDragBlockStart",
+      "type": "EventCallback<BlockDescriptor>",
+      "isRequired": false,
+      "description": "Raised when a block is chosen (clicked) to be added."
+    }
+  ]
+}

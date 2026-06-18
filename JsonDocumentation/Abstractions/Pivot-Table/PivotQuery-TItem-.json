@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Encapsulates all parameters for a pivot table data fetch.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotQuery.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "Generic type parameter TItem."
+    }
+  ],
+  "members": [
+    {
+      "name": "Configuration",
+      "kind": "Property",
+      "type": "PivotTableConfiguration",
+      "description": "The complete pivot table configuration."
+    },
+    {
+      "name": "Fields",
+      "kind": "Property",
+      "type": "List<PivotField<TItem>>",
+      "description": "Available field definitions for resolving keys."
+    },
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IEnumerable<TItem>?",
+      "description": "The source data items (when using in-memory mode via provider)."
+    }
+  ],
+  "itemName": "PivotQuery<TItem>"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "RecordStruct",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public recordstruct defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionSearchHighlightRange.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionSearchHighlightRange"
+}

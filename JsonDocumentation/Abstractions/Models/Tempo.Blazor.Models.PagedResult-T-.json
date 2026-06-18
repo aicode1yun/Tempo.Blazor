@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a paginated slice of results returned by IDataTableDataProvider<TItem>.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/PagedResult.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "T",
+      "description": "Generic type parameter T."
+    }
+  ],
+  "members": [
+    {
+      "name": "Items",
+      "kind": "Property",
+      "type": "IReadOnlyList<T>",
+      "description": "Items on the current page."
+    },
+    {
+      "name": "Page",
+      "kind": "Property",
+      "type": "int",
+      "description": "The 1-based page number returned."
+    },
+    {
+      "name": "PageSize",
+      "kind": "Property",
+      "type": "int",
+      "description": "Page size used."
+    },
+    {
+      "name": "TotalCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Total number of items across all pages (after filtering)."
+    }
+  ],
+  "itemName": "Tempo.Blazor.Models.PagedResult<T>"
+}

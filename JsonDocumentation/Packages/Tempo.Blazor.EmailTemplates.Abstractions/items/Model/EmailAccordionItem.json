@@ -1,0 +1,36 @@
+{
+  "kind": "Class",
+  "category": "Model",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
+  "description": "A single item within an (mj-accordion-element).",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailAccordionItem.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BackgroundColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the item background colour (background-color)."
+    },
+    {
+      "name": "Content",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the item content (inline HTML)."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string",
+      "description": "Gets or sets the item title text."
+    },
+    {
+      "name": "TitleColor",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Gets or sets the title text colour (color)."
+    }
+  ],
+  "itemName": "EmailAccordionItem"
+}

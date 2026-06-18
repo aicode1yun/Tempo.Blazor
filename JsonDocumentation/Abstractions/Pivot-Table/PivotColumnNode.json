@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Pivot Table",
+  "namespace": "Tempo.Blazor.Abstractions.PivotTable",
+  "description": "Represents a node in the column dimension tree of a pivot table result.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotColumnNode.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Children",
+      "kind": "Property",
+      "type": "List<PivotColumnNode>",
+      "description": "Child nodes for multi-level column dimensions."
+    },
+    {
+      "name": "ColIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "The column index in the rendered table (computed after flattening)."
+    },
+    {
+      "name": "ColSpan",
+      "kind": "Property",
+      "type": "int",
+      "description": "The number of leaf columns this node spans (for colspan)."
+    },
+    {
+      "name": "DisplayValue",
+      "kind": "Property",
+      "type": "string",
+      "description": "The display text for this column node."
+    },
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "object?",
+      "description": "The raw key value for this column node."
+    },
+    {
+      "name": "Level",
+      "kind": "Property",
+      "type": "int",
+      "description": "Zero-based depth level in the column tree."
+    },
+    {
+      "name": "Totals",
+      "kind": "Property",
+      "type": "Dictionary<int, PivotCell>",
+      "description": "Column total values keyed by value field index."
+    }
+  ],
+  "itemName": "PivotColumnNode"
+}

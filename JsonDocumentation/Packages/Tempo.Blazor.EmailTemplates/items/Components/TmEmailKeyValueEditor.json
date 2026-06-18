@@ -1,0 +1,22 @@
+{
+  "itemName": "TmEmailKeyValueEditor",
+  "kind": "Component",
+  "category": "Components",
+  "description": "TmEmailKeyValueEditor Blazor component in the Components category.",
+  "packageId": "Tempo.Blazor.EmailTemplates",
+  "namespace": "Tempo.Blazor.EmailTemplates.Components",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates/Components/TmEmailKeyValueEditor.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.EmailTemplates.Components"
+  ],
+  "parameters": [
+    {
+      "name": "OnChanged",
+      "type": "EventCallback",
+      "isRequired": true,
+      "description": "The dictionary being edited (rebuilt in place on every change).",
+      "editorRequired": true
+    }
+  ]
+}

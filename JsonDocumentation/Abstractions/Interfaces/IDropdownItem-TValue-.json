@@ -1,0 +1,16 @@
+{
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents an item in a filterable/searchable dropdown with additional display metadata. Extends ISelectOption with description and avatar support. Used by TmFilterableDropdown.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IDropdownItem.cs",
+  "documentationStatus": "generated",
+  "typeParameters": [
+    {
+      "name": "TValue",
+      "description": "Generic type parameter TValue."
+    }
+  ],
+  "itemName": "IDropdownItem<TValue>"
+}

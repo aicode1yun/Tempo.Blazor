@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/DatabaseView.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Config",
+      "kind": "Property",
+      "type": "IDatabaseViewConfig?"
+    },
+    {
+      "name": "Filter",
+      "kind": "Property",
+      "type": "INotionDatabaseFilter?"
+    },
+    {
+      "name": "Grouping",
+      "kind": "Property",
+      "type": "NotionDatabaseGrouping?"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Sorts",
+      "kind": "Property",
+      "type": "IReadOnlyList<NotionDatabaseSort>"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "DatabaseViewType"
+    },
+    {
+      "name": "VisibleFieldIds",
+      "kind": "Property",
+      "type": "IReadOnlyList<Guid>"
+    }
+  ],
+  "itemName": "DatabaseView"
+}

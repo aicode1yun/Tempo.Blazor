@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Current hyperlink metadata returned by the WYSIWYG selection bridge.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygLinkModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "WysiwygLinkInfo"
+}

@@ -1,0 +1,236 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents a single worksheet within a spreadsheet workbook.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetSheet.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "SpreadsheetSheet",
+      "description": "Creates a deep copy of this sheet."
+    },
+    {
+      "name": "EvaluateFormula",
+      "kind": "Method",
+      "type": "void",
+      "description": "Evaluates the formula of a specific cell and stores the result in Value/DisplayValue.",
+      "parameters": [
+        {
+          "name": "cellRef",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "GetCell",
+      "kind": "Method",
+      "type": "SpreadsheetCell?",
+      "description": "Retrieves a cell at the given row and column indices.",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "int"
+        },
+        {
+          "name": "col",
+          "type": "int"
+        }
+      ]
+    },
+    {
+      "name": "GetCellAndDependentRefs",
+      "kind": "Method",
+      "type": "IReadOnlyList<string>",
+      "description": "Returns the given cells plus every transitive dependent cell that may need a renderer refresh after recalculation.",
+      "parameters": [
+        {
+          "name": "cellRefs",
+          "type": "IEnumerable<string>"
+        }
+      ]
+    },
+    {
+      "name": "GetOrCreateCell",
+      "kind": "Method",
+      "type": "SpreadsheetCell",
+      "description": "Retrieves or creates a cell at the given A1 reference.",
+      "parameters": [
+        {
+          "name": "cellRef",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "RecalculateDependents",
+      "kind": "Method",
+      "type": "void",
+      "description": "Recursively recalculates all cells that depend on the given cell.",
+      "parameters": [
+        {
+          "name": "cellRef",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SetCellFormula",
+      "kind": "Method",
+      "type": "void",
+      "description": "Sets a cell formula at the given row and column indices, evaluates it and recalculates dependents.",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "int"
+        },
+        {
+          "name": "col",
+          "type": "int"
+        },
+        {
+          "name": "formula",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "SetCellValue",
+      "kind": "Method",
+      "type": "void",
+      "description": "Sets a cell value at the given row and column indices and recalculates dependents.",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "int"
+        },
+        {
+          "name": "col",
+          "type": "int"
+        },
+        {
+          "name": "value",
+          "type": "object?"
+        }
+      ]
+    },
+    {
+      "name": "UpdateDependencies",
+      "kind": "Method",
+      "type": "void",
+      "description": "Updates the dependency graph for the given cell after its formula changes.",
+      "parameters": [
+        {
+          "name": "cellRef",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "ActiveCellRef",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The A1 reference of the currently active (selected) cell."
+    },
+    {
+      "name": "AutoFilter",
+      "kind": "Property",
+      "type": "SpreadsheetAutoFilter?",
+      "description": "The auto-filter applied to this sheet, or null when none is active."
+    },
+    {
+      "name": "Cells",
+      "kind": "Property",
+      "type": "Dictionary<string, SpreadsheetCell>",
+      "description": "All cells in the sheet keyed by A1 reference (e.g. A1, B2)."
+    },
+    {
+      "name": "ColumnCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "The total number of columns in the sheet."
+    },
+    {
+      "name": "Columns",
+      "kind": "Property",
+      "type": "Dictionary<int, SpreadsheetColumn>",
+      "description": "Column metadata keyed by zero-based column index."
+    },
+    {
+      "name": "DataValidations",
+      "kind": "Property",
+      "type": "List<SpreadsheetDataValidation>",
+      "description": "Data validation rules defined on this sheet."
+    },
+    {
+      "name": "DefaultColumnWidth",
+      "kind": "Property",
+      "type": "double",
+      "description": "The default column width in pixels."
+    },
+    {
+      "name": "DefaultRowHeight",
+      "kind": "Property",
+      "type": "double",
+      "description": "The default row height in pixels."
+    },
+    {
+      "name": "FreezeColumnCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "The number of columns to freeze on the left (0 = none)."
+    },
+    {
+      "name": "FreezeRowCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "The number of rows to freeze at the top (0 = none)."
+    },
+    {
+      "name": "MergedCells",
+      "kind": "Property",
+      "type": "List<SpreadsheetRange>",
+      "description": "All merged cell ranges in this sheet."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "The name displayed on the sheet tab."
+    },
+    {
+      "name": "RowCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "The total number of rows in the sheet."
+    },
+    {
+      "name": "Rows",
+      "kind": "Property",
+      "type": "Dictionary<int, SpreadsheetRow>",
+      "description": "Row metadata keyed by zero-based row index."
+    },
+    {
+      "name": "SheetIndexInWorkbook",
+      "kind": "Property",
+      "type": "int",
+      "description": "The zero-based index of this sheet within its workbook."
+    },
+    {
+      "name": "ShowGridLines",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether grid lines are visible."
+    },
+    {
+      "name": "Workbook",
+      "kind": "Property",
+      "type": "SpreadsheetWorkbook?",
+      "description": "The workbook that owns this sheet, if any."
+    }
+  ],
+  "itemName": "SpreadsheetSheet"
+}

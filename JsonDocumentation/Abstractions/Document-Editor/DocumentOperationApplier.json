@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Applies low-level document operations to a document snapshot.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentOperationApplier.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Apply",
+      "kind": "Method",
+      "type": "DocumentOperationValidationResult",
+      "description": "Applies a batch to a document.",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DocumentEditorDocument"
+        },
+        {
+          "name": "batch",
+          "type": "DocumentOperationBatch"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentOperationApplier"
+}

@@ -1,0 +1,42 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "description": "Represents a layer in a wireframe page. Elements can be assigned to layers to control visibility, locking, and grouping.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframeLayer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique layer identifier."
+    },
+    {
+      "name": "IsLocked",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, elements on this layer cannot be selected, moved, or edited."
+    },
+    {
+      "name": "IsVisible",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When false, elements on this layer are hidden on the canvas."
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string",
+      "description": "Display name shown in the Layers panel."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Determines z-order / list order. Lower values render first."
+    }
+  ],
+  "itemName": "WireframeLayer"
+}

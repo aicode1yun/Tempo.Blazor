@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Feedback",
+  "description": "Position of a popover relative to its trigger.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Feedback/PopoverPosition.cs",
+  "documentationStatus": "generated",
+  "itemName": "PopoverPosition"
+}

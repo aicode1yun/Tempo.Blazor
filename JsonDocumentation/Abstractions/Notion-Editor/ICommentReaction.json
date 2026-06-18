@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Represents an emoji reaction on a comment entry.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/ICommentReaction.cs",
+  "documentationStatus": "generated",
+  "itemName": "ICommentReaction"
+}

@@ -1,0 +1,45 @@
+{
+  "kind": "Class",
+  "category": "Import",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
+  "description": "Imports MJML markup into an . Parsing is XML-based with an mj-raw shim (raw content may be non-well-formed HTML), tolerates comments, preserves unknown elements as raw blocks and unknown attributes in , and never throws — failures are returned as s.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/MjmlImporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Import",
+      "kind": "Method",
+      "type": "ImportResult",
+      "description": "Imports the given MJML markup, optionally resolving mj-include references.",
+      "parameters": [
+        {
+          "name": "mjml",
+          "type": "string"
+        },
+        {
+          "name": "includeResolver",
+          "type": "IMjmlIncludeResolver?",
+          "default": "null"
+        }
+      ]
+    },
+    {
+      "name": "Rest",
+      "kind": "Method",
+      "type": "IEnumerable<KeyValuePair<string, string>>"
+    },
+    {
+      "name": "Take",
+      "kind": "Method",
+      "type": "string?",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "MjmlImporter"
+}

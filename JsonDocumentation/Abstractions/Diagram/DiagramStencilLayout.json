@@ -1,0 +1,66 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "Declarative layout definition for a diagram stencil.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilLayout.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "BackgroundShape",
+      "kind": "Property",
+      "type": "string",
+      "description": "Background shape fallback. Supported: \"rectangle\", \"rounded\", \"ellipse\", \"diamond\", \"document\", \"weak-entity\", \"cylinder\", \"cloud\", \"note\", \"actor\", \"lollipop\", \"component\", \"cube\", \"double-ellipse\", \"pentagon\", \"half-ellipse\", \"parallelogram\", \"triangle\", \"star\", \"hexagon\", \"sticky-note\", \"pool\"."
+    },
+    {
+      "name": "ContentPosition",
+      "kind": "Property",
+      "type": "string",
+      "description": "Content placement relative to the shape background. \"overlay\" (default) renders sections on top of the shape. \"below\" renders sections underneath the shape (e.g. for actor/person stick figures)."
+    },
+    {
+      "name": "Fill",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Fill color (CSS color value)."
+    },
+    {
+      "name": "PreserveAspectRatio",
+      "kind": "Property",
+      "type": "bool",
+      "description": "When true, the SVG background preserves its aspect ratio (uses preserveAspectRatio=\"xMidYMid meet\"). When false (default), the SVG stretches to fill the node bounds."
+    },
+    {
+      "name": "Sections",
+      "kind": "Property",
+      "type": "List<DiagramStencilSection>",
+      "description": "Layout sections rendered inside the stencil."
+    },
+    {
+      "name": "ShapeSvg",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional SVG content rendered as the stencil background. When provided, the component renders an SVG element with this content instead of using the CSS-based BackgroundShape fallback. The SVG should be designed for a 100x100 viewBox and will be stretched to fill the node unless is set."
+    },
+    {
+      "name": "Stroke",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Stroke color (CSS color value)."
+    },
+    {
+      "name": "StrokeWidth",
+      "kind": "Property",
+      "type": "double?",
+      "description": "Stroke width in pixels."
+    },
+    {
+      "name": "SupportsCornerRadius",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the stencil supports corner-radius editing in the properties panel."
+    }
+  ],
+  "itemName": "DiagramStencilLayout"
+}

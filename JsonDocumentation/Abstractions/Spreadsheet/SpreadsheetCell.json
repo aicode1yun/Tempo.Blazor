@@ -1,0 +1,72 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents a single cell within a spreadsheet sheet.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetCell.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Clone",
+      "kind": "Method",
+      "type": "SpreadsheetCell",
+      "description": "Creates a deep copy of this cell including style."
+    },
+    {
+      "name": "DataType",
+      "kind": "Property",
+      "type": "SpreadsheetDataType",
+      "description": "The data type of the cell value."
+    },
+    {
+      "name": "DisplayValue",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The computed or formatted display value. Null until evaluated."
+    },
+    {
+      "name": "Formula",
+      "kind": "Property",
+      "type": "string?",
+      "description": "The formula expression (e.g. =SUM(A1:A10)). Null if the cell has no formula."
+    },
+    {
+      "name": "Hyperlink",
+      "kind": "Property",
+      "type": "SpreadsheetHyperlink?",
+      "description": "A structured hyperlink attached to this cell."
+    },
+    {
+      "name": "ImageUrl",
+      "kind": "Property",
+      "type": "string?",
+      "description": "An image URL or base64 data to render inside the cell."
+    },
+    {
+      "name": "IsReadOnly",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the cell is read-only and cannot be edited."
+    },
+    {
+      "name": "Style",
+      "kind": "Property",
+      "type": "SpreadsheetCellStyle",
+      "description": "The visual style of the cell."
+    },
+    {
+      "name": "Validation",
+      "kind": "Property",
+      "type": "SpreadsheetDataValidation?",
+      "description": "The data validation rule that applies to this cell (shared reference from the sheet)."
+    },
+    {
+      "name": "Value",
+      "kind": "Property",
+      "type": "object?",
+      "description": "The raw value stored in the cell."
+    }
+  ],
+  "itemName": "SpreadsheetCell"
+}

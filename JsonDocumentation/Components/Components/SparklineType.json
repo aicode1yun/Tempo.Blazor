@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Public enum defined by Tempo.Blazor.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/TmSparkline.razor.cs",
+  "documentationStatus": "generated",
+  "itemName": "SparklineType"
+}

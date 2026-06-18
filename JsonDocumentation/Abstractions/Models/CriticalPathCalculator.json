@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Calculates the critical path of a Gantt task network using ES/EF/LS/LF algorithm. Returns IDs of tasks with zero total float (slack).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/CriticalPathCalculator.cs",
+  "documentationStatus": "generated",
+  "itemName": "CriticalPathCalculator"
+}

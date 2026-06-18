@@ -1,0 +1,50 @@
+{
+  "itemName": "TmNotionAnalyticsPanel",
+  "kind": "Component",
+  "category": "Notion Editor",
+  "description": "Analytics summary panel for the active Notion space and page.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
+  "sourcePath": "src/Tempo.Blazor/Components/NotionEditor/UI/TmNotionAnalyticsPanel.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.NotionEditor.UI"
+  ],
+  "parameters": [
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Maximum number of top pages to show."
+    },
+    {
+      "name": "CurrentPageId",
+      "type": "Guid?",
+      "isRequired": true,
+      "description": "Space whose top pages should be displayed.",
+      "editorRequired": true
+    },
+    {
+      "name": "OnClosed",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Additional CSS class."
+    },
+    {
+      "name": "SpaceId",
+      "type": "string",
+      "isRequired": true,
+      "default": "\"\"",
+      "description": "Analytics provider used to query page views and top pages.",
+      "editorRequired": true
+    },
+    {
+      "name": "TopPageCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "5",
+      "description": "Currently open page id used for the main analytics summary."
+    }
+  ],
+  "subcategory": "UI"
+}

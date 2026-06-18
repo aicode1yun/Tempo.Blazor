@@ -1,0 +1,48 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
+  "description": "Runtime context used to decide whether a toolbar item should be visible.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Registry/DocumentToolbarVisibilityContext.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "IsFeatureEnabled",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns whether the given feature name is enabled for this context.",
+      "parameters": [
+        {
+          "name": "featureName",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "CommandRegistry",
+      "kind": "Property",
+      "type": "DocumentEditorCommandRegistry?",
+      "description": "Optional command registry used to inspect command availability."
+    },
+    {
+      "name": "DisabledFeatures",
+      "kind": "Property",
+      "type": "IReadOnlyCollection<string>?",
+      "description": "Feature names disabled for this toolbar instance."
+    },
+    {
+      "name": "IsHeaderFooterMode",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether the editor is currently editing a header or footer region."
+    },
+    {
+      "name": "ToolbarMode",
+      "kind": "Property",
+      "type": "DocumentToolbarMode",
+      "description": "Current toolbar mode."
+    }
+  ],
+  "itemName": "DocumentToolbarVisibilityContext"
+}

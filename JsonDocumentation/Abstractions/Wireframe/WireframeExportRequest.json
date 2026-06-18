@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Abstractions.Wireframe.Export",
+  "description": "Request body sent from the wireframe editor to the export API.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Export/WireframeExportRequest.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "FileName",
+      "kind": "Property",
+      "type": "string",
+      "description": "Desired output file name without extension."
+    },
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "WireframeExportOptions",
+      "description": "Export options (scale, background, etc.)."
+    },
+    {
+      "name": "Svg",
+      "kind": "Property",
+      "type": "string",
+      "description": "SVG markup string (already cleaned of UI overlays)."
+    }
+  ],
+  "itemName": "WireframeExportRequest"
+}

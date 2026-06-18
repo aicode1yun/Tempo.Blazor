@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Deterministic conflict resolver for the first document operation prototype.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentOperationConflictResolver.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Resolve",
+      "kind": "Method",
+      "type": "IReadOnlyList<DocumentOperation>",
+      "description": "Orders and transforms concurrent operations into a deterministic sequence.",
+      "parameters": [
+        {
+          "name": "operations",
+          "type": "IEnumerable<DocumentOperation>"
+        }
+      ]
+    }
+  ],
+  "itemName": "DocumentOperationConflictResolver"
+}

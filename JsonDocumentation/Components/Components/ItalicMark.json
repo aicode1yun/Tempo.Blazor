@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Model",
+  "description": "Italic mark.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DocumentEditor/Wysiwyg/Model/Marks.cs",
+  "documentationStatus": "generated",
+  "itemName": "ItalicMark"
+}

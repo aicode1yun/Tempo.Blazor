@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Provides bulk page operations for Notion data providers, including a single-page fallback for providers that do not expose native bulk methods.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/NotionDataProviderBulkExtensions.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionDataProviderBulkExtensions"
+}

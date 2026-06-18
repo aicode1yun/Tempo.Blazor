@@ -1,0 +1,48 @@
+{
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents a custom toolbar tool that can be injected into the spreadsheet toolbar.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Models/SpreadsheetCustomTool.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CssClass",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional CSS class applied to the tool button."
+    },
+    {
+      "name": "IconName",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Display icon name (registered in IconRegistry)."
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string",
+      "description": "Unique identifier for the tool."
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int",
+      "description": "Order within the tab (lower = first)."
+    },
+    {
+      "name": "Tab",
+      "kind": "Property",
+      "type": "string",
+      "description": "Tab group where the tool should appear: Home, Insert, View, or File."
+    },
+    {
+      "name": "Title",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Tooltip / aria-label text (localizable key)."
+    }
+  ],
+  "itemName": "SpreadsheetCustomTool"
+}

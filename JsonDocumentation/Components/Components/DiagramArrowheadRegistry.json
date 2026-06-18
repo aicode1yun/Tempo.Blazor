@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram",
+  "description": "Registry of SVG arrowhead definitions for diagram edges. Maps arrowhead identifiers to SVG path data and default sizes.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Diagram/DiagramArrowheadRegistry.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramArrowheadRegistry"
+}

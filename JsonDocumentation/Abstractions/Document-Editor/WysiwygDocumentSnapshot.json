@@ -1,0 +1,30 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Snapshot exchanged between the WYSIWYG JS engine and Blazor.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/WysiwygDocumentSnapshot.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Document",
+      "kind": "Property",
+      "type": "DocumentEditorDocument",
+      "description": "Document payload."
+    },
+    {
+      "name": "ProtocolVersion",
+      "kind": "Property",
+      "type": "int",
+      "description": "Protocol version of the snapshot."
+    },
+    {
+      "name": "Suggestions",
+      "kind": "Property",
+      "type": "IReadOnlyList<DocumentSuggestion>",
+      "description": "Pending provider-backed suggestions to decorate in the surface."
+    }
+  ],
+  "itemName": "WysiwygDocumentSnapshot"
+}

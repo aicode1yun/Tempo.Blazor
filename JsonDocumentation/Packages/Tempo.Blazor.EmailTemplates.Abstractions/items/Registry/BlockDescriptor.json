@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Registry",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
+  "description": "Describes a block kind available in the editor toolbox: how to present it and how to create one.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Registry/BlockDescriptor.cs",
+  "documentationStatus": "generated",
+  "itemName": "BlockDescriptor"
+}

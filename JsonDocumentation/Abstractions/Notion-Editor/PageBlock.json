@@ -1,0 +1,52 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/PageBlock.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Content",
+      "kind": "Property",
+      "type": "IBlockContent"
+    },
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "LastEditedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "PageId",
+      "kind": "Property",
+      "type": "Guid"
+    },
+    {
+      "name": "ParentBlockId",
+      "kind": "Property",
+      "type": "Guid?"
+    },
+    {
+      "name": "Type",
+      "kind": "Property",
+      "type": "BlockType"
+    }
+  ],
+  "itemName": "PageBlock"
+}

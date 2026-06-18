@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "A named snapshot of a Gantt schedule used to compare planned vs. actual.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttBaseline.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "CreatedAt",
+      "kind": "Property",
+      "type": "DateTime"
+    },
+    {
+      "name": "Id",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Name",
+      "kind": "Property",
+      "type": "string"
+    },
+    {
+      "name": "Tasks",
+      "kind": "Property",
+      "type": "IReadOnlyList<GanttBaselineTask>"
+    }
+  ],
+  "itemName": "GanttBaseline"
+}

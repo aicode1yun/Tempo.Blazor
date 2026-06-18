@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Static helper for grouping collections and computing aggregations.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Services/DataGroupingService.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataGroupingService"
+}

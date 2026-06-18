@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Layout",
+  "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Layout",
+  "description": "Severity of a layout validation message.",
+  "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Layout/LayoutSeverity.cs",
+  "documentationStatus": "generated",
+  "itemName": "LayoutSeverity"
+}

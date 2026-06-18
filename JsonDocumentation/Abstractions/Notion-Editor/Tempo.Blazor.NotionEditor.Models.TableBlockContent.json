@@ -1,0 +1,27 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/TableBlockContent.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ColumnCount",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "HasHeaderColumn",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "HasHeaderRow",
+      "kind": "Property",
+      "type": "bool"
+    }
+  ],
+  "itemName": "Tempo.Blazor.NotionEditor.Models.TableBlockContent"
+}

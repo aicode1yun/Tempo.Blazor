@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Models",
+  "description": "A single 2D point on the diagram canvas.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramPoint.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "X",
+      "kind": "Property",
+      "type": "double",
+      "description": "X coordinate in pixels."
+    },
+    {
+      "name": "Y",
+      "kind": "Property",
+      "type": "double",
+      "description": "Y coordinate in pixels."
+    }
+  ],
+  "itemName": "DiagramPoint"
+}

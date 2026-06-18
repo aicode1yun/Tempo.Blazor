@@ -1,0 +1,32 @@
+{
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Abstractions.Models",
+  "description": "Defines the visibility, order and optional width of a Gantt tree-grid column.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GanttColumnDefinition.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Key",
+      "kind": "Property",
+      "type": "GanttColumnKey"
+    },
+    {
+      "name": "Order",
+      "kind": "Property",
+      "type": "int"
+    },
+    {
+      "name": "Visible",
+      "kind": "Property",
+      "type": "bool"
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double?"
+    }
+  ],
+  "itemName": "GanttColumnDefinition"
+}

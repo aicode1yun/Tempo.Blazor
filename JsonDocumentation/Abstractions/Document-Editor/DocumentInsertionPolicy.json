@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Services",
+  "description": "Applies schema-aware insertion fallback rules for paste and import flows.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Services/DocumentEditorSchema.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentInsertionPolicy"
+}

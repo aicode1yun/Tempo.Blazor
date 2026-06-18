@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "description": "Lightweight descriptor used by TmColumnPicker to represent one column's visibility state. Non-generic so TmColumnPicker doesn't need a type parameter.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/ColumnVisibilityItem.cs",
+  "documentationStatus": "generated",
+  "itemName": "ColumnVisibilityItem"
+}

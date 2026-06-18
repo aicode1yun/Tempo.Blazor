@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "Effect extent around a DrawingML object expressed in EMUs.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentObjectLayout.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentObjectEffectExtent"
+}

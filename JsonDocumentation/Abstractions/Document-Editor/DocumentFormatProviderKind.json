@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.DocumentEditor.Models",
+  "description": "External document format supported through a host provider boundary.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentEditor/Models/DocumentFormatProviderModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentFormatProviderKind"
+}

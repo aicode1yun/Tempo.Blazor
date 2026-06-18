@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Mcp.Wireframe",
+  "description": "Outcome of applying a granular operation batch to a wireframe document.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeOperationEngine.cs",
+  "documentationStatus": "generated",
+  "itemName": "WireframeOperationResult"
+}
