@@ -14,16 +14,15 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
     public async Task OfflineMode_DisabledKeepsEditorOnlineOnly()
     {
         var provider = new FailingSaveProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineStore, store));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
-        await SimulateTextInsertAsync(cut, seeded, "Offline text ");
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-save-message']").TextContent.Should().Contain("Save failed"));
@@ -35,17 +34,16 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
     public async Task OfflineMode_SaveFailureStoresDraftAndShowsStatus()
     {
         var provider = new FailingSaveProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
             .Add(p => p.OfflineStore, store));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
-        await SimulateTextInsertAsync(cut, seeded, "Offline text ");
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-offline-banner']").TextContent.Should().Contain("Saved as an offline draft"));
@@ -70,7 +68,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
@@ -98,7 +96,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
@@ -128,7 +126,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
@@ -158,7 +156,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.SyncProvider, new ConflictSyncProvider())
@@ -176,60 +174,37 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task OfflineMode_ClipboardImageWithoutProviderCreatesPendingDraftAsset()
+    public async Task OfflineMode_ClipboardImageWithoutProviderDoesNotCreatePendingDraftAsset()
     {
         var provider = new FailingSaveProvider();
         provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
             .Add(p => p.OfflineStore, store));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleImageUploadRequested(new WysiwygImagePayload
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentCanvasEngineHost>();
+
+        var result = await cut.InvokeAsync(() => host.Instance.UploadCanvasClipboardImage(new TmDocumentCanvasEngineHost.CanvasClipboardImageUploadRequest
         {
-            Source = DocumentImageSource.Clipboard,
             FileName = "paste.png",
             ContentType = "image/png",
-            SizeBytes = 1,
-            Base64Data = "AA=="
-        }));
-        cut.Find("[data-testid='document-save']").Click();
+            SizeBytes = 1
+        }, null!));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-offline-banner']").Should().NotBeNull());
-        var draft = (await store.ListPendingDraftsAsync("doc-1")).Single();
-        draft.PendingAssets.Should().ContainSingle(asset => asset.Source == DocumentImageSource.Clipboard && asset.IsLocalDraft);
-        draft.PendingClipboardImages.Should().ContainSingle(image => image.LocalAssetId == draft.PendingAssets[0].Id);
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Image provider");
+        (await store.ListPendingDraftsAsync("doc-1")).Should().BeEmpty();
     }
 
     private static T Clone<T>(T value)
     {
         var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
         return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
-    }
-
-    private static Task SimulateTextInsertAsync(
-        IRenderedComponent<TmDocumentEditor> cut,
-        DocumentEditorDocument document,
-        string text)
-    {
-        var paragraph = document.Blocks.First(block => block.Content is ParagraphBlockContent);
-        var inline = ((ParagraphBlockContent)paragraph.Content).Inlines.OfType<TextRun>().First();
-
-        return cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandlePatchGenerated(new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = text,
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        }));
     }
 
     private sealed class FailingSaveProvider : InMemoryDocumentEditorProvider

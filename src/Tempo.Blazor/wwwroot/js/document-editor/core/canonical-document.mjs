@@ -3,9 +3,8 @@
 // layer (the Google-Docs migration facade). Data-in / data-out only — no DOM, no
 // instance state, no runtime document store.
 //
-// The module keeps its own small Pascal/camel pair helpers and a deep object sort so
-// its output is byte-identical to the legacy IIFE's `tmDocumentEditorRuntime.
-// serialization` functions (the deep sort yields a stable key order for diffing).
+// The module keeps its own small Pascal/camel pair helpers and a deep object sort
+// so the deep sort yields a stable key order for diffing.
 //
 // Public entry points:
 //   - `fromCanonicalDocument(document)` → `{version:1, document:<normalised>}`

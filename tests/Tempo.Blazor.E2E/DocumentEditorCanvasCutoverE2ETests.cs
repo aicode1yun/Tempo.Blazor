@@ -32,7 +32,7 @@ public sealed class DocumentEditorCanvasCutoverE2ETests : WasmTestBase
     }
 
     [TestMethod]
-    public async Task Phase25_DocumentEditorRoute_RenderEngineQueryRollsBackToLegacy()
+    public async Task Phase25_DocumentEditorRoute_RenderEngineQueryIsIgnoredAndStaysCanvas()
     {
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
@@ -44,10 +44,10 @@ public sealed class DocumentEditorCanvasCutoverE2ETests : WasmTestBase
             Timeout = 60_000
         });
 
-        await WaitForEditorEngineAsync(page, "Legacy");
-        await Assertions.Expect(page.GetByTestId("document-wysiwyg-host"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30_000 });
+        await WaitForEditorEngineAsync(page, "CanvasEnginePreview");
         await Assertions.Expect(page.GetByTestId("document-canvas-engine-host"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30_000 });
+        await Assertions.Expect(page.GetByTestId("document-wysiwyg-host"))
             .ToHaveCountAsync(0, new LocatorAssertionsToHaveCountOptions { Timeout = 5_000 });
     }
 
@@ -56,8 +56,7 @@ public sealed class DocumentEditorCanvasCutoverE2ETests : WasmTestBase
             """
             expectedEngine => {
                 const editor = document.querySelector('[data-testid="document-editor-demo"].tm-document-editor');
-                return editor?.getAttribute('data-render-engine') === expectedEngine
-                    && editor?.getAttribute('data-render-engine-requested') === expectedEngine;
+                return editor?.getAttribute('data-render-engine') === expectedEngine;
             }
             """,
             expectedEngine,

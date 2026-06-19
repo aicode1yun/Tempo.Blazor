@@ -209,7 +209,6 @@
                   TokenValueProvider="@TokenProvider"
                   Author="@DemoAuthor"
                   AutoSaveInterval="@DemoAutoSaveInterval"
-                  RenderEngine="@DemoRenderEngine"
                   ToolbarMode="@_toolbarMode"
                   CanDeleteOwnComments="true"
                   ShowDebugTools="true"
@@ -228,7 +227,6 @@
     private bool _autosaveFailureEnabled;
     private bool _showPasteSample;
     private DocumentToolbarMode _toolbarMode = DocumentToolbarMode.Ribbon;
-    private DocumentEditorRenderEngine _renderEngine = DocumentEditorRenderEngine.CanvasEnginePreview;
     private DocumentEditorPermissions EditorPermissions => new() { CanExport = !_disableExport };
     private string _loadedTitle = "Loading...";
     private string? _formatMessage;
@@ -236,7 +234,6 @@
     private string? _signingDesignerUrl;
     private TimeSpan DemoAutoSaveInterval => TimeSpan.FromMilliseconds(_autosaveFailureEnabled ? 750 : ReadQueryInt("autosaveMs", 30000, 250, 30000));
     private IDocumentImageProvider? DemoImageProvider => _imageProviderEnabled ? ImageResolver : null;
-    private DocumentEditorRenderEngine DemoRenderEngine => _renderEngine;
     private IReadOnlyList<DocumentImageAsset> DemoImageAssets => _imageProviderEnabled
         ?
         [
@@ -268,8 +265,6 @@
         {
             _documentId = InMemoryDocumentEditorProvider.Recovery20260523DocumentId;
         }
-
-        _renderEngine = ReadRenderEngineQuery(DocumentEditorRenderEngine.CanvasEnginePreview);
     }
 
     private IReadOnlyCollection<string> DemoDisabledFeatures
@@ -363,51 +358,6 @@
         }
 
         return fallback;
-    }
-
-    private DocumentEditorRenderEngine ReadRenderEngineQuery(DocumentEditorRenderEngine fallback)
-    {
-        var value = ReadQueryString("renderEngine", string.Empty);
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            value = ReadQueryString("tmDocumentEditorEngine", string.Empty);
-        }
-
-        return NormalizeRenderEngine(value, fallback);
-    }
-
-    private static DocumentEditorRenderEngine NormalizeRenderEngine(string? value, DocumentEditorRenderEngine fallback)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return fallback;
-        }
-
-        var normalized = value.Trim().Replace("-", string.Empty, StringComparison.Ordinal).Replace("_", string.Empty, StringComparison.Ordinal);
-        if (string.Equals(normalized, "legacy", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "wysiwyg", StringComparison.OrdinalIgnoreCase))
-        {
-            return DocumentEditorRenderEngine.Legacy;
-        }
-
-        if (string.Equals(normalized, "core", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "coreengine", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "coreenginepreview", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "googledocs", StringComparison.OrdinalIgnoreCase))
-        {
-            return DocumentEditorRenderEngine.CoreEnginePreview;
-        }
-
-        if (string.Equals(normalized, "canvas", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "canvasengine", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "canvasenginepreview", StringComparison.OrdinalIgnoreCase))
-        {
-            return DocumentEditorRenderEngine.CanvasEnginePreview;
-        }
-
-        return Enum.TryParse<DocumentEditorRenderEngine>(value, ignoreCase: true, out var parsed)
-            ? parsed
-            : fallback;
     }
 
     private void SelectDocument(string documentId)

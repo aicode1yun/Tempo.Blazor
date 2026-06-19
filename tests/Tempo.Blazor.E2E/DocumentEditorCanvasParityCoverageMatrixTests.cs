@@ -195,7 +195,7 @@ public sealed class DocumentEditorCanvasParityCoverageMatrixTests
 
     private static string FindE2EDirectory()
     {
-        var file = FindRepoFile(Path.Combine("tests", "Tempo.Blazor.E2E", "DocumentEditorE2ETestBase.cs"));
+        var file = FindRepoFile(Path.Combine("tests", "Tempo.Blazor.E2E", "DocumentEditorCanvasParityCoverageMatrixTests.cs"));
         return Path.GetDirectoryName(file) ?? throw new DirectoryNotFoundException("Could not resolve tests/Tempo.Blazor.E2E.");
     }
 

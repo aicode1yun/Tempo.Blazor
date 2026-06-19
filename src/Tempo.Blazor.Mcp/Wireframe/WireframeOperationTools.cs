@@ -29,7 +29,7 @@ public static class WireframeOperationTools
         {
             return McpToolResults.Failure(McpToolResults.NotFound, $"Wireframe {documentId} not found.");
         }
-        if (ConflictMessage(expectedModifiedAt, entry.ModifiedAt) is { } conflict)
+        if (McpConcurrency.DateTimeConflict(expectedModifiedAt, entry.ModifiedAt, "wireframe_get_document") is { } conflict)
         {
             return McpToolResults.Failure(McpToolResults.Conflict, conflict);
         }
@@ -80,7 +80,7 @@ public static class WireframeOperationTools
         {
             return McpToolResults.Failure(McpToolResults.NotFound, $"Wireframe {documentId} not found.");
         }
-        if (ConflictMessage(expectedModifiedAt, entry.ModifiedAt) is { } conflict)
+        if (McpConcurrency.DateTimeConflict(expectedModifiedAt, entry.ModifiedAt, "wireframe_get_document") is { } conflict)
         {
             return McpToolResults.Failure(McpToolResults.Conflict, conflict);
         }
@@ -102,15 +102,4 @@ public static class WireframeOperationTools
         return McpToolResults.Success(new { id = documentId, modifiedAt = saved?.ModifiedAt });
     }
 
-    private static string? ConflictMessage(DateTime? expected, DateTime current)
-    {
-        if (expected is null)
-        {
-            return null;
-        }
-
-        return Math.Abs((current - expected.Value).TotalMilliseconds) > 1
-            ? $"The document was modified since you read it (current modifiedAt {current:O}). Re-read with wireframe_get_document and retry."
-            : null;
-    }
 }

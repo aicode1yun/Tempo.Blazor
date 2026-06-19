@@ -16,7 +16,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider));
 
@@ -33,7 +33,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [DocumentEditorFeatureNames.Image]));
@@ -51,7 +51,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [DocumentEditorFeatureNames.Table]));
@@ -69,7 +69,7 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [
@@ -90,31 +90,32 @@ public class TmDocumentEditorFeatureConfigurationTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.DisabledFeatures, [DocumentEditorFeatureNames.Table]));
 
         cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+            cut.FindComponent<TmDocumentCanvasEngineHost>().Should().NotBeNull());
 
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleTableContextMenuRequested(new WysiwygTableContextMenuRequest
-        {
-            Left = 200,
-            Top = 120,
-            Width = 224,
-            Height = 196,
-            Selection = new WysiwygSelectionSnapshot
+        var host = cut.FindComponent<TmDocumentCanvasEngineHost>();
+        await cut.InvokeAsync(() => host.Instance.OnCanvasContextMenuRequested(
+            """
             {
-                Region = "TableCell",
-                AnchorBlockId = "cell-block-1",
-                AnchorInlineId = "cell-inline-1",
-                ActiveTableCellId = "cell-1",
-                TableCellPath = "table-1/row-0/cell-1",
-                IsCollapsed = true
+              "x": 200,
+              "y": 120,
+              "inTable": true,
+              "cellId": "cell-1",
+              "selection": {
+                "region": "TableCell",
+                "anchorBlockId": "cell-block-1",
+                "anchorInlineId": "cell-inline-1",
+                "activeTableCellId": "cell-1",
+                "tableCellPath": "table-1/row-0/cell-1",
+                "isCollapsed": true
+              }
             }
-        }));
+            """));
 
         cut.FindAll("[data-testid='document-table-context-menu']").Should().BeEmpty();
     }

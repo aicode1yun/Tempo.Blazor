@@ -10,8 +10,8 @@
     <PackageId>Tempo.Blazor.Mcp</PackageId>
     <Version>1.0.0</Version>
     <Authors>ptyll</Authors>
-    <Description>Model Context Protocol (MCP) tools for designing Tempo.Blazor wireframes with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.</Description>
-    <PackageTags>blazor;mcp;wireframe;ai;llm;tools</PackageTags>
+    <Description>Model Context Protocol (MCP) tools for designing and editing Tempo.Blazor wireframes, diagrams and editor documents with an LLM. Ships tools + storage abstractions only; the host application maps them onto its own MCP server.</Description>
+    <PackageTags>blazor;mcp;wireframe;diagram;draw;editor;ai;llm;tools</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>

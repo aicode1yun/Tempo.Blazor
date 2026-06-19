@@ -51,8 +51,7 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
 
         var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "canvas-editor-empty")
-            .Add(p => p.Provider, provider)
-            .Add(p => p.RenderEngine, DocumentEditorRenderEngine.CanvasEnginePreview));
+            .Add(p => p.Provider, provider));
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
@@ -84,30 +83,37 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
         cut.Find(".tm-document-editor")
             .GetAttribute("data-render-engine-requested")
             .Should()
-            .Be("CanvasEnginePreview");
+            .BeNull();
         cut.FindAll("[data-testid='document-wysiwyg-host']").Should().BeEmpty();
         cut.FindAll("[data-testid='document-core-engine-host']").Should().BeEmpty();
     }
 
     [Fact]
-    public void TmDocumentEditor_ExplicitLegacyRenderEngine_RemainsRollbackPath()
+    public void TmDocumentEditor_ExplicitLegacyRenderEngine_IsIgnoredAfterCanvasCutover()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        provider.SeedEmptyDocument("canvas-editor-legacy-rollback");
+        provider.SeedEmptyDocument("canvas-editor-legacy-compat");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
-            .Add(p => p.DocumentId, "canvas-editor-legacy-rollback")
-            .Add(p => p.Provider, provider));
+#pragma warning disable CS0618
+        var cut = RenderDocumentEditor(parameters => parameters
+            .Add(p => p.DocumentId, "canvas-editor-legacy-compat")
+            .Add(p => p.Provider, provider)
+            .Add(p => p.RenderEngine, DocumentEditorRenderEngine.Legacy));
+#pragma warning restore CS0618
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
 
         cut.Find(".tm-document-editor")
             .GetAttribute("data-render-engine")
             .Should()
-            .Be("Legacy");
+            .Be("CanvasEnginePreview");
         cut.Find(".tm-document-editor")
             .GetAttribute("data-render-engine-requested")
             .Should()
-            .Be("Legacy");
-        cut.FindAll("[data-testid='document-canvas-engine-host']").Should().BeEmpty();
+            .BeNull();
+        cut.FindAll("[data-testid='document-wysiwyg-host']").Should().BeEmpty();
+        cut.FindAll("[data-testid='document-core-engine-host']").Should().BeEmpty();
     }
 
     [Fact]

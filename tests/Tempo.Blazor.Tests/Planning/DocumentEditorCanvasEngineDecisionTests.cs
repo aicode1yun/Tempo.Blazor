@@ -67,16 +67,18 @@ public class DocumentEditorCanvasEngineDecisionTests
     }
 
     [Fact]
-    public void CanvasEngineBaselineE2E_ExistsAndCarriesRedGate()
+    public void CanvasEngineBaselineE2E_ExistsAndCarriesCanvasHostGate()
     {
         var root = FindRepositoryRoot();
         var e2ePath = Path.Combine(root.FullName, "tests", "Tempo.Blazor.E2E", "DocumentEditorCanvasEngineBaselineE2ETests.cs");
         var e2e = File.ReadAllText(e2ePath);
 
         e2e.Should().Contain("DocumentEditorCanvasEngineBaselineE2ETests");
-        e2e.Should().Contain("CanvasEngineRouteFlag_CurrentlyMissing_BaselineIsExplicit");
-        e2e.Should().Contain("CanvasEngineRouteFlag_RedGate_RendersCanvasHostWhenEnabled");
-        e2e.Should().Contain("[Ignore(");
+        e2e.Should().Contain("Baseline_CurrentCanvasEngine_CapturesDesktopScreenshots");
+        e2e.Should().Contain("CanvasEngineRouteFlag_RendersCanvasHost");
+        e2e.Should().Contain("CanvasEngineRouteFlag_RendersCanvasHostWhenEnabled");
+        e2e.Should().Contain("document-canvas-engine-host");
+        e2e.Should().NotContain("[Ignore(");
     }
 
     private static string ReadCanvasEnginePlan()

@@ -44,17 +44,14 @@ public sealed class DocumentEditorSigningBridgeE2ETests : WasmTestBase
                 const editor = document.querySelector('[data-testid="document-editor-demo"]');
                 if (!editor) return false;
                 const canvas = document.querySelector('[data-testid="document-canvas-engine-host"]');
-                const core = document.querySelector('[data-testid="document-core-engine-host"]');
-                const wysiwyg = document.querySelector('[data-testid="document-wysiwyg-host"]');
-                return !!(canvas || core || wysiwyg);
+                return !!canvas;
             }
             """,
             null,
             new PageWaitForFunctionOptions { Timeout = 60_000 });
         await page.WaitForTimeoutAsync(500);
 
-        var hostCount = await page.Locator(
-            "[data-testid='document-canvas-engine-host'], [data-testid='document-core-engine-host'], [data-testid='document-wysiwyg-host']")
+        var hostCount = await page.Locator("[data-testid='document-canvas-engine-host']")
             .CountAsync();
         Assert.IsTrue(hostCount > 0, "The document editor demo must mount an editor host for the S0 baseline.");
 

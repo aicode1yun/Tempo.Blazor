@@ -40,10 +40,12 @@ public class TmDocumentEditorCssTests
     {
         var root = FindRepositoryRoot();
         var cssRoot = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components");
+        var componentRoot = Path.Combine(root, "src", "Tempo.Blazor", "Components", "DocumentEditor");
         var css = string.Concat(
             File.ReadAllText(Path.Combine(cssRoot, "_document-editor.css")),
             File.ReadAllText(Path.Combine(cssRoot, "_document-editor-toolbar.css")),
-            File.ReadAllText(Path.Combine(cssRoot, "_document-editor-comments.css")));
+            File.ReadAllText(Path.Combine(cssRoot, "_document-editor-comments.css")),
+            File.ReadAllText(Path.Combine(componentRoot, "TmDocumentCanvasEngineHost.razor.css")));
 
         css.Should().Contain(".tm-document-editor__loading");
         css.Should().Contain(".tm-document-editor__empty");
@@ -51,8 +53,9 @@ public class TmDocumentEditorCssTests
         css.Should().Contain(".tm-document-editor--readonly");
         css.Should().Contain(".tm-document-editor__dirty");
         css.Should().Contain(".tm-document-editor__save-message");
-        css.Should().Contain(".tm-document-wysiwyg-host");
-        css.Should().Contain(".tm-wysiwyg-page__body");
+        css.Should().Contain(".tm-document-canvas-engine-host");
+        css.Should().Contain(".tm-document-canvas-engine-host__page");
+        css.Should().Contain(".tm-document-canvas-selection-rect");
         css.Should().Contain(".tm-document-inline--comment-anchor");
         css.Should().Contain(".tm-document-comment-thread--selected");
         css.Should().Contain(".tm-document-version-panel__preview");
@@ -77,10 +80,9 @@ public class TmDocumentEditorCssTests
         css.Should().Contain(".tm-document-editor__track-toggle::before");
         css.Should().Contain(".tm-document-editor__track-toggle::after");
         css.Should().Contain("box-shadow: 0 0.75rem 2rem");
-        css.Should().Contain(".tm-wysiwyg-page__layer--object");
-        css.Should().Contain(".tm-wysiwyg-layout-object");
-        css.Should().Contain(".tm-wysiwyg-object-resize-handle--se");
-        css.Should().Contain(".tm-wysiwyg--protected .tm-wysiwyg-restricted-editable");
+        css.Should().Contain(".tm-document-canvas-object-selection");
+        css.Should().Contain(".tm-document-canvas-object-resize-handle");
+        css.Should().Contain(".tm-document-canvas-revision-overlay__marker");
 
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-editor__page-surface");
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-editor__ribbon");
@@ -93,15 +95,15 @@ public class TmDocumentEditorCssTests
     public void CssFiles_UseStrictLayeredImageLayoutWithoutWysiwygFloatFallback()
     {
         var root = FindRepositoryRoot();
-        var css = File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css"));
+        var css = string.Concat(
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css")),
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "Components", "DocumentEditor", "TmDocumentCanvasEngineHost.razor.css")));
 
-        css.Should().Contain(".tm-wysiwyg-page__layer--body-text");
-        css.Should().Contain(".tm-wysiwyg-page__layer--object");
-        css.Should().Contain(".tm-wysiwyg-layout-object");
-        css.Should().Contain(".tm-wysiwyg-selection-box");
-        css.Should().Contain(".tm-wysiwyg-object-resize-handle--nw");
-        css.Should().Contain(".tm-wysiwyg-object-resize-handle--se");
-        css.Should().Contain(".tm-wysiwyg-layout-bubble");
+        css.Should().Contain(".tm-document-canvas-engine-host__canvas");
+        css.Should().Contain(".tm-document-canvas-selection-rect");
+        css.Should().Contain(".tm-document-canvas-object-selection");
+        css.Should().Contain(".tm-document-canvas-object-resize-handle");
+        css.Should().Contain(".tm-document-canvas-table-resize-preview");
         css.Should().Contain("@media (max-width: 40rem)");
         css.Should().NotContain(".tm-wysiwyg-image--wrap-square");
         css.Should().NotContain(".tm-wysiwyg-image-sidecar-text");
@@ -109,15 +111,17 @@ public class TmDocumentEditorCssTests
     }
 
     [Fact]
-    public void CssFiles_ContainRestrictedEditingMarkers()
+    public void CssFiles_ContainCanvasRestrictedEditingMarkers()
     {
         var root = FindRepositoryRoot();
-        var css = File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css"));
+        var css = string.Concat(
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css")),
+            File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "Components", "DocumentEditor", "TmDocumentCanvasEngineHost.razor.css")));
 
-        css.Should().Contain(".tm-wysiwyg--protected .tm-wysiwyg-block");
-        css.Should().Contain(".tm-wysiwyg--protected .tm-wysiwyg-restricted-editable");
+        css.Should().Contain(".tm-document-editor__ribbon-button--active");
+        css.Should().Contain(".tm-document-canvas-engine-host--readonly");
+        css.Should().Contain(".tm-document-canvas-engine-host__input");
         css.Should().Contain("cursor: not-allowed;");
-        css.Should().Contain("cursor: text;");
     }
 
     private static string FindRepositoryRoot()

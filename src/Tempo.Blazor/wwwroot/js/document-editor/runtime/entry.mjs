@@ -1,10 +1,6 @@
 // Phase D — runtime/entry.mjs
-// Entry point consumed by tests/Tempo.Blazor.Tests/jsbuild/esbuild.mjs. It re-exports
-// every module that has been migrated out of the legacy monolith so that the bundler
-// produces a deterministic public surface (window.tmDocumentEditorModules).
-//
-// As the extraction progresses, more re-exports land here and the IIFE in
-// document-editor-wysiwyg.js drops its inline copies.
+// Historical module aggregation entry point. The canvas editor imports shared modules
+// directly and no longer ships the legacy bundled runtime.
 
 import helpers, * as helperNamed from '../core/helpers.mjs';
 import { DocumentSchemaRegistry, createDefaultSchemaRegistry }

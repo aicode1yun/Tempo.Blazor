@@ -14,7 +14,7 @@ public sealed class DocumentEditorFocusManagerTests
         {
             Id = "surface",
             Kind = DocumentEditorFocusTargetKind.Surface,
-            Selector = "[data-testid='document-wysiwyg-host']"
+            Selector = "[data-testid='document-canvas-engine-host']"
         });
         manager.Register(new DocumentEditorFocusTarget
         {

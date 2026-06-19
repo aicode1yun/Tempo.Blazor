@@ -1,7 +1,6 @@
 // Phase D — layout/line-breaker-helpers.mjs
-// Pure-function support set for the line breaker. Extracted from the legacy IIFE
-// (`document-editor-wysiwyg.js`) so the breaker factory in `line-breaker.mjs`
-// can be unit-tested with real helpers instead of stubs.
+// Pure-function support set for the line breaker so the breaker factory in
+// `line-breaker.mjs` can be unit-tested with real helpers instead of stubs.
 //
 // All functions here are deterministic, framework-free, and DOM-free.
 

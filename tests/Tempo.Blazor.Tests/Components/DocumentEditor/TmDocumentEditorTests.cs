@@ -17,27 +17,27 @@ namespace Tempo.Blazor.Tests.Components.DocumentEditor;
 public class TmDocumentEditorTests : LocalizationTestBase
 {
     [Fact]
-    public void Render_RendersWysiwygHostByDefault()
+    public void Render_RendersCanvasHostByDefault()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
         cut.WaitForAssertion(() =>
-            cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+            cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         cut.FindAll("[data-testid='document-paragraph-editor']").Should().BeEmpty();
     }
 
     [Fact]
-    public void Render_RetainsBlazorShellAroundWysiwygHost()
+    public void Render_RetainsBlazorShellAroundCanvasHost()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -57,11 +57,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
 
         cut.Find("[data-testid='document-floating-root']").ClassList
             .Should()
@@ -78,12 +78,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-save']").Click();
 
@@ -97,11 +96,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs { Key = "f", CtrlKey = true });
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-find-input']").Should().NotBeNull());
@@ -118,29 +117,13 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = provider.SeedContractDocument("doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.AutoSaveInterval, TimeSpan.FromMilliseconds(20)));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandlePatchGenerated(new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = " changed",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = inline.Text.Length
-            }
-        }));
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleDirtyStateChanged(new WysiwygDirtyState
-        {
-            IsDirty = true,
-            DirtyEpoch = 1
-        }));
+        await MarkCanvasReadyAsync(cut);
+        await NotifyCanvasChangedAsync(cut);
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-editor-live-region']").TextContent.Should().Contain("autosave-boom"),
@@ -153,7 +136,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -169,11 +152,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         var root = cut.Find(".tm-document-editor");
         root.GetAttribute("role").Should().Be("application");
         root.GetAttribute("aria-label").Should().Be("Document editor");
@@ -260,7 +243,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -283,7 +266,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -582,6 +565,8 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public async Task Editor_StatusBarReplacesRibbonSaveStatusAndCountsDocumentText()
     {
+        SetDocumentCanvasAnnotationsJson("""{"comments":[],"revisions":[],"wordCount":0,"pageCount":2}""");
+        SetDocumentCanvasPageMetricsJson("""{"totalPages":2,"renderedPages":2,"pages":[{"pageIndex":0,"pageNumber":1},{"pageIndex":1,"pageNumber":2}]}""");
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
         seeded.Blocks.Add(new DocumentBlock
@@ -605,7 +590,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                 .Add(p => p.Provider, provider));
 
@@ -614,7 +599,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-status-page-count']").TextContent.Should().Contain("2 pages");
         cut.Find("[data-testid='document-status-word-count']").TextContent.Should().Contain("words");
         cut.Find("[data-testid='document-status-region']").TextContent.Should().Contain("body");
-        cut.Find("[data-testid='document-status-zoom']").TextContent.Should().Contain("Page width");
+        cut.Find("[data-testid='document-status-zoom']").TextContent.Should().Contain("Zoom 100%");
     }
 
     [Fact]
@@ -665,11 +650,10 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public async Task Editor_EscapeClosesSidePanelAndRequestsDocumentFocus()
     {
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.focus", _ => true).SetVoidResult();
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -678,7 +662,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
         cut.FindAll("[data-testid='document-side-panel']").Should().BeEmpty();
-        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.focus");
+        SetupDocumentCanvasModule().Invocations.Should().Contain(invocation => invocation.Identifier == "focus");
     }
 
     [Fact]
@@ -687,7 +671,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -881,52 +865,52 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task WysiwygSelectionChanged_UsesJsFormattingStateForToolbar()
+    public async Task CanvasSelectionChanged_UsesCanvasUiStateForToolbar()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
         var paragraph = seeded.Blocks.First(block => block.Content is ParagraphBlockContent);
         var inline = ((ParagraphBlockContent)paragraph.Content).Inlines.First();
 
-        JSInterop.Setup<WysiwygFormattingState>("tmDocumentEditorRuntime.getFormattingState", _ => true)
-            .SetResult(new WysiwygFormattingState
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
+        {
+            IsVisible = true,
+            Left = 100,
+            Top = 100,
+            Width = 180,
+            Height = 44,
+            Selection = new WysiwygSelectionSnapshot
             {
-                Bold = WysiwygFormattingValue.Active,
-                Italic = WysiwygFormattingValue.Mixed,
-                Underline = WysiwygFormattingValue.Inactive,
-                ParagraphAlignment = DocumentTextAlignment.Right,
+                Region = "Body",
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = inline.Id,
+                AnchorNodeId = inline.Id,
+                AnchorOffset = 0,
+                FocusBlockId = paragraph.Id,
+                FocusInlineId = inline.Id,
+                FocusNodeId = inline.Id,
+                FocusOffset = 4,
+                IsCollapsed = false
+            }
+        }, new TmDocumentCanvasEngineHost.CanvasEngineUiState
+        {
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState
+            {
+                Bold = true,
+                ItalicMixed = true,
+                Underline = false,
+                Alignment = "right",
                 FontFamily = "Inter, sans-serif",
                 FontSize = "14pt",
                 TextColor = "#123456",
                 HighlightColor = "#abcdef",
-                LineSpacing = 1.5,
-                ActiveRegion = "Body"
-            });
-
-        var cut = RenderDocumentEditorLegacy(parameters =>
-            parameters.Add(p => p.DocumentId, "doc-1")
-                      .Add(p => p.Provider, provider));
-
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
-
-        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
-        {
-            Region = "Body",
-            AnchorBlockId = paragraph.Id,
-            AnchorInlineId = inline.Id,
-            AnchorNodeId = inline.Id,
-            AnchorOffset = 0,
-            FocusBlockId = paragraph.Id,
-            FocusInlineId = inline.Id,
-            FocusNodeId = inline.Id,
-            FocusOffset = 4,
-            IsCollapsed = false
-        }));
+                LineSpacing = 1.5
+            }
+        });
 
         cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("true");
         cut.Find("[data-testid='document-italic']").GetAttribute("aria-pressed").Should().Be("mixed");
@@ -939,7 +923,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task WysiwygSelectionChanged_ImageInspectorReadsActiveDrawingObject()
+    public async Task CanvasSelectionChanged_ImageInspectorReadsActiveDrawingObject()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
@@ -987,37 +971,60 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
-            Region = "Body",
-            SelectionMode = "Object",
-            AnchorBlockId = paragraph.Id,
-            FocusBlockId = paragraph.Id,
-            ActiveImageBlockId = paragraph.Id,
-            ActiveObjectId = "drawing-1",
-            HitTargetKind = "image",
-            IsCollapsed = false,
-            ObjectSelection = new WysiwygObjectSelectionSnapshot
+            IsVisible = true,
+            Left = 220,
+            Top = 120,
+            Width = 184,
+            Height = 40,
+            Reason = "canvas-object-selection",
+            Selection = new WysiwygSelectionSnapshot
             {
                 Region = "Body",
-                Kind = "image",
-                ObjectId = "drawing-1",
-                BlockId = paragraph.Id,
+                SelectionMode = "Object",
                 AnchorBlockId = paragraph.Id,
-                AnchorInlineId = "drawing-run-1",
-                AnchorInlineIndex = 1,
-                InlineIndex = 1,
-                AnchorOffset = 7,
-                RunId = "drawing-run-1"
+                FocusBlockId = paragraph.Id,
+                ActiveImageBlockId = paragraph.Id,
+                ActiveObjectId = "drawing-1",
+                HitTargetKind = "image",
+                IsCollapsed = true,
+                ObjectSelection = new WysiwygObjectSelectionSnapshot
+                {
+                    Region = "Body",
+                    Kind = "image",
+                    ObjectId = "drawing-1",
+                    BlockId = paragraph.Id,
+                    AnchorBlockId = paragraph.Id,
+                    AnchorInlineId = "drawing-run-1",
+                    AnchorInlineIndex = 1,
+                    InlineIndex = 1,
+                    AnchorOffset = 7,
+                    RunId = "drawing-run-1"
+                }
             }
-        }));
+        }, new TmDocumentCanvasEngineHost.CanvasEngineUiState
+        {
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState
+            {
+                Bold = true,
+                Image = new TmDocumentCanvasEngineHost.CanvasEngineImageState
+                {
+                    ObjectId = "drawing-1",
+                    BlockId = paragraph.Id,
+                    RunId = "drawing-run-1",
+                    Url = "https://example.test/drawing.png",
+                    AltText = "Selected drawing object",
+                    Width = 144,
+                    Height = 96,
+                    WrapMode = "square"
+                }
+            }
+        });
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-image-properties-panel']")
@@ -1031,7 +1038,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task WysiwygFormattingStateChanged_UpdatesToolbarFromCanonicalEventAndIgnoresStaleVersions()
+    public async Task CanvasUiStateChanged_UpdatesToolbarFromCanonicalEvent()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
@@ -1050,45 +1057,33 @@ public class TmDocumentEditorTests : LocalizationTestBase
             StableSelectionToken = "phase-6-selection-token"
         };
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
-
-        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+            IsVisible = true,
+            Left = 100,
+            Top = 80,
+            Width = 180,
+            Height = 40,
+            Selection = selection
+        }, new TmDocumentCanvasEngineHost.CanvasEngineUiState
         {
-            Version = 4,
-            Bold = WysiwygFormattingValue.Active,
-            FontSize = "28pt",
-            TextColor = "#2563eb",
-            HighlightColor = "#fde68a",
-            CurrentSelection = selection
-        }));
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState
+            {
+                Bold = true,
+                FontSize = "28pt",
+                TextColor = "#2563eb",
+                HighlightColor = "#fde68a"
+            }
+        });
 
         cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("true");
         cut.Find("[data-testid='document-font-size']").GetAttribute("value").Should().Be("28");
         cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#2563eb");
         cut.Find("[data-testid='document-highlight-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#fde68a");
-
-        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
-        {
-            Version = 3,
-            Bold = WysiwygFormattingValue.Inactive,
-            FontSize = "12pt",
-            TextColor = "#111827",
-            HighlightColor = "#ffffff",
-            CurrentSelection = selection
-        }));
-
-        cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("true");
-        cut.Find("[data-testid='document-font-size']").GetAttribute("value").Should().Be("28");
-        cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#2563eb");
     }
 
     [Fact]
@@ -1111,49 +1106,39 @@ public class TmDocumentEditorTests : LocalizationTestBase
             StableSelectionToken = "phase-6-selection-token"
         };
 
-        JSInterop.Setup<WysiwygFormattingState>("tmDocumentEditorRuntime.getFormattingState", _ => true)
-            .SetResult(new WysiwygFormattingState
-            {
-                Version = 5,
-                TextColor = "#2563eb",
-                CurrentSelection = selection,
-                ActiveRegion = "Body"
-            });
-
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
-
-        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+            IsVisible = true,
+            Left = 100,
+            Top = 80,
+            Width = 180,
+            Height = 40,
+            Selection = selection
+        }, new TmDocumentCanvasEngineHost.CanvasEngineUiState
         {
-            Version = 4,
-            CurrentSelection = selection,
-            ActiveRegion = "Body"
-        }));
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState()
+        });
 
         var textColorPicker = cut.FindComponents<TmColorPicker>()
             .Single(component => component.Markup.Contains("document-font-color-trigger", StringComparison.Ordinal));
 
+        SetDocumentCanvasExecCommandResult("""{"handled":true,"uiState":{"formatting":{"textColor":"#2563eb","alignment":"left"}}}""");
         await cut.InvokeAsync(() => textColorPicker.Instance.ValueChanged.InvokeAsync("#2563EB"));
 
-        var textColorInvocation = JSInterop.Invocations
-            .LastOrDefault(invocation => invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+        var textColorInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
                 && invocation.Arguments.Count > 1
-                && string.Equals(invocation.Arguments[1]?.ToString(), "textColor", StringComparison.Ordinal));
+                && string.Equals(invocation.Arguments[1]?.ToString(), "textcolor", StringComparison.Ordinal));
         textColorInvocation
             .Should()
             .NotBeNull();
-        JsonSerializer.Serialize(textColorInvocation!.Arguments[2], DocumentEditorJson.Options)
+        textColorInvocation!.Arguments[2]?.ToString()
             .Should()
             .Contain("#2563eb")
-            .And.Contain("phase-6-selection-token")
             .And.NotContain("#2563EB");
         cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#2563eb");
     }
@@ -1178,50 +1163,41 @@ public class TmDocumentEditorTests : LocalizationTestBase
             StableSelectionToken = "phase-6-highlight-token"
         };
 
-        JSInterop.Setup<WysiwygFormattingState>("tmDocumentEditorRuntime.getFormattingState", _ => true)
-            .SetResult(new WysiwygFormattingState
-            {
-                Version = 5,
-                HighlightColor = null,
-                CurrentSelection = selection,
-                ActiveRegion = "Body"
-            });
-
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
-
-        await cut.InvokeAsync(() => host.Instance.HandleFormattingStateChanged(new WysiwygFormattingState
+            IsVisible = true,
+            Left = 100,
+            Top = 80,
+            Width = 180,
+            Height = 40,
+            Selection = selection
+        }, new TmDocumentCanvasEngineHost.CanvasEngineUiState
         {
-            Version = 4,
-            CurrentSelection = selection,
-            HighlightColor = "#fde68a",
-            ActiveRegion = "Body"
-        }));
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState
+            {
+                HighlightColor = "#fde68a"
+            }
+        });
 
         var highlightPicker = cut.FindComponents<TmColorPicker>()
             .Single(component => component.Markup.Contains("document-highlight-color-trigger", StringComparison.Ordinal));
 
         await cut.InvokeAsync(() => highlightPicker.Instance.ValueChanged.InvokeAsync(string.Empty));
 
-        var highlightInvocation = JSInterop.Invocations
-            .LastOrDefault(invocation => invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+        var highlightInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
                 && invocation.Arguments.Count > 1
-                && string.Equals(invocation.Arguments[1]?.ToString(), "backgroundColor", StringComparison.Ordinal));
+                && string.Equals(invocation.Arguments[1]?.ToString(), "highlight", StringComparison.Ordinal));
         highlightInvocation
             .Should()
             .NotBeNull();
-        JsonSerializer.Serialize(highlightInvocation!.Arguments[2], DocumentEditorJson.Options)
+        highlightInvocation!.Arguments[2]?.ToString()
             .Should()
-            .Contain("phase-6-highlight-token")
-            .And.NotContain("#fde68a");
+            .NotContain("#fde68a");
         cut.Find("[data-testid='document-highlight-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().NotBe("#fde68a");
     }
 
@@ -1231,31 +1207,24 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+        await MarkCanvasReadyAsync(cut);
 
         await cut.Find("[data-testid='document-bold']").ClickAsync(new MouseEventArgs());
         await cut.Find("[data-testid='document-font-size']").ChangeAsync(new ChangeEventArgs { Value = "14" });
         await cut.Find("[data-testid='document-align-right']").ClickAsync(new MouseEventArgs());
 
-        var commands = JSInterop.Invocations
-            .Where(invocation => invocation.Identifier == "tmDocumentEditorRuntime.executeCommand")
+        var commands = SetupDocumentCanvasModule().Invocations
+            .Where(invocation => invocation.Identifier == "execCommand")
             .Select(invocation => invocation.Arguments.Count > 1 ? invocation.Arguments[1]?.ToString() : null)
             .ToList();
 
-        commands.Should().Contain("toggleBold");
-        commands.Should().Contain("setFontSize");
-        commands.Should().Contain("setParagraphAlignment");
+        commands.Should().Contain("bold");
+        commands.Should().Contain("fontsize");
+        commands.Should().Contain("align");
     }
 
     [Fact]
@@ -1264,26 +1233,19 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+        await MarkCanvasReadyAsync(cut);
 
         await cut.Find("[data-testid='document-font-size']").ChangeAsync(new ChangeEventArgs { Value = "120" });
 
-        JSInterop.Invocations
-            .Where(invocation => invocation.Identifier == "tmDocumentEditorRuntime.executeCommand")
+        SetupDocumentCanvasModule().Invocations
+            .Where(invocation => invocation.Identifier == "execCommand")
             .Select(invocation => invocation.Arguments.Count > 1 ? invocation.Arguments[1]?.ToString() : null)
             .Should()
-            .NotContain("setFontSize");
+            .NotContain("fontsize");
     }
 
     [Fact]
@@ -1324,39 +1286,32 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task SaveRequest_UsesStructuredProviderBoundaryDocumentWithoutDisplayOnlyImageUrl()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
         var document = CreatePhase17ProviderDocument();
         await SeedDocumentAsync(provider, document);
 
         var domSnapshot = Clone(document);
-        GetSingleDrawingRun(domSnapshot, "image-1").Url = "blob:https://app.test/display-only";
-        domSnapshot.HeadersFooters.Clear();
-        domSnapshot.Theme = new DocumentEditorTheme { BodyFontFamily = "Browser default", BodyFontSize = 9 };
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
-            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = domSnapshot }, DocumentEditorJson.Options));
+        GetSingleImageContent(domSnapshot, "image-1").Url = "blob:https://app.test/display-only";
+        SetCanvasRuntimeDocument(domSnapshot);
 
         DocumentEditorSaveRequest? captured = null;
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase17")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.OnSaveRequested, request => captured = request));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => captured.Should().NotBeNull());
         captured!.Document.Should().NotBeNull();
         AssertPhase17Metadata(captured.Document!);
-        var drawing = GetSingleDrawingRun(captured.Document!, "image-1");
-        drawing.Source.Should().Be(DocumentImageSource.Asset);
-        drawing.AssetId.Should().Be("asset-1");
-        drawing.Url.Should().BeNull();
+        var image = GetSingleImageContent(captured.Document!, "image-1");
+        image.Source.Should().Be(DocumentImageSource.Asset);
+        image.AssetId.Should().Be("asset-1");
+        image.Url.Should().BeNull();
         JsonSerializer.Serialize(captured.Document, DocumentEditorJson.Options).Should().NotContain("display-only");
     }
 
@@ -1364,8 +1319,6 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task SaveRequest_UsesCanonicalRuntimeDocumentForFormattingCommentsRevisionsAndJsonSnapshot()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = DocumentEditorDocument.Empty("doc-phase16");
@@ -1458,18 +1411,15 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 GroupId = "runtime-group"
             }
         ];
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
-            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = runtimeDocument }, DocumentEditorJson.Options));
+        SetCanvasRuntimeDocument(runtimeDocument);
 
         DocumentEditorSaveRequest? captured = null;
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase16")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.OnSaveRequested, request => captured = request));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-save']").Click();
 
@@ -1504,8 +1454,6 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task ExportRequests_ReceiveStructuredMetadataForDocxAndPdfProviders()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditor.downloadFile", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
@@ -1513,21 +1461,18 @@ public class TmDocumentEditorTests : LocalizationTestBase
         await SeedDocumentAsync(provider, document);
 
         var domSnapshot = Clone(document);
-        GetSingleDrawingRun(domSnapshot, "image-1").Url = "https://cdn.test/display-url.png";
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
-            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = domSnapshot }, DocumentEditorJson.Options));
+        GetSingleImageContent(domSnapshot, "image-1").Url = "https://cdn.test/display-url.png";
+        SetCanvasRuntimeDocument(domSnapshot);
 
         var pdfProvider = new CapturingPdfExportProvider();
         var formatProvider = new CapturingDocumentFormatProvider();
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase17")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.PdfExportProvider, pdfProvider)
                       .Add(p => p.FormatProvider, formatProvider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-ribbon-tab-references']").Should().NotBeNull());
         cut.Find("[data-testid='document-ribbon-tab-references']").Click();
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-export-docx']").Should().NotBeNull());
@@ -1542,9 +1487,9 @@ public class TmDocumentEditorTests : LocalizationTestBase
         AssertPhase17Metadata(pdfProvider.LastRequest!.Document);
         GetParagraphText(formatProvider.LastExportRequest.Document).Should().StartWith("Provider export text");
         GetParagraphText(pdfProvider.LastRequest.Document).Should().StartWith("Provider export text");
-        GetSingleDrawingRun(formatProvider.LastExportRequest.Document, "image-1")
+        GetSingleImageContent(formatProvider.LastExportRequest.Document, "image-1")
             .Url.Should().BeNull();
-        GetSingleDrawingRun(pdfProvider.LastRequest.Document, "image-1")
+        GetSingleImageContent(pdfProvider.LastRequest.Document, "image-1")
             .Url.Should().BeNull();
         pdfProvider.LastRequest.Options.PageSetup.PageSize.Name.Should().Be("A4");
         formatProvider.LastExportRequest.Format.Should().Be(DocumentFormatProviderKind.Docx);
@@ -1554,25 +1499,20 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task Phase19_PdfExportRequest_IncludesImageTableAndReviewDisplayOptions()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.setReviewDisplayMode", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditor.downloadFile", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
         var document = CreatePhase19ExportDocument();
         await SeedDocumentAsync(provider, document);
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
-            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = Clone(document) }, DocumentEditorJson.Options));
+        SetCanvasRuntimeDocument(Clone(document));
 
         var pdfProvider = new CapturingPdfExportProvider();
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, document.DocumentId)
                       .Add(p => p.Provider, provider)
                       .Add(p => p.PdfExportProvider, pdfProvider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
         await cut.Find("[data-testid='document-review-display-mode']").ChangeAsync(new ChangeEventArgs
         {
@@ -1583,11 +1523,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.WaitForAssertion(() => pdfProvider.LastRequest.Should().NotBeNull());
         var request = pdfProvider.LastRequest!;
-        var drawing = GetSingleDrawingRun(request.Document, "image-1");
-        drawing.Size.Width.Should().Be(320);
-        drawing.Size.Height.Should().Be(180);
-        drawing.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
-        drawing.LinkUrl.Should().Be("https://example.test/image");
+        var image = GetSingleImageContent(request.Document, "image-1");
+        image.Size.Width.Should().Be(320);
+        image.Size.Height.Should().Be(180);
+        image.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        image.LinkUrl.Should().Be("https://example.test/image");
         var table = request.Document.Blocks.Select(block => block.Content).OfType<TableBlockContent>().Single();
         table.Layout.Width.Should().Be(420);
         table.Layout.Alignment.Should().Be(TableHorizontalAlignment.Center);
@@ -1601,8 +1541,6 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task ExportRequests_UseJsRuntimeDocumentAfterLocalRuntimeEdit()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditor.downloadFile", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
@@ -1615,19 +1553,17 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .OfType<TextRun>()
             .Single();
         runtimeRun.Text = "Runtime export text";
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
-            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = runtimeDocument }, DocumentEditorJson.Options));
+        SetCanvasRuntimeDocument(runtimeDocument);
 
         var pdfProvider = new CapturingPdfExportProvider();
         var formatProvider = new CapturingDocumentFormatProvider();
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-phase17")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.PdfExportProvider, pdfProvider)
                       .Add(p => p.FormatProvider, formatProvider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-ribbon-tab-references']").Click();
         cut.Find("[data-testid='document-export-docx']").Click();
@@ -1638,7 +1574,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         GetParagraphText(formatProvider.LastExportRequest!.Document).Should().StartWith("Runtime export text");
         GetParagraphText(pdfProvider.LastRequest!.Document).Should().StartWith("Runtime export text");
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.getDocument")
+        SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "getModelJson")
             .Should().BeGreaterThanOrEqualTo(2);
     }
 
@@ -1646,8 +1582,6 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task VersionCreate_SavesJsRuntimeDocumentBeforeProviderVersionSnapshot()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
         var focusModule = JSInterop.SetupModule("./_content/Tempo.Blazor/js/document-editor/focus-management.mjs");
         focusModule.SetupVoid("trapFocus", _ => true).SetVoidResult();
         focusModule.SetupVoid("releaseFocusTrap", _ => true).SetVoidResult();
@@ -1663,19 +1597,16 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .OfType<TextRun>()
             .First();
         runtimeRun.Text = "Runtime version text";
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
-            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = runtimeDocument }, DocumentEditorJson.Options));
+        SetCanvasRuntimeDocument(runtimeDocument);
 
         DocumentEditorSaveRequest? capturedSave = null;
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.OnSaveRequested, request => capturedSave = request));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
-        await cut.InvokeAsync(() => host.Instance.HandleDirtyStateChanged(new WysiwygDirtyState { IsDirty = true, DirtyEpoch = 1 }));
+        await MarkCanvasReadyAsync(cut);
+        await NotifyCanvasChangedAsync(cut);
 
         cut.Find("[data-testid='document-side-panel-tab-versions']").Click();
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-version-create-open']").Should().NotBeNull());
@@ -1700,116 +1631,57 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task ToolbarUndo_UsesJsRuntimeOnlyAndDoesNotRefreshSnapshotAfterLocalPatch()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.Setup<bool>("tmDocumentEditorRuntime.undo", _ => true).SetResult(false);
-        JSInterop.Setup<WysiwygUndoState>("tmDocumentEditorRuntime.getUndoState", _ => true)
-            .SetResult(new WysiwygUndoState { CanUndo = false, CanRedo = false, JsOwnedUndo = true, Epoch = 1 });
-        JSInterop.Setup<WysiwygDirtyState>("tmDocumentEditorRuntime.getDirtyState", _ => true)
-            .SetResult(new WysiwygDirtyState { IsDirty = true, DirtyEpoch = 1 });
+        SetDocumentCanvasUndoStateJson("""{"canUndo":true,"canRedo":false}""");
 
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        provider.SeedContractDocument("doc-1");
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
-        await cut.InvokeAsync(() => host.Instance.HandleUndoStateChanged(new WysiwygUndoState
-        {
-            CanUndo = true,
-            UndoDepth = 1,
-            NextUndoDescription = "Type text",
-            JsOwnedUndo = true
-        }));
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            TransactionId = "txn-test",
-            Data = "Runtime ",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
+        await NotifyCanvasChangedAsync(cut);
 
-        var snapshotCallsBeforeUndo = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        var replaceCallsBeforeUndo = SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel");
         cut.Find("[data-testid='document-undo']").Click();
 
-        cut.WaitForAssertion(() => JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.undo"));
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
-            .Should().Be(snapshotCallsBeforeUndo, "JS-owned undo must not fall back to the C# snapshot command stack");
+        cut.WaitForAssertion(() => HasCanvasCommand("undo").Should().BeTrue());
+        SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel")
+            .Should().Be(replaceCallsBeforeUndo, "canvas-owned undo must not reload a C# snapshot into the runtime");
     }
 
     [Fact]
-    public async Task ToolbarUndo_RuntimeSnapshotSyncDoesNotEchoReloadIntoWysiwygHost()
+    public async Task ToolbarUndo_RuntimeSnapshotSyncDoesNotEchoReloadIntoCanvasHost()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.Setup<bool>("tmDocumentEditorRuntime.undo", _ => true).SetResult(true);
-        JSInterop.Setup<JsonElement>("tmDocumentEditorRuntime.getLastCommandTransaction", _ => true)
-            .SetResult(JsonSerializer.Deserialize<JsonElement>(
-                """
-                {
-                  "ok": true,
-                  "command": "undo",
-                  "transaction": { "operations": [] },
-                  "operations": []
-                }
-                """));
-        JSInterop.Setup<WysiwygUndoState>("tmDocumentEditorRuntime.getUndoState", _ => true)
-            .SetResult(new WysiwygUndoState { CanUndo = false, CanRedo = true, RedoDepth = 1, JsOwnedUndo = true, Epoch = 2 });
-        JSInterop.Setup<WysiwygDirtyState>("tmDocumentEditorRuntime.getDirtyState", _ => true)
-            .SetResult(new WysiwygDirtyState { IsDirty = true, DirtyEpoch = 2 });
+        SetDocumentCanvasUndoStateJson("""{"canUndo":true,"canRedo":false}""");
 
         var provider = new InMemoryDocumentEditorProvider();
         var runtimeDocument = provider.SeedContractDocument("doc-1");
         var (_, inline) = GetFirstParagraphTextRun(runtimeDocument);
         inline.Text = "Undo restored runtime text";
-        var snapshotJson = JsonSerializer.Serialize(new WysiwygDocumentSnapshot
-        {
-            ProtocolVersion = 1,
-            Document = runtimeDocument
-        }, DocumentEditorJson.Options);
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true).SetResult(snapshotJson);
+        SetCanvasRuntimeDocument(runtimeDocument);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
-        await cut.InvokeAsync(() => host.Instance.HandleUndoStateChanged(new WysiwygUndoState
-        {
-            CanUndo = true,
-            UndoDepth = 1,
-            NextUndoDescription = "Bold",
-            JsOwnedUndo = true
-        }));
+        await MarkCanvasReadyAsync(cut);
+        var host = FindCanvasHost(cut).Instance;
 
-        var snapshotCallsBeforeUndo = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        var replaceCallsBeforeUndo = SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel");
         cut.Find("[data-testid='document-undo']").Click();
 
-        cut.WaitForAssertion(() => JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.getDocument"));
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
-            .Should().Be(snapshotCallsBeforeUndo, "a runtime-owned undo snapshot is already synchronized and must not be echoed back as a reload");
-        cut.FindComponent<TmDocumentWysiwygHost>().Instance.Should().BeSameAs(host.Instance);
+        cut.WaitForAssertion(() => HasCanvasCommand("undo").Should().BeTrue());
+        SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel")
+            .Should().Be(replaceCallsBeforeUndo, "a canvas-owned undo snapshot is already synchronized and must not be echoed back as a reload");
+        FindCanvasHost(cut).Instance.Should().BeSameAs(host);
     }
 
     [Fact]
     public async Task ImportDocx_ReloadsImportedDocumentIntoJsRuntimeExplicitly()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
@@ -1822,58 +1694,50 @@ public class TmDocumentEditorTests : LocalizationTestBase
             Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = "Imported runtime reload" }] }
         });
         var formatProvider = new CapturingDocumentFormatProvider { ImportedDocument = imported };
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.FormatProvider, formatProvider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
         cut.Find("[data-testid='document-ribbon-tab-references']").Click();
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-import-docx-label']").Should().NotBeNull());
         cut.Find("[data-testid='document-import-docx-label']").Click();
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-import-docx-panel']").Should().NotBeNull());
-        var snapshotCallsBeforeImport = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        var replaceCallsBeforeImport = SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel");
 
         cut.FindComponent<InputFile>().UploadFiles(
             InputFileContent.CreateFromBinary([1, 2, 3], "import.docx", contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
 
         cut.WaitForAssertion(() => formatProvider.LastImportRequest.Should().NotBeNull());
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
-            .Should().BeGreaterThan(snapshotCallsBeforeImport, "DOCX import must explicitly reload the JS-owned runtime snapshot");
+        SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel")
+            .Should().BeGreaterThan(replaceCallsBeforeImport, "DOCX import must explicitly reload the canvas-owned runtime snapshot");
     }
 
     [Fact]
-    public async Task HeaderFooterScopeToggle_UsesRuntimeCommandInsteadOfSnapshotRefresh()
+    public async Task HeaderFooterScopeToggle_UsesCanvasRuntimeCommandInsteadOfSnapshotRefresh()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.executeCommand", _ => true).SetVoidResult();
 
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
         cut.Find("[data-testid='document-ribbon-tab-layout']").Click();
-        var snapshotCallsBeforeToggle = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        var replaceCallsBeforeToggle = SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel");
 
         cut.Find("[data-testid='document-different-first-page']").Click();
 
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments.Count >= 2
-            && string.Equals(invocation.Arguments[1] as string, "syncHeaderFooterLayout", StringComparison.Ordinal));
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
-            .Should().Be(snapshotCallsBeforeToggle, "live header/footer layout commands must not force a C# snapshot reload in the JS-owned runtime");
+        HasCanvasCommand("toggleDifferentFirstPage").Should().BeTrue();
+        SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel")
+            .Should().Be(replaceCallsBeforeToggle, "live header/footer layout commands must not force a C# snapshot reload in the canvas-owned runtime");
     }
 
     [Fact]
-    public async Task WysiwygSelectionChanged_UpdatesRibbonFormattingState()
+    public async Task CanvasSelectionChanged_UpdatesRibbonFormattingState()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
@@ -1889,45 +1753,67 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await MarkCanvasReadyAsync(cut);
 
-        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
-            AnchorBlockId = paragraph.Id,
-            AnchorInlineId = inline.Id,
-            AnchorOffset = 2,
-            FocusBlockId = paragraph.Id,
-            FocusInlineId = inline.Id,
-            FocusOffset = 2,
-            IsCollapsed = true
-        }));
+            IsVisible = false,
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = inline.Id,
+                AnchorOffset = 2,
+                FocusBlockId = paragraph.Id,
+                FocusInlineId = inline.Id,
+                FocusOffset = 2,
+                IsCollapsed = true
+            }
+        },
+        new TmDocumentCanvasEngineHost.CanvasEngineUiState
+        {
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState
+            {
+                Bold = true,
+                Alignment = "left"
+            }
+        });
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("true"));
 
-        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
-            AnchorBlockId = paragraph.Id,
-            AnchorInlineId = plainInline.Id,
-            AnchorOffset = 7,
-            FocusBlockId = paragraph.Id,
-            FocusInlineId = plainInline.Id,
-            FocusOffset = 7,
-            IsCollapsed = true
-        }));
+            IsVisible = false,
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = plainInline.Id,
+                AnchorOffset = 7,
+                FocusBlockId = paragraph.Id,
+                FocusInlineId = plainInline.Id,
+                FocusOffset = 7,
+                IsCollapsed = true
+            }
+        },
+        new TmDocumentCanvasEngineHost.CanvasEngineUiState
+        {
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState
+            {
+                Bold = false,
+                Alignment = "left"
+            }
+        });
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-bold']").GetAttribute("aria-pressed").Should().Be("false"));
     }
 
     [Fact]
-    public async Task WysiwygSelectionChanged_InHeaderShowsContextualRibbonAndFormatsHeaderSelection()
+    public async Task CanvasSelectionChanged_InHeaderShowsContextualRibbonAndFormatsHeaderSelection()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
@@ -1944,26 +1830,14 @@ public class TmDocumentEditorTests : LocalizationTestBase
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        SetDocumentCanvasSelectionStateJson($$"""{"isCollapsed":true,"pageIndex":0,"region":"Header","headerFooterScope":"Primary","anchorBlockId":"{{headerParagraph.Id}}","focusBlockId":"{{headerParagraph.Id}}"}""");
+        SetDocumentCanvasFormattingStateJson("""{"bold":true,"italic":false,"underline":false,"alignment":"left"}""");
+
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-
-        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
-        {
-            Region = "Header",
-            HeaderFooterId = header.Id,
-            AnchorBlockId = headerParagraph.Id,
-            AnchorInlineId = headerInline.Id,
-            AnchorOffset = 2,
-            FocusBlockId = headerParagraph.Id,
-            FocusInlineId = headerInline.Id,
-            FocusOffset = 2,
-            IsCollapsed = true
-        }));
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-ribbon-tab-header-footer']").GetAttribute("aria-selected").Should().Be("true"));
@@ -1988,40 +1862,26 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = false
         };
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+        await MarkCanvasReadyAsync(cut);
 
-        await cut.InvokeAsync(() => host.Instance.HandleTextContextMenuRequested(new WysiwygTextContextMenuRequest
+        await NotifyCanvasContextMenuAsync(cut, new TmDocumentCanvasEngineHost.CanvasEngineContextMenuRequest
         {
-            Left = 200,
-            Top = 120,
-            Width = 240,
-            Height = 268,
+            X = 200,
+            Y = 120,
+            HasSelection = true,
             Selection = selection
-        }));
+        });
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-text-context-menu']").TextContent.Should().Contain("Bold"));
         cut.Find("[data-testid='document-context-comment']").TextContent.Should().Contain("Comment");
         cut.Find("[data-testid='document-context-bold']").Click();
 
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments.Count >= 2
-            && invocation.Arguments[1] != null
-            && invocation.Arguments[1]!.ToString() == "toggleBold");
+        HasCanvasCommand("bold").Should().BeTrue();
 
     }
 
@@ -2042,24 +1902,19 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = false
         };
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await MarkCanvasReadyAsync(cut);
 
-        await cut.InvokeAsync(() => host.Instance.HandleTextContextMenuRequested(new WysiwygTextContextMenuRequest
+        await NotifyCanvasContextMenuAsync(cut, new TmDocumentCanvasEngineHost.CanvasEngineContextMenuRequest
         {
-            ClientX = 200,
-            ClientY = 120,
-            Left = 200,
-            Top = 120,
-            Width = 240,
-            Height = 268,
+            X = 200,
+            Y = 120,
+            HasSelection = true,
             Selection = selection
-        }));
+        });
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-text-context-menu']").Should().NotBeNull());
@@ -2093,17 +1948,13 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
         cut.WaitForAssertion(() =>
-            cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+            cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
+        await MarkCanvasReadyAsync(cut);
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
@@ -2122,21 +1973,16 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public async Task CommandPalette_ClickEnabledCommand_ExecutesThroughRegistry()
     {
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.executeCommand", _ => true).SetVoidResult();
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
         cut.WaitForAssertion(() =>
-            cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+            cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
+        await MarkCanvasReadyAsync(cut);
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
@@ -2150,11 +1996,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-command-palette-search']").Input("Bold");
         cut.Find("[data-command='bold'] button").Click();
 
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments.Count >= 2
-            && invocation.Arguments[1] != null
-            && invocation.Arguments[1]!.ToString() == "toggleBold");
+        HasCanvasCommand("bold").Should().BeTrue();
         cut.FindAll("[data-testid='document-command-palette']").Should().BeEmpty();
     }
 
@@ -2173,27 +2015,21 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = true
         };
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+        await MarkCanvasReadyAsync(cut);
 
-        await cut.InvokeAsync(() => host.Instance.HandleTableContextMenuRequested(new WysiwygTableContextMenuRequest
+        await NotifyCanvasContextMenuAsync(cut, new TmDocumentCanvasEngineHost.CanvasEngineContextMenuRequest
         {
-            Left = 200,
-            Top = 120,
-            Width = 224,
-            Height = 196,
+            X = 200,
+            Y = 120,
+            InTable = true,
+            TableId = "table-1",
+            CellId = "cell-1",
             Selection = selection
-        }));
+        });
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-table-context-menu']").TextContent.Should().Contain("Add row"));
@@ -2202,17 +2038,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-table-table-properties']").TextContent.Should().Contain("Table properties");
         cut.Find("[data-testid='document-table-insert-row']").Click();
 
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments.Count >= 2
-            && invocation.Arguments[1] != null
-            && invocation.Arguments[1]!.ToString() == "insertTableRowAfter");
+        HasCanvasCommand("insertTableRowAfter").Should().BeTrue();
     }
 
     [Fact]
-    public async Task MiniToolbarChanged_RendersToolbarAndRestoresSelectionBeforeBoldCommand()
+    public async Task MiniToolbarChanged_RendersToolbarAndRunsBoldThroughCanvasCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
@@ -2228,20 +2058,13 @@ public class TmDocumentEditorTests : LocalizationTestBase
             IsCollapsed = false
         };
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+        await MarkCanvasReadyAsync(cut);
 
-        await cut.InvokeAsync(() => host.Instance.HandleMiniToolbarChanged(new WysiwygMiniToolbarRequest
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
             IsVisible = true,
             Left = 220,
@@ -2249,32 +2072,26 @@ public class TmDocumentEditorTests : LocalizationTestBase
             Width = 184,
             Height = 40,
             Selection = selection
-        }));
+        });
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-mini-toolbar']").Should().NotBeNull());
         cut.Find("[data-testid='document-mini-bold']").Click();
 
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments.Count >= 2
-            && invocation.Arguments[1] != null
-            && invocation.Arguments[1]!.ToString() == "toggleBold");
+        HasCanvasCommand("bold").Should().BeTrue();
 
-        await cut.InvokeAsync(() => host.Instance.HandleMiniToolbarChanged(new WysiwygMiniToolbarRequest
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
             IsVisible = false,
             Reason = "selection-collapsed"
-        }));
+        });
         cut.FindAll("[data-testid='document-mini-toolbar']").Should().NotBeEmpty();
 
-        await cut.InvokeAsync(() => host.Instance.HandleMiniToolbarChanged(new WysiwygMiniToolbarRequest
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
             IsVisible = false,
             Reason = "editable-pointerdown"
-        }));
+        });
         cut.FindAll("[data-testid='document-mini-toolbar']").Should().BeEmpty();
     }
 
@@ -2285,20 +2102,13 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var seeded = provider.SeedContractDocument("doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+        await MarkCanvasReadyAsync(cut);
 
-        await cut.InvokeAsync(() => host.Instance.HandleMiniToolbarChanged(new WysiwygMiniToolbarRequest
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
         {
             IsVisible = true,
             Left = 220,
@@ -2315,7 +2125,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 FocusOffset = 4,
                 IsCollapsed = true
             }
-        }));
+        });
 
         cut.FindAll("[data-testid='document-mini-toolbar']").Should().BeEmpty();
     }
@@ -2323,39 +2133,28 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Render_MissingProviderShowsError()
     {
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1"));
 
         cut.Find(".tm-document-editor__error").TextContent.Should().Contain("provider");
-        cut.FindAll("[data-testid='document-wysiwyg-host']").Should().BeEmpty();
+        cut.FindAll("[data-testid='document-canvas-engine-host']").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task WysiwygPatch_UpdatesDocumentAndExplicitSavePersistsIt()
+    public async Task CanvasRuntimeChange_UpdatesDocumentAndExplicitSavePersistsIt()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
-        var paragraph = seeded.Blocks.First(block => block.Content is ParagraphBlockContent);
-        var inline = ((ParagraphBlockContent)paragraph.Content).Inlines.OfType<TextRun>().First();
+        var runtimeDocument = Clone(seeded);
+        var (_, inline) = GetFirstParagraphTextRun(runtimeDocument);
+        inline.Text = $"Draft {inline.Text}";
+        SetCanvasRuntimeAndAnnotations(runtimeDocument);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandlePatchGenerated(new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "Draft ",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        }));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-save']").Click();
 
@@ -2374,27 +2173,20 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var runtimeTextRun = ((ParagraphBlockContent)runtimeParagraph.Content).Inlines.OfType<TextRun>().First();
         runtimeTextRun.Text = "Runtime-only text";
 
-        var snapshotJson = JsonSerializer.Serialize(new WysiwygDocumentSnapshot
-        {
-            ProtocolVersion = 1,
-            Document = runtimeDocument
-        });
-        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true).SetResult(snapshotJson);
+        SetCanvasRuntimeAndAnnotations(runtimeDocument);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
         var saved = (await provider.LoadAsync("doc-1")).Document!;
         GetParagraphText(saved).Should().StartWith("Runtime-only text");
-        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.getDocument");
+        SetupDocumentCanvasModule().Invocations.Should().Contain(invocation => invocation.Identifier == "getModelJson");
     }
 
     [Fact]
@@ -2402,24 +2194,16 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var runtimeDocument = CreateInsertedRevisionDocument(seeded);
+        await SeedDocumentAsync(provider, runtimeDocument);
+        SetCanvasRuntimeAndAnnotations(runtimeDocument);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "Draft ",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() =>
             cut.FindAll("[data-testid='document-revision-item']").Should().HaveCount(1));
@@ -2440,40 +2224,17 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
         const string revisionId = "revision-live-insert";
+        var runtimeDocument = CreateInsertedRevisionDocument(seeded, "Draft ", revisionId);
+        await SeedDocumentAsync(provider, runtimeDocument);
+        SetCanvasRuntimeAndAnnotations(runtimeDocument);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "D",
-            RevisionId = revisionId,
-            RevisionType = "Insertion",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        });
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "raft ",
-            RevisionId = revisionId,
-            RevisionType = "Insertion",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = $"rev-{revisionId}",
-                AnchorOffset = 1
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() =>
             cut.FindAll("[data-testid='document-revision-item']").Should().HaveCount(1));
@@ -2492,47 +2253,16 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var runtimeDocument = CreateInsertedBlockRevisionDocument(seeded);
+        await SeedDocumentAsync(provider, runtimeDocument);
+        SetCanvasRuntimeAndAnnotations(runtimeDocument);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "Draft ",
-            RevisionId = "revision-before-enter",
-            RevisionType = "Insertion",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        });
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertBlock",
-            BlockType = "Paragraph",
-            RevisionType = "Structural",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = "rev-revision-before-enter",
-                AnchorOffset = 6
-            },
-            Block = new DocumentBlock
-            {
-                Id = "tracked-enter-block",
-                Type = DocumentBlockType.Paragraph,
-                Content = new ParagraphBlockContent
-                {
-                    Inlines = [new TextRun { Id = "tracked-enter-inline", Text = string.Empty }]
-                }
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() =>
             cut.FindAll("[data-testid='document-revision-item']")
@@ -2556,27 +2286,22 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var pending = CreateInsertedRevisionDocument(seeded);
+        await SeedDocumentAsync(provider, pending);
+        SetCanvasRuntimeAndAnnotations(pending);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "Draft ",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-revision-accept']").Should().NotBeNull());
         cut.Find("[data-testid='document-revision-accept']").Click();
+        cut.WaitForAssertion(() => HasCanvasCommand("acceptrevision").Should().BeTrue());
+        var acceptedRuntime = ReviewRevision(pending, "revision-live-insert", DocumentRevisionAction.Accepted);
+        SetCanvasRuntimeAndAnnotations(acceptedRuntime);
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
@@ -2591,27 +2316,22 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var pending = CreateInsertedRevisionDocument(seeded);
+        await SeedDocumentAsync(provider, pending);
+        SetCanvasRuntimeAndAnnotations(pending);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "Draft ",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-revision-reject']").Should().NotBeNull());
         cut.Find("[data-testid='document-revision-reject']").Click();
+        cut.WaitForAssertion(() => HasCanvasCommand("rejectrevision").Should().BeTrue());
+        var rejectedRuntime = ReviewRevision(pending, "revision-live-insert", DocumentRevisionAction.Rejected, removeMarkedContent: true);
+        SetCanvasRuntimeAndAnnotations(rejectedRuntime);
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
@@ -2626,23 +2346,16 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var deletionRuntime = CreateDeletionRevisionDocument(seeded);
+        await SeedDocumentAsync(provider, deletionRuntime);
+        SetCanvasRuntimeAndAnnotations(deletionRuntime);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "DeleteContentBackward",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 4
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() =>
             cut.FindAll("[data-testid='document-revision-item']").Should().HaveCount(1));
@@ -2658,6 +2371,9 @@ public class TmDocumentEditorTests : LocalizationTestBase
         GetRevisionTextRuns(pending).Should().ContainSingle(run => run.Text == "s");
 
         cut.Find("[data-testid='document-revision-accept']").Click();
+        cut.WaitForAssertion(() => HasCanvasCommand("acceptrevision").Should().BeTrue());
+        var acceptedRuntime = ReviewRevision(deletionRuntime, "revision-delete", DocumentRevisionAction.Accepted, removeMarkedContent: true);
+        SetCanvasRuntimeAndAnnotations(acceptedRuntime);
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
@@ -2672,29 +2388,18 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
-        var (paragraph, inline) = GetFirstPlainParagraphTextRun(seeded);
+        var formattingRuntime = CreateFormattingRevisionDocument(seeded);
+        var (_, inline) = GetFirstPlainParagraphTextRun(seeded);
         var selectedText = inline.Text[..4];
+        await SeedDocumentAsync(provider, formattingRuntime);
+        SetCanvasRuntimeAndAnnotations(formattingRuntime);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "ToggleMark",
-            MarkType = "Bold",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0,
-                FocusBlockId = paragraph.Id,
-                FocusInlineId = inline.Id,
-                FocusOffset = 4,
-                IsCollapsed = false
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-revision-item']").TextContent.Should().Contain("Formatting"));
@@ -2719,30 +2424,22 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstPlainParagraphTextRun(seeded);
+        var formattingRuntime = CreateFormattingRevisionDocument(seeded);
+        await SeedDocumentAsync(provider, formattingRuntime);
+        SetCanvasRuntimeAndAnnotations(formattingRuntime);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TrackChangesEnabled, true));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "ToggleMark",
-            MarkType = "Bold",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0,
-                FocusBlockId = paragraph.Id,
-                FocusInlineId = inline.Id,
-                FocusOffset = 4,
-                IsCollapsed = false
-            }
-        });
+        await MarkCanvasReadyAsync(cut);
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-revision-reject']").Should().NotBeNull());
         cut.Find("[data-testid='document-revision-reject']").Click();
+        cut.WaitForAssertion(() => HasCanvasCommand("rejectrevision").Should().BeTrue());
+        var rejectedRuntime = ReviewRevision(formattingRuntime, "revision-format", DocumentRevisionAction.Rejected);
+        SetCanvasRuntimeAndAnnotations(rejectedRuntime);
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
@@ -2754,17 +2451,17 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task KeyboardShortcuts_InvokeSaveThroughWysiwygShell()
+    public async Task KeyboardShortcuts_InvokeSaveThroughCanvasShell()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
         cut.WaitForAssertion(() =>
-            cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+            cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs { Key = "s", CtrlKey = true });
 
@@ -2772,45 +2469,39 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public void ReadOnly_PassesReadOnlyStateToWysiwygHost()
+    public void ReadOnly_PassesReadOnlyStateToCanvasHost()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.ReadOnly, true));
 
         cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Instance.ReadOnly.Should().BeTrue());
+            cut.FindComponent<TmDocumentCanvasEngineHost>().Instance.ReadOnly.Should().BeTrue());
     }
 
     [Fact]
-    public async Task Collaboration_RemoteRevisionUpdateRefreshesPanelWithoutReplacingWysiwygHost()
+    public async Task Collaboration_RemoteRevisionUpdateRefreshesPanelWithoutReplacingCanvasHost()
     {
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentEditorRuntime.applyRemoteOperationBatch", _ => true)
-            .SetResult(WysiwygRemoteOperationBatchApplyResult.Ok(applied: 1));
-
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
         var collaborationProvider = new InMemoryDocumentCollaborationProvider();
+        var module = SetupDocumentCanvasModule();
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, collaborationProvider)
                       .Add(p => p.CollaborationClientId, "client-a")
                       .Add(p => p.CollaborationSyncInterval, TimeSpan.FromMilliseconds(20)));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var wysiwygHost = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
-        await cut.InvokeAsync(() => wysiwygHost.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
-        var snapshotCallsBeforeRemote = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        var canvasHost = FindCanvasHost(cut).Instance;
+        await MarkCanvasReadyAsync(cut);
+        var snapshotCallsBeforeRemote = module.Invocations.Count(invocation => invocation.Identifier == "replaceModel");
 
         var remoteSession = await collaborationProvider.JoinAsync(new DocumentCollaborationJoinRequest
         {
@@ -2829,11 +2520,10 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-revision-item']").TextContent.Should().Contain("Remote"), TimeSpan.FromSeconds(5));
-        cut.FindComponent<TmDocumentWysiwygHost>().Instance.Should().BeSameAs(wysiwygHost);
-        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.applyRemoteOperationBatch");
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
-            .Should().Be(snapshotCallsBeforeRemote, "successful remote JS apply must not refresh the WYSIWYG surface snapshot");
-        JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
+        FindCanvasHost(cut).Instance.Should().BeSameAs(canvasHost);
+        module.Invocations.Count(invocation => invocation.Identifier == "replaceModel")
+            .Should().BeGreaterThan(snapshotCallsBeforeRemote, "typed collaboration fallback updates the mounted canvas snapshot");
+        JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier.StartsWith("tmDocumentEditorRuntime.", StringComparison.Ordinal));
 
         cut.Find("[data-testid='document-save']").Click();
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
@@ -2842,138 +2532,103 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task Collaboration_RemoteBatchQueuedByJsTransactionDoesNotForceSnapshotRefresh()
+    public async Task Collaboration_CanvasRelayBatchAppliesThroughCanvasModule()
     {
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentEditorRuntime.applyRemoteOperationBatch", _ => true)
-            .SetResult(WysiwygRemoteOperationBatchApplyResult.Ok(queued: 1));
-
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
-        var collaborationProvider = new InMemoryDocumentCollaborationProvider();
+        provider.SeedContractDocument("doc-1");
+        var collaborationProvider = new SignalRDocumentCollaborationProvider(new InMemoryDocumentCollaborationProvider());
+        var module = SetupDocumentCanvasModule();
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, collaborationProvider)
                       .Add(p => p.CollaborationClientId, "client-a")
                       .Add(p => p.CollaborationSyncInterval, TimeSpan.FromMilliseconds(20)));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var wysiwygHost = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
-        await cut.InvokeAsync(() => wysiwygHost.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
-        var snapshotCallsBeforeRemote = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        await MarkCanvasReadyAsync(cut);
+        var snapshotCallsBeforeRemote = module.Invocations.Count(invocation => invocation.Identifier == "replaceModel");
 
-        var remoteSession = await collaborationProvider.JoinAsync(new DocumentCollaborationJoinRequest
+        await collaborationProvider.ReceiveRemoteOperationBatchAsync(new DocumentCollaborationOperationBatch
         {
-            DocumentId = "doc-1",
-            ClientId = "client-b",
-            Author = new DocumentEditorAuthor { Id = "client-b", DisplayName = "Remote reviewer" }
-        });
-        await collaborationProvider.BroadcastOperationBatchAsync(remoteSession.Id, new DocumentOperationBatch
-        {
-            DocumentId = "doc-1",
-            Operations =
-            [
-                new DocumentOperation
-                {
-                    OperationId = "queued-remote-insert",
-                    Type = DocumentOperationType.InsertText,
-                    Target = new DocumentOperationTarget { BlockId = paragraph.Id, InlineId = inline.Id, Offset = 0, Length = 7 },
-                    Text = "Queued "
-                }
-            ]
+            Sequence = 2,
+            SessionId = "remote-session",
+            Batch = new DocumentOperationBatch
+            {
+                DocumentId = "doc-1",
+                CanvasOperationBatchJson = """{"sequence":2,"batch":{"operations":[{"id":"remote-canvas-op","type":"insertText","blockId":"body","offset":0,"text":"Remote "}]} }"""
+            }
         });
 
         cut.WaitForAssertion(() =>
-            JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.applyRemoteOperationBatch"),
+            module.Invocations.Any(invocation =>
+                invocation.Identifier == "applyRemoteOperationBatch"
+                && invocation.Arguments.Any(argument =>
+                    argument != null && argument.ToString()!.Contains("remote-canvas-op", StringComparison.Ordinal)))
+            .Should().BeTrue(),
             TimeSpan.FromSeconds(5));
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
-            .Should().Be(snapshotCallsBeforeRemote, "queued remote operations are owned by the JS transaction queue");
-        cut.FindComponent<TmDocumentWysiwygHost>().Instance.Should().BeSameAs(wysiwygHost);
+        module.Invocations.Count(invocation => invocation.Identifier == "replaceModel")
+            .Should().Be(snapshotCallsBeforeRemote, "opaque canvas relay batches are applied by the engine without typed snapshot refresh");
+        JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier.StartsWith("tmDocumentEditorRuntime.", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task Collaboration_RemoteApplyFailureFallsBackToSnapshotAndShowsRecoveryMessage()
+    public async Task Collaboration_CanvasRelayApplyFailureDoesNotCallLegacyRuntime()
     {
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentEditorRuntime.applyRemoteOperationBatch", _ => true)
-            .SetResult(WysiwygRemoteOperationBatchApplyResult.Failed("op-failed"));
-
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
-        var collaborationProvider = new InMemoryDocumentCollaborationProvider();
+        provider.SeedContractDocument("doc-1");
+        var collaborationProvider = new SignalRDocumentCollaborationProvider(new InMemoryDocumentCollaborationProvider());
+        var module = SetupDocumentCanvasModule();
+        SetDocumentCanvasRemoteApplyResult("""{"success":false,"changed":false,"failedOperationIds":["op-failed"]}""");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, collaborationProvider)
                       .Add(p => p.CollaborationClientId, "client-a")
                       .Add(p => p.CollaborationSyncInterval, TimeSpan.FromMilliseconds(20)));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
-        await cut.InvokeAsync(() => host.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
-        var snapshotCallsBeforeRemote = JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
+        await MarkCanvasReadyAsync(cut);
 
-        var remoteSession = await collaborationProvider.JoinAsync(new DocumentCollaborationJoinRequest
+        await collaborationProvider.ReceiveRemoteOperationBatchAsync(new DocumentCollaborationOperationBatch
         {
-            DocumentId = "doc-1",
-            ClientId = "client-b",
-            Author = new DocumentEditorAuthor { Id = "client-b", DisplayName = "Remote reviewer" }
-        });
-        await collaborationProvider.BroadcastOperationBatchAsync(remoteSession.Id, new DocumentOperationBatch
-        {
-            DocumentId = "doc-1",
-            Operations = [CreateRemoteRevisionOperation("remote-revision-fallback", paragraph.Id, inline.Id!, "Fallback ")]
+            Sequence = 3,
+            SessionId = "remote-session",
+            Batch = new DocumentOperationBatch
+            {
+                DocumentId = "doc-1",
+                CanvasOperationBatchJson = """{"sequence":3,"batch":{"operations":[{"id":"op-failed","type":"insertText","blockId":"body","offset":0,"text":"Remote "}]} }"""
+            }
         });
 
         cut.WaitForAssertion(() =>
-            cut.Find("[data-testid='document-save-message']").TextContent.Should().Contain("op-failed"), TimeSpan.FromSeconds(5));
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
-            .Should().BeGreaterThan(snapshotCallsBeforeRemote, "failed remote JS apply must fall back to a synchronized snapshot");
+            module.Invocations.Should().Contain(invocation => invocation.Identifier == "applyRemoteOperationBatch"),
+            TimeSpan.FromSeconds(5));
+        JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier.StartsWith("tmDocumentEditorRuntime.", StringComparison.Ordinal));
     }
 
     [Fact]
     public async Task Collaboration_ProviderFailureDuringRefreshDoesNotBlockLocalTyping()
     {
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var runtimeDocument = Clone(seeded);
+        var (_, inline) = GetFirstParagraphTextRun(runtimeDocument);
+        inline.Text = $"Local {inline.Text}";
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.CollaborationProvider, new ThrowingReconnectCollaborationProvider())
                       .Add(p => p.CollaborationClientId, "client-a")
                       .Add(p => p.CollaborationSyncInterval, TimeSpan.FromMilliseconds(20)));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await MarkCanvasReadyAsync(cut);
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-save-message']").TextContent.Should().Contain("Collaboration is unavailable"), TimeSpan.FromSeconds(5));
 
-        await ApplyWysiwygPatchAsync(cut, new WysiwygPatch
-        {
-            Type = "InsertText",
-            Data = "Local ",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = paragraph.Id,
-                AnchorInlineId = inline.Id,
-                AnchorOffset = 0
-            }
-        });
+        SetCanvasRuntimeAndAnnotations(runtimeDocument);
+        await NotifyCanvasChangedAsync(cut);
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
@@ -2982,169 +2637,98 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task RuntimeRecoveryDetail_RemoteOperation_ShowsClassifiedStatusMessage()
+    public void RuntimeRecoveryDetail_CanvasShellDoesNotRenderLegacyRuntimeMessageByDefault()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
-
-        await cut.InvokeAsync(() => host.HandleRuntimeRecovered(new WysiwygRuntimeRecoveryDetail
-        {
-            Event = "runtimeRecovered",
-            Source = "remoteOperation",
-            State = "recovered",
-            Attempt = 1
-        }));
-
-        cut.Find("[data-testid='document-runtime-message']").TextContent
-            .Should().Contain("remote operation");
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentCanvasEngineHost>().Should().NotBeNull());
+        cut.FindAll("[data-testid='document-runtime-message']").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task RuntimeRecoveryDetail_Failed_ShowsRecoveryFailedStatus()
+    public void RuntimeRecoveryDetail_DebugTools_DoNotShowLegacyRecoveryDetailForCanvasShell()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
-            parameters.Add(p => p.DocumentId, "doc-1")
-                      .Add(p => p.Provider, provider));
-
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
-
-        await cut.InvokeAsync(() => host.HandleRuntimeRecoveryFailed(new WysiwygRuntimeRecoveryDetail
-        {
-            Event = "runtimeRecoveryFailed",
-            Source = "command",
-            State = "failed",
-            Attempt = 3,
-            MaxAttempts = 3
-        }));
-
-        var message = cut.Find("[data-testid='document-runtime-message']");
-        message.TextContent.Should().Contain("Editor recovery failed");
-        message.ClassList.Should().Contain("tm-document-editor__runtime-message--failed");
-    }
-
-    [Fact]
-    public async Task RuntimeRecoveryDetail_DebugTools_ShowLatestRecoveryDetail()
-    {
-        var provider = new InMemoryDocumentEditorProvider();
-        provider.SeedContractDocument("doc-1");
-
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.ShowDebugTools, true));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
-        await cut.InvokeAsync(() => host.HandleRuntimeRecovered(new WysiwygRuntimeRecoveryDetail
-        {
-            Event = "runtimeRecovered",
-            Source = "command",
-            State = "recovered",
-            Attempt = 1,
-            BackoffMs = 100
-        }));
-
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentCanvasEngineHost>().Should().NotBeNull());
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
         cut.Find("[data-testid='document-view-json']").Click();
 
-        cut.Find("[data-testid='document-runtime-recovery-debug']").Should().NotBeNull();
-        cut.Find("[data-testid='document-runtime-recovery-debug-content']").TextContent
-            .Should().Contain("command");
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-json-debug-modal']").Should().NotBeNull());
+        cut.FindAll("[data-testid='document-runtime-recovery-debug']").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task InsertMenu_WithTokenProvider_InsertsTokenRunIntoWysiwygDocument()
+    public void RuntimeRecoveryDetail_CanvasDebugTools_ShowRuntimeDebugSnapshot()
+    {
+        SetDocumentCanvasRuntimeDebugSnapshotJson("""{"runtime":"canvas","state":"ready"}""");
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider)
+                      .Add(p => p.ShowDebugTools, true));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentCanvasEngineHost>().Should().NotBeNull());
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-json']").Click();
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-runtime-debug-content']").TextContent.Should().Contain("canvas"));
+    }
+
+    [Fact]
+    public async Task InsertMenu_WithTokenProvider_RoutesToCanvasTokenMenuCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
-        var paragraph = seeded.Blocks.First(block => block.Content is ParagraphBlockContent);
-        var inline = ((ParagraphBlockContent)paragraph.Content).Inlines.OfType<TextRun>().First();
+        provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.TokenProvider, new TestTokenProvider()));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
-        {
-            AnchorBlockId = paragraph.Id,
-            AnchorInlineId = inline.Id,
-            AnchorOffset = 0,
-            IsCollapsed = true
-        }));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
         cut.Find("[data-testid='document-insert-menu']").Click();
 
-        cut.WaitForAssertion(() =>
-            cut.Find("[data-testid='document-wysiwyg-token-popover']").Should().NotBeNull());
-        cut.Find("[data-testid='document-autocomplete-item']").Click();
-        cut.Find("[data-testid='document-ribbon-tab-home']").Click();
-        cut.Find("[data-testid='document-save']").Click();
-
-        cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
-        var saved = (await provider.LoadAsync("doc-1")).Document!;
-        var savedParagraph = saved.Blocks.Select(block => block.Content).OfType<ParagraphBlockContent>().First();
-        savedParagraph.Inlines.OfType<TokenRun>().Should().Contain(token => token.Key == "matter.number");
+        cut.WaitForAssertion(() => HasCanvasCommand("openTokenMenu").Should().BeTrue());
+        cut.FindAll("[data-testid='document-wysiwyg-token-popover']").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ToolbarTableGrid_RestoresLastBodySelectionBeforeInsertTableCommand()
+    public async Task ToolbarTableGrid_RoutesInsertTableCommandToCanvasEngine()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
-        var selection = new WysiwygSelectionSnapshot
-        {
-            AnchorBlockId = paragraph.Id,
-            AnchorInlineId = inline.Id,
-            AnchorOffset = 3,
-            IsCollapsed = true
-        };
+        provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() =>
-            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
-        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(selection));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
         cut.Find("[data-testid='document-toolbar-table']").Click();
         cut.Find("[data-testid='document-table-grid-cell-1-2']").Click();
 
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments.Count >= 3
-            && invocation.Arguments[1]!.ToString() == "insertTable");
+        cut.WaitForAssertion(() => HasCanvasCommand("insertTable").Should().BeTrue());
+        HasCanvasCommandArgument("insertTable", "\"rows\":2").Should().BeTrue();
+        HasCanvasCommandArgument("insertTable", "\"columns\":3").Should().BeTrue();
+        JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier.StartsWith("tmDocumentEditorRuntime.", StringComparison.Ordinal));
     }
-
-    private static Task ApplyWysiwygPatchAsync(IRenderedComponent<TmDocumentEditor> cut, WysiwygPatch patch)
-        => cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandlePatchGenerated(patch));
 
     private static (DocumentBlock Paragraph, TextRun Inline) GetFirstParagraphTextRun(DocumentEditorDocument document)
     {
@@ -3174,6 +2758,165 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var json = JsonSerializer.Serialize(value, DocumentEditorJson.Options);
         return JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
     }
+
+    private static DocumentEditorDocument CreateInsertedRevisionDocument(
+        DocumentEditorDocument source,
+        string text = "Draft ",
+        string revisionId = "revision-live-insert")
+    {
+        var document = Clone(source);
+        var (paragraph, _) = GetFirstParagraphTextRun(document);
+        var inlines = ((ParagraphBlockContent)paragraph.Content).Inlines;
+        inlines.Insert(0, new TextRun
+        {
+            Id = $"rev-{revisionId}",
+            Text = text,
+            Marks = [CreateRevisionMark(revisionId, DocumentRevisionType.Insertion)]
+        });
+        document.Revisions =
+        [
+            new DocumentRevision
+            {
+                Id = revisionId,
+                Type = DocumentRevisionType.Insertion,
+                Action = DocumentRevisionAction.Pending,
+                PayloadJson = text,
+                Range = new DocumentRevisionRange
+                {
+                    BlockId = paragraph.Id,
+                    StartInlineIndex = 0,
+                    StartOffset = 0,
+                    EndInlineIndex = 0,
+                    EndOffset = text.Length
+                }
+            }
+        ];
+        return document;
+    }
+
+    private static DocumentEditorDocument CreateInsertedBlockRevisionDocument(DocumentEditorDocument source)
+    {
+        var document = CreateInsertedRevisionDocument(source, revisionId: "revision-before-enter");
+        document.Blocks.Insert(1, new DocumentBlock
+        {
+            Id = "tracked-enter-block",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = "tracked-enter-inline", Text = string.Empty }]
+            }
+        });
+        return document;
+    }
+
+    private static DocumentEditorDocument CreateDeletionRevisionDocument(DocumentEditorDocument source)
+    {
+        var document = Clone(source);
+        var (paragraph, inline) = GetFirstParagraphTextRun(document);
+        var original = inline.Text;
+        inline.Text = original[..3];
+        var deleted = new TextRun
+        {
+            Id = "rev-revision-delete",
+            Text = original[3].ToString(),
+            Marks = [CreateRevisionMark("revision-delete", DocumentRevisionType.Deletion)]
+        };
+        var remainder = new TextRun { Id = "delete-remainder", Text = original[4..] };
+        var inlines = ((ParagraphBlockContent)paragraph.Content).Inlines;
+        inlines.Insert(1, deleted);
+        inlines.Insert(2, remainder);
+        document.Revisions =
+        [
+            new DocumentRevision
+            {
+                Id = "revision-delete",
+                Type = DocumentRevisionType.Deletion,
+                Action = DocumentRevisionAction.Pending,
+                PayloadJson = deleted.Text,
+                Range = new DocumentRevisionRange
+                {
+                    BlockId = paragraph.Id,
+                    StartInlineIndex = 1,
+                    StartOffset = 0,
+                    EndInlineIndex = 1,
+                    EndOffset = 1
+                }
+            }
+        ];
+        return document;
+    }
+
+    private static DocumentEditorDocument CreateFormattingRevisionDocument(DocumentEditorDocument source, string revisionId = "revision-format")
+    {
+        var document = Clone(source);
+        var (paragraph, inline) = GetFirstPlainParagraphTextRun(document);
+        var selected = inline.Text[..4];
+        var remainder = inline.Text[4..];
+        inline.Text = selected;
+        inline.Marks.Add(new InlineMark { Type = InlineMarkType.Bold });
+        inline.Marks.Add(CreateRevisionMark(revisionId, DocumentRevisionType.Formatting));
+        ((ParagraphBlockContent)paragraph.Content).Inlines.Insert(1, new TextRun { Id = "format-remainder", Text = remainder });
+        var payload = new DocumentFormattingRevisionPayload
+        {
+            MarkType = InlineMarkType.Bold,
+            NewActive = true
+        };
+        document.Revisions =
+        [
+            new DocumentRevision
+            {
+                Id = revisionId,
+                Type = DocumentRevisionType.Formatting,
+                Action = DocumentRevisionAction.Pending,
+                PayloadJson = JsonSerializer.Serialize(payload, DocumentEditorJson.Options),
+                Range = new DocumentRevisionRange
+                {
+                    BlockId = paragraph.Id,
+                    StartInlineIndex = 0,
+                    StartOffset = 0,
+                    EndInlineIndex = 0,
+                    EndOffset = selected.Length
+                }
+            }
+        ];
+        return document;
+    }
+
+    private static DocumentEditorDocument ReviewRevision(DocumentEditorDocument source, string revisionId, DocumentRevisionAction action, bool removeMarkedContent = false)
+    {
+        var document = Clone(source);
+        var revision = document.Revisions.Single(item => item.Id == revisionId);
+        revision.Action = action;
+        foreach (var block in document.Blocks.Where(block => block.Content is ParagraphBlockContent))
+        {
+            var inlines = ((ParagraphBlockContent)block.Content).Inlines;
+            if (removeMarkedContent)
+            {
+                inlines.RemoveAll(inline => inline.Marks.Any(mark => mark.Type == InlineMarkType.Revision && mark.RevisionId == revisionId));
+            }
+            else
+            {
+                foreach (var inline in inlines)
+                {
+                    inline.Marks.RemoveAll(mark => mark.Type == InlineMarkType.Revision && mark.RevisionId == revisionId);
+                    if (revision.Type == DocumentRevisionType.Formatting && action == DocumentRevisionAction.Rejected)
+                    {
+                        inline.Marks.RemoveAll(mark => mark.Type == InlineMarkType.Bold);
+                    }
+                }
+            }
+        }
+
+        return document;
+    }
+
+    private static InlineMark CreateRevisionMark(string revisionId, DocumentRevisionType type)
+        => new()
+        {
+            Type = InlineMarkType.Revision,
+            RevisionId = revisionId,
+            Value = type.ToString()
+        };
 
     private static async Task SeedDocumentAsync(InMemoryDocumentEditorProvider provider, DocumentEditorDocument document)
     {
@@ -3444,13 +3187,41 @@ public class TmDocumentEditorTests : LocalizationTestBase
         document.HeadersFooters.Should().Contain(headerFooter => headerFooter.Id == "header-1");
         document.HeadersFooters.Should().Contain(headerFooter => headerFooter.Id == "footer-1");
         document.Revisions.Should().ContainSingle(revision => revision.Id == "revision-1");
-        var drawing = GetSingleDrawingRun(document, "image-1");
-        drawing.Size.Width.Should().Be(300);
-        drawing.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        var image = GetSingleImageContent(document, "image-1");
+        image.Size.Width.Should().Be(300);
+        image.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
     }
 
     private static DocumentDrawingRun GetSingleDrawingRun(DocumentEditorDocument document, string objectId)
         => DocumentImagePersistence.EnumerateDrawingRuns(document).Single(drawing => drawing.ObjectId == objectId);
+
+    private static ImageBlockContent GetSingleImageContent(DocumentEditorDocument document, string blockOrObjectId)
+    {
+        var blockImage = document.Blocks
+            .Where(block => string.Equals(block.Id, blockOrObjectId, StringComparison.Ordinal))
+            .Select(block => block.Content)
+            .OfType<ImageBlockContent>()
+            .SingleOrDefault();
+        if (blockImage is not null)
+        {
+            return blockImage;
+        }
+
+        var drawing = GetSingleDrawingRun(document, blockOrObjectId);
+        return new ImageBlockContent
+        {
+            Source = drawing.Source,
+            Url = drawing.Url,
+            AssetId = drawing.AssetId,
+            AltText = drawing.AltText,
+            IsDecorative = drawing.IsDecorative,
+            Caption = drawing.Caption,
+            Size = drawing.Size,
+            NaturalSize = drawing.NaturalSize,
+            Layout = drawing.Layout,
+            LinkUrl = drawing.LinkUrl
+        };
+    }
 
     private static string GetParagraphText(DocumentEditorDocument document)
     {
@@ -3753,11 +3524,10 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task Editor_EscapeExitsFullscreenWhenNoLayersOpen()
     {
         JSInterop.SetupVoid("tmDocumentEditor.setFullscreen", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.focus", _ => true).SetVoidResult();
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -3894,11 +3664,11 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
 
         cut.FindAll("[data-testid='document-json-debug-modal']").Should().BeEmpty();
         cut.FindAll("[data-testid='document-view-json']").Should().BeEmpty();
@@ -3907,17 +3677,16 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void DebugJsonInspector_ShowsCanonicalDocumentAndRuntimeDebugState()
     {
-        JSInterop.Setup<string>("tmDocumentEditorDebug.getRuntimeStateJson", _ => true)
-            .SetResult("""{"HasRuntimeDocument":true,"RuntimeAuthority":"JsCanonicalBoundary"}""");
+        SetDocumentCanvasRuntimeDebugSnapshotJson("""{"HasRuntimeDocument":true,"RuntimeAuthority":"JsCanonicalBoundary"}""");
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
         cut.Find("[data-testid='document-view-json']").Click();
 
@@ -3935,12 +3704,12 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
         cut.Find("[data-testid='document-view-json']").Click();
         cut.Find("[data-testid='document-json-debug-copy']").Click();
@@ -3957,16 +3726,23 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public async Task DebugClipboardModal_ShowsLastRawNormalizedAndWarnings()
     {
+        SetDocumentCanvasClipboardDebugSnapshotJson(
+            """
+            {
+              "rawHtml": "<p>Phase 18</p><script>alert(1)</script>",
+              "plainText": "Phase 18",
+              "normalizedJson": "[{\"type\":\"paragraph\",\"text\":\"Phase 18\"}]",
+              "warnings": ["stripped-element"]
+            }
+            """);
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));
 
-        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleClipboardPasteRequested("<p>Phase 18</p><script>alert(1)</script>", "Phase 18"));
+        await MarkCanvasReadyAsync(cut);
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
         cut.Find("[data-testid='document-view-clipboard-html']").Click();
@@ -3980,20 +3756,106 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void PublicHtmlSourceEditing_IsNotExposedInDebugModal()
     {
-        JSInterop.Setup<string>("tmDocumentEditorDebug.getRuntimeStateJson", _ => true).SetResult("{}");
+        SetDocumentCanvasRuntimeDebugSnapshotJson("{}");
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
+        var cut = RenderDocumentEditor(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Provider, provider)
             .Add(p => p.ShowDebugTools, true));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
         cut.Find("[data-testid='document-view-json']").Click();
 
         cut.FindAll("[data-testid='document-html-source-editor']").Should().BeEmpty();
         cut.FindAll("[data-testid='document-json-debug-import']").Should().BeEmpty();
-        cut.FindAll("textarea").Should().BeEmpty();
+        cut.FindAll("textarea").Should().OnlyContain(element =>
+            element.GetAttribute("data-testid") == "document-canvas-hidden-input");
     }
+
+    private static IRenderedComponent<TmDocumentCanvasEngineHost> FindCanvasHost(IRenderedComponent<TmDocumentEditor> cut)
+    {
+        cut.WaitForAssertion(() =>
+            cut.FindComponent<TmDocumentCanvasEngineHost>().Should().NotBeNull());
+
+        return cut.FindComponent<TmDocumentCanvasEngineHost>();
+    }
+
+    private static Task MarkCanvasReadyAsync(IRenderedComponent<TmDocumentEditor> cut, string? stateJson = "{}")
+    {
+        var host = FindCanvasHost(cut);
+        return cut.InvokeAsync(() => host.Instance.OnCanvasEngineReady(stateJson));
+    }
+
+    private static Task NotifyCanvasChangedAsync(IRenderedComponent<TmDocumentEditor> cut, string? stateJson = """{"isDirty":true,"modelVersion":1}""")
+    {
+        var host = FindCanvasHost(cut);
+        return cut.InvokeAsync(() => host.Instance.OnCanvasEngineChanged(stateJson));
+    }
+
+    private void SetCanvasRuntimeDocument(DocumentEditorDocument document)
+        => SetDocumentCanvasRuntimeDocument(document);
+
+    private void SetCanvasRuntimeAndAnnotations(DocumentEditorDocument document)
+    {
+        SetCanvasRuntimeDocument(document);
+        SetDocumentCanvasAnnotationsJson(JsonSerializer.Serialize(new
+        {
+            comments = document.Comments,
+            revisions = document.Revisions,
+            wordCount = GetParagraphText(document).Split(' ', StringSplitOptions.RemoveEmptyEntries).Length,
+            pageCount = 1
+        }, DocumentEditorJson.Options));
+    }
+
+    private static Task NotifyCanvasMiniToolbarAsync(
+        IRenderedComponent<TmDocumentEditor> cut,
+        WysiwygMiniToolbarRequest request,
+        TmDocumentCanvasEngineHost.CanvasEngineUiState? uiState = null)
+    {
+        var host = FindCanvasHost(cut);
+        var payload = new
+        {
+            request.IsVisible,
+            request.Left,
+            request.Top,
+            request.Width,
+            request.Height,
+            request.Reason,
+            request.Placement,
+            request.Selection,
+            UiState = uiState
+        };
+        var json = JsonSerializer.Serialize(payload, DocumentEditorJson.Options);
+        return cut.InvokeAsync(() => host.Instance.OnCanvasMiniToolbarChanged(json));
+    }
+
+    private static Task NotifyCanvasContextMenuAsync(
+        IRenderedComponent<TmDocumentEditor> cut,
+        TmDocumentCanvasEngineHost.CanvasEngineContextMenuRequest request)
+    {
+        var host = FindCanvasHost(cut);
+        var json = JsonSerializer.Serialize(request, DocumentEditorJson.Options);
+        return cut.InvokeAsync(() => host.Instance.OnCanvasContextMenuRequested(json));
+    }
+
+    private bool HasCanvasCommand(string commandId) =>
+        SetupDocumentCanvasModule().Invocations.Any(invocation =>
+            invocation.Identifier == "execCommand"
+            && invocation.Arguments.Count >= 2
+            && string.Equals(invocation.Arguments[1]?.ToString(), commandId, StringComparison.Ordinal));
+
+    private bool HasCanvasCommandArgument(string commandId, string expected) =>
+        SetupDocumentCanvasModule().Invocations.Any(invocation =>
+            invocation.Identifier == "execCommand"
+            && invocation.Arguments.Count >= 3
+            && string.Equals(invocation.Arguments[1]?.ToString(), commandId, StringComparison.Ordinal)
+            && invocation.Arguments[2]?.ToString()?.Contains(expected, StringComparison.Ordinal) == true);
+
+    private int CountCanvasCommand(string commandId) =>
+        SetupDocumentCanvasModule().Invocations.Count(invocation =>
+            invocation.Identifier == "execCommand"
+            && invocation.Arguments.Count >= 2
+            && string.Equals(invocation.Arguments[1]?.ToString(), commandId, StringComparison.Ordinal));
 }

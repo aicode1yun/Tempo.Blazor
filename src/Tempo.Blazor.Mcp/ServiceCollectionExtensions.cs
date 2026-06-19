@@ -1,5 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Wireframe;
+using Tempo.Blazor.Mcp.DocumentEditor;
+using Tempo.Blazor.Mcp.Diagram;
+using Tempo.Blazor.Mcp.Notion;
 using Tempo.Blazor.Mcp.Wireframe;
 
 namespace Tempo.Blazor.Mcp;
@@ -44,6 +47,99 @@ public static class TempoWireframeMcp
     public static IServiceCollection AddTempoWireframeMcpTools(this IServiceCollection services)
     {
         services.AddWireframeSchemas();
+        return services;
+    }
+}
+
+/// <summary>
+/// Registration helpers for the diagram/draw MCP tools.
+/// </summary>
+public static class TempoDiagramMcp
+{
+    /// <summary>The diagram/draw tool types, exposed for hosts that register tools by type.</summary>
+    public static IReadOnlyList<Type> ToolTypes { get; } =
+    [
+        typeof(DiagramDocumentTools),
+        typeof(DiagramOperationTools),
+        typeof(DiagramValidationTools),
+        typeof(DiagramStencilCatalogTools),
+        typeof(DiagramBriefTools)
+    ];
+
+    /// <summary>
+    /// Registers dependencies required by the diagram/draw MCP tools. The host must supply
+    /// <c>ITempoDocumentLibraryProvider</c> and <c>IDiagramDocumentProvider</c>; stencil providers
+    /// are optional and enable the catalog tools plus stricter validation.
+    /// </summary>
+    public static IServiceCollection AddTempoDiagramMcpTools(this IServiceCollection services)
+        => services;
+}
+
+/// <summary>
+/// Registration helpers for the DocumentEditor MCP tools.
+/// </summary>
+public static class TempoDocumentEditorMcp
+{
+    /// <summary>The DocumentEditor tool types, exposed for hosts that register tools by type.</summary>
+    public static IReadOnlyList<Type> ToolTypes { get; } =
+    [
+        typeof(DocumentEditorDocumentTools),
+        typeof(DocumentEditorOperationTools),
+        typeof(DocumentEditorAnalysisTools)
+    ];
+
+    /// <summary>
+    /// Registers dependencies required by the DocumentEditor MCP tools. The host must supply an
+    /// <c>IDocumentEditorProvider</c>.
+    /// </summary>
+    public static IServiceCollection AddTempoDocumentEditorMcpTools(this IServiceCollection services)
+        => services;
+}
+
+/// <summary>
+/// Registration helpers for the NotionEditor MCP tools.
+/// </summary>
+public static class TempoNotionMcp
+{
+    /// <summary>The NotionEditor tool types, exposed for hosts that register tools by type.</summary>
+    public static IReadOnlyList<Type> ToolTypes { get; } =
+    [
+        typeof(NotionPageTools),
+        typeof(NotionBlockTools),
+        typeof(NotionSchemaAndValidationTools)
+    ];
+
+    /// <summary>
+    /// Registers dependencies required by the NotionEditor MCP tools. The host must supply
+    /// <c>INotionDataProvider</c> and <c>INotionBlockProvider</c>.
+    /// </summary>
+    public static IServiceCollection AddTempoNotionMcpTools(this IServiceCollection services)
+        => services;
+}
+
+/// <summary>
+/// Registration helpers for the complete Tempo.Blazor MCP toolset.
+/// </summary>
+public static class TempoBlazorMcp
+{
+    /// <summary>All tool types shipped by the MCP package.</summary>
+    public static IReadOnlyList<Type> ToolTypes { get; } =
+        TempoWireframeMcp.ToolTypes
+            .Concat(TempoDiagramMcp.ToolTypes)
+            .Concat(TempoDocumentEditorMcp.ToolTypes)
+            .Concat(TempoNotionMcp.ToolTypes)
+            .ToList();
+
+    /// <summary>
+    /// Registers shared dependencies for all Tempo.Blazor MCP tools. The host still supplies the
+    /// persistence providers for the domains it enables.
+    /// </summary>
+    public static IServiceCollection AddTempoBlazorMcpTools(this IServiceCollection services)
+    {
+        services.AddTempoWireframeMcpTools();
+        services.AddTempoDiagramMcpTools();
+        services.AddTempoDocumentEditorMcpTools();
+        services.AddTempoNotionMcpTools();
         return services;
     }
 }

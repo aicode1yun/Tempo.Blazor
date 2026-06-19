@@ -1,12 +1,10 @@
 // Phase D — core/helpers.mjs
-// Standalone utility helpers extracted from the legacy document-editor-wysiwyg.js monolith.
+// Standalone utility helpers shared by the document editor modules.
 //
 // These functions are pure (no closure over instance state) and have no dependency on the
 // rest of the engine, which makes them the safest first extraction.
 //
-// The legacy IIFE still defines its own copies for now — this module is the canonical source
-// for future bundling. Once the bundle replaces the monolith, the IIFE copies will be
-// deleted in favour of these exports.
+// This module is the canonical source for these helpers.
 
 export function hasOwn(value, key) {
     return !!value && Object.prototype.hasOwnProperty.call(value, key);

@@ -1,7 +1,5 @@
 // Phase D — history/operation-types.mjs
 // Enumerations for operation kinds and transaction kinds used by the history/undo stack.
-// Extracted verbatim from the legacy IIFE so that the bundled engine and the legacy
-// document-editor-wysiwyg.js agree on the exact same string values.
 
 export const OperationTypes = Object.freeze({
     InsertText: 'InsertText',

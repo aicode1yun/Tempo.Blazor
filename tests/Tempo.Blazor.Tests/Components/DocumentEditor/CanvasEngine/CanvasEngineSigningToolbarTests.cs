@@ -26,7 +26,6 @@ public sealed class CanvasEngineSigningToolbarTests : LocalizationTestBase
         var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "signing-toolbar-roles")
             .Add(p => p.Provider, provider)
-            .Add(p => p.RenderEngine, DocumentEditorRenderEngine.CanvasEnginePreview)
             .Add(p => p.SigningRoles, new[] { new SigningSubmitterRole { Uuid = "signer", Name = "Signer", Color = "#2563eb" } }));
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
@@ -45,8 +44,7 @@ public sealed class CanvasEngineSigningToolbarTests : LocalizationTestBase
 
         var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "signing-toolbar-noroles")
-            .Add(p => p.Provider, provider)
-            .Add(p => p.RenderEngine, DocumentEditorRenderEngine.CanvasEnginePreview));
+            .Add(p => p.Provider, provider));
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();

@@ -1,8 +1,5 @@
 // Phase D — runtime/watchdog-helpers.mjs
-// State machine constants + pure helpers for the runtime watchdog. The watchdog
-// instance lifecycle (create/dispose/loadDocument wrap-up) remains in the legacy IIFE
-// because it must reach into the `runtime` global (defined in the separate
-// `document-editor.js` bootstrap file). These helpers cover everything that's pure.
+// State machine constants + pure helpers retained for historical runtime diagnostics.
 
 import { asArray } from '../core/helpers.mjs';
 

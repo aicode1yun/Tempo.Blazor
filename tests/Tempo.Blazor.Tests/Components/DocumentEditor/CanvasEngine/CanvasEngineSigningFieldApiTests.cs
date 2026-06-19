@@ -11,7 +11,7 @@ namespace Tempo.Blazor.Tests.Components.DocumentEditor.CanvasEngine;
 /// <summary>
 /// bUnit coverage for the C# signing field bridge API (plan S2.17/S2.18): the host reads signing
 /// fields from the engine, inserts them via the command, and forwards signer roles into engine options;
-/// the editor delegates to the host (or fails loudly when the canvas engine is not active).
+/// the editor delegates to the canvas host.
 /// </summary>
 public sealed class CanvasEngineSigningFieldApiTests : LocalizationTestBase
 {
@@ -72,16 +72,17 @@ public sealed class CanvasEngineSigningFieldApiTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task TmDocumentEditor_GetSigningFieldsAsync_ThrowsWhenCanvasEngineIsNotActive()
+    public async Task TmDocumentEditor_GetSigningFieldsAsync_DelegatesToCanvasHost()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        provider.SeedEmptyDocument("signing-legacy");
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
-            .Add(p => p.DocumentId, "signing-legacy")
+        provider.SeedEmptyDocument("signing-canvas-editor");
+        var cut = RenderDocumentEditor(parameters => parameters
+            .Add(p => p.DocumentId, "signing-canvas-editor")
             .Add(p => p.Provider, provider));
 
-        var act = async () => await cut.InvokeAsync(() => cut.Instance.GetSigningFieldsAsync());
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*canvas*");
+        var fields = await cut.InvokeAsync(() => cut.Instance.GetSigningFieldsAsync());
+
+        fields.Should().BeEmpty();
     }
 
     [Fact]

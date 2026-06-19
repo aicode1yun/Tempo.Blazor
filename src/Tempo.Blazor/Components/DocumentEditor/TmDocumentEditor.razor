@@ -11,7 +11,6 @@
      data-ribbon-keyboard-mode="@_ribbonKeyboardMode.ToString().ToLowerInvariant()"
      data-blazor-render-count="@NextBlazorRenderCount"
      data-render-engine="@EffectiveRenderEngine.ToString()"
-     data-render-engine-requested="@RenderEngine.ToString()"
      data-canvas-route-exec-ms="@_routeExecMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
      data-canvas-route-apply-ms="@_routeApplyMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
      data-canvas-route-focus-ms="@_routeFocusMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
@@ -167,11 +166,11 @@
                                      OnToggleInsert="ToggleInsertPanelAsync"
                                      OnInsertTable="() => InsertTableAsync()"
                                      OnInsertTableWithDimensions="d => InsertTableAsync(d.Rows, d.Columns, appendToBodyEnd: true)"
-                                     ShowBlockStyle="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CoreEnginePreview || EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
-                                     CurrentBlockStyle="@_coreBlockStyle"
+                                     ShowBlockStyle="true"
+                                     CurrentBlockStyle="@_currentBlockStyle"
                                      OnBlockStyleChanged="ApplyBlockStyleAsync"
-                                     ShowStyleManagement="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
-                                     ShowAdvancedCharacterFormatting="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
+                                     ShowStyleManagement="true"
+                                     ShowAdvancedCharacterFormatting="true"
                                      OnStyleDefinitionChanged="ModifyDocumentStyleAsync"
                                      OnStyleCreatedFromSelection="CreateDocumentStyleFromSelectionAsync"
                                      OnStyleRenamed="RenameDocumentStyleAsync"
@@ -183,9 +182,9 @@
                                      OnInsertImageUrl="OpenImageDialogAsync"
                                      OnInsertImageUpload="UploadDemoImageAsync"
                                      OnInsertImageAsset="InsertImageAssetAsync"
-                                     ShowEquationTools="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
+                                     ShowEquationTools="true"
                                      OnInsertEquation="InsertEquationAsync"
-                                     ShowSymbolTools="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
+                                     ShowSymbolTools="true"
                                      OnInsertSymbol="InsertSymbolAsync"
                                      OnInsertPageBreak="InsertPageBreakAsync"
                                      OnInsertSigningField="InsertSigningFieldFromToolbarAsync"
@@ -197,7 +196,7 @@
                                      OnInsertDateField="InsertDateFieldAsync"
                                      OnInsertDocumentTitleField="InsertDocumentTitleFieldAsync"
                                      OnInsertAuthorField="InsertAuthorFieldAsync"
-                                     ShowAdvancedFields="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
+                                     ShowAdvancedFields="true"
                                      OnInsertCaption="InsertCaptionAsync"
                                      OnInsertCrossReference="InsertCrossReferenceAsync"
                                      OnInsertTableOfContents="InsertTableOfContentsAsync"
@@ -222,7 +221,7 @@
                                      OnToggleNonPrintingCharacters="ToggleNonPrintingCharactersAsync"
                                      IsFullscreen="@_isFullscreen"
                                      OnFullscreenToggle="ToggleFullscreenAsync"
-                                     ShowPrintPreviewTools="@(EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)"
+                                     ShowPrintPreviewTools="true"
                                      PrintPreviewActive="@CanvasPrintPreviewActive"
                                      OnOpenPrintPreview="OpenCanvasPrintPreviewAsync"
                                      OnPrintDocument="PrintCanvasDocumentAsync"
@@ -403,15 +402,6 @@
                         <span class="tm-document-editor__status">@DocumentStatus</span>
                     </header>
 
-                    @if (IsDocumentEmpty && EffectiveRenderEngine != DocumentEditorRenderEngine.CanvasEnginePreview)
-                    {
-                        <div class="tm-document-editor__empty">
-                            <TmIcon Name="file-text" Size="IconSize.Lg" />
-                            <span>@Loc["TmDocumentEditor_EmptyDocument"]</span>
-                        </div>
-                    }
-                    else if (EffectiveRenderEngine == DocumentEditorRenderEngine.CanvasEnginePreview)
-                    {
                         <TmDocumentCanvasEngineHost @ref="_canvasHost"
                                                     Document="@DisplayedDocument"
                                                     ReadOnly="@EffectiveReadOnly"
@@ -436,6 +426,55 @@
                                                     OnCommandPaletteRequested="OpenCommandPaletteAsync"
                                                     OnRibbonFocusRequested="ActivateRibbonKeyboardModeAsync"
                                                     OnVersionsPanelRequested="OpenVersionsPanelAsync" />
+                        @if (_canvasImageDialogOpen)
+                        {
+                            <section class="tm-document-image-dialog tm-document-editor__image-dialog"
+                                     role="dialog"
+                                     aria-modal="true"
+                                     aria-label="@Loc["TmDocumentEditor_ImageInsertMenu"]"
+                                     data-testid="document-canvas-image-dialog">
+                                <header class="tm-document-editor__image-dialog-header">
+                                    <h3>@Loc["TmDocumentEditor_ImageInsertUrl"]</h3>
+                                    <button type="button"
+                                            class="tm-document-editor__image-dialog-close"
+                                            title="@Loc["Tm_Close"]"
+                                            aria-label="@Loc["Tm_Close"]"
+                                            @onclick="CancelCanvasImageDialog">
+                                        <TmIcon Name="x" Size="IconSize.Sm" />
+                                    </button>
+                                </header>
+                                <label class="tm-document-editor__field-label">
+                                    <span>@Loc["TmDocumentEditor_ImageUrl"]</span>
+                                    <input type="url"
+                                           class="tm-input"
+                                           placeholder="@Loc["TmDocumentEditor_ImageUrlPlaceholder"]"
+                                           @bind="_canvasImageUrl"
+                                           data-testid="document-canvas-image-url-input" />
+                                </label>
+                                @if (ImageProvider is not null)
+                                {
+                                    <label class="tm-document-editor__field-label">
+                                        <span>@Loc["TmDocumentEditor_UploadImage"]</span>
+                                        <InputFile OnChange="HandleCanvasImageFileAsync"
+                                                   data-testid="document-canvas-image-upload" />
+                                    </label>
+                                }
+                                <div class="tm-document-editor__image-dialog-actions">
+                                    <button type="button"
+                                            class="tm-btn tm-btn--secondary"
+                                            @onclick="CancelCanvasImageDialog">
+                                        @Loc["Tm_Cancel"]
+                                    </button>
+                                    <button type="button"
+                                            class="tm-btn tm-btn--primary"
+                                            disabled="@string.IsNullOrWhiteSpace(_canvasImageUrl)"
+                                            @onclick="InsertCanvasImageFromDialogAsync"
+                                            data-testid="document-canvas-insert-image-url">
+                                        @Loc["TmDocumentEditor_InsertImage"]
+                                    </button>
+                                </div>
+                            </section>
+                        }
                         @if (CanvasSigningFieldPopoverVisible)
                         {
                             <section class="tm-document-editor__content-control-popover"
@@ -606,176 +645,6 @@
                                 }
                             </section>
                         }
-                    }
-                    else if (EffectiveRenderEngine == DocumentEditorRenderEngine.CoreEnginePreview)
-                    {
-                        @* R.4.8 preview — new model-owned engine (render + keyboard/IME edit +
-                           save round-trip). Toolbar/autosave/collab not yet routed here. *@
-                        <TmDocumentCoreEngineHost @ref="_coreHost"
-                                                  Document="@DisplayedDocument"
-                                                  AriaLabel="@(Loc["TmDocumentEditor_EditorLabel"])"
-                                                  ChangeDebounceMs="@CoreChangeDebounceMs"
-                                                  OnModelChanged="HandleCoreModelChangedAsync"
-                                                  OnContextMenu="HandleCoreContextMenuAsync"
-                                                  OnObjectSelected="HandleCoreObjectSelectedAsync" />
-                        @if (_coreContextMenu is not null)
-                        {
-                            <div class="tm-document-core-context-backdrop"
-                                 data-testid="document-core-context-backdrop"
-                                 @onclick="CloseCoreContextMenu"
-                                 @oncontextmenu="CloseCoreContextMenu"
-                                 @oncontextmenu:preventDefault="true"></div>
-                            <section class="tm-document-editor__context-menu tm-document-core-context-menu"
-                                     style="@CoreContextMenuStyle()"
-                                     role="menu"
-                                     aria-label="@Loc["TmDocumentEditor_ContextMenuLabel"]"
-                                     data-testid="document-core-context-menu"
-                                     @onpointerdown:preventDefault="true">
-                                <button type="button" role="menuitem" data-testid="document-core-context-cut"
-                                        disabled="@(!_coreContextMenu.Info.HasSelection)"
-                                        @onclick='() => RunCoreContextCommandAsync("cut")'>
-                                    <TmIcon Name="scissors" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Cut"]</span>
-                                </button>
-                                <button type="button" role="menuitem" data-testid="document-core-context-copy"
-                                        disabled="@(!_coreContextMenu.Info.HasSelection)"
-                                        @onclick='() => RunCoreContextCommandAsync("copy")'>
-                                    <TmIcon Name="copy" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Copy"]</span>
-                                </button>
-                                <button type="button" role="menuitem" data-testid="document-core-context-paste"
-                                        @onclick='() => RunCoreContextCommandAsync("paste")'>
-                                    <TmIcon Name="clipboard" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Paste"]</span>
-                                </button>
-                                <div class="tm-document-editor__context-separator" role="separator"></div>
-                                <button type="button" role="menuitem" data-testid="document-core-context-comment"
-                                        disabled="@(!_coreContextMenu.Info.HasSelection)"
-                                        @onclick="BeginCoreContextCommentAsync">
-                                    <TmIcon Name="message-square" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_AddComment"]</span>
-                                </button>
-                                @if (string.IsNullOrEmpty(_coreContextMenu.Info.Link))
-                                {
-                                    <button type="button" role="menuitem" data-testid="document-core-context-link"
-                                            disabled="@(!_coreContextMenu.Info.HasSelection)"
-                                            @onclick="AddCoreContextLinkAsync">
-                                        <TmIcon Name="link" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_Link"]</span>
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button type="button" role="menuitem" data-testid="document-core-context-remove-link"
-                                            @onclick='() => RunCoreContextCommandAsync("removelink")'>
-                                        <TmIcon Name="unlink" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_RemoveLink"]</span>
-                                    </button>
-                                }
-                                @if (_coreContextMenu.Info.Misspelling is { } misspelling)
-                                {
-                                    <div class="tm-document-editor__context-separator" role="separator"></div>
-                                    @foreach (var suggestion in misspelling.Suggestions.Take(4))
-                                    {
-                                        var pick = suggestion;
-                                        <button type="button" role="menuitem"
-                                                data-testid="document-core-context-spell-suggestion"
-                                                @onclick="() => ApplyCoreSpellSuggestionAsync(pick)">
-                                            <TmIcon Name="check" Size="IconSize.Sm" /><span>@pick</span>
-                                        </button>
-                                    }
-                                }
-                                @if (_coreContextMenu.Info.InTable)
-                                {
-                                    <div class="tm-document-editor__context-separator" role="separator"></div>
-                                    <button type="button" role="menuitem" data-testid="document-core-context-table-row"
-                                            @onclick='() => RunCoreContextCommandAsync("addtablerow")'>
-                                        <TmIcon Name="insert-row" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_AddRowAfter"]</span>
-                                    </button>
-                                    <button type="button" role="menuitem" data-testid="document-core-context-table-col"
-                                            @onclick='() => RunCoreContextCommandAsync("addtablecolumn")'>
-                                        <TmIcon Name="insert-column" Size="IconSize.Sm" /><span>@Loc["TmDocumentEditor_AddColumnAfter"]</span>
-                                    </button>
-                                }
-                            </section>
-                        }
-                        @if (_coreImageDialogOpen)
-                        {
-                            <div class="tm-document-core-image-dialog"
-                                 role="dialog"
-                                 aria-modal="true"
-                                 aria-label="@Loc["TmDocumentEditor_InsertImage"]"
-                                 data-testid="document-core-image-dialog">
-                                <label class="tm-document-core-image-dialog__field">
-                                    <span>@Loc["TmDocumentEditor_ImageInsertUrl"]</span>
-                                    <input type="text"
-                                           value="@_coreImageUrl"
-                                           @oninput="args => _coreImageUrl = args.Value?.ToString() ?? string.Empty"
-                                           placeholder="@Loc["TmDocumentEditor_ImageUrlPlaceholder"]"
-                                           data-testid="document-core-image-url" />
-                                </label>
-                                <label class="tm-document-core-image-dialog__field">
-                                    <span>@Loc["TmDocumentEditor_UploadImage"]</span>
-                                    <InputFile OnChange="HandleCoreImageFileAsync"
-                                               accept="image/*"
-                                               data-testid="document-core-image-file" />
-                                </label>
-                                <div class="tm-document-core-image-dialog__actions">
-                                    <button type="button"
-                                            disabled="@string.IsNullOrWhiteSpace(_coreImageUrl)"
-                                            @onclick="InsertCoreImageAsync"
-                                            data-testid="document-core-image-insert">@Loc["TmDocumentEditor_InsertImage"]</button>
-                                    <button type="button"
-                                            @onclick="CancelCoreImageDialog"
-                                            data-testid="document-core-image-cancel">@Loc["TmDocumentEditor_Cancel"]</button>
-                                </div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <TmDocumentWysiwygHost @ref="_wysiwygHost"
-                                               Document="@DisplayedDocument"
-                                               ReadOnly="@EffectiveReadOnly"
-                                               Permissions="@EffectivePermissions"
-                                               ImageUrlResolver="@ImageUrlResolver"
-                                               ImageProvider="@ImageProvider"
-                                               ImageValidation="@ImageValidation"
-                                               ImageAssetOptions="@ImageAssetOptions"
-                                               AllowOfflineClipboardImages="@OfflineEnabled"
-                                               TokenProvider="@TokenProvider"
-                                               MentionProvider="@MentionProvider"
-                                               Author="@Author"
-                                               FontFamilies="@_fontFamilies"
-                                               ShowRuler="@_showRuler"
-                                               ZoomPercent="@_zoomPercent"
-                                               ZoomPageWidth="@_zoomPageWidth"
-                                               Suggestions="@_suggestions"
-                                               TrackChangesEnabled="@EffectiveTrackChangesEnabled"
-                                               ReviewDisplayMode="@_reviewDisplayMode"
-                                               RuntimeDraftStateJson="@_runtimeDraftStateJson"
-                                               DocumentPatchGenerated="HandleWysiwygPatchAsync"
-                                               DocumentSnapshotChanged="HandleWysiwygSnapshotAsync"
-                                               DocumentSelectionChanged="HandleWysiwygSelectionChangedAsync"
-                                               TextContextMenuRequested="HandleTextContextMenuRequestedAsync"
-                                               TableContextMenuRequested="HandleTableContextMenuRequestedAsync"
-                                               MiniToolbarChanged="HandleMiniToolbarChangedAsync"
-                                               FormattingStateChanged="HandleWysiwygFormattingStateChangedAsync"
-                                               RevisionReviewRequested="ReviewInlineRevisionAsync"
-                                               RevisionsChanged="HandleWysiwygRevisionsChangedAsync"
-                                               CommentsChanged="HandleWysiwygCommentsChangedAsync"
-                                               CommentSelected="SelectCommentAsync"
-                                               RevisionSelected="SelectRevisionAsync"
-                                               TransactionCommitted="HandleWysiwygTransactionCommittedAsync"
-                                               UndoStateChanged="HandleWysiwygUndoStateChangedAsync"
-                                               DirtyStateChanged="HandleWysiwygDirtyStateChangedAsync"
-                                               UndoRequested="UndoAsync"
-                                               RedoRequested="RedoAsync"
-                                               SaveRequested="SaveAsync"
-                                               KeyboardCommandRequested="HandleWysiwygKeyboardCommandRequestedAsync"
-                                               AccessibilityAnnouncementChanged="HandleWysiwygAccessibilityAnnouncementAsync"
-                                               ImageUploadStateChanged="HandleImageUploadStateChangedAsync"
-                                               RuntimeRecovered="HandleRuntimeRecoveredAsync"
-                                               RuntimeRecoveryFailed="HandleRuntimeRecoveryFailedAsync"
-                                               RuntimeRecoveryDetailChanged="HandleRuntimeRecoveryDetailAsync"
-                                               PageMetricsChanged="HandlePageMetricsChangedAsync"
-                                               ActiveHeadingChanged="HandleActiveHeadingChangedAsync" />
-                    }
-
                     <TmDocumentCollaborationCursorOverlay Cursors="@_remoteCursors" />
                 </article>
             </main>
@@ -864,12 +733,13 @@
                                             OnClose="CloseVersionPanel" />
                 </VersionsContent>
                 <PropertiesContent>
-                    @if ((UsingCoreEngine || UsingCanvasEngine) && _coreActiveImage is { } coreImage)
+                    @if (UsingCanvasEngine && _canvasActiveImage is { } coreImage)
                     {
                         @* Engine image inspector reuses the document image panel for the active object selection. *@
                         <section class="tm-document-image-properties-panel"
                                  data-testid="document-image-properties-panel"
-                                 data-active-object-id="@ActiveImageCommandObjectId">
+                                 data-active-object-id="@ActiveImageCommandObjectId"
+                                 data-active-anchor-block-id="@ActiveImageCommandBlockId">
                             <TmDocumentImageInspector Image="coreImage"
                                                       AltTextChanged="SetActiveImageAltTextFromPanelAsync"
                                                       WrapModeChanged="SetActiveImageWrapModeFromPanelAsync"
@@ -966,7 +836,7 @@
         <div class="tm-document-editor__floating-root"
              data-testid="document-floating-root"
              @onclick:stopPropagation="true">
-            @if (_miniToolbar is { IsVisible: true } && IsObjectMiniToolbar && _coreActiveImage is { } objectImage)
+            @if (_miniToolbar is { IsVisible: true } && IsObjectMiniToolbar && _canvasActiveImage is { } objectImage)
             {
                 @* B3: floating image toolbar (Word/GDocs parity) anchored above the selected object. *@
                 <div class="tm-document-editor__mini-toolbar tm-document-editor__mini-toolbar--object @(string.Equals(_miniToolbar.Placement, "above", StringComparison.Ordinal) ? "tm-document-editor__mini-toolbar--object-above" : null)"

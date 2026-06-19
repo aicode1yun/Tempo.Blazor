@@ -4,16 +4,13 @@
 @using Tempo.Blazor.DocumentEditor.Models
 @using Tempo.Blazor.DocumentEditor.Services
 
-<h1>TmDocumentEditor — core engine preview (R.4.8)</h1>
-<p>The full editor shell hosting the new model-owned engine via
-   <code>RenderEngine="CoreEnginePreview"</code> (R.5.3 — autosave routed through the engine's
-   debounced change event).</p>
+<h1>TmDocumentEditor — canvas engine</h1>
+<p>The full editor shell is now canvas-only; legacy render-engine switches are ignored.</p>
 
 <div data-testid="saved-output">@_savedText</div>
 
 <TmDocumentEditor DocumentId="@_documentId"
                   Provider="@_provider"
-                  RenderEngine="DocumentEditorRenderEngine.CoreEnginePreview"
                   AutoSaveInterval="@TimeSpan.FromMilliseconds(400)"
                   ImageAssetOptions="@_imageAssets"
                   CanDeleteOwnComments="true"

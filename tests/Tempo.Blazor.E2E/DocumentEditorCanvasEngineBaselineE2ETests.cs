@@ -9,7 +9,7 @@ namespace Tempo.Blazor.E2E;
 [TestCategory("DocumentEditor")]
 [TestCategory("DocumentEditor:CanvasEngine")]
 [DoNotParallelize]
-public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE2ETestBase
+public sealed class DocumentEditorCanvasEngineBaselineE2ETests : WasmTestBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -39,7 +39,6 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
         var probe = await CaptureProbeAsync(page);
         Assert.AreEqual("CanvasEnginePreview", probe.RenderEngine, "The baseline route must capture the current canvas engine.");
         Assert.IsTrue(probe.HasCanvasHost, "The baseline route must render the canvas engine host.");
-        Assert.IsFalse(probe.HasCoreHost, "The current canvas baseline should not fall back to the core engine host.");
         Assert.IsTrue(new FileInfo(fullPath).Length > 10_000, "The full-page baseline screenshot must be a real non-empty PNG.");
         Assert.IsTrue(new FileInfo(editorPath).Length > 5_000, "The editor baseline screenshot must be a real non-empty PNG.");
 
@@ -76,7 +75,6 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
 
         Assert.IsTrue(probe.HasCanvasHost, "The canvas engine route flag must render the canvas host.");
         Assert.AreEqual("CanvasEnginePreview", probe.RenderEngine, "The demo route must report the active canvas engine.");
-        Assert.AreEqual("CanvasEnginePreview", probe.RequestedRenderEngine, "The public component flag must request the canvas engine.");
 
         var output = CreateOutputDirectory("canvas-flag");
         var manifestPath = Path.Combine(output, "manifest.json");
@@ -133,10 +131,8 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
             () => {
                 const editor = document.querySelector('[data-testid="document-editor-demo"]');
                 if (!editor) return false;
-                const core = document.querySelector('[data-testid="document-core-engine-host"]');
-                const wysiwyg = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const canvas = document.querySelector('[data-testid="document-canvas-engine-host"]');
-                return !!(canvas || wysiwyg || core);
+                return !!canvas;
             }
             """,
             null,
@@ -151,18 +147,13 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
             () => {
                 const editor = document.querySelector('[data-testid="document-editor-demo"]');
                 const root = editor?.closest('[data-render-engine]') || editor;
-                const core = document.querySelector('[data-testid="document-core-engine-host"]');
-                const wysiwyg = document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const canvas = document.querySelector('[data-testid="document-canvas-engine-host"]');
-                const activeHost = canvas || core || wysiwyg;
+                const activeHost = canvas;
                 const text = (activeHost?.innerText || activeHost?.textContent || '').replace(/\s+/g, ' ').trim();
                 const rect = activeHost?.getBoundingClientRect();
                 return {
                     url: location.href,
                     renderEngine: root?.getAttribute('data-render-engine') || '',
-                    requestedRenderEngine: root?.getAttribute('data-render-engine-requested') || '',
-                    hasCoreHost: !!core,
-                    hasWysiwygHost: !!wysiwyg,
                     hasCanvasHost: !!canvas,
                     canvasElementCount: document.querySelectorAll('canvas').length,
                     activeHostWidth: rect?.width || 0,
@@ -213,9 +204,6 @@ public sealed class DocumentEditorCanvasEngineBaselineE2ETests : DocumentEditorE
     {
         public string Url { get; set; } = string.Empty;
         public string RenderEngine { get; set; } = string.Empty;
-        public string RequestedRenderEngine { get; set; } = string.Empty;
-        public bool HasCoreHost { get; set; }
-        public bool HasWysiwygHost { get; set; }
         public bool HasCanvasHost { get; set; }
         public int CanvasElementCount { get; set; }
         public double ActiveHostWidth { get; set; }

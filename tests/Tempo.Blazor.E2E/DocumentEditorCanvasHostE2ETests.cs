@@ -34,7 +34,6 @@ public sealed class DocumentEditorCanvasHostE2ETests : WasmTestBase
                 const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 return {
                     renderEngine: editor?.getAttribute('data-render-engine') || '',
-                    requestedRenderEngine: editor?.getAttribute('data-render-engine-requested') || '',
                     canvasHostReady: host?.getAttribute('data-canvas-engine-ready') === 'true',
                     canvasLayerCount: document.querySelectorAll('[data-canvas-layer]').length,
                     wysiwygHostCount: document.querySelectorAll('[data-testid="document-wysiwyg-host"]').length,
@@ -46,7 +45,6 @@ public sealed class DocumentEditorCanvasHostE2ETests : WasmTestBase
             """);
 
         Assert.AreEqual("CanvasEnginePreview", probe.RenderEngine);
-        Assert.AreEqual("CanvasEnginePreview", probe.RequestedRenderEngine);
         Assert.IsTrue(probe.CanvasHostReady);
         Assert.AreEqual(6, probe.CanvasLayerCount);
         Assert.AreEqual(0, probe.WysiwygHostCount);
@@ -160,7 +158,6 @@ public sealed class DocumentEditorCanvasHostE2ETests : WasmTestBase
     private sealed class CanvasHostProbe
     {
         public string RenderEngine { get; set; } = string.Empty;
-        public string RequestedRenderEngine { get; set; } = string.Empty;
         public bool CanvasHostReady { get; set; }
         public int CanvasLayerCount { get; set; }
         public int WysiwygHostCount { get; set; }

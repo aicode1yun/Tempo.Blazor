@@ -172,46 +172,42 @@ public enum DocumentEditorOfflineMode
 }
 
 /// <summary>
-/// Selects which rendering/editing engine <c>TmDocumentEditor</c> uses.
+/// Legacy render-engine selector retained for source compatibility. <c>TmDocumentEditor</c>
+/// is canvas-only; all values resolve to <see cref="CanvasEnginePreview"/>.
 /// </summary>
+[Obsolete("TmDocumentEditor is canvas-only. This enum is retained for source compatibility and will be removed in a future major version.")]
 public enum DocumentEditorRenderEngine
 {
     /// <summary>
-    /// The shipping contenteditable-based WYSIWYG engine (default). Stable; the only
-    /// engine wired into the hosted component's full interop (save/undo/dirty/snapshot/
-    /// toolbar/collaboration).
+    /// Legacy contenteditable-based WYSIWYG engine value retained for source compatibility.
     /// </summary>
     Legacy,
 
     /// <summary>
-    /// The model-owned, positioned-DOM core engine.
+    /// Legacy positioned-DOM core engine value retained for source compatibility.
     /// </summary>
     CoreEnginePreview,
 
     /// <summary>
-    /// The canvas-backed document engine preview. This is an explicit opt-in host shell
-    /// with canvas layers, accessibility mirror, hidden input bridge, and lifecycle interop.
+    /// The canvas-backed document engine.
     /// </summary>
     CanvasEnginePreview
 }
 
 /// <summary>
-/// Resolves the requested <see cref="DocumentEditorRenderEngine"/> to the engine that may
-/// actually run. The guard keeps <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/>
-/// fail-safe until hosted interop is available; other explicit engine selections run as
-/// requested.
+/// Resolves the requested <see cref="DocumentEditorRenderEngine"/> to the engine that actually
+/// runs. The editor is canvas-only, so every request resolves to
+/// <see cref="DocumentEditorRenderEngine.CanvasEnginePreview"/>.
 /// </summary>
+[Obsolete("TmDocumentEditor is canvas-only. This compatibility resolver will be removed in a future major version.")]
 public static class DocumentEditorRenderEngineFlag
 {
     /// <summary>
-    /// The effective engine: <paramref name="requested"/> unless it is
-    /// <see cref="DocumentEditorRenderEngine.CoreEnginePreview"/> and the hosted interop is
-    /// not yet ready, in which case <see cref="DocumentEditorRenderEngine.Legacy"/>.
+    /// The effective engine. <paramref name="hostedInteropReady"/> is ignored and kept only for
+    /// binary/source compatibility with earlier preview guards.
     /// </summary>
     public static DocumentEditorRenderEngine Resolve(DocumentEditorRenderEngine requested, bool hostedInteropReady)
-        => requested == DocumentEditorRenderEngine.CoreEnginePreview && !hostedInteropReady
-            ? DocumentEditorRenderEngine.Legacy
-            : requested;
+        => DocumentEditorRenderEngine.CanvasEnginePreview;
 }
 
 /// <summary>Host-controlled permissions for <c>TmDocumentEditor</c>.</summary>

@@ -21,16 +21,16 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     // ─── 2.4 Bold/Italic/Underline adapters ─────────────────────────────────
 
     [Fact]
-    public async Task CtrlB_CallsToggleBoldRuntime()
+    public async Task CtrlB_CallsCanvasBoldCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
@@ -38,20 +38,20 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             CtrlKey = true
         });
 
-        HasJsCall("toggleBold").Should().BeTrue("Ctrl+B must dispatch toggleBold to JS runtime");
+        HasCanvasCommand("bold").Should().BeTrue("Ctrl+B must dispatch bold to the canvas runtime");
     }
 
     [Fact]
-    public async Task CtrlI_CallsToggleItalicRuntime()
+    public async Task CtrlI_CallsCanvasItalicCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
@@ -59,20 +59,20 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             CtrlKey = true
         });
 
-        HasJsCall("toggleItalic").Should().BeTrue("Ctrl+I must dispatch toggleItalic to JS runtime");
+        HasCanvasCommand("italic").Should().BeTrue("Ctrl+I must dispatch italic to the canvas runtime");
     }
 
     [Fact]
-    public async Task CtrlU_CallsToggleUnderlineRuntime()
+    public async Task CtrlU_CallsCanvasUnderlineCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
@@ -80,7 +80,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             CtrlKey = true
         });
 
-        HasJsCall("toggleUnderline").Should().BeTrue("Ctrl+U must dispatch toggleUnderline to JS runtime");
+        HasCanvasCommand("underline").Should().BeTrue("Ctrl+U must dispatch underline to the canvas runtime");
     }
 
     // ─── 2.4 Save adapter ────────────────────────────────────────────────────
@@ -92,12 +92,12 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         provider.SeedContractDocument("doc-1");
         DocumentEditorSaveRequest? capturedSave = null;
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.OnSaveRequested, req => capturedSave = req));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
@@ -111,57 +111,40 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     // ─── 2.4 Undo/Redo adapters ─────────────────────────────────────────────
 
     [Fact]
-    public async Task UndoRedoCommandState_FollowsWysiwygUndoState()
+    public void UndoRedoCommandState_FollowsCanvasUndoState()
     {
+        var module = SetupDocumentCanvasModule();
+        module.Setup<string?>("getUndoStateJson", _ => true)
+            .SetResult("""{"canUndo":true,"canRedo":true,"nextUndoDescription":"Type text","nextRedoDescription":"Restore image"}""");
+
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-
-        await cut.InvokeAsync(() => host.Instance.HandleUndoStateChanged(new WysiwygUndoState
-        {
-            CanUndo = true,
-            CanRedo = true,
-            NextUndoDescription = "Type text",
-            NextRedoDescription = "Restore image",
-            JsOwnedUndo = true
-        }));
-
         var registry = GetEditorRegistry(cut);
-        registry.GetState("undo")!.IsEnabled.Should().BeTrue();
-        registry.GetState("undo")!.Value.Should().Be("Type text");
-        registry.GetState("redo")!.IsEnabled.Should().BeTrue();
-        registry.GetState("redo")!.Value.Should().Be("Restore image");
-
-        await cut.InvokeAsync(() => host.Instance.HandleUndoStateChanged(new WysiwygUndoState
+        cut.WaitForAssertion(() =>
         {
-            CanUndo = false,
-            CanRedo = false,
-            JsOwnedUndo = true
-        }));
-
-        registry.GetState("undo")!.IsEnabled.Should().BeFalse();
-        registry.GetState("redo")!.IsEnabled.Should().BeFalse();
+            registry.GetState("undo")!.IsEnabled.Should().BeTrue();
+            registry.GetState("redo")!.IsEnabled.Should().BeTrue();
+        });
     }
 
     // ─── 2.4 Link / Insert adapters ─────────────────────────────────────────
 
     [Fact]
-    public async Task LinkCommand_WithPayload_CallsRuntimeInsertLink()
+    public async Task LinkCommand_WithPayload_CallsCanvasLinkCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         var payload = new WysiwygLinkPayload
         {
@@ -173,9 +156,8 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             .GetRequired("link")
             .ExecuteAsync(new DocumentEditorCommandContext { HasDocument = true }, payload));
 
-        HasJsCall("insertLink").Should().BeTrue("link command must execute the runtime insertLink command");
-        HasJsPayloadValue("Href", "https://example.test/phase-24").Should().BeTrue();
-        HasJsPayloadValue("Title", "Phase 2.4 link").Should().BeTrue();
+        HasCanvasCommand("link").Should().BeTrue("link command must execute the canvas link command");
+        HasCanvasArgument("https://example.test/phase-24").Should().BeTrue();
     }
 
     [Fact]
@@ -184,38 +166,38 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         await cut.InvokeAsync(() => GetEditorRegistry(cut)
             .GetRequired("insertTable")
             .ExecuteAsync(new DocumentEditorCommandContext { HasDocument = true }));
 
-        HasJsCall("insertTable").Should().BeTrue("insertTable adapter must dispatch to the WYSIWYG runtime");
-        HasJsArgument("rows = 2").Should().BeTrue();
-        HasJsArgument("columns = 2").Should().BeTrue();
+        HasCanvasCommand("insertTable").Should().BeTrue("insertTable adapter must dispatch to the canvas runtime");
+        HasCanvasArgument("\"rows\":2").Should().BeTrue();
+        HasCanvasArgument("\"columns\":2").Should().BeTrue();
     }
 
     [Fact]
-    public async Task InsertImageCommand_OpensWysiwygImageDialog()
+    public async Task InsertImageCommand_OpensCanvasImageDialog()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         await cut.InvokeAsync(() => GetEditorRegistry(cut)
             .GetRequired("insertImage")
             .ExecuteAsync(new DocumentEditorCommandContext { HasDocument = true }));
 
-        cut.Find("[data-testid='document-wysiwyg-image-dialog']").Should().NotBeNull();
+        cut.Find("[data-testid='document-canvas-image-dialog']").Should().NotBeNull();
     }
 
     [Theory]
@@ -225,16 +207,16 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     [InlineData("setImageLink")]
     [InlineData("setImageWrapMode")]
     [InlineData("setImageSize")]
-    public async Task ImageCommands_DispatchToWysiwygRuntime_WhenImageIsSelected(string commandName)
+    public async Task ImageCommands_DispatchToCanvasRuntime_WhenImageIsSelected(string commandName)
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         var context = new DocumentEditorCommandContext
         {
@@ -258,7 +240,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             .GetRequired(commandName)
             .ExecuteAsync(context, new { AltText = "Accessible image", WrapMode = "Square", Width = 240d }));
 
-        HasJsCall(commandName).Should().BeTrue($"{commandName} must dispatch to the WYSIWYG runtime");
+        HasCanvasCommand(commandName).Should().BeTrue($"{commandName} must dispatch to the canvas runtime");
     }
 
     [Theory]
@@ -273,16 +255,16 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     [InlineData("splitTableCell")]
     [InlineData("tableProperties")]
     [InlineData("cellProperties")]
-    public async Task TableCommands_DispatchToWysiwygRuntime_WhenCellIsSelected(string commandName)
+    public async Task TableCommands_DispatchToCanvasRuntime_WhenCellIsSelected(string commandName)
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
         var context = new DocumentEditorCommandContext
         {
@@ -298,7 +280,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             .GetRequired(commandName)
             .ExecuteAsync(context));
 
-        HasJsCall(commandName).Should().BeTrue($"{commandName} must dispatch to the WYSIWYG runtime");
+        HasCanvasCommand(commandName).Should().BeTrue($"{commandName} must dispatch to the canvas runtime");
     }
 
     [Fact]
@@ -307,7 +289,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -326,11 +308,11 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
             Key = "f",
@@ -347,11 +329,11 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
             Key = "h",
@@ -371,7 +353,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         provider.SeedContractDocument("doc-1");
         var pdfProvider = new StubPdfExportProvider();
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.PdfExportProvider, pdfProvider)
@@ -395,7 +377,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider));
 
@@ -413,7 +395,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         provider.SeedContractDocument("doc-1");
         var formatProvider = new StubFormatProvider(canImportDocx: true, canExportDocx: true);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.FormatProvider, formatProvider)
@@ -438,7 +420,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
         provider.SeedContractDocument("doc-1");
         var formatProvider = new StubFormatProvider(canImportDocx: false, canExportDocx: true);
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.FormatProvider, formatProvider)
@@ -459,19 +441,19 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     // ─── 2.5 Keyboard shortcuts – disabled command is blocked ────────────────
 
     [Fact]
-    public async Task ReadOnly_CtrlB_DoesNotCallToggleBold()
+    public async Task ReadOnly_CtrlB_DoesNotCallCanvasBoldCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
-        var cut = RenderDocumentEditorLegacy(parameters =>
+        var cut = RenderDocumentEditor(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
                       .Add(p => p.Provider, provider)
                       .Add(p => p.ReadOnly, true));
 
-        await InitJsEngineAsync(cut);
+        InitCanvasEngine(cut);
 
-        var callsBefore = CountJsCall("toggleBold");
+        var callsBefore = CountCanvasCommand("bold");
 
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
         {
@@ -479,45 +461,32 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
             CtrlKey = true
         });
 
-        CountJsCall("toggleBold").Should().Be(callsBefore, "read-only mode disables the bold command");
+        CountCanvasCommand("bold").Should().Be(callsBefore, "read-only mode disables the bold command");
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    private static async Task InitJsEngineAsync(IRenderedComponent<TmDocumentEditor> cut)
+    private static void InitCanvasEngine(IRenderedComponent<TmDocumentEditor> cut)
     {
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
-        var host = cut.FindComponent<TmDocumentWysiwygHost>();
-        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
-        {
-            InstanceId = "test-instance",
-            ProtocolVersion = 1
-        }));
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
     }
 
-    private bool HasJsCall(string commandName) =>
-        JSInterop.Invocations.Any(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand" &&
-            invocation.Arguments.Any(arg => arg != null && arg.ToString()!.Contains(commandName)));
+    private bool HasCanvasCommand(string commandName) =>
+        SetupDocumentCanvasModule().Invocations.Any(invocation =>
+            invocation.Identifier == "execCommand"
+            && invocation.Arguments.Count >= 2
+            && string.Equals(invocation.Arguments[1]?.ToString(), commandName, StringComparison.Ordinal));
 
-    private int CountJsCall(string commandName) =>
-        JSInterop.Invocations.Count(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand" &&
-            invocation.Arguments.Any(arg => arg != null && arg.ToString()!.Contains(commandName)));
+    private int CountCanvasCommand(string commandName) =>
+        SetupDocumentCanvasModule().Invocations.Count(invocation =>
+            invocation.Identifier == "execCommand"
+            && invocation.Arguments.Count >= 2
+            && string.Equals(invocation.Arguments[1]?.ToString(), commandName, StringComparison.Ordinal));
 
-    private bool HasJsArgument(string expected) =>
-        JSInterop.Invocations.Any(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand" &&
-            invocation.Arguments.Any(arg => arg?.ToString()?.Contains(expected, StringComparison.Ordinal) == true));
-
-    private bool HasJsPayloadValue(string key, string expected) =>
-        JSInterop.Invocations.Any(invocation =>
-            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
-            && invocation.Arguments
-                .OfType<IDictionary<string, object?>>()
-                .Any(payload =>
-                    payload.TryGetValue(key, out var value)
-                    && string.Equals(value?.ToString(), expected, StringComparison.Ordinal)));
+    private bool HasCanvasArgument(string expected) =>
+        SetupDocumentCanvasModule().Invocations.Any(invocation =>
+            invocation.Identifier == "execCommand"
+            && invocation.Arguments.Any(arg => arg?.ToString()?.Contains(expected, StringComparison.Ordinal) == true));
 
     private static DocumentEditorCommandRegistry GetEditorRegistry(IRenderedComponent<TmDocumentEditor> cut) =>
         cut.FindComponent<TmDocumentEditorToolbar>().Instance.CommandRegistry

@@ -9,8 +9,7 @@ namespace Tempo.Blazor.Tests.Components.DocumentEditor.CanvasEngine;
 
 /// <summary>
 /// bUnit coverage for the canvas page-image export bridge (plan S1.7): the host pulls one image per
-/// page from the engine via interop, and the editor delegates to the host (or fails loudly when the
-/// canvas engine is not the active, mounted engine).
+/// page from the engine via interop, and the editor delegates to the canvas host.
 /// </summary>
 public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
 {
@@ -72,8 +71,7 @@ public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
 
         var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "canvas-editor-export")
-            .Add(p => p.Provider, provider)
-            .Add(p => p.RenderEngine, DocumentEditorRenderEngine.CanvasEnginePreview));
+            .Add(p => p.Provider, provider));
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
 
@@ -84,19 +82,22 @@ public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task TmDocumentEditor_ExportPageImagesAsync_ThrowsWhenCanvasEngineIsNotActive()
+    public async Task TmDocumentEditor_ExportPageImagesAsync_AlwaysUsesCanvasHost()
     {
+        SetupCanvasModule();
         var provider = new InMemoryDocumentEditorProvider();
-        provider.SeedEmptyDocument("canvas-editor-export-legacy");
+        provider.SeedEmptyDocument("canvas-editor-export-canvas-only");
 
-        var cut = RenderDocumentEditorLegacy(parameters => parameters
-            .Add(p => p.DocumentId, "canvas-editor-export-legacy")
+        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+            .Add(p => p.DocumentId, "canvas-editor-export-canvas-only")
             .Add(p => p.Provider, provider));
 
-        var act = async () => await cut.InvokeAsync(() => cut.Instance.ExportPageImagesAsync());
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-canvas-engine-host']").Should().NotBeNull());
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*canvas*");
+        var images = await cut.InvokeAsync(() => cut.Instance.ExportPageImagesAsync());
+
+        images.Should().HaveCount(2);
     }
 
     private BunitJSModuleInterop SetupCanvasModule()

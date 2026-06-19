@@ -1,9 +1,7 @@
 // Phase R.4.8 — core-engine/core-editor.mjs
-// The bridge-facing facade over the model-owned render host: one entry point the hosted
-// component (C# TmDocumentCoreEngineHost via JS interop) drives. It mounts the engine,
+// The bridge-facing facade over the model-owned render host. It mounts the engine,
 // maps toolbar command ids → host APIs, and exposes save/dirty/undo state. Keeping this
-// vocabulary here (rather than in the C# host) means the cutover bridge is thin and the
-// command surface is unit-testable in Node + the browser harness.
+// vocabulary here means the command surface stays unit-testable in Node + the browser harness.
 //
 //   createCoreEditor({ root, doc?, model, pageSettings?, layoutOptions?, ariaLabel?,
 //                      measurementService?, autoFocus? }) → editor handle:

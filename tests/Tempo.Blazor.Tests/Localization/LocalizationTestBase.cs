@@ -1,7 +1,9 @@
 ﻿using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
 using Tempo.Blazor.Components.DocumentEditor;
 using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.Localization;
 using Tempo.Blazor.Services;
 
@@ -16,6 +18,20 @@ namespace Tempo.Blazor.Tests.Localization;
 /// </summary>
 public abstract class LocalizationTestBase : TestContext
 {
+    private const string DocumentCanvasInteropModulePath = "./_content/Tempo.Blazor/js/document-editor-canvas/interop.mjs";
+
+    private BunitJSModuleInterop? _documentCanvasModule;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasGetModelJson;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasExecCommand;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasGetFormattingStateJson;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasGetUndoStateJson;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasGetSelectionStateJson;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasGetAnnotationsJson;
+    private JSRuntimeInvocationHandler<string>? _documentCanvasGetPageMetricsJson;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasApplyRemoteOperationBatch;
+    private JSRuntimeInvocationHandler<string>? _documentCanvasGetRuntimeDebugSnapshotJson;
+    private JSRuntimeInvocationHandler<string?>? _documentCanvasGetClipboardDebugSnapshotJson;
+
     protected LocalizationTestBase()
     {
         Services.AddSingleton<ITmLocalizer>(BuildEnglishLocalizer());
@@ -28,20 +44,157 @@ public abstract class LocalizationTestBase : TestContext
         JSInterop.SetupVoid("tmColorPicker.unregister", _ => true).SetVoidResult();
     }
 
-    /// <summary>
-    /// Renders <see cref="TmDocumentEditor"/> pinned to the legacy engine. After the canvas phase
-    /// 25 cutover the component defaults to <see cref="DocumentEditorRenderEngine.CanvasEnginePreview"/>,
-    /// which needs a real browser canvas/JS interop surface and cannot render in bUnit. These
-    /// component tests exercise the legacy engine's C#/markup behaviour, so they pin Legacy; the
-    /// canvas engine is covered by the Playwright E2E suites. Removed together with legacy.
-    /// </summary>
-    protected IRenderedComponent<TmDocumentEditor> RenderDocumentEditorLegacy(
+    /// <summary>Renders <see cref="TmDocumentEditor"/> with the default canvas-only shell.</summary>
+    protected IRenderedComponent<TmDocumentEditor> RenderDocumentEditor(
         Action<ComponentParameterCollectionBuilder<TmDocumentEditor>> configure)
-        => RenderComponent<TmDocumentEditor>(parameters =>
+    {
+        SetupDocumentCanvasModule();
+        return RenderComponent<TmDocumentEditor>(parameters =>
         {
-            parameters.Add(p => p.RenderEngine, DocumentEditorRenderEngine.Legacy);
             configure(parameters);
         });
+    }
+
+    /// <summary>Registers the minimal ES module mock used by the canvas-only document editor shell.</summary>
+    protected BunitJSModuleInterop SetupDocumentCanvasModule()
+    {
+        if (_documentCanvasModule is not null)
+        {
+            return _documentCanvasModule;
+        }
+
+        var module = JSInterop.SetupModule(DocumentCanvasInteropModulePath);
+        module.Setup<string>("mount", _ => true).SetResult("document-canvas-test-handle");
+        _documentCanvasGetModelJson = module.Setup<string?>("getModelJson", _ => true);
+        _documentCanvasGetModelJson.SetResult(null);
+        _documentCanvasGetRuntimeDebugSnapshotJson = module.Setup<string>("getRuntimeDebugSnapshotJson", _ => true);
+        _documentCanvasGetRuntimeDebugSnapshotJson.SetResult("{}");
+        module.Setup<string?>("getOfflineStateJson", _ => true).SetResult(null);
+        module.Setup<string?>("getCollaborationStateJson", _ => true).SetResult(null);
+        module.Setup<bool>("isDirty", _ => true).SetResult(false);
+        module.Setup<string?>("takeLocalOperationBatchesJson", _ => true).SetResult("[]");
+        _documentCanvasApplyRemoteOperationBatch = module.Setup<string?>("applyRemoteOperationBatch", _ => true);
+        _documentCanvasApplyRemoteOperationBatch.SetResult("""{"success":true,"changed":true}""");
+        module.Setup<string?>("applyRemoteCursor", _ => true).SetResult("{}");
+        module.Setup<string?>("applyRemoteCursors", _ => true).SetResult("{}");
+        _documentCanvasExecCommand = module.Setup<string?>("execCommand", _ => true);
+        _documentCanvasExecCommand.SetResult("""{"handled":true}""");
+        module.Setup<string?>("copySelection", _ => true).SetResult("""{"handled":true,"operation":"copy"}""");
+        module.Setup<string?>("cutSelection", _ => true).SetResult("""{"handled":true,"operation":"cut"}""");
+        module.Setup<string?>("pasteFromSystemClipboard", _ => true).SetResult("""{"handled":true,"operation":"paste"}""");
+        module.Setup<string?>("getSigningFieldsJson", _ => true).SetResult("[]");
+        module.Setup<string?>("captureCommentAnchorJson", _ => true).SetResult(null);
+        module.Setup<string?>("setTrackChangesEnabled", _ => true).SetResult("{}");
+        module.Setup<string?>("setReviewDisplayMode", _ => true).SetResult("{}");
+        module.Setup<string?>("selectComment", _ => true).SetResult("{}");
+        module.Setup<string?>("selectRevision", _ => true).SetResult("{}");
+        _documentCanvasGetClipboardDebugSnapshotJson = module.Setup<string?>("getClipboardDebugSnapshotJson", _ => true);
+        _documentCanvasGetClipboardDebugSnapshotJson.SetResult("{}");
+        _documentCanvasGetFormattingStateJson = module.Setup<string?>("getFormattingStateJson", _ => true);
+        _documentCanvasGetFormattingStateJson.SetResult("""{"bold":false,"italic":false,"underline":false,"alignment":"left"}""");
+        _documentCanvasGetUndoStateJson = module.Setup<string?>("getUndoStateJson", _ => true);
+        _documentCanvasGetUndoStateJson.SetResult("""{"canUndo":false,"canRedo":false}""");
+        _documentCanvasGetSelectionStateJson = module.Setup<string?>("getSelectionStateJson", _ => true);
+        _documentCanvasGetSelectionStateJson.SetResult("""{"isCollapsed":true,"pageIndex":0}""");
+        _documentCanvasGetAnnotationsJson = module.Setup<string?>("getAnnotationsJson", _ => true);
+        _documentCanvasGetAnnotationsJson.SetResult("""{"comments":[],"revisions":[],"wordCount":0,"pageCount":1}""");
+        _documentCanvasGetPageMetricsJson = module.Setup<string>("getPageMetricsJson", _ => true);
+        _documentCanvasGetPageMetricsJson.SetResult("""{"totalPages":1,"renderedPages":1,"pages":[{"pageIndex":0,"pageNumber":1}]}""");
+        module.Setup<string?>("getDiagnosticsJson", _ => true).SetResult("""{"architectureName":"CanvasDocumentEngine","pageSurfaceStrategy":"canvas-per-visible-page","pageCount":1}""");
+        module.Setup<string?>("getSearchStateJson", _ => true).SetResult("{}");
+        module.Setup<string?>("getNavigationStateJson", _ => true).SetResult("{}");
+        module.Setup<string?>("getPrintPreviewStateJson", _ => true).SetResult("{}");
+        module.SetupVoid("replaceModel", _ => true).SetVoidResult();
+        module.SetupVoid("markSaved", _ => true).SetVoidResult();
+        module.SetupVoid("focus", _ => true).SetVoidResult();
+        module.SetupVoid("editHeaderFooter", _ => true).SetVoidResult();
+        module.SetupVoid("closeHeaderFooter", _ => true).SetVoidResult();
+        module.SetupVoid("scrollToPage", _ => true).SetVoidResult();
+        module.SetupVoid("setOptions", _ => true).SetVoidResult();
+        module.SetupVoid("dispose", _ => true).SetVoidResult();
+
+        _documentCanvasModule = module;
+        return module;
+    }
+
+    /// <summary>Sets the canonical canvas model returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasModelJson(string? modelJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetModelJson?.SetResult(modelJson);
+    }
+
+    /// <summary>Sets the typed document returned by the mocked canvas engine on save/export pulls.</summary>
+    protected void SetDocumentCanvasRuntimeDocument(DocumentEditorDocument document)
+    {
+        var modelJson = JsonSerializer.Serialize(
+            CanvasDocumentModelConverter.ToCanvasModel(document),
+            DocumentEditorJson.Options);
+        SetDocumentCanvasModelJson(modelJson);
+    }
+
+    /// <summary>Sets the default result returned by canvas command execution in the mocked module.</summary>
+    protected void SetDocumentCanvasExecCommandResult(string? resultJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasExecCommand?.SetResult(resultJson);
+    }
+
+    /// <summary>Sets the formatting state returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasFormattingStateJson(string? stateJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetFormattingStateJson?.SetResult(stateJson);
+    }
+
+    /// <summary>Sets the undo state returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasUndoStateJson(string? stateJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetUndoStateJson?.SetResult(stateJson);
+    }
+
+    /// <summary>Sets the selection state returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasSelectionStateJson(string? stateJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetSelectionStateJson?.SetResult(stateJson);
+    }
+
+    /// <summary>Sets the annotation state returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasAnnotationsJson(string? stateJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetAnnotationsJson?.SetResult(stateJson);
+    }
+
+    /// <summary>Sets the page metrics returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasPageMetricsJson(string stateJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetPageMetricsJson?.SetResult(stateJson);
+    }
+
+    /// <summary>Sets the result returned when the mocked canvas engine applies a remote collaboration batch.</summary>
+    protected void SetDocumentCanvasRemoteApplyResult(string? resultJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasApplyRemoteOperationBatch?.SetResult(resultJson);
+    }
+
+    /// <summary>Sets the runtime debug snapshot returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasRuntimeDebugSnapshotJson(string snapshotJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetRuntimeDebugSnapshotJson?.SetResult(snapshotJson);
+    }
+
+    /// <summary>Sets the clipboard debug snapshot returned by the mocked canvas engine.</summary>
+    protected void SetDocumentCanvasClipboardDebugSnapshotJson(string? snapshotJson)
+    {
+        SetupDocumentCanvasModule();
+        _documentCanvasGetClipboardDebugSnapshotJson?.SetResult(snapshotJson);
+    }
 
     /// <summary>Registers a Czech localizer for this test context.</summary>
     protected void UseCzechLocalization()

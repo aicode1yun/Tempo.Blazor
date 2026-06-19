@@ -19,6 +19,12 @@ public static class McpToolResults
     /// <summary>Error code for an optimistic-concurrency conflict.</summary>
     public const string Conflict = "conflict";
 
+    /// <summary>Error code for a syntactically valid but unsupported operation.</summary>
+    public const string InvalidOperation = "invalid_operation";
+
+    /// <summary>Error code for an optional host capability that is not registered.</summary>
+    public const string Unsupported = "unsupported";
+
     /// <summary>Generic error code.</summary>
     public const string Error = "error";
 

@@ -117,16 +117,9 @@ public class MyNewTests : ServerTestBase
 
 ### Document Editor Tests
 
-Document editor WYSIWYG tests should exercise the real demo editor and the JS-owned runtime path. Open the page with `OpenDocumentEditorPageAsync`, wait for `[data-testid='document-wysiwyg-host']` plus `WaitForWysiwygBodyAsync`, and prefer DOM/provider assertions over Blazor render-count assertions for the editable surface.
+Document editor E2E tests should exercise the canvas editor host. Open `/document-editor` or a dedicated canvas route, wait for `[data-testid='document-canvas-engine-host'][data-canvas-engine-ready='true']`, and prefer user-visible DOM/provider assertions plus canvas pixel checks over implementation-only probes.
 
-Use `window.tmDocumentEditorRuntime` and `window.tmDocumentEditorDebug` only for runtime invariants and diagnostics such as undo state, dirty state, snapshot reload counts, render stats, and selection snapshots. Keep coverage spread across typing, undo/redo, formatting, track changes, comments, images, tables, headers/footers, collaboration, save/reload, DOCX import/export, PDF export, and comparison. Additional runtime details are documented in `docs/document-editor-js-owned-runtime.md`.
-
-Document editor E2E files are classified by `DocumentEditorE2EContractAuditTests`:
-- `DocumentEditor:HumanWorkflow` covers user-visible behavior through Playwright mouse, keyboard, locator and provider interactions.
-- `DocumentEditor:DiagnosticRuntime` covers strict runtime/layout probes and must not be counted as UX parity coverage by itself.
-- `DocumentEditor:ProviderBoundary` covers save/load/import/export/collaboration boundaries.
-- `DocumentEditor:LayoutVisual` covers visible geometry, viewport safety and UI placement.
-- `LegacyMixed` or obsolete coverage must point at a stricter replacement file before it can remain green.
+Keep coverage spread across typing, undo/redo, formatting, track changes, comments, images, tables, headers/footers, collaboration, save/reload, import/export, PDF export, and comparison. Canvas E2E files are classified by `DocumentEditorCanvasParityCoverageMatrixTests`.
 
 For local editor assertions, prefer `WaitForEditorStableAsync(page, reason, blockId, expectedText)` over fixed sleeps. The helper waits for the host, visible blocks, optional expected text and absence of Blazor/runtime error UI; it deliberately does not wait for save/autosave.
 

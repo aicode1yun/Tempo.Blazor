@@ -51,7 +51,7 @@ internal static class DocumentEditorE2EReset
         await page.EvaluateAsync(
             """
             () => {
-                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
                 try { window.tmDocumentEditor?.disableBeforeUnloadGuard?.(); } catch {}
                 try { window.getSelection?.()?.removeAllRanges?.(); } catch {}
 
@@ -62,8 +62,6 @@ internal static class DocumentEditorE2EReset
 
                 document.querySelectorAll('[data-testid="document-editor-live-region"], [data-testid="document-canvas-live-region"], .tm-core-live-region')
                     .forEach(node => { node.textContent = ''; });
-                host?.querySelectorAll('[data-testid="document-wysiwyg-object-selection-pane"], [data-testid="document-wysiwyg-image-selection-pane"]')
-                    .forEach(node => node.remove());
 
                 host?.removeAttribute('data-focus-owner');
                 return {
