@@ -52,7 +52,12 @@ public class DocumentDocxFormatTests
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is HeadingBlockContent).Should().BeTrue();
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is ListBlockContent { Ordered: true }).Should().BeTrue();
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is TableBlockContent).Should().BeTrue();
-        DocumentImagePersistence.EnumerateDrawingRuns(result.Document).Should().NotBeEmpty();
+        // The sample image is floating, so it round-trips back as an image block;
+        // accept either representation since the persistence layer converts between
+        // image blocks and inline drawing runs.
+        (result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is ImageBlockContent)
+            || DocumentImagePersistence.EnumerateDrawingRuns(result.Document).Any())
+            .Should().BeTrue("the imported document should contain the sample image");
         result.Document.Blocks.OfType<DocumentBlock>().Any(b => b.Content is PageBreakBlockContent).Should().BeTrue();
         result.Document.HeadersFooters.Should().NotBeEmpty();
         result.Document.Notes.Should().Contain(note => note.Type == DocumentNoteType.Footnote);

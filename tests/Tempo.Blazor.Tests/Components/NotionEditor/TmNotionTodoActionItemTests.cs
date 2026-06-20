@@ -51,7 +51,9 @@ public class TmNotionTodoActionItemTests : LocalizationTestBase
     [Fact]
     public void TodoWithDueDate_RendersCultureFormattedDate()
     {
-        var dueDate = new DateTime(2026, 6, 18);
+        // Future date so the todo is never overdue (otherwise the component
+        // prefixes the text with "Overdue · "); this test only checks formatting.
+        var dueDate = DateTime.Today.AddDays(30);
         var cut = RenderTodo(new TodoBlockContent
         {
             Html = "Scheduled task",

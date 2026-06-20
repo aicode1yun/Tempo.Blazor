@@ -479,7 +479,12 @@ public sealed class DocxPackageReader
     private bool TryCreateTempoImageBlock(W.Paragraph paragraph, IReadOnlyList<InlineContent> inlines, out DocumentBlock block)
     {
         block = new DocumentBlock();
-        var drawing = inlines.OfType<DocumentDrawingRun>().SingleOrDefault();
+        // First (not Single): a paragraph may legitimately contain several inline
+        // drawings (e.g. two images in one sentence). Those are not single-image
+        // blocks - HasNonImageBlockInlineContent below rejects them so they stay
+        // inline. SingleOrDefault() here threw "Sequence contains more than one
+        // element" and aborted the whole import.
+        var drawing = inlines.OfType<DocumentDrawingRun>().FirstOrDefault();
         if (drawing is null)
         {
             return false;

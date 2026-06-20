@@ -26,7 +26,9 @@ public class TmSpreadsheetTests : LocalizationTestBase
         var cut = RenderComponent<TmSpreadsheet>();
 
         // The DOM grid renderer has been removed; only the canvas engine remains.
-        cut.FindAll(".tm-spreadsheet-grid").Should().BeEmpty();
+        // The canvas grid root reuses the .tm-spreadsheet-grid styling class, so
+        // assert there is no *separate* (non-canvas) DOM grid element.
+        cut.FindAll(".tm-spreadsheet-grid:not(.tm-spreadsheet-canvas-grid)").Should().BeEmpty();
     }
 
     [Fact]
